@@ -78,7 +78,7 @@ struct TagButtonView: View {
     
     var body: some View {
         Button(action: {
-            withAnimation(.snappy) {
+            withAnimation(.easeIn) {
                 activeTag = mockTag
             }
         }) {
@@ -90,10 +90,9 @@ struct TagButtonView: View {
                 .background {
                     Capsule()
                         .fill(activeTag == mockTag ? .black : .white)
-                        .matchedGeometryEffect(id: activeTag == mockTag ? "ACTIVETAG" : "", in: animation)
+                        .matchedGeometryEffect(id: "ACTIVETAG_\(mockTag)", in: animation) // Use unique ID for each tag
                 }
         }
         .buttonStyle(.plain)
-        
     }
 }
