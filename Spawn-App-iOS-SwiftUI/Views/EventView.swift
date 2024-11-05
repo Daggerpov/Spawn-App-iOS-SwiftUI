@@ -33,7 +33,7 @@ struct EventView: View {
                 }
                 .font(.caption)
             }
-            .foregroundColor(.black)
+            .foregroundColor(.white)
             .frame(alignment: .leading)
             Spacer()
             VStack{
@@ -61,7 +61,7 @@ struct EventView: View {
                                 .resizable()
                                 .frame(width: 20, height: 20)
                                 .clipShape(Circle())
-                                .shadow(radius: 10)
+                                .shadow(radius: 20)
                                 .foregroundColor(color)
                             )
                     

@@ -11,7 +11,7 @@ struct ContentView: View {
     @Namespace private var animation
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
-    let colors: [Color] = [Color.blue, Color.red, Color.orange, Color.green]
+    let colors: [Color] = [Color(hex: "#8084ac"), Color(hex: "#704444"), Color(hex: "#b0442c"), Color(hex: "#889c6c")]
     
     var body: some View {
         VStack{
@@ -45,7 +45,7 @@ struct ContentView: View {
             .padding(.horizontal)
         }
         .padding()
-        .background(Color.gray)
+        .background(Color(hex: "#C0BCB4"))
     }
 }
 
@@ -74,6 +74,7 @@ extension ContentView {
                 }
                 .font(.title)
             }
+            .foregroundColor(Color(hex: "#173131"))
             Spacer()
             .frame(alignment: .leading)
             Spacer()
