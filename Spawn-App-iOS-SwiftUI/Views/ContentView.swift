@@ -11,6 +11,7 @@ struct ContentView: View {
     @Namespace private var animation
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
+    let colors: [Color] = [Color.blue, Color.red, Color.orange, Color.green]
     
     var body: some View {
         VStack{
@@ -30,15 +31,18 @@ struct ContentView: View {
             //            }
 //            Spacer()
 //                .frame(maxHeight: .infinity)
+            Spacer()
+            Spacer()
             VStack{
                 ScrollView(.vertical) {
                     LazyVStack(spacing: 15) {
-                        ForEach(0..<4) {_ in 
-                            EventView()
+                        ForEach(Event.mockEvents) {mockEvent in
+                            EventView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
                         }
                     }
                 }
             }
+            .padding(.horizontal)
         }
         .padding()
         .background(Color.gray)
