@@ -28,8 +28,17 @@ struct ContentView: View {
             //            .onChange(of: viewModel.activeCategory) { _ in
             //                viewModel.loadQuotesBySearch()
             //            }
-            Spacer()
-                .frame(maxHeight: .infinity)
+//            Spacer()
+//                .frame(maxHeight: .infinity)
+            VStack{
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 15) {
+                        ForEach(0..<4) {
+                            EventView()
+                        }
+                    }
+                }
+            }
         }
         .padding()
         .background(Color.gray)
@@ -47,9 +56,11 @@ extension ContentView {
             VStack{
                 // TODO: fix the sizes of these texts
                 // TODO: fix the text alignment of "hello"
-                Text("hello,")
-                    .font(.title2)
-                //                        .frame(alignment: .leading)
+                HStack{
+                    Text("hello,")
+                        .font(.title)
+                    Spacer()
+                }
                 
                 HStack{
                     Image(systemName: "star.fill")
@@ -59,40 +70,19 @@ extension ContentView {
                 }
                 .font(.title)
             }
+            Spacer()
             .frame(alignment: .leading)
             Spacer()
-            Spacer()
-            Spacer()
-            Circle()
-            // TODO: change this to a relative size, using Geometry Reader
-                .frame(height: 45)
+            Image("Daniel_Lee_pfp")
+                .resizable()
+                .frame(width: 45, height: 45)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.black, lineWidth: 2))
+                .shadow(radius: 10)
             Spacer()
         }
+        .padding()
     }
 }
 
-struct TagButtonView: View {
-    let mockTag: String
-    @Binding var activeTag: String
-    var animation: Namespace.ID
-    
-    var body: some View {
-        Button(action: {
-            withAnimation(.easeIn) {
-                activeTag = mockTag
-            }
-        }) {
-            Text(mockTag)
-                .font(.callout)
-                .foregroundColor(activeTag == mockTag ? .white : .black)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 15)
-                .background {
-                    Capsule()
-                        .fill(activeTag == mockTag ? .black : .white)
-                        .matchedGeometryEffect(id: "ACTIVETAG_\(mockTag)", in: animation) // Use unique ID for each tag
-                }
-        }
-        .buttonStyle(.plain)
-    }
-}
+
