@@ -24,14 +24,18 @@ struct EventView: View {
                     Text("\(event.startTime) -  \(event.endTime)")
                         .cornerRadius(20)
                         .font(.caption2)
+                    // TODO: surround by rounded rectangle
                     Spacer()
+                    
                 }
                 HStack{
                     Image(systemName: "map")
+                    // TODO: surround by circle, per Figma design
                     Text(event.location)
                     Spacer()
                 }
                 .font(.caption)
+                // TODO: surround by rounded rectangle
             }
             .foregroundColor(.white)
             .frame(alignment: .leading)
@@ -59,7 +63,7 @@ struct EventView: View {
                         .overlay(
                             Image(systemName: event.symbolName)
                                 .resizable()
-                                .frame(width: 20, height: 20)
+                                .frame(width: 17.5, height: 17.5)
                                 .clipShape(Circle())
                                 .shadow(radius: 20)
                                 .foregroundColor(color)

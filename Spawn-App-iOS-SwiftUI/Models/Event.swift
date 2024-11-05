@@ -49,6 +49,46 @@ extension Event {
             endTime: "07:00 PM",
             location: "Riverside Park",
             symbolName: "star.fill"
+        ),
+        Event(
+            id: UUID(),
+            title: "Doctor's Appointment",
+            startTime: "04:00 PM",
+            endTime: "04:30 PM",
+            location: "City Clinic",
+            symbolName: "star.fill"
+        ),
+        Event(
+            id: UUID(),
+            title: "Dinner with Family",
+            startTime: "07:30 PM",
+            endTime: "09:00 PM",
+            location: "Home",
+            symbolName: "star.fill"
+        ),
+        Event(
+            id: UUID(),
+            title: "Online Course",
+            startTime: "05:00 PM",
+            endTime: "06:30 PM",
+            location: "Living Room",
+            symbolName: "star.fill"
+        ),
+        Event(
+            id: UUID(),
+            title: "Book Club Meeting",
+            startTime: "03:00 PM",
+            endTime: "04:30 PM",
+            location: "Library",
+            symbolName: "star.fill"
+        ),
+        Event(
+            id: UUID(),
+            title: "Gym Workout",
+            startTime: "06:00 AM",
+            endTime: "07:00 AM",
+            location: "Fitness Center",
+            symbolName: "star.fill"
         )
     ]
 }
