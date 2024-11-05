@@ -33,7 +33,7 @@ struct ContentView: View {
             VStack{
                 ScrollView(.vertical) {
                     LazyVStack(spacing: 15) {
-                        ForEach(0..<4) {
+                        ForEach(0..<4) {_ in 
                             EventView()
                         }
                     }
