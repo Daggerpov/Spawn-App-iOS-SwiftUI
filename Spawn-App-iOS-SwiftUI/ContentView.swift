@@ -6,81 +6,94 @@
 //
 
 import SwiftUI
-import CoreData
 
 struct ContentView: View {
-    @Environment(\.managedObjectContext) private var viewContext
-
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Item.timestamp, ascending: true)],
-        animation: .default)
-    private var items: FetchedResults<Item>
-
+    @Namespace private var animation
+    @State private var activeTag: String = "Everyone"
+    let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
+    
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp!, formatter: itemFormatter)")
-                    } label: {
-                        Text(item.timestamp!, formatter: itemFormatter)
+        VStack{
+            headerView
+            Spacer()
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(mockTags, id: \.self) { mockTag in
+                        TagButtonView(mockTag: mockTag, activeTag: $activeTag, animation: animation)
                     }
                 }
-                .onDelete(perform: deleteItems)
+                .padding(.top, 10)
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-            Text("Select an item")
+            // TODO: implement logic here to adjust search results when the tag clicked is changed
+            //            .onChange(of: viewModel.activeCategory) { _ in
+            //                viewModel.loadQuotesBySearch()
+            //            }
+            Spacer()
+                .frame(maxHeight: .infinity)
         }
+        .padding()
+        .background(Color.gray)
     }
+}
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(context: viewContext)
-            newItem.timestamp = Date()
+#Preview {
+    ContentView()
+}
 
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
+extension ContentView {
+    private var headerView: some View {
+        HStack{
+            Spacer()
+            VStack{
+                // TODO: fix the sizes of these texts
+                // TODO: fix the text alignment of "hello"
+                Text("hello,")
+                    .font(.title2)
+                //                        .frame(alignment: .leading)
+                
+                HStack{
+                    Image(systemName: "star.fill")
+                    Text("udhlee")
+                        .bold()
+                    
+                }
+                .font(.title)
             }
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { items[$0] }.forEach(viewContext.delete)
-
-            do {
-                try viewContext.save()
-            } catch {
-                // Replace this implementation with code to handle the error appropriately.
-                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
-                let nsError = error as NSError
-                fatalError("Unresolved error \(nsError), \(nsError.userInfo)")
-            }
+            .frame(alignment: .leading)
+            Spacer()
+            Spacer()
+            Spacer()
+            Circle()
+            // TODO: change this to a relative size, using Geometry Reader
+                .frame(height: 45)
+            Spacer()
         }
     }
 }
 
-private let itemFormatter: DateFormatter = {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .short
-    formatter.timeStyle = .medium
-    return formatter
-}()
-
-#Preview {
-    ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+struct TagButtonView: View {
+    let mockTag: String
+    @Binding var activeTag: String
+    var animation: Namespace.ID
+    
+    var body: some View {
+        Button(action: {
+            withAnimation(.snappy) {
+                activeTag = mockTag
+            }
+        }) {
+            Text(mockTag)
+                .font(.callout)
+                .foregroundColor(activeTag == mockTag ? .white : .black)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 15)
+                .background {
+                    Capsule()
+                        .fill(activeTag == mockTag ? .black : .white)
+                        .matchedGeometryEffect(id: activeTag == mockTag ? "ACTIVETAG" : "", in: animation)
+                }
+        }
+        .buttonStyle(.plain)
+        
+    }
 }
