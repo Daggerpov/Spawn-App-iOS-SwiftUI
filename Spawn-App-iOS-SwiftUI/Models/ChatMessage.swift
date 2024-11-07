@@ -2,7 +2,7 @@
 //  ChatMessage.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel on 11/6/24.
+//  Created by Daniel Agapov on 11/6/24.
 //
 
 import Foundation

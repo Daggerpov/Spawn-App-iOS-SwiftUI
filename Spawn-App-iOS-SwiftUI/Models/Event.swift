@@ -2,7 +2,7 @@
 //  Event.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel on 11/4/24.
+//  Created by Daniel Agapov on 11/4/24.
 //
 
 import Foundation
@@ -14,7 +14,7 @@ struct Event: Identifiable, Codable {
     var title: String
     var startTime: String? // TODO: change to proper time later
     var endTime: String? // TODO: change to proper time later
-    var location: Location? // TODO: change to proper location later
+    var location: Location? 
     var note: String? // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
     
     // MARK: Relations

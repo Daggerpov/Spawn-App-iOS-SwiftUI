@@ -2,7 +2,7 @@
 //  ColorHelper.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel on 11/4/24.
+//  Created by Daniel Agapov on 11/4/24.
 //
 
 import SwiftUI

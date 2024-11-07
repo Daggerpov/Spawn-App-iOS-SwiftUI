@@ -2,7 +2,7 @@
 //  Spawn_App_iOS_SwiftUIApp.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel on 11/3/24.
+//  Created by Daniel Agapov on 11/3/24.
 //
 
 import SwiftUI
