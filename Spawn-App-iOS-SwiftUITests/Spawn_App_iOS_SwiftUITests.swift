@@ -2,7 +2,7 @@
 //  Spawn_App_iOS_SwiftUITests.swift
 //  Spawn-App-iOS-SwiftUITests
 //
-//  Created by Daniel on 11/3/24.
+//  Created by Daniel Agapov on 11/3/24.
 //
 
 import XCTest

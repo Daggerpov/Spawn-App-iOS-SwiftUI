@@ -2,7 +2,7 @@
 //  ColorHelper.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel on 11/4/24.
+//  Created by Daniel Agapov on 11/4/24.
 //
 
 import SwiftUI
@@ -28,3 +28,5 @@ extension Color {
         return String(format: "#%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
     }
 }
+
+let colors: [Color] = [Color(hex: "#8084ac"), Color(hex: "#704444"), Color(hex: "#b0442c"), Color(hex: "#889c6c")]

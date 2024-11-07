@@ -2,14 +2,21 @@
 //  EventView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel on 11/4/24.
+//  Created by Daniel Agapov on 11/4/24.
 //
 
 import SwiftUI
 
 struct EventView: View {
+    @ObservedObject var viewModel: EventViewModel
     var event: Event
     var color: Color
+    
+    init(event: Event, color: Color) {
+        self.event = event
+        self.color = color
+        viewModel = EventViewModel(event: event)
+    }
     var body: some View {
         VStack{
             VStack (spacing: 10) {
@@ -42,25 +49,30 @@ struct EventView: View {
             HStack{
                 VStack{
                     HStack{
-                        Text("\(event.startTime) -  \(event.endTime)")
+                        Text(viewModel.eventTimeDisplayString)
                             .cornerRadius(20)
                             .font(.caption2)
                             .frame(alignment: .leading)
                         // TODO: surround by rounded rectangle
                         Spacer()
                     }
+                    
                     Spacer()
-                    HStack{
-                        Image(systemName: "map")
-                        // TODO: surround by circle, per Figma design
-                        Text(event.location)
-                            .lineLimit(1)
-                            .fixedSize()
-                            .font(.caption2)
-                        Spacer()
+                    if let eventLocation = event.location?.locationName {
+                        HStack{
+                            Image(systemName: "map")
+                            // TODO: surround by circle, per Figma design
+                            
+                            Text(eventLocation)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .font(.caption2)
+                            Spacer()
+                            
+                        }
+                        .frame(alignment: .leading)
+                        .font(.caption)
                     }
-                    .frame(alignment: .leading)
-                    .font(.caption)
                 }
                 .foregroundColor(.white)
                 Spacer()
@@ -70,7 +82,9 @@ struct EventView: View {
                     .background(Color.white)
                     .clipShape(Circle())
                     .overlay(
-                        Image(systemName: event.symbolName)
+                        // TODO: obviously change `Bool.random()` later to proper logic
+                        // proper logic: (if user is in `Event`'s `participants`)
+                        Image(systemName: Bool.random() ? "checkmark" : "star.fill")
                             .resizable()
                             .frame(width: 17.5, height: 17.5)
                             .clipShape(Circle())

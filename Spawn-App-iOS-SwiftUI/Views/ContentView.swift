@@ -2,7 +2,7 @@
 //  ContentView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel on 11/3/24.
+//  Created by Daniel Agapov on 11/3/24.
 //
 
 import SwiftUI
@@ -11,7 +11,7 @@ struct ContentView: View {
     @Namespace private var animation
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
-    let colors: [Color] = [Color(hex: "#8084ac"), Color(hex: "#704444"), Color(hex: "#b0442c"), Color(hex: "#889c6c")]
+    
     
     var body: some View {
         VStack{
