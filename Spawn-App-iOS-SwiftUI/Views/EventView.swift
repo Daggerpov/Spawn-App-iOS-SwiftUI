@@ -8,8 +8,15 @@
 import SwiftUI
 
 struct EventView: View {
+    @ObservedObject var viewModel: EventViewModel
     var event: Event
     var color: Color
+    
+    init(event: Event, color: Color) {
+        self.event = event
+        self.color = color
+        viewModel = EventViewModel(event: event)
+    }
     var body: some View {
         VStack{
             VStack (spacing: 10) {
@@ -42,7 +49,7 @@ struct EventView: View {
             HStack{
                 VStack{
                     HStack{
-                        Text("\(event.startTime) -  \(event.endTime)")
+                        Text(viewModel.eventTimeDisplayString)
                             .cornerRadius(20)
                             .font(.caption2)
                             .frame(alignment: .leading)
