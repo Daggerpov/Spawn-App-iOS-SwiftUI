@@ -20,74 +20,58 @@ extension Event {
     static let mockEvents: [Event] = [
         Event(
             id: UUID(),
-            title: "Morning Yoga",
-            startTime: "08:00 AM",
-            endTime: "09:00 AM",
-            location: "City Park",
+            title: "Dinner time!!!!!!",
+            startTime: "10:00 PM",
+            endTime: "11:30 PM",
+            location: "Gather - Place Vanier",
             symbolName: "checkmark"
         ),
         Event(
             id: UUID(),
-            title: "Work Meeting",
-            startTime: "10:00 AM",
-            endTime: "11:00 AM",
-            location: "Office",
+            title: "wanna run 5k with me?",
+            startTime: "04:00 PM",
+            endTime: "05:30 PM",
+            location: "Wesbrook Mall",
             symbolName: "star.fill"
         ),
         Event(
             id: UUID(),
-            title: "Lunch with Sarah",
-            startTime: "12:30 PM",
-            endTime: "01:30 PM",
-            location: "Downtown Cafe",
-            symbolName: "star.fill"
-        ),
-        Event(
-            id: UUID(),
-            title: "Evening Run",
+            title: "playing basketball!!!",
             startTime: "06:00 PM",
             endTime: "07:00 PM",
-            location: "Riverside Park",
+            location: "UBC Student Recreation Centre",
             symbolName: "star.fill"
         ),
         Event(
             id: UUID(),
-            title: "Doctor's Appointment",
-            startTime: "04:00 PM",
-            endTime: "04:30 PM",
-            location: "City Clinic",
+            title: "Im painting rn lol",
+            startTime: "10:00 AM",
+            endTime: "11:30 AM",
+            location: "Ross Drive - Wesbrook Mall",
             symbolName: "star.fill"
         ),
         Event(
             id: UUID(),
-            title: "Dinner with Family",
-            startTime: "07:30 PM",
-            endTime: "09:00 PM",
-            location: "Home",
+            title: "Grabbing Udon",
+            startTime: "12:00 PM",
+            endTime: "02:30 PM",
+            location: "Marugame Udon",
             symbolName: "star.fill"
         ),
         Event(
             id: UUID(),
-            title: "Online Course",
-            startTime: "05:00 PM",
-            endTime: "06:30 PM",
-            location: "Living Room",
+            title: "Calendar Party",
+            startTime: "11:00 PM",
+            endTime: "02:30 AM",
+            location: "The Pit - Nest",
             symbolName: "star.fill"
         ),
         Event(
             id: UUID(),
-            title: "Book Club Meeting",
-            startTime: "03:00 PM",
-            endTime: "04:30 PM",
-            location: "Library",
-            symbolName: "star.fill"
-        ),
-        Event(
-            id: UUID(),
-            title: "Gym Workout",
-            startTime: "06:00 AM",
-            endTime: "07:00 AM",
-            location: "Fitness Center",
+            title: "Gym - Leg Day",
+            startTime: "10:00 AM",
+            endTime: "11:30 AM",
+            location: "UBC Student Recreation Centre",
             symbolName: "star.fill"
         )
     ]
