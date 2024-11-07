@@ -19,10 +19,27 @@ struct AppUser: Identifiable {
     var firstName: String?
     var lastName: String?
     var bio: String?
+    var friendTags: [FriendTag]?
 }
 
 extension AppUser {
-    static let danielAgapov: AppUser = AppUser(id: UUID(), baseUser: User.danielAgapov, username: "daggerpov", firstName: "Daniel", lastName: "Agapov", bio: "This is my bio.")
+    static let danielAgapov: AppUser = AppUser(
+        id: UUID(),
+        baseUser: User.danielAgapov,
+        username: "daggerpov",
+        firstName: "Daniel",
+        lastName: "Agapov",
+        bio: "This is my bio.",
+        friendTags: [FriendTag(displayName: "Hobbies", friends: [AppUser.danielLee])]
+    )
         
-    static let danielLee: AppUser = AppUser(id: UUID(), baseUser: User.danielLee, username: "uhdlee", firstName: "Daniel", lastName: "Lee", bio: "This is my bio.")
+    static let danielLee: AppUser = AppUser(
+        id: UUID(),
+        baseUser: User.danielLee,
+        username: "uhdlee",
+        firstName: "Daniel",
+        lastName: "Lee",
+        bio: "This is my bio.",
+        friendTags: [FriendTag.close, FriendTag.sports]
+    )
 }
