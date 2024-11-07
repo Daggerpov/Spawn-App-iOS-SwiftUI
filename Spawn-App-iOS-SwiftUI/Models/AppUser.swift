@@ -11,15 +11,21 @@ import SwiftUI
 // that the `User` struct still comforms to `Codable` (which an `Image` property
 // would prevent if I included it in that struct).
 
+// tech note: for new friend searching, it should first be done by username, but
+// we could also search by first name and last name, if provided (thus, optional types).
+
+// tech note: for friend finding in map, can use `lastLocation`
+
 struct AppUser: Identifiable {
     var id: UUID
     var baseUser: User
-    var profilePicture: Image?
     var username: String
+    var profilePicture: Image?
     var firstName: String?
     var lastName: String?
     var bio: String?
     var friendTags: [FriendTag]?
+    var lastLocation: Location?
 }
 
 extension AppUser {
