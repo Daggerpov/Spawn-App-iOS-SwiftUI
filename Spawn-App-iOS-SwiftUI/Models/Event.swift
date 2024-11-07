@@ -15,7 +15,6 @@ struct Event: Identifiable, Codable {
     var startTime: String // TODO: change to proper time later
     var endTime: String // TODO: change to proper time later
     var location: String // TODO: change to proper location later
-    var symbolName: String // TODO: maybe change later?
     
     // MARK: Relations
     var creator: User
@@ -32,7 +31,6 @@ extension Event {
             startTime: "10:00 PM",
             endTime: "11:30 PM",
             location: "Gather - Place Vanier",
-            symbolName: "checkmark",
             creator: User.danielAgapov,
             participants: [User.danielLee]
         ),
@@ -42,7 +40,6 @@ extension Event {
             startTime: "04:00 PM",
             endTime: "05:30 PM",
             location: "Wesbrook Mall",
-            symbolName: "star.fill",
             creator: User.danielAgapov
         ),
         Event(
@@ -51,7 +48,6 @@ extension Event {
             startTime: "06:00 PM",
             endTime: "07:00 PM",
             location: "UBC Student Recreation Centre",
-            symbolName: "star.fill",
             creator: User.danielAgapov
         ),
         Event(
@@ -60,7 +56,6 @@ extension Event {
             startTime: "10:00 AM",
             endTime: "11:30 AM",
             location: "Ross Drive - Wesbrook Mall",
-            symbolName: "star.fill",
             creator: User.danielAgapov,
             participants: [User.danielLee]
             
@@ -71,7 +66,6 @@ extension Event {
             startTime: "12:00 PM",
             endTime: "02:30 PM",
             location: "Marugame Udon",
-            symbolName: "star.fill",
             creator: User.danielAgapov
         ),
         Event(
@@ -80,7 +74,6 @@ extension Event {
             startTime: "11:00 PM",
             endTime: "02:30 AM",
             location: "The Pit - Nest",
-            symbolName: "star.fill",
             creator: User.danielAgapov
         ),
         Event(
@@ -89,7 +82,6 @@ extension Event {
             startTime: "10:00 AM",
             endTime: "11:30 AM",
             location: "UBC Student Recreation Centre",
-            symbolName: "star.fill",
             creator: User.danielAgapov
         )
     ]
