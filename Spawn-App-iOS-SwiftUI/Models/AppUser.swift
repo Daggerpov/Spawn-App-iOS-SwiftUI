@@ -36,7 +36,7 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
-        friendTags: [FriendTag(displayName: "Hobbies", friends: [AppUser.danielLee])]
+        friendTags: [FriendTag(displayName: "Hobbies", color: colors.randomElement() ?? Color.blue, friends: [AppUser.danielLee])]
     )
         
     static let danielLee: AppUser = AppUser(
