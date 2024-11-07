@@ -15,7 +15,8 @@ struct ContentView: View {
     
     var body: some View {
         VStack{
-            headerView
+            Spacer()
+            headerView.padding(.top, 50)
             Spacer()
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -24,6 +25,8 @@ struct ContentView: View {
                     }
                 }
                 .padding(.top, 10)
+                .padding(.leading, 16)
+                .padding(.trailing, 16)
             }
             // TODO: implement logic here to adjust search results when the tag clicked is changed
             //            .onChange(of: viewModel.activeCategory) { _ in
@@ -46,6 +49,7 @@ struct ContentView: View {
         }
         .padding()
         .background(Color(hex: "#C0BCB4"))
+        .ignoresSafeArea(.container)
     }
 }
 
@@ -70,12 +74,13 @@ extension ContentView {
                     Image(systemName: "star.fill")
                     Text("udhlee")
                         .bold()
+                        .font(.largeTitle)
+                    Spacer()
                     
                 }
                 .font(.title)
             }
             .foregroundColor(Color(hex: "#173131"))
-            Spacer()
             .frame(alignment: .leading)
             Spacer()
             Image("Daniel_Lee_pfp")
@@ -86,7 +91,8 @@ extension ContentView {
                 .shadow(radius: 10)
             Spacer()
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.vertical, 2)
     }
 }
 
