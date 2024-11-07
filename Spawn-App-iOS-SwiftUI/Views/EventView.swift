@@ -53,7 +53,7 @@ struct EventView: View {
                     HStack{
                         Image(systemName: "map")
                         // TODO: surround by circle, per Figma design
-                        Text(event.location)
+                        Text(event.location.locationName)
                             .lineLimit(1)
                             .fixedSize()
                             .font(.caption2)
