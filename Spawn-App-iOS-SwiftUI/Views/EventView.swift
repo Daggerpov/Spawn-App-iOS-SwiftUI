@@ -49,18 +49,23 @@ struct EventView: View {
                         // TODO: surround by rounded rectangle
                         Spacer()
                     }
+                    
                     Spacer()
-                    HStack{
-                        Image(systemName: "map")
-                        // TODO: surround by circle, per Figma design
-                        Text(event.location.locationName)
-                            .lineLimit(1)
-                            .fixedSize()
-                            .font(.caption2)
-                        Spacer()
+                    if let eventLocation = event.location?.locationName {
+                        HStack{
+                            Image(systemName: "map")
+                            // TODO: surround by circle, per Figma design
+                            
+                            Text(eventLocation)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .font(.caption2)
+                            Spacer()
+                            
+                        }
+                        .frame(alignment: .leading)
+                        .font(.caption)
                     }
-                    .frame(alignment: .leading)
-                    .font(.caption)
                 }
                 .foregroundColor(.white)
                 Spacer()
