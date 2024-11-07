@@ -70,7 +70,9 @@ struct EventView: View {
                     .background(Color.white)
                     .clipShape(Circle())
                     .overlay(
-                        Image(systemName: event.symbolName)
+                        // TODO: obviously change `Bool.random()` later to proper logic
+                        // proper logic: (if user is in `Event`'s `participants`)
+                        Image(systemName: Bool.random() ? "checkmark" : "star.fill")
                             .resizable()
                             .frame(width: 17.5, height: 17.5)
                             .clipShape(Circle())
