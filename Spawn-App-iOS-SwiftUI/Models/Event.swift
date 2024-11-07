@@ -12,9 +12,10 @@ struct Event: Identifiable, Codable {
     
     // MARK: Info
     var title: String
-    var startTime: String // TODO: change to proper time later
-    var endTime: String // TODO: change to proper time later
-    var location: Location // TODO: change to proper location later
+    var startTime: String? // TODO: change to proper time later
+    var endTime: String? // TODO: change to proper time later
+    var location: Location? // TODO: change to proper location later
+    var note: String? // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
     
     // MARK: Relations
     var creator: User
@@ -44,14 +45,14 @@ extension Event {
             id: UUID(),
             title: "wanna run 5k with me?",
             startTime: "04:00 PM",
-            endTime: "05:30 PM",
+//            endTime: "05:30 PM",
             location: Location(locationName: "Wesbrook Mall"),
             creator: User.danielAgapov
         ),
         Event(
             id: UUID(),
             title: "playing basketball!!!",
-            startTime: "06:00 PM",
+//            startTime: "06:00 PM",
             endTime: "07:00 PM",
             location: Location(locationName: "UBC Student Recreation Centre"),
             creator: User.danielAgapov
