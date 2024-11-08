@@ -313,3 +313,4 @@ fastlane/Preview.html
 fastlane/screenshots/**/*.png
 fastlane/test_output
 Spawn-App-iOS-SwiftUI.xcodeproj/xcshareddata/xcschemes/Spawn-App-iOS-SwiftUI.xcscheme
+.vscode/settings.json
