@@ -1,0 +1,48 @@
+Table User {
+    id UUID [pk]
+    friends UUID[] [ref: > User.id, note: "List of friend User IDs"]
+}
+
+Table AppUser {
+    id UUID [pk]
+    baseUser UUID [ref: > User.id]
+    username String
+    profilePicture String // Replace with appropriate type if needed (e.g., URL or BLOB)
+    firstName String
+    lastName String
+    bio String
+    lastLocation UUID [ref: > Location.id]
+    friendTags UUID[] [ref: > FriendTag.id, note: "List of associated FriendTag IDs"]
+}
+
+Table FriendTag {
+    id UUID [pk]
+    displayName String
+    color String // Adjust type as needed
+    friends UUID[] [ref: > AppUser.id, note: "List of AppUser IDs"]
+}
+
+Table Event {
+    id UUID [pk]
+    title String
+    startTime String
+    endTime String
+    location UUID [ref: > Location.id]
+    note String
+    creator UUID [ref: > User.id]
+    participants UUID[] [ref: > User.id, note: "List of participant User IDs"]
+    chatMessages UUID[] [ref: > ChatMessage.id, note: "List of associated ChatMessage IDs"]
+    invited UUID[] [ref: > User.id, note: "List of invited User IDs"]
+}
+
+Table ChatMessage {
+    id UUID [pk]
+    timestamp String
+    user UUID [ref: > User.id]
+    likedBy UUID[] [ref: > User.id, note: "List of User IDs who liked the message"]
+}
+
+Table Location {
+    id UUID [pk]
+    locationName String
+}

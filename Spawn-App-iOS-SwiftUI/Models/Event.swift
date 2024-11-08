@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Event: Identifiable, Codable {
+class Event: Identifiable, Codable {
     var id: UUID
     
     // MARK: Info
@@ -28,6 +28,30 @@ struct Event: Identifiable, Codable {
     // the event, which will populate this `invited` property with the `FriendTag`s'
     // `friends` property (`[AppUser]`), which all have a `baseUser` (`User`) property.
     var invited: [User]?
+
+	init(
+		id: UUID,
+		title: String,
+		startTime: String? = nil,
+		endTime: String? = nil,
+		location: Location? = nil,
+		note: String? = nil,
+		creator: User,
+		participants: [User]? = nil,
+		chatMessages: [ChatMessage]? = nil,
+		invited: [User]? = nil
+	) {
+		self.id = id
+		self.title = title
+		self.startTime = startTime
+		self.endTime = endTime
+		self.location = location
+		self.note = note
+		self.creator = creator
+		self.participants = participants
+		self.chatMessages = chatMessages
+		self.invited = invited
+	}
 }
 
 extension Event {
@@ -45,14 +69,12 @@ extension Event {
             id: UUID(),
             title: "wanna run 5k with me?",
             startTime: "04:00 PM",
-//            endTime: "05:30 PM",
             location: Location(locationName: "Wesbrook Mall"),
             creator: User.danielAgapov
         ),
         Event(
             id: UUID(),
             title: "playing basketball!!!",
-//            startTime: "06:00 PM",
             endTime: "07:00 PM",
             location: Location(locationName: "UBC Student Recreation Centre"),
             creator: User.danielAgapov

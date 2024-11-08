@@ -5,9 +5,13 @@
 //  Created by Daniel Agapov on 11/6/24.
 //
 
-struct Location: Codable {
+class Location: Codable {
     // MARK: stub for now, but will make more robust later after implementing map
     var locationName: String
+
+	init(locationName: String) {
+		self.locationName = locationName
+	}
 }
 
 extension Location {

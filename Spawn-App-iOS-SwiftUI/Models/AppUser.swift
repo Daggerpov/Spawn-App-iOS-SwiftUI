@@ -16,22 +16,43 @@ import SwiftUI
 
 // tech note: for friend finding in map, can use `lastLocation`
 
-struct AppUser: Identifiable {
-    var id: UUID
-    var baseUser: User
-    var username: String
-    var profilePicture: Image?
-    var firstName: String?
-    var lastName: String?
-    var bio: String?
-    var friendTags: [FriendTag]?
-    var lastLocation: Location?
+class AppUser: Identifiable {
+	var id: UUID {
+		baseUser.id
+	}
+	var baseUser: User
+	var username: String
+	var profilePicture: Image?
+	var firstName: String?
+	var lastName: String?
+	var bio: String?
+	var friendTags: [FriendTag]?
+	var lastLocation: Location?
+
+	init(
+		baseUser: User,
+		username: String,
+		profilePicture: Image? = nil,
+		firstName: String? = nil,
+		lastName: String? = nil,
+		bio: String? = nil,
+		friendTags: [FriendTag]? = nil,
+		lastLocation: Location? = nil
+	) {
+		self.baseUser = baseUser
+		self.username = username
+		self.profilePicture = profilePicture
+		self.firstName = firstName
+		self.lastName = lastName
+		self.bio = bio
+		self.friendTags = friendTags
+		self.lastLocation = lastLocation
+	}
 }
 
 extension AppUser {
     static let danielAgapov: AppUser = AppUser(
-        id: UUID(),
-        baseUser: User.danielAgapov,
+		baseUser: User.danielAgapov,
         username: "daggerpov",
         firstName: "Daniel",
         lastName: "Agapov",
@@ -40,7 +61,6 @@ extension AppUser {
     )
         
     static let danielLee: AppUser = AppUser(
-        id: UUID(),
         baseUser: User.danielLee,
         username: "uhdlee",
         firstName: "Daniel",

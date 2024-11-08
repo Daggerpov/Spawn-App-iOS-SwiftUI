@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ChatMessage: Identifiable, Codable {
+class ChatMessage: Identifiable, Codable {
     var id: UUID
     var timestamp: String // TODO: change data type alter
     var user: User
@@ -16,4 +16,11 @@ struct ChatMessage: Identifiable, Codable {
     var likedBy: [User]?
     // tech note: in user's view of event, check if that user is in
     // the `ChatMessage`'s `likedBy` array (`[User]`)
+
+	init(id: UUID, timestamp: String, user: User, likedBy: [User]? = nil) {
+		self.id = id
+		self.timestamp = timestamp
+		self.user = user
+		self.likedBy = likedBy
+	}
 }
