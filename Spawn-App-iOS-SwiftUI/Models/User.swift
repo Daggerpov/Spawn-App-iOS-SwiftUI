@@ -7,9 +7,14 @@
 
 import Foundation
 
-struct User: Identifiable, Codable {
+class User: Identifiable, Codable {
     var id: UUID
     var friends: [User]?
+
+	init(id: UUID, friends: [User]? = nil) {
+		self.id = id
+		self.friends = friends
+	}
 }
 
 extension User {

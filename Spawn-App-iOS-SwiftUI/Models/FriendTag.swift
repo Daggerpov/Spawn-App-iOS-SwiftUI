@@ -14,10 +14,16 @@
 
 import SwiftUI
 
-struct FriendTag {
+class FriendTag {
     var displayName: String
     var color: Color
     var friends: [AppUser]?
+
+	init(displayName: String, color: Color, friends: [AppUser]? = nil) {
+		self.displayName = displayName
+		self.color = color
+		self.friends = friends
+	}
 }
 
 extension FriendTag {
