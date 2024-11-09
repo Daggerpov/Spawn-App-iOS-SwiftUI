@@ -18,12 +18,23 @@ class User: Identifiable, Codable {
 }
 
 extension User {
-    static let danielAgapov: User = User(id: UUID())
-    
+	static let danielAgapov: User = {
+		let user = User(id: UUID())
+		user.friends = User.mockUsers.filter { $0.id != user.id }
+		return user
+	}()
     static let danielLee: User = User(id: UUID(), friends: [danielAgapov])
-    
+	static let shannon: User = User(id: UUID(), friends: [danielAgapov, danielLee])
+	static let jennifer: User = User(id: UUID(), friends: [danielAgapov, danielLee, shannon])
+	static let michael: User = User(id: UUID(), friends: [danielAgapov, danielLee, shannon, jennifer])
+	static let haley: User = User(id: UUID(), friends: [danielAgapov, danielLee, shannon, jennifer, michael])
+
     static let mockUsers: [User] = [
         danielAgapov,
-        danielLee
+        danielLee,
+		shannon,
+		jennifer,
+		michael,
+		haley
     ]
 }

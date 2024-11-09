@@ -22,7 +22,7 @@ class AppUser: Identifiable {
 	}
 	var baseUser: User
 	var username: String
-	var profilePicture: Image?
+	var profilePicture: UIImage?
 	var firstName: String?
 	var lastName: String?
 	var bio: String?
@@ -32,7 +32,7 @@ class AppUser: Identifiable {
 	init(
 		baseUser: User,
 		username: String,
-		profilePicture: Image? = nil,
+		profilePicture: UIImage? = nil,
 		firstName: String? = nil,
 		lastName: String? = nil,
 		bio: String? = nil,
@@ -68,4 +68,44 @@ extension AppUser {
         bio: "This is my bio.",
         friendTags: [FriendTag.close, FriendTag.sports]
     )
+
+    static let shannon: AppUser = AppUser(
+        baseUser: User.danielLee,
+        username: "shannonaurl",
+        firstName: "Shannon",
+        lastName: "Lee",
+        bio: "This is my bio.",
+        friendTags: [FriendTag.close, FriendTag.sports]
+    )
+    static let jennifer: AppUser = AppUser(
+        baseUser: User.danielLee,
+        username: "uhdlee",
+        firstName: "Daniel",
+        lastName: "Lee",
+        bio: "This is my bio.",
+        friendTags: [FriendTag.close, FriendTag.sports]
+    )
+    static let michael: AppUser = AppUser(
+        baseUser: User.danielLee,
+        username: "uhdlee",
+        firstName: "Daniel",
+        lastName: "Lee",
+        bio: "This is my bio.",
+        friendTags: [FriendTag.close, FriendTag.sports]
+    )
+    static let haley: AppUser = AppUser(
+        baseUser: User.danielLee,
+        username: "uhdlee",
+        firstName: "Daniel",
+        lastName: "Lee",
+        bio: "This is my bio.",
+        friendTags: [FriendTag.close, FriendTag.sports]
+    )
+
+
+
+
+
 }
+
+
