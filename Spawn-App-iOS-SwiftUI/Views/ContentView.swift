@@ -14,38 +14,39 @@ struct ContentView: View {
     
     
     var body: some View {
-        VStack{
-            Spacer()
-            headerView.padding(.top, 50)
-            Spacer()
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(mockTags, id: \.self) { mockTag in
-                        TagButtonView(mockTag: mockTag, activeTag: $activeTag, animation: animation)
-                    }
-                }
-                .padding(.top, 10)
-                .padding(.leading, 16)
-                .padding(.trailing, 16)
-            }
-            // TODO: implement logic here to adjust search results when the tag clicked is changed
-            Spacer()
-            Spacer()
+        NavigationStack{
             VStack{
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 15) {
-                        ForEach(Event.mockEvents) {mockEvent in
-                            EventView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
-                            EventCardView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
+                Spacer()
+                headerView.padding(.top, 50)
+                Spacer()
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(mockTags, id: \.self) { mockTag in
+                            TagButtonView(mockTag: mockTag, activeTag: $activeTag, animation: animation)
+                        }
+                    }
+                    .padding(.top, 10)
+                    .padding(.leading, 16)
+                    .padding(.trailing, 16)
+                }
+                // TODO: implement logic here to adjust search results when the tag clicked is changed
+                Spacer()
+                Spacer()
+                VStack{
+                    ScrollView(.vertical) {
+                        LazyVStack(spacing: 15) {
+                            ForEach(Event.mockEvents) {mockEvent in
+                                EventCardView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
+                            }
                         }
                     }
                 }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
+            .padding()
+            .background(Color(hex: "#C0BCB4"))
+            .ignoresSafeArea(.container)
         }
-        .padding()
-        .background(Color(hex: "#C0BCB4"))
-        .ignoresSafeArea(.container)
     }
 }
 
@@ -79,12 +80,15 @@ extension ContentView {
             .foregroundColor(Color(hex: "#173131"))
             .frame(alignment: .leading)
             Spacer()
+            
             Image("Daniel_Lee_pfp")
                 .resizable()
                 .frame(width: 45, height: 45)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(Color.black, lineWidth: 2))
                 .shadow(radius: 10)
+            
+            
             Spacer()
         }
         .padding(.horizontal)
