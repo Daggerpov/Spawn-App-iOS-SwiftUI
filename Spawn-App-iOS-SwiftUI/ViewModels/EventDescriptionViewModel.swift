@@ -17,7 +17,11 @@ class EventDescriptionViewModel: ObservableObject {
     }
     
     public var appUserLookup: [UUID: AppUser] {
-        // look-up app user by id from user
-        Dictionary(uniqueKeysWithValues: appUsers.map { ($0.id, $0) })
+        var lookupDict: [UUID: AppUser] = [:]
+        for user in appUsers {
+            lookupDict[user.id] = user // This will replace any duplicate with the last occurrence
+        }
+        return lookupDict
     }
+
 }
