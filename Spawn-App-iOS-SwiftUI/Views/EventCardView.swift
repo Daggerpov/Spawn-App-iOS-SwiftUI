@@ -1,5 +1,5 @@
 //
-//  EventView.swift
+//  EventCardView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/4/24.
@@ -7,15 +7,15 @@
 
 import SwiftUI
 
-struct EventView: View {
-    @ObservedObject var viewModel: EventViewModel
+struct EventCardView: View {
+    @ObservedObject var viewModel: EventCardViewModel
     var event: Event
     var color: Color
     
     init(event: Event, color: Color) {
         self.event = event
         self.color = color
-        viewModel = EventViewModel(event: event)
+        viewModel = EventCardViewModel(event: event)
     }
     var body: some View {
         VStack{

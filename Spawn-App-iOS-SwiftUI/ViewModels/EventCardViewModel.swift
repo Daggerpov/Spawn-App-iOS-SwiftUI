@@ -1,5 +1,5 @@
 //
-//  EventViewModel.swift
+//  EventCardViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/6/24.
@@ -7,14 +7,14 @@
 
 import Foundation
 
-class EventViewModel: ObservableObject {
+class EventCardViewModel: ObservableObject {
     @Published var eventTimeDisplayString: String = ""
     
     var event: Event
     
     init(event: Event) {
         self.event = event
-        self.eventTimeDisplayString = EventViewModel.formatEventTime(event: event)
+        self.eventTimeDisplayString = EventCardViewModel.formatEventTime(event: event)
     }
     
     static func formatEventTime(event: Event) -> String {
