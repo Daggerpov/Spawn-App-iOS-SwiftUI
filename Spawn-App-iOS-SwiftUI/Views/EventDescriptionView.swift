@@ -8,55 +8,63 @@
 import SwiftUI
 
 struct EventDescriptionView: View {
-    var event: Event
+    @ObservedObject var viewModel: EventDescriptionViewModel
     
-    init(event: Event) {
-        self.event = event
+    init(event: Event, appUsers: [AppUser]) {
+        self.viewModel = EventDescriptionViewModel(event: event, appUsers: appUsers)
     }
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Event Title: \(event.title)")
+                    Text("Event Title: \(viewModel.event.title)")
                         .font(.largeTitle)
                         .bold()
                     
-                    if let startTime = event.startTime {
+                    if let startTime = viewModel.event.startTime {
                         Text("Start Time: \(startTime)")
                             .font(.headline)
                     }
                     
-                    if let endTime = event.endTime {
+                    if let endTime = viewModel.event.endTime {
                         Text("End Time: \(endTime)")
                             .font(.headline)
                     }
                     
-                    if let location = event.location {
+                    if let location = viewModel.event.location {
                         Text("Location: \(location.locationName)")
                             .font(.subheadline)
                     }
                     
-                    if let note = event.note {
+                    if let note = viewModel.event.note {
                         Text("Note: \(note)")
                             .font(.body)
                     }
                     
-                    Text("Creator: \(event.creator.id.uuidString)") // You can display the name or other properties if available
+                    Text("Creator: \(viewModel.appUserLookup[viewModel.event.creator.id]?.username ?? viewModel.event.creator.id.uuidString)")
                     
-                    if let participants = event.participants, !participants.isEmpty {
+                    if let participants = viewModel.event.participants, !participants.isEmpty {
                         Text("Participants:")
                             .font(.headline)
                         ForEach(participants, id: \.id) { participant in
-                            Text("- \(participant.id.uuidString)") // Replace `id` with `name` or other properties if available
+                            if let appUser = viewModel.appUserLookup[participant.id] {
+                                Text("- \(appUser.username)")
+                            } else {
+                                Text("- \(participant.id.uuidString)")
+                            }
                         }
                     }
                     
-                    if let invited = event.invited, !invited.isEmpty {
+                    if let invited = viewModel.event.invited, !invited.isEmpty {
                         Text("Invited:")
                             .font(.headline)
                         ForEach(invited, id: \.id) { invitee in
-                            Text("- \(invitee.id.uuidString)") // Replace `id` with `name` or other properties if available
+                            if let appUser = viewModel.appUserLookup[invitee.id] {
+                                Text("- \(appUser.username)")
+                            } else {
+                                Text("- \(invitee.id.uuidString)")
+                            }
                         }
                     }
                 }
