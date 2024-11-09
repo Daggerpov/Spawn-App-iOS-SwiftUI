@@ -29,11 +29,6 @@ struct ContentView: View {
                 .padding(.trailing, 16)
             }
             // TODO: implement logic here to adjust search results when the tag clicked is changed
-            //            .onChange(of: viewModel.activeCategory) { _ in
-            //                viewModel.loadQuotesBySearch()
-            //            }
-//            Spacer()
-//                .frame(maxHeight: .infinity)
             Spacer()
             Spacer()
             VStack{
