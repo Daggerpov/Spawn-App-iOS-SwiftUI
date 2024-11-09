@@ -66,6 +66,6 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Lee",
         bio: "This is my bio.",
-        friendTags: [FriendTag.close, FriendTag.sports]
+        friendTags: [FriendTag.close, FriendTag.sports], lastLocation: Location.mockLocation
     )
 }
