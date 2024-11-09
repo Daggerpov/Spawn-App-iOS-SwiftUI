@@ -66,7 +66,7 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Lee",
         bio: "This is my bio.",
-        friendTags: [FriendTag.close, FriendTag.sports]
+        friendTags: nil
     )
 
     static let shannon: AppUser = AppUser(
@@ -74,38 +74,31 @@ extension AppUser {
         username: "shannonaurl",
         firstName: "Shannon",
         lastName: "Lee",
-        bio: "This is my bio.",
-        friendTags: [FriendTag.close, FriendTag.sports]
+        bio: "This is my bio."
     )
     static let jennifer: AppUser = AppUser(
         baseUser: User.danielLee,
         username: "uhdlee",
         firstName: "Daniel",
         lastName: "Lee",
-        bio: "This is my bio.",
-        friendTags: [FriendTag.close, FriendTag.sports]
+        bio: "This is my bio."
     )
     static let michael: AppUser = AppUser(
         baseUser: User.danielLee,
         username: "uhdlee",
         firstName: "Daniel",
         lastName: "Lee",
-        bio: "This is my bio.",
-        friendTags: [FriendTag.close, FriendTag.sports]
+        bio: "This is my bio."
     )
     static let haley: AppUser = AppUser(
         baseUser: User.danielLee,
         username: "uhdlee",
         firstName: "Daniel",
         lastName: "Lee",
-        bio: "This is my bio.",
-        friendTags: [FriendTag.close, FriendTag.sports]
+        bio: "This is my bio."
     )
 
-
-
-
-
+    static let mockAppUsers: [AppUser] = [danielAgapov, danielLee, shannon, jennifer, michael, haley]
 }
 
 
