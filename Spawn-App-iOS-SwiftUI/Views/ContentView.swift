@@ -36,6 +36,7 @@ struct ContentView: View {
                     LazyVStack(spacing: 15) {
                         ForEach(Event.mockEvents) {mockEvent in
                             EventView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
+                            EventCardView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
                         }
                     }
                 }
