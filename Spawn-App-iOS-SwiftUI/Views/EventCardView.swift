@@ -19,7 +19,7 @@ struct EventCardView: View {
     }
     var body: some View {
         NavigationStack{
-            NavigationLink(destination: EventDescriptionView()) {
+            NavigationLink(destination: EventDescriptionView(event: event)) {
                 VStack{
                     VStack (spacing: 10) {
                         HStack{
