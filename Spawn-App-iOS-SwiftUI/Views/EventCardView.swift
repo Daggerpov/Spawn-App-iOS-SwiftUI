@@ -19,7 +19,7 @@ struct EventCardView: View {
     }
     var body: some View {
         NavigationStack{
-            NavigationLink(destination: EventDescriptionView(event: event, appUsers: AppUser.mockAppUsers)) {
+            NavigationLink(destination: EventDescriptionView(event: event, appUsers: AppUser.mockAppUsers, color: color)) {
                 VStack{
                     VStack (spacing: 10) {
                         HStack{

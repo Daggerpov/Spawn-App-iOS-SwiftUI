@@ -70,31 +70,29 @@ extension AppUser {
     )
 
     static let shannon: AppUser = AppUser(
-        baseUser: User.danielLee,
+        baseUser: User.shannon,
         username: "shannonaurl",
         firstName: "Shannon",
-        lastName: "Lee",
         bio: "This is my bio."
     )
     static let jennifer: AppUser = AppUser(
-        baseUser: User.danielLee,
-        username: "uhdlee",
-        firstName: "Daniel",
-        lastName: "Lee",
+        baseUser: User.jennifer,
+        username: "jenntjen",
+        firstName: "Jennifer",
+        lastName: "Tjen",
         bio: "This is my bio."
     )
     static let michael: AppUser = AppUser(
-        baseUser: User.danielLee,
-        username: "uhdlee",
-        firstName: "Daniel",
-        lastName: "Lee",
+        baseUser: User.michael,
+        username: "michaeltham",
+        firstName: "Michael",
+        lastName: "Tham",
         bio: "This is my bio."
     )
     static let haley: AppUser = AppUser(
-        baseUser: User.danielLee,
-        username: "uhdlee",
-        firstName: "Daniel",
-        lastName: "Lee",
+        baseUser: User.haley,
+        username: "haleyusername",
+        firstName: "Haley",
         bio: "This is my bio."
     )
 

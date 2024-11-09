@@ -10,8 +10,11 @@ import SwiftUI
 struct EventDescriptionView: View {
     @ObservedObject var viewModel: EventDescriptionViewModel
     
-    init(event: Event, appUsers: [AppUser]) {
+    var color: Color
+    
+    init(event: Event, appUsers: [AppUser], color: Color) {
         self.viewModel = EventDescriptionViewModel(event: event, appUsers: appUsers)
+        self.color = color
     }
     
     var body: some View {
