@@ -12,12 +12,14 @@ struct EventCardView: View {
     var appUser: AppUser
     var event: Event
     var color: Color
+    var callback: (Event, Color) -> Void
     
-    init(appUser: AppUser, event: Event, color: Color) {
+    init(appUser: AppUser, event: Event, color: Color, callback: @escaping(Event, Color) -> Void) {
         self.appUser = appUser
         self.event = event
         self.color = color
-        viewModel = EventCardViewModel(appUser: appUser, event: event)
+        self.viewModel = EventCardViewModel(appUser: appUser, event: event)
+        self.callback = callback
     }
     var body: some View {
         NavigationStack{
@@ -49,6 +51,9 @@ struct EventCardView: View {
                 .cornerRadius(10)
                 .onAppear {
                     viewModel.fetchIsParticipating()
+                }
+                .onTapGesture {
+                    callback(event, color)
                 }
             }
         }
