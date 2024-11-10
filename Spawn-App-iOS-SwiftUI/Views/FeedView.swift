@@ -71,7 +71,6 @@ struct FeedView: View {
                         appUsers: AppUser.mockAppUsers,
                         color: color
                     )
-                    .frame(width: 200, height: 300)
                 }
             }
         } customize: {
@@ -79,7 +78,7 @@ struct FeedView: View {
                 .type(.floater(
                     verticalPadding: 20,
                     horizontalPadding: 20,
-                    useSafeAreaInset: true
+                    useSafeAreaInset: false
                 ))
         }
     }

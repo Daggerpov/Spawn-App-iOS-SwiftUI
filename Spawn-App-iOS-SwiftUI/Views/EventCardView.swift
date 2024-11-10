@@ -29,8 +29,7 @@ struct EventCardView: View {
                     Spacer()
                     HStack{
                         VStack{
-                            EventTimeView(eventTime: viewModel.eventTimeDisplayString)
-                            
+                            EventTimeView(event: event)
                             Spacer()
                             EventLocationView(event: event)
                         }

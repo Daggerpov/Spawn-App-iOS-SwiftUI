@@ -20,9 +20,20 @@ struct EventDescriptionView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text("Event Title: \(viewModel.event.title)")
-                        .font(.largeTitle)
-                        .bold()
+                    VStack{
+                        EventTitleView(event: viewModel.event)
+                        Spacer()
+                        HStack{
+                            VStack{
+                                EventTimeView(event: viewModel.event)
+                                Spacer()
+                                EventLocationView(event: viewModel.event)
+                            }
+                            .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .frame(alignment: .trailing)
+                    }
                     
                     if let startTime = viewModel.event.startTime {
                         Text("Start Time: \(startTime)")
@@ -70,9 +81,10 @@ struct EventDescriptionView: View {
                         }
                     }
                 }
-                .padding()
-                .navigationTitle("Event Details")
             }
+            .padding(20)
+            .background(color)
+            .cornerRadius(10)
         }
     }
 }
