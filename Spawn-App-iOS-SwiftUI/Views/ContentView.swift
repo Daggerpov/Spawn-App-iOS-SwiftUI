@@ -11,7 +11,7 @@ struct ContentView: View {
     @Namespace private var animation
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
-    
+    var appUser: AppUser
     
     var body: some View {
         NavigationStack{
@@ -51,7 +51,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(appUser: AppUser.danielLee)
 }
 
 extension ContentView {
@@ -69,7 +69,7 @@ extension ContentView {
                 
                 HStack{
                     Image(systemName: "star.fill")
-                    Text("udhlee")
+                    Text(appUser.username)
                         .bold()
                         .font(.largeTitle)
                     Spacer()
@@ -81,14 +81,15 @@ extension ContentView {
             .frame(alignment: .leading)
             Spacer()
             
-            Image("Daniel_Lee_pfp")
+            if let pfp = appUser.profilePicture {
+                pfp
                 .resizable()
                 .frame(width: 45, height: 45)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(Color.black, lineWidth: 2))
                 .shadow(radius: 10)
-            
-            
+            }
+                        
             Spacer()
         }
         .padding(.horizontal)

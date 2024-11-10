@@ -22,7 +22,7 @@ class AppUser: Identifiable {
 	}
 	var baseUser: User
 	var username: String
-	var profilePicture: UIImage?
+	var profilePicture: Image?
 	var firstName: String?
 	var lastName: String?
 	var bio: String?
@@ -32,7 +32,7 @@ class AppUser: Identifiable {
 	init(
 		baseUser: User,
 		username: String,
-		profilePicture: UIImage? = nil,
+		profilePicture: Image? = nil,
 		firstName: String? = nil,
 		lastName: String? = nil,
 		bio: String? = nil,
@@ -63,6 +63,7 @@ extension AppUser {
     static let danielLee: AppUser = AppUser(
         baseUser: User.danielLee,
         username: "uhdlee",
+        profilePicture: Image("Daniel_Lee_pfp"),
         firstName: "Daniel",
         lastName: "Lee",
         bio: "This is my bio.",

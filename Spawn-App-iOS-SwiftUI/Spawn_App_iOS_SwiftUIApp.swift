@@ -12,7 +12,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(appUser: AppUser.danielLee)
         }
     }
 }
