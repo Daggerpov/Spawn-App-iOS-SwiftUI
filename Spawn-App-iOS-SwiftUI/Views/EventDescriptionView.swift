@@ -9,7 +9,6 @@ import SwiftUI
 
 struct EventDescriptionView: View {
     @ObservedObject var viewModel: EventDescriptionViewModel
-    
     var color: Color
     
     init(event: Event, appUsers: [AppUser], color: Color) {
@@ -45,13 +44,13 @@ struct EventDescriptionView: View {
                             .font(.body)
                     }
                     
-                    Text("Creator: \(viewModel.appUserLookup[viewModel.event.creator.id]?.username ?? viewModel.event.creator.id.uuidString)")
+                    Text("Creator: \(AppUserService.shared.appUserLookup[viewModel.event.creator.id]?.username ?? viewModel.event.creator.id.uuidString)")
                     
                     if let participants = viewModel.event.participants, !participants.isEmpty {
                         Text("Participants:")
                             .font(.headline)
                         ForEach(participants, id: \.id) { participant in
-                            if let appUser = viewModel.appUserLookup[participant.id] {
+                            if let appUser = AppUserService.shared.appUserLookup[participant.id] {
                                 Text("- \(appUser.username)")
                             } else {
                                 Text("- \(participant.id.uuidString)")
@@ -63,7 +62,7 @@ struct EventDescriptionView: View {
                         Text("Invited:")
                             .font(.headline)
                         ForEach(invited, id: \.id) { invitee in
-                            if let appUser = viewModel.appUserLookup[invitee.id] {
+                            if let appUser = AppUserService.shared.appUserLookup[invitee.id] {
                                 Text("- \(appUser.username)")
                             } else {
                                 Text("- \(invitee.id.uuidString)")
