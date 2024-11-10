@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  FeedView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/3/24.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ContentView: View {
+struct FeedView: View {
     @Namespace private var animation
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
@@ -51,10 +51,10 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(appUser: AppUser.danielLee)
+    FeedView(appUser: AppUser.danielLee)
 }
 
-extension ContentView {
+extension FeedView {
     private var headerView: some View {
         HStack{
             Spacer()
