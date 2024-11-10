@@ -76,14 +76,16 @@ struct EventCardView: View {
                             .background(Color.white)
                             .clipShape(Circle())
                             .overlay(
-                                // TODO: obviously change `Bool.random()` later to proper logic
-                                // proper logic: (if user is in `Event`'s `participants`)
-                                Image(systemName: viewModel.isParticipating() ? "checkmark" : "star.fill")
-                                    .resizable()
-                                    .frame(width: 17.5, height: 17.5)
-                                    .clipShape(Circle())
-                                    .shadow(radius: 20)
-                                    .foregroundColor(color)
+                                Button(action: {
+                                    viewModel.toggleParticipation()
+                                }) {
+                                    Image(systemName: viewModel.isParticipating ? "checkmark" : "star.fill")
+                                        .resizable()
+                                        .frame(width: 17.5, height: 17.5)
+                                        .clipShape(Circle())
+                                        .shadow(radius: 20)
+                                        .foregroundColor(color)
+                                }
                             )
                     }
                     .frame(alignment: .trailing)
@@ -91,9 +93,13 @@ struct EventCardView: View {
                 .padding(20)
                 .background(color)
                 .cornerRadius(10)
+                .onAppear {
+                    viewModel.fetchIsParticipating()
+                }
             }
         }
     }
+        
 }
 
 

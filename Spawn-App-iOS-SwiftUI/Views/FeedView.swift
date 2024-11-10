@@ -87,11 +87,7 @@ extension FeedView {
                     ProfileView(appUser: appUser)
                 } label: {
                     pfp
-                        .resizable()
-                        .frame(width: 45, height: 45)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.black, lineWidth: 2))
-                        .shadow(radius: 10)
+                        .ProfileImageModifier(imageType: .feedPage)
                 }
             }
                         

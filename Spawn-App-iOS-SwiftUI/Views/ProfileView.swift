@@ -24,12 +24,7 @@ struct ProfileView: View {
                             .shadow(radius: 10)
                     } else {
                         Image(systemName: "person.crop.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 150, height: 150)
-                            .foregroundColor(.gray)
-                            .clipShape(Circle())
-                            .shadow(radius: 10)
+                            .ProfileImageModifier(imageType: .profilePage)
                     }
                     
                     // Username

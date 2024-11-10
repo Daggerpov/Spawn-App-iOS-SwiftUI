@@ -8,18 +8,31 @@
 import Foundation
 
 final class AppUserService {
-    static let shared = AppUserService(appUsers: AppUser.mockAppUsers)
+    static let shared = AppUserService(
+        appUsers: AppUser.mockAppUsers,
+        users: User.mockUsers
+    )
     
     var appUsers: [AppUser]
+    var users: [User]
     
-    private init(appUsers: [AppUser]) {
+    private init(appUsers: [AppUser], users: [User]) {
         self.appUsers = appUsers
+        self.users = users
     }
     
     public var appUserLookup: [UUID: AppUser] {
         var lookupDict: [UUID: AppUser] = [:]
-        for user in appUsers {
-            lookupDict[user.id] = user // This will replace any duplicate with the last occurrence
+        for currentAppUser in appUsers {
+            lookupDict[currentAppUser.id] = currentAppUser // This will replace any duplicate with the last occurrence
+        }
+        return lookupDict
+    }
+    
+    public var userLookup: [UUID: User] {
+        var lookupDict: [UUID: User] = [:]
+        for currentUser in users {
+            lookupDict[currentUser.id] = currentUser
         }
         return lookupDict
     }
