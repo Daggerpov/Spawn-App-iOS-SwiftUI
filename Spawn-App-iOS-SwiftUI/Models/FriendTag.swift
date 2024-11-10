@@ -14,19 +14,21 @@
 
 import SwiftUI
 
-class FriendTag {
+class FriendTag: Identifiable {
+    var id: UUID
     var displayName: String
     var color: Color
     var friends: [AppUser]?
 
-	init(displayName: String, color: Color, friends: [AppUser]? = nil) {
-		self.displayName = displayName
+    init(id: UUID, displayName: String, color: Color, friends: [AppUser]? = nil) {
+        self.id = id
+        self.displayName = displayName
 		self.color = color
 		self.friends = friends
 	}
 }
 
 extension FriendTag {
-    static let close = FriendTag(displayName: "Close Friends", color: Color(hex: "#704444"), friends: [AppUser.danielAgapov])
-    static let sports = FriendTag(displayName: "Sports", color: Color(hex: "#8084ac"), friends: [AppUser.danielLee])
+    static let close = FriendTag(id: UUID(), displayName: "Close Friends", color: Color(hex: "#704444"), friends: [AppUser.danielAgapov])
+    static let sports = FriendTag(id: UUID(), displayName: "Sports", color: Color(hex: "#8084ac"), friends: [AppUser.danielLee])
 }
