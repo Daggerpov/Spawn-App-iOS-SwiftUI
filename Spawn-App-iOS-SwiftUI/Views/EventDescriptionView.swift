@@ -17,67 +17,55 @@ struct EventDescriptionView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack{
-                        EventTitleView(event: viewModel.event)
-                        Spacer()
-                        HStack{
-                            VStack{
-                                EventTimeView(event: viewModel.event)
-                                Spacer()
-                                EventLocationView(event: viewModel.event)
-                            }
-                            .foregroundColor(.white)
-                            Spacer()
-                        }
-                        .frame(alignment: .trailing)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Title and Time Information
+                EventTitleView(event: viewModel.event)
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 10) {
+                        EventTimeView(event: viewModel.event)
+                        EventLocationView(event: viewModel.event)
                     }
+                    .foregroundColor(.white)
                     
-                    if let startTime = viewModel.event.startTime {
-                        Text("Start Time: \(startTime)")
-                            .font(.headline)
-                    }
-                    
-                    if let endTime = viewModel.event.endTime {
-                        Text("End Time: \(endTime)")
-                            .font(.headline)
-                    }
-                    
-                    if let location = viewModel.event.location {
-                        Text("Location: \(location.locationName)")
-                            .font(.subheadline)
-                    }
-                    
-                    if let note = viewModel.event.note {
-                        Text("Note: \(note)")
-                            .font(.body)
-                    }
-                    
-                    Text("Creator: \(AppUserService.shared.appUserLookup[viewModel.event.creator.id]?.username ?? viewModel.event.creator.id.uuidString)")
-                    
-                    if let participants = viewModel.event.participants, !participants.isEmpty {
-                        Text("Participants:")
-                            .font(.headline)
-                        ForEach(participants, id: \.id) { participant in
-                            if let appUser = AppUserService.shared.appUserLookup[participant.id] {
-                                Text("- \(appUser.username)")
-                            } else {
-                                Text("- \(participant.id.uuidString)")
-                            }
-                        }
-                    }
-                    
-                    if let invited = viewModel.event.invited, !invited.isEmpty {
+                    Spacer() // Ensures alignment but doesn't add spacing below the content
+                }
+                
+                // Start and End Time
+                if let startTime = viewModel.event.startTime {
+                    Text("Start Time: \(startTime)")
+                        .font(.headline)
+                }
+                
+                if let endTime = viewModel.event.endTime {
+                    Text("End Time: \(endTime)")
+                        .font(.headline)
+                }
+                
+                // Location
+                if let location = viewModel.event.location {
+                    Text("Location: \(location.locationName)")
+                        .font(.subheadline)
+                }
+                
+                // Note
+                if let note = viewModel.event.note {
+                    Text("Note: \(note)")
+                        .font(.body)
+                }
+                
+                // Creator Information
+                Text("Creator: \(AppUserService.shared.appUserLookup[viewModel.event.creator.id]?.username ?? viewModel.event.creator.id.uuidString)")
+                    .font(.body)
+                
+                // Invited Users
+                if let invited = viewModel.event.invited, !invited.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
                         Text("Invited:")
                             .font(.headline)
                         ForEach(invited, id: \.id) { invitee in
-                            if let appUser = AppUserService.shared.appUserLookup[invitee.id] {
-                                Text("- \(appUser.username)")
-                            } else {
-                                Text("- \(invitee.id.uuidString)")
-                            }
+                            Text("- \(AppUserService.shared.appUserLookup[invitee.id]?.username ?? invitee.id.uuidString)")
                         }
                     }
                 }
@@ -86,5 +74,6 @@ struct EventDescriptionView: View {
             .background(color)
             .cornerRadius(10)
         }
+        .padding(.horizontal) // Reduces padding on the bottom
     }
 }
