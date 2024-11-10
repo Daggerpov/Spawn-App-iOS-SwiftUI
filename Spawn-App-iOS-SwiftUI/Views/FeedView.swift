@@ -5,15 +5,21 @@
 //  Created by Daniel Agapov on 11/3/24.
 //
 
+import PopupView
+
 import SwiftUI
 
 struct FeedView: View {
     @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
     
-    @Namespace private var animation
+    @Namespace private var animation: Namespace.ID
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
     var appUser: AppUser
+    
+    @State var showingPopup: Bool = false
+    @State var eventInPopup: Event?
+    @State var colorInPopup: Color?
     
     var body: some View {
         NavigationStack{
@@ -38,7 +44,16 @@ struct FeedView: View {
                     ScrollView(.vertical) {
                         LazyVStack(spacing: 15) {
                             ForEach(viewModel.events) {mockEvent in
-                                EventCardView(appUser: appUser, event: mockEvent, color: colors.randomElement() ?? Color.blue)
+                                EventCardView(
+                                    appUser: appUser,
+                                    event: mockEvent,
+                                    // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
+                                    color: colors.randomElement() ?? Color.blue
+                                ) { event, color in
+                                    eventInPopup = event
+                                    colorInPopup = color
+                                    showingPopup = true
+                                }
                             }
                         }
                     }
@@ -48,6 +63,24 @@ struct FeedView: View {
             .padding()
             .background(Color(hex: "#C0BCB4"))
             .ignoresSafeArea(.container)
+        }
+        .popup(isPresented: $showingPopup) {
+            if let event = eventInPopup {
+                if let color = colorInPopup {
+                    EventDescriptionView(
+                        event: event,
+                        appUsers: AppUser.mockAppUsers,
+                        color: color
+                    )
+                }
+            }
+        } customize: {
+            $0
+                .type(.floater(
+                    verticalPadding: 20,
+                    horizontalPadding: 20,
+                    useSafeAreaInset: false
+                ))
         }
     }
 }
@@ -90,12 +123,9 @@ extension FeedView {
                         .ProfileImageModifier(imageType: .feedPage)
                 }
             }
-                        
             Spacer()
         }
         .padding(.horizontal)
         .padding(.vertical, 2)
     }
 }
-
-

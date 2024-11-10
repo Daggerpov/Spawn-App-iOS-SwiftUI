@@ -15,7 +15,7 @@ extension Image {
         
         switch imageType {
             case .feedPage:
-                imageSize = 45
+                imageSize = 55
                 strokeColor = .black
                 lineWidth = 2
             case .eventParticipants:
