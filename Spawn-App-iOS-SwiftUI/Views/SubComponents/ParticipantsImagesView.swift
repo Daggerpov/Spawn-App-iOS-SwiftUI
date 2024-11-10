@@ -15,15 +15,17 @@ struct ParticipantsImagesView: View {
             HStack{
                 Spacer()
                 ForEach(participants, id: \.self.id) { participant in
-                    if let appUser: AppUser = AppUserService.shared.appUserLookup[participant.id] {
-                        if let profilePicture = appUser.profilePicture {
-                            profilePicture
-                            .resizable()
-                            .frame(width: 25, height: 25)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white, lineWidth: 1))
-                            .shadow(radius: 10)
-                        }
+                    if let appUserParticipant: AppUser = AppUserService.shared.appUserLookup[participant.id] {
+                        NavigationLink(destination: ProfileView(appUser: appUserParticipant), label: {
+                            if let profilePicture = appUserParticipant.profilePicture {
+                                profilePicture
+                                    .resizable()
+                                    .frame(width: 25, height: 25)
+                                    .clipShape(Circle())
+                                    .overlay(Circle().stroke(Color.white, lineWidth: 1))
+                                    .shadow(radius: 10)
+                            }
+                        })
                     }
                 }
             }
