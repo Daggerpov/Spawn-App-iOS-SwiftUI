@@ -45,8 +45,28 @@ class AppUser: Identifiable {
 		self.firstName = firstName
 		self.lastName = lastName
 		self.bio = bio
-		self.friendTags = friendTags
+        self.friendTags = friendTags
 		self.lastLocation = lastLocation
+        
+        // Add friends to the user's default "Everyone" tag
+        if let friends = baseUser.friends {
+            let everyoneTag = FriendTag(
+                id: UUID(),
+                displayName: "Everyone",
+                color: Color(hex: "#asdfdf"),
+                friends: []
+            )
+            
+            // Append friends to the "Everyone" tag
+            for friend in friends {
+                if let appUser = AppUserService.shared.appUserLookup[friend.id] {
+                    everyoneTag.friends?.append(appUser)
+                }
+            }
+            
+            // Insert the "Everyone" tag at the beginning of the friend's tags array
+            self.friendTags?.insert(everyoneTag, at: 0)
+        }
 	}
 }
 
