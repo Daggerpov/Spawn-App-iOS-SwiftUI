@@ -15,13 +15,4 @@ class EventDescriptionViewModel: ObservableObject {
         self.event = event
         self.appUsers = appUsers
     }
-    
-    public var appUserLookup: [UUID: AppUser] {
-        var lookupDict: [UUID: AppUser] = [:]
-        for user in appUsers {
-            lookupDict[user.id] = user // This will replace any duplicate with the last occurrence
-        }
-        return lookupDict
-    }
-
 }
