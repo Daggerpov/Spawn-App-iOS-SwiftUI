@@ -58,7 +58,7 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
-        friendTags: [FriendTag(displayName: "Hobbies", color: colors.randomElement() ?? Color.blue, friends: [AppUser.danielLee])]
+        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: colors.randomElement() ?? Color.blue, friends: [AppUser.danielLee])]
     )
         
     static let danielLee: AppUser = AppUser(
@@ -68,7 +68,8 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Lee",
         bio: "This is my bio.",
-        friendTags: nil
+        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: colors.randomElement() ?? Color.blue, friends: [AppUser.shannon]), FriendTag(id: UUID(), displayName: "Close Friends", color: colors.randomElement() ?? Color.blue, friends: [AppUser.haley]), FriendTag(id: UUID(), displayName: "Hobbies", color: colors.randomElement() ?? Color.blue, friends: [AppUser.jennifer, AppUser.haley, AppUser.shannon])],
+        lastLocation: Location.mockLocation
     )
 
     static let shannon: AppUser = AppUser(

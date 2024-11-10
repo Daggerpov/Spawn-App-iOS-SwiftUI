@@ -83,12 +83,16 @@ extension FeedView {
             Spacer()
             
             if let pfp = appUser.profilePicture {
-                pfp
-                .resizable()
-                .frame(width: 45, height: 45)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(Color.black, lineWidth: 2))
-                .shadow(radius: 10)
+                NavigationLink {
+                    ProfileView(appUser: appUser)
+                } label: {
+                    pfp
+                        .resizable()
+                        .frame(width: 45, height: 45)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.black, lineWidth: 2))
+                        .shadow(radius: 10)
+                }
             }
                         
             Spacer()
