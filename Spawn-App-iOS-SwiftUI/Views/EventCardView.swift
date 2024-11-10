@@ -23,41 +23,39 @@ struct EventCardView: View {
     }
     var body: some View {
         NavigationStack{
-            NavigationLink(destination: EventDescriptionView(event: event, appUsers: AppUser.mockAppUsers, color: color)) {
-                VStack{
-                    EventTitleView(event: event)
-                    Spacer()
-                    HStack{
-                        VStack{
-                            EventTimeView(event: event)
-                            Spacer()
-                            EventLocationView(event: event)
-                        }
-                        .foregroundColor(.white)
+            VStack{
+                EventTitleView(event: event)
+                Spacer()
+                HStack{
+                    VStack{
+                        EventTimeView(event: event)
                         Spacer()
-                        EventParticipateButtonView(
-                            toggleParticipationCallback: {
-                                viewModel.toggleParticipation()
-                            },
-                            isParticipating: viewModel.isParticipating,
-                            color: color
-                        )
+                        EventLocationView(event: event)
                     }
-                    .frame(alignment: .trailing)
+                    .foregroundColor(.white)
+                    Spacer()
+                    EventParticipateButtonView(
+                        toggleParticipationCallback: {
+                            viewModel.toggleParticipation()
+                        },
+                        isParticipating: viewModel.isParticipating,
+                        color: color
+                    )
                 }
-                .padding(20)
-                .background(color)
-                .cornerRadius(10)
-                .onAppear {
-                    viewModel.fetchIsParticipating()
-                }
-                .onTapGesture {
-                    callback(event, color)
-                }
+                .frame(alignment: .trailing)
+            }
+            .padding(20)
+            .background(color)
+            .cornerRadius(10)
+            .onAppear {
+                viewModel.fetchIsParticipating()
+            }
+            .onTapGesture {
+                callback(event, color)
             }
         }
     }
-        
+    
 }
 
 
