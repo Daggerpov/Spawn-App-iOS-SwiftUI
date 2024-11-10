@@ -73,7 +73,6 @@ extension ContentView {
                         .bold()
                         .font(.largeTitle)
                     Spacer()
-                    
                 }
                 .font(.title)
             }

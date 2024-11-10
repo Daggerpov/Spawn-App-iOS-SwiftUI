@@ -29,17 +29,7 @@ struct EventCardView: View {
                                 .multilineTextAlignment(.leading)
                             Spacer()
                             VStack{
-                                HStack{
-                                    Spacer()
-                                    ForEach(0..<Int.random(in: 2...4), id: \.self){ _ in
-                                        Image("Daniel_Lee_pfp")
-                                            .resizable()
-                                            .frame(width: 25, height: 25)
-                                            .clipShape(Circle())
-                                            .overlay(Circle().stroke(Color.white, lineWidth: 1))
-                                            .shadow(radius: 10)
-                                    }
-                                }
+                                ParticipantsImagesView(event: event)
                                 Spacer()
                             }
                         }
