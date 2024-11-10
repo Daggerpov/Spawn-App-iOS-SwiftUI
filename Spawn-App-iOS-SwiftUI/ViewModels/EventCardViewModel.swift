@@ -43,4 +43,20 @@ class EventCardViewModel: ObservableObject {
             user.id == appUser.id
         })) != nil)
     }
+    
+    public func toggleParticipation() -> Void {
+        if isParticipating {
+            // remove user
+            event.participants?.removeAll(where: { user in
+                user.id == appUser.id
+            })
+            isParticipating = false
+        } else {
+            // join participants
+            if let user = AppUserService.shared.userLookup[appUser.id]{
+                event.participants?.append(user)
+            }
+            isParticipating = true
+        }
+    }
 }
