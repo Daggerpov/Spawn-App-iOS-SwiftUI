@@ -10,9 +10,11 @@ import Foundation
 class EventCardViewModel: ObservableObject {
     @Published var eventTimeDisplayString: String = ""
     
+    var appUser: AppUser
     var event: Event
-    
-    init(event: Event) {
+
+    init(appUser: AppUser, event: Event) {
+        self.appUser = appUser
         self.event = event
         self.eventTimeDisplayString = EventCardViewModel.formatEventTime(event: event)
     }
@@ -33,4 +35,13 @@ class EventCardViewModel: ObservableObject {
         }
         return eventTimeDisplayStringLocal
     }
+    
+    /// returns whether the logged in app user is part of the event's participants array
+    public func isParticipating() -> Bool {
+        
+        return ((event.participants?.contains(where: { user in
+            user.id == appUser.id
+        })) != nil)
+    }
+                
 }

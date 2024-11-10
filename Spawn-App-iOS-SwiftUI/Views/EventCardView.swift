@@ -9,13 +9,15 @@ import SwiftUI
 
 struct EventCardView: View {
     @ObservedObject var viewModel: EventCardViewModel
+    var appUser: AppUser
     var event: Event
     var color: Color
     
-    init(event: Event, color: Color) {
+    init(appUser: AppUser, event: Event, color: Color) {
+        self.appUser = appUser
         self.event = event
         self.color = color
-        viewModel = EventCardViewModel(event: event)
+        viewModel = EventCardViewModel(appUser: appUser, event: event)
     }
     var body: some View {
         NavigationStack{
@@ -76,7 +78,7 @@ struct EventCardView: View {
                             .overlay(
                                 // TODO: obviously change `Bool.random()` later to proper logic
                                 // proper logic: (if user is in `Event`'s `participants`)
-                                Image(systemName: Bool.random() ? "checkmark" : "star.fill")
+                                Image(systemName: viewModel.isParticipating() ? "checkmark" : "star.fill")
                                     .resizable()
                                     .frame(width: 17.5, height: 17.5)
                                     .clipShape(Circle())

@@ -38,7 +38,7 @@ struct FeedView: View {
                     ScrollView(.vertical) {
                         LazyVStack(spacing: 15) {
                             ForEach(viewModel.events) {mockEvent in
-                                EventCardView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
+                                EventCardView(appUser: appUser, event: mockEvent, color: colors.randomElement() ?? Color.blue)
                             }
                         }
                     }
