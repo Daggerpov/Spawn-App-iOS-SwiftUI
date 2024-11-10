@@ -47,6 +47,7 @@ struct FeedView: View {
                                 EventCardView(
                                     appUser: appUser,
                                     event: mockEvent,
+                                    // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
                                     color: colors.randomElement() ?? Color.blue
                                 ) { event, color in
                                     eventInPopup = event
