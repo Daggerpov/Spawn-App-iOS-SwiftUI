@@ -30,16 +30,45 @@ struct EventTitleView: View {
 }
 
 struct EventTimeView: View {
-    var eventTime: String
+    @ObservedObject var viewModel: EventTimeViewModel
+    
+    init(event: Event) {
+        self.viewModel = EventTimeViewModel(event: event)
+    }
+    
     var body: some View {
         HStack{
-            Text(eventTime)
+            Text(viewModel.eventTimeDisplayString)
                 .cornerRadius(20)
                 .font(.caption2)
                 .frame(alignment: .leading)
             // TODO: surround by rounded rectangle
             Spacer()
         }
+    }
+}
+
+class EventTimeViewModel: ObservableObject {
+    @Published var eventTimeDisplayString: String = ""
+    
+    init(event: Event) {
+        self.eventTimeDisplayString = Self.formatEventTime(event: event)
+    }
+    static func formatEventTime(event: Event) -> String {
+        var eventTimeDisplayStringLocal: String = ""
+        if let eventStartTime = event.startTime {
+            if let eventEndTime = event.endTime {
+                eventTimeDisplayStringLocal += "\(eventStartTime) — \(eventEndTime)"
+            } else {
+                eventTimeDisplayStringLocal = "Starts at \(eventStartTime)"
+            }
+        } else {
+            // no start time
+            if let eventEndTime = event.endTime {
+                eventTimeDisplayStringLocal = "Ends at \(eventEndTime)"
+            }
+        }
+        return eventTimeDisplayStringLocal
     }
 }
 
