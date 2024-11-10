@@ -2,7 +2,7 @@
  
 ## Current App Look:
 
-![Nov 9th - event-description-page branch](image-1.png)
+![Nov 9th - event-description-page branch](current-app-look.png)
 
 ## Entity Relationship Diagram:
 
