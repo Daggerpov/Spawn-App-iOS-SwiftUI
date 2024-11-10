@@ -54,6 +54,7 @@ extension AppUser {
     static let danielAgapov: AppUser = AppUser(
 		baseUser: User.danielAgapov,
         username: "daggerpov",
+        profilePicture: Image("Daniel_Agapov_pfp"),
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
@@ -73,12 +74,14 @@ extension AppUser {
     static let shannon: AppUser = AppUser(
         baseUser: User.shannon,
         username: "shannonaurl",
+        profilePicture: Image("Shannon_pfp"),
         firstName: "Shannon",
         bio: "This is my bio."
     )
     static let jennifer: AppUser = AppUser(
         baseUser: User.jennifer,
         username: "jenntjen",
+        profilePicture: Image("Jennifer_pfp"),
         firstName: "Jennifer",
         lastName: "Tjen",
         bio: "This is my bio."
@@ -86,6 +89,7 @@ extension AppUser {
     static let michael: AppUser = AppUser(
         baseUser: User.michael,
         username: "michaeltham",
+        profilePicture: Image("Michael_pfp"),
         firstName: "Michael",
         lastName: "Tham",
         bio: "This is my bio."
@@ -93,6 +97,7 @@ extension AppUser {
     static let haley: AppUser = AppUser(
         baseUser: User.haley,
         username: "haleyusername",
+        profilePicture: Image("Haley_pfp"),
         firstName: "Haley",
         bio: "This is my bio."
     )
