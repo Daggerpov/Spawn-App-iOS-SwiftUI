@@ -16,14 +16,14 @@ struct ParticipantsImagesView: View {
                 Spacer()
                 ForEach(participants, id: \.self.id) { participant in
                     if let appUserParticipant: AppUser = AppUserService.shared.appUserLookup[participant.id] {
-                        NavigationLink(destination: ProfileView(appUser: appUserParticipant), label: {
-                            if let profilePicture = appUserParticipant.profilePicture {
-                                profilePicture
-                                    .resizable()
-                                    .frame(width: 25, height: 25)
-                                    .clipShape(Circle())
-                                    .overlay(Circle().stroke(Color.white, lineWidth: 1))
-                                    .shadow(radius: 10)
+                        NavigationLink(
+                            destination: ProfileView(appUser: appUserParticipant),
+                            label: {
+                                 if let profilePicture = appUserParticipant.profilePicture {
+                                     profilePicture
+                                         .ProfileImageModifier(
+                                            imageType: .eventParticipants
+                                         )
                             }
                         })
                     }
