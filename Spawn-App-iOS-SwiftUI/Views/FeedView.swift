@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct FeedView: View {
+    @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
+    
     @Namespace private var animation
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
@@ -35,7 +37,7 @@ struct FeedView: View {
                 VStack{
                     ScrollView(.vertical) {
                         LazyVStack(spacing: 15) {
-                            ForEach(Event.mockEvents) {mockEvent in
+                            ForEach(viewModel.events) {mockEvent in
                                 EventCardView(event: mockEvent, color: colors.randomElement() ?? Color.blue)
                             }
                         }
