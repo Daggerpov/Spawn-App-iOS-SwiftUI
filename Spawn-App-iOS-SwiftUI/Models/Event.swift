@@ -63,14 +63,20 @@ extension Event {
             endTime: "11:30 PM",
             location: Location(locationName: "Gather - Place Vanier"),
             creator: User.danielAgapov,
-            participants: [User.danielLee]
+            participants: [
+                User.danielLee,
+                User.haley,
+                User.jennifer,
+                User.michael
+            ]
         ),
         Event(
             id: UUID(),
             title: "wanna run 5k with me?",
             startTime: "04:00 PM",
             location: Location(locationName: "Wesbrook Mall"),
-            creator: User.danielAgapov
+            creator: User.danielAgapov,
+            participants: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee]
         ),
         Event(
             id: UUID(),

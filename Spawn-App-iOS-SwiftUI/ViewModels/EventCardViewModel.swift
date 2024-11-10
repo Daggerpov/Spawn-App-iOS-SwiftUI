@@ -1,5 +1,5 @@
 //
-//  EventViewModel.swift
+//  EventCardViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/6/24.
@@ -7,14 +7,16 @@
 
 import Foundation
 
-class EventViewModel: ObservableObject {
+class EventCardViewModel: ObservableObject {
     @Published var eventTimeDisplayString: String = ""
     
+    var appUser: AppUser
     var event: Event
-    
-    init(event: Event) {
+
+    init(appUser: AppUser, event: Event) {
+        self.appUser = appUser
         self.event = event
-        self.eventTimeDisplayString = EventViewModel.formatEventTime(event: event)
+        self.eventTimeDisplayString = EventCardViewModel.formatEventTime(event: event)
     }
     
     static func formatEventTime(event: Event) -> String {
@@ -33,4 +35,13 @@ class EventViewModel: ObservableObject {
         }
         return eventTimeDisplayStringLocal
     }
+    
+    /// returns whether the logged in app user is part of the event's participants array
+    public func isParticipating() -> Bool {
+        
+        return ((event.participants?.contains(where: { user in
+            user.id == appUser.id
+        })) != nil)
+    }
+                
 }
