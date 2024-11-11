@@ -57,8 +57,17 @@ struct FeedView: View {
                             }
                         }
                     }
+                    HStack (spacing: 35) {
+                        BottomNavButtonView(buttonType: .map)
+                        Spacer()
+                        BottomNavButtonView(buttonType: .plus)
+                        Spacer()
+                        BottomNavButtonView(buttonType: .tag)
+                    }
+                    
                 }
                 .padding(.horizontal)
+                
             }
             .padding()
             .background(Color(hex: "#C0BCB4"))
