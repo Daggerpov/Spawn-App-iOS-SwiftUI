@@ -28,7 +28,6 @@ struct BottomNavButtonView: View {
             Circle()
                 .frame(width: 45, height: 45)
                 .foregroundColor(Color(hex: "#C0BCB4"))
-//                .background(Color(hex: "#C0BCB4"))
                 .clipShape(Circle())
                 .overlay(
                     Circle()
@@ -48,28 +47,31 @@ struct BottomNavButtonView: View {
                 )
         } else if buttonType == .plus {
             RoundedRectangle(cornerRadius: 20)
-                .frame(width: 45, height: 45)
+                .frame(width: 100, height: 45)
                 .foregroundColor(Color(hex: "#C0BCB4"))
-//                .background(Color(hex: "#C0BCB4"))
-                .clipShape(Circle())
                 .overlay(
-                    Circle()
+                    RoundedRectangle(cornerRadius: 20)
                         .stroke(Color(hex: "#173131"), lineWidth: 2)
                 )
                 .overlay(
                     NavigationLink(destination: {
                         FriendMapView()
                     }) {
-                        Image(systemName: imageName)
-                            .resizable()
-                            .frame(width: 25, height: 25)
-                            .clipShape(Circle())
-                            .shadow(radius: 20)
-                            .foregroundColor(Color(hex: "#173131"))
+                        HStack{
+                            Spacer()
+                            Image(systemName: imageName)
+                                .resizable()
+                                .frame(width: 20, height: 20)
+                                .clipShape(Circle())
+                                .shadow(radius: 20)
+                                .foregroundColor(Color(hex: "#173131"))
+                                .font(.system(size: 30, weight: .bold)) // Added font modifier for thickness, to match Figma design
+                            Spacer()
+                        }
                     }
                 )
         }
-            
+        
         
     }
 }
