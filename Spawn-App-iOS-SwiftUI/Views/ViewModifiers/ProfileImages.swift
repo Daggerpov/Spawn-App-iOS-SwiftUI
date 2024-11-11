@@ -18,7 +18,7 @@ extension Image {
                 imageSize = 55
                 strokeColor = .black
                 lineWidth = 2
-            case .eventParticipants:
+            case .eventParticipants, .chatMessage:
                 imageSize = 25
                 strokeColor = .white
                 lineWidth = 1
