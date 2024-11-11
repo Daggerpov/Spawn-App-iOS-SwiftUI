@@ -45,4 +45,6 @@ extension User {
             haley
         ]
     }()
+    
+    static let emptyUser: User = User(id: UUID(), friends: [])
 }
