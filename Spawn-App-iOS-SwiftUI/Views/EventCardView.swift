@@ -24,7 +24,7 @@ struct EventCardView: View {
     var body: some View {
         NavigationStack{
             VStack{
-                EventTitleView(event: event)
+                EventCardTopRowView(event: event)
                 Spacer()
                 HStack{
                     VStack{
