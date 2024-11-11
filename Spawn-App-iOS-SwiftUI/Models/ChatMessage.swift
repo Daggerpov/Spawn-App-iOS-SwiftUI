@@ -9,6 +9,7 @@ import Foundation
 
 class ChatMessage: Identifiable, Codable {
     var id: UUID
+    var message: String
     var timestamp: String // TODO: change data type alter
     var user: User
     // do I even need an `event` var here, if each `Event` has a list of chats?
@@ -17,10 +18,21 @@ class ChatMessage: Identifiable, Codable {
     // tech note: in user's view of event, check if that user is in
     // the `ChatMessage`'s `likedBy` array (`[User]`)
 
-	init(id: UUID, timestamp: String, user: User, likedBy: [User]? = nil) {
+    init(id: UUID, message: String, timestamp: String, user: User, likedBy: [User]? = nil) {
 		self.id = id
+        self.message = message
 		self.timestamp = timestamp
 		self.user = user
 		self.likedBy = likedBy
 	}
+}
+
+extension ChatMessage {
+    static let guysWya: ChatMessage = ChatMessage(
+        id: UUID(),
+        message: "yo guys, wya?",
+        timestamp: "2 minutes ago",
+        user: User.michael,
+        likedBy: User.mockUsers
+    )
 }

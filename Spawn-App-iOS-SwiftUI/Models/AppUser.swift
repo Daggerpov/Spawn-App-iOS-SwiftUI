@@ -122,6 +122,11 @@ extension AppUser {
         firstName: "Haley",
         bio: "This is my bio."
     )
+    
+    static let emptyUser: AppUser = AppUser(
+        baseUser: User.emptyUser,
+        username: "Empty User"
+    )
 
     static let mockAppUsers: [AppUser] = [danielAgapov, danielLee, shannon, jennifer, michael, haley]
 }

@@ -6,7 +6,7 @@
  
 ## Current App Look:
 
-![Nov 9th - event-description-page branch](current-app-look-images/feed-page.png)
+![Nov 11th](current-app-look-images/feed-page-with-buttons.png)
+![alt text](current-app-look-images/event-description.png)
 ![alt text](current-app-look-images/profile-page.png)
-![alt text](current-app-look-images/event-description-page.png)
-
+![alt text](current-app-look-images/basic-map.png)

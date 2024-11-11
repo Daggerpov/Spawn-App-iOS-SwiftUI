@@ -62,6 +62,7 @@ extension Event {
             startTime: "10:00 PM",
             endTime: "11:30 PM",
             location: Location(locationName: "Gather - Place Vanier"),
+            note: "let's eat!",
             creator: User.danielAgapov,
             participants: [
                 User.danielLee,
@@ -75,14 +76,25 @@ extension Event {
             title: "wanna run 5k with me?",
             startTime: "04:00 PM",
             location: Location(locationName: "Wesbrook Mall"),
+            note: "let's run!",
             creator: User.danielAgapov,
-            participants: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee]
+            participants: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee],
+            chatMessages: [
+                ChatMessage(
+                    id: UUID(),
+                    message: "yo guys, wya?",
+                    timestamp: "2 minutes ago",
+                    user: User.danielAgapov
+                ),
+                ChatMessage(id: UUID(), message: "I just saw you", timestamp: "30 seconds ago", user: User.danielLee)
+            ]
         ),
         Event(
             id: UUID(),
             title: "playing basketball!!!",
             endTime: "07:00 PM",
             location: Location(locationName: "UBC Student Recreation Centre"),
+            note: "let's play basketball!",
             creator: User.danielAgapov
         ),
         Event(

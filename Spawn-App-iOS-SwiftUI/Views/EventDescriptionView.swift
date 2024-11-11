@@ -37,6 +37,38 @@ struct EventDescriptionView: View {
                     Text("Note: \(note)")
                         .font(.body)
                 }
+                
+                if let chatMessages = viewModel.event.chatMessages {
+                    Text("\(chatMessages.count) replies")
+                }
+                
+                ScrollView(.vertical) {
+                    LazyVStack(spacing: 15) {
+                        if let chatMessages = viewModel.event.chatMessages {
+                            ForEach(chatMessages) { chatMessage in
+                                let appUser: AppUser = AppUserService.shared.appUserLookup[chatMessage.user.id] ?? AppUser.emptyUser
+                                HStack{
+                                    if let profilePicture = appUser.profilePicture {
+                                        profilePicture
+                                            .ProfileImageModifier(imageType: .chatMessage)
+                                    }
+                                    VStack{
+                                        Text(appUser.username)
+                                        Text(chatMessage.message)
+                                    }
+                                    Spacer()
+                                    HStack{
+                                        Text(chatMessage.timestamp)
+                                        // TODO: add logic later, to either use heart.fill or just heart,
+                                        // based on whether current user is in the chat message's likedBy array
+                                        Image(systemName: "heart")
+                                    }
+                                }
+                            }
+                        }
+                        
+                    }
+                }
             }
             .padding(20)
             .background(color)
