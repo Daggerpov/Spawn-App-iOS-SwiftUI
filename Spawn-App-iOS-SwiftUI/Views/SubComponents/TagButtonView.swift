@@ -23,11 +23,12 @@ struct TagButtonView: View {
                 .foregroundColor(activeTag == mockTag ? .white : Color(hex: "#173131"))
                 .padding(.vertical, 8)
                 .padding(.horizontal, 15)
-                .background {
+                .background{
                     Capsule()
                         .fill(activeTag == mockTag ? Color(hex: "#173131") : .white)
                         .matchedGeometryEffect(id: "ACTIVETAG_\(mockTag)", in: animation) // Use unique ID for each tag
                 }
+                
         }
         .buttonStyle(.plain)
     }

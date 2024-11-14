@@ -8,20 +8,11 @@
 import SwiftUI
 
 struct OpenFriendTagsView: View {
-    
     var body: some View {
         VStack{
             Spacer()
-            HStack{
-                Spacer()
-                Text("View Friends")
-                Spacer()
-            }
-            HStack{
-                Spacer()
-                Text("View Tags")
-                Spacer()
-            }
+            OpenFriendTagsView_ButtonView(type: .friends)
+            OpenFriendTagsView_ButtonView(type: .tags)
             Spacer()
         }
         .background(backgroundColor)
@@ -29,3 +20,31 @@ struct OpenFriendTagsView: View {
         .frame(maxWidth: .infinity, maxHeight: 275)
     }
 }
+
+struct OpenFriendTagsView_ButtonView: View {
+    var type: OpenFriendTagButtonType
+    
+    var body: some View {
+        HStack{
+            Spacer()
+            Text("View \(type.getDisplayName())")
+                .font(.headline)
+                .background(universalAccentColor)
+                .foregroundColor(.white)
+                .background(
+                    RoundedRectangle(
+                        cornerRadius: universalRectangleCornerRadius
+                    )
+                    .fill(.background)
+                    .stroke(universalAccentColor)
+                    .foregroundColor(universalAccentColor)
+                )
+            Spacer()
+            // TODO: implement navigation to go to either destination, similar to `BottomNavButtonView`
+            // -> base this on the `type`
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+    }
+}
+
