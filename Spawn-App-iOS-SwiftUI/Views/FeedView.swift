@@ -74,7 +74,7 @@ struct FeedView: View {
                 
             }
             .padding()
-            .background(backgroundColor)
+            .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
         }
         .popup(isPresented: $showingEventDescriptionPopup) {

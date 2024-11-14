@@ -9,15 +9,20 @@ import SwiftUI
 
 struct OpenFriendTagsView: View {
     var body: some View {
-        VStack{
+        VStack (spacing: 16){
+            // The small black bar
+            RoundedRectangle(cornerRadius: 2)
+                .frame(width: 120, height: 4)
+                .foregroundColor(.black)
+                .padding(.top, 20)
             Spacer()
             OpenFriendTagsView_ButtonView(type: .friends)
             OpenFriendTagsView_ButtonView(type: .tags)
             Spacer()
         }
-        .background(backgroundColor)
+        .background(universalBackgroundColor)
         .cornerRadius(universalRectangleCornerRadius)
-        .frame(maxWidth: .infinity, maxHeight: 275)
+        .frame(maxWidth: .infinity, maxHeight: 250)
     }
 }
 
@@ -25,26 +30,20 @@ struct OpenFriendTagsView_ButtonView: View {
     var type: OpenFriendTagButtonType
     
     var body: some View {
-        HStack{
-            Spacer()
+        Button(action: {
+            // TODO: implement navigation to go to either destination, based on `type`
+        }) {
             Text("View \(type.getDisplayName())")
-                .font(.headline)
-                .background(universalAccentColor)
-                .foregroundColor(.white)
+                .font(.title2)
+                .foregroundColor(universalBackgroundColor)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(
-                        cornerRadius: universalRectangleCornerRadius
-                    )
-                    .fill(.background)
-                    .stroke(universalAccentColor)
-                    .foregroundColor(universalAccentColor)
+                    RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+                        .fill(universalAccentColor)
                 )
-            Spacer()
-            // TODO: implement navigation to go to either destination, similar to `BottomNavButtonView`
-            // -> base this on the `type`
         }
-        .frame(maxWidth: .infinity)
-        .padding()
+        .padding(.horizontal, 60)
     }
 }
 

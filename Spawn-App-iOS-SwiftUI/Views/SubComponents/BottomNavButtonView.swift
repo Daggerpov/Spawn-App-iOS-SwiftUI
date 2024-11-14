@@ -27,7 +27,7 @@ struct BottomNavButtonView: View {
         if buttonType == .map || buttonType == .tag {
             Circle()
                 .frame(width: 45, height: 45)
-                .foregroundColor(backgroundColor)
+                .foregroundColor(universalBackgroundColor)
                 .clipShape(Circle())
                 .overlay(
                     Circle()
@@ -59,7 +59,7 @@ struct BottomNavButtonView: View {
         } else if buttonType == .plus {
             RoundedRectangle(cornerRadius: 20)
                 .frame(width: 100, height: 45)
-                .foregroundColor(backgroundColor)
+                .foregroundColor(universalBackgroundColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(Color(hex: "#173131"), lineWidth: 2)
