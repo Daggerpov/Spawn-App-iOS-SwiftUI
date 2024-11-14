@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct OpenFriendTagsView: View {
+    var callback: (OpenFriendTagButtonType) -> Void
     var body: some View {
         VStack (spacing: 16){
             // The small black bar
@@ -16,8 +17,8 @@ struct OpenFriendTagsView: View {
                 .foregroundColor(.black)
                 .padding(.top, 20)
             Spacer()
-            OpenFriendTagsView_ButtonView(type: .friends)
-            OpenFriendTagsView_ButtonView(type: .tags)
+            OpenFriendTagsView_ButtonView(type: .friends, callback: callback)
+            OpenFriendTagsView_ButtonView(type: .tags, callback: callback)
             Spacer()
         }
         .background(universalBackgroundColor)
@@ -28,10 +29,11 @@ struct OpenFriendTagsView: View {
 
 struct OpenFriendTagsView_ButtonView: View {
     var type: OpenFriendTagButtonType
+    var callback: (OpenFriendTagButtonType) -> Void
     
     var body: some View {
         Button(action: {
-            // TODO: implement navigation to go to either destination, based on `type`
+            callback(type)
         }) {
             Text("View \(type.getDisplayName())")
                 .font(.title2)

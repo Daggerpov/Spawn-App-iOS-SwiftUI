@@ -19,6 +19,8 @@ struct FeedView: View {
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
+    @State var showingFriendsPopup: Bool = false
+    @State var showingTagsPopup: Bool = false
     @State var eventInPopup: Event?
     @State var colorInPopup: Color?
     
@@ -99,8 +101,44 @@ struct FeedView: View {
             
             // TODO: investigate making the background view dim, just like in the figma design
         }
+        .popup(isPresented: $showingFriendsPopup) {
+            FriendsListView(appUser: appUser)
+        } customize: {
+            $0
+                .type(.floater(
+                    verticalPadding: 20,
+                    horizontalPadding: 20,
+                    useSafeAreaInset: false
+                ))
+            // TODO: read up on the documentation: https://github.com/exyte/popupview
+            // so that the description view is dismissed upon clicking outside
+            
+            // TODO: investigate making the background view dim, just like in the figma design
+        }
+        .popup(isPresented: $showingTagsPopup) {
+            TagsListView(appUser: appUser)
+        } customize: {
+            $0
+                .type(.floater(
+                    verticalPadding: 20,
+                    horizontalPadding: 20,
+                    useSafeAreaInset: false
+                ))
+            // TODO: read up on the documentation: https://github.com/exyte/popupview
+            // so that the description view is dismissed upon clicking outside
+            
+            // TODO: investigate making the background view dim, just like in the figma design
+        }
         .popup(isPresented: $showingOpenFriendTagsPopup) {
-            OpenFriendTagsView()
+            OpenFriendTagsView() { type in
+                switch type {
+                    case .friends:
+                        showingFriendsPopup = true
+                    case .tags:
+                        // TODO: implement
+                        showingTagsPopup = true
+                }
+            }
         } customize: {
             $0
                 .type(.toast)
