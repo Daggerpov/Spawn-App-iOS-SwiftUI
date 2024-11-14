@@ -96,12 +96,12 @@ struct FeedView: View {
                 ))
         }
         .popup(isPresented: $showingOpenFriendTagsPopup) {
-            Text("The popup")
-                .frame(width: 200, height: 60)
-                .background(Color(red: 0.85, green: 0.8, blue: 0.95))
-                .cornerRadius(30.0)
+            OpenFriendTagsView()
         } customize: {
-            $0.autohideIn(2)
+            $0
+                .type(.toast)
+                .position(.bottom)
+                .dragToDismiss(true)
         }
     }
 }
