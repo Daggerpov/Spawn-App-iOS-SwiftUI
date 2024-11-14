@@ -44,7 +44,7 @@ struct BottomNavButtonView: View {
                                     .frame(width: 25, height: 25)
                                     .clipShape(Circle())
                                     .shadow(radius: 20)
-                                    .foregroundColor(Color(hex: "#173131"))
+                                    .foregroundColor(universalAccentColor)
                             }
                         } else {
                             Image(systemName: imageName)
@@ -52,7 +52,7 @@ struct BottomNavButtonView: View {
                                 .frame(width: 25, height: 25)
                                 .clipShape(Circle())
                                 .shadow(radius: 20)
-                                .foregroundColor(Color(hex: "#173131"))
+                                .foregroundColor(universalAccentColor)
                         }
                     }
                 )
@@ -75,7 +75,7 @@ struct BottomNavButtonView: View {
                                 .frame(width: 20, height: 20)
                                 .clipShape(Circle())
                                 .shadow(radius: 20)
-                                .foregroundColor(Color(hex: "#173131"))
+                                .foregroundColor(universalAccentColor)
                                 .font(.system(size: 30, weight: .bold)) // Added font modifier for thickness, to match Figma design
                             Spacer()
                         }

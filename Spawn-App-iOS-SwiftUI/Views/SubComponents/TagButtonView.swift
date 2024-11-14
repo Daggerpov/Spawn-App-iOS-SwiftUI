@@ -20,7 +20,7 @@ struct TagButtonView: View {
         }) {
             Text(mockTag)
                 .font(.callout)
-                .foregroundColor(activeTag == mockTag ? .white : Color(hex: "#173131"))
+                .foregroundColor(activeTag == mockTag ? .white : universalAccentColor)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 15)
                 .background{

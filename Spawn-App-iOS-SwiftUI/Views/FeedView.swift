@@ -159,8 +159,6 @@ extension FeedView {
         HStack{
             Spacer()
             VStack{
-                // TODO: fix the sizes of these texts
-                // TODO: fix the text alignment of "hello"
                 HStack{
                     Text("hello,")
                         .font(.title)
@@ -176,7 +174,7 @@ extension FeedView {
                 }
                 .font(.title)
             }
-            .foregroundColor(Color(hex: "#173131"))
+            .foregroundColor(universalAccentColor)
             .frame(alignment: .leading)
             Spacer()
             
