@@ -28,6 +28,3 @@ extension Color {
         return String(format: "#%02lX%02lX%02lX", lroundf(r * 255), lroundf(g * 255), lroundf(b * 255))
     }
 }
-
-let eventColors: [Color] = [Color(hex: "#8084ac"), Color(hex: "#704444"), Color(hex: "#b0442c"), Color(hex: "#889c6c")]
-let backgroundColor: Color = Color(hex: "#C0BCB4")

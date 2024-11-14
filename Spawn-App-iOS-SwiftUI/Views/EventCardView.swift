@@ -46,7 +46,7 @@ struct EventCardView: View {
             }
             .padding(20)
             .background(color)
-            .cornerRadius(10)
+            .cornerRadius(universalRectangleCornerRadius)
             .onAppear {
                 viewModel.fetchIsParticipating()
             }

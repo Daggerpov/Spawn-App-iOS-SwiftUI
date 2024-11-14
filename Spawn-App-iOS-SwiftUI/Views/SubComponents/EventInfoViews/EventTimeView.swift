@@ -17,7 +17,6 @@ struct EventTimeView: View {
     var body: some View {
         HStack{
             Text(viewModel.eventTimeDisplayString)
-                .cornerRadius(20)
                 .font(.caption2)
                 .frame(alignment: .leading)
             // TODO: surround by rounded rectangle
