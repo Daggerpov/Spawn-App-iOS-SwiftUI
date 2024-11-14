@@ -27,28 +27,39 @@ struct BottomNavButtonView: View {
         if buttonType == .map || buttonType == .tag {
             Circle()
                 .frame(width: 45, height: 45)
-                .foregroundColor(Color(hex: "#C0BCB4"))
+                .foregroundColor(universalBackgroundColor)
                 .clipShape(Circle())
                 .overlay(
                     Circle()
                         .stroke(Color(hex: "#173131"), lineWidth: 2)
                 )
                 .overlay(
-                    NavigationLink(destination: {
-                        FriendMapView()
-                    }) {
-                        Image(systemName: imageName)
-                            .resizable()
-                            .frame(width: 25, height: 25)
-                            .clipShape(Circle())
-                            .shadow(radius: 20)
-                            .foregroundColor(Color(hex: "#173131"))
+                    Group{
+                        if buttonType == .map {
+                            NavigationLink(destination: {
+                                FriendMapView()
+                            }) {
+                                Image(systemName: imageName)
+                                    .resizable()
+                                    .frame(width: 25, height: 25)
+                                    .clipShape(Circle())
+                                    .shadow(radius: 20)
+                                    .foregroundColor(Color(hex: "#173131"))
+                            }
+                        } else {
+                            Image(systemName: imageName)
+                                .resizable()
+                                .frame(width: 25, height: 25)
+                                .clipShape(Circle())
+                                .shadow(radius: 20)
+                                .foregroundColor(Color(hex: "#173131"))
+                        }
                     }
                 )
         } else if buttonType == .plus {
             RoundedRectangle(cornerRadius: 20)
                 .frame(width: 100, height: 45)
-                .foregroundColor(Color(hex: "#C0BCB4"))
+                .foregroundColor(universalBackgroundColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(Color(hex: "#173131"), lineWidth: 2)

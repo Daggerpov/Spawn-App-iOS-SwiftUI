@@ -20,7 +20,7 @@ struct EventDescriptionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Title and Time Information
-                EventTitleView(event: viewModel.event)
+                EventCardTopRowView(event: viewModel.event)
                 
                 HStack {
                     VStack(alignment: .leading, spacing: 10) {
@@ -72,7 +72,7 @@ struct EventDescriptionView: View {
             }
             .padding(20)
             .background(color)
-            .cornerRadius(10)
+            .cornerRadius(universalRectangleCornerRadius)
         }
         .padding(.horizontal) // Reduces padding on the bottom
         .padding(.top, 200)

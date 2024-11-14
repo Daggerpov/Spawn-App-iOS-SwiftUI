@@ -17,7 +17,8 @@ struct FeedView: View {
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
     var appUser: AppUser
     
-    @State var showingPopup: Bool = false
+    @State var showingEventDescriptionPopup: Bool = false
+    @State var showingOpenFriendTagsPopup: Bool = false
     @State var eventInPopup: Event?
     @State var colorInPopup: Color?
     
@@ -48,11 +49,11 @@ struct FeedView: View {
                                     appUser: appUser,
                                     event: mockEvent,
                                     // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
-                                    color: colors.randomElement() ?? Color.blue
+                                    color: eventColors.randomElement() ?? Color.blue
                                 ) { event, color in
                                     eventInPopup = event
                                     colorInPopup = color
-                                    showingPopup = true
+                                    showingEventDescriptionPopup = true
                                 }
                             }
                         }
@@ -63,6 +64,9 @@ struct FeedView: View {
                         BottomNavButtonView(buttonType: .plus)
                         Spacer()
                         BottomNavButtonView(buttonType: .tag)
+                            .onTapGesture {
+                                showingOpenFriendTagsPopup = true
+                            }
                     }
                     
                 }
@@ -70,10 +74,10 @@ struct FeedView: View {
                 
             }
             .padding()
-            .background(Color(hex: "#C0BCB4"))
+            .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
         }
-        .popup(isPresented: $showingPopup) {
+        .popup(isPresented: $showingEventDescriptionPopup) {
             if let event = eventInPopup {
                 if let color = colorInPopup {
                     EventDescriptionView(
@@ -90,6 +94,20 @@ struct FeedView: View {
                     horizontalPadding: 20,
                     useSafeAreaInset: false
                 ))
+            // TODO: read up on the documentation: https://github.com/exyte/popupview
+            // so that the description view is dismissed upon clicking outside
+            
+            // TODO: investigate making the background view dim, just like in the figma design
+        }
+        .popup(isPresented: $showingOpenFriendTagsPopup) {
+            OpenFriendTagsView()
+        } customize: {
+            $0
+                .type(.toast)
+                .position(.bottom)
+                .dragToDismiss(true)
+                .closeOnTap(false)
+                .closeOnTapOutside(true)
         }
     }
 }

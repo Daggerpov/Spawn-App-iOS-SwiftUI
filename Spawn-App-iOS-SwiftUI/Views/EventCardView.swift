@@ -24,7 +24,7 @@ struct EventCardView: View {
     var body: some View {
         NavigationStack{
             VStack{
-                EventTitleView(event: event)
+                EventCardTopRowView(event: event)
                 Spacer()
                 HStack{
                     VStack{
@@ -46,7 +46,7 @@ struct EventCardView: View {
             }
             .padding(20)
             .background(color)
-            .cornerRadius(10)
+            .cornerRadius(universalRectangleCornerRadius)
             .onAppear {
                 viewModel.fetchIsParticipating()
             }
