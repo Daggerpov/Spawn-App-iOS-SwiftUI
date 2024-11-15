@@ -19,7 +19,7 @@ extension Image {
                 strokeColor = .black
                 lineWidth = 2
             case .friendsListView:
-                imageSize = 40
+                imageSize = 50
                 strokeColor = .black
                 lineWidth = 0
             case .eventParticipants, .chatMessage:

@@ -24,7 +24,10 @@ struct FriendsListView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     // Title and Time Information
                     ForEach(viewModel.friends) { friend in
-                        FriendListingView(friend: friend, appUser: appUser)
+                        FriendListingView(person: friend, appUser: appUser, isFriend: true)
+                    }
+                    ForEach(viewModel.recommendedFriends) { recommendedFriend in
+                        FriendListingView(person: recommendedFriend, appUser: appUser, isFriend: false)
                     }
                 }
             }
