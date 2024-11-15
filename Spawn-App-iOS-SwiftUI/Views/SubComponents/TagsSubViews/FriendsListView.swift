@@ -38,23 +38,25 @@ struct FriendsListView: View {
 
 extension FriendsListView {
     var searchView: some View {
-        VStack(spacing: 10) {
-            HStack(spacing: 12) {
-                Image(systemName: "magnifyingglass").font(.title3)
+        VStack{
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .font(.title3)
+                    .foregroundColor(universalAccentColor)
                 TextField("Search", text: $viewModel.searchText)
-                // TODO: implement an onchange to filter the users by search text:
-//                    .onChange(of: viewModel.searchText) { _ in
-//                        viewModel.loadQuotesBySearch()
-//                    }
+                    .foregroundColor(universalAccentColor)
             }
-            .foregroundColor(universalBackgroundColor)
             .padding(.vertical, 20)
             .padding(.horizontal, 15)
             .frame(height: 45)
-            .background{
-                RoundedRectangle(cornerRadius: 25).fill(.background)
-                    .foregroundColor(universalBackgroundColor)
-            }
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(universalAccentColor, lineWidth: 2)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(universalBackgroundColor)
+            )
         }
         .padding(.vertical, 20)
     }
