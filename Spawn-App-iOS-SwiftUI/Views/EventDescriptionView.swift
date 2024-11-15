@@ -45,6 +45,7 @@ struct EventDescriptionView: View {
                 ScrollView(.vertical) {
                     LazyVStack(spacing: 15) {
                         if let chatMessages = viewModel.event.chatMessages {
+                            // TODO: remove this logic out of the view, and into view model
                             ForEach(chatMessages) { chatMessage in
                                 let appUser: AppUser = AppUserService.shared.appUserLookup[chatMessage.user.id] ?? AppUser.emptyUser
                                 HStack{

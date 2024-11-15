@@ -88,7 +88,26 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Lee",
         bio: "This is my bio.",
-        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [AppUser.shannon]), FriendTag(id: UUID(), displayName: "Close Friends", color: eventColors.randomElement() ?? Color.blue, friends: [AppUser.haley]), FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [AppUser.jennifer, AppUser.haley, AppUser.shannon])],
+        friendTags: [
+            FriendTag(
+                id: UUID(),
+                displayName: "Biztech",
+                color: eventColors[0],
+                friends: [AppUser.shannon]
+            ),
+            FriendTag(
+                id: UUID(),
+                displayName: "Close Friends",
+                color: eventColors[1],
+                friends: [AppUser.haley]
+            ),
+            FriendTag(
+                id: UUID(),
+                displayName: "Hobbies",
+                color: eventColors[2],
+                friends: [AppUser.jennifer, AppUser.haley, AppUser.shannon]
+            )
+        ],
         lastLocation: Location.mockLocation
     )
 

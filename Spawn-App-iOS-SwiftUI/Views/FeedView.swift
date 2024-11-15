@@ -19,6 +19,8 @@ struct FeedView: View {
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
+    @State var showingFriendsPopup: Bool = false
+    @State var showingTagsPopup: Bool = false
     @State var eventInPopup: Event?
     @State var colorInPopup: Color?
     
@@ -77,6 +79,7 @@ struct FeedView: View {
             .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
         }
+        // TODO: fix these repetitive popups; maybe separate into another component
         .popup(isPresented: $showingEventDescriptionPopup) {
             if let event = eventInPopup {
                 if let color = colorInPopup {
@@ -99,8 +102,44 @@ struct FeedView: View {
             
             // TODO: investigate making the background view dim, just like in the figma design
         }
+        .popup(isPresented: $showingFriendsPopup) {
+            FriendsListView(appUser: appUser)
+        } customize: {
+            $0
+                .type(.floater(
+                    verticalPadding: 20,
+                    horizontalPadding: 20,
+                    useSafeAreaInset: false
+                ))
+            // TODO: read up on the documentation: https://github.com/exyte/popupview
+            // so that the description view is dismissed upon clicking outside
+            
+            // TODO: investigate making the background view dim, just like in the figma design
+        }
+        .popup(isPresented: $showingTagsPopup) {
+            TagsListView(appUser: appUser)
+        } customize: {
+            $0
+                .type(.floater(
+                    verticalPadding: 20,
+                    horizontalPadding: 20,
+                    useSafeAreaInset: false
+                ))
+            // TODO: read up on the documentation: https://github.com/exyte/popupview
+            // so that the description view is dismissed upon clicking outside
+            
+            // TODO: investigate making the background view dim, just like in the figma design
+        }
         .popup(isPresented: $showingOpenFriendTagsPopup) {
-            OpenFriendTagsView()
+            OpenFriendTagsView() { type in
+                switch type {
+                    case .friends:
+                        showingFriendsPopup = true
+                    case .tags:
+                        showingTagsPopup = true
+                }
+                showingOpenFriendTagsPopup = false
+            }
         } customize: {
             $0
                 .type(.toast)
@@ -121,8 +160,6 @@ extension FeedView {
         HStack{
             Spacer()
             VStack{
-                // TODO: fix the sizes of these texts
-                // TODO: fix the text alignment of "hello"
                 HStack{
                     Text("hello,")
                         .font(.title)
@@ -138,7 +175,7 @@ extension FeedView {
                 }
                 .font(.title)
             }
-            .foregroundColor(Color(hex: "#173131"))
+            .foregroundColor(universalAccentColor)
             .frame(alignment: .leading)
             Spacer()
             

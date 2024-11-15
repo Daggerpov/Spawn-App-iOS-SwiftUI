@@ -27,7 +27,7 @@ extension User {
     
     static func setupFriends() {
         danielAgapov.friends = [danielLee, shannon, jennifer, michael, haley]
-        danielLee.friends = [danielAgapov]
+        danielLee.friends = [danielAgapov, jennifer, haley]
         shannon.friends = [danielAgapov, danielLee]
         jennifer.friends = [danielAgapov, danielLee, shannon]
         michael.friends = [danielAgapov, danielLee, shannon, jennifer]
