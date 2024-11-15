@@ -9,6 +9,7 @@ import Foundation
 
 class FriendsListViewModel: ObservableObject {
     @Published var friends: [AppUser] = []
+    @Published var searchText: String = ""
     var appUser: AppUser
     
     init(appUser: AppUser) {
@@ -19,5 +20,9 @@ class FriendsListViewModel: ObservableObject {
     func fetchFriends() -> [AppUser] {
         // TODO: implement later
         return AppUser.mockAppUsers
+    }
+    
+    func fetchFriendTags() -> [FriendTag] {
+        return FriendTag.mockTags
     }
 }
