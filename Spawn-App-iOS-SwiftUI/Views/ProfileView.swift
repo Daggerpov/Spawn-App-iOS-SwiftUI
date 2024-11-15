@@ -15,13 +15,10 @@ struct ProfileView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // Profile Picture
+                    
                     if let profilePicture = appUser.profilePicture {
                         profilePicture
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 150, height: 150)
-                            .clipShape(Circle())
-                            .shadow(radius: 10)
+                            .ProfileImageModifier(imageType: .profilePage)
                     } else {
                         Image(systemName: "person.crop.circle.fill")
                             .ProfileImageModifier(imageType: .profilePage)
