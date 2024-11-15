@@ -7,6 +7,8 @@
 ## Current App Look:
 
 ![Nov 11th](current-app-look-images/feed-page-with-buttons.png)
+![Nov 14th](current-app-look-images/friends-list.png)
 ![alt text](current-app-look-images/event-description.png)
+![alt text](current-app-look-images/view-tags-and-friends.png)
 ![alt text](current-app-look-images/profile-page.png)
 ![alt text](current-app-look-images/basic-map.png)
