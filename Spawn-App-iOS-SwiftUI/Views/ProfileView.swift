@@ -29,17 +29,9 @@ struct ProfileView: View {
                         .font(.title)
                         .bold()
                     
-                    // Full Name
-                    if let firstName = appUser.firstName, let lastName = appUser.lastName {
-                        Text("Full Name: \(firstName) \(lastName)")
-                            .font(.headline)
-                    } else if let firstName = appUser.firstName {
-                        Text("First Name: \(firstName)")
-                            .font(.headline)
-                    } else if let lastName = appUser.lastName {
-                        Text("Last Name: \(lastName)")
-                            .font(.headline)
-                    }
+                    Text(NameFormatterService.shared.formatName(appUser: appUser))
+                        .font(.headline)
+                    
                     
                     // Bio
                     if let bio = appUser.bio {
