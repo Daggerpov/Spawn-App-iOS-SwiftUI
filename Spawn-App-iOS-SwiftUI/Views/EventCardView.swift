@@ -27,13 +27,20 @@ struct EventCardView: View {
                 EventCardTopRowView(event: event)
                 Spacer()
                 HStack{
-                    VStack{
-                        EventTimeView(event: event)
+					VStack{
+						HStack{
+							EventTimeView(event: event).fixedSize()
+							Spacer()
+						}
                         Spacer()
-                        EventLocationView(event: event)
+						HStack{
+							EventLocationView(event: event).fixedSize()
+							Spacer()
+						}
                     }
                     .foregroundColor(.white)
                     Spacer()
+                        .frame(width: 30)
                     Circle()
                         .CircularButton(systemName: viewModel.isParticipating ? "checkmark" : "star.fill", buttonActionCallback: {
                             viewModel.toggleParticipation()

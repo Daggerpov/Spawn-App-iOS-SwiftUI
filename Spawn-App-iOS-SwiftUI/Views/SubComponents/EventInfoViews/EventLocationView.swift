@@ -12,22 +12,30 @@ struct EventLocationView: View {
 
     var body: some View {
         if let eventLocation = event.location?.locationName {
-            HStack{
-                Image(systemName: "map")
-                // TODO: surround by circle, per Figma design
-                Text(eventLocation)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .font(.caption2)
-                Spacer()
-            }
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.init(white: 2, opacity: 0.05))
-            )
-            .frame(alignment: .leading)
-            .font(.caption)
-        }
+			// TODO: refactor this and `EventTimeView` into component;
+			// lots of duplicate code and styling
+			HStack(spacing: 5) {
+				Image(systemName: "map")
+					.padding(5)
+					.background(
+						RoundedRectangle(cornerRadius: 30)
+							.fill(Color.white.opacity(0.1))
+					)
+
+				Text(eventLocation)
+					.lineLimit(1)
+					.fixedSize()
+					.font(.caption2)
+					.padding(.horizontal, 3)
+			}
+			.padding(.trailing, 10)
+			.overlay {
+				// Background for the text bubble
+				RoundedRectangle(cornerRadius: 30)
+					.fill(Color.white.opacity(0.1))
+					.frame(height: 30)
+			}
+
+		}
     }
 }

@@ -15,16 +15,28 @@ struct EventTimeView: View {
     }
     
     var body: some View {
-        HStack {
-            Text(viewModel.eventTimeDisplayString)
-                .font(.caption2)
-                .padding(6) // Adjust padding as needed
-                .background(
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(Color.init(white: 2, opacity: 0.05))
-                )
-                .frame(alignment: .leading)
-            Spacer()
-        }
+		// TODO: refactor this and `EventLocationView` into component;
+		// lots of duplicate code and styling
+		HStack(spacing: 5) {
+			Image(systemName: "clock")
+				.padding(5)
+				.background(
+					RoundedRectangle(cornerRadius: 30)
+						.fill(Color.white.opacity(0.1))
+				)
+
+			Text(viewModel.eventTimeDisplayString)
+				.lineLimit(1)
+				.fixedSize()
+				.font(.caption2)
+				.padding(.horizontal, 3)
+		}
+		.padding(.trailing, 10)
+		.overlay {
+			// Background for the text bubble
+			RoundedRectangle(cornerRadius: 30)
+				.fill(Color.white.opacity(0.1))
+				.frame(height: 30)
+		}
     }
 }
