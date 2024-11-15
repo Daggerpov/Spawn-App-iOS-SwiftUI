@@ -7,6 +7,12 @@
 
 import SwiftUI
 
+// TODO: this modifier currently doesn't achieve
+// my desired result -> look into fixing it
+// For now, it's low-priority, since the search bar looks fine.
+// But, ideally, the placeholder text would be the same
+// color as the text upon typing
+
 struct PlaceholderTextModifier: ViewModifier {
     var color: Color
     
