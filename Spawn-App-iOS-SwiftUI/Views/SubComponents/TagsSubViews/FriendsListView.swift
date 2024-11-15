@@ -45,6 +45,7 @@ extension FriendsListView {
                     .foregroundColor(universalAccentColor)
                 TextField("Search", text: $viewModel.searchText)
                     .foregroundColor(universalAccentColor)
+                    .placeholderColor(universalAccentColor)
             }
             .padding(.vertical, 20)
             .padding(.horizontal, 15)
