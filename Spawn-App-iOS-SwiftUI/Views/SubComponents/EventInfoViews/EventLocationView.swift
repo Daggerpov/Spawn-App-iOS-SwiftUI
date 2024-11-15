@@ -15,14 +15,17 @@ struct EventLocationView: View {
             HStack{
                 Image(systemName: "map")
                 // TODO: surround by circle, per Figma design
-                
                 Text(eventLocation)
                     .lineLimit(1)
                     .fixedSize()
                     .font(.caption2)
                 Spacer()
-                
             }
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.init(white: 2, opacity: 0.05))
+            )
             .frame(alignment: .leading)
             .font(.caption)
         }
