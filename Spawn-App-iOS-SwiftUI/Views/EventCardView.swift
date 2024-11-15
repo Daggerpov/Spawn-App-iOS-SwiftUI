@@ -34,6 +34,7 @@ struct EventCardView: View {
                     }
                     .foregroundColor(.white)
                     Spacer()
+                        .frame(width: 30)
                     Circle()
                         .CircularButton(systemName: viewModel.isParticipating ? "checkmark" : "star.fill", buttonActionCallback: {
                             viewModel.toggleParticipation()

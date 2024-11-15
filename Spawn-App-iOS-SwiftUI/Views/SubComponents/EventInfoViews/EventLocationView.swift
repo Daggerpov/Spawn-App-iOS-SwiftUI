@@ -12,19 +12,29 @@ struct EventLocationView: View {
 
     var body: some View {
         if let eventLocation = event.location?.locationName {
-            HStack{
-                Image(systemName: "map")
-                // TODO: surround by circle, per Figma design
-                
-                Text(eventLocation)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .font(.caption2)
-                Spacer()
-                
-            }
-            .frame(alignment: .leading)
-            .font(.caption)
-        }
+                    ZStack(alignment: .leading) {
+                        // Background for the text bubble
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(Color.white.opacity(0.1))
+                            .frame(height: 30) // Adjust height as needed
+
+                        HStack(spacing: 5) {
+                            Image(systemName: "map")
+                                .padding(5)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 30)
+                                        .fill(Color.white.opacity(0.1))
+                                )
+                            
+                            Text(eventLocation)
+                                .lineLimit(1)
+                                .fixedSize()
+                                .font(.caption2)
+                                .padding(.leading, 3) // Adjust for spacing
+                        }
+//                        .padding(.leading, 5) // Extra padding for left alignment
+                    }
+
+                }
     }
 }
