@@ -79,6 +79,7 @@ struct FeedView: View {
             .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
         }
+        // TODO: fix these repetitive popups; maybe separate into another component
         .popup(isPresented: $showingEventDescriptionPopup) {
             if let event = eventInPopup {
                 if let color = colorInPopup {
@@ -135,9 +136,9 @@ struct FeedView: View {
                     case .friends:
                         showingFriendsPopup = true
                     case .tags:
-                        // TODO: implement
                         showingTagsPopup = true
                 }
+                showingOpenFriendTagsPopup = false
             }
         } customize: {
             $0
