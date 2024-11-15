@@ -18,11 +18,14 @@ class FriendsListViewModel: ObservableObject {
     }
     
     func fetchFriends() -> [AppUser] {
-        // TODO: implement later
-        return AppUser.mockAppUsers
+        guard let baseUserFriends = appUser.baseUser.friends else { return [] }
+        
+        return baseUserFriends.compactMap { friend in
+            AppUserService.shared.appUserLookup[friend.id] ?? AppUser.emptyUser
+        }
     }
     
     func fetchFriendTags() -> [FriendTag] {
-        return FriendTag.mockTags
+        return appUser.friendTags ?? []
     }
 }
