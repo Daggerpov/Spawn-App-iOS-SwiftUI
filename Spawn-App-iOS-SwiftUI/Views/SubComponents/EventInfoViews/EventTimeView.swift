@@ -15,11 +15,15 @@ struct EventTimeView: View {
     }
     
     var body: some View {
-        HStack{
+        HStack {
             Text(viewModel.eventTimeDisplayString)
                 .font(.caption2)
+                .padding(6) // Adjust padding as needed
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(Color.init(white: 2, opacity: 0.05))
+                )
                 .frame(alignment: .leading)
-            // TODO: surround by rounded rectangle
             Spacer()
         }
     }
