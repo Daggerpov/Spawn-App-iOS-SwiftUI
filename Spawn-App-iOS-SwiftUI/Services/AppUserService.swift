@@ -8,7 +8,7 @@
 import Foundation
 
 final class AppUserService {
-    static let shared = AppUserService(
+    static let shared: AppUserService = AppUserService(
         appUsers: AppUser.mockAppUsers,
         users: User.mockUsers
     )
