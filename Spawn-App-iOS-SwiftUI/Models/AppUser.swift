@@ -91,7 +91,7 @@ extension AppUser {
         friendTags: [
             FriendTag(
                 id: UUID(),
-                displayName: "Hobbies",
+                displayName: "Biztech",
                 color: eventColors[0],
                 friends: [AppUser.shannon]
             ),
