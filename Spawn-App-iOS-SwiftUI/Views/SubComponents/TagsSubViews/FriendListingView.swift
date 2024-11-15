@@ -29,16 +29,27 @@ struct FriendListingView: View {
                     Image(systemName: "star.fill")
                     Text(friend.username)
                         .bold()
+                    Spacer()
                 }
                 .padding(.horizontal)
                 .font(.subheadline)
                 .foregroundColor(universalBackgroundColor)
                 HStack{
                     ForEach(viewModel.tagsForFriend) { friendTag in
+                        // TODO: implement navigation from friend tag to friend tag view, which I'll do now, inside of "View Tags" popup
                         Text(friendTag.displayName)
-                            .foregroundColor(friendTag.color)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .foregroundColor(.white) // Adjust text color if needed
+                            .background(
+                                Capsule()
+                                    .fill(friendTag.color)
+                            )
                     }
+                    Spacer()
                 }
+                .padding(.leading, 20)
             }
             Spacer()
         }
