@@ -8,7 +8,13 @@
 import SwiftUI
 
 struct FriendListingView: View {
+    @ObservedObject var viewModel: FriendListingViewModel
     var friend: AppUser
+    
+    init(friend: AppUser, appUser: AppUser) {
+        self.friend = friend
+        self.viewModel = FriendListingViewModel(friend: friend, appUser: appUser)
+    }
     var body: some View {
         HStack{
             if let pfp = friend.profilePicture {
@@ -19,12 +25,22 @@ struct FriendListingView: View {
                     .ProfileImageModifier(imageType: .friendsListView)
             }
             VStack{
-                
-                Text(friend.username)
-                    .font(.subheadline)
-                    .bold()
-                    .foregroundColor(universalBackgroundColor)
+                HStack{
+                    Image(systemName: "star.fill")
+                    Text(friend.username)
+                        .bold()
+                }
+                .padding(.horizontal)
+                .font(.subheadline)
+                .foregroundColor(universalBackgroundColor)
+                HStack{
+                    ForEach(viewModel.tagsForFriend) { friendTag in
+                        Text(friendTag.displayName)
+                            .foregroundColor(friendTag.color)
+                    }
+                }
             }
+            Spacer()
         }
         .frame(maxWidth: .infinity)
         .padding(20)
