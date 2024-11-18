@@ -16,6 +16,7 @@ struct TagsListView: View {
     
     var body: some View {
         ScrollView {
+            searchView
             VStack(alignment: .leading, spacing: 20) {
                 // Title and Time Information
                 ForEach(viewModel.friendTags) { friendTag in
@@ -43,5 +44,32 @@ struct TagsListView: View {
         .padding(.horizontal)
         .padding(.horizontal) // Reduces padding on the bottom
         .padding(.top, 200)
+    }
+}
+
+extension TagsListView {
+    var searchView: some View {
+        VStack{
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .font(.title3)
+                    .foregroundColor(universalAccentColor)
+                TextField("Search", text: $viewModel.searchText)
+                    .foregroundColor(universalAccentColor)
+                    .placeholderColor(universalAccentColor)
+            }
+            .padding(.vertical, 20)
+            .padding(.horizontal, 15)
+            .frame(height: 45)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(universalAccentColor, lineWidth: 2)
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(universalBackgroundColor)
+            )
+        }
+        .padding(.vertical, 20)
     }
 }
