@@ -26,6 +26,21 @@ struct TagsListView: View {
             .background(universalAccentColor)
             .cornerRadius(universalRectangleCornerRadius)
         }
+        Button(action: {
+            // Action for adding a new tag
+        }) {
+            HStack {
+                Image(systemName: "plus")
+                    .font(.title)
+            }
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(style: StrokeStyle(lineWidth: 2, dash: [5]))
+                    .foregroundColor(.gray)
+            )
+        }
+        .padding(.horizontal)
         .padding(.horizontal) // Reduces padding on the bottom
         .padding(.top, 200)
     }
