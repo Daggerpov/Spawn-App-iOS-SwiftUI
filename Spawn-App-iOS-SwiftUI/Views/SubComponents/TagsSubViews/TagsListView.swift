@@ -15,35 +15,46 @@ struct TagsListView: View {
     }
     
     var body: some View {
-        ScrollView {
-            searchView
-            VStack(alignment: .leading, spacing: 20) {
-                // Title and Time Information
-                ForEach(viewModel.friendTags) { friendTag in
-                    Text(friendTag.displayName)
+            ScrollView {
+                searchView
+                VStack(alignment: .leading, spacing: 20) {
+                    // Title and Time Information
+                    ForEach(viewModel.friendTags) { friendTag in
+                        HStack {
+                            Text(friendTag.displayName).foregroundColor(.white)
+                                .padding()
+                            Spacer()
+                            Image(systemName: "chevron.down")
+                                .foregroundColor(.white)
+                                .padding()
+                        }
+                        .background(friendTag.color)
+                        .cornerRadius(10)
+                        .padding(.horizontal)
+                    }
                 }
+                .padding(20)
+                .background(universalAccentColor)
+                .cornerRadius(universalRectangleCornerRadius)
             }
-            .padding(20)
-            .background(universalAccentColor)
-            .cornerRadius(universalRectangleCornerRadius)
-        }
-        Button(action: {
-            // Action for adding a new tag
-        }) {
-            HStack {
-                Image(systemName: "plus")
-                    .font(.title)
+            
+            Button(action: {
+                // Action for adding a new tag
+            }) {
+                HStack {
+                    Image(systemName: "plus")
+                        .font(.title)
+                }
+                .frame(maxWidth: .infinity, minHeight: 50)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [5]))
+                        .foregroundColor(.gray)
+                )
             }
-            .frame(maxWidth: .infinity, minHeight: 50)
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(style: StrokeStyle(lineWidth: 2, dash: [5]))
-                    .foregroundColor(.gray)
-            )
-        }
-        .padding(.horizontal)
-        .padding(.horizontal) // Reduces padding on the bottom
-        .padding(.top, 200)
+            .padding(.horizontal)
+            .padding(.horizontal) // Reduces padding on the bottom
+            .padding(.top, 200)
     }
 }
 
