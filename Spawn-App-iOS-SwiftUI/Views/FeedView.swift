@@ -78,6 +78,7 @@ struct FeedView: View {
             .padding()
             .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
+            .dimmedBackground(isActive: showingTagsPopup || showingEventDescriptionPopup || showingFriendsPopup)
         }
         // TODO: fix these repetitive popups; maybe separate into another component
         .popup(isPresented: $showingEventDescriptionPopup) {
@@ -191,5 +192,20 @@ extension FeedView {
         }
         .padding(.horizontal)
         .padding(.vertical, 2)
+    }
+}
+
+extension View {
+    func dimmedBackground(isActive: Bool) -> some View {
+        self.overlay(
+            Group {
+                if isActive {
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .animation(.easeInOut, value: isActive)
+                }
+            }
+        )
     }
 }
