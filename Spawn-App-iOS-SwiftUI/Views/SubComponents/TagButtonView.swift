@@ -26,7 +26,7 @@ struct TagButtonView: View {
                 .padding(.horizontal, 15)
                 .background{
                     Capsule()
-                        .fill(activeTag == mockTag ? Color(hex: "#E7E7DD") : .white)
+                        .fill(activeTag == mockTag ? universalAccentColor : .white)
                         .matchedGeometryEffect(id: "ACTIVETAG_\(mockTag)", in: animation) // Use unique ID for each tag
                 }
                 
