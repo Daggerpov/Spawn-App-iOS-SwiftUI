@@ -34,7 +34,8 @@ struct FriendListingView: View {
                                 .font(.headline)
                             Spacer()
                         }
-                        .padding(.horizontal)
+						.padding(.leading, 10)
+                        .padding(.trailing, 16)
                         .font(.subheadline)
                         .foregroundColor(universalBackgroundColor)
                         HStack{
@@ -52,8 +53,8 @@ struct FriendListingView: View {
                             }
                             Spacer()
                         }
-                        .padding(.leading, 20)
-                        
+                        .padding(.leading, 10)
+
                     }
                     Spacer()
                 }
@@ -80,13 +81,15 @@ struct FriendListingView: View {
                                     .font(.headline)
                                 Spacer()
                             }
-                            .padding(.leading)
+                            .padding(.leading, 10)
+							.padding(.trailing, 16)
                             .font(.subheadline)
                             .foregroundColor(universalBackgroundColor)
                             HStack{
                                 Text(viewModel.formattedFriendName)
                                     .bold()
-                                    .padding(.horizontal)
+									.padding(.leading, 10)
+									.padding(.trailing, 16)
                                     .padding(.vertical, 0.25)
                                     .font(.headline)
                                     .foregroundColor(universalBackgroundColor)
