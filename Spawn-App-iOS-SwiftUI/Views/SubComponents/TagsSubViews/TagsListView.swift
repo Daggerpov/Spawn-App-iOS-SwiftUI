@@ -15,13 +15,18 @@ struct TagsListView: View {
     }
     
     var body: some View {
+        VStack(spacing: 20){
+            //search bar
+            searchView
+            
             ScrollView {
-                searchView
+                //list of tags
                 VStack(alignment: .leading, spacing: 20) {
                     // Title and Time Information
                     ForEach(viewModel.friendTags) { friendTag in
                         HStack {
-                            Text(friendTag.displayName).foregroundColor(.white)
+                            Text(friendTag.displayName)
+                                .foregroundColor(.white)
                                 .padding()
                             Spacer()
                             Image(systemName: "chevron.down")
@@ -38,6 +43,7 @@ struct TagsListView: View {
                 .cornerRadius(universalRectangleCornerRadius)
             }
             
+            //add tag button
             Button(action: {
                 // Action for adding a new tag
             }) {
@@ -53,8 +59,16 @@ struct TagsListView: View {
                 )
             }
             .padding(.horizontal)
-            .padding(.horizontal) // Reduces padding on the bottom
-            .padding(.top, 200)
+            //            .padding(.horizontal) // Reduces padding on the bottom
+            //            .padding(.top, 200)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 30)
+                .fill(Color(hex: "#E7E7DD"))
+                .shadow(color: .gray.opacity(0.2), radius: 10, x: 0, y: 5)
+        )
+        .padding()
     }
 }
 
