@@ -15,7 +15,7 @@ struct TagsListView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20){
+        VStack{
             //search bar
             searchView
             
@@ -58,7 +58,6 @@ struct TagsListView: View {
                         .foregroundColor(.gray)
                 )
             }
-            .padding(.horizontal)
             //            .padding(.horizontal) // Reduces padding on the bottom
             //            .padding(.top, 200)
         }
