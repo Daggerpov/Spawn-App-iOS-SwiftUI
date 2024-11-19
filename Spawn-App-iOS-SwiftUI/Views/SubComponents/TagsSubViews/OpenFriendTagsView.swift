@@ -21,7 +21,7 @@ struct OpenFriendTagsView: View {
             OpenFriendTagsView_ButtonView(type: .tags, callback: callback)
             Spacer()
         }
-        .background(universalBackgroundColor)
+        .background(Color(hex: "#E7E7DD"))
         .cornerRadius(universalRectangleCornerRadius)
         .frame(maxWidth: .infinity, maxHeight: 250)
     }

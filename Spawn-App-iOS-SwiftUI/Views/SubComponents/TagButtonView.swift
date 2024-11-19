@@ -11,6 +11,7 @@ struct TagButtonView: View {
     let mockTag: String
     @Binding var activeTag: String
     var animation: Namespace.ID
+
     
     var body: some View {
         Button(action: {
@@ -25,7 +26,7 @@ struct TagButtonView: View {
                 .padding(.horizontal, 15)
                 .background{
                     Capsule()
-                        .fill(activeTag == mockTag ? Color(hex: "#173131") : .white)
+                        .fill(activeTag == mockTag ? Color(hex: "#E7E7DD") : .white)
                         .matchedGeometryEffect(id: "ACTIVETAG_\(mockTag)", in: animation) // Use unique ID for each tag
                 }
                 
