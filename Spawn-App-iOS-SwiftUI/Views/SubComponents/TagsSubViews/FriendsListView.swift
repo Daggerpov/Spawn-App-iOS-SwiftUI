@@ -19,7 +19,7 @@ struct FriendsListView: View {
     var body: some View {
         VStack {
             // TODO: implement searching by friend username or either name
-            searchView
+            SearchView()
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     // Title and Time Information
@@ -31,37 +31,18 @@ struct FriendsListView: View {
                     }
                 }
             }
+			.padding(.horizontal)
         }
+
         .padding()
         .background(universalBackgroundColor)
+		.overlay {
+			RoundedRectangle(cornerRadius: 20)
+				.stroke(universalBackgroundColor, lineWidth: 2)
+		}
+		.clipShape(RoundedRectangle(cornerRadius: 20))
         .padding(.horizontal)
         .padding(.top, 200)
-    }
-}
 
-extension FriendsListView {
-    var searchView: some View {
-        VStack{
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .font(.title3)
-                    .foregroundColor(universalAccentColor)
-                TextField("Search", text: $viewModel.searchText)
-                    .foregroundColor(universalAccentColor)
-                    .placeholderColor(universalAccentColor)
-            }
-            .padding(.vertical, 20)
-            .padding(.horizontal, 15)
-            .frame(height: 45)
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(universalAccentColor, lineWidth: 2)
-            )
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(universalBackgroundColor)
-            )
-        }
-        .padding(.vertical, 20)
     }
 }
