@@ -76,7 +76,7 @@ struct FeedView: View {
                 
             }
             .padding()
-            .background(universalBackgroundColor)
+            .background(Color(hex: "#E7E7DD"))
             .ignoresSafeArea(.container)
         }
         // TODO: fix these repetitive popups; maybe separate into another component
