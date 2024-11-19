@@ -29,7 +29,8 @@ class FriendTag: Identifiable {
 }
 
 extension FriendTag {
-    static let close = FriendTag(id: UUID(), displayName: "Close Friends", color: Color(hex: "#704444"), friends: [AppUser.danielAgapov])
-    static let sports = FriendTag(id: UUID(), displayName: "Sports", color: Color(hex: "#8084ac"), friends: [AppUser.danielLee])
-    static let mockTags = [close, sports]
+    static let close = FriendTag(id: UUID(), displayName: "Close Friends", color: Color(hex: "#9CA3DA"), friends: [AppUser.danielAgapov])
+    static let sports = FriendTag(id: UUID(), displayName: "Sports", color: Color(hex: "#CB4B2E"), friends: [AppUser.danielLee])
+    static let hobbies = FriendTag(id: UUID(), displayName: "Hobbies", color: Color(hex: "#A2C587"), friends: [AppUser.danielLee])
+    static let mockTags = [close, sports, hobbies]
 }
