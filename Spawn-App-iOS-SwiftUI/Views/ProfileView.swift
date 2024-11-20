@@ -33,18 +33,17 @@ struct ProfileView: View {
                         )
                         
                     
-                    Text("Name: \(NameFormatterService.shared.formatName(appUser: appUser))")
-                        .font(.headline)
+                    Text("Name \(NameFormatterService.shared.formatName(appUser: appUser))")
                     
                     // Username
-                    Text("Username: \(appUser.username)")
+                    Text("Username \(appUser.username)")
                     
                     // Email
-                    Text("Email: \(appUser.email)")
+                    Text("Email \(appUser.email)")
             
                     // Bio
                     if let bio = appUser.bio {
-                        Text("Bio: \(bio)")
+                        Text("Bio \(bio)")
                             .font(.body)
                     }
                     
@@ -67,6 +66,24 @@ struct ProfileView: View {
                     .padding(.horizontal)
 
                     Spacer()
+                    Spacer()
+                    Spacer()
+                    Spacer()
+                    Spacer()
+                    Spacer()
+
+                    // Logout Button
+                    Button(action: {
+                    }) {
+                        Text("Log Out")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(profilPicPlusButtonColor)
+                            .cornerRadius(20)
+                    }
+                    .padding(.horizontal)
                     
                     
                     // commented out friend tags and last location for now as it's not included in the Figma Design
