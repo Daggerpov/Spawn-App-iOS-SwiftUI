@@ -28,6 +28,7 @@ class AppUser: Identifiable {
 	var bio: String?
 	var friendTags: [FriendTag]?
 	var lastLocation: Location?
+    var email: String
 
 	init(
 		baseUser: User,
@@ -37,7 +38,8 @@ class AppUser: Identifiable {
 		lastName: String? = nil,
 		bio: String? = nil,
 		friendTags: [FriendTag]? = nil,
-		lastLocation: Location? = nil
+		lastLocation: Location? = nil,
+        email: String
 	) {
 		self.baseUser = baseUser
 		self.username = username
@@ -47,6 +49,7 @@ class AppUser: Identifiable {
 		self.bio = bio
         self.friendTags = friendTags
 		self.lastLocation = lastLocation
+        self.email = email
         
         // Add friends to the user's default "Everyone" tag
         if let friends = baseUser.friends {
@@ -78,7 +81,8 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
-        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [AppUser.danielLee])]
+        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [AppUser.danielLee])],
+        email: "daniel@agapov.com"
     )
         
     static let danielLee: AppUser = AppUser(
@@ -108,7 +112,8 @@ extension AppUser {
                 friends: [AppUser.jennifer, AppUser.haley, AppUser.shannon]
             )
         ],
-        lastLocation: Location.mockLocation
+        lastLocation: Location.mockLocation,
+        email: "daniel2456@gmail.com"
     )
 
     static let shannon: AppUser = AppUser(
@@ -116,7 +121,8 @@ extension AppUser {
         username: "shannonaurl",
         profilePicture: Image("Shannon_pfp"),
         firstName: "Shannon",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "shannon@gmail.com"
     )
     static let jennifer: AppUser = AppUser(
         baseUser: User.jennifer,
@@ -124,7 +130,8 @@ extension AppUser {
         profilePicture: Image("Jennifer_pfp"),
         firstName: "Jennifer",
         lastName: "Tjen",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "jennifer@gmail.com"
     )
     static let michael: AppUser = AppUser(
         baseUser: User.michael,
@@ -132,19 +139,22 @@ extension AppUser {
         profilePicture: Image("Michael_pfp"),
         firstName: "Michael",
         lastName: "Tham",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "michael@gmail.com"
     )
     static let haley: AppUser = AppUser(
         baseUser: User.haley,
         username: "haleyusername",
         profilePicture: Image("Haley_pfp"),
         firstName: "Haley",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "haley@gmail.com"
     )
     
     static let emptyUser: AppUser = AppUser(
         baseUser: User.emptyUser,
-        username: "Empty User"
+        username: "Empty User",
+        email: "empty@gmail.com"
     )
 
     static let mockAppUsers: [AppUser] = [danielAgapov, danielLee, shannon, jennifer, michael, haley]
