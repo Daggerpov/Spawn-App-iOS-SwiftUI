@@ -24,14 +24,17 @@ struct ProfileView: View {
                             .ProfileImageModifier(imageType: .profilePage)
                     }
                     
+                    Text("Name: \(NameFormatterService.shared.formatName(appUser: appUser))")
+                        .font(.headline)
+                    
                     // Username
                     Text("Username: \(appUser.username)")
                         .font(.title)
                         .bold()
                     
-                    Text(NameFormatterService.shared.formatName(appUser: appUser))
-                        .font(.headline)
-                    
+                    // Email
+                    Text("Email: \(appUser.email)")
+            
                     
                     // Bio
                     if let bio = appUser.bio {
@@ -39,25 +42,28 @@ struct ProfileView: View {
                             .font(.body)
                     }
                     
+                    
+                    // commented out friend tags and last location for now as it's not included in the Figma Design
+                    
                     // Friend Tags
-                    if let friendTags = appUser.friendTags, !friendTags.isEmpty {
-                        Text("Friend Tags:")
-                            .font(.headline)
-                        ForEach(friendTags) { tag in
-                            HStack {
-                                Circle()
-                                    .fill(tag.color)
-                                    .frame(width: 10, height: 10)
-                                Text(tag.displayName)
-                            }
-                        }
-                    }
+//                    if let friendTags = appUser.friendTags, !friendTags.isEmpty {
+//                        Text("Friend Tags:")
+//                            .font(.headline)
+//                        ForEach(friendTags) { tag in
+//                            HStack {
+//                                Circle()
+//                                    .fill(tag.color)
+//                                    .frame(width: 10, height: 10)
+//                                Text(tag.displayName)
+//                            }
+//                        }
+//                    }
                     
                     // Last Location
-                    if let lastLocation = appUser.lastLocation {
-                        Text("Last Location: \(lastLocation.locationName)")
-                            .font(.subheadline)
-                    }
+//                    if let lastLocation = appUser.lastLocation {
+//                        Text("Last Location: \(lastLocation.locationName)")
+//                            .font(.subheadline)
+//                    }
                 }
                 .padding()
                 .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")

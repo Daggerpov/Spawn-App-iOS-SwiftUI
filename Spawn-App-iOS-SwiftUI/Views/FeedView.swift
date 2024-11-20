@@ -100,8 +100,6 @@ struct FeedView: View {
                 ))
             // TODO: read up on the documentation: https://github.com/exyte/popupview
             // so that the description view is dismissed upon clicking outside
-            
-            // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingFriendsPopup) {
             FriendsListView(appUser: appUser)
@@ -114,8 +112,6 @@ struct FeedView: View {
                 ))
             // TODO: read up on the documentation: https://github.com/exyte/popupview
             // so that the description view is dismissed upon clicking outside
-            
-            // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingTagsPopup) {
             TagsListView(appUser: appUser)
@@ -128,8 +124,6 @@ struct FeedView: View {
                 ))
             // TODO: read up on the documentation: https://github.com/exyte/popupview
             // so that the description view is dismissed upon clicking outside
-            
-            // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingOpenFriendTagsPopup) {
             OpenFriendTagsView() { type in
