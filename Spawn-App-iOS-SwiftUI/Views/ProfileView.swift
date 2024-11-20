@@ -13,7 +13,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .center, spacing: 20) {
                     // Profile Picture
                     
                     if let profilePicture = appUser.profilePicture {
@@ -37,6 +37,7 @@ struct ProfileView: View {
                             Image(systemName: "plus")
                                 .foregroundColor(addButtonColor)
                         )
+                        .offset(x: 45, y: -45)
                         
                     
                     Text("Name \(NameFormatterService.shared.formatName(appUser: appUser))")
