@@ -19,10 +19,16 @@ struct ProfileView: View {
                     if let profilePicture = appUser.profilePicture {
                         profilePicture
                             .ProfileImageModifier(imageType: .profilePage)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
+                        
                     } else {
                         Image(systemName: "person.crop.circle.fill")
                             .ProfileImageModifier(imageType: .profilePage)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
                     }
+                        
                     
                     Circle()
                         .fill(profilPicPlusButtonColor)
