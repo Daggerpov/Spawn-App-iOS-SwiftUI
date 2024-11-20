@@ -48,6 +48,7 @@ struct ProfileView: View {
                             .font(.body)
                     }
                     
+                    Divider().background(universalAccentColor)
                     
                     // Edit Button
                     Button(action: {
