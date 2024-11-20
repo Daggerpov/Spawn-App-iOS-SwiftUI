@@ -29,12 +29,12 @@ struct EventCardView: View {
                 HStack{
 					VStack{
 						HStack{
-							EventTimeView(event: event).fixedSize()
+							EventInfoView(event: event, eventInfoType: .time)
 							Spacer()
 						}
                         Spacer()
 						HStack{
-							EventLocationView(event: event).fixedSize()
+							EventInfoView(event: event, eventInfoType: .location)
 							Spacer()
 						}
                     }

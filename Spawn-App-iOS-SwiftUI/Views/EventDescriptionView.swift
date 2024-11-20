@@ -24,8 +24,8 @@ struct EventDescriptionView: View {
                 
                 HStack {
                     VStack(alignment: .leading, spacing: 10) {
-                        EventTimeView(event: viewModel.event)
-                        EventLocationView(event: viewModel.event)
+						EventInfoView(event: viewModel.event, eventInfoType: .time)
+						EventInfoView(event: viewModel.event, eventInfoType: .location)
                     }
                     .foregroundColor(.white)
                     

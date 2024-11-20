@@ -1,5 +1,5 @@
 //
-//  EventTimeViewModel.swift
+//  EventInfoViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/11/24.
@@ -7,11 +7,24 @@
 
 import Foundation
 
-class EventTimeViewModel: ObservableObject {
-    @Published var eventTimeDisplayString: String = ""
-    
-    init(event: Event) {
-        self.eventTimeDisplayString = Self.formatEventTime(event: event)
+class EventInfoViewModel: ObservableObject {
+    @Published var eventInfoDisplayString: String
+	@Published var imageSystemName: String
+
+    init(event: Event, eventInfoType: EventInfoType) {
+		switch eventInfoType {
+			case .location:
+				imageSystemName = "map"
+				if let eventLocation = event.location?.locationName {
+					self.eventInfoDisplayString = eventLocation
+				} else {
+					// nil event location (should be error?)
+					self.eventInfoDisplayString = "No Location"
+				}
+			case .time:
+				imageSystemName = "clock"
+				self.eventInfoDisplayString = Self.formatEventTime(event: event)
+		}
     }
     static func formatEventTime(event: Event) -> String {
         var eventTimeDisplayStringLocal: String = ""

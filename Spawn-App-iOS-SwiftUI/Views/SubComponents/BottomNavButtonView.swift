@@ -31,7 +31,7 @@ struct BottomNavButtonView: View {
                 .clipShape(Circle())
                 .overlay(
                     Circle()
-                        .stroke(Color(hex: "#173131"), lineWidth: 2)
+                        .stroke(universalAccentColor, lineWidth: 2)
                 )
                 .overlay(
                     Group{
@@ -62,7 +62,7 @@ struct BottomNavButtonView: View {
                 .foregroundColor(universalBackgroundColor)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color(hex: "#173131"), lineWidth: 2)
+                        .stroke(universalAccentColor, lineWidth: 2)
                 )
                 .overlay(
                     NavigationLink(destination: {
