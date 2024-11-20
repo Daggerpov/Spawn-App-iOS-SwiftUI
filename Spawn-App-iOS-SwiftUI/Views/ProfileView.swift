@@ -29,7 +29,7 @@ struct ProfileView: View {
                         .frame(width: 30, height: 30)
                         .overlay(
                             Image(systemName: "plus")
-                                .foregroundColor(Color(hex: "#E7E7DD"))
+                                .foregroundColor(addButtonColor)
                         )
                         
                     
@@ -55,7 +55,7 @@ struct ProfileView: View {
                     }) {
                         Text("Edit")
                             .font(.headline)
-                            .foregroundColor(.black)
+                            .foregroundColor(universalAccentColor)
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(
