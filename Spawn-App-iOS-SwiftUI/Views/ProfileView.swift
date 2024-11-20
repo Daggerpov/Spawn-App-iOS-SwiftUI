@@ -24,18 +24,24 @@ struct ProfileView: View {
                             .ProfileImageModifier(imageType: .profilePage)
                     }
                     
+                    Circle()
+                        .fill(profilPicPlusButtonColor)
+                        .frame(width: 30, height: 30)
+                        .overlay(
+                            Image(systemName: "plus")
+                                .foregroundColor(Color(hex: "#E7E7DD"))
+                        )
+                        
+                    
                     Text("Name: \(NameFormatterService.shared.formatName(appUser: appUser))")
                         .font(.headline)
                     
                     // Username
                     Text("Username: \(appUser.username)")
-                        .font(.title)
-                        .bold()
                     
                     // Email
                     Text("Email: \(appUser.email)")
             
-                    
                     // Bio
                     if let bio = appUser.bio {
                         Text("Bio: \(bio)")
@@ -66,7 +72,7 @@ struct ProfileView: View {
 //                    }
                 }
                 .padding()
-                .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")
+//                .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")
             }
         }
     }
