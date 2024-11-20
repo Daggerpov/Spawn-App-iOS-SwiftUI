@@ -49,6 +49,25 @@ struct ProfileView: View {
                     }
                     
                     
+                    // Edit Button
+                    Button(action: {
+                        // Edit button action
+                    }) {
+                        Text("Edit")
+                            .font(.headline)
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.black, lineWidth: 1)
+                            )
+                    }
+                    .padding(.horizontal)
+
+                    Spacer()
+                    
+                    
                     // commented out friend tags and last location for now as it's not included in the Figma Design
                     
                     // Friend Tags
