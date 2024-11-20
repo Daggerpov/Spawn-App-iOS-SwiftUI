@@ -15,7 +15,6 @@ class EventCardViewModel: ObservableObject {
     init(appUser: AppUser, event: Event) {
         self.appUser = appUser
         self.event = event
-        
     }
     
     /// returns whether the logged in app user is part of the event's participants array
