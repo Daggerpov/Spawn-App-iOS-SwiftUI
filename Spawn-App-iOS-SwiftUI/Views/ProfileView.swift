@@ -44,7 +44,7 @@ struct ProfileView: View {
                                   .font(.headline)
                               Spacer()
                               Text("\(appUser.firstName ?? "") \(appUser.lastName ?? "")")
-                                  .multilineTextAlignment(.trailing)
+                                  .multilineTextAlignment(.leading)
                                   .font(.headline)
                           }
                           HStack {
@@ -52,7 +52,7 @@ struct ProfileView: View {
                                   .font(.headline)
                               Spacer()
                               Text(appUser.username)
-                                  .multilineTextAlignment(.trailing)
+                                  .multilineTextAlignment(.leading)
                                   .font(.headline)
                           }
                           HStack {
@@ -60,31 +60,29 @@ struct ProfileView: View {
                                   .font(.headline)
                               Spacer()
                               Text(appUser.email)
-                                  .multilineTextAlignment(.trailing)
+                                  .multilineTextAlignment(.leading)
                                   .font(.headline)
                           }
-                          if let bio = appUser.bio {
-                              HStack {
-                                  Text("Bio")
-                                      .font(.headline)
-                                  Spacer()
-                                  Text(bio)
-                                      .multilineTextAlignment(.trailing)
-                                      .font(.headline)
-                              }
-                          } else {
-                              HStack {
-                                  Text("Bio")
-                                      .font(.headline)
-                                  Spacer()
-                                  Text("No bio available")
-                                      .foregroundColor(.gray)
-                                      .multilineTextAlignment(.trailing)
-                              }
+                          HStack {
+                              Text("Bio")
+                                  .font(.headline)
+                              Spacer()
+                              TextField(
+                                      "",
+                                      text: Binding(
+                                          get: { appUser.bio ?? "" },
+                                          set: { appUser.bio = $0 }
+                                      ),
+                                      prompt: Text("Bio")
+                                          .foregroundColor(universalPlaceHolderTextColor)
+                                  )
+                                  .multilineTextAlignment(.leading)
+                                  .font(.headline)
                           }
                       }
                     .padding(.horizontal, 15)
                     
+                    Spacer()
                     Divider().background(universalAccentColor)
                     Spacer()
                     
@@ -95,7 +93,7 @@ struct ProfileView: View {
                         Text("Edit")
                             .font(.headline)
                             .foregroundColor(universalAccentColor)
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: 135)
                             .padding()
                             .background(
                                 RoundedRectangle(cornerRadius: 20)
@@ -108,7 +106,6 @@ struct ProfileView: View {
                     Spacer()
                     Spacer()
                     Spacer()
-                    Spacer()
 
                     // Logout Button
                     Button(action: {
@@ -117,7 +114,7 @@ struct ProfileView: View {
                             .font(.headline)
                             .foregroundColor(.white)
                             .padding()
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: 170)
                             .background(profilPicPlusButtonColor)
                             .cornerRadius(20)
                     }
