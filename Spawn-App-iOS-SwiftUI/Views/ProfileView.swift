@@ -39,48 +39,15 @@ struct ProfileView: View {
                         .offset(x: 45, y: -45)
                     
                     VStack(alignment: .leading, spacing: 25) {
-                          HStack {
-                              Text("Name")
-                                  .font(.headline)
-                              Spacer()
-                              Text("\(appUser.firstName ?? "") \(appUser.lastName ?? "")")
-                                  .multilineTextAlignment(.leading)
-                                  .font(.headline)
-                          }
-                          HStack {
-                              Text("Username")
-                                  .font(.headline)
-                              Spacer()
-                              Text(appUser.username)
-                                  .multilineTextAlignment(.leading)
-                                  .font(.headline)
-                          }
-                          HStack {
-                              Text("Email")
-                                  .font(.headline)
-                              Spacer()
-                              Text(appUser.email)
-                                  .multilineTextAlignment(.leading)
-                                  .font(.headline)
-                          }
-                          HStack {
-                              Text("Bio")
-                                  .font(.headline)
-                              Spacer()
-                              TextField(
-                                      "",
-                                      text: Binding(
-                                          get: { appUser.bio ?? "" },
-                                          set: { appUser.bio = $0 }
-                                      ),
-                                      prompt: Text("Bio")
-                                          .foregroundColor(universalPlaceHolderTextColor)
-                                  )
-                                  .multilineTextAlignment(.leading)
-                                  .font(.headline)
-                          }
-                      }
-                    .padding(.horizontal, 15)
+                       ProfileField(label: "Name", value: "\(appUser.firstName ?? "") \(appUser.lastName ?? "")")
+                       ProfileField(label: "Username", value: appUser.username)
+                       ProfileField(label: "Email", value: appUser.email)
+                       BioField(label: "Bio", bio: Binding(
+                           get: { appUser.bio ?? "" },
+                           set: { appUser.bio = $0 }
+                       ))
+                   }
+                   .padding(.horizontal)
                     
                     Spacer()
                     Divider().background(universalAccentColor)
@@ -147,6 +114,46 @@ struct ProfileView: View {
 //                .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")
             }
             .background(universalBackgroundColor)
+        }
+    }
+}
+
+
+struct ProfileField: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.headline)
+                .frame(width: 100, alignment: .leading)
+            Spacer()
+            Text(value)
+                .font(.body)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+}
+
+struct BioField: View {
+    let label: String
+    @Binding var bio: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.headline)
+                .frame(width: 80, alignment: .leading)
+            Spacer()
+            TextField(
+                "",
+                text: $bio,
+                prompt: Text("Bio")
+                    .foregroundColor(universalPlaceHolderTextColor)
+            )
+            .multilineTextAlignment(.trailing)
+            .font(.body)
         }
     }
 }
