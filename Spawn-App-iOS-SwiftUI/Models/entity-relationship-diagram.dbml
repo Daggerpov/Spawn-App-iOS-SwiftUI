@@ -1,25 +1,19 @@
 Table User {
     id UUID [pk]
-    friends UUID[] [ref: > User.id, note: "List of friend User IDs"]
-}
-
-Table AppUser {
-    id UUID [pk]
-    baseUser UUID [ref: > User.id]
+    friends UUID[] [ref: > User.id]
     username String
     profilePicture String // Replace with appropriate type if needed (e.g., URL or BLOB)
     firstName String
     lastName String
     bio String
-    lastLocation UUID [ref: > Location.id]
     friendTags UUID[] [ref: > FriendTag.id, note: "List of associated FriendTag IDs"]
 }
 
 Table FriendTag {
     id UUID [pk]
     displayName String
-    color String // Adjust type as needed
-    friends UUID[] [ref: > AppUser.id, note: "List of AppUser IDs"]
+    colorHexCode String // Adjust type as needed
+    friends UUID[] [ref: > User.id, note: "List of User IDs"]
 }
 
 Table Event {
@@ -44,5 +38,7 @@ Table ChatMessage {
 
 Table Location {
     id UUID [pk]
-    locationName String
+    name String
+    latitude Double
+    longitude Double
 }

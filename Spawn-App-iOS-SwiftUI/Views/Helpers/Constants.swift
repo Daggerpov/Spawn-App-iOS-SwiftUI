@@ -8,7 +8,10 @@
 import SwiftUI
 
 let universalRectangleCornerRadius: CGFloat = 20
-let eventColors: [Color] = [Color(hex: "#8084ac"), Color(hex: "#704444"), Color(hex: "#b0442c"), Color(hex: "#889c6c")]
+let eventColorHexCodes: [String] = ["#8084ac", "#704444", "#b0442c", "#889c6c"]
+let eventColors = eventColorHexCodes.map { colorHexCode in
+    Color(hex: colorHexCode)
+}
 let universalBackgroundColor: Color = Color(hex: "#E7E7DD")
 let universalAccentColor: Color = Color(hex: "#1D3D3D") // TODO: might want to define this in assets folder instead
 let profilPicPlusButtonColor: Color = Color(hex: "#D5583C")

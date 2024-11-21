@@ -10,15 +10,15 @@ class NameFormatterService {
     
     private init() {}
     
-    public func formatName(appUser: AppUser) -> String {
-        if let firstName = appUser.firstName {
-            if let lastName = appUser.lastName {
+    public func formatName(user: User) -> String {
+        if let firstName = user.firstName {
+            if let lastName = user.lastName {
                 return "\(firstName) \(lastName)"
             } else {
                 return firstName
             }
         }
-        if let lastName = appUser.lastName {
+        if let lastName = user.lastName {
             return lastName
         }
         return ""

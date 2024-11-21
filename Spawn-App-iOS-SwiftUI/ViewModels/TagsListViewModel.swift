@@ -10,19 +10,19 @@ import Foundation
 class TagsListViewModel: ObservableObject {
     @Published var friendTags: [FriendTag] = []
     @Published var searchText: String = ""
-    var appUser: AppUser
+    var user: User
     
-    init(appUser: AppUser) {
-        self.appUser = appUser
+    init(user: User) {
+        self.user = user
         self.friendTags = fetchTags()
     }
     
     func fetchTags() -> [FriendTag] {
         // TODO: implement later
-//        guard let baseUserFriends = appUser.baseUser.friends else { return [] }
+//        guard let baseUserFriends = user.baseuser.friends else { return [] }
 //        
 //        return baseUserFriends.compactMap { friend in
-//            AppUserService.shared.appUserLookup[friend.id] ?? AppUser.emptyUser
+//            UserService.shared.UserLookup[friend.id] ?? user.emptyUser
 //        }
         // change to event tags
         

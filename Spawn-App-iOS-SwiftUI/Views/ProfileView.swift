@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    var appUser: AppUser
+    var user: User
     
     var body: some View {
         NavigationStack {
@@ -16,8 +16,8 @@ struct ProfileView: View {
                 VStack(alignment: .center, spacing: 20) {
                     // Profile Picture
                     
-                    if let profilePicture = appUser.profilePicture {
-                        profilePicture
+                    if let profilePictureString = user.profilePicture {
+                        Image(profilePictureString)
                             .ProfileImageModifier(imageType: .profilePage)
                             .clipShape(Circle())
                             .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))

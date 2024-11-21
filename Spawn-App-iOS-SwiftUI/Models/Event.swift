@@ -24,9 +24,9 @@ class Event: Identifiable, Codable {
     var participants: [User]?
     var chatMessages: [ChatMessage]?
     
-    // tech note: this will be determined by the `AppUser`'s specified `FriendTag`s on
+    // tech note: this will be determined by the `User`'s specified `FriendTag`s on
     // the event, which will populate this `invited` property with the `FriendTag`s'
-    // `friends` property (`[AppUser]`), which all have a `baseUser` (`User`) property.
+    // `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
     var invited: [User]?
 
 	init(
