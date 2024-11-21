@@ -21,7 +21,6 @@ struct ProfileView: View {
                             .ProfileImageModifier(imageType: .profilePage)
                             .clipShape(Circle())
                             .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
-                        
                     } else {
                         Image(systemName: "person.crop.circle.fill")
                             .ProfileImageModifier(imageType: .profilePage)
@@ -39,12 +38,12 @@ struct ProfileView: View {
                         .offset(x: 45, y: -45)
                     
                     VStack(alignment: .leading, spacing: 25) {
-                       ProfileField(label: "Name", value: "\(appUser.firstName ?? "") \(appUser.lastName ?? "")")
-                       ProfileField(label: "Username", value: appUser.username)
-                       ProfileField(label: "Email", value: appUser.email)
+                       ProfileField(label: "Name", value: "\(user.firstName ?? "") \(user.lastName ?? "")")
+                       ProfileField(label: "Username", value: user.username)
+                       ProfileField(label: "Email", value: user.email)
                        BioField(label: "Bio", bio: Binding(
-                           get: { appUser.bio ?? "" },
-                           set: { appUser.bio = $0 }
+                           get: { user.bio ?? "" },
+                           set: { user.bio = $0 }
                        ))
                    }
                    .padding(.horizontal)
@@ -86,32 +85,8 @@ struct ProfileView: View {
                             .cornerRadius(20)
                     }
                     .padding(.horizontal)
-                    
-                    
-                    // commented out friend tags and last location for now as it's not included in the Figma Design
-                    
-                    // Friend Tags
-//                    if let friendTags = appUser.friendTags, !friendTags.isEmpty {
-//                        Text("Friend Tags:")
-//                            .font(.headline)
-//                        ForEach(friendTags) { tag in
-//                            HStack {
-//                                Circle()
-//                                    .fill(tag.color)
-//                                    .frame(width: 10, height: 10)
-//                                Text(tag.displayName)
-//                            }
-//                        }
-//                    }
-                    
-                    // Last Location
-//                    if let lastLocation = appUser.lastLocation {
-//                        Text("Last Location: \(lastLocation.locationName)")
-//                            .font(.subheadline)
-//                    }
                 }
                 .padding()
-//                .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")
             }
             .background(universalBackgroundColor)
         }
