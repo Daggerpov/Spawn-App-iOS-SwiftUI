@@ -16,8 +16,8 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // Profile Picture
                     
-                    if let profilePicture = User.profilePicture {
-                        profilePicture
+                    if let profilePictureString = user.profilePicture {
+                        Image(profilePictureString)
                             .ProfileImageModifier(imageType: .profilePage)
                     } else {
                         Image(systemName: "person.crop.circle.fill")
@@ -25,7 +25,7 @@ struct ProfileView: View {
                     }
                     
                     // Username
-                    Text("Username: \(User.username)")
+                    Text("Username: \(user.username)")
                         .font(.title)
                         .bold()
                     
@@ -34,13 +34,13 @@ struct ProfileView: View {
                     
                     
                     // Bio
-                    if let bio = User.bio {
+                    if let bio = user.bio {
                         Text("Bio: \(bio)")
                             .font(.body)
                     }
                     
                     // Friend Tags
-                    if let friendTags = User.friendTags, !friendTags.isEmpty {
+                    if let friendTags = user.friendTags, !friendTags.isEmpty {
                         Text("Friend Tags:")
                             .font(.headline)
                         ForEach(friendTags) { tag in
@@ -54,13 +54,13 @@ struct ProfileView: View {
                     }
                     
                     // Last Location
-                    if let lastLocation = User.lastLocation {
+                    if let lastLocation = user.lastLocation {
                         Text("Last Location: \(lastLocation.locationName)")
                             .font(.subheadline)
                     }
                 }
                 .padding()
-                .navigationTitle("\(User.firstName ?? User.username)'s Profile")
+                .navigationTitle("\(user.firstName ?? user.username)'s Profile")
             }
         }
     }

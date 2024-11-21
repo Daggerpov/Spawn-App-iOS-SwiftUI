@@ -20,7 +20,7 @@ class EventCardViewModel: ObservableObject {
     /// returns whether the logged in app user is part of the event's participants array
     public func fetchIsParticipating() -> Void {
         self.isParticipating = ((event.participants?.contains(where: { user in
-            user.id == User.id
+            user.id == user.id
         })) != nil)
     }
     
@@ -28,7 +28,7 @@ class EventCardViewModel: ObservableObject {
         if isParticipating {
             // remove user
             event.participants?.removeAll(where: { user in
-                user.id == User.id
+                user.id == user.id
             })
             isParticipating = false
         } else {
