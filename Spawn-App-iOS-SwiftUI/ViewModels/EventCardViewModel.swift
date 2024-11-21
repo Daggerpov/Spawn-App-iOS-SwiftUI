@@ -13,7 +13,7 @@ class EventCardViewModel: ObservableObject {
     var event: Event
 
     init(user: User, event: Event) {
-        self.User = User
+        self.user = user
         self.event = event
     }
     
@@ -32,7 +32,7 @@ class EventCardViewModel: ObservableObject {
             })
             isParticipating = false
         } else {
-            event.participants?.append(User)
+            event.participants?.append(user)
             isParticipating = true
         }
     }

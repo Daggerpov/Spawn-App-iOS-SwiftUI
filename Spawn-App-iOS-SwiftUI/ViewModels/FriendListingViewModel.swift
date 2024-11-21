@@ -16,7 +16,7 @@ class FriendListingViewModel: ObservableObject {
     
     init(person: User, user: User, isFriend: Bool) {
         self.person = person
-        self.User = User
+        self.user = user
         self.isFriend = isFriend
         self.formattedFriendName = fetchFormattedFriendName()
         fetchTagsForFriend()
@@ -33,7 +33,7 @@ class FriendListingViewModel: ObservableObject {
     }
     
     private func fetchFormattedFriendName() -> String {
-        return NameFormatterService.shared.formatName(User: person)
+        return NameFormatterService.shared.formatName(user: person)
     }
     
     public func addFriend() -> Void {

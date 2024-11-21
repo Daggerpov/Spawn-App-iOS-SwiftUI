@@ -12,7 +12,7 @@ struct FriendsListView: View {
     var user: User
     
     init(user: User) {
-        self.User = User
+        self.user = User
         self.viewModel = FriendsListViewModel(user: User)
     }
     

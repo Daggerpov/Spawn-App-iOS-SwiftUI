@@ -29,7 +29,7 @@ struct ProfileView: View {
                         .font(.title)
                         .bold()
                     
-                    Text(NameFormatterService.shared.formatName(user: User))
+                    Text(NameFormatterService.shared.formatName(user: user))
                         .font(.headline)
                     
                     

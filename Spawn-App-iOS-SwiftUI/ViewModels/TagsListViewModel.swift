@@ -13,7 +13,7 @@ class TagsListViewModel: ObservableObject {
     var user: User
     
     init(user: User) {
-        self.User = User
+        self.user = user
         self.friendTags = fetchTags()
     }
     

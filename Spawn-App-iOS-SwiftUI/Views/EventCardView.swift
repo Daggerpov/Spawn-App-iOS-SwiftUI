@@ -15,10 +15,10 @@ struct EventCardView: View {
     var callback: (Event, Color) -> Void
     
     init(user: User, event: Event, color: Color, callback: @escaping(Event, Color) -> Void) {
-        self.User = User
+        self.user = user
         self.event = event
         self.color = color
-        self.viewModel = EventCardViewModel(user: User, event: event)
+        self.viewModel = EventCardViewModel(user: user, event: event)
         self.callback = callback
     }
     var body: some View {

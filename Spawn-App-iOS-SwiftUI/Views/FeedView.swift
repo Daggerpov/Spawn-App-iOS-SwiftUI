@@ -153,7 +153,7 @@ struct FeedView: View {
 }
 
 #Preview {
-    FeedView(user: user.danielLee)
+    FeedView(user: User.danielLee)
 }
 
 extension FeedView {
