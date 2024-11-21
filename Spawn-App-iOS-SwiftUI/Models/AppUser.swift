@@ -16,13 +16,12 @@ import SwiftUI
 
 // tech note: for friend finding in map, can use `lastLocation`
 
-class AppUser: Identifiable {
-	var id: UUID {
-		baseUser.id
-	}
+class AppUser: Identifiable, Codable {
+    var id: UUID
+    var friends: [AppUser]?
 	var baseUser: User
 	var username: String
-	var profilePicture: Image?
+	var profilePicture: String? // TODO: re-think data type later
 	var firstName: String?
 	var lastName: String?
 	var bio: String?
@@ -30,7 +29,8 @@ class AppUser: Identifiable {
 	var lastLocation: Location?
 
 	init(
-		baseUser: User,
+        id: UUID,
+        friends: [AppUser]? = nil,
 		username: String,
 		profilePicture: Image? = nil,
 		firstName: String? = nil,
@@ -39,7 +39,8 @@ class AppUser: Identifiable {
 		friendTags: [FriendTag]? = nil,
 		lastLocation: Location? = nil
 	) {
-		self.baseUser = baseUser
+        self.id = id
+        self.friends = friends
 		self.username = username
 		self.profilePicture = profilePicture
 		self.firstName = firstName
@@ -72,7 +73,8 @@ class AppUser: Identifiable {
 
 extension AppUser {
     static let danielAgapov: AppUser = AppUser(
-		baseUser: User.danielAgapov,
+        id: UUID(),
+        friends: [],
         username: "daggerpov",
         profilePicture: Image("Daniel_Agapov_pfp"),
         firstName: "Daniel",
@@ -80,9 +82,10 @@ extension AppUser {
         bio: "This is my bio.",
         friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [AppUser.danielLee])]
     )
-        
+    
     static let danielLee: AppUser = AppUser(
-        baseUser: User.danielLee,
+        id: UUID(),
+        friends: [],
         username: "uhdlee",
         profilePicture: Image("Daniel_Lee_pfp"),
         firstName: "Daniel",
@@ -110,16 +113,18 @@ extension AppUser {
         ],
         lastLocation: Location.mockLocation
     )
-
+    
     static let shannon: AppUser = AppUser(
-        baseUser: User.shannon,
+        id: UUID(),
+        friends: [],
         username: "shannonaurl",
         profilePicture: Image("Shannon_pfp"),
         firstName: "Shannon",
         bio: "This is my bio."
     )
     static let jennifer: AppUser = AppUser(
-        baseUser: User.jennifer,
+        id: UUID(),
+        friends: [],
         username: "jenntjen",
         profilePicture: Image("Jennifer_pfp"),
         firstName: "Jennifer",
@@ -127,7 +132,8 @@ extension AppUser {
         bio: "This is my bio."
     )
     static let michael: AppUser = AppUser(
-        baseUser: User.michael,
+        id: UUID(),
+        friends: [],
         username: "michaeltham",
         profilePicture: Image("Michael_pfp"),
         firstName: "Michael",
@@ -135,7 +141,8 @@ extension AppUser {
         bio: "This is my bio."
     )
     static let haley: AppUser = AppUser(
-        baseUser: User.haley,
+        id: UUID(),
+        friends: [],
         username: "haleyusername",
         profilePicture: Image("Haley_pfp"),
         firstName: "Haley",
@@ -143,11 +150,22 @@ extension AppUser {
     )
     
     static let emptyUser: AppUser = AppUser(
-        baseUser: User.emptyUser,
+        id: UUID(),
+        friends: [],
         username: "Empty User"
     )
-
-    static let mockAppUsers: [AppUser] = [danielAgapov, danielLee, shannon, jennifer, michael, haley]
+    
+    static func setupFriends() {
+        danielAgapov.friends = [danielLee, shannon, jennifer, michael, haley]
+        danielLee.friends = [danielAgapov, jennifer, haley]
+        shannon.friends = [danielAgapov, danielLee]
+        jennifer.friends = [danielAgapov, danielLee, shannon]
+        michael.friends = [danielAgapov, danielLee, shannon, jennifer]
+        haley.friends = [danielAgapov, danielLee, shannon, jennifer, michael]
+    }
+    
+    static let mockAppUsers: [AppUser] = {
+        setupFriends()
+        return [danielAgapov, danielLee, shannon, jennifer, michael, haley]
+    } ()
 }
-
-
