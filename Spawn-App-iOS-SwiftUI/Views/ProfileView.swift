@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    var User: User
+    var user: User
     
     var body: some View {
         NavigationStack {
@@ -29,7 +29,7 @@ struct ProfileView: View {
                         .font(.title)
                         .bold()
                     
-                    Text(NameFormatterService.shared.formatName(User: User))
+                    Text(NameFormatterService.shared.formatName(user: User))
                         .font(.headline)
                     
                     

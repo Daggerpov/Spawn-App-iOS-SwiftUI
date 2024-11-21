@@ -10,9 +10,9 @@ import Foundation
 class FriendsListViewModel: ObservableObject {
     @Published var friends: [User] = []
     @Published var recommendedFriends: [User] = []
-    var User: User
+    var user: User
     
-    init(User: User) {
+    init(user: User) {
         self.User = User
         self.friends = fetchFriends()
         self.recommendedFriends = fetchRecommendedFriends()

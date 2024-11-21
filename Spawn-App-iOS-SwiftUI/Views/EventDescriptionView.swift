@@ -47,7 +47,7 @@ struct EventDescriptionView: View {
                         if let chatMessages = viewModel.event.chatMessages {
                             // TODO: remove this logic out of the view, and into view model
                             ForEach(chatMessages) { chatMessage in
-                                let User: User = chatMessage.user
+                                let user: User = chatMessage.user
                                 HStack{
                                     if let profilePicture = User.profilePicture {
                                         profilePicture

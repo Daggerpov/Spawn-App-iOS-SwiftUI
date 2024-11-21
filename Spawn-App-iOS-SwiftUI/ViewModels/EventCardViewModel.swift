@@ -9,10 +9,10 @@ import Foundation
 
 class EventCardViewModel: ObservableObject {
     @Published var isParticipating: Bool = false
-    var User: User
+    var user: User
     var event: Event
 
-    init(User: User, event: Event) {
+    init(user: User, event: Event) {
         self.User = User
         self.event = event
     }
@@ -32,10 +32,7 @@ class EventCardViewModel: ObservableObject {
             })
             isParticipating = false
         } else {
-            // join participants
-            if let user = UserService.shared.userLookup[User.id]{
-                event.participants?.append(user)
-            }
+            event.participants?.append(User)
             isParticipating = true
         }
     }

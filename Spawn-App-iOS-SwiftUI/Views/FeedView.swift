@@ -15,7 +15,7 @@ struct FeedView: View {
     @Namespace private var animation: Namespace.ID
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
-    var User: User
+    var user: User
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
@@ -48,7 +48,7 @@ struct FeedView: View {
                         LazyVStack(spacing: 15) {
                             ForEach(viewModel.events) {mockEvent in
                                 EventCardView(
-                                    User: User,
+                                    user: User,
                                     event: mockEvent,
                                     // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
                                     color: eventColors.randomElement() ?? Color.blue
@@ -104,7 +104,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingFriendsPopup) {
-            FriendsListView(User: User)
+            FriendsListView(user: User)
         } customize: {
             $0
                 .type(.floater(
@@ -118,7 +118,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingTagsPopup) {
-            TagsListView(User: User)
+            TagsListView(user: User)
         } customize: {
             $0
                 .type(.floater(
@@ -153,7 +153,7 @@ struct FeedView: View {
 }
 
 #Preview {
-    FeedView(User: User.danielLee)
+    FeedView(user: User.danielLee)
 }
 
 extension FeedView {
@@ -182,7 +182,7 @@ extension FeedView {
             
             if let pfp = User.profilePicture {
                 NavigationLink {
-                    ProfileView(User: User)
+                    ProfileView(user: User)
                 } label: {
                     pfp
                         .ProfileImageModifier(imageType: .feedPage)

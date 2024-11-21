@@ -12,7 +12,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 
     var body: some Scene {
         WindowGroup {
-            FeedView(User: User.danielLee)
+            FeedView(user: User.danielLee)
         }
     }
 }

@@ -10,9 +10,9 @@ import Foundation
 class TagsListViewModel: ObservableObject {
     @Published var friendTags: [FriendTag] = []
     @Published var searchText: String = ""
-    var User: User
+    var user: User
     
-    init(User: User) {
+    init(user: User) {
         self.User = User
         self.friendTags = fetchTags()
     }

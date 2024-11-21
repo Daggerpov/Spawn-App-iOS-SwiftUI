@@ -11,9 +11,9 @@ struct FriendListingView: View {
     @ObservedObject var viewModel: FriendListingViewModel
     var person: User
     
-    init(person: User, User: User, isFriend: Bool) {
+    init(person: User, user: User, isFriend: Bool) {
         self.person = person
-        self.viewModel = FriendListingViewModel(person: person, User: User, isFriend: isFriend)
+        self.viewModel = FriendListingViewModel(person: person, user: User, isFriend: isFriend)
     }
     var body: some View {
         Group{

@@ -33,7 +33,7 @@ struct ParticipantsImagesView: View {
             ForEach(participantsCleanup(participants: event.participants ?? []), id: \.self.id) { participant in
                 if let UserParticipant = UserService.shared.UserLookup[participant.id] {
                     NavigationLink(
-                        destination: ProfileView(User: UserParticipant),
+                        destination: ProfileView(user: UserParticipant),
                         label: {
                             if let profilePicture = UserParticipant.profilePicture {
                                 profilePicture

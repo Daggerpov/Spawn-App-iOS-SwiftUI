@@ -10,11 +10,11 @@ import Foundation
 class FriendListingViewModel: ObservableObject {
     @Published var tagsForFriend: [FriendTag] = []
     var person: User
-    var User: User
+    var user: User
     var isFriend: Bool
     var formattedFriendName: String = ""
     
-    init(person: User, User: User, isFriend: Bool) {
+    init(person: User, user: User, isFriend: Bool) {
         self.person = person
         self.User = User
         self.isFriend = isFriend
