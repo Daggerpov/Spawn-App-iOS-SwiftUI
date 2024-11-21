@@ -13,8 +13,8 @@ Table of contents:
 ![image](https://github.com/user-attachments/assets/1d9f156e-39d9-4d03-b9f4-5eff24b68b4e)
 ![Nov 14th](current-app-look-images/friends-list.png)
 ![Nov 19th - Tags View](current-app-look-images/tags-view.png)
-![alt text](current-app-look-images/event-description-modal.png)
 ![alt text](current-app-look-images/profile-page.png)
+![alt text](current-app-look-images/event-description-modal.png)
 
 # Entity Relationship Diagram
 
