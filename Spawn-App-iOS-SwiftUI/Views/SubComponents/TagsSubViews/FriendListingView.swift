@@ -13,14 +13,14 @@ struct FriendListingView: View {
     
     init(person: User, user: User, isFriend: Bool) {
         self.person = person
-        self.viewModel = FriendListingViewModel(person: person, user: User, isFriend: isFriend)
+        self.viewModel = FriendListingViewModel(person: person, user: user, isFriend: isFriend)
     }
     var body: some View {
         Group{
             if viewModel.isFriend {
                 HStack{
-                    if let pfp = person.profilePicture {
-                        pfp
+                    if let profilePictureString = person.profilePicture {
+                        Image(profilePictureString)
                             .ProfileImageModifier(imageType: .friendsListView)
                     } else {
                         Image(systemName: "person.crop.circle.fill")

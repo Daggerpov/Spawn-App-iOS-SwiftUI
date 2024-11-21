@@ -31,17 +31,15 @@ struct ParticipantsImagesView: View {
         HStack {
             Spacer()
             ForEach(participantsCleanup(participants: event.participants ?? []), id: \.self.id) { participant in
-                if let UserParticipant = UserService.shared.UserLookup[participant.id] {
-                    NavigationLink(
-                        destination: ProfileView(user: UserParticipant),
-                        label: {
-                            if let profilePicture = UserParticipant.profilePicture {
-                                profilePicture
-                                    .ProfileImageModifier(imageType: .eventParticipants)
-                            }
+                NavigationLink(
+                    destination: ProfileView(user: participant),
+                    label: {
+                        if let profilePictureString = participant.profilePicture {
+                            Image(profilePictureString)
+                                .ProfileImageModifier(imageType: .eventParticipants)
                         }
-                    )
-                }
+                    }
+                )
             }
         }
     }
