@@ -54,7 +54,7 @@ extension FriendListingView {
                             .foregroundColor(.white) // Adjust text color if needed
                             .background(
                                 Capsule()
-                                    .fill(Color(friendTag.colorHexCode))
+                                    .fill(Color(hex: friendTag.colorHexCode))
                             )
                     }
                     Spacer()

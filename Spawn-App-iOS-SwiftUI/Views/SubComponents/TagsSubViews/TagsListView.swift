@@ -32,7 +32,7 @@ struct TagsListView: View {
 						.padding()
 						.padding(.vertical, 10)
 						.foregroundColor(.white)
-                        .background(Color(friendTag.colorHexCode))
+                        .background(Color(hex: friendTag.colorHexCode))
 						.cornerRadius(universalRectangleCornerRadius)
                         .padding(.horizontal)
                     }

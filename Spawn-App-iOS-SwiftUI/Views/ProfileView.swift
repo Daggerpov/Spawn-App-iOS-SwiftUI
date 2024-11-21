@@ -46,7 +46,7 @@ struct ProfileView: View {
                         ForEach(friendTags) { tag in
                             HStack {
                                 Circle()
-                                    .fill(Color(tag.colorHexCode))
+                                    .fill(Color(hex: tag.colorHexCode))
                                     .frame(width: 10, height: 10)
                                 Text(tag.displayName)
                             }
