@@ -14,8 +14,6 @@ import SwiftUI
 // tech note: for new friend searching, it should first be done by username, but
 // we could also search by first name and last name, if provided (thus, optional types).
 
-// tech note: for friend finding in map, can use `lastLocation`
-
 class User: Identifiable, Codable {
     var id: UUID
     var friends: [User]?
@@ -25,7 +23,7 @@ class User: Identifiable, Codable {
     var lastName: String?
     var bio: String?
     var friendTags: [FriendTag]?
-    var lastLocation: Location?
+    var email: String
     
     init(
         id: UUID,
@@ -36,7 +34,7 @@ class User: Identifiable, Codable {
         lastName: String? = nil,
         bio: String? = nil,
         friendTags: [FriendTag]? = nil,
-        lastLocation: Location? = nil
+        email: String
     ) {
         self.id = id
         self.friends = friends
@@ -46,7 +44,7 @@ class User: Identifiable, Codable {
         self.lastName = lastName
         self.bio = bio
         self.friendTags = friendTags
-        self.lastLocation = lastLocation
+        self.email = email
         
         // Add friends to the user's default "Everyone" tag
         if let friends = friends {
@@ -74,7 +72,8 @@ extension User {
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
-        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes.randomElement() ?? "#ffffff", friends: [User.danielLee])]
+        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes.randomElement() ?? "#ffffff", friends: [User.danielLee])],
+        email: "daniel@agapov.com"
     )
     
     static let danielLee: User = User(
@@ -105,7 +104,7 @@ extension User {
                 friends: [User.jennifer, User.haley, User.shannon]
             )
         ],
-        lastLocation: Location.mockLocation
+        email: "daniel2456@gmail.com"
     )
     
     static let shannon: User = User(
@@ -114,7 +113,8 @@ extension User {
         username: "shannonaurl",
         profilePicture: "Shannon_pfp",
         firstName: "Shannon",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "shannon@gmail.com"
     )
     static let jennifer: User = User(
         id: UUID(),
@@ -123,7 +123,8 @@ extension User {
         profilePicture: "Jennifer_pfp",
         firstName: "Jennifer",
         lastName: "Tjen",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "jennifer@gmail.com"
     )
     static let michael: User = User(
         id: UUID(),
@@ -132,7 +133,8 @@ extension User {
         profilePicture: "Michael_pfp",
         firstName: "Michael",
         lastName: "Tham",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "haley@gmail.com"
     )
     static let haley: User = User(
         id: UUID(),
@@ -140,13 +142,16 @@ extension User {
         username: "haleyusername",
         profilePicture: "Haley_pfp",
         firstName: "Haley",
-        bio: "This is my bio."
+        bio: "This is my bio.",
+        email: "haley@gmail.com"
     )
     
     static let emptyUser: User = User(
         id: UUID(),
         friends: [],
-        username: "Empty User"
+        username: "empty username",
+        bio: "This is my bio.",
+        email: "haley@gmail.com"
     )
     
     static func setupFriends() {
