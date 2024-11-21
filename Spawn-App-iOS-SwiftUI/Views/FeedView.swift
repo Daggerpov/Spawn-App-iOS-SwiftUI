@@ -15,7 +15,7 @@ struct FeedView: View {
     @Namespace private var animation: Namespace.ID
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
-    var appUser: AppUser
+    var user: User
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
@@ -30,36 +30,12 @@ struct FeedView: View {
                 Spacer()
                 headerView.padding(.top, 50)
                 Spacer()
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(mockTags, id: \.self) { mockTag in
-                            TagButtonView(mockTag: mockTag, activeTag: $activeTag, animation: animation)
-                        }
-                    }
-                    .padding(.top, 10)
-                    .padding(.leading, 16)
-                    .padding(.trailing, 16)
-                }
+                tagsView
                 // TODO: implement logic here to adjust search results when the tag clicked is changed
                 Spacer()
                 Spacer()
                 VStack{
-                    ScrollView(.vertical) {
-                        LazyVStack(spacing: 15) {
-                            ForEach(viewModel.events) {mockEvent in
-                                EventCardView(
-                                    appUser: appUser,
-                                    event: mockEvent,
-                                    // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
-                                    color: eventColors.randomElement() ?? Color.blue
-                                ) { event, color in
-                                    eventInPopup = event
-                                    colorInPopup = color
-                                    showingEventDescriptionPopup = true
-                                }
-                            }
-                        }
-                    }
+                    eventsListView
                     HStack (spacing: 35) {
                         BottomNavButtonView(buttonType: .map)
                         Spacer()
@@ -70,10 +46,8 @@ struct FeedView: View {
                                 showingOpenFriendTagsPopup = true
                             }
                     }
-                    
                 }
                 .padding(.horizontal)
-                
             }
             .padding()
             .background(universalBackgroundColor)
@@ -82,14 +56,12 @@ struct FeedView: View {
         }
         // TODO: fix these repetitive popups; maybe separate into another component
         .popup(isPresented: $showingEventDescriptionPopup) {
-            if let event = eventInPopup {
-                if let color = colorInPopup {
-                    EventDescriptionView(
-                        event: event,
-                        appUsers: AppUser.mockAppUsers,
-                        color: color
-                    )
-                }
+            if let event = eventInPopup, let color = colorInPopup {
+                EventDescriptionView(
+                    event: event,
+                    users: User.mockUsers,
+                    color: color
+                )
             }
         } customize: {
             $0
@@ -104,7 +76,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingFriendsPopup) {
-            FriendsListView(appUser: appUser)
+            FriendsListView(user: user)
         } customize: {
             $0
                 .type(.floater(
@@ -118,7 +90,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingTagsPopup) {
-            TagsListView(appUser: appUser)
+            TagsListView(user: user)
         } customize: {
             $0
                 .type(.floater(
@@ -153,7 +125,7 @@ struct FeedView: View {
 }
 
 #Preview {
-    FeedView(appUser: AppUser.danielLee)
+    FeedView(user: User.danielLee)
 }
 
 extension FeedView {
@@ -169,7 +141,7 @@ extension FeedView {
                 
                 HStack{
                     Image(systemName: "star.fill")
-                    Text(appUser.username)
+                    Text(user.username)
                         .bold()
                         .font(.largeTitle)
                     Spacer()
@@ -180,11 +152,11 @@ extension FeedView {
             .frame(alignment: .leading)
             Spacer()
             
-            if let pfp = appUser.profilePicture {
+            if let profilePictureString = user.profilePicture {
                 NavigationLink {
-                    ProfileView(appUser: appUser)
+                    ProfileView(user: user)
                 } label: {
-                    pfp
+                    Image(profilePictureString)
                         .ProfileImageModifier(imageType: .feedPage)
                 }
             }
@@ -192,6 +164,38 @@ extension FeedView {
         }
         .padding(.horizontal)
         .padding(.vertical, 2)
+    }
+    
+    var tagsView: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(mockTags, id: \.self) { mockTag in
+                    TagButtonView(mockTag: mockTag, activeTag: $activeTag, animation: animation)
+                }
+            }
+            .padding(.top, 10)
+            .padding(.leading, 16)
+            .padding(.trailing, 16)
+        }
+    }
+    
+    var eventsListView: some View {
+        ScrollView(.vertical) {
+            LazyVStack(spacing: 15) {
+                ForEach(viewModel.events) {mockEvent in
+                    EventCardView(
+                        user: user,
+                        event: mockEvent,
+                        // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
+                        color: eventColors.randomElement() ?? Color.blue
+                    ) { event, color in
+                        eventInPopup = event
+                        colorInPopup = color
+                        showingEventDescriptionPopup = true
+                    }
+                }
+            }
+        }
     }
 }
 

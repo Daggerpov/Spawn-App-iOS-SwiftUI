@@ -11,8 +11,8 @@ struct EventDescriptionView: View {
     @ObservedObject var viewModel: EventDescriptionViewModel
     var color: Color
     
-    init(event: Event, appUsers: [AppUser], color: Color) {
-        self.viewModel = EventDescriptionViewModel(event: event, appUsers: appUsers)
+    init(event: Event, users: [User], color: Color) {
+        self.viewModel = EventDescriptionViewModel(event: event, users: users)
         self.color = color
     }
     
@@ -47,14 +47,14 @@ struct EventDescriptionView: View {
                         if let chatMessages = viewModel.event.chatMessages {
                             // TODO: remove this logic out of the view, and into view model
                             ForEach(chatMessages) { chatMessage in
-                                let appUser: AppUser = AppUserService.shared.appUserLookup[chatMessage.user.id] ?? AppUser.emptyUser
+                                let user: User = chatMessage.user
                                 HStack{
-                                    if let profilePicture = appUser.profilePicture {
-                                        profilePicture
+                                    if let profilePictureString = user.profilePicture {
+                                        Image(profilePictureString)
                                             .ProfileImageModifier(imageType: .chatMessage)
                                     }
                                     VStack{
-                                        Text(appUser.username)
+                                        Text(user.username)
                                         Text(chatMessage.message)
                                     }
                                     Spacer()

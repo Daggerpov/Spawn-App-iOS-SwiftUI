@@ -3,7 +3,7 @@ Table User {
     friends UUID[] [ref: > User.id, note: "List of friend User IDs"]
 }
 
-Table AppUser {
+Table User {
     id UUID [pk]
     baseUser UUID [ref: > User.id]
     username String
@@ -19,7 +19,7 @@ Table FriendTag {
     id UUID [pk]
     displayName String
     color String // Adjust type as needed
-    friends UUID[] [ref: > AppUser.id, note: "List of AppUser IDs"]
+    friends UUID[] [ref: > User.id, note: "List of User IDs"]
 }
 
 Table Event {

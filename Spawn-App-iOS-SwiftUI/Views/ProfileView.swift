@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    var appUser: AppUser
+    var user: User
     
     var body: some View {
         NavigationStack {
@@ -16,8 +16,8 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // Profile Picture
                     
-                    if let profilePicture = appUser.profilePicture {
-                        profilePicture
+                    if let profilePictureString = user.profilePicture {
+                        Image(profilePictureString)
                             .ProfileImageModifier(imageType: .profilePage)
                     } else {
                         Image(systemName: "person.crop.circle.fill")
@@ -25,28 +25,28 @@ struct ProfileView: View {
                     }
                     
                     // Username
-                    Text("Username: \(appUser.username)")
+                    Text("Username: \(user.username)")
                         .font(.title)
                         .bold()
                     
-                    Text(NameFormatterService.shared.formatName(appUser: appUser))
+                    Text(NameFormatterService.shared.formatName(user: user))
                         .font(.headline)
                     
                     
                     // Bio
-                    if let bio = appUser.bio {
+                    if let bio = user.bio {
                         Text("Bio: \(bio)")
                             .font(.body)
                     }
                     
                     // Friend Tags
-                    if let friendTags = appUser.friendTags, !friendTags.isEmpty {
+                    if let friendTags = user.friendTags, !friendTags.isEmpty {
                         Text("Friend Tags:")
                             .font(.headline)
                         ForEach(friendTags) { tag in
                             HStack {
                                 Circle()
-                                    .fill(tag.color)
+                                    .fill(Color(hex: tag.colorHexCode))
                                     .frame(width: 10, height: 10)
                                 Text(tag.displayName)
                             }
@@ -54,13 +54,13 @@ struct ProfileView: View {
                     }
                     
                     // Last Location
-                    if let lastLocation = appUser.lastLocation {
+                    if let lastLocation = user.lastLocation {
                         Text("Last Location: \(lastLocation.locationName)")
                             .font(.subheadline)
                     }
                 }
                 .padding()
-                .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")
+                .navigationTitle("\(user.firstName ?? user.username)'s Profile")
             }
         }
     }

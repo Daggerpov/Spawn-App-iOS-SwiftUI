@@ -12,25 +12,25 @@
 // the events against the event creator and see whether the event creator is
 // one of the `FriendTag`'s `friends`.
 
-import SwiftUI
+import Foundation
 
-class FriendTag: Identifiable {
+class FriendTag: Identifiable, Codable {
     var id: UUID
     var displayName: String
-    var color: Color
-    var friends: [AppUser]?
+    var colorHexCode: String
+    var friends: [User]?
 
-    init(id: UUID, displayName: String, color: Color, friends: [AppUser]? = nil) {
+    init(id: UUID, displayName: String, colorHexCode: String, friends: [User]? = nil) {
         self.id = id
         self.displayName = displayName
-		self.color = color
+		self.colorHexCode = colorHexCode
 		self.friends = friends
 	}
 }
 
 extension FriendTag {
-    static let close = FriendTag(id: UUID(), displayName: "Close Friends", color: Color(hex: "#9CA3DA"), friends: [AppUser.danielAgapov])
-    static let sports = FriendTag(id: UUID(), displayName: "Sports", color: Color(hex: "#CB4B2E"), friends: [AppUser.danielLee])
-    static let hobbies = FriendTag(id: UUID(), displayName: "Hobbies", color: Color(hex: "#A2C587"), friends: [AppUser.danielLee])
+    static let close = FriendTag(id: UUID(), displayName: "Close Friends", colorHexCode: "#9CA3DA", friends: [User.danielAgapov])
+    static let sports = FriendTag(id: UUID(), displayName: "Sports", colorHexCode: "#CB4B2E", friends: [User.danielLee])
+    static let hobbies = FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: "#A2C587", friends: [User.danielLee])
     static let mockTags = [close, sports, hobbies]
 }

@@ -9,11 +9,11 @@ import SwiftUI
 
 struct FriendsListView: View {
     @ObservedObject var viewModel: FriendsListViewModel
-    var appUser: AppUser
+    var user: User
     
-    init(appUser: AppUser) {
-        self.appUser = appUser
-        self.viewModel = FriendsListViewModel(appUser: appUser)
+    init(user: User) {
+        self.user = user
+        self.viewModel = FriendsListViewModel(user: user)
     }
     
     var body: some View {
@@ -24,10 +24,10 @@ struct FriendsListView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     // Title and Time Information
                     ForEach(viewModel.friends) { friend in
-                        FriendListingView(person: friend, appUser: appUser, isFriend: true)
+                        FriendListingView(person: friend, user: user, isFriend: true)
                     }
                     ForEach(viewModel.recommendedFriends) { recommendedFriend in
-                        FriendListingView(person: recommendedFriend, appUser: appUser, isFriend: false)
+                        FriendListingView(person: recommendedFriend, user: user, isFriend: false)
                     }
                 }
             }

@@ -9,14 +9,14 @@ import Foundation
 
 class FriendListingViewModel: ObservableObject {
     @Published var tagsForFriend: [FriendTag] = []
-    var person: AppUser
-    var appUser: AppUser
+    var person: User
+    var user: User
     var isFriend: Bool
     var formattedFriendName: String = ""
     
-    init(person: AppUser, appUser: AppUser, isFriend: Bool) {
+    init(person: User, user: User, isFriend: Bool) {
         self.person = person
-        self.appUser = appUser
+        self.user = user
         self.isFriend = isFriend
         self.formattedFriendName = fetchFormattedFriendName()
         fetchTagsForFriend()
@@ -24,7 +24,7 @@ class FriendListingViewModel: ObservableObject {
     
     private func fetchTagsForFriend() -> Void {
         if isFriend {
-            guard let friendTags = appUser.friendTags else { return }
+            guard let friendTags = user.friendTags else { return }
             
             tagsForFriend = friendTags.filter { friendTag in
                 friendTag.friends?.contains(where: { $0.id == person.id }) == true
@@ -33,7 +33,7 @@ class FriendListingViewModel: ObservableObject {
     }
     
     private func fetchFormattedFriendName() -> String {
-        return NameFormatterService.shared.formatName(appUser: person)
+        return NameFormatterService.shared.formatName(user: person)
     }
     
     public func addFriend() -> Void {
