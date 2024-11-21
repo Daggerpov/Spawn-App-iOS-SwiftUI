@@ -11,7 +11,7 @@ struct TagsListView: View {
     @ObservedObject var viewModel: TagsListViewModel
     
     init(user: User) {
-        self.viewModel = TagsListViewModel(user: User)
+        self.viewModel = TagsListViewModel(user: user)
     }
     
     var body: some View {
@@ -32,7 +32,7 @@ struct TagsListView: View {
 						.padding()
 						.padding(.vertical, 10)
 						.foregroundColor(.white)
-                        .background(friendTag.color)
+                        .background(Color(friendTag.colorHexCode))
 						.cornerRadius(universalRectangleCornerRadius)
                         .padding(.horizontal)
                     }

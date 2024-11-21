@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+// TODO: refactor this heavily copy-pasted code I wrote later - Daniel
 struct FriendListingView: View {
     @ObservedObject var viewModel: FriendListingViewModel
     var person: User
@@ -18,98 +19,99 @@ struct FriendListingView: View {
     var body: some View {
         Group{
             if viewModel.isFriend {
-                HStack{
-                    if let profilePictureString = person.profilePicture {
-                        Image(profilePictureString)
-                            .ProfileImageModifier(imageType: .friendsListView)
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .ProfileImageModifier(imageType: .friendsListView)
-                    }
-                    VStack{
-                        HStack{
-                            Image(systemName: "star.fill")
-                            Text(person.username)
-                                .bold()
-                                .font(.headline)
-                            Spacer()
-                        }
-						.padding(.leading, 10)
-                        .padding(.trailing, 16)
-                        .font(.subheadline)
-                        .foregroundColor(universalBackgroundColor)
-                        HStack{
-                            ForEach(viewModel.tagsForFriend) { friendTag in
-                                // TODO: implement navigation from friend tag to friend tag view, which I'll do now, inside of "View Tags" popup
-                                Text(friendTag.displayName)
-                                    .font(.caption)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .foregroundColor(.white) // Adjust text color if needed
-                                    .background(
-                                        Capsule()
-                                            .fill(friendTag.color)
-                                    )
-                            }
-                            Spacer()
-                        }
-                        .padding(.leading, 10)
+                isFriendView
+            } else {
+                isNotFriendView
+            }
+        }
+    }
+}
 
+extension FriendListingView {
+    var isFriendView: some View {
+        HStack{
+            Image(person.profilePicture ?? "person.crop.circle.fill")
+                .ProfileImageModifier(imageType: .friendsListView)
+            VStack{
+                HStack{
+                    Image(systemName: "star.fill")
+                    Text(person.username)
+                        .bold()
+                        .font(.headline)
+                    Spacer()
+                }
+                .padding(.leading, 10)
+                .padding(.trailing, 16)
+                .font(.subheadline)
+                .foregroundColor(universalBackgroundColor)
+                HStack{
+                    ForEach(viewModel.tagsForFriend) { friendTag in
+                        // TODO: implement navigation from friend tag to friend tag view, which I'll do now, inside of "View Tags" popup
+                        Text(friendTag.displayName)
+                            .font(.caption)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .foregroundColor(.white) // Adjust text color if needed
+                            .background(
+                                Capsule()
+                                    .fill(Color(friendTag.colorHexCode))
+                            )
                     }
                     Spacer()
                 }
-                .frame(maxWidth: .infinity)
-                .padding(20)
-                .background(universalAccentColor)
-                .cornerRadius(universalRectangleCornerRadius)
-            } else {
-                // not a friend
-                HStack{
+                .padding(.leading, 10)
+                
+            }
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(20)
+        .background(universalAccentColor)
+        .cornerRadius(universalRectangleCornerRadius)
+    }
+    
+    var isNotFriendView: some View {
+        // not a friend
+        HStack{
+            HStack{
+                Image(person.profilePicture ?? "person.crop.circle.fill")
+                    .ProfileImageModifier(imageType: .friendsListView)
+                
+                VStack{
                     HStack{
-                        if let pfp = person.profilePicture {
-                            pfp
-                                .ProfileImageModifier(imageType: .friendsListView)
-                        } else {
-                            Image(systemName: "person.crop.circle.fill")
-                                .ProfileImageModifier(imageType: .friendsListView)
-                        }
-                        VStack{
-                            HStack{
-                                Image(systemName: "star.fill")
-                                Text(person.username)
-                                    .bold()
-                                    .font(.headline)
-                                Spacer()
-                            }
-                            .padding(.leading, 10)
-							.padding(.trailing, 16)
-                            .font(.subheadline)
-                            .foregroundColor(universalBackgroundColor)
-                            HStack{
-                                Text(viewModel.formattedFriendName)
-                                    .bold()
-									.padding(.leading, 10)
-									.padding(.trailing, 16)
-                                    .padding(.vertical, 0.25)
-                                    .font(.headline)
-                                    .foregroundColor(universalBackgroundColor)
-                                Spacer()
-                            }
-                        }
+                        Image(systemName: "star.fill")
+                        Text(person.username)
+                            .bold()
+                            .font(.headline)
                         Spacer()
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(20)
-                    .background(universalAccentColor)
-                    .cornerRadius(universalRectangleCornerRadius)
-                    Spacer()
-                    Circle()
-                        .CircularButton(systemName: "person.2.badge.plus.fill", buttonActionCallback: {
-                            viewModel.addFriend()
-                        }, width: 25, height: 20, frameSize: 45)
-                        .padding(.leading, 10)
+                    .padding(.leading, 10)
+                    .padding(.trailing, 16)
+                    .font(.subheadline)
+                    .foregroundColor(universalBackgroundColor)
+                    HStack{
+                        Text(viewModel.formattedFriendName)
+                            .bold()
+                            .padding(.leading, 10)
+                            .padding(.trailing, 16)
+                            .padding(.vertical, 0.25)
+                            .font(.headline)
+                            .foregroundColor(universalBackgroundColor)
+                        Spacer()
+                    }
                 }
+                Spacer()
             }
+            .frame(maxWidth: .infinity)
+            .padding(20)
+            .background(universalAccentColor)
+            .cornerRadius(universalRectangleCornerRadius)
+            Spacer()
+            Circle()
+                .CircularButton(systemName: "person.2.badge.plus.fill", buttonActionCallback: {
+                    viewModel.addFriend()
+                }, width: 25, height: 20, frameSize: 45)
+                .padding(.leading, 10)
         }
     }
 }

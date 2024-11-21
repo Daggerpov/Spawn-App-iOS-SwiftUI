@@ -11,8 +11,8 @@ struct EventDescriptionView: View {
     @ObservedObject var viewModel: EventDescriptionViewModel
     var color: Color
     
-    init(event: Event, Users: [User], color: Color) {
-        self.viewModel = EventDescriptionViewModel(event: event, Users: Users)
+    init(event: Event, users: [User], color: Color) {
+        self.viewModel = EventDescriptionViewModel(event: event, users: users)
         self.color = color
     }
     
@@ -49,8 +49,8 @@ struct EventDescriptionView: View {
                             ForEach(chatMessages) { chatMessage in
                                 let user: User = chatMessage.user
                                 HStack{
-                                    if let profilePicture = user.profilePicture {
-                                        profilePicture
+                                    if let profilePictureString = user.profilePicture {
+                                        Image(profilePictureString)
                                             .ProfileImageModifier(imageType: .chatMessage)
                                     }
                                     VStack{
