@@ -19,55 +19,50 @@ import SwiftUI
 class User: Identifiable, Codable {
     var id: UUID
     var friends: [User]?
-	var username: String
-	var profilePicture: String? // TODO: re-think data type later
-	var firstName: String?
-	var lastName: String?
-	var bio: String?
-	var friendTags: [FriendTag]?
-	var lastLocation: Location?
-
-	init(
+    var username: String
+    var profilePicture: String? // TODO: re-think data type later
+    var firstName: String?
+    var lastName: String?
+    var bio: String?
+    var friendTags: [FriendTag]?
+    var lastLocation: Location?
+    
+    init(
         id: UUID,
         friends: [User]? = nil,
-		username: String,
-		profilePicture: Image? = nil,
-		firstName: String? = nil,
-		lastName: String? = nil,
-		bio: String? = nil,
-		friendTags: [FriendTag]? = nil,
-		lastLocation: Location? = nil
-	) {
+        username: String,
+        profilePicture: String? = nil,
+        firstName: String? = nil,
+        lastName: String? = nil,
+        bio: String? = nil,
+        friendTags: [FriendTag]? = nil,
+        lastLocation: Location? = nil
+    ) {
         self.id = id
         self.friends = friends
-		self.username = username
-		self.profilePicture = profilePicture
-		self.firstName = firstName
-		self.lastName = lastName
-		self.bio = bio
+        self.username = username
+        self.profilePicture = profilePicture
+        self.firstName = firstName
+        self.lastName = lastName
+        self.bio = bio
         self.friendTags = friendTags
-		self.lastLocation = lastLocation
+        self.lastLocation = lastLocation
         
         // Add friends to the user's default "Everyone" tag
-        if let friends = baseUser.friends {
+        if let friends = friends {
             let everyoneTag = FriendTag(
                 id: UUID(),
                 displayName: "Everyone",
-                color: Color(hex: "#asdfdf"),
+                colorHexCode: "#asdfdf",
                 friends: []
             )
             
-            // Append friends to the "Everyone" tag
-            for friend in friends {
-                if let User = UserService.shared.UserLookup[friend.id] {
-                    everyoneTag.friends?.append(User)
-                }
-            }
+            everyoneTag.friends = friends
             
             // Insert the "Everyone" tag at the beginning of the friend's tags array
             self.friendTags?.insert(everyoneTag, at: 0)
         }
-	}
+    }
 }
 
 extension User {
@@ -75,18 +70,18 @@ extension User {
         id: UUID(),
         friends: [],
         username: "daggerpov",
-        profilePicture: Image("Daniel_Agapov_pfp"),
+        profilePicture: "Daniel_Agapov_pfp",
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
-        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [User.danielLee])]
+        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes.randomElement() ?? "#ffffff", friends: [User.danielLee])]
     )
     
     static let danielLee: User = User(
         id: UUID(),
         friends: [],
         username: "uhdlee",
-        profilePicture: Image("Daniel_Lee_pfp"),
+        profilePicture: "Daniel_Lee_pfp",
         firstName: "Daniel",
         lastName: "Lee",
         bio: "This is my bio.",
@@ -94,19 +89,19 @@ extension User {
             FriendTag(
                 id: UUID(),
                 displayName: "Biztech",
-                color: eventColors[0],
+                colorHexCode: eventColorHexCodes[0],
                 friends: [User.shannon]
             ),
             FriendTag(
                 id: UUID(),
                 displayName: "Close Friends",
-                color: eventColors[1],
+                colorHexCode: eventColorHexCodes[1],
                 friends: [User.haley]
             ),
             FriendTag(
                 id: UUID(),
                 displayName: "Hobbies",
-                color: eventColors[2],
+                colorHexCode: eventColorHexCodes[2],
                 friends: [User.jennifer, User.haley, User.shannon]
             )
         ],
@@ -117,7 +112,7 @@ extension User {
         id: UUID(),
         friends: [],
         username: "shannonaurl",
-        profilePicture: Image("Shannon_pfp"),
+        profilePicture: "Shannon_pfp",
         firstName: "Shannon",
         bio: "This is my bio."
     )
@@ -125,7 +120,7 @@ extension User {
         id: UUID(),
         friends: [],
         username: "jenntjen",
-        profilePicture: Image("Jennifer_pfp"),
+        profilePicture: "Jennifer_pfp",
         firstName: "Jennifer",
         lastName: "Tjen",
         bio: "This is my bio."
@@ -134,7 +129,7 @@ extension User {
         id: UUID(),
         friends: [],
         username: "michaeltham",
-        profilePicture: Image("Michael_pfp"),
+        profilePicture: "Michael_pfp",
         firstName: "Michael",
         lastName: "Tham",
         bio: "This is my bio."
@@ -143,7 +138,7 @@ extension User {
         id: UUID(),
         friends: [],
         username: "haleyusername",
-        profilePicture: Image("Haley_pfp"),
+        profilePicture: "Haley_pfp",
         firstName: "Haley",
         bio: "This is my bio."
     )
