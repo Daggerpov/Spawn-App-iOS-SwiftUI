@@ -8,7 +8,7 @@
 import SwiftUI
 
 let universalRectangleCornerRadius: CGFloat = 20
-let eventColorHexCodes: [String] = ["#8084ac", "#8084ac", "#8084ac", "#8084ac"]
+let eventColorHexCodes: [String] = ["#8084ac", "#704444", "#b0442c", "#889c6c"]
 let eventColors = eventColorHexCodes.map { colorHexCode in
     Color(hex: colorHexCode)
 }
