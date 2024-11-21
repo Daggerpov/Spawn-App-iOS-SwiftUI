@@ -44,5 +44,7 @@ Table ChatMessage {
 
 Table Location {
     id UUID [pk]
-    locationName String
+    name String
+    latitude Double
+    longitude Double
 }

@@ -8,6 +8,7 @@
 class Location: Codable {
     // MARK: stub for now, but will make more robust later after implementing map
     var locationName: String
+    
 
 	init(locationName: String) {
 		self.locationName = locationName
