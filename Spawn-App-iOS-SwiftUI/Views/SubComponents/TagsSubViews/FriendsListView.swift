@@ -12,8 +12,8 @@ struct FriendsListView: View {
     var user: User
     
     init(user: User) {
-        self.user = User
-        self.viewModel = FriendsListViewModel(user: User)
+        self.user = user
+        self.viewModel = FriendsListViewModel(user: user)
     }
     
     var body: some View {
@@ -24,10 +24,10 @@ struct FriendsListView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     // Title and Time Information
                     ForEach(viewModel.friends) { friend in
-                        FriendListingView(person: friend, user: User, isFriend: true)
+                        FriendListingView(person: friend, user: user, isFriend: true)
                     }
                     ForEach(viewModel.recommendedFriends) { recommendedFriend in
-                        FriendListingView(person: recommendedFriend, user: User, isFriend: false)
+                        FriendListingView(person: recommendedFriend, user: user, isFriend: false)
                     }
                 }
             }
