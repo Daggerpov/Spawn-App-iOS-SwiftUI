@@ -9,16 +9,16 @@ import SwiftUI
 
 struct EventCardView: View {
     @ObservedObject var viewModel: EventCardViewModel
-    var appUser: AppUser
+    var User: User
     var event: Event
     var color: Color
     var callback: (Event, Color) -> Void
     
-    init(appUser: AppUser, event: Event, color: Color, callback: @escaping(Event, Color) -> Void) {
-        self.appUser = appUser
+    init(User: User, event: Event, color: Color, callback: @escaping(Event, Color) -> Void) {
+        self.User = User
         self.event = event
         self.color = color
-        self.viewModel = EventCardViewModel(appUser: appUser, event: event)
+        self.viewModel = EventCardViewModel(User: User, event: event)
         self.callback = callback
     }
     var body: some View {

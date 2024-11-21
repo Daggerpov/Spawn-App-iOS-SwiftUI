@@ -10,8 +10,8 @@ import SwiftUI
 struct TagsListView: View {
     @ObservedObject var viewModel: TagsListViewModel
     
-    init(appUser: AppUser) {
-        self.viewModel = TagsListViewModel(appUser: appUser)
+    init(User: User) {
+        self.viewModel = TagsListViewModel(User: User)
     }
     
     var body: some View {

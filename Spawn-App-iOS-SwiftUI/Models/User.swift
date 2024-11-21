@@ -1,5 +1,5 @@
 //
-//  AppUser.swift
+//  User.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/6/24.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-// My idea for now is that I'll be able to link a `User` to its `AppUser`, such
+// My idea for now is that I'll be able to link a `User` to its `User`, such
 // that the `User` struct still comforms to `Codable` (which an `Image` property
 // would prevent if I included it in that struct).
 
@@ -16,10 +16,9 @@ import SwiftUI
 
 // tech note: for friend finding in map, can use `lastLocation`
 
-class AppUser: Identifiable, Codable {
+class User: Identifiable, Codable {
     var id: UUID
-    var friends: [AppUser]?
-	var baseUser: User
+    var friends: [User]?
 	var username: String
 	var profilePicture: String? // TODO: re-think data type later
 	var firstName: String?
@@ -30,7 +29,7 @@ class AppUser: Identifiable, Codable {
 
 	init(
         id: UUID,
-        friends: [AppUser]? = nil,
+        friends: [User]? = nil,
 		username: String,
 		profilePicture: Image? = nil,
 		firstName: String? = nil,
@@ -60,8 +59,8 @@ class AppUser: Identifiable, Codable {
             
             // Append friends to the "Everyone" tag
             for friend in friends {
-                if let appUser = AppUserService.shared.appUserLookup[friend.id] {
-                    everyoneTag.friends?.append(appUser)
+                if let User = UserService.shared.UserLookup[friend.id] {
+                    everyoneTag.friends?.append(User)
                 }
             }
             
@@ -71,8 +70,8 @@ class AppUser: Identifiable, Codable {
 	}
 }
 
-extension AppUser {
-    static let danielAgapov: AppUser = AppUser(
+extension User {
+    static let danielAgapov: User = User(
         id: UUID(),
         friends: [],
         username: "daggerpov",
@@ -80,10 +79,10 @@ extension AppUser {
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
-        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [AppUser.danielLee])]
+        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", color: eventColors.randomElement() ?? Color.blue, friends: [User.danielLee])]
     )
     
-    static let danielLee: AppUser = AppUser(
+    static let danielLee: User = User(
         id: UUID(),
         friends: [],
         username: "uhdlee",
@@ -96,25 +95,25 @@ extension AppUser {
                 id: UUID(),
                 displayName: "Biztech",
                 color: eventColors[0],
-                friends: [AppUser.shannon]
+                friends: [User.shannon]
             ),
             FriendTag(
                 id: UUID(),
                 displayName: "Close Friends",
                 color: eventColors[1],
-                friends: [AppUser.haley]
+                friends: [User.haley]
             ),
             FriendTag(
                 id: UUID(),
                 displayName: "Hobbies",
                 color: eventColors[2],
-                friends: [AppUser.jennifer, AppUser.haley, AppUser.shannon]
+                friends: [User.jennifer, User.haley, User.shannon]
             )
         ],
         lastLocation: Location.mockLocation
     )
     
-    static let shannon: AppUser = AppUser(
+    static let shannon: User = User(
         id: UUID(),
         friends: [],
         username: "shannonaurl",
@@ -122,7 +121,7 @@ extension AppUser {
         firstName: "Shannon",
         bio: "This is my bio."
     )
-    static let jennifer: AppUser = AppUser(
+    static let jennifer: User = User(
         id: UUID(),
         friends: [],
         username: "jenntjen",
@@ -131,7 +130,7 @@ extension AppUser {
         lastName: "Tjen",
         bio: "This is my bio."
     )
-    static let michael: AppUser = AppUser(
+    static let michael: User = User(
         id: UUID(),
         friends: [],
         username: "michaeltham",
@@ -140,7 +139,7 @@ extension AppUser {
         lastName: "Tham",
         bio: "This is my bio."
     )
-    static let haley: AppUser = AppUser(
+    static let haley: User = User(
         id: UUID(),
         friends: [],
         username: "haleyusername",
@@ -149,7 +148,7 @@ extension AppUser {
         bio: "This is my bio."
     )
     
-    static let emptyUser: AppUser = AppUser(
+    static let emptyUser: User = User(
         id: UUID(),
         friends: [],
         username: "Empty User"
@@ -164,7 +163,7 @@ extension AppUser {
         haley.friends = [danielAgapov, danielLee, shannon, jennifer, michael]
     }
     
-    static let mockAppUsers: [AppUser] = {
+    static let mockUsers: [User] = {
         setupFriends()
         return [danielAgapov, danielLee, shannon, jennifer, michael, haley]
     } ()

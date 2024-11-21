@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    var appUser: AppUser
+    var User: User
     
     var body: some View {
         NavigationStack {
@@ -16,7 +16,7 @@ struct ProfileView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     // Profile Picture
                     
-                    if let profilePicture = appUser.profilePicture {
+                    if let profilePicture = User.profilePicture {
                         profilePicture
                             .ProfileImageModifier(imageType: .profilePage)
                     } else {
@@ -25,22 +25,22 @@ struct ProfileView: View {
                     }
                     
                     // Username
-                    Text("Username: \(appUser.username)")
+                    Text("Username: \(User.username)")
                         .font(.title)
                         .bold()
                     
-                    Text(NameFormatterService.shared.formatName(appUser: appUser))
+                    Text(NameFormatterService.shared.formatName(User: User))
                         .font(.headline)
                     
                     
                     // Bio
-                    if let bio = appUser.bio {
+                    if let bio = User.bio {
                         Text("Bio: \(bio)")
                             .font(.body)
                     }
                     
                     // Friend Tags
-                    if let friendTags = appUser.friendTags, !friendTags.isEmpty {
+                    if let friendTags = User.friendTags, !friendTags.isEmpty {
                         Text("Friend Tags:")
                             .font(.headline)
                         ForEach(friendTags) { tag in
@@ -54,13 +54,13 @@ struct ProfileView: View {
                     }
                     
                     // Last Location
-                    if let lastLocation = appUser.lastLocation {
+                    if let lastLocation = User.lastLocation {
                         Text("Last Location: \(lastLocation.locationName)")
                             .font(.subheadline)
                     }
                 }
                 .padding()
-                .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")
+                .navigationTitle("\(User.firstName ?? User.username)'s Profile")
             }
         }
     }

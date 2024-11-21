@@ -9,11 +9,11 @@ import SwiftUI
 
 struct FriendListingView: View {
     @ObservedObject var viewModel: FriendListingViewModel
-    var person: AppUser
+    var person: User
     
-    init(person: AppUser, appUser: AppUser, isFriend: Bool) {
+    init(person: User, User: User, isFriend: Bool) {
         self.person = person
-        self.viewModel = FriendListingViewModel(person: person, appUser: appUser, isFriend: isFriend)
+        self.viewModel = FriendListingViewModel(person: person, User: User, isFriend: isFriend)
     }
     var body: some View {
         Group{

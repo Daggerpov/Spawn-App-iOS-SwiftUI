@@ -15,7 +15,7 @@ struct FeedView: View {
     @Namespace private var animation: Namespace.ID
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
-    var appUser: AppUser
+    var User: User
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
@@ -48,7 +48,7 @@ struct FeedView: View {
                         LazyVStack(spacing: 15) {
                             ForEach(viewModel.events) {mockEvent in
                                 EventCardView(
-                                    appUser: appUser,
+                                    User: User,
                                     event: mockEvent,
                                     // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
                                     color: eventColors.randomElement() ?? Color.blue
@@ -86,7 +86,7 @@ struct FeedView: View {
                 if let color = colorInPopup {
                     EventDescriptionView(
                         event: event,
-                        appUsers: AppUser.mockAppUsers,
+                        Users: User.mockUsers,
                         color: color
                     )
                 }
@@ -104,7 +104,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingFriendsPopup) {
-            FriendsListView(appUser: appUser)
+            FriendsListView(User: User)
         } customize: {
             $0
                 .type(.floater(
@@ -118,7 +118,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingTagsPopup) {
-            TagsListView(appUser: appUser)
+            TagsListView(User: User)
         } customize: {
             $0
                 .type(.floater(
@@ -153,7 +153,7 @@ struct FeedView: View {
 }
 
 #Preview {
-    FeedView(appUser: AppUser.danielLee)
+    FeedView(User: User.danielLee)
 }
 
 extension FeedView {
@@ -169,7 +169,7 @@ extension FeedView {
                 
                 HStack{
                     Image(systemName: "star.fill")
-                    Text(appUser.username)
+                    Text(User.username)
                         .bold()
                         .font(.largeTitle)
                     Spacer()
@@ -180,9 +180,9 @@ extension FeedView {
             .frame(alignment: .leading)
             Spacer()
             
-            if let pfp = appUser.profilePicture {
+            if let pfp = User.profilePicture {
                 NavigationLink {
-                    ProfileView(appUser: appUser)
+                    ProfileView(User: User)
                 } label: {
                     pfp
                         .ProfileImageModifier(imageType: .feedPage)

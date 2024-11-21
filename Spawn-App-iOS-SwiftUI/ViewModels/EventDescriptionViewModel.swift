@@ -8,11 +8,11 @@
 import Foundation
 
 class EventDescriptionViewModel: ObservableObject {
-    @Published var appUsers: [AppUser]
+    @Published var Users: [User]
     var event: Event
     
-    init(event: Event, appUsers: [AppUser] = []) {
+    init(event: Event, Users: [User] = []) {
         self.event = event
-        self.appUsers = appUsers
+        self.Users = Users
     }
 }

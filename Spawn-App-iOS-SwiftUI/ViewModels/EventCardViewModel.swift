@@ -9,18 +9,18 @@ import Foundation
 
 class EventCardViewModel: ObservableObject {
     @Published var isParticipating: Bool = false
-    var appUser: AppUser
+    var User: User
     var event: Event
 
-    init(appUser: AppUser, event: Event) {
-        self.appUser = appUser
+    init(User: User, event: Event) {
+        self.User = User
         self.event = event
     }
     
     /// returns whether the logged in app user is part of the event's participants array
     public func fetchIsParticipating() -> Void {
         self.isParticipating = ((event.participants?.contains(where: { user in
-            user.id == appUser.id
+            user.id == User.id
         })) != nil)
     }
     
@@ -28,12 +28,12 @@ class EventCardViewModel: ObservableObject {
         if isParticipating {
             // remove user
             event.participants?.removeAll(where: { user in
-                user.id == appUser.id
+                user.id == User.id
             })
             isParticipating = false
         } else {
             // join participants
-            if let user = AppUserService.shared.userLookup[appUser.id]{
+            if let user = UserService.shared.userLookup[User.id]{
                 event.participants?.append(user)
             }
             isParticipating = true
