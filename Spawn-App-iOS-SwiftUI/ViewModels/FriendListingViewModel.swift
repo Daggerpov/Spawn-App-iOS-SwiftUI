@@ -24,7 +24,7 @@ class FriendListingViewModel: ObservableObject {
     
     private func fetchTagsForFriend() -> Void {
         if isFriend {
-            guard let friendTags = User.friendTags else { return }
+            guard let friendTags = user.friendTags else { return }
             
             tagsForFriend = friendTags.filter { friendTag in
                 friendTag.friends?.contains(where: { $0.id == person.id }) == true

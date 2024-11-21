@@ -86,7 +86,7 @@ struct FeedView: View {
                 if let color = colorInPopup {
                     EventDescriptionView(
                         event: event,
-                        Users: User.mockUsers,
+                        Users: user.mockUsers,
                         color: color
                     )
                 }
@@ -153,7 +153,7 @@ struct FeedView: View {
 }
 
 #Preview {
-    FeedView(user: User.danielLee)
+    FeedView(user: user.danielLee)
 }
 
 extension FeedView {
@@ -169,7 +169,7 @@ extension FeedView {
                 
                 HStack{
                     Image(systemName: "star.fill")
-                    Text(User.username)
+                    Text(user.username)
                         .bold()
                         .font(.largeTitle)
                     Spacer()
@@ -180,7 +180,7 @@ extension FeedView {
             .frame(alignment: .leading)
             Spacer()
             
-            if let pfp = User.profilePicture {
+            if let pfp = user.profilePicture {
                 NavigationLink {
                     ProfileView(user: User)
                 } label: {

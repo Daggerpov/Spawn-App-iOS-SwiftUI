@@ -49,12 +49,12 @@ struct EventDescriptionView: View {
                             ForEach(chatMessages) { chatMessage in
                                 let user: User = chatMessage.user
                                 HStack{
-                                    if let profilePicture = User.profilePicture {
+                                    if let profilePicture = user.profilePicture {
                                         profilePicture
                                             .ProfileImageModifier(imageType: .chatMessage)
                                     }
                                     VStack{
-                                        Text(User.username)
+                                        Text(user.username)
                                         Text(chatMessage.message)
                                     }
                                     Spacer()

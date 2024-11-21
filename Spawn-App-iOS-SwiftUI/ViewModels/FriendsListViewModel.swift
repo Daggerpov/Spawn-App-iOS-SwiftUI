@@ -19,20 +19,20 @@ class FriendsListViewModel: ObservableObject {
     }
     
     func fetchFriends() -> [User] {
-        guard let baseUserFriends = User.baseUser.friends else { return [] }
+        guard let baseUserFriends = user.baseuser.friends else { return [] }
         
         return baseUserFriends.compactMap { friend in
-            UserService.shared.UserLookup[friend.id] ?? User.emptyUser
+            UserService.shared.UserLookup[friend.id] ?? user.emptyUser
         }
     }
     
     func fetchRecommendedFriends() -> [User] {
-        let allMockUsers = User.mockUsers
+        let allMockUsers = user.mockUsers
         
         let recommended = allMockUsers.filter { mockUser in
             // Check if the mock user is not in the friends list
             // and if the mock user isn't the own user themselves
-            return mockUser.id != User.id && !self.friends.contains(where: { $0.id == mockUser.id })
+            return mockuser.id != user.id && !self.friends.contains(where: { $0.id == mockuser.id })
         }
         
         return recommended
@@ -40,6 +40,6 @@ class FriendsListViewModel: ObservableObject {
 
     
     func fetchFriendTags() -> [FriendTag] {
-        return User.friendTags ?? []
+        return user.friendTags ?? []
     }
 }
