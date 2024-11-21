@@ -1,10 +1,5 @@
 Table User {
     id UUID [pk]
-    friends UUID[] [ref: > User.id, note: "List of friend User IDs"]
-}
-
-Table User {
-    id UUID [pk]
     friends UUID[] [ref: > User.id]
     username String
     profilePicture String // Replace with appropriate type if needed (e.g., URL or BLOB)
