@@ -14,7 +14,7 @@
 
 import Foundation
 
-class FriendTag: Identifiable {
+class FriendTag: Identifiable, Codable {
     var id: UUID
     var displayName: String
     var colorHexCode: String
