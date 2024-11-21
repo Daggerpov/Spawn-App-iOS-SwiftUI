@@ -91,7 +91,7 @@ extension AppUser {
         profilePicture: Image("Daniel_Lee_pfp"),
         firstName: "Daniel",
         lastName: "Lee",
-        bio: "This is my bio.",
+        bio: "",
         friendTags: [
             FriendTag(
                 id: UUID(),

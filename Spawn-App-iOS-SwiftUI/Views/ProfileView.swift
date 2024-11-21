@@ -28,8 +28,7 @@ struct ProfileView: View {
                             .clipShape(Circle())
                             .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
                     }
-                        
-                    
+                                            
                     Circle()
                         .fill(profilPicPlusButtonColor)
                         .frame(width: 30, height: 30)
@@ -38,23 +37,56 @@ struct ProfileView: View {
                                 .foregroundColor(addButtonColor)
                         )
                         .offset(x: 45, y: -45)
-                        
                     
-                    Text("Name \(NameFormatterService.shared.formatName(appUser: appUser))")
-                    
-                    // Username
-                    Text("Username \(appUser.username)")
-                    
-                    // Email
-                    Text("Email \(appUser.email)")
-            
-                    // Bio
-                    if let bio = appUser.bio {
-                        Text("Bio \(bio)")
-                            .font(.body)
-                    }
+                    VStack(alignment: .leading, spacing: 25) {
+                          HStack {
+                              Text("Name")
+                                  .font(.headline)
+                              Spacer()
+                              Text("\(appUser.firstName ?? "") \(appUser.lastName ?? "")")
+                                  .multilineTextAlignment(.trailing)
+                                  .font(.headline)
+                          }
+                          HStack {
+                              Text("Username")
+                                  .font(.headline)
+                              Spacer()
+                              Text(appUser.username)
+                                  .multilineTextAlignment(.trailing)
+                                  .font(.headline)
+                          }
+                          HStack {
+                              Text("Email")
+                                  .font(.headline)
+                              Spacer()
+                              Text(appUser.email)
+                                  .multilineTextAlignment(.trailing)
+                                  .font(.headline)
+                          }
+                          if let bio = appUser.bio {
+                              HStack {
+                                  Text("Bio")
+                                      .font(.headline)
+                                  Spacer()
+                                  Text(bio)
+                                      .multilineTextAlignment(.trailing)
+                                      .font(.headline)
+                              }
+                          } else {
+                              HStack {
+                                  Text("Bio")
+                                      .font(.headline)
+                                  Spacer()
+                                  Text("No bio available")
+                                      .foregroundColor(.gray)
+                                      .multilineTextAlignment(.trailing)
+                              }
+                          }
+                      }
+                    .padding(.horizontal, 15)
                     
                     Divider().background(universalAccentColor)
+                    Spacer()
                     
                     // Edit Button
                     Button(action: {
@@ -72,7 +104,6 @@ struct ProfileView: View {
                     }
                     .padding(.horizontal)
 
-                    Spacer()
                     Spacer()
                     Spacer()
                     Spacer()
@@ -118,6 +149,7 @@ struct ProfileView: View {
                 .padding()
 //                .navigationTitle("\(appUser.firstName ?? appUser.username)'s Profile")
             }
+            .background(universalBackgroundColor)
         }
     }
 }
