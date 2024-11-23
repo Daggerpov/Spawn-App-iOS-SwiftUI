@@ -13,7 +13,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .center, spacing: 20) {
                     // Profile Picture
                     
                     if let profilePictureString = user.profilePicture {
@@ -23,40 +23,108 @@ struct ProfileView: View {
                         Image(systemName: "person.crop.circle.fill")
                             .ProfileImageModifier(imageType: .profilePage)
                     }
+                                            
+                    Circle()
+                        .fill(profilPicPlusButtonColor)
+                        .frame(width: 30, height: 30)
+                        .overlay(
+                            Image(systemName: "plus")
+                                .foregroundColor(addButtonColor)
+                        )
+                        .offset(x: 45, y: -45)
                     
-                    // Username
-                    Text("Username: \(user.username)")
-                        .font(.title)
-                        .bold()
+                    VStack(alignment: .leading, spacing: 25) {
+                       ProfileField(label: "Name", value: "\(user.firstName ?? "") \(user.lastName ?? "")")
+                       ProfileField(label: "Username", value: user.username)
+                       ProfileField(label: "Email", value: user.email)
+                       BioField(label: "Bio", bio: Binding(
+                           get: { user.bio ?? "" },
+                           set: { user.bio = $0 }
+                       ))
+                   }
+                   .padding(.horizontal)
                     
-                    Text(NameFormatterService.shared.formatName(user: user))
-                        .font(.headline)
+                    Spacer()
+                    Divider().background(universalAccentColor)
+                    Spacer()
                     
-                    
-                    // Bio
-                    if let bio = user.bio {
-                        Text("Bio: \(bio)")
-                            .font(.body)
-                    }
-                    
-                    // Friend Tags
-                    if let friendTags = user.friendTags, !friendTags.isEmpty {
-                        Text("Friend Tags:")
+                    // Edit Button
+                    Button(action: {
+                        // Edit button action
+                    }) {
+                        Text("Edit")
                             .font(.headline)
-                        ForEach(friendTags) { tag in
-                            HStack {
-                                Circle()
-                                    .fill(Color(hex: tag.colorHexCode))
-                                    .frame(width: 10, height: 10)
-                                Text(tag.displayName)
-                            }
-                        }
+                            .foregroundColor(universalAccentColor)
+                            .frame(maxWidth: 135)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.black, lineWidth: 1)
+                            )
                     }
-                    
+                    .padding(.horizontal)
+
+                    Spacer()
+                    Spacer()
+                    Spacer()
+                    Spacer()
+
+                    // Logout Button
+                    Button(action: {
+                    }) {
+                        Text("Log Out")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: 170)
+                            .background(profilPicPlusButtonColor)
+                            .cornerRadius(20)
+                    }
+                    .padding(.horizontal)
                 }
                 .padding()
-                .navigationTitle("\(user.firstName ?? user.username)'s Profile")
             }
+            .background(universalBackgroundColor)
+        }
+    }
+}
+
+
+struct ProfileField: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.headline)
+                .frame(width: 100, alignment: .leading)
+            Spacer()
+            Text(value)
+                .font(.body)
+                .multilineTextAlignment(.trailing)
+        }
+    }
+}
+
+struct BioField: View {
+    let label: String
+    @Binding var bio: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.headline)
+                .frame(width: 80, alignment: .leading)
+            Spacer()
+            TextField(
+                "",
+                text: $bio,
+                prompt: Text("Bio")
+                    .foregroundColor(universalPlaceHolderTextColor)
+            )
+            .multilineTextAlignment(.trailing)
+            .font(.body)
         }
     }
 }
