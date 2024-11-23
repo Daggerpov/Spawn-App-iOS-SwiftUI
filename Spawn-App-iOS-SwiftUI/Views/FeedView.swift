@@ -10,12 +10,12 @@ import PopupView
 import SwiftUI
 
 struct FeedView: View {
+    @EnvironmentObject var user: ObservableUser
     @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
     
     @Namespace private var animation: Namespace.ID
     @State private var activeTag: String = "Everyone"
     let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
-    var user: User
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
@@ -76,7 +76,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingFriendsPopup) {
-            FriendsListView(user: user)
+            FriendsListView(user: user.user)
         } customize: {
             $0
                 .type(.floater(
@@ -90,7 +90,7 @@ struct FeedView: View {
             // TODO: investigate making the background view dim, just like in the figma design
         }
         .popup(isPresented: $showingTagsPopup) {
-            TagsListView(user: user)
+            TagsListView(user: user.user)
         } customize: {
             $0
                 .type(.floater(
@@ -125,7 +125,11 @@ struct FeedView: View {
 }
 
 #Preview {
-    FeedView(user: User.danielLee)
+    @Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
+        user: .danielLee
+    )
+    FeedView()
+        .environmentObject(observableUser)
 }
 
 extension FeedView {
@@ -154,7 +158,7 @@ extension FeedView {
             
             if let profilePictureString = user.profilePicture {
                 NavigationLink {
-                    ProfileView(user: user)
+                    ProfileView(user: user.user)
                 } label: {
                     Image(profilePictureString)
                         .ProfileImageModifier(imageType: .feedPage)
@@ -184,7 +188,7 @@ extension FeedView {
             LazyVStack(spacing: 15) {
                 ForEach(viewModel.events) {mockEvent in
                     EventCardView(
-                        user: user,
+                        user: user.user,
                         event: mockEvent,
                         // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
                         color: eventColors.randomElement() ?? Color.blue

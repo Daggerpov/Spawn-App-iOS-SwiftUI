@@ -25,7 +25,6 @@ class User: Identifiable, Codable {
     var lastName: String?
     var bio: String?
     var friendTags: [FriendTag]?
-    var lastLocation: Location?
     
     init(
         id: UUID,
@@ -35,8 +34,7 @@ class User: Identifiable, Codable {
         firstName: String? = nil,
         lastName: String? = nil,
         bio: String? = nil,
-        friendTags: [FriendTag]? = nil,
-        lastLocation: Location? = nil
+        friendTags: [FriendTag]? = nil
     ) {
         self.id = id
         self.friends = friends
@@ -46,7 +44,6 @@ class User: Identifiable, Codable {
         self.lastName = lastName
         self.bio = bio
         self.friendTags = friendTags
-        self.lastLocation = lastLocation
         
         // Add friends to the user's default "Everyone" tag
         if let friends = friends {
@@ -104,8 +101,7 @@ extension User {
                 colorHexCode: eventColorHexCodes[2],
                 friends: [User.jennifer, User.haley, User.shannon]
             )
-        ],
-        lastLocation: Location.mockLocation
+        ]
     )
     
     static let shannon: User = User(
