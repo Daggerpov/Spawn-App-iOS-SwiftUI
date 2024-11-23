@@ -125,7 +125,11 @@ struct FeedView: View {
 }
 
 #Preview {
+    @Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
+        user: .danielLee
+    )
     FeedView()
+        .environmentObject(observableUser)
 }
 
 extension FeedView {
