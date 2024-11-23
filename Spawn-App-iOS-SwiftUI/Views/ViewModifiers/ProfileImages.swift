@@ -12,7 +12,6 @@ extension Image {
         let imageSize: CGFloat
         var strokeColor: Color = universalAccentColor
         var lineWidth: CGFloat = 2
-        var shadow: Bool = false
         
         switch imageType {
             case .feedPage:
@@ -35,6 +34,5 @@ extension Image {
             .frame(width: imageSize, height: imageSize)
             .clipShape(Circle())
             .overlay(Circle().stroke(strokeColor, lineWidth: lineWidth))
-            .shadow(radius: shadow ? 10 : 0)
     }
 }
