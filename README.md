@@ -15,6 +15,7 @@ Table of contents:
 ![Nov 19th - Tags View](current-app-look-images/tags-view.png)
 ![alt text](current-app-look-images/profile-page.png)
 ![alt text](current-app-look-images/event-description-modal.png)
+![Nov 23rd - Map View](current-app-look-images/map-view.png)
 
 # Entity Relationship Diagram
 
