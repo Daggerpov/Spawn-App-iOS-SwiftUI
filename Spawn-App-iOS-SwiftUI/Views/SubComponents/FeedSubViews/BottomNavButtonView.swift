@@ -28,60 +28,85 @@ struct BottomNavButtonView: View {
     }
     
     var body: some View {
-        if buttonType == .map {
-            Circle()
-                .frame(width: 45, height: 45)
-                .foregroundColor(universalBackgroundColor)
-                .clipShape(Circle())
-                .overlay(
-                    Circle()
-                        .stroke(universalAccentColor, lineWidth: 2)
-                )
-                .overlay(
-                    Group{
-                        if buttonType == .map {
-                            NavigationLink(destination: {
-                                FriendMapView()
-                            }) {
-                                navButtonImage
-                            }
-                        } else {
+        switch buttonType {
+            case .map:
+                Circle()
+                    .frame(width: 45, height: 45)
+                    .foregroundColor(universalBackgroundColor)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(universalAccentColor, lineWidth: 2)
+                    )
+                    .overlay(
+                        NavigationLink(destination: {
+                            FriendMapView()
+                                .navigationBarTitle("")
+                                .navigationBarHidden(true)
+                        }) {
                             navButtonImage
                         }
-                    }
-                )
-        } else if buttonType == .feed || buttonType == .friends {
-            Circle()
-                .CircularButton(systemName: imageName, buttonActionCallback: {
-                    print("clicked!")
-                    // TODO: change to navigation later
-                }, width: 25, height: 20, frameSize: 45, source: "map")
-            
-        } else if buttonType == .plus {
-            RoundedRectangle(cornerRadius: 20)
-                .frame(width: 100, height: 45)
-                .foregroundColor(universalBackgroundColor)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(universalAccentColor, lineWidth: 2)
-                )
-                .overlay(
-                    NavigationLink(destination: {
-                        FriendMapView()
-                    }) {
-                        HStack{
-                            Spacer()
+                    )
+            case .feed:
+                Circle()
+                    .CircularButton(
+                        systemName: imageName,
+                        buttonActionCallback: {},
+                        width: 25,
+                        height: 20,
+                        frameSize: 45,
+                        source: "map"
+                    )
+                    .overlay(
+                        NavigationLink(destination: {
+                            FeedView()
+                                .navigationBarTitle("")
+                                .navigationBarHidden(true)
+                        }) {
                             Image(systemName: imageName)
                                 .resizable()
-                                .frame(width: 20, height: 20)
-                                .clipShape(Circle())
+                                .frame(width: 25, height: 20)
                                 .shadow(radius: 20)
                                 .foregroundColor(universalAccentColor)
-                                .font(.system(size: 30, weight: .bold)) // Added font modifier for thickness, to match Figma design
-                            Spacer()
                         }
-                    }
-                )
+                    )
+            case .friends:
+                Circle()
+                    .modifier(CircularButtonStyling(width: 25, height: 20, frameSize: 45, source: "map"))
+                    .overlay(
+                        Image(systemName: imageName)
+                            .resizable()
+                            .frame(width: 25, height: 20)
+                            .shadow(radius: 20)
+                            .foregroundColor(universalAccentColor)
+                    )
+            case .plus:
+                RoundedRectangle(cornerRadius: 20)
+                    .frame(width: 100, height: 45)
+                    .foregroundColor(universalBackgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(universalAccentColor, lineWidth: 2)
+                    )
+                    .overlay(
+                        NavigationLink(destination: {
+                            FriendMapView()
+                                .navigationBarTitle("")
+                                .navigationBarHidden(true)
+                        }) {
+                            HStack{
+                                Spacer()
+                                Image(systemName: imageName)
+                                    .resizable()
+                                    .frame(width: 20, height: 20)
+                                    .clipShape(Circle())
+                                    .shadow(radius: 20)
+                                    .foregroundColor(universalAccentColor)
+                                    .font(.system(size: 30, weight: .bold)) // Added font modifier for thickness, to match Figma design
+                                Spacer()
+                            }
+                        }
+                    )
         }
     }
 }
