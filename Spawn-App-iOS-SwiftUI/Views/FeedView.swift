@@ -14,8 +14,8 @@ struct FeedView: View {
     @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
     
     @Namespace private var animation: Namespace.ID
-    @State private var activeTag: String = "Everyone"
-    let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
+    
+    let mockTags: [FriendTag] = FriendTag.mockTags
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
@@ -30,7 +30,7 @@ struct FeedView: View {
                 Spacer()
                 headerView.padding(.top, 50)
                 Spacer()
-                tagsView
+                TagsScrollView(tags: mockTags)
                 // TODO: implement logic here to adjust search results when the tag clicked is changed
                 Spacer()
                 Spacer()
@@ -162,19 +162,6 @@ extension FeedView {
         }
         .padding(.horizontal)
         .padding(.vertical, 2)
-    }
-    
-    var tagsView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(mockTags, id: \.self) { mockTag in
-                    TagButtonView(mockTag: mockTag, activeTag: $activeTag, animation: animation)
-                }
-            }
-            .padding(.top, 10)
-            .padding(.leading, 16)
-            .padding(.trailing, 16)
-        }
     }
     
     var eventsListView: some View {
