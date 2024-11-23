@@ -28,7 +28,7 @@ struct FeedView: View {
         NavigationStack{
             VStack{
                 Spacer()
-                headerView.padding(.top, 50)
+                HeaderView().padding(.top, 50)
                 Spacer()
                 TagsScrollView(tags: mockTags)
                 // TODO: implement logic here to adjust search results when the tag clicked is changed
@@ -41,7 +41,7 @@ struct FeedView: View {
                         Spacer()
                         BottomNavButtonView(buttonType: .plus)
                         Spacer()
-                        BottomNavButtonView(buttonType: .tag)
+                        BottomNavButtonView(buttonType: .friends)
                             .onTapGesture {
                                 showingOpenFriendTagsPopup = true
                             }
@@ -127,43 +127,6 @@ struct FeedView: View {
 }
 
 extension FeedView {
-    private var headerView: some View {
-        HStack{
-            Spacer()
-            VStack{
-                HStack{
-                    Text("hello,")
-                        .font(.title)
-                    Spacer()
-                }
-                
-                HStack{
-                    Image(systemName: "star.fill")
-                    Text(user.username)
-                        .bold()
-                        .font(.largeTitle)
-                    Spacer()
-                }
-                .font(.title)
-            }
-            .foregroundColor(universalAccentColor)
-            .frame(alignment: .leading)
-            Spacer()
-            
-            if let profilePictureString = user.profilePicture {
-                NavigationLink {
-                    ProfileView(user: user.user)
-                } label: {
-                    Image(profilePictureString)
-                        .ProfileImageModifier(imageType: .feedPage)
-                }
-            }
-            Spacer()
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 2)
-    }
-    
     var eventsListView: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: 15) {
