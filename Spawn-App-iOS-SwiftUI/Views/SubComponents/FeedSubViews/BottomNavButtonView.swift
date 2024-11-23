@@ -10,6 +10,7 @@ import SwiftUI
 struct BottomNavButtonView: View {
     var buttonType: BottomNavButtonType
     var imageName: String
+    var imageSize: CGFloat = 25
     
     init(buttonType: BottomNavButtonType) {
         self.buttonType = buttonType
@@ -18,13 +19,16 @@ struct BottomNavButtonView: View {
                 self.imageName = "map.fill"
             case .plus:
                 self.imageName = "plus"
-            case .tag:
-                self.imageName = "tag.fill"
+            case .friends:
+                self.imageName = "person.2.fill"
+            case .feed:
+                self.imageName = "list.bullet"
+                self.imageSize = 12
         }
     }
     
     var body: some View {
-        if buttonType == .map || buttonType == .tag {
+        if buttonType == .map {
             Circle()
                 .frame(width: 45, height: 45)
                 .foregroundColor(universalBackgroundColor)
@@ -39,23 +43,20 @@ struct BottomNavButtonView: View {
                             NavigationLink(destination: {
                                 FriendMapView()
                             }) {
-                                Image(systemName: imageName)
-                                    .resizable()
-                                    .frame(width: 25, height: 25)
-                                    .clipShape(Circle())
-                                    .shadow(radius: 20)
-                                    .foregroundColor(universalAccentColor)
+                                navButtonImage
                             }
                         } else {
-                            Image(systemName: imageName)
-                                .resizable()
-                                .frame(width: 25, height: 25)
-                                .clipShape(Circle())
-                                .shadow(radius: 20)
-                                .foregroundColor(universalAccentColor)
+                            navButtonImage
                         }
                     }
                 )
+        } else if buttonType == .feed || buttonType == .friends {
+            Circle()
+                .CircularButton(systemName: imageName, buttonActionCallback: {
+                    print("clicked!")
+                    // TODO: change to navigation later
+                }, width: 25, height: 20, frameSize: 45, source: "map")
+            
         } else if buttonType == .plus {
             RoundedRectangle(cornerRadius: 20)
                 .frame(width: 100, height: 45)
@@ -82,7 +83,16 @@ struct BottomNavButtonView: View {
                     }
                 )
         }
-        
-        
+    }
+}
+
+extension BottomNavButtonView {
+    var navButtonImage: some View {
+        Image(systemName: imageName)
+            .resizable()
+            .frame(width: imageSize, height: imageSize)
+            .clipShape(Circle())
+            .shadow(radius: 20)
+            .foregroundColor(universalAccentColor)
     }
 }
