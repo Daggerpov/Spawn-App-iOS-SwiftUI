@@ -10,17 +10,15 @@ import SwiftUI
 extension Image {
     func ProfileImageModifier(imageType: ProfileImageType) -> some View {
         let imageSize: CGFloat
-        let strokeColor: Color
+        var strokeColor: Color = universalAccentColor
         let lineWidth: CGFloat
         
         switch imageType {
             case .feedPage:
                 imageSize = 55
-                strokeColor = .black
                 lineWidth = 2
             case .friendsListView:
                 imageSize = 50
-                strokeColor = .black
                 lineWidth = 0
             case .eventParticipants, .chatMessage:
                 imageSize = 25
@@ -28,8 +26,7 @@ extension Image {
                 lineWidth = 1
             case .profilePage:
                 imageSize = 150
-                strokeColor = .black
-                lineWidth = 0
+                lineWidth = 2
         }
         
         return self

@@ -19,13 +19,9 @@ struct ProfileView: View {
                     if let profilePictureString = user.profilePicture {
                         Image(profilePictureString)
                             .ProfileImageModifier(imageType: .profilePage)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
                     } else {
                         Image(systemName: "person.crop.circle.fill")
                             .ProfileImageModifier(imageType: .profilePage)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
                     }
                                             
                     Circle()
