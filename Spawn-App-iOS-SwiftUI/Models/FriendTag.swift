@@ -14,7 +14,11 @@
 
 import Foundation
 
-class FriendTag: Identifiable, Codable {
+struct FriendTag: Identifiable, Codable, Hashable {
+    static func == (lhs: FriendTag, rhs: FriendTag) -> Bool {
+        return lhs.id == rhs.id
+    }
+
     var id: UUID
     var displayName: String
     var colorHexCode: String

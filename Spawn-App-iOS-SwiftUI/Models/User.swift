@@ -14,7 +14,11 @@ import SwiftUI
 // tech note: for new friend searching, it should first be done by username, but
 // we could also search by first name and last name, if provided (thus, optional types).
 
-class User: Identifiable, Codable {
+struct User: Identifiable, Codable, Hashable {
+    static func == (lhs: User, rhs: User) -> Bool {
+        return lhs.id == rhs.id
+    }
+
     var id: UUID
     var friends: [User]?
     var username: String
@@ -48,7 +52,7 @@ class User: Identifiable, Codable {
         
         // Add friends to the user's default "Everyone" tag
         if let friends = friends {
-            let everyoneTag = FriendTag(
+            var everyoneTag = FriendTag(
                 id: UUID(),
                 displayName: "Everyone",
                 colorHexCode: "#asdfdf",
@@ -64,7 +68,7 @@ class User: Identifiable, Codable {
 }
 
 extension User {
-    static let danielAgapov: User = User(
+    static var danielAgapov: User = User(
         id: UUID(),
         friends: [],
         username: "daggerpov",
@@ -76,7 +80,7 @@ extension User {
         email: "daniel@agapov.com"
     )
     
-    static let danielLee: User = User(
+    static var danielLee: User = User(
         id: UUID(),
         friends: [],
         username: "uhdlee",
@@ -107,7 +111,7 @@ extension User {
         email: "daniel2456@gmail.com"
     )
     
-    static let shannon: User = User(
+    static var shannon: User = User(
         id: UUID(),
         friends: [],
         username: "shannonaurl",
@@ -116,7 +120,7 @@ extension User {
         bio: "This is my bio.",
         email: "shannon@gmail.com"
     )
-    static let jennifer: User = User(
+    static var jennifer: User = User(
         id: UUID(),
         friends: [],
         username: "jenntjen",
@@ -126,7 +130,7 @@ extension User {
         bio: "This is my bio.",
         email: "jennifer@gmail.com"
     )
-    static let michael: User = User(
+    static var michael: User = User(
         id: UUID(),
         friends: [],
         username: "michaeltham",
@@ -136,7 +140,7 @@ extension User {
         bio: "This is my bio.",
         email: "haley@gmail.com"
     )
-    static let haley: User = User(
+    static var haley: User = User(
         id: UUID(),
         friends: [],
         username: "haleyusername",
