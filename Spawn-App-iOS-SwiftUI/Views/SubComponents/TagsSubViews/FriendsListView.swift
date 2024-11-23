@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendsListView: View {
     @ObservedObject var viewModel: FriendsListViewModel
-    var user: User
+    @EnvironmentObject var user: ObservableUser
     
     init(user: User) {
         self.user = user

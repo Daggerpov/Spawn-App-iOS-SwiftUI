@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileView: View {
-    var user: User
+    let user: User
     
     var body: some View {
         NavigationStack {
@@ -53,11 +53,6 @@ struct ProfileView: View {
                         }
                     }
                     
-                    // Last Location
-                    if let lastLocation = user.lastLocation {
-                        Text("Last Location: \(lastLocation.locationName)")
-                            .font(.subheadline)
-                    }
                 }
                 .padding()
                 .navigationTitle("\(user.firstName ?? user.username)'s Profile")
