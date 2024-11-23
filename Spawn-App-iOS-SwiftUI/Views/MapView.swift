@@ -1,5 +1,5 @@
 //
-//  FriendMapView.swift
+//  MapView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/11/24.
@@ -8,7 +8,7 @@
 import SwiftUI
 import MapKit
 
-struct FriendMapView: View {
+struct MapView: View {
     @EnvironmentObject var user: ObservableUser
     
     @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
@@ -82,7 +82,7 @@ struct FriendMapView: View {
     @Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
         user: .danielLee
     )
-    FriendMapView()
+    MapView()
         .environmentObject(observableUser)
 }
 

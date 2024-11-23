@@ -40,7 +40,7 @@ struct BottomNavButtonView: View {
                     )
                     .overlay(
                         NavigationLink(destination: {
-                            FriendMapView()
+                            MapView()
                                 .navigationBarTitle("")
                                 .navigationBarHidden(true)
                         }) {
@@ -90,7 +90,7 @@ struct BottomNavButtonView: View {
                     )
                     .overlay(
                         NavigationLink(destination: {
-                            FriendMapView()
+                            MapView()
                                 .navigationBarTitle("")
                                 .navigationBarHidden(true)
                         }) {
