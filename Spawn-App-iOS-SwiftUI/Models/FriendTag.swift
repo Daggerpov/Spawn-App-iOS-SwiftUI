@@ -33,8 +33,14 @@ struct FriendTag: Identifiable, Codable, Hashable {
 }
 
 extension FriendTag {
+    static let everyone = FriendTag(
+        id: UUID(),
+        displayName: "Everyone",
+        colorHexCode: universalAccentColorHexCode,
+        friends: [User.haley, User.jennifer, User.shannon, User.michael]
+    )
     static let close = FriendTag(id: UUID(), displayName: "Close Friends", colorHexCode: "#9CA3DA", friends: [User.danielAgapov])
     static let sports = FriendTag(id: UUID(), displayName: "Sports", colorHexCode: "#CB4B2E", friends: [User.danielLee])
     static let hobbies = FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: "#A2C587", friends: [User.danielLee])
-    static let mockTags = [close, sports, hobbies]
+    static let mockTags = [everyone, close, sports, hobbies]
 }
