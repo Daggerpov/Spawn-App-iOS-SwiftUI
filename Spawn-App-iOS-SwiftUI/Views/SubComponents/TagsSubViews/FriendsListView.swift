@@ -12,7 +12,6 @@ struct FriendsListView: View {
     @EnvironmentObject var user: ObservableUser
     
     init(user: User) {
-        self.user = user
         self.viewModel = FriendsListViewModel(user: user)
     }
     
@@ -24,10 +23,10 @@ struct FriendsListView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     // Title and Time Information
                     ForEach(viewModel.friends) { friend in
-                        FriendListingView(person: friend, user: user, isFriend: true)
+                        FriendListingView(person: friend, user: user.user, isFriend: true)
                     }
                     ForEach(viewModel.recommendedFriends) { recommendedFriend in
-                        FriendListingView(person: recommendedFriend, user: user, isFriend: false)
+                        FriendListingView(person: recommendedFriend, user: user.user, isFriend: false)
                     }
                 }
             }
