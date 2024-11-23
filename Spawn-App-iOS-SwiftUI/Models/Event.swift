@@ -61,7 +61,7 @@ extension Event {
             title: "Dinner time!!!!!!",
             startTime: "10:00 PM",
             endTime: "11:30 PM",
-            location: Location(locationName: "Gather - Place Vanier"),
+            location: Location(id: UUID(), locationName: "Gather - Place Vanier", latitude: 100, longitude: 100),
             note: "let's eat!",
             creator: User.danielAgapov,
             participants: [
@@ -75,7 +75,7 @@ extension Event {
             id: UUID(),
             title: "wanna run 5k with me?",
             startTime: "04:00 PM",
-            location: Location(locationName: "Wesbrook Mall"),
+            location: Location(id: UUID(), locationName: "Wesbrook Mall", latitude: 100, longitude: 100),
             note: "let's run!",
             creator: User.danielAgapov,
             participants: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee],
@@ -93,7 +93,7 @@ extension Event {
             id: UUID(),
             title: "playing basketball!!!",
             endTime: "07:00 PM",
-            location: Location(locationName: "UBC Student Recreation Centre"),
+            location: Location(id: UUID(), locationName: "UBC Student Recreation Centre", latitude: 100, longitude: 100),
             note: "let's play basketball!",
             creator: User.danielAgapov
         ),
@@ -102,7 +102,7 @@ extension Event {
             title: "Im painting rn lol",
             startTime: "10:00 AM",
             endTime: "11:30 AM",
-            location: Location(locationName: "Ross Drive - Wesbrook Mall"),
+            location: Location(id: UUID(), locationName: "Ross Drive - Wesbrook Mall", latitude: 100, longitude: 100),
             creator: User.danielAgapov,
             participants: [User.danielLee]
             
@@ -112,7 +112,7 @@ extension Event {
             title: "Grabbing Udon",
             startTime: "12:00 PM",
             endTime: "02:30 PM",
-            location: Location(locationName: "Marugame Udon"),
+            location: Location(id: UUID(), locationName: "Marugame Udon", latitude: 100, longitude: 100),
             creator: User.danielAgapov
         ),
         Event(
@@ -120,7 +120,7 @@ extension Event {
             title: "Calendar Party",
             startTime: "11:00 PM",
             endTime: "02:30 AM",
-            location: Location(locationName: "The Pit - Nest"),
+            location: Location(id: UUID(), locationName: "The Pit - Nest", latitude: 100, longitude: 100),
             creator: User.danielAgapov
         ),
         Event(
@@ -128,7 +128,7 @@ extension Event {
             title: "Gym - Leg Day",
             startTime: "10:00 AM",
             endTime: "11:30 AM",
-            location: Location(locationName: "UBC Student Recreation Centre"),
+            location: Location(id: UUID(), locationName: "UBC Student Recreation Centre", latitude: 100, longitude: 100),
             creator: User.danielAgapov
         )
     ]
