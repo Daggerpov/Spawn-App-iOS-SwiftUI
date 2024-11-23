@@ -8,12 +8,9 @@
 import SwiftUI
 
 extension Circle {
-    func CircularButton (systemName: String, buttonActionCallback: @escaping() -> Void, width: CGFloat? = 17.5, height: CGFloat? = 17.5, frameSize: CGFloat? = 40) -> some View {
+    func CircularButton (systemName: String, buttonActionCallback: @escaping() -> Void, width: CGFloat? = 17.5, height: CGFloat? = 17.5, frameSize: CGFloat? = 40, source: String? = "default") -> some View {
         return self
-            .frame(width: frameSize, height: frameSize)
-            .foregroundColor(Color.white)
-            .background(Color.white)
-            .clipShape(Circle())
+            .modifier(CircularButtonStyling(width: width, height: height, frameSize: frameSize, source: source))
             .overlay(
                 Button(action: {
                     buttonActionCallback()
@@ -27,3 +24,30 @@ extension Circle {
             )
     }
 }
+
+struct CircularButtonStyling: ViewModifier {
+    var width: CGFloat?
+    var height: CGFloat?
+    var frameSize: CGFloat?
+    var source: String? = "default"
+    func body(content: Content) -> some View {
+        content
+            .frame(width: frameSize, height: frameSize)
+            .foregroundColor(
+                source == "map" ? universalBackgroundColor : Color.white
+            )
+            .background(source == "map" ? universalBackgroundColor : Color.white)
+            .clipShape(Circle())
+            .overlay(
+                Group{
+                    if source == "map" {
+                        Circle()
+                            .stroke(universalAccentColor, lineWidth: 2)
+                    } else {
+                        EmptyView()
+                    }
+                }
+            )
+    }
+}
+    

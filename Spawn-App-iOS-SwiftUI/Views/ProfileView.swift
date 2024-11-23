@@ -9,6 +9,13 @@ import SwiftUI
 
 struct ProfileView: View {
     let user: User
+    @State private var bio: String
+    @State private var editingState: ProfileEditText = .edit
+    
+    init(user: User) {
+        self.user = user
+        bio = user.bio ?? ""
+    }
     
     var body: some View {
         NavigationStack {
@@ -38,8 +45,8 @@ struct ProfileView: View {
                        ProfileField(label: "Username", value: user.username)
                        ProfileField(label: "Email", value: user.email)
                        BioField(label: "Bio", bio: Binding(
-                           get: { user.bio ?? "" },
-                           set: { user.bio = $0 }
+                           get: { bio },
+                           set: { bio = $0 }
                        ))
                    }
                    .padding(.horizontal)
@@ -48,11 +55,15 @@ struct ProfileView: View {
                     Divider().background(universalAccentColor)
                     Spacer()
                     
-                    // Edit Button
                     Button(action: {
-                        // Edit button action
+                        switch editingState {
+                            case .edit:
+                                editingState = .save
+                            case .save:
+                                editingState = .edit
+                        }
                     }) {
-                        Text("Edit")
+                        Text(editingState.displayText())
                             .font(.headline)
                             .foregroundColor(universalAccentColor)
                             .frame(maxWidth: 135)

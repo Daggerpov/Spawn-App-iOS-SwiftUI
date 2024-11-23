@@ -6,5 +6,5 @@
 //
 
 enum BottomNavButtonType {
-    case map, plus, tag
+    case map, plus, friends, feed
 }

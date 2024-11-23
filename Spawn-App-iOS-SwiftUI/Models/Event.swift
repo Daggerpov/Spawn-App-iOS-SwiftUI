@@ -61,9 +61,9 @@ extension Event {
             title: "Dinner time!!!!!!",
             startTime: "10:00 PM",
             endTime: "11:30 PM",
-            location: Location(id: UUID(), locationName: "Gather - Place Vanier", latitude: 100, longitude: 100),
+            location: Location(id: UUID(), locationName: "Gather - Place Vanier", latitude: 49.26468617023799, longitude: -123.25859833051356),
             note: "let's eat!",
-            creator: User.danielAgapov,
+            creator: User.jennifer,
             participants: [
                 User.danielLee,
                 User.haley,
@@ -75,8 +75,7 @@ extension Event {
             id: UUID(),
             title: "wanna run 5k with me?",
             startTime: "04:00 PM",
-            location: Location(id: UUID(), locationName: "Wesbrook Mall", latitude: 100, longitude: 100),
-            note: "let's run!",
+            location: Location(id: UUID(), locationName: "Wesbrook Mall", latitude: 49.25997722657244, longitude: -123.23986523529379),
             creator: User.danielAgapov,
             participants: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee],
             chatMessages: [
@@ -93,7 +92,7 @@ extension Event {
             id: UUID(),
             title: "playing basketball!!!",
             endTime: "07:00 PM",
-            location: Location(id: UUID(), locationName: "UBC Student Recreation Centre", latitude: 100, longitude: 100),
+            location: Location(id: UUID(), locationName: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
             note: "let's play basketball!",
             creator: User.danielAgapov
         ),
@@ -102,34 +101,36 @@ extension Event {
             title: "Im painting rn lol",
             startTime: "10:00 AM",
             endTime: "11:30 AM",
-            location: Location(id: UUID(), locationName: "Ross Drive - Wesbrook Mall", latitude: 100, longitude: 100),
-            creator: User.danielAgapov,
+            location: Location(id: UUID(), locationName: "Ross Drive - Wesbrook Mall", latitude: 49.25189587512135, longitude: -123.237051932404),
+            creator: User.shannon,
             participants: [User.danielLee]
             
         ),
-        Event(
-            id: UUID(),
-            title: "Grabbing Udon",
-            startTime: "12:00 PM",
-            endTime: "02:30 PM",
-            location: Location(id: UUID(), locationName: "Marugame Udon", latitude: 100, longitude: 100),
-            creator: User.danielAgapov
-        ),
+        // commenting this one out, since its location messes with the map zoom level (zooms it way out)
+        // TODO: we should find a system to handle this better
+//        Event(
+//            id: UUID(),
+//            title: "Grabbing Udon",
+//            startTime: "12:00 PM",
+//            endTime: "02:30 PM",
+//            location: Location(id: UUID(), locationName: "Marugame Udon", latitude: 49.28032597998406, longitude: -123.11026665974741),
+//            creator: User.danielAgapov
+//        ),
         Event(
             id: UUID(),
             title: "Calendar Party",
             startTime: "11:00 PM",
             endTime: "02:30 AM",
-            location: Location(id: UUID(), locationName: "The Pit - Nest", latitude: 100, longitude: 100),
-            creator: User.danielAgapov
+            location: Location(id: UUID(), locationName: "The Pit - Nest", latitude: 49.26694140754859, longitude: -123.25036565366581),
+            creator: User.danielLee
         ),
         Event(
             id: UUID(),
             title: "Gym - Leg Day",
             startTime: "10:00 AM",
             endTime: "11:30 AM",
-            location: Location(id: UUID(), locationName: "UBC Student Recreation Centre", latitude: 100, longitude: 100),
-            creator: User.danielAgapov
+            location: Location(id: UUID(), locationName: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
+            creator: User.michael
         )
     ]
 }

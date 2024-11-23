@@ -11,12 +11,11 @@ extension Image {
     func ProfileImageModifier(imageType: ProfileImageType) -> some View {
         let imageSize: CGFloat
         var strokeColor: Color = universalAccentColor
-        let lineWidth: CGFloat
+        var lineWidth: CGFloat = 2
         
         switch imageType {
             case .feedPage:
                 imageSize = 55
-                lineWidth = 2
             case .friendsListView:
                 imageSize = 50
                 lineWidth = 0
@@ -26,7 +25,8 @@ extension Image {
                 lineWidth = 1
             case .profilePage:
                 imageSize = 150
-                lineWidth = 2
+            case .mapView:
+                imageSize = 40
         }
         
         return self
@@ -34,6 +34,5 @@ extension Image {
             .frame(width: imageSize, height: imageSize)
             .clipShape(Circle())
             .overlay(Circle().stroke(strokeColor, lineWidth: lineWidth))
-            .shadow(radius: 10)
     }
 }

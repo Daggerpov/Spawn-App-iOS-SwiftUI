@@ -14,8 +14,8 @@ struct FeedView: View {
     @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
     
     @Namespace private var animation: Namespace.ID
-    @State private var activeTag: String = "Everyone"
-    let mockTags: [String] = ["Everyone", "Close Friends", "Sports", "Hobbies"]
+    
+    let mockTags: [FriendTag] = FriendTag.mockTags
     
     @State var showingEventDescriptionPopup: Bool = false
     @State var showingOpenFriendTagsPopup: Bool = false
@@ -28,9 +28,9 @@ struct FeedView: View {
         NavigationStack{
             VStack{
                 Spacer()
-                headerView.padding(.top, 50)
+                HeaderView().padding(.top, 50)
                 Spacer()
-                tagsView
+                TagsScrollView(tags: mockTags)
                 // TODO: implement logic here to adjust search results when the tag clicked is changed
                 Spacer()
                 Spacer()
@@ -41,7 +41,7 @@ struct FeedView: View {
                         Spacer()
                         BottomNavButtonView(buttonType: .plus)
                         Spacer()
-                        BottomNavButtonView(buttonType: .tag)
+                        BottomNavButtonView(buttonType: .friends)
                             .onTapGesture {
                                 showingOpenFriendTagsPopup = true
                             }
@@ -127,56 +127,6 @@ struct FeedView: View {
 }
 
 extension FeedView {
-    private var headerView: some View {
-        HStack{
-            Spacer()
-            VStack{
-                HStack{
-                    Text("hello,")
-                        .font(.title)
-                    Spacer()
-                }
-                
-                HStack{
-                    Image(systemName: "star.fill")
-                    Text(user.username)
-                        .bold()
-                        .font(.largeTitle)
-                    Spacer()
-                }
-                .font(.title)
-            }
-            .foregroundColor(universalAccentColor)
-            .frame(alignment: .leading)
-            Spacer()
-            
-            if let profilePictureString = user.profilePicture {
-                NavigationLink {
-                    ProfileView(user: user.user)
-                } label: {
-                    Image(profilePictureString)
-                        .ProfileImageModifier(imageType: .feedPage)
-                }
-            }
-            Spacer()
-        }
-        .padding(.horizontal)
-        .padding(.vertical, 2)
-    }
-    
-    var tagsView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(mockTags, id: \.self) { mockTag in
-                    TagButtonView(mockTag: mockTag, activeTag: $activeTag, animation: animation)
-                }
-            }
-            .padding(.top, 10)
-            .padding(.leading, 16)
-            .padding(.trailing, 16)
-        }
-    }
-    
     var eventsListView: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: 15) {

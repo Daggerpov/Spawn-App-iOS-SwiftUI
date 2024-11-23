@@ -11,7 +11,6 @@ struct TagButtonView: View {
     let mockTag: String
     @Binding var activeTag: String
     var animation: Namespace.ID
-
     
     var body: some View {
         Button(action: {
