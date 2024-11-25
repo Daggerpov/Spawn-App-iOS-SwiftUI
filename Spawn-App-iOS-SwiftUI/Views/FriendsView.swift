@@ -90,23 +90,6 @@ private extension FriendsView {
             
             colorOptions
             
-            VStack{
-                if let friendsadfasdf = user.friends, !(user.friends?.isEmpty ?? false) {
-                    Text("has friends")
-                    ForEach(friendsadfasdf) { friend in
-                        Text("this is my frien \(friend.username)")
-                    }
-                } else {
-                    Text("does not has friends")
-                }
-                Text(user.username)
-                Text(user.email)
-                Text(user.bio ?? "")
-                ForEach(user.friends ?? []) { friend in
-                    Text("this is my frien \(friend.username)")
-                }
-            }
-            
             VStack(spacing: 10) {
                 if let friends = user.friends, !(user.friends?.isEmpty ?? false) {
                     ForEach(friends) { friend in

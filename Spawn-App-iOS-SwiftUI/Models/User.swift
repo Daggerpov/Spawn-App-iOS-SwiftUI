@@ -183,23 +183,13 @@ extension User {
         email: "haley@gmail.com"
     )
     
-    static let danielLeeFriendemptyUser: User = User(
-        id: UUID(),
-        friends: [],
-        username: "empty username",
-        bio: "This is my bio.",
-        email: "haley@gmail.com"
-    )
-    
     static var danielLee: User = User(
         id: UUID(),
         friends: [
-            emptyUser,
             danielLeeFriendhaley,
             danielLeeFriendmichael,
             danielLeeFriendshannon,
             danielLeeFriendjennifer,
-            danielLeeFriendemptyUser,
             danielLeeFrienddanielAgapov
         ],
         username: "uhdlee",
