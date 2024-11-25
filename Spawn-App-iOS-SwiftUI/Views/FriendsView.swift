@@ -34,23 +34,22 @@ private extension FriendsView {
             BackButton()
             Spacer()
             Picker("", selection: $selectedTab) {
-                Text("friends").tag(FriendTagToggle.friends)
-                    .cornerRadius(universalRectangleCornerRadius)
-                    .padding(.horizontal)
-                    .foregroundColor(selectedTab == .friends ? universalAccentColor : universalBackgroundColor)
-                    .background(
-                        selectedTab == .friends ? universalBackgroundColor : universalAccentColor)
-                Text("tags").tag(FriendTagToggle.tags)
-                    .cornerRadius(universalRectangleCornerRadius)
-                    .padding()
-                    .foregroundColor(selectedTab == .tags ? universalAccentColor : universalBackgroundColor)
-                    .background(
-                        selectedTab == .tags ? universalBackgroundColor : universalAccentColor)
+                Text("friends")
+                    .tag(FriendTagToggle.friends)
+                Text("tags")
+                    .tag(FriendTagToggle.tags)
             }
-            .background(universalAccentColor)
             .pickerStyle(SegmentedPickerStyle())
-            .frame(width: 150)
-            .cornerRadius(universalRectangleCornerRadius)
+            .frame(width: 150, height: 40)
+            .background(
+                RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+                    .fill(universalAccentColor)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+                    .stroke(universalBackgroundColor, lineWidth: 1)
+            )
+            .cornerRadius(universalRectangleCornerRadius) 
             Spacer()
         }
         .padding(.horizontal)
