@@ -11,6 +11,6 @@ struct FriendsTabView: View {
     let user: User
     
     var body: some View {
-        Text("asdf")
+        SearchView(searchPlaceholderText: "search or add friends")
     }
 }

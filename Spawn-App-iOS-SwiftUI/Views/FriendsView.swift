@@ -19,7 +19,6 @@ struct FriendsView: View {
         NavigationStack {
             VStack(spacing: 20) {
                 header
-                SearchView(searchPlaceholderText: "search or add firends")
                 if selectedTab == .friends {
                     FriendsTabView(user: user)
                 } else {
