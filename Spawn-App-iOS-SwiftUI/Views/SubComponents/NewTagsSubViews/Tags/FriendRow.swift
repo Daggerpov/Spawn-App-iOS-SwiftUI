@@ -16,15 +16,18 @@ struct FriendRow: View {
             if let profilePictureString = friend.profilePicture {
                 Image(profilePictureString)
                     .ProfileImageModifier(imageType: .chatMessage)
+                    .font(.system(size: 20))
             }
+            Image(systemName: "star.fill")
+                .font(.system(size: 10))
             Text(friend.username)
                 .font(.subheadline)
             Spacer()
             Button(action: action) {
                 Image(systemName: "xmark")
-                    .foregroundColor(universalAccentColor)
             }
         }
-        .padding(.horizontal)
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity)
     }
 }

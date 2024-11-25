@@ -13,7 +13,7 @@ struct ExpandedTagView: View {
     var body: some View {
         VStack(spacing: 15) {
             HStack {
-                Text("Close Friends")
+                Text(friendTag.displayName)
                     .font(.headline)
                     .fontWeight(.bold)
                 
@@ -36,6 +36,9 @@ struct ExpandedTagView: View {
             }
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.2)))
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(hex: friendTag.colorHexCode).opacity(0.2))
+        )
     }
 }
