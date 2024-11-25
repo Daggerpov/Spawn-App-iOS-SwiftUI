@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TagsTabView: View {
     let user: User
+    @State var currentSelectedColorIndex: Int = 0
     
     var body: some View {
         VStack{
@@ -60,10 +61,14 @@ extension TagsTabView {
         HStack(spacing: 15) {
             // Iterate through eventColors and add a plus circle at the end
             ForEach(0..<eventColors.count, id: \.self) { index in
-                Circle()
-                    .stroke(Color.white, lineWidth: 2)
-                    .fill(eventColors[index])
-                    .frame(width: 30, height: 30)
+                Button(action: {
+                    currentSelectedColorIndex = index
+                }) {
+                    Circle()
+                        .stroke(index == currentSelectedColorIndex ? universalAccentColor : Color.white, lineWidth: 2)
+                        .fill(eventColors[index])
+                        .frame(width: 30, height: 30)
+                }
             }
             
             Circle()
@@ -79,8 +84,8 @@ extension TagsTabView {
                 .overlay(
                     Image(systemName: "plus").foregroundColor(.white)
                 )
+            Spacer()
         }
-
     }
     var otherTagsSection: some View {
         ScrollView {
