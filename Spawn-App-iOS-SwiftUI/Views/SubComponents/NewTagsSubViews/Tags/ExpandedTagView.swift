@@ -13,12 +13,8 @@ struct ExpandedTagView: View {
     var body: some View {
         VStack(spacing: 15) {
             HStack {
-                Text(friendTag.displayName)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                
                 Spacer()
-                EditButton()
+                
             }
             
             ColorOptions()
