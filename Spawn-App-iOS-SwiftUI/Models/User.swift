@@ -80,37 +80,6 @@ extension User {
         email: "daniel@agapov.com"
     )
     
-    static var danielLee: User = User(
-        id: UUID(),
-        friends: [],
-        username: "uhdlee",
-        profilePicture: "Daniel_Lee_pfp",
-        firstName: "Daniel",
-        lastName: "Lee",
-        bio: "This is my bio.",
-        friendTags: [
-            FriendTag(
-                id: UUID(),
-                displayName: "Biztech",
-                colorHexCode: eventColorHexCodes[0],
-                friends: [User.shannon]
-            ),
-            FriendTag(
-                id: UUID(),
-                displayName: "Close Friends",
-                colorHexCode: eventColorHexCodes[1],
-                friends: [User.haley]
-            ),
-            FriendTag(
-                id: UUID(),
-                displayName: "Hobbies",
-                colorHexCode: eventColorHexCodes[2],
-                friends: [User.jennifer, User.haley, User.shannon]
-            )
-        ],
-        email: "daniel2456@gmail.com"
-    )
-    
     static var shannon: User = User(
         id: UUID(),
         friends: [],
@@ -158,17 +127,118 @@ extension User {
         email: "haley@gmail.com"
     )
     
+    // MARK: this method of setting up danielLee's friends
+    // is messy, but works. The `setupFriends()` method
+    // below doesn't quite do the job.
+    
+    // Can't be asked to fix this, since it's just for mocking
+    
+    static var danielLeeFrienddanielAgapov: User = User(
+        id: UUID(),
+        friends: [],
+        username: "daggerpov",
+        profilePicture: "Daniel_Agapov_pfp",
+        firstName: "Daniel",
+        lastName: "Agapov",
+        bio: "This is my bio.",
+        email: "daniel@agapov.com"
+    )
+    
+    static var danielLeeFriendshannon: User = User(
+        id: UUID(),
+        friends: [],
+        username: "shannonaurl",
+        profilePicture: "Shannon_pfp",
+        firstName: "Shannon",
+        bio: "This is my bio.",
+        email: "shannon@gmail.com"
+    )
+    static var danielLeeFriendjennifer: User = User(
+        id: UUID(),
+        friends: [],
+        username: "jenntjen",
+        profilePicture: "Jennifer_pfp",
+        firstName: "Jennifer",
+        lastName: "Tjen",
+        bio: "This is my bio.",
+        email: "jennifer@gmail.com"
+    )
+    static var danielLeeFriendmichael: User = User(
+        id: UUID(),
+        friends: [],
+        username: "michaeltham",
+        profilePicture: "Michael_pfp",
+        firstName: "Michael",
+        lastName: "Tham",
+        bio: "This is my bio.",
+        email: "haley@gmail.com"
+    )
+    static var danielLeeFriendhaley: User = User(
+        id: UUID(),
+        friends: [],
+        username: "haleyusername",
+        profilePicture: "Haley_pfp",
+        firstName: "Haley",
+        bio: "This is my bio.",
+        email: "haley@gmail.com"
+    )
+    
+    static let danielLeeFriendemptyUser: User = User(
+        id: UUID(),
+        friends: [],
+        username: "empty username",
+        bio: "This is my bio.",
+        email: "haley@gmail.com"
+    )
+    
+    static var danielLee: User = User(
+        id: UUID(),
+        friends: [
+            emptyUser,
+            danielLeeFriendhaley,
+            danielLeeFriendmichael,
+            danielLeeFriendshannon,
+            danielLeeFriendjennifer,
+            danielLeeFriendemptyUser,
+            danielLeeFrienddanielAgapov
+        ],
+        username: "uhdlee",
+        profilePicture: "Daniel_Lee_pfp",
+        firstName: "Daniel",
+        lastName: "Lee",
+        bio: "This is my bio.",
+        friendTags: [
+            FriendTag(
+                id: UUID(),
+                displayName: "Biztech",
+                colorHexCode: eventColorHexCodes[0],
+                friends: [User.shannon]
+            ),
+            FriendTag(
+                id: UUID(),
+                displayName: "Close Friends",
+                colorHexCode: eventColorHexCodes[1],
+                friends: [User.haley]
+            ),
+            FriendTag(
+                id: UUID(),
+                displayName: "Hobbies",
+                colorHexCode: eventColorHexCodes[2],
+                friends: [User.jennifer, User.haley, User.shannon]
+            )
+        ],
+        email: "daniel2456@gmail.com"
+    )
+    
     static func setupFriends() {
-        danielAgapov.friends = [danielLee, shannon, jennifer, michael, haley]
-        danielLee.friends = [danielAgapov, jennifer, haley]
-        shannon.friends = [danielAgapov, danielLee]
-        jennifer.friends = [danielAgapov, danielLee, shannon]
-        michael.friends = [danielAgapov, danielLee, shannon, jennifer]
-        haley.friends = [danielAgapov, danielLee, shannon, jennifer, michael]
+        danielAgapov.friends = [shannon, jennifer, michael, haley]
+        shannon.friends = [danielAgapov]
+        jennifer.friends = [danielAgapov, shannon]
+        michael.friends = [danielAgapov, shannon, jennifer]
+        haley.friends = [danielAgapov, shannon, jennifer, michael]
     }
     
     static let mockUsers: [User] = {
-        setupFriends()
-        return [danielAgapov, danielLee, shannon, jennifer, michael, haley]
+        return [danielAgapov, shannon, jennifer, michael, haley]
     } ()
 }
