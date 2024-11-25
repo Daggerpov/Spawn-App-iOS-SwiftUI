@@ -12,33 +12,28 @@ struct TagsTabView: View {
     
     var body: some View {
         VStack{
-            tagSection
+            VStack(alignment: .leading, spacing: 15) {
+                Text("TAGS")
+                    .font(.headline)
+                
+                AddTagButton()
+            }
             Spacer()
             Spacer()
-            otherTagsSection
+            tagsSection
         }
         .padding()
     }
 }
 
 extension TagsTabView {
-    var tagSection: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("TAGS")
-                .font(.headline)
-            
-            AddTagButton()
-        }
-    }
-    
-    var otherTagsSection: some View {
+    var tagsSection: some View {
         Group {
             if let tags = user.friendTags, !tags.isEmpty {
                 ScrollView{
                     VStack(spacing: 15) {
                         ForEach(tags) { friendTag in
                             TagRow(friendTag: friendTag)
-                                .padding()
                                 .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: friendTag.colorHexCode).opacity(0.2)))
                         }
                     }
