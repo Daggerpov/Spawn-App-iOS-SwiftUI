@@ -9,8 +9,7 @@ import SwiftUI
 
 struct FriendsView: View {
     let user: User
-    @State private var selectedTab: FriendTagToggle = .friends
-    @State private var searchText: String = ""
+    @State private var selectedTab: FriendTagToggle = .tags // TODO DANIEL: change back to friends later by default
     
     init(user: User) {
         self.user = user
@@ -20,8 +19,12 @@ struct FriendsView: View {
         NavigationStack {
             VStack(spacing: 20) {
                 header
-                searchBar
-                TagsView(user: user)
+                SearchView()
+                if selectedTab == .friends {
+                    FriendsTabView(user: user)
+                } else {
+                    TagsTabView(user: user)
+                }
             }
             .padding()
             .background(universalBackgroundColor)
@@ -55,118 +58,6 @@ private extension FriendsView {
             Spacer()
         }
         .padding(.horizontal)
-    }
-    
-    var searchBar: some View {
-        HStack {
-            TextField("search or add friends", text: $searchText)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.horizontal, 10)
-        }
-        .frame(height: 40)
-    }
-}
-
-// MARK: - Reusable Components
-
-struct BackButton: View {
-    var body: some View {
-        Image(systemName: "arrow.left")
-            .font(.system(size: 24, weight: .bold))
-            .foregroundColor(.black)
-            .overlay(
-                NavigationLink(destination: {
-                    FeedView()
-                        .navigationBarTitle("")
-                        .navigationBarHidden(true)
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
-                }
-            )
-    }
-}
-
-struct AddTagButton: View {
-    var action: () -> Void = {}
-    
-    var body: some View {
-        Button(action: action) {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(style: StrokeStyle(lineWidth: 2, dash: [6]))
-                .frame(height: 50)
-                .overlay(
-                    Image(systemName: "plus")
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
-                )
-        }
-    }
-}
-
-struct EditButton: View {
-    var action: () -> Void = {}
-    
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "pencil")
-                .foregroundColor(.black)
-        }
-    }
-}
-
-struct FriendRow: View {
-    var friend: User
-    var action: () -> Void = {}
-    
-    var body: some View {
-        HStack {
-            if let profilePictureString = friend.profilePicture {
-                Image(profilePictureString)
-                    .ProfileImageModifier(imageType: .chatMessage)
-            }
-            Text(friend.username)
-                .font(.subheadline)
-            Spacer()
-            Button(action: action) {
-                Image(systemName: "xmark")
-                    .foregroundColor(.black)
-            }
-        }
-        .padding(.horizontal)
-    }
-}
-
-struct TagRow: View {
-    @EnvironmentObject var user: ObservableUser
-    var tagName: String
-    var color: Color
-    var action: () -> Void = {}
-    
-    var body: some View {
-        HStack {
-            Text(tagName)
-                .font(.subheadline)
-            Spacer()
-            HStack(spacing: -10) {
-                ForEach(0..<2) { _ in
-                    Circle()
-                        .frame(width: 30, height: 30)
-                        .foregroundColor(.gray.opacity(0.2))
-                }
-                Button(action: action) {
-                    Image(systemName: "plus.circle")
-                        .font(.system(size: 24))
-                        .foregroundColor(.black)
-                }
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-                .fill(color)
-        )
     }
 }
 
