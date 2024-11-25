@@ -18,7 +18,6 @@ struct FeedView: View {
     let mockTags: [FriendTag] = FriendTag.mockTags
     
     @State var showingEventDescriptionPopup: Bool = false
-    @State var showingOpenFriendTagsPopup: Bool = false
     @State var showingFriendsPopup: Bool = false
     @State var showingTagsPopup: Bool = false
     @State var eventInPopup: Event?
@@ -42,9 +41,6 @@ struct FeedView: View {
                         BottomNavButtonView(buttonType: .plus)
                         Spacer()
                         BottomNavButtonView(buttonType: .friends)
-                            .onTapGesture {
-                                showingOpenFriendTagsPopup = true
-                            }
                     }
                 }
                 .padding(.horizontal)
@@ -96,24 +92,6 @@ struct FeedView: View {
                 ))
             // TODO: read up on the documentation: https://github.com/exyte/popupview
             // so that the description view is dismissed upon clicking outside
-        }
-        .popup(isPresented: $showingOpenFriendTagsPopup) {
-            OpenFriendTagsView() { type in
-                switch type {
-                    case .friends:
-                        showingFriendsPopup = true
-                    case .tags:
-                        showingTagsPopup = true
-                }
-                showingOpenFriendTagsPopup = false
-            }
-        } customize: {
-            $0
-                .type(.toast)
-                .position(.bottom)
-                .dragToDismiss(true)
-                .closeOnTap(false)
-                .closeOnTapOutside(true)
         }
     }
 }

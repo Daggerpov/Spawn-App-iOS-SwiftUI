@@ -24,8 +24,8 @@ struct EventDescriptionView: View {
                 
                 HStack {
                     VStack(alignment: .leading, spacing: 10) {
-						EventInfoView(event: viewModel.event, eventInfoType: .time)
-						EventInfoView(event: viewModel.event, eventInfoType: .location)
+                        EventInfoView(event: viewModel.event, eventInfoType: .time)
+                        EventInfoView(event: viewModel.event, eventInfoType: .location)
                     }
                     .foregroundColor(.white)
                     
@@ -42,34 +42,7 @@ struct EventDescriptionView: View {
                     Text("\(chatMessages.count) replies")
                 }
                 
-                ScrollView(.vertical) {
-                    LazyVStack(spacing: 15) {
-                        if let chatMessages = viewModel.event.chatMessages {
-                            // TODO: remove this logic out of the view, and into view model
-                            ForEach(chatMessages) { chatMessage in
-                                let user: User = chatMessage.user
-                                HStack{
-                                    if let profilePictureString = user.profilePicture {
-                                        Image(profilePictureString)
-                                            .ProfileImageModifier(imageType: .chatMessage)
-                                    }
-                                    VStack{
-                                        Text(user.username)
-                                        Text(chatMessage.message)
-                                    }
-                                    Spacer()
-                                    HStack{
-                                        Text(chatMessage.timestamp)
-                                        // TODO: add logic later, to either use heart.fill or just heart,
-                                        // based on whether current user is in the chat message's likedBy array
-                                        Image(systemName: "heart")
-                                    }
-                                }
-                            }
-                        }
-                        
-                    }
-                }
+                chatMessagesView
             }
             .padding(20)
             .background(color)
@@ -77,5 +50,37 @@ struct EventDescriptionView: View {
         }
         .padding(.horizontal) // Reduces padding on the bottom
         .padding(.top, 200)
+    }
+}
+
+extension EventDescriptionView {
+    var chatMessagesView: some View {
+        ScrollView(.vertical) {
+            LazyVStack(spacing: 15) {
+                if let chatMessages = viewModel.event.chatMessages {
+                    // TODO: remove this logic out of the view, and into view model
+                    ForEach(chatMessages) { chatMessage in
+                        let user: User = chatMessage.user
+                        HStack{
+                            if let profilePictureString = user.profilePicture {
+                                Image(profilePictureString)
+                                    .ProfileImageModifier(imageType: .chatMessage)
+                            }
+                            VStack{
+                                Text(user.username)
+                                Text(chatMessage.message)
+                            }
+                            Spacer()
+                            HStack{
+                                Text(chatMessage.timestamp)
+                                // TODO: add logic later, to either use heart.fill or just heart,
+                                // based on whether current user is in the chat message's likedBy array
+                                Image(systemName: "heart")
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
