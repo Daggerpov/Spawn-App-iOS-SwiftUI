@@ -7,18 +7,22 @@
 
 import SwiftUI
 
-struct TagsView: View {
+struct TagsTabView: View {
     let user: User
     
     var body: some View {
-        tagSection
-        closeFriendsSection
-        Spacer()
-        otherTagsSection
+        VStack{
+            tagSection
+            Spacer()
+            closeFriendsSection
+            Spacer()
+            otherTagsSection
+        }
+        .padding()
     }
 }
 
-extension TagsView {
+extension TagsTabView {
     var tagSection: some View {
         VStack(alignment: .leading, spacing: 15) {
             Text("TAGS")
@@ -53,15 +57,29 @@ extension TagsView {
     }
     var colorOptions: some View {
         HStack(spacing: 15) {
-            ForEach(0..<5) { index in
-                Circle()
-                    .fill(index == 4 ? Color.gray.opacity(0.2) : eventColors[index])
-                    .frame(width: 30, height: 30)
-                    .overlay(
-                        index == 4
-                        ? Image(systemName: "plus").foregroundColor(.black)
-                        : nil
-                    )
+            // TODO: change this event color logic later
+            let numBum: Int = eventColors.count + 2
+            ForEach(0..<(numBum)) { index in
+                if index == 4 {
+                    Circle()
+                        .stroke(
+                            Color.white,
+                            style: StrokeStyle(
+                                lineWidth: 2,
+                                dash: [5, 3] // Length of dash and gap
+                            )
+                        )
+                        .fill(index == 4 ? Color.gray.opacity(0.2) : eventColors[index])
+                        .frame(width: 30, height: 30)
+                        .overlay(
+                            Image(systemName: "plus").foregroundColor(.white)
+                        )
+                } else {
+                    Circle()
+                        .stroke(Color.white, lineWidth: 2)
+                        .fill(index == 4 ? Color.gray.opacity(0.2) : eventColors[index])
+                        .frame(width: 30, height: 30)
+                }
             }
         }
     }
