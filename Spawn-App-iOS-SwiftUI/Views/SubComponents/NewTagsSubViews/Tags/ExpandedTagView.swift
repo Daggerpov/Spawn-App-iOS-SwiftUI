@@ -14,7 +14,6 @@ struct ExpandedTagView: View {
         VStack(spacing: 15) {
             HStack {
                 Spacer()
-                
             }
             
             ColorOptions()
