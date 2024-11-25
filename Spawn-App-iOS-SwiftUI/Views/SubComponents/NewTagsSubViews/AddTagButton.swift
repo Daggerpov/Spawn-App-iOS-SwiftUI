@@ -13,12 +13,12 @@ struct AddTagButton: View {
     var body: some View {
         Button(action: action) {
             RoundedRectangle(cornerRadius: 12)
-                .stroke(style: StrokeStyle(lineWidth: 2, dash: [6]))
+                .stroke(universalAccentColor, style: StrokeStyle(lineWidth: 2, dash: [4]))
                 .frame(height: 50)
                 .overlay(
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                 )
         }
     }
