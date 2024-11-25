@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FriendsView: View {
-    @State private var selectedTab: Int = 0
+    @State private var selectedTab: FriendTagToggle = .friends
     @State private var searchText: String = ""
     
     var body: some View {
@@ -34,11 +34,23 @@ private extension FriendsView {
             BackButton()
             Spacer()
             Picker("", selection: $selectedTab) {
-                Text("Friends").tag(0)
-                Text("Tags").tag(1)
+                Text("friends").tag(FriendTagToggle.friends)
+                    .cornerRadius(universalRectangleCornerRadius)
+                    .padding(.horizontal)
+                    .foregroundColor(selectedTab == .friends ? universalAccentColor : universalBackgroundColor)
+                    .background(
+                        selectedTab == .friends ? universalBackgroundColor : universalAccentColor)
+                Text("tags").tag(FriendTagToggle.tags)
+                    .cornerRadius(universalRectangleCornerRadius)
+                    .padding()
+                    .foregroundColor(selectedTab == .tags ? universalAccentColor : universalBackgroundColor)
+                    .background(
+                        selectedTab == .tags ? universalBackgroundColor : universalAccentColor)
             }
+            .background(universalAccentColor)
             .pickerStyle(SegmentedPickerStyle())
             .frame(width: 150)
+            .cornerRadius(universalRectangleCornerRadius)
             Spacer()
         }
         .padding(.horizontal)
@@ -46,7 +58,7 @@ private extension FriendsView {
     
     var searchBar: some View {
         HStack {
-            TextField("Search or add friends", text: $searchText)
+            TextField("search or add friends", text: $searchText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal, 10)
         }
@@ -120,14 +132,21 @@ private extension FriendsView {
 // MARK: - Reusable Components
 
 struct BackButton: View {
-    var action: () -> Void = {}
-    
     var body: some View {
-        Button(action: action) {
-            Image(systemName: "arrow.left")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.black)
-        }
+        Image(systemName: "arrow.left")
+            .font(.system(size: 24, weight: .bold))
+            .foregroundColor(.black)
+            .overlay(
+                NavigationLink(destination: {
+                    FeedView()
+                        .navigationBarTitle("")
+                        .navigationBarHidden(true)
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.black)
+                }
+            )
     }
 }
 

@@ -49,14 +49,12 @@ struct BottomNavButtonView: View {
                     )
             case .feed:
                 Circle()
-                    .CircularButton(
-                        systemName: imageName,
-                        buttonActionCallback: {},
+                    .modifier(CircularButtonStyling(
                         width: 25,
                         height: 20,
                         frameSize: 45,
                         source: "map"
-                    )
+                    ))
                     .overlay(
                         NavigationLink(destination: {
                             FeedView()
@@ -76,9 +74,8 @@ struct BottomNavButtonView: View {
                     .overlay(
                         NavigationLink(destination: {
                             FriendsView()
-                            // TODO DANIEL: remove later:
                                 .navigationBarTitle("")
-//                                .navigationBarHidden(true)
+                                .navigationBarHidden(true)
                         }) {
                             Image(systemName: imageName)
                                 .resizable()
