@@ -14,6 +14,8 @@ struct TagsTabView: View {
         VStack{
             tagSection
             Spacer()
+            Spacer()
+            Spacer()
             closeFriendsSection
             Spacer()
             otherTagsSection
@@ -30,7 +32,6 @@ extension TagsTabView {
             
             AddTagButton()
         }
-        .padding(.top)
     }
     
     var closeFriendsSection: some View {
@@ -57,31 +58,29 @@ extension TagsTabView {
     }
     var colorOptions: some View {
         HStack(spacing: 15) {
-            // TODO: change this event color logic later
-            let numBum: Int = eventColors.count + 2
-            ForEach(0..<(numBum)) { index in
-                if index == 4 {
-                    Circle()
-                        .stroke(
-                            Color.white,
-                            style: StrokeStyle(
-                                lineWidth: 2,
-                                dash: [5, 3] // Length of dash and gap
-                            )
-                        )
-                        .fill(index == 4 ? Color.gray.opacity(0.2) : eventColors[index])
-                        .frame(width: 30, height: 30)
-                        .overlay(
-                            Image(systemName: "plus").foregroundColor(.white)
-                        )
-                } else {
-                    Circle()
-                        .stroke(Color.white, lineWidth: 2)
-                        .fill(index == 4 ? Color.gray.opacity(0.2) : eventColors[index])
-                        .frame(width: 30, height: 30)
-                }
+            // Iterate through eventColors and add a plus circle at the end
+            ForEach(0..<eventColors.count, id: \.self) { index in
+                Circle()
+                    .stroke(Color.white, lineWidth: 2)
+                    .fill(eventColors[index])
+                    .frame(width: 30, height: 30)
             }
+            
+            Circle()
+                .stroke(
+                    Color.white,
+                    style: StrokeStyle(
+                        lineWidth: 2,
+                        dash: [5, 3] // Length of dash and gap
+                    )
+                )
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 30, height: 30)
+                .overlay(
+                    Image(systemName: "plus").foregroundColor(.white)
+                )
         }
+
     }
     var otherTagsSection: some View {
         ScrollView {
