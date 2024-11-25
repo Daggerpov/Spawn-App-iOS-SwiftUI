@@ -16,8 +16,6 @@ struct TagsTabView: View {
             Spacer()
             Spacer()
             Spacer()
-            closeFriendsSection
-            Spacer()
             otherTagsSection
         }
         .padding()
@@ -34,34 +32,15 @@ extension TagsTabView {
         }
     }
     
-    var closeFriendsSection: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Text("Close Friends")
-                    .font(.headline)
-                Spacer()
-                EditButton()
-            }
-            
-            ColorOptions()
-            
-            VStack(spacing: 10) {
-                if let friends = user.friends, !(user.friends?.isEmpty ?? false) {
-                    ForEach(friends) { friend in
-                        FriendRow(friend: friend)
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.2)))
-    }
-    
     var otherTagsSection: some View {
-        ScrollView {
-            VStack(spacing: 15) {
-                ForEach(0..<3) { index in
-                    TagRow(tagName: "Tag Name", color: eventColors[index])
+        Group {
+            if let tags = user.friendTags, !tags.isEmpty {
+                VStack(spacing: 15) {
+                    ForEach(tags) { friendTag in
+                        TagRow(friendTag: friendTag)
+                            .padding()
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: friendTag.colorHexCode).opacity(0.2)))
+                    }
                 }
             }
         }
