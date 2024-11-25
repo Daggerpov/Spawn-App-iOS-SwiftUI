@@ -8,8 +8,13 @@
 import SwiftUI
 
 struct FriendsView: View {
+    let user: User
     @State private var selectedTab: FriendTagToggle = .friends
     @State private var searchText: String = ""
+    
+    init(user: User) {
+        self.user = user
+    }
     
     var body: some View {
         NavigationStack {
@@ -49,7 +54,7 @@ private extension FriendsView {
                 RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
                     .stroke(universalBackgroundColor, lineWidth: 1)
             )
-            .cornerRadius(universalRectangleCornerRadius) 
+            .cornerRadius(universalRectangleCornerRadius)
             Spacer()
         }
         .padding(.horizontal)
@@ -85,9 +90,28 @@ private extension FriendsView {
             
             colorOptions
             
+            VStack{
+                if let friendsadfasdf = user.friends, !(user.friends?.isEmpty ?? false) {
+                    Text("has friends")
+                    ForEach(friendsadfasdf) { friend in
+                        Text("this is my frien \(friend.username)")
+                    }
+                } else {
+                    Text("does not has friends")
+                }
+                Text(user.username)
+                Text(user.email)
+                Text(user.bio ?? "")
+                ForEach(user.friends ?? []) { friend in
+                    Text("this is my frien \(friend.username)")
+                }
+            }
+            
             VStack(spacing: 10) {
-                ForEach(["ethhansen", "gingy05", "username"], id: \.self) { friend in
-                    FriendRow(name: friend)
+                if let friends = user.friends, !(user.friends?.isEmpty ?? false) {
+                    ForEach(friends) { friend in
+                        FriendRow(friend: friend)
+                    }
                 }
             }
         }
@@ -178,15 +202,16 @@ struct EditButton: View {
 }
 
 struct FriendRow: View {
-    var name: String
+    var friend: User
     var action: () -> Void = {}
     
     var body: some View {
         HStack {
-            Circle()
-                .frame(width: 40, height: 40)
-                .foregroundColor(.gray.opacity(0.2))
-            Text(name)
+            if let profilePictureString = friend.profilePicture {
+                Image(profilePictureString)
+                    .ProfileImageModifier(imageType: .chatMessage)
+            }
+            Text(friend.username)
                 .font(.subheadline)
             Spacer()
             Button(action: action) {
@@ -199,6 +224,7 @@ struct FriendRow: View {
 }
 
 struct TagRow: View {
+    @EnvironmentObject var user: ObservableUser
     var tagName: String
     var color: Color
     var action: () -> Void = {}
@@ -222,14 +248,16 @@ struct TagRow: View {
             }
         }
         .padding()
-        .background(RoundedRectangle(cornerRadius: 12).fill(color))
+        .background(
+            RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+                .fill(color)
+        )
     }
 }
 
-// MARK: - Preview
-
-struct FriendsView_Previews: PreviewProvider {
-    static var previews: some View {
-        FriendsView()
-    }
+#Preview {
+    @Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
+        user: .danielLee
+    )
+    FriendsView(user: observableUser.user)
 }

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BottomNavButtonView: View {
+    @EnvironmentObject var user: ObservableUser
     var buttonType: BottomNavButtonType
     var imageName: String
     var imageSize: CGFloat = 25
@@ -73,7 +74,7 @@ struct BottomNavButtonView: View {
                     .modifier(CircularButtonStyling(width: 25, height: 20, frameSize: 45, source: "map"))
                     .overlay(
                         NavigationLink(destination: {
-                            FriendsView()
+                            FriendsView(user: user.user)
                                 .navigationBarTitle("")
                                 .navigationBarHidden(true)
                         }) {
