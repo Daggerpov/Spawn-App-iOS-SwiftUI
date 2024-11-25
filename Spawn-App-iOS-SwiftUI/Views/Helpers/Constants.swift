@@ -18,6 +18,5 @@ let universalAccentColor: Color = Color(
     hex: universalAccentColorHexCode
 )
 let profilPicPlusButtonColor: Color = Color(hex: "#D5583C")
-let addButtonColor: Color = Color(hex: "#E7E7DD")
 let universalPlaceHolderTextColor: Color = Color(hex: "#B0AFAF")
 
