@@ -22,7 +22,7 @@ struct FriendRow: View {
             Spacer()
             Button(action: action) {
                 Image(systemName: "xmark")
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor)
             }
         }
         .padding(.horizontal)

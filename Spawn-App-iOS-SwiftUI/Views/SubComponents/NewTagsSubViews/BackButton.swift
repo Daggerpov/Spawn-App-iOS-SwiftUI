@@ -11,7 +11,7 @@ struct BackButton: View {
     var body: some View {
         Image(systemName: "arrow.left")
             .font(.system(size: 24, weight: .bold))
-            .foregroundColor(.black)
+            .foregroundColor(universalAccentColor)
             .overlay(
                 NavigationLink(destination: {
                     FeedView()
@@ -20,7 +20,7 @@ struct BackButton: View {
                 }) {
                     Image(systemName: "arrow.left")
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                 }
             )
     }

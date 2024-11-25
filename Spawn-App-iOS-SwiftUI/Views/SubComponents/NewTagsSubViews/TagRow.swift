@@ -27,7 +27,7 @@ struct TagRow: View {
                 Button(action: action) {
                     Image(systemName: "plus.circle")
                         .font(.system(size: 24))
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                 }
             }
         }

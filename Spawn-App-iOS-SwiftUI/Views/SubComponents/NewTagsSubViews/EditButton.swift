@@ -13,7 +13,7 @@ struct EditButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: "pencil")
-                .foregroundColor(.black)
+                .foregroundColor(universalAccentColor)
         }
     }
 }
