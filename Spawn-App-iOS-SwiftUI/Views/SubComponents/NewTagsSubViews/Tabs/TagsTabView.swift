@@ -15,7 +15,6 @@ struct TagsTabView: View {
             tagSection
             Spacer()
             Spacer()
-            Spacer()
             otherTagsSection
         }
         .padding()
@@ -35,11 +34,13 @@ extension TagsTabView {
     var otherTagsSection: some View {
         Group {
             if let tags = user.friendTags, !tags.isEmpty {
-                VStack(spacing: 15) {
-                    ForEach(tags) { friendTag in
-                        TagRow(friendTag: friendTag)
-                            .padding()
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: friendTag.colorHexCode).opacity(0.2)))
+                ScrollView{
+                    VStack(spacing: 15) {
+                        ForEach(tags) { friendTag in
+                            TagRow(friendTag: friendTag)
+                                .padding()
+                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: friendTag.colorHexCode).opacity(0.2)))
+                        }
                     }
                 }
             }
