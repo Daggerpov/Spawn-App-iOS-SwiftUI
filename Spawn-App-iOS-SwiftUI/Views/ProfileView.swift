@@ -36,7 +36,7 @@ struct ProfileView: View {
                         .frame(width: 30, height: 30)
                         .overlay(
                             Image(systemName: "plus")
-                                .foregroundColor(addButtonColor)
+                                .foregroundColor(universalBackgroundColor)
                         )
                         .offset(x: 45, y: -45)
                     
@@ -91,6 +91,7 @@ struct ProfileView: View {
                             .background(profilPicPlusButtonColor)
                             .cornerRadius(20)
                     }
+                    Spacer()
                     .padding(.horizontal)
                 }
                 .padding()
@@ -115,6 +116,7 @@ struct ProfileField: View {
                 .font(.body)
                 .multilineTextAlignment(.trailing)
         }
+        .foregroundColor(universalAccentColor)
     }
 }
 
@@ -132,10 +134,10 @@ struct BioField: View {
                 "",
                 text: $bio,
                 prompt: Text("Bio")
-                    .foregroundColor(universalPlaceHolderTextColor)
             )
             .multilineTextAlignment(.trailing)
             .font(.body)
         }
+        .foregroundColor(universalAccentColor)
     }
 }
