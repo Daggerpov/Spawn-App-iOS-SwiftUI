@@ -74,11 +74,18 @@ struct BottomNavButtonView: View {
                 Circle()
                     .modifier(CircularButtonStyling(width: 25, height: 20, frameSize: 45, source: "map"))
                     .overlay(
-                        Image(systemName: imageName)
-                            .resizable()
-                            .frame(width: 25, height: 20)
-                            .shadow(radius: 20)
-                            .foregroundColor(universalAccentColor)
+                        NavigationLink(destination: {
+                            FriendsView()
+                            // TODO DANIEL: remove later:
+                                .navigationBarTitle("")
+//                                .navigationBarHidden(true)
+                        }) {
+                            Image(systemName: imageName)
+                                .resizable()
+                                .frame(width: 25, height: 20)
+                                .shadow(radius: 20)
+                                .foregroundColor(universalAccentColor)
+                        }
                     )
             case .plus:
                 RoundedRectangle(cornerRadius: 20)
