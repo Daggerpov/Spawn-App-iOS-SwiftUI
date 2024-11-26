@@ -23,23 +23,7 @@ class EventInfoViewModel: ObservableObject {
 				}
 			case .time:
 				imageSystemName = "clock"
-				self.eventInfoDisplayString = Self.formatEventTime(event: event)
+				self.eventInfoDisplayString = FormatterService.shared.formatEventTime(event: event)
 		}
-    }
-    static func formatEventTime(event: Event) -> String {
-        var eventTimeDisplayStringLocal: String = ""
-        if let eventStartTime = event.startTime {
-            if let eventEndTime = event.endTime {
-                eventTimeDisplayStringLocal += "\(eventStartTime) — \(eventEndTime)"
-            } else {
-                eventTimeDisplayStringLocal = "Starts at \(eventStartTime)"
-            }
-        } else {
-            // no start time
-            if let eventEndTime = event.endTime {
-                eventTimeDisplayStringLocal = "Ends at \(eventEndTime)"
-            }
-        }
-        return eventTimeDisplayStringLocal
     }
 }
