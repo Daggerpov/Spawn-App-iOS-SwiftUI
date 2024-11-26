@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct BottomNavButtonView: View {
+    @EnvironmentObject var user: ObservableUser
     var buttonType: BottomNavButtonType
     var imageName: String
     var imageSize: CGFloat = 25
@@ -49,14 +50,12 @@ struct BottomNavButtonView: View {
                     )
             case .feed:
                 Circle()
-                    .CircularButton(
-                        systemName: imageName,
-                        buttonActionCallback: {},
+                    .modifier(CircularButtonStyling(
                         width: 25,
                         height: 20,
                         frameSize: 45,
                         source: "map"
-                    )
+                    ))
                     .overlay(
                         NavigationLink(destination: {
                             FeedView()
@@ -75,10 +74,9 @@ struct BottomNavButtonView: View {
                     .modifier(CircularButtonStyling(width: 25, height: 20, frameSize: 45, source: "map"))
                     .overlay(
                         NavigationLink(destination: {
-                            FriendsView()
-                            // TODO DANIEL: remove later:
+                            FriendsView(user: user.user)
                                 .navigationBarTitle("")
-//                                .navigationBarHidden(true)
+                                .navigationBarHidden(true)
                         }) {
                             Image(systemName: imageName)
                                 .resizable()

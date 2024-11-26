@@ -18,8 +18,6 @@ struct FeedView: View {
     let mockTags: [FriendTag] = FriendTag.mockTags
     
     @State var showingEventDescriptionPopup: Bool = false
-    @State var showingFriendsPopup: Bool = false
-    @State var showingTagsPopup: Bool = false
     @State var eventInPopup: Event?
     @State var colorInPopup: Color?
     
@@ -48,7 +46,7 @@ struct FeedView: View {
             .padding()
             .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
-            .dimmedBackground(isActive: showingTagsPopup || showingEventDescriptionPopup || showingFriendsPopup)
+            .dimmedBackground(isActive: showingEventDescriptionPopup)
         }
         // TODO: fix these repetitive popups; maybe separate into another component
         .popup(isPresented: $showingEventDescriptionPopup) {
@@ -59,30 +57,6 @@ struct FeedView: View {
                     color: color
                 )
             }
-        } customize: {
-            $0
-                .type(.floater(
-                    verticalPadding: 20,
-                    horizontalPadding: 20,
-                    useSafeAreaInset: false
-                ))
-            // TODO: read up on the documentation: https://github.com/exyte/popupview
-            // so that the description view is dismissed upon clicking outside
-        }
-        .popup(isPresented: $showingFriendsPopup) {
-            FriendsListView(user: user.user)
-        } customize: {
-            $0
-                .type(.floater(
-                    verticalPadding: 20,
-                    horizontalPadding: 20,
-                    useSafeAreaInset: false
-                ))
-            // TODO: read up on the documentation: https://github.com/exyte/popupview
-            // so that the description view is dismissed upon clicking outside
-        }
-        .popup(isPresented: $showingTagsPopup) {
-            TagsListView(user: user.user)
         } customize: {
             $0
                 .type(.floater(
