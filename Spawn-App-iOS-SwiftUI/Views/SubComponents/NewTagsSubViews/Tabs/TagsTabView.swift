@@ -16,7 +16,7 @@ struct TagsTabView: View {
                 Text("TAGS")
                     .font(.headline)
                 
-                AddTagButton()
+                AddTagButton(color: universalAccentColor)
             }
             Spacer()
             Spacer()

@@ -15,13 +15,15 @@ struct FriendRow: View {
         HStack {
             if let profilePictureString = friend.profilePicture {
                 Image(profilePictureString)
-                    .ProfileImageModifier(imageType: .chatMessage)
-                    .font(.system(size: 20))
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 35, height: 35)
+                    .clipShape(Circle())
             }
             Image(systemName: "star.fill")
                 .font(.system(size: 10))
             Text(friend.username)
-                .font(.subheadline)
+                .font(.headline)
             Spacer()
             Button(action: action) {
                 Image(systemName: "xmark")
@@ -29,5 +31,15 @@ struct FriendRow: View {
         }
         .foregroundColor(.white)
         .frame(maxWidth: .infinity)
+        .padding(.bottom, 10)
+        .background(
+                VStack(spacing: 0) {
+                    Spacer()
+                    Rectangle()
+                        .frame(height: 1)
+                        .foregroundColor(.black)
+                        .opacity(0.3)
+                }
+            )
     }
 }
