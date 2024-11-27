@@ -19,11 +19,11 @@ struct ExpandedTagView: View {
             ColorOptions()
             FriendContainer(friendTag: friendTag)
         }
-        .padding()
+        .padding(.horizontal)
         .padding(.bottom)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(hex: friendTag.colorHexCode).opacity(0.2))
-        )
+//        .background(
+//            RoundedRectangle(cornerRadius: 12)
+//                .fill(Color(hex: friendTag.colorHexCode).opacity(0.2))
+//        )
     }
 }

@@ -39,5 +39,6 @@ struct ColorOptions: View {
             Spacer()
         }
         .padding(.horizontal, 5)
+        .padding(.bottom, 3)
     }
 }
