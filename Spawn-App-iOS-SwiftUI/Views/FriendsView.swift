@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendsView: View {
     let user: User
-    @State private var selectedTab: FriendTagToggle = .tags // TODO DANIEL: change back to friends later by default
+    @State private var selectedTab: FriendTagToggle = .friends // TODO DANIEL: change back to friends later by default
     
     init(user: User) {
         self.user = user
