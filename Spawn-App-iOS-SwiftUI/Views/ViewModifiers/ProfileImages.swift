@@ -27,8 +27,11 @@ extension Image {
                 imageSize = 150
             case .mapView:
                 imageSize = 40
+			case .tagFriends:
+				imageSize = 35
+				lineWidth = 0
         }
-        
+
         return self
             .resizable()
             .frame(width: imageSize, height: imageSize)

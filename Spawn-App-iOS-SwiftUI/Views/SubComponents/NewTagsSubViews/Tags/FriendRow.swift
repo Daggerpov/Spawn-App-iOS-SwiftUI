@@ -15,10 +15,7 @@ struct FriendRow: View {
         HStack {
             if let profilePictureString = friend.profilePicture {
                 Image(profilePictureString)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 35, height: 35)
-                    .clipShape(Circle())
+					.ProfileImageModifier(imageType: .tagFriends)
             }
             Image(systemName: "star.fill")
                 .font(.system(size: 10))
