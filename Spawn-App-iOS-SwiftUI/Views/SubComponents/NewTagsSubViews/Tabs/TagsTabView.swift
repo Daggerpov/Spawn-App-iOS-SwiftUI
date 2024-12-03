@@ -16,7 +16,7 @@ struct TagsTabView: View {
                 Text("TAGS")
                     .font(.headline)
                 
-                AddTagButton()
+                AddTagButton(color: universalAccentColor)
             }
             Spacer()
             Spacer()
@@ -34,7 +34,16 @@ extension TagsTabView {
                     VStack(spacing: 15) {
                         ForEach(tags) { friendTag in
                             TagRow(friendTag: friendTag)
-                                .background(RoundedRectangle(cornerRadius: 12).fill(Color(hex: friendTag.colorHexCode).opacity(0.2)))
+								.background(
+									RoundedRectangle(cornerRadius: 12)
+										.fill(
+											Color(hex: friendTag.colorHexCode)
+												.opacity(0.5)
+										)
+										.cornerRadius(
+											universalRectangleCornerRadius
+										)
+								)
                         }
                     }
                 }

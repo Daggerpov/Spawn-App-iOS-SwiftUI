@@ -15,25 +15,11 @@ struct ExpandedTagView: View {
             HStack {
                 Spacer()
             }
-            
+
             ColorOptions()
-            
-            VStack(spacing: 10) {
-                if let friends = friendTag.friends, !friends.isEmpty {
-                    ForEach(friends) { friend in
-                        FriendRow(friend: friend)
-                            .padding(.horizontal)
-                    }
-                } else {
-                    Text("No friends added yet.")
-                        .foregroundColor(.gray)
-                }
-            }
+            FriendContainer(friendTag: friendTag)
         }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(hex: friendTag.colorHexCode).opacity(0.2))
-        )
+        .padding(.horizontal)
+        .padding(.bottom)
     }
 }

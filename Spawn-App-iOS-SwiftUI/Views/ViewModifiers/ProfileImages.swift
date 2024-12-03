@@ -27,10 +27,14 @@ extension Image {
                 imageSize = 150
             case .mapView:
                 imageSize = 40
+			case .tagFriends:
+				imageSize = 35
+				lineWidth = 0
         }
-        
+
         return self
             .resizable()
+			.aspectRatio(contentMode: .fill)
             .frame(width: imageSize, height: imageSize)
             .clipShape(Circle())
             .overlay(Circle().stroke(strokeColor, lineWidth: lineWidth))

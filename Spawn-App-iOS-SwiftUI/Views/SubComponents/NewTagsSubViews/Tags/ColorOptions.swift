@@ -19,7 +19,7 @@ struct ColorOptions: View {
                     Circle()
                         .stroke(index == currentSelectedColorIndex ? universalAccentColor : Color.white, lineWidth: 2)
                         .fill(eventColors[index])
-                        .frame(width: 30, height: 30)
+                        .frame(width: 35, height: 35)
                 }
             }
             
@@ -38,5 +38,7 @@ struct ColorOptions: View {
                 )
             Spacer()
         }
+        .padding(.horizontal, 5)
+        .padding(.bottom, 3)
     }
 }

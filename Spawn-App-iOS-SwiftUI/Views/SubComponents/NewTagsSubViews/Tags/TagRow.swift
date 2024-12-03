@@ -29,6 +29,7 @@ struct TagRow: View {
                 }
                 .foregroundColor(.white)
                 .font(.title)
+                .fontWeight(.semibold)
                 
                 Spacer()
                 HStack(spacing: -10) {
