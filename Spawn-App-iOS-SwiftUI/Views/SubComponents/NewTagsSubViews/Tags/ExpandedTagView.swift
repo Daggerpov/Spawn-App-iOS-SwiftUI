@@ -21,9 +21,5 @@ struct ExpandedTagView: View {
         }
         .padding(.horizontal)
         .padding(.bottom)
-//        .background(
-//            RoundedRectangle(cornerRadius: 12)
-//                .fill(Color(hex: friendTag.colorHexCode).opacity(0.2))
-//        )
     }
 }
