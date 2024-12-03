@@ -34,6 +34,7 @@ extension Image {
 
         return self
             .resizable()
+			.aspectRatio(contentMode: .fill)
             .frame(width: imageSize, height: imageSize)
             .clipShape(Circle())
             .overlay(Circle().stroke(strokeColor, lineWidth: lineWidth))
