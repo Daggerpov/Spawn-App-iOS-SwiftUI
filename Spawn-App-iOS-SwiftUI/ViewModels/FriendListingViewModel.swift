@@ -33,7 +33,7 @@ class FriendListingViewModel: ObservableObject {
     }
     
     private func fetchFormattedFriendName() -> String {
-        return NameFormatterService.shared.formatName(user: person)
+        return FormatterService.shared.formatName(user: person)
     }
     
     public func addFriend() -> Void {
