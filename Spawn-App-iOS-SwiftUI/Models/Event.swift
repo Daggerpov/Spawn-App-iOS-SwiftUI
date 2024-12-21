@@ -55,22 +55,23 @@ class Event: Identifiable, Codable {
 }
 
 extension Event {
+	static let mockDinnerEvent: Event = Event(
+		id: UUID(),
+		title: "Dinner time!!!!!!",
+		startTime: "10:00 PM",
+		endTime: "11:30 PM",
+		location: Location(id: UUID(), name: "Gather - Place Vanier", latitude: 49.26468617023799, longitude: -123.25859833051356),
+		note: "let's eat!",
+		creator: User.jennifer,
+		participants: [
+			User.danielLee,
+			User.haley,
+			User.jennifer,
+			User.michael
+		]
+	)
     static let mockEvents: [Event] = [
-        Event(
-            id: UUID(),
-            title: "Dinner time!!!!!!",
-            startTime: "10:00 PM",
-            endTime: "11:30 PM",
-            location: Location(id: UUID(), name: "Gather - Place Vanier", latitude: 49.26468617023799, longitude: -123.25859833051356),
-            note: "let's eat!",
-            creator: User.jennifer,
-            participants: [
-                User.danielLee,
-                User.haley,
-                User.jennifer,
-                User.michael
-            ]
-        ),
+        mockDinnerEvent,
         Event(
             id: UUID(),
             title: "wanna run 5k with me?",

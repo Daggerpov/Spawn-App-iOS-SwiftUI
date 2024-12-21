@@ -19,11 +19,12 @@ class ChatMessage: Identifiable, Codable {
     // tech note: in user's view of event, check if that user is in
     // the `ChatMessage`'s `likedBy` array (`[User]`)
 
-    init(id: UUID, message: String, timestamp: String, user: User, likedBy: [User]? = nil) {
+    init(id: UUID, message: String, timestamp: String, userSenderId: UUID, eventId: UUID, likedBy: [User]? = nil) {
 		self.id = id
         self.content = message
 		self.timestamp = timestamp
-		self.userSenderId = user
+		self.userSenderId = userSenderId
+		self.eventId = eventId
 		self.likedBy = likedBy
 	}
 }
@@ -33,7 +34,8 @@ extension ChatMessage {
         id: UUID(),
         message: "yo guys, wya?",
         timestamp: "2 minutes ago",
-        user: User.michael,
+		userSenderId: User.michael.id,
+		eventId: Event.mockDinnerEvent.id,
         likedBy: User.mockUsers
     )
 }
