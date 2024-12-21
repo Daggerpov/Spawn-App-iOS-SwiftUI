@@ -11,7 +11,7 @@ class ChatMessage: Identifiable, Codable {
     var id: UUID
     var content: String
     var timestamp: String // TODO: change data type alter
-    var userSenderId: UUID
+    var user: User
 	var eventId: UUID
     // do I even need an `event` var here, if each `Event` has a list of chats?
     // -> it's a (event) 1 <-> many (chat) relationship
