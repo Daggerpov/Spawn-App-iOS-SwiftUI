@@ -84,14 +84,14 @@ extension Event {
                     id: UUID(),
 					content: "yo guys, wya?",
                     timestamp: "2 minutes ago",
-					userSenderId: User.danielAgapov.id,
+					userSender: User.danielAgapov,
 					eventId: Event.mockDinnerEvent.id
                 ),
 				ChatMessage(
 					id: UUID(),
 					content: "I just saw you",
 					timestamp: "30 seconds ago",
-					userSenderId: User.danielLee.id,
+					userSender: User.danielLee,
 					eventId: mockDinnerEvent
 						.id)
             ]
