@@ -9,9 +9,10 @@ import Foundation
 
 class ChatMessage: Identifiable, Codable {
     var id: UUID
-    var message: String
+    var content: String
     var timestamp: String // TODO: change data type alter
-    var user: User
+    var userSenderId: UUID
+	var eventId: UUID
     // do I even need an `event` var here, if each `Event` has a list of chats?
     // -> it's a (event) 1 <-> many (chat) relationship
     var likedBy: [User]?
@@ -20,9 +21,9 @@ class ChatMessage: Identifiable, Codable {
 
     init(id: UUID, message: String, timestamp: String, user: User, likedBy: [User]? = nil) {
 		self.id = id
-        self.message = message
+        self.content = message
 		self.timestamp = timestamp
-		self.user = user
+		self.userSenderId = user
 		self.likedBy = likedBy
 	}
 }

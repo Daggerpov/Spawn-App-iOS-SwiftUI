@@ -22,12 +22,14 @@ struct FriendTag: Identifiable, Codable, Hashable {
     var id: UUID
     var displayName: String
     var colorHexCode: String
+	var owner: User
     var friends: [User]?
 
-    init(id: UUID, displayName: String, colorHexCode: String, friends: [User]? = nil) {
+	init(id: UUID, displayName: String, colorHexCode: String, owner: User, friends: [User]? = nil) {
         self.id = id
         self.displayName = displayName
 		self.colorHexCode = colorHexCode
+		self.owner = owner
 		self.friends = friends
 	}
 }

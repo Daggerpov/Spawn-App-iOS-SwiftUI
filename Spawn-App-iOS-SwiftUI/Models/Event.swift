@@ -22,12 +22,12 @@ class Event: Identifiable, Codable {
     
     // tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
     var participants: [User]?
-    var chatMessages: [ChatMessage]?
-    
+
     // tech note: this will be determined by the `User`'s specified `FriendTag`s on
     // the event, which will populate this `invited` property with the `FriendTag`s'
     // `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
     var invited: [User]?
+	var chatMessages: [ChatMessage]?
 
 	init(
 		id: UUID,
