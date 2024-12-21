@@ -60,7 +60,7 @@ extension EventDescriptionView {
                 if let chatMessages = viewModel.event.chatMessages {
                     // TODO: remove this logic out of the view, and into view model
                     ForEach(chatMessages) { chatMessage in
-                        let user: UUID = chatMessage.userSender
+                        let user: User = chatMessage.userSender
                         HStack{
                             if let profilePictureString = user.profilePicture {
                                 Image(profilePictureString)
