@@ -82,11 +82,18 @@ extension Event {
             chatMessages: [
                 ChatMessage(
                     id: UUID(),
-                    message: "yo guys, wya?",
+					content: "yo guys, wya?",
                     timestamp: "2 minutes ago",
-                    user: User.danielAgapov
+					userSenderId: User.danielAgapov.id,
+					eventId: Event.mockDinnerEvent.id
                 ),
-                ChatMessage(id: UUID(), message: "I just saw you", timestamp: "30 seconds ago", user: User.danielLee)
+				ChatMessage(
+					id: UUID(),
+					content: "I just saw you",
+					timestamp: "30 seconds ago",
+					userSenderId: User.danielLee.id,
+					eventId: mockDinnerEvent
+						.id)
             ]
         ),
         Event(
