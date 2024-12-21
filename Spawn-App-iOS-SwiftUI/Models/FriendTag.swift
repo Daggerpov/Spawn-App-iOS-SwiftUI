@@ -39,10 +39,11 @@ extension FriendTag {
         id: UUID(),
         displayName: "Everyone",
         colorHexCode: universalAccentColorHexCode,
+		owner: User.danielAgapov,
         friends: [User.haley, User.jennifer, User.shannon, User.michael]
     )
-    static let close = FriendTag(id: UUID(), displayName: "Close Friends", colorHexCode: eventColorHexCodes[0], friends: [User.danielAgapov])
-    static let sports = FriendTag(id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[1], friends: [User.danielLee])
-    static let hobbies = FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[2], friends: [User.danielLee])
+	static let close = FriendTag(id: UUID(), displayName: "Close Friends", colorHexCode: eventColorHexCodes[0], owner: User.danielAgapov, friends: [User.danielAgapov])
+    static let sports = FriendTag(id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[1], owner: User.danielAgapov,  friends: [User.danielLee])
+    static let hobbies = FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[2], owner: User.danielAgapov,  friends: [User.danielLee])
     static let mockTags = [everyone, close, sports, hobbies]
 }
