@@ -25,7 +25,7 @@ struct MapView: View {
         ZStack{
             Map(position: $camera) {
                 ForEach(viewModel.events) {mockEvent in
-                    if let name = mockEvent.location?.locationName,
+                    if let name = mockEvent.location?.name,
                        let lat = mockEvent.location?.latitude,
                        let long = mockEvent.location?.longitude {
                         Annotation(

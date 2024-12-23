@@ -15,7 +15,7 @@ class EventInfoViewModel: ObservableObject {
 		switch eventInfoType {
 			case .location:
 				imageSystemName = "map"
-				if let eventLocation = event.location?.locationName {
+				if let eventLocation = event.location?.name {
 					self.eventInfoDisplayString = eventLocation
 				} else {
 					// nil event location (should be error?)

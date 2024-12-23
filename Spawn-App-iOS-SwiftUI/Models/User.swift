@@ -55,7 +55,7 @@ struct User: Identifiable, Codable, Hashable {
             var everyoneTag = FriendTag(
                 id: UUID(),
                 displayName: "Everyone",
-                colorHexCode: "#asdfdf",
+				colorHexCode: "#asdfdf", owner: User.danielAgapov,
                 friends: []
             )
             
@@ -76,7 +76,7 @@ extension User {
         firstName: "Daniel",
         lastName: "Agapov",
         bio: "This is my bio.",
-        friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes.randomElement() ?? "#ffffff", friends: [User.danielLee])],
+		friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes.randomElement() ?? "#ffffff", owner: User.danielAgapov, friends: [User.danielLee])],
         email: "daniel@agapov.com"
     )
     
@@ -202,18 +202,21 @@ extension User {
                 id: UUID(),
                 displayName: "Biztech",
                 colorHexCode: eventColorHexCodes[0],
+				owner: User.danielLee,
                 friends: [User.shannon]
             ),
             FriendTag(
                 id: UUID(),
                 displayName: "Close Friends",
-                colorHexCode: eventColorHexCodes[1],
+				colorHexCode: eventColorHexCodes[1],
+				owner: User.danielLee,
                 friends: [User.haley]
             ),
             FriendTag(
                 id: UUID(),
                 displayName: "Hobbies",
-                colorHexCode: eventColorHexCodes[2],
+				colorHexCode: eventColorHexCodes[2],
+				owner: User.danielLee,
                 friends: [User.jennifer, User.haley, User.shannon]
             )
         ],
