@@ -8,12 +8,13 @@
 import SwiftUI
 import MapKit
 import PopupView
+import AVFoundation
 
 struct MapView: View {
     @EnvironmentObject var user: ObservableUser
     
     @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
-    @State var camera: MapCameraPosition = .automatic
+	@State var camera: AVCaptureDevice.Position = .unspecified
     let mockTags: [FriendTag] = FriendTag.mockTags
     
     // MARK - Event Description State Vars
@@ -109,6 +110,7 @@ struct MapView: View {
     }
 }
 
+@available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
         user: .danielLee
