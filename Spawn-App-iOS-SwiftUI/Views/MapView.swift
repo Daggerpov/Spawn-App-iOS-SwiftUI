@@ -28,41 +28,42 @@ struct MapView: View {
 	var body: some View {
 		ZStack {
 			Map(coordinateRegion: $region, annotationItems: viewModel.events) {
-				mockEvent in
-				MapAnnotation(
-					coordinate: CLLocationCoordinate2D(
-						latitude: mockEvent.location?.latitude ?? 0,
-						longitude: mockEvent.location?.longitude ?? 0
-					), anchorPoint: CGPoint(x: 0.5, y: 1.0)
-				) {
-					Button(action: {
-						eventInPopup = mockEvent
-						colorInPopup = eventColors.randomElement()
-						showingEventDescriptionPopup = true
-					}) {
-						VStack(spacing: -8) {
-							ZStack {
-								Image(systemName: "mappin.circle.fill")
-									.resizable()
-									.scaledToFit()
-									.frame(width: 60, height: 60)
-									.foregroundColor(universalAccentColor)
+				ForEach(viewModel.events) {mockEvent in
 
-								if let creatorPfp = mockEvent.creator
-									.profilePicture
-								{
-									Image(creatorPfp)
-										.ProfileImageModifier(
-											imageType: .mapView)
+					MapAnnotation(
+						coordinate: CLLocationCoordinate2D(
+							latitude: mockEvent.location?.latitude ?? 0,
+							longitude: mockEvent.location?.longitude ?? 0
+						), anchorPoint: CGPoint(x: 0.5, y: 1.0)
+					) {
+						Button(action: {
+							eventInPopup = mockEvent
+							colorInPopup = eventColors.randomElement()
+							showingEventDescriptionPopup = true
+						}) {
+							VStack(spacing: -8) {
+								ZStack {
+									Image(systemName: "mappin.circle.fill")
+										.resizable()
+										.scaledToFit()
+										.frame(width: 60, height: 60)
+										.foregroundColor(universalAccentColor)
+
+									if let creatorPfp = mockEvent.creator
+										.profilePicture
+									{
+										Image(creatorPfp)
+											.ProfileImageModifier(
+												imageType: .mapView)
+									}
 								}
+								Triangle()
+									.fill(universalAccentColor)
+									.frame(width: 40, height: 20)
 							}
-							Triangle()
-								.fill(universalAccentColor)
-								.frame(width: 40, height: 20)
 						}
 					}
 				}
-
 			}
 			.ignoresSafeArea()
 			VStack {
