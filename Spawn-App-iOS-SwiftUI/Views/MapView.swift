@@ -15,7 +15,8 @@ struct MapView: View {
 	@StateObject var viewModel: FeedViewModel = FeedViewModel(
 		events: Event.mockEvents)
 	@State private var region = MKCoordinateRegion(
-		center: CLLocationCoordinate2D(latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
+		center: CLLocationCoordinate2D(
+			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
 		span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
 	)
 	let mockTags: [FriendTag] = FriendTag.mockTags
@@ -27,40 +28,40 @@ struct MapView: View {
 
 	var body: some View {
 		ZStack {
-			Map(coordinateRegion: $region, annotationItems: viewModel.events) {
-				ForEach(viewModel.events) {mockEvent in
+			Map(
+				coordinateRegion: $region,
+				annotationItems: viewModel.events
+			) { mockEvent in
+				MapAnnotation(
+					coordinate: CLLocationCoordinate2D(
+						latitude: mockEvent.location?.latitude ?? 0,
+						longitude: mockEvent.location?.longitude ?? 0
+					), anchorPoint: CGPoint(x: 0.5, y: 1.0)
+				) {
+					Button(action: {
+						eventInPopup = mockEvent
+						colorInPopup = eventColors.randomElement()
+						showingEventDescriptionPopup = true
+					}) {
+						VStack(spacing: -8) {
+							ZStack {
+								Image(systemName: "mappin.circle.fill")
+									.resizable()
+									.scaledToFit()
+									.frame(width: 60, height: 60)
+									.foregroundColor(universalAccentColor)
 
-					MapAnnotation(
-						coordinate: CLLocationCoordinate2D(
-							latitude: mockEvent.location?.latitude ?? 0,
-							longitude: mockEvent.location?.longitude ?? 0
-						), anchorPoint: CGPoint(x: 0.5, y: 1.0)
-					) {
-						Button(action: {
-							eventInPopup = mockEvent
-							colorInPopup = eventColors.randomElement()
-							showingEventDescriptionPopup = true
-						}) {
-							VStack(spacing: -8) {
-								ZStack {
-									Image(systemName: "mappin.circle.fill")
-										.resizable()
-										.scaledToFit()
-										.frame(width: 60, height: 60)
-										.foregroundColor(universalAccentColor)
-
-									if let creatorPfp = mockEvent.creator
-										.profilePicture
-									{
-										Image(creatorPfp)
-											.ProfileImageModifier(
-												imageType: .mapView)
-									}
+								if let creatorPfp = mockEvent.creator
+									.profilePicture
+								{
+									Image(creatorPfp)
+										.ProfileImageModifier(
+											imageType: .mapView)
 								}
-								Triangle()
-									.fill(universalAccentColor)
-									.frame(width: 40, height: 20)
 							}
+							Triangle()
+								.fill(universalAccentColor)
+								.frame(width: 40, height: 20)
 						}
 					}
 				}
