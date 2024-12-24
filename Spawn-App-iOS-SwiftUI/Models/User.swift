@@ -68,17 +68,34 @@ struct User: Identifiable, Codable, Hashable {
 }
 
 extension User {
-    static var danielAgapov: User = User(
-        id: UUID(),
-        friends: [],
-        username: "daggerpov",
-        profilePicture: "Daniel_Agapov_pfp",
-        firstName: "Daniel",
-        lastName: "Agapov",
-        bio: "This is my bio.",
-		friendTags: [FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes.randomElement() ?? "#ffffff", owner: User.danielAgapov, friends: [User.danielLee])],
-        email: "daniel@agapov.com"
-    )
+	static var danielAgapov: User = {
+		var user = User(
+			id: UUID(),
+			friends: [],
+			username: "daggerpov",
+			profilePicture: "Daniel_Agapov_pfp",
+			firstName: "Daniel",
+			lastName: "Agapov",
+			bio: "This is my bio.",
+			friendTags: [], // Temporarily empty
+			email: "daniel@agapov.com"
+		)
+
+		// Initialize friendTags after the User is created
+		let friendTag = FriendTag(
+			id: UUID(),
+			displayName: "Hobbies",
+			colorHexCode: eventColorHexCodes.randomElement() ?? "#ffffff",
+			owner: user, // Reference the user here
+			friends: [User.danielLee]
+		)
+
+		// Now assign the friendTags
+		user.friendTags = [friendTag]
+
+		return user
+	}()
+
     
     static var shannon: User = User(
         id: UUID(),
