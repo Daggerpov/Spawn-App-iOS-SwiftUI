@@ -69,13 +69,13 @@ struct FeedView: View {
         }
     }
 }
-
+@available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
-        user: .danielLee
-    )
-    FeedView()
-        .environmentObject(observableUser)
+	@Previewable
+	@StateObject var observableUser = ObservableUser(user: .danielLee)
+
+	FeedView()
+		.environmentObject(observableUser)
 }
 
 extension FeedView {
