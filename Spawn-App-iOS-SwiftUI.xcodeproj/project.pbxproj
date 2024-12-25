@@ -33,9 +33,22 @@
 		65D503782CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUIUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DC44BC0A2D1C3EFD00420368 /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUI" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 65D503582CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		65D5035B2CD86EB300923A01 /* Spawn-App-iOS-SwiftUI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DC44BC0A2D1C3EFD00420368 /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUI" target */,
+			);
 			path = "Spawn-App-iOS-SwiftUI";
 			sourceTree = "<group>";
 		};
@@ -408,6 +421,7 @@
 				DEVELOPMENT_TEAM = GUW483PXY6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Spawn-App-iOS-SwiftUI/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Spawn;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -441,6 +455,7 @@
 				DEVELOPMENT_TEAM = GUW483PXY6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Spawn-App-iOS-SwiftUI/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Spawn;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.social-networking";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
