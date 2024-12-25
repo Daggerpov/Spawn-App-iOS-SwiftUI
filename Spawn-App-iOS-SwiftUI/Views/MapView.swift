@@ -88,6 +88,9 @@ struct MapView: View {
 		}
 
 		.ignoresSafeArea()
+		.onAppear {
+			adjustRegionForEvents()
+		}
 		.popup(isPresented: $showingEventDescriptionPopup) {
 			if let event = eventInPopup, let color = colorInPopup {
 				EventDescriptionView(
@@ -107,6 +110,27 @@ struct MapView: View {
 			// TODO: read up on the documentation: https://github.com/exyte/popupview
 			// so that the description view is dismissed upon clicking outside
 		}
+	}
+	private func adjustRegionForEvents() {
+		guard !viewModel.events.isEmpty else { return }
+
+		let latitudes = viewModel.events.compactMap { $0.location?.latitude }
+		let longitudes = viewModel.events.compactMap { $0.location?.longitude }
+
+		guard let minLatitude = latitudes.min(),
+			  let maxLatitude = latitudes.max(),
+			  let minLongitude = longitudes.min(),
+			  let maxLongitude = longitudes.max() else { return }
+
+		let centerLatitude = (minLatitude + maxLatitude) / 2
+		let centerLongitude = (minLongitude + maxLongitude) / 2
+		let latitudeDelta = (maxLatitude - minLatitude) * 1.5 // Add padding
+		let longitudeDelta = (maxLongitude - minLongitude) * 1.5 // Add padding
+
+		region = MKCoordinateRegion(
+			center: CLLocationCoordinate2D(latitude: centerLatitude, longitude: centerLongitude),
+			span: MKCoordinateSpan(latitudeDelta: max(latitudeDelta, 0.01), longitudeDelta: max(longitudeDelta, 0.01))
+		)
 	}
 }
 
