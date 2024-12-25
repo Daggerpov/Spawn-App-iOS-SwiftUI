@@ -15,7 +15,11 @@ struct Spawn_App_iOS_SwiftUIApp: App {
         WindowGroup {
             FeedView()
                 .environmentObject(observableUser) // Inject the observable user into the environment
-        }
+				.onAppear {
+					User.setupFriends()
+				}
+		}
+
     }
 }
 
