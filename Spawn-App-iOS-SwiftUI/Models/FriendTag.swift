@@ -30,6 +30,7 @@ struct FriendTag: Identifiable, Codable, Hashable {
 		self.displayName = displayName
 		self.colorHexCode = colorHexCode
 		self.ownerId = ownerId
+		self.ownerId = ownerId
 		self.friends = friends
 	}
 }
