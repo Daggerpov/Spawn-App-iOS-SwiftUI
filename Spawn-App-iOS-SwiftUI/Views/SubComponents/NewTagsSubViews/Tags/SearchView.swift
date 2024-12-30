@@ -25,11 +25,11 @@ struct SearchView: View {
 			.padding(.horizontal, 15)
 			.frame(height: 45)
 			.overlay(
-				RoundedRectangle(cornerRadius: 20)
+				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
 					.stroke(universalAccentColor, lineWidth: 2)
 			)
 			.background(
-				RoundedRectangle(cornerRadius: 20)
+				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
 					.fill(universalBackgroundColor)
 			)
 		}

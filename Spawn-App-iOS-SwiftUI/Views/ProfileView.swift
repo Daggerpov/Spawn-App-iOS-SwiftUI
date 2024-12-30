@@ -69,7 +69,7 @@ struct ProfileView: View {
                             .frame(maxWidth: 135)
                             .padding()
                             .background(
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
                                     .stroke(universalAccentColor, lineWidth: 1)
                             )
                     }

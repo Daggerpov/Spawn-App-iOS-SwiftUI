@@ -86,11 +86,11 @@ struct BottomNavButtonView: View {
                         }
                     )
             case .plus:
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
                     .frame(width: 100, height: 45)
                     .foregroundColor(universalBackgroundColor)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
+                        RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
                             .stroke(universalAccentColor, lineWidth: 2)
                     )
                     .overlay(
