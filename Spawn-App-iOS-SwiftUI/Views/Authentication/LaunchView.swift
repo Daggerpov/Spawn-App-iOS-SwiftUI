@@ -15,20 +15,27 @@ struct LaunchView: View {
 				.resizable()
 				.scaledToFit()
 				.frame(width: 300, height: 300)
-
-			// TODO: fill in action for button later
-			Button(action: {}) {
+			
+			NavigationLink(destination: {
+				UserInfoInputView()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}) {
 				AuthProviderButtonView(authProviderType: .google)
 			}
-
-			// TODO: fill in action for button later
-			Button(action: {}) {
+			
+			NavigationLink(destination: {
+				UserInfoInputView()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}) {
 				AuthProviderButtonView(authProviderType: .apple)
+				
+				Spacer()
 			}
-			Spacer()
+			.background(Color(hex: "#8693FF"))
+			.ignoresSafeArea()
 		}
-		.background(Color(hex: "#8693FF"))
-		.ignoresSafeArea()
 	}
 }
 
