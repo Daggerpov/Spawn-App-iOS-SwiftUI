@@ -9,47 +9,22 @@ import SwiftUI
 
 struct LaunchView: View {
 	var body: some View {
-		VStack {
+		VStack (spacing: 16){
 			Spacer()
-
 			Image("spawn_launch_logo")
 				.resizable()
 				.scaledToFit()
-				.frame(width: 100, height: 100)
-
-			Spacer()
-
+				.frame(width: 300, height: 300)
+			
+			// TODO: fill in action for button later
 			Button(action: {}) {
-				HStack {
-					Image(systemName: "g.circle")
-						.font(.system(size: 20))
-					Text("Continue with Google")
-						.fontWeight(.medium)
-				}
-				.padding()
-				.frame(maxWidth: .infinity)
-				.background(Color.white)
-				.cornerRadius(8)
-				.foregroundColor(.black)
-				.padding(.horizontal, 32)
-			}
-			.padding(.bottom, 16)
-
-			Button(action: {}) {
-				HStack {
-					Image(systemName: "applelogo")
-						.font(.system(size: 20))
-					Text("Continue with Apple")
-						.fontWeight(.medium)
-				}
-				.padding()
-				.frame(maxWidth: .infinity)
-				.background(Color.white)
-				.cornerRadius(8)
-				.foregroundColor(.black)
-				.padding(.horizontal, 32)
+				AuthProviderButtonView(authProviderType: .google)
 			}
 
+			// TODO: fill in action for button later
+			Button(action: {}) {
+				AuthProviderButtonView(authProviderType: .apple)
+			}
 			Spacer()
 		}
 		.background(Color(red: 0.69, green: 0.75, blue: 1.0))
