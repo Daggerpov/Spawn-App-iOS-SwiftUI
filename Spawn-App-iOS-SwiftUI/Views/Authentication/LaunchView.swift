@@ -17,16 +17,6 @@ struct LaunchView: View {
 				.scaledToFit()
 				.frame(width: 100, height: 100)
 
-			Text("spawn")
-				.font(.system(size: 40, weight: .bold))
-				.foregroundColor(.white)
-				.padding(.top, 8)
-
-			Text("Spontaneity made easy.")
-				.font(.system(size: 16))
-				.foregroundColor(.white)
-				.padding(.top, 8)
-
 			Spacer()
 
 			Button(action: {}) {
