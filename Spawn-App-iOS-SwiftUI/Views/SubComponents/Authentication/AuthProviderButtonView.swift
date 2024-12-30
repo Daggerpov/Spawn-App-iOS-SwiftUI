@@ -12,16 +12,30 @@ struct AuthProviderButtonView: View {
 
 	var body: some View {
 		HStack {
-			Image(systemName: authProviderType == .google ? "g.circle" : "applelogo")
-				.font(.system(size: 20))
+			switch authProviderType {
+				case .apple:
+					Image(systemName: "applelogo")
+						.font(.system(size: 20))
+				case .google:
+					Image("google_logo")
+						.font(.system(size: 20))
+			}
+
 			Text("Continue with \(authProviderType == .google ? "Google" : "Apple")")
 				.fontWeight(.medium)
 		}
 		.padding()
 		.frame(maxWidth: .infinity)
-		.background(Color.white)
 		.cornerRadius(8)
 		.foregroundColor(.black)
+//		.overlay(
+//			RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+//				.stroke(universalAccentColor, lineWidth: 2)
+//		)
+		.background(
+			RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+				.fill(universalBackgroundColor)
+		)
 		.padding(.horizontal, 32)
 	}
 }
