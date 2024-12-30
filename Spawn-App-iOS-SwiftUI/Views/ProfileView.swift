@@ -80,17 +80,20 @@ struct ProfileView: View {
                     Spacer()
                     Spacer()
 
-                    // Logout Button
-                    Button(action: {
-                    }) {
-                        Text("Log Out")
+					NavigationLink(destination: {
+						LaunchView()
+							.navigationBarTitle("")
+							.navigationBarHidden(true)
+					}) {
+						Text("Log Out")
                             .font(.headline)
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: 170)
                             .background(profilPicPlusButtonColor)
                             .cornerRadius(20)
-                    }
+					}
+
                     Spacer()
                     .padding(.horizontal)
                 }
