@@ -27,7 +27,7 @@ struct LaunchView: View {
 			}
 			Spacer()
 		}
-		.background(Color(red: 0.69, green: 0.75, blue: 1.0))
+		.background(Color(hex: "#8693FF"))
 		.ignoresSafeArea()
 	}
 }
