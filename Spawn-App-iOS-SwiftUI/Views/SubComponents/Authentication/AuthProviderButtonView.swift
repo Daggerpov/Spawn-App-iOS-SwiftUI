@@ -18,7 +18,9 @@ struct AuthProviderButtonView: View {
 						.font(.system(size: 20))
 				case .google:
 					Image("google_logo")
-						.font(.system(size: 20))
+						.resizable()
+						.scaledToFit()
+						.frame(width: 25, height: 25)
 			}
 
 			Text("Continue with \(authProviderType == .google ? "Google" : "Apple")")
@@ -34,7 +36,7 @@ struct AuthProviderButtonView: View {
 //		)
 		.background(
 			RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-				.fill(universalBackgroundColor)
+				.fill(.white)
 		)
 		.padding(.horizontal, 32)
 	}
