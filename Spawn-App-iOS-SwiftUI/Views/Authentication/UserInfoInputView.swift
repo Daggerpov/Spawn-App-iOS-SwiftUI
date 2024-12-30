@@ -8,59 +8,70 @@
 import SwiftUI
 
 struct UserInfoInputView: View {
+	@StateObject var observableUser = ObservableUser(user: .danielAgapov)  // Shared instance
 	var body: some View {
-		VStack(spacing: 16) {
-			Spacer()
-			Spacer()
-
-			Text("Help your friends recognize you")
-				.font(.system(size: 30, weight: .semibold))
-				.foregroundColor(.white)
-				.multilineTextAlignment(.center)
-
-			Spacer()
-
-			ZStack {
-				Circle()
-					.fill(.white)
-					.frame(width: 100, height: 100)
-
-				Circle()
-					.fill(.black)
-					.frame(width: 24, height: 24)
-					.overlay(
-						Image(systemName: "plus")
-							.foregroundColor(.white)
-							.font(.system(size: 12, weight: .bold))
-					)
-					.offset(x: 35, y: 35)
-			}
-
-			Spacer()
-
+		NavigationStack {
 			VStack(spacing: 16) {
-				InputFieldView(label: "Name", placeholderText: "")
-				InputFieldView(label: "Username", placeholderText: "")
-			}
-			.padding(.horizontal, 32)
-
-			HStack{
 				Spacer()
-				Button(action: {}) {
-					Text("Skip for now >")
-						.font(.system(size: 20, weight: .semibold))
-						.foregroundColor(.white)
+				Spacer()
+
+				Text("Help your friends recognize you")
+					.font(.system(size: 30, weight: .semibold))
+					.foregroundColor(.white)
+					.multilineTextAlignment(.center)
+
+				Spacer()
+
+				ZStack {
+					Circle()
+						.fill(.white)
+						.frame(width: 100, height: 100)
+
+					Circle()
+						.fill(.black)
+						.frame(width: 24, height: 24)
+						.overlay(
+							Image(systemName: "plus")
+								.foregroundColor(.white)
+								.font(.system(size: 12, weight: .bold))
+						)
+						.offset(x: 35, y: 35)
 				}
+
+				Spacer()
+
+				VStack(spacing: 16) {
+					InputFieldView(label: "Name", placeholderText: "")
+					InputFieldView(label: "Username", placeholderText: "")
+				}
+				.padding(.horizontal, 32)
+
+				HStack {
+					Spacer()
+					NavigationLink(destination: {
+						FeedView()
+							.environmentObject(observableUser)
+							.onAppear {
+								User.setupFriends()
+							}
+							.navigationBarTitle("")
+							.navigationBarHidden(true)
+					}) {
+						Text("Enter Spawn >")
+							.font(.system(size: 20, weight: .semibold))
+							.foregroundColor(.white)
+					}
+				}
+				.padding(.horizontal, 32)
+				Spacer()
+				Spacer()
+				Spacer()
+				Spacer()
 			}
-			.padding(.horizontal, 32)
-			Spacer()
-			Spacer()
-			Spacer()
-			Spacer()
+			.padding()
+			.background(Color(hex: "#8693FF"))
+			.ignoresSafeArea()
 		}
-		.padding()
-		.background(Color(hex: "#8693FF"))
-		.ignoresSafeArea()
 	}
 }
 
