@@ -19,7 +19,7 @@ struct ProfileView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
+            VStack {
                 VStack(alignment: .center, spacing: 20) {
                     // Profile Picture
                     

@@ -9,6 +9,10 @@ import SwiftUI
 
 struct UserInfoInputView: View {
 	@StateObject var observableUser = ObservableUser(user: .danielAgapov)  // Shared instance
+
+	@State private var name: String = ""
+	@State private var username: String = ""
+
 	var body: some View {
 		NavigationStack {
 			VStack(spacing: 16) {
@@ -41,8 +45,8 @@ struct UserInfoInputView: View {
 				Spacer()
 
 				VStack(spacing: 16) {
-					InputFieldView(label: "Name", placeholderText: "")
-					InputFieldView(label: "Username", placeholderText: "")
+					InputFieldView(label: "Name", text: Binding(get: { name }, set: { name = $0}))
+					InputFieldView(label: "Username", text: Binding(get: { username }, set: { username = $0}))
 				}
 				.padding(.horizontal, 32)
 
@@ -77,7 +81,8 @@ struct UserInfoInputView: View {
 
 struct InputFieldView: View {
 	var label: String
-	var placeholderText: String
+
+	@Binding var text: String
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 4) {
@@ -85,7 +90,7 @@ struct InputFieldView: View {
 				.font(.system(size: 18))
 				.foregroundColor(.white)
 
-			TextField("", text: .constant(placeholderText))
+			TextField("", text: $text)
 				.padding()
 				.background(Color.white)
 				.cornerRadius(universalRectangleCornerRadius)
