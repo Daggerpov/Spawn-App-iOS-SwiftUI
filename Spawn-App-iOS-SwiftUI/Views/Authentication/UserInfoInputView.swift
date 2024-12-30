@@ -11,10 +11,14 @@ struct UserInfoInputView: View {
 	var body: some View {
 		VStack(spacing: 16) {
 			Spacer()
+			Spacer()
 
-			Text("Setup your profile?")
-				.font(.system(size: 20, weight: .semibold))
+			Text("Help your friends recognize you")
+				.font(.system(size: 30, weight: .semibold))
 				.foregroundColor(.white)
+				.multilineTextAlignment(.center)
+
+			Spacer()
 
 			ZStack {
 				Circle()
@@ -32,21 +36,29 @@ struct UserInfoInputView: View {
 					.offset(x: 35, y: 35)
 			}
 
+			Spacer()
+
 			VStack(spacing: 16) {
 				InputFieldView(label: "Name", placeholderText: "")
 				InputFieldView(label: "Username", placeholderText: "")
 			}
 			.padding(.horizontal, 32)
 
-			Spacer()
-
-			Button(action: {}) {
-				Text("Skip for now >")
-					.font(.system(size: 16, weight: .semibold))
-					.foregroundColor(.white)
+			HStack{
+				Spacer()
+				Button(action: {}) {
+					Text("Skip for now >")
+						.font(.system(size: 20, weight: .semibold))
+						.foregroundColor(.white)
+				}
 			}
-			.padding(.bottom, 32)
+			.padding(.horizontal, 32)
+			Spacer()
+			Spacer()
+			Spacer()
+			Spacer()
 		}
+		.padding()
 		.background(Color(hex: "#8693FF"))
 		.ignoresSafeArea()
 	}
@@ -59,13 +71,13 @@ struct InputFieldView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 4) {
 			Text(label)
-				.font(.system(size: 14))
+				.font(.system(size: 18))
 				.foregroundColor(.white)
 
 			TextField("", text: .constant(placeholderText))
 				.padding()
 				.background(Color.white)
-				.cornerRadius(8)
+				.cornerRadius(universalRectangleCornerRadius)
 		}
 	}
 }
