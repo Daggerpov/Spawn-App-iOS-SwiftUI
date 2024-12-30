@@ -33,8 +33,8 @@ struct UserInfoInputView: View {
 			}
 
 			VStack(spacing: 16) {
-				InputFieldView(placeholder: "Name", text: "")
-				InputFieldView(placeholder: "Username", text: "")
+				InputFieldView(label: "Name", placeholderText: "")
+				InputFieldView(label: "Username", placeholderText: "")
 			}
 			.padding(.horizontal, 32)
 
@@ -53,16 +53,16 @@ struct UserInfoInputView: View {
 }
 
 struct InputFieldView: View {
-	var placeholder: String
-	var text: String
+	var label: String
+	var placeholderText: String
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 4) {
-			Text(placeholder)
+			Text(label)
 				.font(.system(size: 14))
 				.foregroundColor(.white)
 
-			TextField("", text: .constant(text))
+			TextField("", text: .constant(placeholderText))
 				.padding()
 				.background(Color.white)
 				.cornerRadius(8)
