@@ -82,6 +82,10 @@ struct ProfileView: View {
 
 					NavigationLink(destination: {
 						LaunchView()
+							.environmentObject(user)
+							.onAppear {
+								User.setupFriends()
+							}
 							.navigationBarTitle("")
 							.navigationBarHidden(true)
 					}) {
