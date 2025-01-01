@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct LaunchView: View {
+	@StateObject var observableUser = ObservableUser(user: .danielAgapov)
+
 	var body: some View {
 		NavigationStack{
 			VStack(spacing: 16) {
@@ -19,6 +21,10 @@ struct LaunchView: View {
 				
 				NavigationLink(destination: {
 					UserInfoInputView()
+						.environmentObject(observableUser) // Inject the observable user into the environment
+						.onAppear {
+							User.setupFriends()
+						}
 						.navigationBarTitle("")
 						.navigationBarHidden(true)
 				}) {
@@ -27,6 +33,10 @@ struct LaunchView: View {
 				
 				NavigationLink(destination: {
 					UserInfoInputView()
+						.environmentObject(observableUser) // Inject the observable user into the environment
+						.onAppear {
+							User.setupFriends()
+						}
 						.navigationBarTitle("")
 						.navigationBarHidden(true)
 				}) {
