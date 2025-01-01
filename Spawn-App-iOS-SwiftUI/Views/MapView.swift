@@ -9,16 +9,12 @@ import MapKit
 import PopupView
 import SwiftUI
 
+@available(iOS 17.0, *)
 struct MapView: View {
 	@EnvironmentObject var user: ObservableUser
 
-	@StateObject var viewModel: FeedViewModel = FeedViewModel(
-		events: Event.mockEvents)
-	@State private var region = MKCoordinateRegion(
-		center: CLLocationCoordinate2D(
-			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
-		span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-	)
+	@StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
+	@State var camera: MapCameraPosition = .automatic
 	let mockTags: [FriendTag] = FriendTag.mockTags
 
 	// MARK - Event Description State Vars
@@ -27,54 +23,58 @@ struct MapView: View {
 	@State var colorInPopup: Color?
 
 	var body: some View {
-		ZStack {
-			Map(
-				coordinateRegion: $region,
-				annotationItems: viewModel.events
-			) { mockEvent in
-				MapAnnotation(
-					coordinate: CLLocationCoordinate2D(
-						latitude: mockEvent.location?.latitude ?? 0,
-						longitude: mockEvent.location?.longitude ?? 0
-					), anchorPoint: CGPoint(x: 0.5, y: 1.0)
-				) {
-					Button(action: {
-						eventInPopup = mockEvent
-						colorInPopup = eventColors.randomElement()
-						showingEventDescriptionPopup = true
-					}) {
-						VStack(spacing: -8) {
-							ZStack {
-								Image(systemName: "mappin.circle.fill")
-									.resizable()
-									.scaledToFit()
-									.frame(width: 60, height: 60)
-									.foregroundColor(universalAccentColor)
+		ZStack{
+			Map(position: $camera) {
+				ForEach(viewModel.events) {mockEvent in
+					if let name = mockEvent.location?.name,
+					   let lat = mockEvent.location?.latitude,
+					   let long = mockEvent.location?.longitude {
+						Annotation(
+							name,
+							coordinate: CLLocationCoordinate2D(
+								latitude: lat,
+								longitude: long
+							)
+						) {
+							VStack {
+								if let creatorPfp = mockEvent.creator.profilePicture {
+									Button(action: {
+										eventInPopup = mockEvent
+										colorInPopup = eventColors.randomElement()
+										showingEventDescriptionPopup = true
+									}) {
 
-								if let creatorPfp = mockEvent.creator
-									.profilePicture
-								{
-									Image(creatorPfp)
-										.ProfileImageModifier(
-											imageType: .mapView)
+										VStack (spacing: -8){ // -8, to make the triangle "go inside" the pin
+											ZStack {
+												Image(systemName: "mappin.circle.fill")
+													.resizable()
+													.scaledToFit()
+													.frame(width: 60, height: 60)
+													.foregroundColor(universalAccentColor)
+
+												Image(creatorPfp)
+													.ProfileImageModifier(imageType: .mapView)
+											}
+											Triangle()
+												.fill(universalAccentColor)
+												.frame(width: 40, height: 20)
+
+										}
+									}
 								}
 							}
-							Triangle()
-								.fill(universalAccentColor)
-								.frame(width: 40, height: 20)
 						}
 					}
 				}
 			}
-			.ignoresSafeArea()
 			VStack {
-				VStack {
+				VStack{
 					TagsScrollView(tags: mockTags)
 				}
 				.padding(.horizontal)
 				.padding(.top, 20)
 				Spacer()
-				HStack(spacing: 35) {
+				HStack (spacing: 35) {
 					BottomNavButtonView(buttonType: .feed)
 					Spacer()
 					BottomNavButtonView(buttonType: .plus)
@@ -88,9 +88,7 @@ struct MapView: View {
 		}
 
 		.ignoresSafeArea()
-		.onAppear {
-			adjustRegionForEvents()
-		}
+		.mapStyle(.standard)
 		.popup(isPresented: $showingEventDescriptionPopup) {
 			if let event = eventInPopup, let color = colorInPopup {
 				EventDescriptionView(
@@ -101,36 +99,14 @@ struct MapView: View {
 			}
 		} customize: {
 			$0
-				.type(
-					.floater(
-						verticalPadding: 20,
-						horizontalPadding: 20,
-						useSafeAreaInset: false
-					))
+				.type(.floater(
+					verticalPadding: 20,
+					horizontalPadding: 20,
+					useSafeAreaInset: false
+				))
 			// TODO: read up on the documentation: https://github.com/exyte/popupview
 			// so that the description view is dismissed upon clicking outside
 		}
-	}
-	private func adjustRegionForEvents() {
-		guard !viewModel.events.isEmpty else { return }
-
-		let latitudes = viewModel.events.compactMap { $0.location?.latitude }
-		let longitudes = viewModel.events.compactMap { $0.location?.longitude }
-
-		guard let minLatitude = latitudes.min(),
-			  let maxLatitude = latitudes.max(),
-			  let minLongitude = longitudes.min(),
-			  let maxLongitude = longitudes.max() else { return }
-
-		let centerLatitude = (minLatitude + maxLatitude) / 2
-		let centerLongitude = (minLongitude + maxLongitude) / 2
-		let latitudeDelta = (maxLatitude - minLatitude) * 1.5 // Add padding
-		let longitudeDelta = (maxLongitude - minLongitude) * 1.5 // Add padding
-
-		region = MKCoordinateRegion(
-			center: CLLocationCoordinate2D(latitude: centerLatitude, longitude: centerLongitude),
-			span: MKCoordinateSpan(latitudeDelta: max(latitudeDelta, 0.01), longitudeDelta: max(longitudeDelta, 0.01))
-		)
 	}
 }
 
