@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ProfileView: View {
+	@EnvironmentObject var observableUser: ObservableUser
+
     let user: User
     @State private var bio: String
     @State private var editingState: ProfileEditText = .edit
@@ -82,7 +84,7 @@ struct ProfileView: View {
 
 					NavigationLink(destination: {
 						LaunchView()
-							.environmentObject(user)
+							.environmentObject(observableUser)
 							.onAppear {
 								User.setupFriends()
 							}
