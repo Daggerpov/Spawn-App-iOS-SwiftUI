@@ -75,11 +75,11 @@ struct MapView: View {
 				.padding(.top, 20)
 				Spacer()
 				HStack(spacing: 35) {
-					BottomNavButtonView(buttonType: .feed)
+					BottomNavButtonView(buttonType: .feed, source: .map)
 					Spacer()
-					BottomNavButtonView(buttonType: .plus)
+					BottomNavButtonView(buttonType: .plus, source: .map)
 					Spacer()
-					BottomNavButtonView(buttonType: .friends)
+					BottomNavButtonView(buttonType: .friends, source: .map)
 					// TODO: make work after designs are finalized
 				}
 				.padding(32)

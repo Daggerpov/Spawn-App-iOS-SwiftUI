@@ -12,8 +12,9 @@ struct BottomNavButtonView: View {
     var buttonType: BottomNavButtonType
     var imageName: String
     var imageSize: CGFloat = 25
-    
-    init(buttonType: BottomNavButtonType) {
+	let source: BackButtonSourcePageType
+
+	init(buttonType: BottomNavButtonType, source: BackButtonSourcePageType = .feed) {
         self.buttonType = buttonType
         switch(buttonType) {
             case .map:
@@ -26,6 +27,7 @@ struct BottomNavButtonView: View {
                 self.imageName = "list.bullet"
                 self.imageSize = 12
         }
+		self.source = source
     }
     
     var body: some View {
@@ -74,7 +76,7 @@ struct BottomNavButtonView: View {
                     .modifier(CircularButtonStyling(width: 25, height: 20, frameSize: 45, source: "map"))
                     .overlay(
                         NavigationLink(destination: {
-                            FriendsView(user: user.user)
+							FriendsView(user: user.user, source: source)
                                 .navigationBarTitle("")
                                 .navigationBarHidden(true)
                         }) {

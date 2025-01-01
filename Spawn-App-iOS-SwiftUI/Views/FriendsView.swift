@@ -9,10 +9,13 @@ import SwiftUI
 
 struct FriendsView: View {
     let user: User
+	let source: BackButtonSourcePageType
+
     @State private var selectedTab: FriendTagToggle = .tags // TODO DANIEL: change back to friends later by default
     
-    init(user: User) {
+	init(user: User, source: BackButtonSourcePageType) {
         self.user = user
+		self.source = source
     }
     
     var body: some View {
@@ -35,7 +38,7 @@ struct FriendsView: View {
 private extension FriendsView {
     var header: some View {
         HStack {
-            BackButton()
+			BackButton(source: source)
             Spacer()
             Picker("", selection: $selectedTab) {
                 Text("friends")
@@ -66,5 +69,5 @@ private extension FriendsView {
 	@Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
 		user: .danielLee
 	)
-	FriendsView(user: observableUser.user)
+	FriendsView(user: observableUser.user, source: .feed)
 }
