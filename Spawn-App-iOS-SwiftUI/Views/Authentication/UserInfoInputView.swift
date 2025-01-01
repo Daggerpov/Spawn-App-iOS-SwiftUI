@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct UserInfoInputView: View {
-	@StateObject var observableUser = ObservableUser(user: .danielAgapov)  // Shared instance
-
 	@State private var name: String = ""
 	@State private var username: String = ""
 
@@ -54,10 +52,6 @@ struct UserInfoInputView: View {
 					Spacer()
 					NavigationLink(destination: {
 						FeedView()
-							.environmentObject(observableUser)
-							.onAppear {
-								User.setupFriends()
-							}
 							.navigationBarTitle("")
 							.navigationBarHidden(true)
 					}) {
