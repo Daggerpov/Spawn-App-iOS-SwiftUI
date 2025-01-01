@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct LaunchView: View {
+	@StateObject var observableUser: ObservableUser = ObservableUser(user: .danielAgapov)
+
 	var body: some View {
 		NavigationStack{
 			VStack(spacing: 16) {
@@ -36,7 +38,11 @@ struct LaunchView: View {
 			}
 			.background(Color(hex: "#8693FF"))
 			.ignoresSafeArea()
+			.onAppear {
+				User.setupFriends()
+			}
 		}
+		.environmentObject(observableUser)
 	}
 }
 
