@@ -113,6 +113,18 @@ struct MapView: View {
 			// TODO: read up on the documentation: https://github.com/exyte/popupview
 			// so that the description view is dismissed upon clicking outside
 		}
+		.popup(isPresented: $showingEventCreationPopup) {
+			EventCreationView(creatingUser: user.user)
+		} customize: {
+			$0
+				.type(.floater(
+					verticalPadding: 20,
+					horizontalPadding: 20,
+					useSafeAreaInset: false
+				))
+			// TODO: read up on the documentation: https://github.com/exyte/popupview
+			// so that the description view is dismissed upon clicking outside
+		}
 	}
 	private func adjustRegionForEvents() {
 		guard !viewModel.events.isEmpty else { return }
