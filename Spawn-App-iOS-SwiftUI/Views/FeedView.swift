@@ -17,10 +17,12 @@ struct FeedView: View {
     
     let mockTags: [FriendTag] = FriendTag.mockTags
     
-    @State var showingEventDescriptionPopup: Bool = false
-    @State var eventInPopup: Event?
-    @State var colorInPopup: Color?
-    
+    @State private var showingEventDescriptionPopup: Bool = false
+    @State private var eventInPopup: Event?
+    @State private var colorInPopup: Color?
+
+	@State private var showingEventCreationPopup: Bool = false
+
     var body: some View {
         NavigationStack{
             VStack{
@@ -36,7 +38,30 @@ struct FeedView: View {
                     HStack (spacing: 35) {
                         BottomNavButtonView(buttonType: .map)
                         Spacer()
-                        BottomNavButtonView(buttonType: .plus)
+						RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+							.frame(width: 100, height: 45)
+							.foregroundColor(universalBackgroundColor)
+							.overlay(
+								RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+									.stroke(universalAccentColor, lineWidth: 2)
+							)
+							.overlay(
+								Button(action: {
+									showingEventCreationPopup = true
+								}) {
+									HStack{
+										Spacer()
+										Image(systemName: "plus")
+											.resizable()
+											.frame(width: 20, height: 20)
+											.clipShape(Circle())
+											.shadow(radius: 20)
+											.foregroundColor(universalAccentColor)
+											.font(.system(size: 30, weight: .bold))
+										Spacer()
+									}
+								}
+							)
                         Spacer()
                         BottomNavButtonView(buttonType: .friends)
                     }
@@ -48,7 +73,6 @@ struct FeedView: View {
             .ignoresSafeArea(.container)
             .dimmedBackground(isActive: showingEventDescriptionPopup)
         }
-        // TODO: fix these repetitive popups; maybe separate into another component
         .popup(isPresented: $showingEventDescriptionPopup) {
             if let event = eventInPopup, let color = colorInPopup {
                 EventDescriptionView(
@@ -67,6 +91,18 @@ struct FeedView: View {
             // TODO: read up on the documentation: https://github.com/exyte/popupview
             // so that the description view is dismissed upon clicking outside
         }
+		.popup(isPresented: $showingEventCreationPopup) {
+			EventCreationView(creatingUser: user.user)
+		} customize: {
+			$0
+				.type(.floater(
+					verticalPadding: 20,
+					horizontalPadding: 20,
+					useSafeAreaInset: false
+				))
+			// TODO: read up on the documentation: https://github.com/exyte/popupview
+			// so that the description view is dismissed upon clicking outside
+		}
     }
 }
 @available(iOS 17.0, *)
