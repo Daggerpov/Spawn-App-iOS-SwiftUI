@@ -48,7 +48,9 @@ struct FeedView: View {
             .padding()
             .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
-            .dimmedBackground(isActive: showingEventDescriptionPopup)
+			.dimmedBackground(
+				isActive: showingEventDescriptionPopup || showingEventCreationPopup
+			)
         }
         .popup(isPresented: $showingEventDescriptionPopup) {
             if let event = eventInPopup, let color = colorInPopup {
@@ -60,11 +62,16 @@ struct FeedView: View {
             }
         } customize: {
             $0
-                .type(.floater(
-                    verticalPadding: 20,
-                    horizontalPadding: 20,
-                    useSafeAreaInset: false
-                ))
+				.type(.floater(
+					verticalPadding: 20,
+					horizontalPadding: 20,
+					useSafeAreaInset: false
+				))
+				.appearFrom(.centerScale)
+				.disappearTo(.centerScale)
+				.closeOnTapOutside(true)
+				.dragToDismiss(false) // Prevent dismissal when dragging
+				.autohideIn(nil) // Disable auto-hide
             // TODO: read up on the documentation: https://github.com/exyte/popupview
             // so that the description view is dismissed upon clicking outside
         }
@@ -77,6 +84,11 @@ struct FeedView: View {
 					horizontalPadding: 20,
 					useSafeAreaInset: false
 				))
+				.appearFrom(.bottomSlide)
+				.disappearTo(.bottomSlide)
+				.closeOnTapOutside(true)
+				.dragToDismiss(false) // Prevent dismissal when dragging
+				.autohideIn(nil) // Disable auto-hide
 			// TODO: read up on the documentation: https://github.com/exyte/popupview
 			// so that the description view is dismissed upon clicking outside
 		}
