@@ -17,10 +17,12 @@ struct FeedView: View {
     
     let mockTags: [FriendTag] = FriendTag.mockTags
     
-    @State var showingEventDescriptionPopup: Bool = false
-    @State var eventInPopup: Event?
-    @State var colorInPopup: Color?
-    
+    @State private var showingEventDescriptionPopup: Bool = false
+    @State private var eventInPopup: Event?
+    @State private var colorInPopup: Color?
+
+	@State private var showingEventCreationPopup: Bool = false
+
     var body: some View {
         NavigationStack{
             VStack{
@@ -36,7 +38,7 @@ struct FeedView: View {
                     HStack (spacing: 35) {
                         BottomNavButtonView(buttonType: .map)
                         Spacer()
-                        BottomNavButtonView(buttonType: .plus)
+						EventCreationButtonView(showingEventCreationPopup: $showingEventCreationPopup)
                         Spacer()
                         BottomNavButtonView(buttonType: .friends)
                     }
@@ -46,9 +48,10 @@ struct FeedView: View {
             .padding()
             .background(universalBackgroundColor)
             .ignoresSafeArea(.container)
-            .dimmedBackground(isActive: showingEventDescriptionPopup)
+			.dimmedBackground(
+				isActive: showingEventDescriptionPopup || showingEventCreationPopup
+			)
         }
-        // TODO: fix these repetitive popups; maybe separate into another component
         .popup(isPresented: $showingEventDescriptionPopup) {
             if let event = eventInPopup, let color = colorInPopup {
                 EventDescriptionView(
@@ -59,14 +62,36 @@ struct FeedView: View {
             }
         } customize: {
             $0
-                .type(.floater(
-                    verticalPadding: 20,
-                    horizontalPadding: 20,
-                    useSafeAreaInset: false
-                ))
+				.type(.floater(
+					verticalPadding: 20,
+					horizontalPadding: 20,
+					useSafeAreaInset: false
+				))
+				.appearFrom(.centerScale)
+				.disappearTo(.centerScale)
+				.closeOnTapOutside(true)
+				.dragToDismiss(false) // Prevent dismissal when dragging
+				.autohideIn(nil) // Disable auto-hide
             // TODO: read up on the documentation: https://github.com/exyte/popupview
             // so that the description view is dismissed upon clicking outside
         }
+		.popup(isPresented: $showingEventCreationPopup) {
+			EventCreationView(creatingUser: user.user)
+		} customize: {
+			$0
+				.type(.floater(
+					verticalPadding: 20,
+					horizontalPadding: 20,
+					useSafeAreaInset: false
+				))
+				.appearFrom(.bottomSlide)
+				.disappearTo(.bottomSlide)
+				.closeOnTapOutside(true)
+				.dragToDismiss(false) // Prevent dismissal when dragging
+				.autohideIn(nil) // Disable auto-hide
+			// TODO: read up on the documentation: https://github.com/exyte/popupview
+			// so that the description view is dismissed upon clicking outside
+		}
     }
 }
 @available(iOS 17.0, *)

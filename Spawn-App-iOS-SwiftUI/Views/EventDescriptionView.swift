@@ -48,7 +48,7 @@ struct EventDescriptionView: View {
             .background(color)
             .cornerRadius(universalRectangleCornerRadius)
         }
-        .padding(.horizontal) // Reduces padding on the bottom
+        .padding(.horizontal)
         .padding(.top, 200)
     }
 }

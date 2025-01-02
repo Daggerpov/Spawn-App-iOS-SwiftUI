@@ -22,9 +22,11 @@ struct MapView: View {
 	let mockTags: [FriendTag] = FriendTag.mockTags
 
 	// MARK - Event Description State Vars
-	@State var showingEventDescriptionPopup: Bool = false
-	@State var eventInPopup: Event?
-	@State var colorInPopup: Color?
+	@State private var showingEventDescriptionPopup: Bool = false
+	@State private var eventInPopup: Event?
+	@State private var colorInPopup: Color?
+
+	@State private var showingEventCreationPopup: Bool = false
 
 	var body: some View {
 		ZStack {
@@ -77,10 +79,11 @@ struct MapView: View {
 				HStack(spacing: 35) {
 					BottomNavButtonView(buttonType: .feed, source: .map)
 					Spacer()
-					BottomNavButtonView(buttonType: .plus, source: .map)
+					EventCreationButtonView(
+						showingEventCreationPopup: $showingEventCreationPopup
+					)
 					Spacer()
 					BottomNavButtonView(buttonType: .friends, source: .map)
-					// TODO: make work after designs are finalized
 				}
 				.padding(32)
 			}
@@ -107,6 +110,18 @@ struct MapView: View {
 						horizontalPadding: 20,
 						useSafeAreaInset: false
 					))
+			// TODO: read up on the documentation: https://github.com/exyte/popupview
+			// so that the description view is dismissed upon clicking outside
+		}
+		.popup(isPresented: $showingEventCreationPopup) {
+			EventCreationView(creatingUser: user.user)
+		} customize: {
+			$0
+				.type(.floater(
+					verticalPadding: 20,
+					horizontalPadding: 20,
+					useSafeAreaInset: false
+				))
 			// TODO: read up on the documentation: https://github.com/exyte/popupview
 			// so that the description view is dismissed upon clicking outside
 		}

@@ -13,7 +13,7 @@ struct EventCardTopRowView: View {
     var body: some View {
         VStack (spacing: 10) {
             HStack{
-                titleView
+				EventCardTitleView(eventTitle: event.title)
                 Spacer()
                 VStack{
                     ParticipantsImagesView(event: event)
@@ -26,11 +26,13 @@ struct EventCardTopRowView: View {
     }
 }
 
-extension EventCardTopRowView {
-    var titleView: some View {
-        Text(event.title)
-            .font(.title2)
-            .frame(alignment: .leading)
-            .multilineTextAlignment(.leading)
-    }
+struct EventCardTitleView: View {
+	var eventTitle: String
+	var body: some View {
+		// TODO: make this title editable
+		Text(eventTitle)
+			.font(.title2)
+			.frame(alignment: .leading)
+			.multilineTextAlignment(.leading)
+	}
 }
