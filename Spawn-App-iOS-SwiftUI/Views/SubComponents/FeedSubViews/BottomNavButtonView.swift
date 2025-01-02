@@ -19,8 +19,6 @@ struct BottomNavButtonView: View {
         switch(buttonType) {
             case .map:
                 self.imageName = "map.fill"
-            case .plus:
-                self.imageName = "plus"
             case .friends:
                 self.imageName = "person.2.fill"
             case .feed:
@@ -85,33 +83,6 @@ struct BottomNavButtonView: View {
                                 .frame(width: 25, height: 20)
                                 .shadow(radius: 20)
                                 .foregroundColor(universalAccentColor)
-                        }
-                    )
-            case .plus:
-                RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-                    .frame(width: 100, height: 45)
-                    .foregroundColor(universalBackgroundColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-                            .stroke(universalAccentColor, lineWidth: 2)
-                    )
-                    .overlay(
-                        NavigationLink(destination: {
-                            MapView()
-                                .navigationBarTitle("")
-                                .navigationBarHidden(true)
-                        }) {
-                            HStack{
-                                Spacer()
-                                Image(systemName: imageName)
-                                    .resizable()
-                                    .frame(width: 20, height: 20)
-                                    .clipShape(Circle())
-                                    .shadow(radius: 20)
-                                    .foregroundColor(universalAccentColor)
-                                    .font(.system(size: 30, weight: .bold)) // Added font modifier for thickness, to match Figma design
-                                Spacer()
-                            }
                         }
                     )
         }
