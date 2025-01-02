@@ -38,30 +38,7 @@ struct FeedView: View {
                     HStack (spacing: 35) {
                         BottomNavButtonView(buttonType: .map)
                         Spacer()
-						RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-							.frame(width: 100, height: 45)
-							.foregroundColor(universalBackgroundColor)
-							.overlay(
-								RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-									.stroke(universalAccentColor, lineWidth: 2)
-							)
-							.overlay(
-								Button(action: {
-									showingEventCreationPopup = true
-								}) {
-									HStack{
-										Spacer()
-										Image(systemName: "plus")
-											.resizable()
-											.frame(width: 20, height: 20)
-											.clipShape(Circle())
-											.shadow(radius: 20)
-											.foregroundColor(universalAccentColor)
-											.font(.system(size: 30, weight: .bold))
-										Spacer()
-									}
-								}
-							)
+						EventCreationButtonView(showingEventCreationPopup: $showingEventCreationPopup)
                         Spacer()
                         BottomNavButtonView(buttonType: .friends)
                     }
