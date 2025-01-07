@@ -9,8 +9,17 @@ import Foundation
 
 class FeedViewModel: ObservableObject {
     @Published var events: [Event]
-    
-    init(events: [Event]) {
-        self.events = events
+
+	var apiService: IAPIService
+
+	init(apiService: IAPIService, user: User) {
+		self.events = fetchEventsForUser(user: user)
     }
+
+	func fetchEventsForUser(user: User) -> [Event] {
+		if let url: URL = URL(string: APIService.baseURL + "events/user/\(user.id)") {
+			return apiService
+				.fetchData(from: url)
+		}
+	}
 }
