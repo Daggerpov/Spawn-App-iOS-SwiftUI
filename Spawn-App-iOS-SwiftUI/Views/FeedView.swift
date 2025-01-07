@@ -11,8 +11,8 @@ import SwiftUI
 
 struct FeedView: View {
     @EnvironmentObject var user: ObservableUser
-    @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
-    
+	@ObservedObject var viewModel: FeedViewModel
+
     @Namespace private var animation: Namespace.ID
     
     let mockTags: [FriendTag] = FriendTag.mockTags
@@ -22,6 +22,10 @@ struct FeedView: View {
     @State private var colorInPopup: Color?
 
 	@State private var showingEventCreationPopup: Bool = false
+
+	init() {
+		self.viewModel = FeedViewModel(apiService: MockAPIService.mocking ? MockAPIService() : APIService, user: user)
+	}
 
     var body: some View {
         NavigationStack{
