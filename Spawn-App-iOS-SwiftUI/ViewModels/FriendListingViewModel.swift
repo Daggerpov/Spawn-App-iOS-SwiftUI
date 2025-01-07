@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// This class isn't being used, but may be useful in the future, once the friends page is setup
 class FriendListingViewModel: ObservableObject {
     @Published var tagsForFriend: [FriendTag] = []
     var person: User
@@ -23,6 +24,7 @@ class FriendListingViewModel: ObservableObject {
     }
     
     private func fetchTagsForFriend() -> Void {
+
         if isFriend {
             guard let friendTags = user.friendTags else { return }
             

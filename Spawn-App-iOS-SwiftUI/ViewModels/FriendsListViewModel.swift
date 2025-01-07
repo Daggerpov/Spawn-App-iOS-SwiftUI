@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// This class isn't being used, but may be useful in the future, once the friends page is setup
 class FriendsListViewModel: ObservableObject {
     @Published var friends: [User] = []
     @Published var recommendedFriends: [User] = []
