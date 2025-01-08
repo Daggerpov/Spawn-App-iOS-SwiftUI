@@ -24,6 +24,7 @@ class FeedViewModel: ObservableObject {
 				events = try await self.apiService.fetchData(from: url)
 			} catch {
 				events = []
+				print(apiService.errorMessage ?? "")
 			}
 		}
 	}

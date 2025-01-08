@@ -10,7 +10,7 @@ import Foundation
 class APIService: IAPIService {
 	static var baseURL: String = "https://spawn-app-back-end-production.up.railway.app/api/v1/"
 
-	private var errorMessage: String? // TODO: currently not being accessed; maybe use in alert to user
+	var errorMessage: String? // TODO: currently not being accessed; maybe use in alert to user
 
 	internal func fetchData<T: Decodable>(from url: URL) async throws -> T where T: Decodable {
 		let (data, response) = try await URLSession.shared.data(from: url)
