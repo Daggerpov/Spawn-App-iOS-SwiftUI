@@ -114,16 +114,14 @@ extension Event {
             participants: [User.danielLee]
             
         ),
-        // commenting this one out, since its location messes with the map zoom level (zooms it way out)
-        // TODO: we should find a system to handle this better
-//        Event(
-//            id: UUID(),
-//            title: "Grabbing Udon",
-//            startTime: "12:00 PM",
-//            endTime: "02:30 PM",
-//            location: Location(id: UUID(), name: "Marugame Udon", latitude: 49.28032597998406, longitude: -123.11026665974741),
-//            creator: User.danielAgapov
-//        ),
+        Event(
+            id: UUID(),
+            title: "Grabbing Udon",
+            startTime: "12:00 PM",
+            endTime: "02:30 PM",
+            location: Location(id: UUID(), name: "Marugame Udon", latitude: 49.28032597998406, longitude: -123.11026665974741),
+            creator: User.danielAgapov
+        ),
         Event(
             id: UUID(),
             title: "Calendar Party",
