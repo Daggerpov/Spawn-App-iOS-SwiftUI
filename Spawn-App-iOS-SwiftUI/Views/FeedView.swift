@@ -11,7 +11,8 @@ import SwiftUI
 
 struct FeedView: View {
     @EnvironmentObject var user: ObservableUser
-	@ObservedObject var viewModel: FeedViewModel
+
+	@StateObject private var viewModel: FeedViewModel
 
     @Namespace private var animation: Namespace.ID
     
@@ -23,8 +24,8 @@ struct FeedView: View {
 
 	@State private var showingEventCreationPopup: Bool = false
 
-	init() {
-		self.viewModel = FeedViewModel(apiService: MockAPIService.mocking ? MockAPIService() : APIService, user: user)
+	init(user: User) {
+		_viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.mocking ? MockAPIService() : APIService(), user: user))
 	}
 
     var body: some View {
@@ -56,6 +57,11 @@ struct FeedView: View {
 				isActive: showingEventDescriptionPopup || showingEventCreationPopup
 			)
         }
+		.onAppear {
+			Task{
+				await viewModel.fetchEventsForUser()
+			}
+		}
         .popup(isPresented: $showingEventDescriptionPopup) {
             if let event = eventInPopup, let color = colorInPopup {
                 EventDescriptionView(
@@ -103,7 +109,7 @@ struct FeedView: View {
 	@Previewable
 	@StateObject var observableUser = ObservableUser(user: .danielLee)
 
-	FeedView()
+	FeedView(user: observableUser.user)
 		.environmentObject(observableUser)
 }
 

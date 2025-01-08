@@ -12,7 +12,8 @@ import SwiftUI
 struct MapView: View {
 	@EnvironmentObject var user: ObservableUser
 
-	@ObservedObject var viewModel: FeedViewModel
+	@StateObject private var viewModel: FeedViewModel
+
 	@State private var region = MKCoordinateRegion(
 		center: CLLocationCoordinate2D(
 			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
@@ -27,8 +28,8 @@ struct MapView: View {
 
 	@State private var showingEventCreationPopup: Bool = false
 
-	init() {
-		self.viewModel = FeedViewModel(apiService: MockAPIService.mocking ? MockAPIService() : APIService, user: user)
+	init(user: User) {
+		_viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.mocking ? MockAPIService() : APIService(), user: user))
 	}
 
 	var body: some View {
@@ -96,6 +97,9 @@ struct MapView: View {
 		.ignoresSafeArea()
 		.onAppear {
 			adjustRegionForEvents()
+			Task{
+				await viewModel.fetchEventsForUser()
+			}
 		}
 		.popup(isPresented: $showingEventDescriptionPopup) {
 			if let event = eventInPopup, let color = colorInPopup {
@@ -158,7 +162,7 @@ struct MapView: View {
 		ObservableUser(
 			user: .danielLee
 		)
-	MapView()
+	MapView(user: observableUser.user)
 		.environmentObject(observableUser)
 }
 
