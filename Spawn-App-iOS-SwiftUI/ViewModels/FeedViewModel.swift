@@ -8,18 +8,23 @@
 import Foundation
 
 class FeedViewModel: ObservableObject {
-    @Published var events: [Event]
+    @Published var events: [Event] = []
 
 	var apiService: IAPIService
+	var user: User
 
 	init(apiService: IAPIService, user: User) {
-		self.events = fetchEventsForUser(user: user)
+		self.apiService = apiService
+		self.user = user
     }
 
-	func fetchEventsForUser(user: User) -> [Event] {
+	func fetchEventsForUser() async -> Void {
 		if let url: URL = URL(string: APIService.baseURL + "events/user/\(user.id)") {
-			return apiService
-				.fetchData(from: url)
+			do {
+				events = try await self.apiService.fetchData(from: url)
+			} catch {
+				events = []
+			}
 		}
 	}
 }
