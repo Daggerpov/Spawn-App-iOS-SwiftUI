@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class FeedViewModel: ObservableObject {
     @Published var events: [Event] = []
 
@@ -19,13 +20,22 @@ class FeedViewModel: ObservableObject {
     }
 
 	func fetchEventsForUser() async -> Void {
-		if let url: URL = URL(string: APIService.baseURL + "events/user/\(user.id)") {
+		// TODO DANIEL: change back to "events/user/\(user.id)" later
+		if let url = URL(string: APIService.baseURL + "events") {
 			do {
-				events = try await self.apiService.fetchData(from: url)
+				let fetchedEvents: [Event] = try await self.apiService.fetchData(from: url)
+
+				// Ensure updating on the main thread
+				await MainActor.run {
+					self.events = fetchedEvents
+				}
 			} catch {
-				events = []
+				await MainActor.run {
+					self.events = []
+				}
 				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
+
 }
