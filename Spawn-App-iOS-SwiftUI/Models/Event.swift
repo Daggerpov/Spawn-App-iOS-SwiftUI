@@ -12,9 +12,9 @@ class Event: Identifiable, Codable {
     
     // MARK: Info
     var title: String
-    var startTime: String? // TODO: change to proper time later
-    var endTime: String? // TODO: change to proper time later
-    var location: Location? 
+    var startTime: Date? // TODO: change to proper time later
+    var endTime: Date? // TODO: change to proper time later
+    var location: Location?
     var note: String? // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
     
     // MARK: Relations
@@ -32,8 +32,8 @@ class Event: Identifiable, Codable {
 	init(
 		id: UUID,
 		title: String,
-		startTime: String? = nil,
-		endTime: String? = nil,
+		startTime: Date? = nil,
+		endTime: Date? = nil,
 		location: Location? = nil,
 		note: String? = nil,
 		creator: User? = User.danielAgapov,
@@ -55,11 +55,17 @@ class Event: Identifiable, Codable {
 }
 
 extension Event {
+	static let iso8601DateFormatter: ISO8601DateFormatter = {
+		let formatter = ISO8601DateFormatter()
+		formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+		return formatter
+	}()
+
 	static let mockDinnerEvent: Event = Event(
 		id: UUID(),
 		title: "Dinner time!!!!!!",
-		startTime: "10:00 PM",
-		endTime: "11:30 PM",
+		startTime: iso8601DateFormatter.date(from: "2025-01-10T22:00:00Z"),
+		endTime: iso8601DateFormatter.date(from: "2025-01-10T23:30:00Z"),
 		location: Location(id: UUID(), name: "Gather - Place Vanier", latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
 		creator: User.jennifer,
@@ -70,73 +76,73 @@ extension Event {
 			User.michael
 		]
 	)
-    static let mockEvents: [Event] = [
-        mockDinnerEvent,
-        Event(
-            id: UUID(),
-            title: "wanna run 5k with me?",
-            startTime: "04:00 PM",
-            location: Location(id: UUID(), name: "Wesbrook Mall", latitude: 49.25997722657244, longitude: -123.23986523529379),
-            creator: User.danielAgapov,
-            participants: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee],
-            chatMessages: [
-                ChatMessage(
-                    id: UUID(),
+
+	static let mockEvents: [Event] = [
+		mockDinnerEvent,
+		Event(
+			id: UUID(),
+			title: "wanna run 5k with me?",
+			startTime: iso8601DateFormatter.date(from: "2025-01-11T16:00:00Z"),
+			location: Location(id: UUID(), name: "Wesbrook Mall", latitude: 49.25997722657244, longitude: -123.23986523529379),
+			creator: User.danielAgapov,
+			participants: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee],
+			chatMessages: [
+				ChatMessage(
+					id: UUID(),
 					content: "yo guys, wya?",
-                    timestamp: "2 minutes ago",
+					timestamp: iso8601DateFormatter.date(from: "2025-01-11T16:02:00Z")!,
 					userSender: User.danielAgapov,
-					eventId: Event.mockDinnerEvent.id
-                ),
+					eventId: mockDinnerEvent.id
+				),
 				ChatMessage(
 					id: UUID(),
 					content: "I just saw you",
-					timestamp: "30 seconds ago",
+					timestamp: iso8601DateFormatter.date(from: "2025-01-11T16:02:30Z")!,
 					userSender: User.danielLee,
-					eventId: mockDinnerEvent
-						.id)
-            ]
-        ),
-        Event(
-            id: UUID(),
-            title: "playing basketball!!!",
-            endTime: "07:00 PM",
-            location: Location(id: UUID(), name: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
-            note: "let's play basketball!",
-            creator: User.danielAgapov
-        ),
-        Event(
-            id: UUID(),
-            title: "Im painting rn lol",
-            startTime: "10:00 AM",
-            endTime: "11:30 AM",
-            location: Location(id: UUID(), name: "Ross Drive - Wesbrook Mall", latitude: 49.25189587512135, longitude: -123.237051932404),
-            creator: User.shannon,
-            participants: [User.danielLee]
-            
-        ),
-        Event(
-            id: UUID(),
-            title: "Grabbing Udon",
-            startTime: "12:00 PM",
-            endTime: "02:30 PM",
-            location: Location(id: UUID(), name: "Marugame Udon", latitude: 49.28032597998406, longitude: -123.11026665974741),
-            creator: User.danielAgapov
-        ),
-        Event(
-            id: UUID(),
-            title: "Calendar Party",
-            startTime: "11:00 PM",
-            endTime: "02:30 AM",
-            location: Location(id: UUID(), name: "The Pit - Nest", latitude: 49.26694140754859, longitude: -123.25036565366581),
-            creator: User.danielLee
-        ),
-        Event(
-            id: UUID(),
-            title: "Gym - Leg Day",
-            startTime: "10:00 AM",
-            endTime: "11:30 AM",
-            location: Location(id: UUID(), name: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
-            creator: User.michael
-        )
-    ]
+					eventId: mockDinnerEvent.id
+				)
+			]
+		),
+		Event(
+			id: UUID(),
+			title: "playing basketball!!!",
+			endTime: iso8601DateFormatter.date(from: "2025-01-11T19:00:00Z"),
+			location: Location(id: UUID(), name: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
+			note: "let's play basketball!",
+			creator: User.danielAgapov
+		),
+		Event(
+			id: UUID(),
+			title: "Im painting rn lol",
+			startTime: iso8601DateFormatter.date(from: "2025-01-11T10:00:00Z"),
+			endTime: iso8601DateFormatter.date(from: "2025-01-11T11:30:00Z"),
+			location: Location(id: UUID(), name: "Ross Drive - Wesbrook Mall", latitude: 49.25189587512135, longitude: -123.237051932404),
+			creator: User.shannon,
+			participants: [User.danielLee]
+		),
+		Event(
+			id: UUID(),
+			title: "Grabbing Udon",
+			startTime: iso8601DateFormatter.date(from: "2025-01-11T12:00:00Z"),
+			endTime: iso8601DateFormatter.date(from: "2025-01-11T14:30:00Z"),
+			location: Location(id: UUID(), name: "Marugame Udon", latitude: 49.28032597998406, longitude: -123.11026665974741),
+			creator: User.danielAgapov
+		),
+		Event(
+			id: UUID(),
+			title: "Calendar Party",
+			startTime: iso8601DateFormatter.date(from: "2025-01-11T23:00:00Z"),
+			endTime: iso8601DateFormatter.date(from: "2025-01-12T02:30:00Z"),
+			location: Location(id: UUID(), name: "The Pit - Nest", latitude: 49.26694140754859, longitude: -123.25036565366581),
+			creator: User.danielLee
+		),
+		Event(
+			id: UUID(),
+			title: "Gym - Leg Day",
+			startTime: iso8601DateFormatter.date(from: "2025-01-11T10:00:00Z"),
+			endTime: iso8601DateFormatter.date(from: "2025-01-11T11:30:00Z"),
+			location: Location(id: UUID(), name: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
+			creator: User.michael
+		)
+	]
 }
