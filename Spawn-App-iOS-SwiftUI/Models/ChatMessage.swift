@@ -30,6 +30,12 @@ class ChatMessage: Identifiable, Codable {
 }
 
 extension ChatMessage {
+	static let dateFormatter: DateFormatter = {
+		let formatter = DateFormatter()
+		formatter.dateStyle = .short
+		formatter.timeStyle = .short
+		return formatter
+	}()
 	static let guysWya: ChatMessage = ChatMessage(
 		id: UUID(),
 		content: "yo guys, wya?",
