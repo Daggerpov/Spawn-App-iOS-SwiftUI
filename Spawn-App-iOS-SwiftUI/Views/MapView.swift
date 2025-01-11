@@ -57,7 +57,9 @@ struct MapView: View {
 									.frame(width: 60, height: 60)
 									.foregroundColor(universalAccentColor)
 
-								if let creatorPfp = mockEvent.creator
+								let creatorOne: User = mockEvent.creator ?? User.danielAgapov
+
+								if let creatorPfp = creatorOne
 									.profilePicture
 								{
 									Image(creatorPfp)

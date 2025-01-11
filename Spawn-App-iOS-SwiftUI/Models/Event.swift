@@ -18,8 +18,8 @@ class Event: Identifiable, Codable {
     var note: String? // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
     
     // MARK: Relations
-    var creator: User
-    
+    var creator: User?
+
     // tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
     var participants: [User]?
 
@@ -36,7 +36,7 @@ class Event: Identifiable, Codable {
 		endTime: String? = nil,
 		location: Location? = nil,
 		note: String? = nil,
-		creator: User,
+		creator: User? = User.danielAgapov,
 		participants: [User]? = nil,
 		chatMessages: [ChatMessage]? = nil,
 		invited: [User]? = nil
