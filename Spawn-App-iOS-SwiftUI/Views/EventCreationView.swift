@@ -11,7 +11,7 @@ struct EventCreationView: View {
 	@ObservedObject var viewModel: EventCreationViewModel
 
 	init(creatingUser: User) {
-		self.viewModel = EventCreationViewModel(creatingUser: creatingUser)
+		self.viewModel = EventCreationViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService(), creatingUser: creatingUser)
 	}
 
 	var body: some View {
@@ -62,6 +62,9 @@ struct EventCreationView: View {
 			Button(action: {
 				// TODO DANIEL: create event action
 				print("asd;lfkj")
+				Task {
+					await viewModel.createEvent()
+				}
 			}) {
 				Text("spawn")
 					.font(.headline)
