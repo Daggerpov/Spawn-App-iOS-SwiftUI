@@ -25,7 +25,7 @@ struct FeedView: View {
 	@State private var showingEventCreationPopup: Bool = false
 
 	init(user: User) {
-		_viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.mocking ? MockAPIService() : APIService(), user: user))
+		_viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService(), user: user))
 	}
 
     var body: some View {
@@ -34,7 +34,7 @@ struct FeedView: View {
                 Spacer()
                 HeaderView().padding(.top, 50)
                 Spacer()
-                TagsScrollView(tags: mockTags)
+				TagsScrollView(tags: viewModel.tags)
                 // TODO: implement logic here to adjust search results when the tag clicked is changed
                 Spacer()
                 Spacer()
@@ -60,6 +60,7 @@ struct FeedView: View {
 		.onAppear {
 			Task{
 				await viewModel.fetchEventsForUser()
+				await viewModel.fetchTagsForUser()
 			}
 		}
         .popup(isPresented: $showingEventDescriptionPopup) {

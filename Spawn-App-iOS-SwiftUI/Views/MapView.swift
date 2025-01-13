@@ -29,7 +29,7 @@ struct MapView: View {
 	@State private var showingEventCreationPopup: Bool = false
 
 	init(user: User) {
-		_viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.mocking ? MockAPIService() : APIService(), user: user))
+		_viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService(), user: user))
 	}
 
 	var body: some View {
@@ -77,7 +77,7 @@ struct MapView: View {
 			.ignoresSafeArea()
 			VStack {
 				VStack {
-					TagsScrollView(tags: mockTags)
+					TagsScrollView(tags: viewModel.tags)
 				}
 				.padding(.horizontal)
 				.padding(.top, 20)
@@ -101,6 +101,7 @@ struct MapView: View {
 			adjustRegionForEvents()
 			Task{
 				await viewModel.fetchEventsForUser()
+				await viewModel.fetchTagsForUser()
 			}
 		}
 		.popup(isPresented: $showingEventDescriptionPopup) {
