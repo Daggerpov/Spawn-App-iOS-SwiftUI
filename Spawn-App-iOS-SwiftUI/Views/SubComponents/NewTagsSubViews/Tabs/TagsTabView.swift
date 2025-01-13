@@ -9,10 +9,8 @@ import SwiftUI
 
 struct TagsTabView: View {
 	@ObservedObject var viewModel: TagsTabViewModel
-	let user: User
 
 	init(user: User) {
-		self.user = user
 		self.viewModel = TagsTabViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService() : APIService(), user: user)
