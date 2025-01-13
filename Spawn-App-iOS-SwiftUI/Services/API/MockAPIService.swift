@@ -20,4 +20,8 @@ class MockAPIService: IAPIService {
 		// TODO: implement other types for mocking later:
 		throw APIError.invalidData
 	}
+
+	func sendData<T>(_ object: T, to url: URL) async throws where T : Encodable {
+		throw APIError.invalidData
+	}
 }

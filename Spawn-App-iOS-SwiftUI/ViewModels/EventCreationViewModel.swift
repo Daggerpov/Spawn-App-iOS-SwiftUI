@@ -9,9 +9,25 @@ import Foundation
 
 class EventCreationViewModel: ObservableObject {
 	@Published var event: Event
+	@Published var creationMessage: String = ""
 
-	init(creatingUser: User) {
+	private var apiService: IAPIService
+
+	init(apiService: IAPIService, creatingUser: User) {
+		self.apiService = apiService
 		self.event = Event(id: UUID(), title: "", creator: creatingUser)
 	}
 
+	func createEvent() -> Void {
+		if let url = URL(string: APIService.baseURL + "events") {
+			do {
+				try await self.apiService.sendData(from: url)
+			} catch {
+				await MainActor.run {
+					creationMessage = "There was an error creating your event. Please try again"
+					print(apiService.errorMessage ?? "")
+				}
+			}
+		}
+	}
 }
