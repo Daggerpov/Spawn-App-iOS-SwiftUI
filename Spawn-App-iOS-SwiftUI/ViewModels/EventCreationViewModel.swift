@@ -18,10 +18,10 @@ class EventCreationViewModel: ObservableObject {
 		self.event = Event(id: UUID(), title: "", creator: creatingUser)
 	}
 
-	func createEvent() -> Void {
+	func createEvent() async -> Void {
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
-				try await self.apiService.sendData(from: url)
+				try await self.apiService.sendData(event, to: url)
 			} catch {
 				await MainActor.run {
 					creationMessage = "There was an error creating your event. Please try again"

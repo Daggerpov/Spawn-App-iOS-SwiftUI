@@ -5,10 +5,8 @@
 //  Created by Daniel Agapov on 2025-01-13.
 //
 
-
 import Foundation
 
-@MainActor
 class TagsTabViewModel: ObservableObject {
 	@Published var tags: [FriendTag] = []
 
