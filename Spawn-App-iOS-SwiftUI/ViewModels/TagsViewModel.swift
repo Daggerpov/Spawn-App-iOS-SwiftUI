@@ -28,7 +28,7 @@ class TagsViewModel: ObservableObject {
 		)
     }
 
-	func fetchTagsForUser() async -> Void {
+	func fetchTags() async -> Void {
 		// TODO DANIEL: change back to "friendTags?ownerId=ownerId" later
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {

@@ -29,6 +29,11 @@ struct TagsTabView: View {
 			Spacer()
 			tagsSection
 		}
+		.onAppear {
+			Task {
+				await viewModel.fetchTags()
+			}
+		}
 		.padding()
 	}
 }

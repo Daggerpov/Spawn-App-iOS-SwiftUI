@@ -15,6 +15,8 @@ class APIService: IAPIService {
 	// Shared JSONDecoder for decoding data from the backend
 	private static func makeDecoder() -> JSONDecoder {
 		let decoder = JSONDecoder()
+
+		// Custom date decoding strategy
 		decoder.dateDecodingStrategy = .custom { decoder -> Date in
 			let container = try decoder.singleValueContainer()
 			let dateString = try container.decode(String.self)
@@ -58,14 +60,14 @@ class APIService: IAPIService {
 		}
 
 		guard httpResponse.statusCode == 200 else {
-			errorMessage = "invalid status code for \(url)"
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
 			print(errorMessage ?? "no error message to log")
 
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 
 		do {
-			let decodedData = try APIService.makeDecoder().decode(T.self, from: data)
+			let decodedData = try JSONDecoder().decode(T.self, from: data)
 			return decodedData
 		} catch {
 			errorMessage = APIError.failedJSONParsing.localizedDescription
@@ -93,7 +95,7 @@ class APIService: IAPIService {
 		}
 
 		guard httpResponse.statusCode == 200 else {
-			errorMessage = "invalid status code for \(url)"
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
 			print(errorMessage ?? "no error message to log")
 
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
