@@ -26,8 +26,8 @@ struct FeedView: View {
 	@State private var creationOffset: CGFloat = 1000
 
 	var body: some View {
+		ZStack {
 		NavigationStack {
-			ZStack {
 				VStack {
 					Spacer()
 					HeaderView().padding(.top, 50)
@@ -72,23 +72,12 @@ struct FeedView: View {
 							users: User.mockUsers,
 							color: color
 						)
-						.fixedSize(horizontal: false, vertical: true)
-						.padding()
-						.background(.white)
-						.clipShape(RoundedRectangle(cornerRadius: 20))
-						.overlay(alignment: .topTrailing) {
-							Button {
-								closeDescription()
-							} label: {
-								Image(systemName: "xmark")
-									.font(.title2)
-									.fontWeight(.medium)
-							}
-							.tint(.black)
-							.padding()
-						}
-						.shadow(radius: 20)
-						.padding(30)
+//						.fixedSize(horizontal: false, vertical: true)
+//						.padding()
+//						.background(.white)
+//						.clipShape(RoundedRectangle(cornerRadius: 20))
+//						.shadow(radius: 20)
+//						.padding(30)
 						.offset(x: 0, y: descriptionOffset)
 						.onAppear {
 							withAnimation(.spring()) {
@@ -109,23 +98,12 @@ struct FeedView: View {
 
 					EventCreationView(creatingUser: user.user)
 
-					.fixedSize(horizontal: false, vertical: true)
-					.padding()
+//					.fixedSize(horizontal: false, vertical: true)
+//					.padding()
 					.background(.white)
-					.clipShape(RoundedRectangle(cornerRadius: 20))
-					.overlay(alignment: .topTrailing) {
-						Button {
-							closeCreation()
-						} label: {
-							Image(systemName: "xmark")
-								.font(.title2)
-								.fontWeight(.medium)
-						}
-						.tint(.black)
-						.padding()
-					}
-					.shadow(radius: 20)
-					.padding(30)
+//					.clipShape(RoundedRectangle(cornerRadius: 20))
+//					.shadow(radius: 20)
+//					.padding(30)
 					.offset(x: 0, y: creationOffset)
 					.onAppear {
 						withAnimation(.spring()) {
