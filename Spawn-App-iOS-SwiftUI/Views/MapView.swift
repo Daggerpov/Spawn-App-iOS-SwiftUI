@@ -26,7 +26,7 @@ struct MapView: View {
 	@State private var colorInPopup: Color?
 
 	@State private var showingEventCreationPopup: Bool = false
-	
+
 	@State private var descriptionOffset: CGFloat = 1000
 	@State private var creationOffset: CGFloat = 1000
 
@@ -115,17 +115,6 @@ struct MapView: View {
 						.padding()
 						.background(.white)
 						.clipShape(RoundedRectangle(cornerRadius: 20))
-						.overlay(alignment: .topTrailing) {
-							Button {
-								closeDescription()
-							} label: {
-								Image(systemName: "xmark")
-									.font(.title2)
-									.fontWeight(.medium)
-							}
-							.tint(.black)
-							.padding()
-						}
 						.shadow(radius: 20)
 						.padding(30)
 						.offset(x: 0, y: descriptionOffset)
@@ -152,17 +141,6 @@ struct MapView: View {
 						.padding()
 						.background(.white)
 						.clipShape(RoundedRectangle(cornerRadius: 20))
-						.overlay(alignment: .topTrailing) {
-							Button {
-								closeCreation()
-							} label: {
-								Image(systemName: "xmark")
-									.font(.title2)
-									.fontWeight(.medium)
-							}
-							.tint(.black)
-							.padding()
-						}
 						.shadow(radius: 20)
 						.padding(30)
 						.offset(x: 0, y: creationOffset)
@@ -189,6 +167,7 @@ struct MapView: View {
 			showingEventCreationPopup = false
 		}
 	}
+	
 	private func adjustRegionForEvents() {
 		guard !viewModel.events.isEmpty else { return }
 
