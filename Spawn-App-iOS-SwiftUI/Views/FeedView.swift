@@ -25,73 +25,47 @@ struct FeedView: View {
 
     var body: some View {
         NavigationStack{
-            VStack{
-                Spacer()
-                HeaderView().padding(.top, 50)
-                Spacer()
-                TagsScrollView(tags: mockTags)
-                // TODO: implement logic here to adjust search results when the tag clicked is changed
-                Spacer()
-                Spacer()
-                VStack{
-                    eventsListView
-                    HStack (spacing: 35) {
-                        BottomNavButtonView(buttonType: .map)
-                        Spacer()
-						EventCreationButtonView(showingEventCreationPopup: $showingEventCreationPopup)
-                        Spacer()
-                        BottomNavButtonView(buttonType: .friends)
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .padding()
-            .background(universalBackgroundColor)
-            .ignoresSafeArea(.container)
-			.dimmedBackground(
-				isActive: showingEventDescriptionPopup || showingEventCreationPopup
-			)
+			ZStack{
+				VStack{
+					Spacer()
+					HeaderView().padding(.top, 50)
+					Spacer()
+					TagsScrollView(tags: mockTags)
+					// TODO: implement logic here to adjust search results when the tag clicked is changed
+					Spacer()
+					Spacer()
+					VStack{
+						eventsListView
+						HStack (spacing: 35) {
+							BottomNavButtonView(buttonType: .map)
+							Spacer()
+							EventCreationButtonView(showingEventCreationPopup: $showingEventCreationPopup)
+							Spacer()
+							BottomNavButtonView(buttonType: .friends)
+						}
+					}
+					.padding(.horizontal)
+				}
+				.padding()
+				.background(universalBackgroundColor)
+				.ignoresSafeArea(.container)
+				.dimmedBackground(
+					isActive: showingEventDescriptionPopup || showingEventCreationPopup
+				)
+			}
+			if (showingEventDescriptionPopup) {
+				if let event = eventInPopup, let color = colorInPopup {
+					EventDescriptionView(
+						event: event,
+						users: User.mockUsers,
+						color: color
+					)
+				}
+			}
+			if (showingEventCreationPopup) {
+				EventCreationView(creatingUser: user.user)
+			}
         }
-        .popup(isPresented: $showingEventDescriptionPopup) {
-            if let event = eventInPopup, let color = colorInPopup {
-                EventDescriptionView(
-                    event: event,
-                    users: User.mockUsers,
-                    color: color
-                )
-            }
-        } customize: {
-            $0
-				.type(.floater(
-					verticalPadding: 20,
-					horizontalPadding: 20,
-					useSafeAreaInset: false
-				))
-				.appearFrom(.centerScale)
-				.disappearTo(.centerScale)
-				.closeOnTapOutside(true)
-				.dragToDismiss(false) // Prevent dismissal when dragging
-				.autohideIn(nil) // Disable auto-hide
-            // TODO: read up on the documentation: https://github.com/exyte/popupview
-            // so that the description view is dismissed upon clicking outside
-        }
-		.popup(isPresented: $showingEventCreationPopup) {
-			EventCreationView(creatingUser: user.user)
-		} customize: {
-			$0
-				.type(.floater(
-					verticalPadding: 20,
-					horizontalPadding: 20,
-					useSafeAreaInset: false
-				))
-				.appearFrom(.bottomSlide)
-				.disappearTo(.bottomSlide)
-				.closeOnTapOutside(true)
-				.dragToDismiss(false) // Prevent dismissal when dragging
-				.autohideIn(nil) // Disable auto-hide
-			// TODO: read up on the documentation: https://github.com/exyte/popupview
-			// so that the description view is dismissed upon clicking outside
-		}
     }
 }
 @available(iOS 17.0, *)
