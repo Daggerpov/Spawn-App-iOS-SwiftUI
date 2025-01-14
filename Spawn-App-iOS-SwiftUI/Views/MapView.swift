@@ -6,7 +6,6 @@
 //
 
 import MapKit
-import PopupView
 import SwiftUI
 
 struct MapView: View {
@@ -27,103 +26,167 @@ struct MapView: View {
 	@State private var colorInPopup: Color?
 
 	@State private var showingEventCreationPopup: Bool = false
+	
+	@State private var descriptionOffset: CGFloat = 1000
+	@State private var creationOffset: CGFloat = 1000
 
 	var body: some View {
-		ZStack {
-			Map(
-				coordinateRegion: $region,
-				annotationItems: viewModel.events
-			) { mockEvent in
-				MapAnnotation(
-					coordinate: CLLocationCoordinate2D(
-						latitude: mockEvent.location?.latitude ?? 0,
-						longitude: mockEvent.location?.longitude ?? 0
-					), anchorPoint: CGPoint(x: 0.5, y: 1.0)
-				) {
-					Button(action: {
-						eventInPopup = mockEvent
-						colorInPopup = eventColors.randomElement()
-						showingEventDescriptionPopup = true
-					}) {
-						VStack(spacing: -8) {
-							ZStack {
-								Image(systemName: "mappin.circle.fill")
-									.resizable()
-									.scaledToFit()
-									.frame(width: 60, height: 60)
-									.foregroundColor(universalAccentColor)
+		ZStack{
+			ZStack {
+				Map(
+					coordinateRegion: $region,
+					annotationItems: viewModel.events
+				) { mockEvent in
+					MapAnnotation(
+						coordinate: CLLocationCoordinate2D(
+							latitude: mockEvent.location?.latitude ?? 0,
+							longitude: mockEvent.location?.longitude ?? 0
+						), anchorPoint: CGPoint(x: 0.5, y: 1.0)
+					) {
+						Button(action: {
+							eventInPopup = mockEvent
+							colorInPopup = eventColors.randomElement()
+							showingEventDescriptionPopup = true
+						}) {
+							VStack(spacing: -8) {
+								ZStack {
+									Image(systemName: "mappin.circle.fill")
+										.resizable()
+										.scaledToFit()
+										.frame(width: 60, height: 60)
+										.foregroundColor(universalAccentColor)
 
-								if let creatorPfp = mockEvent.creator
-									.profilePicture
-								{
-									Image(creatorPfp)
-										.ProfileImageModifier(
-											imageType: .mapView)
+									if let creatorPfp = mockEvent.creator
+										.profilePicture
+									{
+										Image(creatorPfp)
+											.ProfileImageModifier(
+												imageType: .mapView)
+									}
 								}
+								Triangle()
+									.fill(universalAccentColor)
+									.frame(width: 40, height: 20)
 							}
-							Triangle()
-								.fill(universalAccentColor)
-								.frame(width: 40, height: 20)
 						}
 					}
 				}
-			}
-			.ignoresSafeArea()
-			VStack {
+				.ignoresSafeArea()
 				VStack {
-					TagsScrollView(tags: mockTags)
-				}
-				.padding(.horizontal)
-				.padding(.top, 20)
-				Spacer()
-				HStack(spacing: 35) {
-					BottomNavButtonView(buttonType: .feed, source: .map)
+					VStack {
+						TagsScrollView(tags: mockTags)
+					}
+					.padding(.horizontal)
+					.padding(.top, 20)
 					Spacer()
-					EventCreationButtonView(
-						showingEventCreationPopup: $showingEventCreationPopup
-					)
-					Spacer()
-					BottomNavButtonView(buttonType: .friends, source: .map)
+					HStack(spacing: 35) {
+						BottomNavButtonView(buttonType: .feed, source: .map)
+						Spacer()
+						EventCreationButtonView(
+							showingEventCreationPopup: $showingEventCreationPopup
+						)
+						Spacer()
+						BottomNavButtonView(buttonType: .friends, source: .map)
+					}
+					.padding(32)
 				}
-				.padding(32)
+				.padding(.top, 50)
 			}
-			.padding(.top, 50)
-		}
 
-		.ignoresSafeArea()
-		.onAppear {
-			adjustRegionForEvents()
-		}
-		.popup(isPresented: $showingEventDescriptionPopup) {
-			if let event = eventInPopup, let color = colorInPopup {
-				EventDescriptionView(
-					event: event,
-					users: User.mockUsers,
-					color: color
-				)
+			.ignoresSafeArea()
+			.onAppear {
+				adjustRegionForEvents()
 			}
-		} customize: {
-			$0
-				.type(
-					.floater(
-						verticalPadding: 20,
-						horizontalPadding: 20,
-						useSafeAreaInset: false
-					))
-			// TODO: read up on the documentation: https://github.com/exyte/popupview
-			// so that the description view is dismissed upon clicking outside
+			if showingEventDescriptionPopup {
+				if let event = eventInPopup, let color = colorInPopup {
+					ZStack {
+						Color(.black)
+							.opacity(0.5)
+							.onTapGesture {
+								closeDescription()
+							}
+
+						EventDescriptionView(
+							event: event,
+							users: User.mockUsers,
+							color: color
+						)
+						.fixedSize(horizontal: false, vertical: true)
+						.padding()
+						.background(.white)
+						.clipShape(RoundedRectangle(cornerRadius: 20))
+						.overlay(alignment: .topTrailing) {
+							Button {
+								closeDescription()
+							} label: {
+								Image(systemName: "xmark")
+									.font(.title2)
+									.fontWeight(.medium)
+							}
+							.tint(.black)
+							.padding()
+						}
+						.shadow(radius: 20)
+						.padding(30)
+						.offset(x: 0, y: descriptionOffset)
+						.onAppear {
+							withAnimation(.spring()) {
+								descriptionOffset = 0
+							}
+						}
+					}
+					.ignoresSafeArea()
+				}
+			}
+			if showingEventCreationPopup {
+				ZStack {
+					Color(.black)
+						.opacity(0.5)
+						.onTapGesture {
+							closeCreation()
+						}
+
+					EventCreationView(creatingUser: user.user)
+
+						.fixedSize(horizontal: false, vertical: true)
+						.padding()
+						.background(.white)
+						.clipShape(RoundedRectangle(cornerRadius: 20))
+						.overlay(alignment: .topTrailing) {
+							Button {
+								closeCreation()
+							} label: {
+								Image(systemName: "xmark")
+									.font(.title2)
+									.fontWeight(.medium)
+							}
+							.tint(.black)
+							.padding()
+						}
+						.shadow(radius: 20)
+						.padding(30)
+						.offset(x: 0, y: creationOffset)
+						.onAppear {
+							withAnimation(.spring()) {
+								creationOffset = 0
+							}
+						}
+				}
+				.ignoresSafeArea()
+			}
 		}
-		.popup(isPresented: $showingEventCreationPopup) {
-			EventCreationView(creatingUser: user.user)
-		} customize: {
-			$0
-				.type(.floater(
-					verticalPadding: 20,
-					horizontalPadding: 20,
-					useSafeAreaInset: false
-				))
-			// TODO: read up on the documentation: https://github.com/exyte/popupview
-			// so that the description view is dismissed upon clicking outside
+	}
+	func closeDescription() {
+		withAnimation(.spring()) {
+			descriptionOffset = 1000
+			showingEventDescriptionPopup = false
+		}
+	}
+
+	func closeCreation() {
+		withAnimation(.spring()) {
+			creationOffset = 1000
+			showingEventCreationPopup = false
 		}
 	}
 	private func adjustRegionForEvents() {
