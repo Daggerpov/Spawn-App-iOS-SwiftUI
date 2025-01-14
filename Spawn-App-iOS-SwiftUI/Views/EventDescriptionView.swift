@@ -49,7 +49,6 @@ struct EventDescriptionView: View {
             .cornerRadius(universalRectangleCornerRadius)
         }
         .padding(.horizontal)
-//        .padding(.top, 200)
     }
 }
 

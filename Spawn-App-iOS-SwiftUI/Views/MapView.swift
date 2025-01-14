@@ -135,20 +135,23 @@ struct MapView: View {
 							closeCreation()
 						}
 
-					EventCreationView(creatingUser: user.user)
-
-						.fixedSize(horizontal: false, vertical: true)
-						.padding()
-						.background(.white)
-						.clipShape(RoundedRectangle(cornerRadius: 20))
-						.shadow(radius: 20)
-						.padding(30)
-						.offset(x: 0, y: creationOffset)
-						.onAppear {
-							withAnimation(.spring()) {
-								creationOffset = 0
+					VStack{
+						Spacer()
+						EventCreationView(creatingUser: user.user)
+							.fixedSize(horizontal: false, vertical: true)
+							.padding()
+							.background(.white)
+							.clipShape(RoundedRectangle(cornerRadius: 20))
+							.shadow(radius: 20)
+							.padding(30)
+							.offset(x: 0, y: creationOffset)
+							.onAppear {
+								withAnimation(.spring()) {
+									creationOffset = 0
+								}
 							}
-						}
+						Spacer()
+					}
 				}
 				.ignoresSafeArea()
 			}

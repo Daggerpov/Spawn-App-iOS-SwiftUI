@@ -72,12 +72,6 @@ struct FeedView: View {
 							users: User.mockUsers,
 							color: color
 						)
-//						.fixedSize(horizontal: false, vertical: true)
-//						.padding()
-//						.background(.white)
-//						.clipShape(RoundedRectangle(cornerRadius: 20))
-//						.shadow(radius: 20)
-//						.padding(30)
 						.offset(x: 0, y: descriptionOffset)
 						.onAppear {
 							withAnimation(.spring()) {
@@ -97,13 +91,6 @@ struct FeedView: View {
 						}
 
 					EventCreationView(creatingUser: user.user)
-
-//					.fixedSize(horizontal: false, vertical: true)
-//					.padding()
-					.background(.white)
-//					.clipShape(RoundedRectangle(cornerRadius: 20))
-//					.shadow(radius: 20)
-//					.padding(30)
 					.offset(x: 0, y: creationOffset)
 					.onAppear {
 						withAnimation(.spring()) {
