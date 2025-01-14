@@ -8,10 +8,10 @@
 import SwiftUI
 
 struct TagsTabView: View {
-	@ObservedObject var viewModel: TagsTabViewModel
+	@ObservedObject var viewModel: TagsViewModel
 
 	init(user: User) {
-		self.viewModel = TagsTabViewModel(
+		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService() : APIService(), user: user)
 	}
@@ -22,7 +22,8 @@ struct TagsTabView: View {
 				Text("TAGS")
 					.font(.headline)
 
-				AddTagButton(color: universalAccentColor)
+				AddTagButtonView(color: universalAccentColor)
+					.environmentObject(viewModel)
 			}
 			Spacer()
 			Spacer()
