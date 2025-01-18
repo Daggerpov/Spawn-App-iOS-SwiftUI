@@ -11,7 +11,7 @@ struct FriendsView: View {
     let user: User
 	let source: BackButtonSourcePageType
 
-    @State private var selectedTab: FriendTagToggle = .tags // TODO DANIEL: change back to friends later by default
+    @State private var selectedTab: FriendTagToggle = .friends
     
 	init(user: User, source: BackButtonSourcePageType) {
         self.user = user

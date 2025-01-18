@@ -11,6 +11,10 @@ struct FriendsTabView: View {
     let user: User
     
     var body: some View {
+        // add friends buttons
+        
+        // accept friend req buttons
         SearchView(searchPlaceholderText: "search or add friends")
+        
     }
 }
