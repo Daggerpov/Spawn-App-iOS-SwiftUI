@@ -6,5 +6,6 @@
 //
 
 enum FriendTagToggle {
+    .cornerRadius(universalRectangleCornerRadius)
     case friends, tags
 }
