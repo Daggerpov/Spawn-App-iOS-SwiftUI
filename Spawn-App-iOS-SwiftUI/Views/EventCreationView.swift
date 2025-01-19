@@ -30,14 +30,20 @@ struct EventCreationView: View {
 			Button(action: { showFullDatePicker = true }) {
 				HStack {
 					Image(systemName: "calendar")
-					Text(viewModel.formatDate(selectedDate))  // Display the selected date
+						.foregroundColor(.secondary)
+					Text(viewModel.formatDate(selectedDate))
+						.padding()
 						.foregroundColor(.primary)
+						.background(
+						Rectangle()
+							.foregroundColor(Color("#D9D9D2"))
+							.background(Color(.init(gray: 0, alpha: 0.055)))
+							.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+							.cornerRadius(15)
+					)
 				}
-				.padding(.vertical, 8)
-				.padding(.horizontal, 12)
-				.background(
-					RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6))
-				)
+				.padding()
+
 			}
 			.sheet(isPresented: $showFullDatePicker) {
 				VStack {
@@ -58,8 +64,7 @@ struct EventCreationView: View {
 					}
 					.padding()
 					.frame(maxWidth: .infinity)
-					.background(Color.accentColor)
-					.foregroundColor(.white)
+					.foregroundColor(Color(.systemGray6))
 					.cornerRadius(10)
 					.padding()
 				}
