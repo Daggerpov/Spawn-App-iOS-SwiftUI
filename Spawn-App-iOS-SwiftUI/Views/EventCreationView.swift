@@ -71,7 +71,7 @@ struct EventCreationView: View {
 					.frame(maxWidth: .infinity)
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: 10).fill(
+						RoundedRectangle(cornerRadius: 15).fill(
 							Color.accentColor)
 					)
 					.foregroundColor(.white)
