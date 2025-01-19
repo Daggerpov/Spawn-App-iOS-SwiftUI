@@ -26,32 +26,48 @@ struct EventCreationView: View {
 			EventInputFieldLabel(text: "event name")
 			EventInputField(value: $viewModel.event.title)
 
-			EventInputFieldLabel(text: "date")
-			Button(action: { showFullDatePicker = true }) {
-				HStack {
-					Image(systemName: "calendar")
-						.foregroundColor(.secondary)
-					Text(viewModel.formatDate(selectedDate))
-						.padding()
-						.foregroundColor(.primary)
-						.background(
-						Rectangle()
-							.foregroundColor(Color("#D9D9D2"))
-							.background(Color(.init(gray: 0, alpha: 0.055)))
-							.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
-							.cornerRadius(15)
-					)
+			HStack {
+				VStack(alignment: .leading) {
+					EventInputFieldLabel(text: "date")
+					HStack {
+						Image(systemName: "calendar")
+							.resizable()
+							.frame(width: 24, height: 24)
+							.foregroundColor(.secondary)
+							.padding(.leading)
+						Button(action: { showFullDatePicker = true }) {
+							Text(viewModel.formatDate(selectedDate))
+								.padding()
+								.foregroundColor(.primary)
+								.background(
+									Rectangle()
+										.foregroundColor(Color("#D9D9D2"))
+										.background(
+											Color(.init(gray: 0, alpha: 0.055))
+										)
+										.frame(
+											maxWidth: .infinity, minHeight: 46,
+											maxHeight: 46
+										)
+										.cornerRadius(15)
+								)
+						}
+					}
+					.sheet(isPresented: $showFullDatePicker) {
+						fullDatePickerView
+					}
 				}
 			}
-			.sheet(isPresented: $showFullDatePicker) {
-				fullDatePickerView
-			}
 
-			HStack() {
-				startTimeView
-
-				endTimeView
-
+			HStack {
+				VStack(alignment: .leading) {
+					EventInputFieldLabel(text: "start time")
+					startTimeView
+				}
+				VStack(alignment: .leading) {
+					EventInputFieldLabel(text: "end time")
+					endTimeView
+				}
 				Spacer()
 			}
 
@@ -106,7 +122,7 @@ struct EventCreationView: View {
 		.cornerRadius(15)
 		.shadow(radius: 10)
 		.padding(.horizontal, 20)
-		.padding(.vertical , 100)
+		.padding(.vertical, 100)
 	}
 }
 
@@ -114,15 +130,11 @@ struct EventInputFieldLabel: View {
 	var text: String
 
 	var body: some View {
-		VStack {
-			Text(text)
-				.font(Font.custom("Poppins", size: 20))
-				.kerning(1)
-				.foregroundColor(universalAccentColor)
-				.frame(
-					maxWidth: .infinity, minHeight: 16, maxHeight: 16,
-					alignment: .topLeading)
-		}
+		Text(text)
+			.font(Font.custom("Poppins", size: 20))
+			.kerning(1)
+			.foregroundColor(universalAccentColor)
+			.bold()
 	}
 }
 
@@ -167,7 +179,10 @@ struct TimePicker: View {
 	var body: some View {
 		HStack {
 			Image(systemName: iconName)
+				.resizable()
+				.frame(width: 24, height: 24)
 				.foregroundColor(.secondary)
+
 			DatePicker(
 				"",
 				selection: $date,
@@ -179,65 +194,67 @@ struct TimePicker: View {
 		.background(
 			Rectangle()
 				.foregroundColor(.clear)
-				.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+				.frame(maxWidth: .infinity)
 				.cornerRadius(15)
 		)
+	}
+
+	// Helper function to check if the date is the current time
+	private func isNow(_ date: Date) -> Bool {
+		let calendar = Calendar.current
+		let now = Date()
+		return calendar.isDate(date, inSameDayAs: now)
+			&& calendar.component(.hour, from: date)
+				== calendar.component(.hour, from: now)
+			&& calendar.component(.minute, from: date)
+				== calendar.component(.minute, from: now)
+	}
+
+	// Helper function to format the time
+	private func formattedTime(_ date: Date) -> String {
+		let formatter = DateFormatter()
+		formatter.dateFormat = "h:mm a"  // Customize the format as needed
+		return formatter.string(from: date)
 	}
 }
 
 extension EventCreationView {
 	var startTimeView: some View {
-		VStack {
-			HStack{
-				EventInputFieldLabel(text: "start time")
-				Spacer()
-			}
-			HStack{
-				TimePicker(
-					iconName: "clock",
-					date: Binding(
-						get: {
-							viewModel.event.startTime
-							?? viewModel.combineDateAndTime(
-								selectedDate, time: Date())
-						},
-						set: { time in
-							viewModel.event.startTime = viewModel.combineDateAndTime(
-								selectedDate, time: time)
-						}
-					)
-				)
-				Spacer()
-			}
-		}
+		TimePicker(
+			iconName: "clock",
+			date: Binding(
+				get: {
+					viewModel.event.startTime
+						?? viewModel.combineDateAndTime(
+							selectedDate, time: Date())
+				},
+				set: { time in
+					viewModel.event.startTime =
+						viewModel.combineDateAndTime(
+							selectedDate, time: time)
+				}
+			)
+		)
 	}
 
 	var endTimeView: some View {
-		VStack {
-			HStack{
-				EventInputFieldLabel(text: "end time")
-				Spacer()
-			}
-			HStack{
-				TimePicker(
-					iconName: "clock.arrow.circlepath",
-					date: Binding(
-						get: {
-							viewModel.event.endTime
-							?? viewModel.combineDateAndTime(
-								selectedDate, time: Date()
-									.addingTimeInterval(2 * 60 * 60) // adds 2 hours
-							)
-						},
-						set: { time in
-							viewModel.event.endTime = viewModel.combineDateAndTime(
-								selectedDate, time: time)
-						}
-					)
-				)
-				Spacer()
-			}
-		}
+		TimePicker(
+			iconName: "clock.arrow.trianglehead.counterclockwise.rotate.90",
+			date: Binding(
+				get: {
+					viewModel.event.endTime
+						?? viewModel.combineDateAndTime(
+							selectedDate,
+							time: Date()
+								.addingTimeInterval(2 * 60 * 60)  // adds 2 hours
+						)
+				},
+				set: { time in
+					viewModel.event.endTime = viewModel.combineDateAndTime(
+						selectedDate, time: time)
+				}
+			)
+		)
 	}
 
 	var fullDatePickerView: some View {
