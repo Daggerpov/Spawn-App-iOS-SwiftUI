@@ -99,10 +99,6 @@ struct MapView: View {
 					.padding(32)
 				}
 				.padding(.top, 50)
-				.dimmedBackground(
-					isActive: showingEventDescriptionPopup
-					|| showingEventCreationPopup
-				)
 			}
 
 			.ignoresSafeArea()
@@ -114,23 +110,10 @@ struct MapView: View {
 				}
 			}
 			if showingEventDescriptionPopup {
-				EventDescriptionPopupView(
-					eventInPopup: eventInPopup,
-					colorInPopup: colorInPopup,
-					closeDescription: {
-						closeDescription()
-					},
-					offset: $descriptionOffset
-				)
+				eventDescriptionPopupView
 			}
 			if showingEventCreationPopup {
-				EventCreationPopupView(
-					user: user.user,
-					closeCreation: {
-						closeCreation()
-					},
-					offset: $creationOffset
-				)
+				eventCreationPopupView
 			}
 		}
 	}
@@ -168,6 +151,70 @@ struct MapView: View {
 			creationOffset = 1000
 			showingEventCreationPopup = false
 		}
+	}
+}
+
+extension MapView {
+	var eventDescriptionPopupView: some View {
+		Group{
+			if let event = eventInPopup, let color = colorInPopup {
+				ZStack {
+					Color(.black)
+						.opacity(0.5)
+						.onTapGesture {
+							closeDescription()
+						}
+					
+					EventDescriptionView(
+						event: event,
+						users: User.mockUsers,
+						color: color
+					)
+					.fixedSize(horizontal: false, vertical: true)
+					.padding()
+					.background(.white)
+					.clipShape(RoundedRectangle(cornerRadius: 20))
+					.shadow(radius: 20)
+					.padding(30)
+					.offset(x: 0, y: descriptionOffset)
+					.onAppear {
+						withAnimation(.spring()) {
+							descriptionOffset = 0
+						}
+					}
+				}
+				.ignoresSafeArea()
+			}
+		}
+	}
+
+	var eventCreationPopupView: some View {
+		ZStack {
+			Color(.black)
+				.opacity(0.5)
+				.onTapGesture {
+					closeCreation()
+				}
+
+			VStack{
+				Spacer()
+				EventCreationView(creatingUser: user.user)
+					.fixedSize(horizontal: false, vertical: true)
+					.padding()
+					.background(.white)
+					.clipShape(RoundedRectangle(cornerRadius: 20))
+					.shadow(radius: 20)
+					.padding(30)
+					.offset(x: 0, y: creationOffset)
+					.onAppear {
+						withAnimation(.spring()) {
+							creationOffset = 0
+						}
+					}
+				Spacer()
+			}
+		}
+		.ignoresSafeArea()
 	}
 }
 
