@@ -74,46 +74,23 @@ struct FeedView: View {
 				}
 			}
 			if showingEventDescriptionPopup {
-				if let event = eventInPopup, let color = colorInPopup {
-					ZStack {
-						Color(.black)
-							.opacity(0.5)
-							.onTapGesture {
-								closeDescription()
-							}
-
-						EventDescriptionView(
-							event: event,
-							users: User.mockUsers,
-							color: color
-						)
-						.offset(x: 0, y: descriptionOffset)
-						.onAppear {
-							withAnimation(.spring()) {
-								descriptionOffset = 0
-							}
-						}
-					}
-					.ignoresSafeArea()
-				}
+				EventDescriptionPopupView(
+					eventInPopup: eventInPopup,
+					colorInPopup: colorInPopup,
+					closeDescription: {
+						closeDescription()
+					},
+					offset: $descriptionOffset
+				)
 			}
 			if showingEventCreationPopup {
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeCreation()
-						}
-
-					EventCreationView(creatingUser: user.user)
-						.offset(x: 0, y: creationOffset)
-						.onAppear {
-							withAnimation(.spring()) {
-								creationOffset = 0
-							}
-						}
-				}
-				.ignoresSafeArea()
+				EventCreationPopupView(
+					user: user.user,
+					closeCreation: {
+						closeCreation()
+					},
+					offset: $creationOffset
+				)
 			}
 		}
 	}
