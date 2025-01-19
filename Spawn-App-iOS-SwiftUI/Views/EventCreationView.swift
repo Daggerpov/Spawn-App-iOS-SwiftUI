@@ -16,7 +16,9 @@ struct EventCreationView: View {
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 20) {
-			TextField("Event Title", text: $viewModel.event.title)
+			EventInputFieldLabel(text: "title")
+
+			TextField("", text: $viewModel.event.title)
 				.font(.title2.bold())
 				.foregroundColor(.primary)
 				.padding()
@@ -25,21 +27,25 @@ struct EventCreationView: View {
 				)
 
 			HStack(spacing: 16) {
+				EventInputFieldLabel(text: "start time")
 				EventInputField(
-					iconName: "clock", placeholder: "Start Time",
+					iconName: "clock",
 					value: $viewModel.event.startTime)
+				EventInputFieldLabel(text: "end time")
 				EventInputField(
-					iconName: "clock.arrow.circlepath", placeholder: "End Time",
+					iconName: "clock.arrow.circlepath",
 					value: $viewModel.event.endTime)
 			}
 
+			EventInputFieldLabel(text: "location")
 			EventInputField(
-				iconName: "mappin.and.ellipse", placeholder: "Location",
+				iconName: "mappin.and.ellipse",
 				value: Binding(
 					get: { viewModel.event.location?.name ?? "" },
 					set: { viewModel.event.location?.name = $0 ?? "" }
 				))
 
+			EventInputFieldLabel(text: "description")
 			TextEditor(
 				text: Binding(
 					get: { viewModel.event.note ?? "" },
@@ -60,8 +66,6 @@ struct EventCreationView: View {
 			.cornerRadius(10)
 
 			Button(action: {
-				// TODO DANIEL: create event action
-				print("asd;lfkj")
 				Task {
 					await viewModel.createEvent()
 				}
@@ -87,9 +91,22 @@ struct EventCreationView: View {
 	}
 }
 
+struct EventInputFieldLabel: View {
+	var text: String
+
+	var body: some View {
+		VStack {
+			Text(text)
+				.font(Font.custom("Poppins", size: 16))
+				.kerning(0.8)
+				.foregroundColor(Color(red: 0.11, green: 0.24, blue: 0.24))
+				.frame(maxWidth: .infinity, minHeight: 16, maxHeight: 16, alignment: .topLeading)
+		}
+	}
+}
+
 struct EventInputField: View {
 	var iconName: String
-	var placeholder: String
 	@Binding var value: String?
 
 	var body: some View {
@@ -97,7 +114,7 @@ struct EventInputField: View {
 			Image(systemName: iconName)
 				.foregroundColor(.secondary)
 			TextField(
-				placeholder,
+				"",
 				text: Binding(
 					get: { value ?? "" },
 					set: { value = $0 }
@@ -107,7 +124,16 @@ struct EventInputField: View {
 		}
 		.padding()
 		.background(
-			RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
+			Rectangle()
+				.foregroundColor(.clear)
+				.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+				.cornerRadius(15)
+				.overlay(
+					RoundedRectangle(cornerRadius: 15)
+						.inset(by: 0.75)
+						.stroke(.black, lineWidth: 1.5)
+				)
+		)
 	}
 }
 
