@@ -174,6 +174,8 @@ extension MapView {
 		.ignoresSafeArea()
 
 	}
+
+
 	var eventDescriptionPopupView: some View {
 		Group {
 			if let event = eventInPopup, let color = colorInPopup {
@@ -189,12 +191,6 @@ extension MapView {
 						users: User.mockUsers,
 						color: color
 					)
-					.fixedSize(horizontal: false, vertical: true)
-					.padding()
-					.background(.white)
-					.clipShape(RoundedRectangle(cornerRadius: 20))
-					.shadow(radius: 20)
-					.padding(30)
 					.offset(x: 0, y: descriptionOffset)
 					.onAppear {
 						withAnimation(.spring()) {
@@ -215,26 +211,17 @@ extension MapView {
 					closeCreation()
 				}
 
-			VStack {
-				Spacer()
-				EventCreationView(creatingUser: user.user)
-					.fixedSize(horizontal: false, vertical: true)
-					.padding()
-					.background(.white)
-					.clipShape(RoundedRectangle(cornerRadius: 20))
-					.shadow(radius: 20)
-					.padding(30)
-					.offset(x: 0, y: creationOffset)
-					.onAppear {
-						withAnimation(.spring()) {
-							creationOffset = 0
-						}
+			EventCreationView(creatingUser: user.user)
+				.offset(x: 0, y: creationOffset)
+				.onAppear {
+					withAnimation(.spring()) {
+						creationOffset = 0
 					}
-				Spacer()
-			}
+				}
 		}
 		.ignoresSafeArea()
 	}
+
 }
 
 @available(iOS 17.0, *)
