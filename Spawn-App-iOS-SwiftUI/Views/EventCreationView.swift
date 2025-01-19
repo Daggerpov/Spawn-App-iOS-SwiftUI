@@ -42,75 +42,16 @@ struct EventCreationView: View {
 							.cornerRadius(15)
 					)
 				}
-				.padding()
-
 			}
 			.sheet(isPresented: $showFullDatePicker) {
-				VStack {
-					Text("Select a Date")
-						.font(.headline)
-						.padding()
-					DatePicker(
-						"Select Date",
-						selection: $selectedDate,
-						displayedComponents: .date
-					)
-					.datePickerStyle(GraphicalDatePickerStyle())
-					.labelsHidden()
-					.padding()
-
-					Button("Done") {
-						showFullDatePicker = false
-					}
-					.padding()
-					.frame(maxWidth: .infinity)
-					.foregroundColor(Color(.systemGray6))
-					.cornerRadius(10)
-					.padding()
-				}
-				.presentationDetents([.medium])
+				fullDatePickerView
 			}
 
-			HStack(spacing: 16) {
-				VStack {
-					EventInputFieldLabel(text: "start time")
-						.padding(.leading, 8)
-					TimePicker(
-						iconName: "clock",
-						date: Binding(
-							get: {
-								viewModel.event.startTime
-								?? viewModel.combineDateAndTime(
-										selectedDate, time: Date())
-							},
-							set: { time in
-								viewModel.event.startTime = viewModel.combineDateAndTime(
-									selectedDate, time: time)
-							}
-						)
-					)
-				}
+			HStack() {
+				startTimeView
 
-				VStack {
-					EventInputFieldLabel(text: "end time")
-						.padding(.leading, 8)
-					TimePicker(
-						iconName: "clock.arrow.circlepath",
-						date: Binding(
-							get: {
-								viewModel.event.endTime
-								?? viewModel.combineDateAndTime(
-										selectedDate, time: Date()
-											.addingTimeInterval(2 * 60 * 60) // adds 2 hours
-									)
-							},
-							set: { time in
-								viewModel.event.endTime = viewModel.combineDateAndTime(
-									selectedDate, time: time)
-							}
-						)
-					)
-				}
+				endTimeView
+
 				Spacer()
 			}
 
@@ -241,6 +182,88 @@ struct TimePicker: View {
 				.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
 				.cornerRadius(15)
 		)
+	}
+}
+
+extension EventCreationView {
+	var startTimeView: some View {
+		VStack {
+			HStack{
+				EventInputFieldLabel(text: "start time")
+				Spacer()
+			}
+			HStack{
+				TimePicker(
+					iconName: "clock",
+					date: Binding(
+						get: {
+							viewModel.event.startTime
+							?? viewModel.combineDateAndTime(
+								selectedDate, time: Date())
+						},
+						set: { time in
+							viewModel.event.startTime = viewModel.combineDateAndTime(
+								selectedDate, time: time)
+						}
+					)
+				)
+				Spacer()
+			}
+		}
+	}
+
+	var endTimeView: some View {
+		VStack {
+			HStack{
+				EventInputFieldLabel(text: "end time")
+				Spacer()
+			}
+			HStack{
+				TimePicker(
+					iconName: "clock.arrow.circlepath",
+					date: Binding(
+						get: {
+							viewModel.event.endTime
+							?? viewModel.combineDateAndTime(
+								selectedDate, time: Date()
+									.addingTimeInterval(2 * 60 * 60) // adds 2 hours
+							)
+						},
+						set: { time in
+							viewModel.event.endTime = viewModel.combineDateAndTime(
+								selectedDate, time: time)
+						}
+					)
+				)
+				Spacer()
+			}
+		}
+	}
+
+	var fullDatePickerView: some View {
+		VStack {
+			Text("Select a Date")
+				.font(.headline)
+				.padding()
+			DatePicker(
+				"Select Date",
+				selection: $selectedDate,
+				displayedComponents: .date
+			)
+			.datePickerStyle(GraphicalDatePickerStyle())
+			.labelsHidden()
+			.padding()
+
+			Button("Done") {
+				showFullDatePicker = false
+			}
+			.padding()
+			.frame(maxWidth: .infinity)
+			.foregroundColor(Color(.systemGray6))
+			.cornerRadius(10)
+			.padding()
+		}
+		.presentationDetents([.medium])
 	}
 }
 
