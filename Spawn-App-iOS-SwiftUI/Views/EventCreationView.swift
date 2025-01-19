@@ -20,17 +20,19 @@ struct EventCreationView: View {
 			EventInputField(value: $viewModel.event.title)
 
 			HStack(spacing: 16) {
-				VStack{
+				VStack {
 					EventInputFieldLabel(text: "start time")
-					TimePicker(
-						iconName: "clock",
-						value: $viewModel.event.startTime)
+					TimePicker(iconName: "clock", date: Binding(
+						get: { viewModel.event.startTime ?? Date() },
+						set: { viewModel.event.startTime = $0 }
+					))
 				}
-				VStack{
+				VStack {
 					EventInputFieldLabel(text: "end time")
-					TimePicker(
-						iconName: "clock.arrow.circlepath",
-						value: $viewModel.event.endTime)
+					TimePicker(iconName: "clock.arrow.circlepath", date: Binding(
+						get: { viewModel.event.endTime ?? Date() },
+						set: { viewModel.event.endTime = $0 }
+					))
 				}
 			}
 
@@ -38,14 +40,21 @@ struct EventCreationView: View {
 			EventInputField(
 				iconName: "mappin.and.ellipse",
 				value: Binding(
-					get: { viewModel.event.location?.name ?? "" },
-					set: { viewModel.event.location?.name = $0 ?? "" }
-				))
+					get: { viewModel.event.location?.name ?? ""
+ },
+					set: {
+						viewModel.event.location?.name = (
+							(($0?.isEmpty) != nil) ? nil : $0
+						) ?? ""
+					}
+				)
+			)
 
 			EventInputFieldLabel(text: "description")
 			EventInputField(
 				value: Binding(
-					get: { viewModel.event.note ?? ""},
+					get: { viewModel.event.note ?? ""
+},
 					set: {
 						viewModel.event.note = (($0?.isEmpty) != nil) ? nil : $0
 					}

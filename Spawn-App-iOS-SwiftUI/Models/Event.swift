@@ -31,7 +31,7 @@ class Event: Identifiable, Codable {
 
 	init(
 		id: UUID,
-		title: String,
+		title: String? = nil,
 		startTime: Date? = nil,
 		endTime: Date? = nil,
 		location: Location? = nil,
