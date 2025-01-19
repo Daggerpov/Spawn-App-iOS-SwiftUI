@@ -47,15 +47,7 @@ struct FeedView: View {
 					Spacer()
 					VStack {
 						eventsListView
-						HStack(spacing: 35) {
-							BottomNavButtonView(buttonType: .map)
-							Spacer()
-							EventCreationButtonView(
-								showingEventCreationPopup:
-									$showingEventCreationPopup)
-							Spacer()
-							BottomNavButtonView(buttonType: .friends)
-						}
+						bottomButtonsView
 					}
 					.padding(.horizontal)
 				}
@@ -142,6 +134,17 @@ struct FeedView: View {
 }
 
 extension FeedView {
+	var bottomButtonsView: some View {
+		HStack(spacing: 35) {
+			BottomNavButtonView(buttonType: .map)
+			Spacer()
+			EventCreationButtonView(
+				showingEventCreationPopup:
+					$showingEventCreationPopup)
+			Spacer()
+			BottomNavButtonView(buttonType: .friends)
+		}
+	}
 	var eventsListView: some View {
 		ScrollView(.vertical) {
 			LazyVStack(spacing: 15) {

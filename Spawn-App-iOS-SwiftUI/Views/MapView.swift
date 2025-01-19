@@ -33,78 +33,35 @@ struct MapView: View {
 	// ------------
 
 	init(user: User) {
-		_viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService(), user: user))
+		_viewModel = StateObject(
+			wrappedValue: FeedViewModel(
+				apiService: MockAPIService.isMocking
+					? MockAPIService() : APIService(), user: user))
 	}
 
 	var body: some View {
-		ZStack{
-			ZStack {
-				Map(
-					coordinateRegion: $region,
-					annotationItems: viewModel.events
-				) { mockEvent in
-					MapAnnotation(
-						coordinate: CLLocationCoordinate2D(
-							latitude: mockEvent.location?.latitude ?? 0,
-							longitude: mockEvent.location?.longitude ?? 0
-						), anchorPoint: CGPoint(x: 0.5, y: 1.0)
-					) {
-						Button(action: {
-							eventInPopup = mockEvent
-							colorInPopup = eventColors.randomElement()
-							showingEventDescriptionPopup = true
-						}) {
-							VStack(spacing: -8) {
-								ZStack {
-									Image(systemName: "mappin.circle.fill")
-										.resizable()
-										.scaledToFit()
-										.frame(width: 60, height: 60)
-										.foregroundColor(universalAccentColor)
-
-									let creatorOne: User = mockEvent.creator ?? User.danielAgapov
-
-									if let creatorPfp = creatorOne
-										.profilePicture
-									{
-										Image(creatorPfp)
-											.ProfileImageModifier(
-												imageType: .mapView)
-									}
-								}
-								Triangle()
-									.fill(universalAccentColor)
-									.frame(width: 40, height: 20)
-							}
+		ZStack {
+			VStack{
+				ZStack {
+					mapView
+					VStack {
+						VStack {
+							TagsScrollView(tags: viewModel.tags)
 						}
+						.padding(.horizontal)
+						.padding(.top, 20)
+						Spacer()
+						bottomButtonsView
+							.padding(32)
 					}
+					.padding(.top, 50)
 				}
 				.ignoresSafeArea()
-				VStack {
-					VStack {
-						TagsScrollView(tags: viewModel.tags)
-					}
-					.padding(.horizontal)
-					.padding(.top, 20)
-					Spacer()
-					HStack(spacing: 35) {
-						BottomNavButtonView(buttonType: .feed, source: .map)
-						Spacer()
-						EventCreationButtonView(
-							showingEventCreationPopup: $showingEventCreationPopup
-						)
-						Spacer()
-						BottomNavButtonView(buttonType: .friends, source: .map)
-					}
-					.padding(32)
-				}
-				.padding(.top, 50)
 			}
 
-			.ignoresSafeArea()
 			.onAppear {
 				adjustRegionForEvents()
-				Task{
+				Task {
 					await viewModel.fetchEventsForUser()
 					await viewModel.fetchTagsForUser()
 				}
@@ -124,18 +81,22 @@ struct MapView: View {
 		let longitudes = viewModel.events.compactMap { $0.location?.longitude }
 
 		guard let minLatitude = latitudes.min(),
-			  let maxLatitude = latitudes.max(),
-			  let minLongitude = longitudes.min(),
-			  let maxLongitude = longitudes.max() else { return }
+			let maxLatitude = latitudes.max(),
+			let minLongitude = longitudes.min(),
+			let maxLongitude = longitudes.max()
+		else { return }
 
 		let centerLatitude = (minLatitude + maxLatitude) / 2
 		let centerLongitude = (minLongitude + maxLongitude) / 2
-		let latitudeDelta = (maxLatitude - minLatitude) * 1.5 // Add padding
-		let longitudeDelta = (maxLongitude - minLongitude) * 1.5 // Add padding
+		let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
+		let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
 
 		region = MKCoordinateRegion(
-			center: CLLocationCoordinate2D(latitude: centerLatitude, longitude: centerLongitude),
-			span: MKCoordinateSpan(latitudeDelta: max(latitudeDelta, 0.01), longitudeDelta: max(longitudeDelta, 0.01))
+			center: CLLocationCoordinate2D(
+				latitude: centerLatitude, longitude: centerLongitude),
+			span: MKCoordinateSpan(
+				latitudeDelta: max(latitudeDelta, 0.01),
+				longitudeDelta: max(longitudeDelta, 0.01))
 		)
 	}
 
@@ -155,8 +116,66 @@ struct MapView: View {
 }
 
 extension MapView {
+	var bottomButtonsView: some View {
+		HStack(spacing: 35) {
+			BottomNavButtonView(buttonType: .feed, source: .map)
+			Spacer()
+			EventCreationButtonView(
+				showingEventCreationPopup:
+					$showingEventCreationPopup
+			)
+			Spacer()
+			BottomNavButtonView(buttonType: .friends, source: .map)
+		}
+	}
+
+	var mapView: some View {
+		Map(
+			coordinateRegion: $region,
+			annotationItems: viewModel.events
+		) { mockEvent in
+			MapAnnotation(
+				coordinate: CLLocationCoordinate2D(
+					latitude: mockEvent.location?.latitude ?? 0,
+					longitude: mockEvent.location?.longitude ?? 0
+				), anchorPoint: CGPoint(x: 0.5, y: 1.0)
+			) {
+				Button(action: {
+					eventInPopup = mockEvent
+					colorInPopup = eventColors.randomElement()
+					showingEventDescriptionPopup = true
+				}) {
+					VStack(spacing: -8) {
+						ZStack {
+							Image(systemName: "mappin.circle.fill")
+								.resizable()
+								.scaledToFit()
+								.frame(width: 60, height: 60)
+								.foregroundColor(universalAccentColor)
+
+							let creatorOne: User =
+							mockEvent.creator ?? User.danielAgapov
+
+							if let creatorPfp = creatorOne
+								.profilePicture
+							{
+								Image(creatorPfp)
+									.ProfileImageModifier(
+										imageType: .mapView)
+							}
+						}
+						Triangle()
+							.fill(universalAccentColor)
+							.frame(width: 40, height: 20)
+					}
+				}
+			}
+		}
+		.ignoresSafeArea()
+
+	}
 	var eventDescriptionPopupView: some View {
-		Group{
+		Group {
 			if let event = eventInPopup, let color = colorInPopup {
 				ZStack {
 					Color(.black)
@@ -164,7 +183,7 @@ extension MapView {
 						.onTapGesture {
 							closeDescription()
 						}
-					
+
 					EventDescriptionView(
 						event: event,
 						users: User.mockUsers,
@@ -196,7 +215,7 @@ extension MapView {
 					closeCreation()
 				}
 
-			VStack{
+			VStack {
 				Spacer()
 				EventCreationView(creatingUser: user.user)
 					.fixedSize(horizontal: false, vertical: true)
