@@ -61,6 +61,8 @@ struct EventCreationView: View {
 					.cornerRadius(10)
 					.padding()
 				}
+				.presentationDetents([.medium])
+			}
 
 			HStack(spacing: 16) {
 				VStack {
