@@ -10,16 +10,30 @@ import SwiftUI
 struct EventCreationView: View {
 	@ObservedObject var viewModel: EventCreationViewModel
 
+	@State private var selectedDate: Date = Date()  // New local state for the selected date
+
 	init(creatingUser: User) {
 		self.viewModel = EventCreationViewModel(
 			apiService: MockAPIService.isMocking
-				? MockAPIService() : APIService(), creatingUser: creatingUser)
+				? MockAPIService() : APIService(),
+			creatingUser: creatingUser
+		)
 	}
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 20) {
-			EventInputFieldLabel(text: "title")
+			Spacer()
+			EventInputFieldLabel(text: "event name")
 			EventInputField(value: $viewModel.event.title)
+
+			EventInputFieldLabel(text: "date")
+			DatePicker(
+				"Select Date",
+				selection: $selectedDate,
+				displayedComponents: .date
+			)
+			.datePickerStyle(GraphicalDatePickerStyle())
+			.labelsHidden()
 
 			HStack(spacing: 16) {
 				VStack {
@@ -27,18 +41,34 @@ struct EventCreationView: View {
 					TimePicker(
 						iconName: "clock",
 						date: Binding(
-							get: { viewModel.event.startTime ?? Date() },
-							set: { viewModel.event.startTime = $0 }
-						))
+							get: {
+								viewModel.event.startTime
+									?? combineDateAndTime(
+										selectedDate, time: Date())
+							},
+							set: { time in
+								viewModel.event.startTime = combineDateAndTime(
+									selectedDate, time: time)
+							}
+						)
+					)
 				}
 				VStack {
 					EventInputFieldLabel(text: "end time")
 					TimePicker(
 						iconName: "clock.arrow.circlepath",
 						date: Binding(
-							get: { viewModel.event.endTime ?? Date() },
-							set: { viewModel.event.endTime = $0 }
-						))
+							get: {
+								viewModel.event.endTime
+									?? combineDateAndTime(
+										selectedDate, time: Date())
+							},
+							set: { time in
+								viewModel.event.endTime = combineDateAndTime(
+									selectedDate, time: time)
+							}
+						)
+					)
 				}
 			}
 
@@ -74,10 +104,7 @@ struct EventCreationView: View {
 				}
 			}) {
 				Text("spawn")
-					.font(
-						Font.custom("Poppins", size: 20)
-							.weight(.medium)
-					)
+					.font(Font.custom("Poppins", size: 20).weight(.medium))
 					.frame(maxWidth: .infinity)
 					.kerning(1)
 					.multilineTextAlignment(.center)
@@ -96,6 +123,22 @@ struct EventCreationView: View {
 		.shadow(radius: 10)
 		.padding(.horizontal, 20)
 		.padding(.bottom, 200)
+	}
+
+	// Helper function to combine a date and a time into a single Date
+	private func combineDateAndTime(_ date: Date, time: Date) -> Date {
+		let calendar = Calendar.current
+		let dateComponents = calendar.dateComponents(
+			[.year, .month, .day], from: date)
+		let timeComponents = calendar.dateComponents(
+			[.hour, .minute], from: time)
+		var combinedComponents = DateComponents()
+		combinedComponents.year = dateComponents.year
+		combinedComponents.month = dateComponents.month
+		combinedComponents.day = dateComponents.day
+		combinedComponents.hour = timeComponents.hour
+		combinedComponents.minute = timeComponents.minute
+		return calendar.date(from: combinedComponents) ?? date
 	}
 }
 
