@@ -23,7 +23,6 @@ struct EventCreationView: View {
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 20) {
-			Spacer()
 			EventInputFieldLabel(text: "event name")
 			EventInputField(value: $viewModel.event.title)
 
@@ -93,7 +92,9 @@ struct EventCreationView: View {
 							get: {
 								viewModel.event.endTime
 									?? combineDateAndTime(
-										selectedDate, time: Date())
+										selectedDate, time: Date()
+											.addingTimeInterval(2 * 60 * 60) // adds 2 hours
+									)
 							},
 							set: { time in
 								viewModel.event.endTime = combineDateAndTime(
