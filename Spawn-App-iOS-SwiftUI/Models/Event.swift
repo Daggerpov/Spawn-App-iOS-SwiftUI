@@ -11,9 +11,9 @@ class Event: Identifiable, Codable {
     var id: UUID
     
     // MARK: Info
-    var title: String
     var startTime: Date? // TODO: change to proper time later
     var endTime: Date? // TODO: change to proper time later
+    var title: String?
     var location: Location?
     var note: String? // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
     
