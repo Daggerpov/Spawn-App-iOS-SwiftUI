@@ -10,12 +10,12 @@ import SwiftUI
 struct EventCreationView: View {
 	@ObservedObject var viewModel: EventCreationViewModel
 
-	@State private var selectedDate: Date = Date()  // New local state for the selected date
+	@State private var selectedDate: Date = Date() // Local state for the selected date
+	@State private var showFullDatePicker: Bool = false // Toggles the pop-out calendar
 
 	init(creatingUser: User) {
 		self.viewModel = EventCreationViewModel(
-			apiService: MockAPIService.isMocking
-				? MockAPIService() : APIService(),
+			apiService: MockAPIService.isMocking ? MockAPIService() : APIService(),
 			creatingUser: creatingUser
 		)
 	}
@@ -27,13 +27,40 @@ struct EventCreationView: View {
 			EventInputField(value: $viewModel.event.title)
 
 			EventInputFieldLabel(text: "date")
-			DatePicker(
-				"Select Date",
-				selection: $selectedDate,
-				displayedComponents: .date
-			)
-			.datePickerStyle(GraphicalDatePickerStyle())
-			.labelsHidden()
+			Button(action: { showFullDatePicker = true }) {
+				HStack {
+					Image(systemName: "calendar")
+					Text(formatDate(selectedDate)) // Display the selected date
+						.foregroundColor(.primary)
+				}
+				.padding(.vertical, 8)
+				.padding(.horizontal, 12)
+				.background(RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6)))
+			}
+			.sheet(isPresented: $showFullDatePicker) {
+				VStack {
+					Text("Select a Date")
+						.font(.headline)
+						.padding()
+					DatePicker(
+						"Select Date",
+						selection: $selectedDate,
+						displayedComponents: .date
+					)
+					.datePickerStyle(GraphicalDatePickerStyle())
+					.labelsHidden()
+					.padding()
+
+					Button("Done") {
+						showFullDatePicker = false
+					}
+					.padding()
+					.frame(maxWidth: .infinity)
+					.background(Color.accentColor)
+					.foregroundColor(.white)
+					.cornerRadius(10)
+					.padding()
+				}
 
 			HStack(spacing: 16) {
 				VStack {
@@ -82,6 +109,8 @@ struct EventCreationView: View {
 					set: {
 						viewModel.event.location?.name =
 							((($0?.isEmpty) != nil) ? nil : $0) ?? ""
+							$0.isEmpty ? nil : $0
+						) ?? <#default value#>
 					}
 				)
 			)
@@ -94,7 +123,8 @@ struct EventCreationView: View {
 					},
 					set: {
 						viewModel.event.note = (($0?.isEmpty) != nil) ? nil : $0
-					}
+					get: { viewModel.event.note ?? "" },
+					set: { viewModel.event.note = $0.isEmpty ? nil : $0 }
 				)
 			)
 
@@ -110,8 +140,7 @@ struct EventCreationView: View {
 					.multilineTextAlignment(.center)
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: 15).fill(
-							universalAccentColor)
+						RoundedRectangle(cornerRadius: 15).fill(universalAccentColor)
 					)
 					.foregroundColor(.white)
 			}
@@ -128,10 +157,8 @@ struct EventCreationView: View {
 	// Helper function to combine a date and a time into a single Date
 	private func combineDateAndTime(_ date: Date, time: Date) -> Date {
 		let calendar = Calendar.current
-		let dateComponents = calendar.dateComponents(
-			[.year, .month, .day], from: date)
-		let timeComponents = calendar.dateComponents(
-			[.hour, .minute], from: time)
+		let dateComponents = calendar.dateComponents([.year, .month, .day], from: date)
+		let timeComponents = calendar.dateComponents([.hour, .minute], from: time)
 		var combinedComponents = DateComponents()
 		combinedComponents.year = dateComponents.year
 		combinedComponents.month = dateComponents.month
@@ -140,7 +167,15 @@ struct EventCreationView: View {
 		combinedComponents.minute = timeComponents.minute
 		return calendar.date(from: combinedComponents) ?? date
 	}
+
+	// Helper function to format the date for display
+	private func formatDate(_ date: Date) -> String {
+		let formatter = DateFormatter()
+		formatter.dateStyle = .medium
+		return formatter.string(from: date)
+	}
 }
+
 
 struct EventInputFieldLabel: View {
 	var text: String
