@@ -61,9 +61,9 @@ struct MapView: View {
 										.scaledToFit()
 										.frame(width: 60, height: 60)
 										.foregroundColor(universalAccentColor)
-									
+
 									let creatorOne: User = mockEvent.creator ?? User.danielAgapov
-									
+
 									if let creatorPfp = creatorOne
 										.profilePicture
 									{
@@ -100,7 +100,7 @@ struct MapView: View {
 				}
 				.padding(.top, 50)
 			}
-			
+
 			.ignoresSafeArea()
 			.onAppear {
 				adjustRegionForEvents()
@@ -110,62 +110,10 @@ struct MapView: View {
 				}
 			}
 			if showingEventDescriptionPopup {
-				if let event = eventInPopup, let color = colorInPopup {
-					ZStack {
-						Color(.black)
-							.opacity(0.5)
-							.onTapGesture {
-								closeDescription()
-							}
-						
-						EventDescriptionView(
-							event: event,
-							users: User.mockUsers,
-							color: color
-						)
-						.fixedSize(horizontal: false, vertical: true)
-						.padding()
-						.background(.white)
-						.clipShape(RoundedRectangle(cornerRadius: 20))
-						.shadow(radius: 20)
-						.padding(30)
-						.offset(x: 0, y: descriptionOffset)
-						.onAppear {
-							withAnimation(.spring()) {
-								descriptionOffset = 0
-							}
-						}
-					}
-					.ignoresSafeArea()
-				}
+				eventDescriptionPopupView
 			}
 			if showingEventCreationPopup {
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeCreation()
-						}
-					
-					VStack{
-						Spacer()
-						EventCreationView(creatingUser: user.user)
-							.fixedSize(horizontal: false, vertical: true)
-							.padding()
-							.background(.white)
-							.clipShape(RoundedRectangle(cornerRadius: 20))
-							.shadow(radius: 20)
-							.padding(30)
-							.offset(x: 0, y: creationOffset)
-							.onAppear {
-								withAnimation(.spring()) {
-									creationOffset = 0
-								}
-							}
-						Spacer()
-					}
-				}
-				.ignoresSafeArea()
+				eventCreationPopupView
 			}
 		}
 	}
@@ -203,6 +151,70 @@ struct MapView: View {
 			creationOffset = 1000
 			showingEventCreationPopup = false
 		}
+	}
+}
+
+extension MapView {
+	var eventDescriptionPopupView: some View {
+		Group{
+			if let event = eventInPopup, let color = colorInPopup {
+				ZStack {
+					Color(.black)
+						.opacity(0.5)
+						.onTapGesture {
+							closeDescription()
+						}
+					
+					EventDescriptionView(
+						event: event,
+						users: User.mockUsers,
+						color: color
+					)
+					.fixedSize(horizontal: false, vertical: true)
+					.padding()
+					.background(.white)
+					.clipShape(RoundedRectangle(cornerRadius: 20))
+					.shadow(radius: 20)
+					.padding(30)
+					.offset(x: 0, y: descriptionOffset)
+					.onAppear {
+						withAnimation(.spring()) {
+							descriptionOffset = 0
+						}
+					}
+				}
+				.ignoresSafeArea()
+			}
+		}
+	}
+
+	var eventCreationPopupView: some View {
+		ZStack {
+			Color(.black)
+				.opacity(0.5)
+				.onTapGesture {
+					closeCreation()
+				}
+
+			VStack{
+				Spacer()
+				EventCreationView(creatingUser: user.user)
+					.fixedSize(horizontal: false, vertical: true)
+					.padding()
+					.background(.white)
+					.clipShape(RoundedRectangle(cornerRadius: 20))
+					.shadow(radius: 20)
+					.padding(30)
+					.offset(x: 0, y: creationOffset)
+					.onAppear {
+						withAnimation(.spring()) {
+							creationOffset = 0
+						}
+					}
+				Spacer()
+			}
+		}
+		.ignoresSafeArea()
 	}
 }
 
