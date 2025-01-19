@@ -30,7 +30,7 @@ struct EventCreationView: View {
 			Button(action: { showFullDatePicker = true }) {
 				HStack {
 					Image(systemName: "calendar")
-					Text(formatDate(selectedDate))  // Display the selected date
+					Text(viewModel.formatDate(selectedDate))  // Display the selected date
 						.foregroundColor(.primary)
 				}
 				.padding(.vertical, 8)
@@ -75,11 +75,11 @@ struct EventCreationView: View {
 						date: Binding(
 							get: {
 								viewModel.event.startTime
-									?? combineDateAndTime(
+								?? viewModel.combineDateAndTime(
 										selectedDate, time: Date())
 							},
 							set: { time in
-								viewModel.event.startTime = combineDateAndTime(
+								viewModel.event.startTime = viewModel.combineDateAndTime(
 									selectedDate, time: time)
 							}
 						)
@@ -94,13 +94,13 @@ struct EventCreationView: View {
 						date: Binding(
 							get: {
 								viewModel.event.endTime
-									?? combineDateAndTime(
+								?? viewModel.combineDateAndTime(
 										selectedDate, time: Date()
 											.addingTimeInterval(2 * 60 * 60) // adds 2 hours
 									)
 							},
 							set: { time in
-								viewModel.event.endTime = combineDateAndTime(
+								viewModel.event.endTime = viewModel.combineDateAndTime(
 									selectedDate, time: time)
 							}
 						)
@@ -161,29 +161,6 @@ struct EventCreationView: View {
 		.shadow(radius: 10)
 		.padding(.horizontal, 20)
 		.padding(.vertical , 100)
-	}
-
-	// Helper function to combine a date and a time into a single Date
-	private func combineDateAndTime(_ date: Date, time: Date) -> Date {
-		let calendar = Calendar.current
-		let dateComponents = calendar.dateComponents(
-			[.year, .month, .day], from: date)
-		let timeComponents = calendar.dateComponents(
-			[.hour, .minute], from: time)
-		var combinedComponents = DateComponents()
-		combinedComponents.year = dateComponents.year
-		combinedComponents.month = dateComponents.month
-		combinedComponents.day = dateComponents.day
-		combinedComponents.hour = timeComponents.hour
-		combinedComponents.minute = timeComponents.minute
-		return calendar.date(from: combinedComponents) ?? date
-	}
-
-	// Helper function to format the date for display
-	private func formatDate(_ date: Date) -> String {
-		let formatter = DateFormatter()
-		formatter.dateStyle = .medium
-		return formatter.string(from: date)
 	}
 }
 
