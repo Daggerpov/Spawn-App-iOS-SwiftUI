@@ -11,29 +11,50 @@ struct AuthProviderButtonView: View {
 	var authProviderType: AuthProviderType
 
 	var body: some View {
-		HStack {
+		Button (action: {
 			switch authProviderType {
 				case .apple:
-					Image(systemName: "applelogo")
-						.font(.system(size: 20))
+					loginWithApple()
 				case .google:
-					Image("google_logo")
-						.resizable()
-						.scaledToFit()
-						.frame(width: 25, height: 25)
+					loginWithGoogle()
 			}
+		}){
+			HStack {
+				switch authProviderType {
+					case .apple:
+						Image(systemName: "applelogo")
+							.font(.system(size: 20))
+					case .google:
+						Image("google_logo")
+							.resizable()
+							.scaledToFit()
+							.frame(width: 25, height: 25)
+				}
 
-			Text("Continue with \(authProviderType == .google ? "Google" : "Apple")")
-				.fontWeight(.medium)
+				Text("Continue with \(authProviderType == .google ? "Google" : "Apple")")
+					.fontWeight(.medium)
+			}
+			.padding()
+			.frame(maxWidth: .infinity)
+			.cornerRadius(8)
+			.foregroundColor(.black)
+			.background(
+				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+					.fill(.white)
+			)
+			.padding(.horizontal, 32)
 		}
-		.padding()
-		.frame(maxWidth: .infinity)
-		.cornerRadius(8)
-		.foregroundColor(.black)
-		.background(
-			RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-				.fill(.white)
-		)
-		.padding(.horizontal, 32)
+	}
+
+	private func loginWithGoogle(){
+		guard let url = URL(string: APIService.baseURL + "/oauth2/authorization/google") else {
+			print("Invalid URL")
+			return
+		}
+		UIApplication.shared.open(url)
+	}
+
+	private func loginWithApple() {
+		// TODO: implement later
 	}
 }
