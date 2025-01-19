@@ -17,24 +17,21 @@ struct EventCreationView: View {
 	var body: some View {
 		VStack(alignment: .leading, spacing: 20) {
 			EventInputFieldLabel(text: "title")
-
-			TextField("", text: $viewModel.event.title)
-				.font(.title2.bold())
-				.foregroundColor(.primary)
-				.padding()
-				.background(
-					RoundedRectangle(cornerRadius: 10).fill(Color(.systemGray6))
-				)
+			EventInputField(value: $viewModel.event.title)
 
 			HStack(spacing: 16) {
-				EventInputFieldLabel(text: "start time")
-				EventInputField(
-					iconName: "clock",
-					value: $viewModel.event.startTime)
-				EventInputFieldLabel(text: "end time")
-				EventInputField(
-					iconName: "clock.arrow.circlepath",
-					value: $viewModel.event.endTime)
+				VStack{
+					EventInputFieldLabel(text: "start time")
+					TimePicker(
+						iconName: "clock",
+						value: $viewModel.event.startTime)
+				}
+				VStack{
+					EventInputFieldLabel(text: "end time")
+					TimePicker(
+						iconName: "clock.arrow.circlepath",
+						value: $viewModel.event.endTime)
+				}
 			}
 
 			EventInputFieldLabel(text: "location")
@@ -46,24 +43,14 @@ struct EventCreationView: View {
 				))
 
 			EventInputFieldLabel(text: "description")
-			TextEditor(
-				text: Binding(
-					get: { viewModel.event.note ?? "" },
-					set: { viewModel.event.note = $0.isEmpty ? nil : $0 }
+			EventInputField(
+				value: Binding(
+					get: { viewModel.event.note ?? ""},
+					set: {
+						viewModel.event.note = (($0?.isEmpty) != nil) ? nil : $0
+					}
 				)
 			)
-			.padding()
-			.frame(height: 80)
-			.background(
-				RoundedRectangle(cornerRadius: 10).fill(
-					Color(.systemGray6)
-				)
-			)
-			.overlay(
-				RoundedRectangle(cornerRadius: 10)
-					.stroke(Color(.systemGray4), lineWidth: 1)
-			)
-			.cornerRadius(10)
 
 			Button(action: {
 				Task {
@@ -71,12 +58,16 @@ struct EventCreationView: View {
 				}
 			}) {
 				Text("spawn")
-					.font(.headline)
+					.font(
+						Font.custom("Poppins", size: 20)
+							.weight(.medium)
+					)
 					.frame(maxWidth: .infinity)
+					.kerning(1)
+					.multilineTextAlignment(.center)
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: 15).fill(
-							Color.accentColor)
+						RoundedRectangle(cornerRadius: 15).fill(universalAccentColor)
 					)
 					.foregroundColor(.white)
 			}
@@ -106,18 +97,20 @@ struct EventInputFieldLabel: View {
 }
 
 struct EventInputField: View {
-	var iconName: String
+	var iconName: String?
 	@Binding var value: String?
 
 	var body: some View {
 		HStack {
-			Image(systemName: iconName)
-				.foregroundColor(.secondary)
+			if let icon = iconName {
+				Image(systemName: icon)
+					.foregroundColor(.secondary)
+			}
 			TextField(
 				"",
 				text: Binding(
 					get: { value ?? "" },
-					set: { value = $0 }
+					set: { value = $0.isEmpty ? nil : $0 }
 				)
 			)
 			.foregroundColor(.primary)
@@ -137,6 +130,37 @@ struct EventInputField: View {
 	}
 }
 
+struct TimePicker: View {
+	var iconName: String
+	@Binding var date: Date
+
+	var body: some View {
+		HStack {
+			Image(systemName: iconName)
+				.foregroundColor(.secondary)
+			DatePicker(
+				"",
+				selection: $date,
+				displayedComponents: .hourAndMinute
+			)
+			.labelsHidden()
+		}
+		.padding()
+		.background(
+			Rectangle()
+				.foregroundColor(.clear)
+				.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+				.cornerRadius(15)
+				.overlay(
+					RoundedRectangle(cornerRadius: 15)
+						.inset(by: 0.75)
+						.stroke(.black, lineWidth: 1.5)
+				)
+		)
+	}
+}
+
+
 #Preview {
-	EventCreationView(creatingUser: .danielAgapov)
+	EventCreationView(creatingUser: User.danielAgapov)
 }
