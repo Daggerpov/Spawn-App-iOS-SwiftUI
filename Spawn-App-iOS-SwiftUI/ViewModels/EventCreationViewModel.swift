@@ -52,15 +52,15 @@ class EventCreationViewModel: ObservableObject {
 		let calendar = Calendar.current
 		let now = Date()
 
-		// Check if the date is "now"
-		if calendar.isDate(date, equalTo: now, toGranularity: .minute) {
+		// If the date is today, show "today" without time
+		if calendar.isDate(date, equalTo: now, toGranularity: .day) {
 			return "today"
 		}
 
-		// Otherwise, return the formatted date
+		// If the date is the current date, return it without time
 		let formatter = DateFormatter()
 		formatter.dateStyle = .medium
-		formatter.timeStyle = .short
+		formatter.timeStyle = .none
 		return formatter.string(from: date)
 	}
 }
