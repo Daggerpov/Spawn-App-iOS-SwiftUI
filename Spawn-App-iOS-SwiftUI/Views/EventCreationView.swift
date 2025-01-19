@@ -11,7 +11,9 @@ struct EventCreationView: View {
 	@ObservedObject var viewModel: EventCreationViewModel
 
 	init(creatingUser: User) {
-		self.viewModel = EventCreationViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService(), creatingUser: creatingUser)
+		self.viewModel = EventCreationViewModel(
+			apiService: MockAPIService.isMocking
+				? MockAPIService() : APIService(), creatingUser: creatingUser)
 	}
 
 	var body: some View {
@@ -22,17 +24,21 @@ struct EventCreationView: View {
 			HStack(spacing: 16) {
 				VStack {
 					EventInputFieldLabel(text: "start time")
-					TimePicker(iconName: "clock", date: Binding(
-						get: { viewModel.event.startTime ?? Date() },
-						set: { viewModel.event.startTime = $0 }
-					))
+					TimePicker(
+						iconName: "clock",
+						date: Binding(
+							get: { viewModel.event.startTime ?? Date() },
+							set: { viewModel.event.startTime = $0 }
+						))
 				}
 				VStack {
 					EventInputFieldLabel(text: "end time")
-					TimePicker(iconName: "clock.arrow.circlepath", date: Binding(
-						get: { viewModel.event.endTime ?? Date() },
-						set: { viewModel.event.endTime = $0 }
-					))
+					TimePicker(
+						iconName: "clock.arrow.circlepath",
+						date: Binding(
+							get: { viewModel.event.endTime ?? Date() },
+							set: { viewModel.event.endTime = $0 }
+						))
 				}
 			}
 
@@ -40,12 +46,12 @@ struct EventCreationView: View {
 			EventInputField(
 				iconName: "mappin.and.ellipse",
 				value: Binding(
-					get: { viewModel.event.location?.name ?? ""
- },
+					get: {
+						viewModel.event.location?.name ?? ""
+					},
 					set: {
-						viewModel.event.location?.name = (
-							(($0?.isEmpty) != nil) ? nil : $0
-						) ?? ""
+						viewModel.event.location?.name =
+							((($0?.isEmpty) != nil) ? nil : $0) ?? ""
 					}
 				)
 			)
@@ -53,8 +59,9 @@ struct EventCreationView: View {
 			EventInputFieldLabel(text: "description")
 			EventInputField(
 				value: Binding(
-					get: { viewModel.event.note ?? ""
-},
+					get: {
+						viewModel.event.note ?? ""
+					},
 					set: {
 						viewModel.event.note = (($0?.isEmpty) != nil) ? nil : $0
 					}
@@ -76,7 +83,8 @@ struct EventCreationView: View {
 					.multilineTextAlignment(.center)
 					.padding()
 					.background(
-						RoundedRectangle(cornerRadius: 15).fill(universalAccentColor)
+						RoundedRectangle(cornerRadius: 15).fill(
+							universalAccentColor)
 					)
 					.foregroundColor(.white)
 			}
@@ -100,7 +108,9 @@ struct EventInputFieldLabel: View {
 				.font(Font.custom("Poppins", size: 16))
 				.kerning(0.8)
 				.foregroundColor(Color(red: 0.11, green: 0.24, blue: 0.24))
-				.frame(maxWidth: .infinity, minHeight: 16, maxHeight: 16, alignment: .topLeading)
+				.frame(
+					maxWidth: .infinity, minHeight: 16, maxHeight: 16,
+					alignment: .topLeading)
 		}
 	}
 }
@@ -168,7 +178,6 @@ struct TimePicker: View {
 		)
 	}
 }
-
 
 #Preview {
 	EventCreationView(creatingUser: User.danielAgapov)
