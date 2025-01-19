@@ -69,6 +69,7 @@ struct EventCreationView: View {
 			HStack(spacing: 16) {
 				VStack {
 					EventInputFieldLabel(text: "start time")
+						.padding(.leading, 8)
 					TimePicker(
 						iconName: "clock",
 						date: Binding(
@@ -84,8 +85,10 @@ struct EventCreationView: View {
 						)
 					)
 				}
+
 				VStack {
 					EventInputFieldLabel(text: "end time")
+						.padding(.leading, 8)
 					TimePicker(
 						iconName: "clock.arrow.circlepath",
 						date: Binding(
@@ -103,6 +106,7 @@ struct EventCreationView: View {
 						)
 					)
 				}
+				Spacer()
 			}
 
 			EventInputFieldLabel(text: "location")
@@ -151,12 +155,12 @@ struct EventCreationView: View {
 			.padding(.top, 20)
 
 		}
-		.padding()
+		.padding(32)
 		.background(universalBackgroundColor)
 		.cornerRadius(15)
 		.shadow(radius: 10)
 		.padding(.horizontal, 20)
-		.padding(.bottom, 200)
+		.padding(.vertical , 100)
 	}
 
 	// Helper function to combine a date and a time into a single Date
@@ -189,9 +193,9 @@ struct EventInputFieldLabel: View {
 	var body: some View {
 		VStack {
 			Text(text)
-				.font(Font.custom("Poppins", size: 16))
-				.kerning(0.8)
-				.foregroundColor(Color(red: 0.11, green: 0.24, blue: 0.24))
+				.font(Font.custom("Poppins", size: 20))
+				.kerning(1)
+				.foregroundColor(universalAccentColor)
 				.frame(
 					maxWidth: .infinity, minHeight: 16, maxHeight: 16,
 					alignment: .topLeading)
@@ -254,11 +258,6 @@ struct TimePicker: View {
 				.foregroundColor(.clear)
 				.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
 				.cornerRadius(15)
-				.overlay(
-					RoundedRectangle(cornerRadius: 15)
-						.inset(by: 0.75)
-						.stroke(.black, lineWidth: 1.5)
-				)
 		)
 	}
 }
