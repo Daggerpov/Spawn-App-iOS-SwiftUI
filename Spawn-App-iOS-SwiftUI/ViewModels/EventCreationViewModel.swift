@@ -49,8 +49,18 @@ class EventCreationViewModel: ObservableObject {
 
 	// Helper function to format the date for display
 	func formatDate(_ date: Date) -> String {
+		let calendar = Calendar.current
+		let now = Date()
+
+		// Check if the date is "now"
+		if calendar.isDate(date, equalTo: now, toGranularity: .minute) {
+			return "today"
+		}
+
+		// Otherwise, return the formatted date
 		let formatter = DateFormatter()
 		formatter.dateStyle = .medium
+		formatter.timeStyle = .short
 		return formatter.string(from: date)
 	}
 }
