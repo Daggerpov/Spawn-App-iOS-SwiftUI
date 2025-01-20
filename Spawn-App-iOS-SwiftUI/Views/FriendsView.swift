@@ -27,6 +27,7 @@ struct FriendsView: View {
                 } else {
                     TagsTabView(user: user)
                 }
+                requestsSection
             }
             .padding()
             .background(universalBackgroundColor)
@@ -43,6 +44,7 @@ private extension FriendsView {
             Picker("", selection: $selectedTab) {
                 Text("friends")
                     .tag(FriendTagToggle.friends)
+                //TODO: change color of text to universalAccentColorHexCode when selected and universalBackgroundColor when not
                 Text("tags")
                     .tag(FriendTagToggle.tags)
             }
@@ -60,6 +62,26 @@ private extension FriendsView {
             Spacer()
         }
         .padding(.horizontal)
+    }
+    
+    var requestsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("requests")
+                .font(.headline)
+                .foregroundColor(.black)
+            ScrollView(.horizontal, showsIndicators: false) {
+//                //TODO: figuring out how to display the requests as circles below the 'requests' text
+//                HStack(spacing: 12) {
+//                    ForEach(user, id: \.id) { request in
+//                        Image(request.imageName)
+//                            .resizable()
+//                            .frame(width: 50, height: 50)
+//                            .clipShape(Circle())
+//                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
+//                    }
+//                }
+            }
+        }
     }
 }
 
