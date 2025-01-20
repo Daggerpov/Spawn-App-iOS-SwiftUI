@@ -27,9 +27,6 @@ struct FriendsView: View {
                 } else {
                     TagsTabView(user: user)
                 }
-                requestsSection
-                recommendedFriendsSection
-                friendsSection
             }
             .padding()
             .background(universalBackgroundColor)
@@ -49,6 +46,7 @@ private extension FriendsView {
                 //TODO: change color of text to universalAccentColorHexCode when selected and universalBackgroundColor when not
                 Text("tags")
                     .tag(FriendTagToggle.tags)
+                //TODO: change color of text to universalAccentColorHexCode when selected and universalBackgroundColor when not
             }
             .pickerStyle(SegmentedPickerStyle())
             .frame(width: 150, height: 40)
@@ -65,62 +63,6 @@ private extension FriendsView {
         }
         .padding(.horizontal)
     }
-    
-    var requestsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("requests")
-                .font(.headline)
-                .foregroundColor(.black)
-            ScrollView(.horizontal, showsIndicators: false) {
-//                //TODO: figuring out how to display the requests as circles below the 'requests' text
-                VStack(spacing: 12) {
-//                    ForEach(user, id: \.id) { request in
-//                        Image(request.imageName)
-//                            .resizable()
-//                            .frame(width: 50, height: 50)
-//                            .clipShape(Circle())
-//                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
-//                    }
-                }
-            }
-        }
-    }
-    
-    var recommendedFriendsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("recommended friends")
-                .font(.headline)
-                .foregroundColor(.black)
-            ScrollView(.horizontal, showsIndicators: false) {
-//                //TODO: figuring out how to display recommended friends
-                HStack(spacing: 12) {
-//                    ForEach(user, id: \.id) { request in
-//                        Image(request.imageName)
-//                            .resizable()
-//                            .frame(width: 50, height: 50)
-//                            .clipShape(Circle())
-//                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
-//                    }
-                }
-            }
-        }
-    }
-    
-    var friendsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("friends")
-                .font(.headline)
-                .foregroundColor(.black)
-            ScrollView(.horizontal, showsIndicators: false) {
-//                //TODO: figuring out how to display friends
-                HStack(spacing: 12) {
-//                    FriendRow(friend: user)
-                }
-            }
-        }
-    }
-    
-
 }
 
 @available(iOS 17.0, *)
