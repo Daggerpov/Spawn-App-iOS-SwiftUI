@@ -28,6 +28,8 @@ struct FriendsView: View {
                     TagsTabView(user: user)
                 }
                 requestsSection
+                friendsSection(title: "recommended friends")
+                friendsSection(title: "friends")
             }
             .padding()
             .background(universalBackgroundColor)
@@ -71,7 +73,7 @@ private extension FriendsView {
                 .foregroundColor(.black)
             ScrollView(.horizontal, showsIndicators: false) {
 //                //TODO: figuring out how to display the requests as circles below the 'requests' text
-//                HStack(spacing: 12) {
+                HStack(spacing: 12) {
 //                    ForEach(user, id: \.id) { request in
 //                        Image(request.imageName)
 //                            .resizable()
@@ -79,10 +81,20 @@ private extension FriendsView {
 //                            .clipShape(Circle())
 //                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
 //                    }
-//                }
+                }
             }
         }
     }
+    
+    func friendsSection(title: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.black)
+//            ForEach(friends, id: \.id) { friend in
+//                friendRow(friend: friend)
+            }
+        }
 }
 
 @available(iOS 17.0, *)
