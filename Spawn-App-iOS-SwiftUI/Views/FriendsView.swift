@@ -43,10 +43,13 @@ private extension FriendsView {
             Picker("", selection: $selectedTab) {
                 Text("friends")
                     .tag(FriendTagToggle.friends)
-                //TODO: change color of text to universalAccentColorHexCode when selected and universalBackgroundColor when not
+                //TODO: change color of text to universalAccentColor when selected and universalBackgroundColor when not
+                    .foregroundColor(selectedTab == .friends ? universalAccentColor : universalBackgroundColor)
+
                 Text("tags")
                     .tag(FriendTagToggle.tags)
-                //TODO: change color of text to universalAccentColorHexCode when selected and universalBackgroundColor when not
+                //TODO: change color of text to universalAccentColor when selected and universalBackgroundColor when not
+                    .foregroundColor(selectedTab == .tags ? universalAccentColor : universalBackgroundColor)
             }
             .pickerStyle(SegmentedPickerStyle())
             .frame(width: 150, height: 40)
