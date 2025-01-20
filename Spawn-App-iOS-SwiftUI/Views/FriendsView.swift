@@ -28,8 +28,8 @@ struct FriendsView: View {
                     TagsTabView(user: user)
                 }
                 requestsSection
-                friendsSection(title: "recommended friends")
-                friendsSection(title: "friends")
+                recommendedFriendsSection
+                friendsSection
             }
             .padding()
             .background(universalBackgroundColor)
@@ -73,6 +73,26 @@ private extension FriendsView {
                 .foregroundColor(.black)
             ScrollView(.horizontal, showsIndicators: false) {
 //                //TODO: figuring out how to display the requests as circles below the 'requests' text
+                VStack(spacing: 12) {
+//                    ForEach(user, id: \.id) { request in
+//                        Image(request.imageName)
+//                            .resizable()
+//                            .frame(width: 50, height: 50)
+//                            .clipShape(Circle())
+//                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
+//                    }
+                }
+            }
+        }
+    }
+    
+    var recommendedFriendsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("recommended friends")
+                .font(.headline)
+                .foregroundColor(.black)
+            ScrollView(.horizontal, showsIndicators: false) {
+//                //TODO: figuring out how to display recommended friends
                 HStack(spacing: 12) {
 //                    ForEach(user, id: \.id) { request in
 //                        Image(request.imageName)
@@ -86,15 +106,21 @@ private extension FriendsView {
         }
     }
     
-    func friendsSection(title: String) -> some View {
+    var friendsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+            Text("friends")
                 .font(.headline)
                 .foregroundColor(.black)
-//            ForEach(friends, id: \.id) { friend in
-//                friendRow(friend: friend)
+            ScrollView(.horizontal, showsIndicators: false) {
+//                //TODO: figuring out how to display friends
+                HStack(spacing: 12) {
+//                    FriendRow(friend: user)
+                }
             }
         }
+    }
+    
+
 }
 
 @available(iOS 17.0, *)
