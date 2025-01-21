@@ -8,22 +8,18 @@
 import Foundation
 
 class EventInfoViewModel: ObservableObject {
-    @Published var eventInfoDisplayString: String
+	@Published var eventInfoDisplayString: String
 	@Published var imageSystemName: String
 
-    init(event: Event, eventInfoType: EventInfoType) {
+	init(event: Event, eventInfoType: EventInfoType) {
 		switch eventInfoType {
 			case .location:
 				imageSystemName = "map"
-				if let eventLocation = event.location?.name {
-					self.eventInfoDisplayString = eventLocation
-				} else {
-					// nil event location (should be error?)
-					self.eventInfoDisplayString = "No Location"
-				}
+				self.eventInfoDisplayString = event.location?.name ?? "No Location"
 			case .time:
 				imageSystemName = "clock"
 				self.eventInfoDisplayString = FormatterService.shared.formatEventTime(event: event)
 		}
-    }
+	}
 }
+

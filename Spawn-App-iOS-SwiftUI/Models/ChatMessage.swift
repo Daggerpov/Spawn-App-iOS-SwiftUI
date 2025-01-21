@@ -30,6 +30,10 @@ class ChatMessage: Identifiable, Codable {
 }
 
 extension ChatMessage {
+	var formattedTimestamp: String {
+		return FormatterService.shared.timeAgo(from: timestamp)
+	}
+	
 	static let dateFormatter: DateFormatter = {
 		let formatter = DateFormatter()
 		formatter.dateStyle = .short
