@@ -7,7 +7,6 @@
 
 import Foundation
 
-@MainActor
 class FeedViewModel: ObservableObject {
     @Published var events: [Event] = []
 	@Published var tags: [FriendTag] = []
