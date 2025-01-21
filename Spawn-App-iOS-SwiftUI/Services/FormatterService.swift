@@ -43,4 +43,26 @@ class FormatterService {
 			return "No Time Available"
 		}
 	}
+
+	func timeAgo(from date: Date) -> String {
+		let now = Date()
+		let secondsAgo = Int(now.timeIntervalSince(date))
+
+		let minute = 60
+		let hour = 3600
+		let day = 86400
+
+		if secondsAgo < minute {
+			return secondsAgo == 1 ? "1 second ago" : "\(secondsAgo) seconds ago"
+		} else if secondsAgo < hour {
+			let minutes = secondsAgo / minute
+			return minutes == 1 ? "1 minute ago" : "\(minutes) minutes ago"
+		} else if secondsAgo < day {
+			let hours = secondsAgo / hour
+			return hours == 1 ? "1 hour ago" : "\(hours) hours ago"
+		} else {
+			let days = secondsAgo / day
+			return days == 1 ? "1 day ago" : "\(days) days ago"
+		}
+	}
 }
