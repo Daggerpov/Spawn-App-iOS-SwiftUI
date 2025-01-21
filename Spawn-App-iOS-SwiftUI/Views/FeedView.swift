@@ -14,8 +14,6 @@ struct FeedView: View {
 
 	@Namespace private var animation: Namespace.ID
 
-	let mockTags: [FriendTag] = FriendTag.mockTags
-
 	@State private var showingEventDescriptionPopup: Bool = false
 	@State private var eventInPopup: Event?
 	@State private var colorInPopup: Color?
