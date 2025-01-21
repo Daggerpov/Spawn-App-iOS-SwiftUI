@@ -17,7 +17,7 @@ struct EventCardView: View {
     init(user: User, event: Event, color: Color, callback: @escaping(Event, Color) -> Void) {
         self.event = event
         self.color = color
-        self.viewModel = EventCardViewModel(user: user, event: event)
+		self.viewModel = EventCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService(), user: user, event: event)
         self.callback = callback
     }
     var body: some View {
@@ -58,7 +58,4 @@ struct EventCardView: View {
             }
         }
     }
-    
 }
-
-

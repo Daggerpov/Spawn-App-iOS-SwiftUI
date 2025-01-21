@@ -14,11 +14,12 @@ struct ParticipantsImagesView: View {
     func participantsCleanup(participants: [User]) -> [User]{
         var participantsFiltered = participants
         // Remove the creator if already in the list
-        participantsFiltered.removeAll { $0.id == event.creator.id }
-        
+		let userCreator: User = event.creator ?? User.danielAgapov
+        participantsFiltered.removeAll { $0.id == userCreator.id }
+
         // Prepend the creator to the participants list
-        participantsFiltered.insert(event.creator, at: 0)
-        
+		participantsFiltered.insert(event.creator ?? User.danielAgapov, at: 0)
+
         // Sort the rest of the participants (if necessary)
         participantsFiltered.sort { participant1, participant2 in
             // Creator is already at the front, so this sorting can handle the rest

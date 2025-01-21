@@ -49,7 +49,6 @@ struct EventDescriptionView: View {
             .cornerRadius(universalRectangleCornerRadius)
         }
         .padding(.horizontal)
-        .padding(.top, 200)
     }
 }
 
@@ -72,7 +71,7 @@ extension EventDescriptionView {
                             }
                             Spacer()
                             HStack{
-                                Text(chatMessage.timestamp)
+								Text(ChatMessage.dateFormatter.string(from: chatMessage.timestamp))
                                 // TODO: add logic later, to either use heart.fill or just heart,
                                 // based on whether current user is in the chat message's likedBy array
                                 Image(systemName: "heart")
