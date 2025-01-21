@@ -14,6 +14,7 @@ struct FriendsTabView: View {
 	init(user: User) {
 		self.user = user
 		self.viewModel = FriendsTabViewModel(
+			userId: user.id,
 			apiService: MockAPIService.isMocking
 				? MockAPIService() : APIService())
 	}
@@ -23,7 +24,9 @@ struct FriendsTabView: View {
 			SearchView(searchPlaceholderText: "search or add friends")
 		}
 		.onAppear {
-			viewModel.fetchAllData()
+			Task{
+				await viewModel.fetchAllData()
+			}
 		}
 	}
 }
