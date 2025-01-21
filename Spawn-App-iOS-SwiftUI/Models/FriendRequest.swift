@@ -9,7 +9,7 @@ import Foundation
 
 /// as defined in the back-end `FriendRequestDTO.java`
 struct FriendRequest: Identifiable, Codable, Hashable {
-	static func == (lhs: FriendTag, rhs: FriendTag) -> Bool {
+	static func == (lhs: FriendRequest, rhs: FriendRequest) -> Bool {
 		return lhs.id == rhs.id
 	}
 
