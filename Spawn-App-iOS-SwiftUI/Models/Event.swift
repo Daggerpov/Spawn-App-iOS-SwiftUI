@@ -55,17 +55,29 @@ class Event: Identifiable, Codable {
 }
 
 extension Event {
-	static let iso8601DateFormatter: ISO8601DateFormatter = {
-		let formatter = ISO8601DateFormatter()
-		formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-		return formatter
-	}()
+	static func dateFromTimeString(_ timeString: String) -> Date? {
+		let dateFormatter = DateFormatter()
+		dateFormatter.dateFormat = "h:mm a" // Parse time in 12-hour format with AM/PM
+		dateFormatter.timeZone = .current
+		dateFormatter.locale = .current
+
+		// Combine with today's date
+		if let parsedTime = dateFormatter.date(from: timeString) {
+			let calendar = Calendar.current
+			let now = Date()
+			return calendar.date(bySettingHour: calendar.component(.hour, from: parsedTime),
+								 minute: calendar.component(.minute, from: parsedTime),
+								 second: 0,
+								 of: now)
+		}
+		return nil
+	}
 
 	static let mockDinnerEvent: Event = Event(
 		id: UUID(),
 		title: "Dinner time!!!!!!",
-		startTime: Date(),
-		endTime: Date(),
+		startTime: dateFromTimeString("10:00 PM"),
+		endTime: dateFromTimeString("11:30 PM"),
 		location: Location(id: UUID(), name: "Gather - Place Vanier", latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
 		creator: User.jennifer,
