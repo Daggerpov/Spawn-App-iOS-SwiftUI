@@ -5,6 +5,8 @@
 //  Created by Daniel Agapov on 11/14/24.
 //
 
+import Foundation
+
 class FormatterService {
     static let shared: FormatterService = FormatterService()
     
@@ -24,20 +26,17 @@ class FormatterService {
         return ""
     }
 
-	public func formatEventTime(event: Event) -> String {
-		var eventTimeDisplayStringLocal: String = ""
-		if let eventStartTime = event.startTime {
-			if let eventEndTime = event.endTime {
-				eventTimeDisplayStringLocal += "\(eventStartTime) — \(eventEndTime)"
-			} else {
-				eventTimeDisplayStringLocal = "Starts at \(eventStartTime)"
-			}
-		} else {
-			// no start time
-			if let eventEndTime = event.endTime {
-				eventTimeDisplayStringLocal = "Ends at \(eventEndTime)"
-			}
+	func formatEventTime(event: Event) -> String {
+		
+		guard let startTime = event.startTime else { return "No Time Available" }
+		let dateFormatter = DateFormatter()
+		dateFormatter.dateFormat = "h:mm a"
+		dateFormatter.timeZone = .current
+
+		if let endTime = event.endTime,
+		   Calendar.current.isDate(startTime, inSameDayAs: endTime) {
+			return "\(dateFormatter.string(from: startTime)) - \(dateFormatter.string(from: endTime))"
 		}
-		return eventTimeDisplayStringLocal
+		return dateFormatter.string(from: startTime)
 	}
 }
