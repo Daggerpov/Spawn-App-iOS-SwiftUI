@@ -16,7 +16,7 @@ struct FriendsTabView: View {
 		self.viewModel = FriendsTabViewModel(
 			userId: user.id,
 			apiService: MockAPIService.isMocking
-				? MockAPIService() : APIService())
+			? MockAPIService(userId: user.id) : APIService())
 	}
 
 	var body: some View {
