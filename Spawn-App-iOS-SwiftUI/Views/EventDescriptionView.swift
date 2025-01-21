@@ -75,9 +75,7 @@ extension EventDescriptionView {
 							}
 							Spacer()
 							HStack {
-								Text(
-									ChatMessage.dateFormatter.string(
-										from: chatMessage.timestamp))
+								Text(chatMessage.formattedTimestamp)
 								// TODO: add logic later, to either use heart.fill or just heart,
 								// based on whether current user is in the chat message's likedBy array
 								Image(systemName: "heart")
