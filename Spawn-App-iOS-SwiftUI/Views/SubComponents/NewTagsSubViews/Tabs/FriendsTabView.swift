@@ -8,9 +8,22 @@
 import SwiftUI
 
 struct FriendsTabView: View {
-    let user: User
-    
-    var body: some View {
-        SearchView(searchPlaceholderText: "search or add friends")
-    }
+	@ObservedObject var viewModel: FriendsTabViewModel
+	let user: User
+
+	init(user: User) {
+		self.user = user
+		self.viewModel = FriendsTabViewModel(
+			apiService: MockAPIService.isMocking
+				? MockAPIService() : APIService())
+	}
+
+	var body: some View {
+		VStack {
+			SearchView(searchPlaceholderText: "search or add friends")
+		}
+		.onAppear {
+			viewModel.fetchAllData()
+		}
+	}
 }

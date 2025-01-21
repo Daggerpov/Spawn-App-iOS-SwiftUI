@@ -8,13 +8,13 @@
 import Foundation
 
 class FriendsTabViewModel: ObservableObject {
-	@Published var incomingFriendRequests: [FriendRequest]
-	@Published var recommendedFriends: [User]
-	@Published var friends: [User]
+	@Published var incomingFriendRequests: [FriendRequest] = []
+	@Published var recommendedFriends: [User] = []
+	@Published var friends: [User] = []
 
 	var apiService: IAPIService
 
-	init(apiService, IAPIService) {
+	init(apiService: IAPIService) {
 		self.apiService = apiService
 	}
 
@@ -26,5 +26,13 @@ class FriendsTabViewModel: ObservableObject {
 
 	internal func fetchIncomingFriendRequests () {
 		
+	}
+
+	internal func fetchRecommendedFriends() {
+
+	}
+
+	internal func fetchFriends() {
+
 	}
 }
