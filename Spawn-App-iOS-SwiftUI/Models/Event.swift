@@ -102,14 +102,14 @@ extension Event {
 				ChatMessage(
 					id: UUID(),
 					content: "yo guys, wya?",
-					timestamp: Date(),
+					timestamp: Date().addingTimeInterval(-30), // 30 seconds ago
 					userSender: User.danielAgapov,
 					eventId: mockDinnerEvent.id
 				),
 				ChatMessage(
 					id: UUID(),
 					content: "I just saw you",
-					timestamp: Date(),
+					timestamp: Date().addingTimeInterval(-120), // 2 minutes ago
 					userSender: User.danielLee,
 					eventId: mockDinnerEvent.id
 				)
