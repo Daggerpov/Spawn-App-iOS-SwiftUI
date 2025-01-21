@@ -54,6 +54,14 @@ class MockAPIService: IAPIService {
 			return User.mockUsers as! T
 		}
 
+		/// TagsViewModel.swift:
+
+		// fetchTags():
+
+		if url.absoluteString == APIService.baseURL + "friendTags" {
+			return FriendTag.mockTags as! T
+		}
+
 		if T.self == User.self {
 			return User.danielAgapov as! T
 		}
