@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-
-
 struct EventDescriptionView: View {
     @State private var messageText: String = ""
     @ObservedObject var viewModel: EventDescriptionViewModel
@@ -136,13 +134,13 @@ extension EventDescriptionView {
                 }
                 Spacer()
                 HStack {
-                    Text(abbreviatedTime(from: chatMessage.timestamp))
+                    Text(abbreviatedTime(from: chatMessage.formattedTimestamp))
                                     .foregroundColor(.white)
                                     .font(.caption)
                     Image(systemName: "heart") // Logic for liked/unliked can go here later
                 }
             }
-            .padding(.vertical, 5) // Simplified padding
+            .padding(.vertical, 5)
             .padding(.horizontal, 30)
         }
     }
