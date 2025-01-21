@@ -10,7 +10,7 @@ import Foundation
 class ChatMessage: Identifiable, Codable {
     var id: UUID
     var content: String
-    var timestamp: String // TODO: change data type alter
+    var timestamp: Date
     var userSender: User
 	var eventId: UUID
     // do I even need an `event` var here, if each `Event` has a list of chats?
@@ -19,7 +19,7 @@ class ChatMessage: Identifiable, Codable {
     // tech note: in user's view of event, check if that user is in
     // the `ChatMessage`'s `likedBy` array (`[User]`)
 
-	init(id: UUID, content: String, timestamp: String, userSender: User, eventId: UUID, likedBy: [User]? = nil) {
+	init(id: UUID, content: String, timestamp: Date, userSender: User, eventId: UUID, likedBy: [User]? = nil) {
 		self.id = id
         self.content = content
 		self.timestamp = timestamp
@@ -30,12 +30,22 @@ class ChatMessage: Identifiable, Codable {
 }
 
 extension ChatMessage {
-    static let guysWya: ChatMessage = ChatMessage(
-        id: UUID(),
-        content: "yo guys, wya?",
-        timestamp: "2 minutes ago",
+	var formattedTimestamp: String {
+		return FormatterService.shared.timeAgo(from: timestamp)
+	}
+	
+	static let dateFormatter: DateFormatter = {
+		let formatter = DateFormatter()
+		formatter.dateStyle = .short
+		formatter.timeStyle = .short
+		return formatter
+	}()
+	static let guysWya: ChatMessage = ChatMessage(
+		id: UUID(),
+		content: "yo guys, wya?",
+		timestamp: Date().addingTimeInterval(-120), // 2 minutes ago
 		userSender: User.michael,
 		eventId: Event.mockDinnerEvent.id,
-        likedBy: User.mockUsers
-    )
+		likedBy: User.mockUsers
+	)
 }

@@ -5,136 +5,175 @@
 //  Created by Daniel Agapov on 11/3/24.
 //
 
-import PopupView
-
 import SwiftUI
 
 struct FeedView: View {
-    @EnvironmentObject var user: ObservableUser
-    @StateObject var viewModel: FeedViewModel = FeedViewModel(events: Event.mockEvents)
-    
-    @Namespace private var animation: Namespace.ID
-    
-    let mockTags: [FriendTag] = FriendTag.mockTags
-    
-    @State private var showingEventDescriptionPopup: Bool = false
-    @State private var eventInPopup: Event?
-    @State private var colorInPopup: Color?
+	@EnvironmentObject var user: ObservableUser
+
+	@StateObject private var viewModel: FeedViewModel
+
+	@Namespace private var animation: Namespace.ID
+
+	@State private var showingEventDescriptionPopup: Bool = false
+	@State private var eventInPopup: Event?
+	@State private var colorInPopup: Color?
 
 	@State private var showingEventCreationPopup: Bool = false
 
-    var body: some View {
-        NavigationStack{
-            VStack{
-                Spacer()
-                HeaderView().padding(.top, 50)
-                Spacer()
-                TagsScrollView(tags: mockTags)
-                // TODO: implement logic here to adjust search results when the tag clicked is changed
-                Spacer()
-                Spacer()
-                VStack{
-                    eventsListView
-                    HStack (spacing: 35) {
-                        BottomNavButtonView(buttonType: .map)
-                        Spacer()
-						EventCreationButtonView(showingEventCreationPopup: $showingEventCreationPopup)
-                        Spacer()
-                        BottomNavButtonView(buttonType: .friends)
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .padding()
-            .background(universalBackgroundColor)
-            .ignoresSafeArea(.container)
-			.dimmedBackground(
-				isActive: showingEventDescriptionPopup || showingEventCreationPopup
-			)
-        }
-        .popup(isPresented: $showingEventDescriptionPopup) {
-            if let event = eventInPopup, let color = colorInPopup {
-                EventDescriptionView(
-                    event: event,
-                    users: User.mockUsers,
-                    color: color
-                )
-            }
-        } customize: {
-            $0
-				.type(.floater(
-					verticalPadding: 20,
-					horizontalPadding: 20,
-					useSafeAreaInset: false
-				))
-				.appearFrom(.centerScale)
-				.disappearTo(.centerScale)
-				.closeOnTapOutside(true)
-				.dragToDismiss(false) // Prevent dismissal when dragging
-				.autohideIn(nil) // Disable auto-hide
-            // TODO: read up on the documentation: https://github.com/exyte/popupview
-            // so that the description view is dismissed upon clicking outside
-        }
-		.popup(isPresented: $showingEventCreationPopup) {
-			EventCreationView(creatingUser: user.user)
-		} customize: {
-			$0
-				.type(.floater(
-					verticalPadding: 20,
-					horizontalPadding: 20,
-					useSafeAreaInset: false
-				))
-				.appearFrom(.bottomSlide)
-				.disappearTo(.bottomSlide)
-				.closeOnTapOutside(true)
-				.dragToDismiss(false) // Prevent dismissal when dragging
-				.autohideIn(nil) // Disable auto-hide
-			// TODO: read up on the documentation: https://github.com/exyte/popupview
-			// so that the description view is dismissed upon clicking outside
+	// for popups:
+	@State private var descriptionOffset: CGFloat = 1000
+	@State private var creationOffset: CGFloat = 1000
+	// --------
+
+	init(user: User) {
+		_viewModel = StateObject(
+			wrappedValue: FeedViewModel(
+				apiService: MockAPIService.isMocking
+				? MockAPIService(userId: user.id) : APIService(), user: user))
+	}
+
+	var body: some View {
+		ZStack {
+			NavigationStack {
+				VStack {
+					Spacer()
+					HeaderView().padding(.top, 50)
+					Spacer()
+					TagsScrollView(tags: viewModel.tags)
+					// TODO: implement logic here to adjust search results when the tag clicked is changed
+					Spacer()
+					Spacer()
+					VStack {
+						eventsListView
+						bottomButtonsView
+					}
+					.padding(.horizontal)
+				}
+				.padding()
+				.background(universalBackgroundColor)
+				.ignoresSafeArea(.container)
+				.dimmedBackground(
+					isActive: showingEventDescriptionPopup
+						|| showingEventCreationPopup
+				)
+			}
+			.onAppear {
+				Task {
+					await viewModel.fetchEventsForUser()
+					await viewModel.fetchTagsForUser()
+				}
+			}
+			if showingEventDescriptionPopup {
+				if let event = eventInPopup, let color = colorInPopup {
+					ZStack {
+						Color(.black)
+							.opacity(0.5)
+							.onTapGesture {
+								closeDescription()
+							}
+
+						EventDescriptionView(
+							event: event,
+							users: User.mockUsers,
+							color: color
+						)
+						.offset(x: 0, y: descriptionOffset)
+						.onAppear {
+							withAnimation(.spring()) {
+								descriptionOffset = 0
+							}
+						}
+					}
+					.ignoresSafeArea()
+				}
+			}
+			if showingEventCreationPopup {
+				ZStack {
+					Color(.black)
+						.opacity(0.5)
+						.onTapGesture {
+							closeCreation()
+						}
+
+					EventCreationView(creatingUser: user.user)
+						.offset(x: 0, y: creationOffset)
+						.onAppear {
+							withAnimation(.spring()) {
+								creationOffset = 0
+							}
+						}
+				}
+				.ignoresSafeArea()
+			}
 		}
-    }
+	}
+	func closeDescription() {
+		withAnimation(.spring()) {
+			descriptionOffset = 1000
+			showingEventDescriptionPopup = false
+		}
+	}
+
+	func closeCreation() {
+		withAnimation(.spring()) {
+			creationOffset = 1000
+			showingEventCreationPopup = false
+		}
+	}
 }
+
 @available(iOS 17.0, *)
 #Preview {
 	@Previewable
 	@StateObject var observableUser = ObservableUser(user: .danielLee)
 
-	FeedView()
+	FeedView(user: observableUser.user)
 		.environmentObject(observableUser)
 }
 
 extension FeedView {
-    var eventsListView: some View {
-        ScrollView(.vertical) {
-            LazyVStack(spacing: 15) {
-                ForEach(viewModel.events) {mockEvent in
-                    EventCardView(
-                        user: user.user,
-                        event: mockEvent,
-                        // TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
-                        color: eventColors.randomElement() ?? Color.blue
-                    ) { event, color in
-                        eventInPopup = event
-                        colorInPopup = color
-                        showingEventDescriptionPopup = true
-                    }
-                }
-            }
-        }
-    }
+	var bottomButtonsView: some View {
+		HStack(spacing: 35) {
+			BottomNavButtonView(buttonType: .map)
+			Spacer()
+			EventCreationButtonView(
+				showingEventCreationPopup:
+					$showingEventCreationPopup)
+			Spacer()
+			BottomNavButtonView(buttonType: .friends)
+		}
+	}
+	var eventsListView: some View {
+		ScrollView(.vertical) {
+			LazyVStack(spacing: 15) {
+				ForEach(viewModel.events) { mockEvent in
+					EventCardView(
+						user: user.user,
+						event: mockEvent,
+						// TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
+						color: eventColors.randomElement() ?? Color.blue
+					) { event, color in
+						eventInPopup = event
+						colorInPopup = color
+						showingEventDescriptionPopup = true
+					}
+				}
+			}
+		}
+	}
 }
 
 extension View {
-    func dimmedBackground(isActive: Bool) -> some View {
-        self.overlay(
-            Group {
-                if isActive {
-                    Color.black.opacity(0.5)
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-                        .animation(.easeInOut, value: isActive)
-                }
-            }
-        )
-    }
+	func dimmedBackground(isActive: Bool) -> some View {
+		self.overlay(
+			Group {
+				if isActive {
+					Color.black.opacity(0.5)
+						.ignoresSafeArea()
+						.transition(.opacity)
+						.animation(.easeInOut, value: isActive)
+				}
+			}
+		)
+	}
 }

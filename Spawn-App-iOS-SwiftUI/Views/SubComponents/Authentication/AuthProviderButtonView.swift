@@ -13,18 +13,20 @@ struct AuthProviderButtonView: View {
 	var body: some View {
 		HStack {
 			switch authProviderType {
-				case .apple:
-					Image(systemName: "applelogo")
-						.font(.system(size: 20))
-				case .google:
-					Image("google_logo")
-						.resizable()
-						.scaledToFit()
-						.frame(width: 25, height: 25)
+			case .apple:
+				Image(systemName: "applelogo")
+					.font(.system(size: 20))
+			case .google:
+				Image("google_logo")
+					.resizable()
+					.scaledToFit()
+					.frame(width: 25, height: 25)
 			}
 
-			Text("Continue with \(authProviderType == .google ? "Google" : "Apple")")
-				.fontWeight(.medium)
+			Text(
+				"Continue with \(authProviderType == .google ? "Google" : "Apple")"
+			)
+			.fontWeight(.medium)
 		}
 		.padding()
 		.frame(maxWidth: .infinity)
@@ -36,4 +38,5 @@ struct AuthProviderButtonView: View {
 		)
 		.padding(.horizontal, 32)
 	}
+
 }
