@@ -13,9 +13,9 @@ class MockAPIService: IAPIService {
 
 	var errorMessage: String? = nil
 
-	var userId: UUID
+	var userId: UUID?
 
-	init(userId: UUID) {
+	init(userId: UUID? = nil) {
 		self.userId = userId
 	}
 
@@ -65,7 +65,7 @@ class MockAPIService: IAPIService {
 		if T.self == User.self {
 			return User.danielAgapov as! T
 		}
-		// TODO: implement other types for mocking later:
+
 		throw APIError.invalidData
 	}
 
