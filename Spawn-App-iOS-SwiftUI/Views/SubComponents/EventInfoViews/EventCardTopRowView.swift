@@ -13,7 +13,9 @@ struct EventCardTopRowView: View {
     var body: some View {
         VStack (spacing: 10) {
             HStack{
-				EventCardTitleView(eventTitle: event.title)
+				if let title = event.title {
+					EventCardTitleView(eventTitle: title)
+				}
                 Spacer()
                 VStack{
                     ParticipantsImagesView(event: event)

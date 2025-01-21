@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct UserInfoInputView: View {
+	@EnvironmentObject var observableUser: ObservableUser
 	@State private var name: String = ""
 	@State private var username: String = ""
 
@@ -51,7 +52,7 @@ struct UserInfoInputView: View {
 				HStack {
 					Spacer()
 					NavigationLink(destination: {
-						FeedView()
+						FeedView(user: observableUser.user)
 							.navigationBarTitle("")
 							.navigationBarHidden(true)
 					}) {
