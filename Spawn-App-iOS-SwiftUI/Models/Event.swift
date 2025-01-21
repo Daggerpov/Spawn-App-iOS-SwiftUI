@@ -90,14 +90,14 @@ extension Event {
 				ChatMessage(
 					id: UUID(),
 					content: "yo guys, wya?",
-					timestamp: iso8601DateFormatter.date(from: "2025-01-11T16:02:00Z")!,
+					timestamp: Date(),
 					userSender: User.danielAgapov,
 					eventId: mockDinnerEvent.id
 				),
 				ChatMessage(
 					id: UUID(),
 					content: "I just saw you",
-					timestamp: iso8601DateFormatter.date(from: "2025-01-11T16:02:30Z")!,
+					timestamp: Date(),
 					userSender: User.danielLee,
 					eventId: mockDinnerEvent.id
 				)

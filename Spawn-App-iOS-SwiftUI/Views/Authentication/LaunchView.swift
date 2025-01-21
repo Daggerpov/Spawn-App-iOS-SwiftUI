@@ -8,10 +8,13 @@
 import SwiftUI
 
 struct LaunchView: View {
-	@StateObject var observableUser: ObservableUser = ObservableUser(user: .danielAgapov)
+	@StateObject var viewModel: LaunchViewModel = LaunchViewModel(
+		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+	@StateObject var observableUser: ObservableUser = ObservableUser(
+		user: .danielAgapov)
 
 	var body: some View {
-		NavigationStack{
+		NavigationStack {
 			VStack(spacing: 16) {
 				Spacer()
 				Image("spawn_launch_logo")
@@ -25,8 +28,11 @@ struct LaunchView: View {
 						.navigationBarHidden(true)
 				}) {
 					AuthProviderButtonView(authProviderType: .google)
-				}
-				
+				}.simultaneousGesture(
+					TapGesture().onEnded {
+						loginWithGoogle()
+					})
+
 				NavigationLink(destination: {
 					UserInfoInputView()
 						.navigationBarTitle("")
@@ -34,6 +40,11 @@ struct LaunchView: View {
 				}) {
 					AuthProviderButtonView(authProviderType: .apple)
 				}
+				// TODO: implement later
+//				.simultaneousGesture(
+//					TapGesture().onEnded {
+//						loginWithApple()
+//					})
 				Spacer()
 			}
 			.background(Color(hex: "#8693FF"))
@@ -43,6 +54,21 @@ struct LaunchView: View {
 			}
 		}
 		.environmentObject(observableUser)
+	}
+
+	private func loginWithGoogle() {
+		guard
+			let url = URL(
+				string: APIService.baseURL + "/oauth2/authorization/google")
+		else {
+			print("Invalid URL")
+			return
+		}
+		UIApplication.shared.open(url)
+	}
+
+	private func loginWithApple() {
+		// TODO: implement later
 	}
 }
 
