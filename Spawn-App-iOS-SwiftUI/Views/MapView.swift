@@ -36,7 +36,7 @@ struct MapView: View {
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-					? MockAPIService() : APIService(), user: user))
+					? MockAPIService(userId: user.id) : APIService(), user: user))
 	}
 
 	var body: some View {

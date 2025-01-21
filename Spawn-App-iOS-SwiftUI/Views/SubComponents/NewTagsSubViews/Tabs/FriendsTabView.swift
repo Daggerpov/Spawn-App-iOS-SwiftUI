@@ -10,30 +10,28 @@ import SwiftUI
 struct FriendsTabView: View {
     @ObservedObject var viewModel: FriendsTabViewModel
     let user: User
-    
+
     init(user: User) {
         self.user = user
         self.viewModel = FriendsTabViewModel(
             userId: user.id,
             apiService: MockAPIService.isMocking
-                ? MockAPIService() : APIService())
+            ? MockAPIService(userId: user.id) : APIService())
     }
-    
+
     var body: some View {
-        // add friends buttons
-        
-        // accept friend req buttons
-        SearchView(searchPlaceholderText: "search or add friends")
-        
-        requestsSection
-        recommendedFriendsSection
-        friendsSection
-        
+        VStack {
+            // add friends buttons
+
+            // accept friend req buttons
+                SearchView(searchPlaceholderText: "search or add friends")
+        }
         .onAppear {
             Task{
                 await viewModel.fetchAllData()
             }
         }
+        
     }
     
     var requestsSection: some View {

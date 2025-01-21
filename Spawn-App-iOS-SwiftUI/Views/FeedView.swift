@@ -14,8 +14,6 @@ struct FeedView: View {
 
 	@Namespace private var animation: Namespace.ID
 
-	let mockTags: [FriendTag] = FriendTag.mockTags
-
 	@State private var showingEventDescriptionPopup: Bool = false
 	@State private var eventInPopup: Event?
 	@State private var colorInPopup: Color?
@@ -31,7 +29,7 @@ struct FeedView: View {
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-					? MockAPIService() : APIService(), user: user))
+				? MockAPIService(userId: user.id) : APIService(), user: user))
 	}
 
 	var body: some View {
