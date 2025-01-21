@@ -36,7 +36,6 @@ struct EventDescriptionView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(maxWidth: .infinity)
 
                     HStack(spacing: 10) {
                         EventInfoView(event: viewModel.event, eventInfoType: .time)
@@ -79,7 +78,7 @@ extension EventDescriptionView {
             LazyVStack(spacing: 15) {
                 if let chatMessages = viewModel.event.chatMessages {
                     ForEach(chatMessages) { chatMessage in
-                        ChatMessageRow(chatMessage: chatMessage, universalAccentColor: universalAccentColor)
+                        ChatMessageRow(chatMessage: chatMessage)
                     }
                 }
                 chatBar
@@ -94,8 +93,7 @@ extension EventDescriptionView {
     
     struct ChatMessageRow: View {
         let chatMessage: ChatMessage
-        let universalAccentColor: Color
-        
+
         private func abbreviatedTime(from timestamp: String) -> String {
                 let abbreviations: [String: String] = [
                     "seconds": "sec",
