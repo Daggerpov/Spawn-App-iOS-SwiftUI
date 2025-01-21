@@ -12,27 +12,71 @@ class FriendsTabViewModel: ObservableObject {
 	@Published var recommendedFriends: [User] = []
 	@Published var friends: [User] = []
 
+	var userId: UUID
 	var apiService: IAPIService
 
-	init(apiService: IAPIService) {
+	init(userId: UUID, apiService: IAPIService) {
+		self.userId = userId
 		self.apiService = apiService
 	}
 
-	func fetchAllData() {
-		fetchIncomingFriendRequests()
-		fetchRecommendedFriends()
-		fetchFriends()
+	func fetchAllData() async {
+		await fetchIncomingFriendRequests()
+		await fetchRecommendedFriends()
+		await fetchFriends()
 	}
 
-	internal func fetchIncomingFriendRequests () {
-		
+	internal func fetchIncomingFriendRequests () async {
+		if let url = URL(string: APIService.baseURL + "users/\(userId)/friend-requests") {
+			do {
+				let fetchedIncomingFriendRequests: [FriendRequest] = try await self.apiService.fetchData(from: url)
+
+				// Ensure updating on the main thread
+				await MainActor.run {
+					self.incomingFriendRequests = fetchedIncomingFriendRequests
+				}
+			} catch {
+				await MainActor.run {
+					self.incomingFriendRequests = []
+				}
+				print(apiService.errorMessage ?? "")
+			}
+		}
 	}
 
-	internal func fetchRecommendedFriends() {
+	internal func fetchRecommendedFriends() async {
+		if let url = URL(string: APIService.baseURL + "users/\(userId)/recommended-friends") {
+			do {
+				let fetchedRecommendedFriends: [User] = try await self.apiService.fetchData(from: url)
 
+				// Ensure updating on the main thread
+				await MainActor.run {
+					self.recommendedFriends = fetchedRecommendedFriends
+				}
+			} catch {
+				await MainActor.run {
+					self.recommendedFriends = []
+				}
+				print(apiService.errorMessage ?? "")
+			}
+		}
 	}
 
-	internal func fetchFriends() {
+	internal func fetchFriends() async {
+		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends") {
+			do {
+				let fetchedFriends: [User] = try await self.apiService.fetchData(from: url)
 
+				// Ensure updating on the main thread
+				await MainActor.run {
+					self.friends = fetchedFriends
+				}
+			} catch {
+				await MainActor.run {
+					self.friends = []
+				}
+				print(apiService.errorMessage ?? "")
+			}
+		}
 	}
 }
