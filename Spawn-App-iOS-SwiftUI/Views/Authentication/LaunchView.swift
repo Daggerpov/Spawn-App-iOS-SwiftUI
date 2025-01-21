@@ -18,7 +18,7 @@ struct LaunchView: View {
 					.resizable()
 					.scaledToFit()
 					.frame(width: 300, height: 300)
-				
+
 				NavigationLink(destination: {
 					UserInfoInputView()
 						.navigationBarTitle("")

@@ -8,7 +8,16 @@
 import SwiftUI
 
 struct FriendsTabView: View {
+    @ObservedObject var viewModel: FriendsTabViewModel
     let user: User
+    
+    init(user: User) {
+        self.user = user
+        self.viewModel = FriendsTabViewModel(
+            userId: user.id,
+            apiService: MockAPIService.isMocking
+                ? MockAPIService() : APIService())
+    }
     
     var body: some View {
         // add friends buttons
@@ -19,6 +28,12 @@ struct FriendsTabView: View {
         requestsSection
         recommendedFriendsSection
         friendsSection
+        
+        .onAppear {
+            Task{
+                await viewModel.fetchAllData()
+            }
+        }
     }
     
     var requestsSection: some View {

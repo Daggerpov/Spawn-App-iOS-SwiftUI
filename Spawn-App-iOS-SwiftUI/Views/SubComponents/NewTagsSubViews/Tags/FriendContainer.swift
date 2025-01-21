@@ -13,7 +13,7 @@ struct FriendContainer: View {
     
     var body: some View {
         VStack {
-            AddTagButton(action: action, color: .white)
+            AddTagButtonView(color: .white)
             
             ScrollView {
                 if let friends = friendTag.friends, !friends.isEmpty {
