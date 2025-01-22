@@ -109,25 +109,27 @@ struct FriendsTabView: View {
 
 							Spacer()
 
-							Button(action: {
-								Task{
-									await viewModel.addFriend
-								}
-							}) {
-								ZStack {
-									Circle()
-										.fill(Color.white)
-										.frame(width: 50, height: 50)
+							Button(
+								action: {
+									Task {
+										await viewModel.addFriend(friendUserId: friend.id)
+									}
+								}) {
+									ZStack {
+										Circle()
+											.fill(Color.white)
+											.frame(width: 50, height: 50)
 
-									Image(systemName: "person.badge.plus")
-										.resizable()
-										.scaledToFit()
-										.frame(width: 24, height: 24)
-										.foregroundColor(universalAccentColor)
+										Image(systemName: "person.badge.plus")
+											.resizable()
+											.scaledToFit()
+											.frame(width: 24, height: 24)
+											.foregroundColor(
+												universalAccentColor)
+									}
 								}
-							}
-							.buttonStyle(PlainButtonStyle())
-							.shadow(radius: 4)
+								.buttonStyle(PlainButtonStyle())
+								.shadow(radius: 4)
 						}
 						.padding(.vertical, 12)
 						.padding(.horizontal, 16)
