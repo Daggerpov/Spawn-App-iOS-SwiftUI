@@ -16,7 +16,11 @@ struct ExpandedTagView: View {
                 Spacer()
             }
 
-            ColorOptions()
+			// TODO: change this later to be a properly shared hex code statep 
+			ColorOptions(
+				currentSelectedColorHexCode:
+						.constant(universalAccentColorHexCode)
+			)
             FriendContainer(friendTag: friendTag)
         }
         .padding(.horizontal)
