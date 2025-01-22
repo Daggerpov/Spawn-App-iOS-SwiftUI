@@ -106,6 +106,65 @@ struct FriendsTabView: View {
 //        .padding(.horizontal, 16)
 //    }
     
+    var recommendedFriendsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("recommended friends")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+
+            VStack(spacing: 16) {
+                ForEach(0..<3, id: \.self) { index in
+                    HStack {
+                            Image("profile\(index + 1)")
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle().stroke(universalAccentColor, lineWidth: 2)
+                                )
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(index == 0 ? "★ jcrisologo" : "★ username")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.black)
+
+                            Text(index == 0 ? "Jerimy Crisologo" : "full name")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.black)
+                        }
+                        .padding(.leading, 8)
+
+                        Spacer()
+
+                        // Add Friend Button
+                        Button(action: {
+                            // Add friend action here
+                        }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white)
+                                    .frame(width: 50, height: 50)
+
+                                Image(systemName: "person.badge.plus")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                                    .foregroundColor(universalAccentColor)
+                            }
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .shadow(radius: 4)
+                    }
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 16)
+                    .foregroundColor(universalAccentColor)
+                    .cornerRadius(16)
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+    
     var friendsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("friends")
