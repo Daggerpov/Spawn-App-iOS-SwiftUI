@@ -130,11 +130,11 @@ struct FriendsTabView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(index == 0 ? "★ jcrisologo" : "★ username")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.black)
+                                .foregroundColor(universalBackgroundColor)
 
                             Text(index == 0 ? "Jerimy Crisologo" : "full name")
                                 .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.black)
+                                .foregroundColor(universalBackgroundColor)
                         }
                         .padding(.leading, 8)
 
@@ -209,7 +209,7 @@ struct FriendsTabView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(index == 0 ? "★ cherylzhang6" : "★ username")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.white)
+                                .foregroundColor(universalBackgroundColor)
 
                             HStack(spacing: 8) {
                                 Text("Close Friends")
