@@ -20,7 +20,7 @@ struct FriendsTabView: View {
 	}
 
 	var body: some View {
-		ScrollView{
+		ScrollView {
 			VStack {
 				// add friends buttons
 
@@ -32,13 +32,12 @@ struct FriendsTabView: View {
 			friendsSection
 		}
 		.onAppear {
-					Task {
-						await viewModel.fetchAllData()
-					}
-				}
+			Task {
+				await viewModel.fetchAllData()
+			}
+		}
 	}
 
-	//TODO: implement fetchIncomingFriendRequests() from FriendsTabViewModel here to show requests
 	var requestsSection: some View {
 		VStack(alignment: .leading, spacing: 10) {
 			if viewModel.incomingFriendRequests.count > 0 {
@@ -73,7 +72,6 @@ struct FriendsTabView: View {
 	}
 
 	//TODO: refine this scetion to only show the greenbackground as the figma design
-	//TODO: implement fetchRecommendedFriends() from FriendsTabViewModel here to show recommended friends
 	var recommendedFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.recommendedFriends.count > 0 {
