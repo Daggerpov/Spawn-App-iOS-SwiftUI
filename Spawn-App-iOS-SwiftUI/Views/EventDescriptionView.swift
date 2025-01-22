@@ -8,82 +8,162 @@
 import SwiftUI
 
 struct EventDescriptionView: View {
-	@ObservedObject var viewModel: EventDescriptionViewModel
-	var color: Color
+    @State private var messageText: String = ""
+    @ObservedObject var viewModel: EventDescriptionViewModel
+    var color: Color
+    
+    init(event: Event, users: [User], color: Color) {
+        self.viewModel = EventDescriptionViewModel(event: event, users: users)
+        self.color = color
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Title and Time Information
+                EventCardTopRowView(event: viewModel.event)
+                
+                VStack {
+                    HStack {
+                        // Note
+                        if let note = viewModel.event.note {
+                            Text("\(note)")
+                                .font(.body)
+                                .padding(.bottom, 15)
+                                .foregroundColor(.white)
+                                .font(.body)
+                                .italic()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-	init(event: Event, users: [User], color: Color) {
-		self.viewModel = EventDescriptionViewModel(event: event, users: users)
-		self.color = color
-	}
+                    HStack(spacing: 10) {
+                        EventInfoView(event: viewModel.event, eventInfoType: .time)
+                        EventInfoView(event: viewModel.event, eventInfoType: .location)
+                    }
+                    .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity) // Ensures the HStack uses the full width of its parent
+                
+                if let chatMessages = viewModel.event.chatMessages {
+                    Divider()
+                        .frame(height: 0.5)
+                        .background(Color.black)
+                        .opacity(1)
+                    HStack {
+                        Spacer()
+                        Text("\(chatMessages.count) replies")
+                            .foregroundColor(.black)
+                            .opacity(0.7)
+                            .font(.caption)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
 
-	var body: some View {
-		ScrollView {
-			VStack(alignment: .leading, spacing: 20) {
-				// Title and Time Information
-				EventCardTopRowView(event: viewModel.event)
-
-				HStack {
-					VStack(alignment: .leading, spacing: 10) {
-						EventInfoView(
-							event: viewModel.event, eventInfoType: .time)
-						EventInfoView(
-							event: viewModel.event, eventInfoType: .location)
-					}
-					.foregroundColor(.white)
-
-					Spacer()  // Ensures alignment but doesn't add spacing below the content
-				}
-
-				// Note
-				if let note = viewModel.event.note {
-					Text("Note: \(note)")
-						.font(.body)
-				}
-
-				if let chatMessages = viewModel.event.chatMessages {
-					Text("\(chatMessages.count) replies")
-				}
-
-				chatMessagesView
-			}
-			.padding(20)
-			.background(color)
-			.cornerRadius(universalRectangleCornerRadius)
-		}
-		.padding(.horizontal)
-		.padding(.vertical, 200)
-	}
+                
+                chatMessagesView
+            }
+            .padding(20)
+            .background(color)
+            .cornerRadius(universalRectangleCornerRadius)
+        }
+        .padding(.horizontal)
+        .padding(.top, 200)
+    }
 }
 
 extension EventDescriptionView {
-	var chatMessagesView: some View {
-		ScrollView(.vertical) {
-			LazyVStack(spacing: 15) {
-				if let chatMessages = viewModel.event.chatMessages {
-					// TODO: remove this logic out of the view, and into view model
-					ForEach(chatMessages) { chatMessage in
-						let user: User = chatMessage.userSender
-						HStack {
-							if let profilePictureString = user.profilePicture {
-								Image(profilePictureString)
-									.ProfileImageModifier(
-										imageType: .chatMessage)
-							}
-							VStack {
-								Text(user.username)
-								Text(chatMessage.content)
-							}
-							Spacer()
-							HStack {
-								Text(chatMessage.formattedTimestamp)
-								// TODO: add logic later, to either use heart.fill or just heart,
-								// based on whether current user is in the chat message's likedBy array
-								Image(systemName: "heart")
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+    var chatMessagesView: some View {
+        ScrollView(.vertical) {
+            LazyVStack(spacing: 15) {
+                if let chatMessages = viewModel.event.chatMessages {
+                    ForEach(chatMessages) { chatMessage in
+                        ChatMessageRow(chatMessage: chatMessage)
+                    }
+                }
+                chatBar
+                    .padding(.horizontal, 25)
+            }
+            .padding(.top, 10)
+            .padding(.bottom, 10)
+            .background(Color.black.opacity(0.05))
+            .cornerRadius(20)
+        }
+    }
+    
+    struct ChatMessageRow: View {
+        let chatMessage: ChatMessage
+
+        private func abbreviatedTime(from timestamp: String) -> String {
+                let abbreviations: [String: String] = [
+                    "seconds": "sec",
+                    "minutes": "mins",
+                    "week": "wk",
+                    "weeks": "wk"
+                ]
+                var result = timestamp
+                for (full, abbreviation) in abbreviations {
+                    result = result.replacingOccurrences(of: full, with: abbreviation)
+                }
+                return result
+            }
+
+        var body: some View {
+            HStack {
+                if let profilePictureString = chatMessage.userSender.profilePicture {
+                    Image(profilePictureString)
+                        .ProfileImageModifier(imageType: .chatMessage)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Image(systemName: "star.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 15, height: 15)
+                            .foregroundColor(universalAccentColor)
+                        Text(chatMessage.userSender.username)
+                            .foregroundColor(universalAccentColor)
+                            .bold()
+                            .font(.caption)
+                    }
+                    Text(chatMessage.content)
+                        .foregroundColor(.white)
+                        .font(.caption)
+                }
+                Spacer()
+                HStack {
+                    Text(abbreviatedTime(from: chatMessage.formattedTimestamp))
+                                    .foregroundColor(.white)
+                                    .font(.caption)
+                    Image(systemName: "heart") // Logic for liked/unliked can go here later
+                }
+            }
+            .padding(.vertical, 5)
+            .padding(.horizontal, 30)
+        }
+    }
+
+    
+    var chatBar: some View {
+        HStack {
+                TextField("Add a comment", text: $messageText)
+                    .padding(10)
+                    .background(Color.white)
+                    .cornerRadius(10)
+                    .font(.caption)
+                    .foregroundColor(self.color)
+
+                Button(action: {
+                    // Handle send action
+                    print("Message sent: \(messageText)")
+                    messageText = ""
+                }) {
+                    Image(systemName: "paperplane.fill")
+                        .foregroundColor(Color.black)
+                        .padding(.trailing, 10)
+                }
+            }
+            .background(Color.white)
+            .cornerRadius(15)
+    }
 }
