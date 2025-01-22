@@ -11,6 +11,7 @@ struct FriendsView: View {
     let user: User
 	let source: BackButtonSourcePageType
 
+    //TODO: fix the friendtag toggle to look like figma design
     @State private var selectedTab: FriendTagToggle = .friends
     
 	init(user: User, source: BackButtonSourcePageType) {

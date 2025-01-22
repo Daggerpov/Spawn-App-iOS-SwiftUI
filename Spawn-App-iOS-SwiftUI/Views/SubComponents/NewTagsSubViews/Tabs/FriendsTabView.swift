@@ -57,7 +57,7 @@ struct FriendsTabView: View {
 //        }
 //    }
     
-    //TODO#1: implement fetchIncomingFriendRequests() from FriendsTabViewModel here to show requests
+    //TODO: implement fetchIncomingFriendRequests() from FriendsTabViewModel here to show requests
     var requestsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("requests")
@@ -108,8 +108,8 @@ struct FriendsTabView: View {
 //        .padding(.horizontal, 16)
 //    }
     
-    //TODO#1: refine this scetion to only show the greenbackground as the figma design
-    //TODO#2: implement fetchRecommendedFriends() from FriendsTabViewModel here to show recommended friends
+    //TODO: refine this scetion to only show the greenbackground as the figma design
+    //TODO: implement fetchRecommendedFriends() from FriendsTabViewModel here to show recommended friends
     var recommendedFriendsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("recommended friends")
