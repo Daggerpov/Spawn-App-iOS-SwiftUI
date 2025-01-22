@@ -56,6 +56,7 @@ struct FriendsTabView: View {
 //        }
 //    }
     
+    //TODO#1: implement fetchIncomingFriendRequests() from FriendsTabViewModel
     var requestsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("requests")
@@ -106,6 +107,8 @@ struct FriendsTabView: View {
 //        .padding(.horizontal, 16)
 //    }
     
+    //TODO#1: refine this scetion to show the greenbackground around each friend
+    //TODO#2: implement fetchRecommendedFriends() from FriendsTabViewModel
     var recommendedFriendsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("recommended friends")
@@ -136,9 +139,7 @@ struct FriendsTabView: View {
 
                         Spacer()
 
-                        // Add Friend Button
                         Button(action: {
-                            // Add friend action here
                         }) {
                             ZStack {
                                 Circle()
