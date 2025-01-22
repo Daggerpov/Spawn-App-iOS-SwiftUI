@@ -11,7 +11,8 @@ struct FriendsView: View {
     let user: User
 	let source: BackButtonSourcePageType
 
-    @State private var selectedTab: FriendTagToggle = .tags // TODO DANIEL: change back to friends later by default
+    //TODO: fix the friendtag toggle to look like figma design
+    @State private var selectedTab: FriendTagToggle = .friends
     
 	init(user: User, source: BackButtonSourcePageType) {
         self.user = user
@@ -43,8 +44,11 @@ private extension FriendsView {
             Picker("", selection: $selectedTab) {
                 Text("friends")
                     .tag(FriendTagToggle.friends)
+                //TODO: change color of text to universalAccentColor when selected and universalBackgroundColor when not
+
                 Text("tags")
                     .tag(FriendTagToggle.tags)
+                //TODO: change color of text to universalAccentColor when selected and universalBackgroundColor when not
             }
             .pickerStyle(SegmentedPickerStyle())
             .frame(width: 150, height: 40)
@@ -66,8 +70,9 @@ private extension FriendsView {
 @available(iOS 17.0, *)
 #Preview
 {
-	@Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
-		user: .danielLee
-	)
+	@Previewable
+	@StateObject var observableUser = ObservableUser(user: .danielLee)
+
 	FriendsView(user: observableUser.user, source: .feed)
+		.environmentObject(observableUser)
 }
