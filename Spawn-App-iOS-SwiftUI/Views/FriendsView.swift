@@ -44,14 +44,15 @@ private extension FriendsView {
                 Text("friends")
                     .tag(FriendTagToggle.friends)
                 //TODO: change color of text to universalAccentColor when selected and universalBackgroundColor when not
-                    .foregroundColor(selectedTab == .friends ? universalAccentColor : universalBackgroundColor)
+//                    .foregroundColor(selectedTab == FriendTagToggle.friends ? universalAccentColor : universalBackgroundColor)
 
                 Text("tags")
                     .tag(FriendTagToggle.tags)
                 //TODO: change color of text to universalAccentColor when selected and universalBackgroundColor when not
-                    .foregroundColor(selectedTab == .tags ? universalAccentColor : universalBackgroundColor)
+//                    .foregroundColor(selectedTab == FriendTagToggle.tags ? universalAccentColor : universalBackgroundColor)
             }
             .pickerStyle(SegmentedPickerStyle())
+            .tint(universalAccentColor)
             .frame(width: 150, height: 40)
             .background(
                 RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
