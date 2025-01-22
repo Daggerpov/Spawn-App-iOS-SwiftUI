@@ -81,60 +81,7 @@ struct FriendsTabView: View {
 
 				VStack(spacing: 16) {
 					ForEach(viewModel.recommendedFriends) { friend in
-						HStack {
-							if let pfp = friend.profilePicture {
-								Image(pfp)
-									.resizable()
-									.scaledToFill()
-									.frame(width: 50, height: 50)
-									.clipShape(Circle())
-									.overlay(
-										Circle().stroke(
-											universalAccentColor, lineWidth: 2)
-									)
-
-							}
-							VStack(alignment: .leading, spacing: 2) {
-								Text(friend.username)
-									.font(.system(size: 16, weight: .bold))
-
-								Text(
-									FormatterService.shared.formatName(
-										user: friend)
-								)
-								.font(.system(size: 14, weight: .medium))
-							}
-							.foregroundColor(universalBackgroundColor)
-							.padding(.leading, 8)
-
-							Spacer()
-
-							Button(
-								action: {
-									Task {
-										await viewModel.addFriend(friendUserId: friend.id)
-									}
-								}) {
-									ZStack {
-										Circle()
-											.fill(Color.white)
-											.frame(width: 50, height: 50)
-
-										Image(systemName: "person.badge.plus")
-											.resizable()
-											.scaledToFit()
-											.frame(width: 24, height: 24)
-											.foregroundColor(
-												universalAccentColor)
-									}
-								}
-								.buttonStyle(PlainButtonStyle())
-								.shadow(radius: 4)
-						}
-						.padding(.vertical, 12)
-						.padding(.horizontal, 16)
-						.background(universalAccentColor)
-						.cornerRadius(16)
+						RecommendedFriendView(viewModel: viewModel, friend: friend)
 					}
 				}
 			}
@@ -207,6 +154,70 @@ struct FriendsTabView: View {
 			}
 		}
 		.padding(.horizontal, 20)
+	}
+
+	struct RecommendedFriendView: View {
+		@ObservedObject var viewModel: FriendsTabViewModel
+		var friend: User
+		@State private var isAdded: Bool = false
+
+		var body: some View {
+			HStack {
+				if let pfp = friend.profilePicture {
+					Image(pfp)
+						.resizable()
+						.scaledToFill()
+						.frame(width: 50, height: 50)
+						.clipShape(Circle())
+						.overlay(
+							Circle().stroke(
+								universalAccentColor, lineWidth: 2)
+						)
+
+				}
+				VStack(alignment: .leading, spacing: 2) {
+					Text(friend.username)
+						.font(.system(size: 16, weight: .bold))
+
+					Text(
+						FormatterService.shared.formatName(
+							user: friend)
+					)
+					.font(.system(size: 14, weight: .medium))
+				}
+				.foregroundColor(universalBackgroundColor)
+				.padding(.leading, 8)
+
+				Spacer()
+
+				Button(
+					action: {
+						isAdded = true
+						Task {
+							await viewModel.addFriend(friendUserId: friend.id)
+						}
+					}) {
+						ZStack {
+							Circle()
+								.fill(Color.white)
+								.frame(width: 50, height: 50)
+
+							Image(systemName: isAdded ? "checkmark" : "person.badge.plus")
+								.resizable()
+								.scaledToFit()
+								.frame(width: 24, height: 24)
+								.foregroundColor(
+									universalAccentColor)
+						}
+					}
+					.buttonStyle(PlainButtonStyle())
+					.shadow(radius: 4)
+			}
+			.padding(.vertical, 12)
+			.padding(.horizontal, 16)
+			.background(universalAccentColor)
+			.cornerRadius(16)
+		}
 	}
 
 }
