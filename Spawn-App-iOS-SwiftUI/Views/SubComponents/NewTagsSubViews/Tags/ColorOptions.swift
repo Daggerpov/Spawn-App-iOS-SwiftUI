@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ColorOptions: View {
+	@Binding var currentSelectedColorHexCode: String
 	@State var currentSelectedColorIndex: Int = 0
 	var body: some View {
 		HStack(spacing: 15) {
@@ -15,6 +16,7 @@ struct ColorOptions: View {
 			ForEach(0..<eventColors.count, id: \.self) { index in
 				Button(action: {
 					currentSelectedColorIndex = index
+					currentSelectedColorHexCode = eventColorHexCodes[index]
 				}) {
 
 					Circle()
