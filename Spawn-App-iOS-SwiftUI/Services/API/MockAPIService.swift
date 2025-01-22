@@ -81,6 +81,19 @@ class MockAPIService: IAPIService {
 
 		if url.absoluteString == APIService.baseURL + "users/friend-request" {return} // just stop executing
 
+		/// `EventCreationViewModel.swift`:
+
+		// createEvent():
+
+		if url.absoluteString == APIService.baseURL + "events" {return}
+
+		/// TagsViewModel.swift:
+
+		// createTag():
+
+		if url.absoluteString == APIService.baseURL + "friendTags" {return}
+
+		// this means I need to include the url call in this mock `sendData` method:
 		throw APIError.invalidData
 	}
 }
