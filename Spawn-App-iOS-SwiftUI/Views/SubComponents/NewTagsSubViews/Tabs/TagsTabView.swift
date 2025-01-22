@@ -21,6 +21,7 @@ struct TagsTabView: View {
 			VStack(alignment: .leading, spacing: 15) {
 				Text("TAGS")
 					.font(.headline)
+					.foregroundColor(universalAccentColor)
 
 				AddTagButtonView(color: universalAccentColor)
 					.environmentObject(viewModel)

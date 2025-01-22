@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct AddTagButtonView: View {
+	@State private var isCreatingTag: Bool = false
 	@EnvironmentObject var viewModel: TagsViewModel
 
     var color: Color
     
     var body: some View {
 		Button(action: {
+			toggleIsCreatingTag()
 			Task{
 				await viewModel.createTag()
 			}
@@ -29,6 +31,17 @@ struct AddTagButtonView: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
                 .padding(.bottom, 10)
+			if isCreatingTag {
+				CreatingTagRowView()
+			}
         }
     }
+
+	private func toggleIsCreatingTag(){
+		if isCreatingTag {
+			isCreatingTag = false
+		} else {
+			isCreatingTag = true
+		}
+	}
 }
