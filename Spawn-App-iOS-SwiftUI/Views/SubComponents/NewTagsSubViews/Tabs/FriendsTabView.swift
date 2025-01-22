@@ -198,14 +198,13 @@ struct FriendsTabView: View {
                             .frame(width: 60, height: 60)
                             .clipShape(Circle())
                             .overlay(
-                                Circle().stroke(universalAccentColor, lineWidth: 2)
+                                Circle().stroke(Color.white, lineWidth: 2)
                             )
                             .background(
                                 Circle()
                                     .fill(index == 0 ? Color.clear : Color.white)
                             )
 
-                        // Username and Tags
                         VStack(alignment: .leading, spacing: 8) {
                             Text(index == 0 ? "★ cherylzhang6" : "★ username")
                                 .font(.system(size: 16, weight: .bold))
