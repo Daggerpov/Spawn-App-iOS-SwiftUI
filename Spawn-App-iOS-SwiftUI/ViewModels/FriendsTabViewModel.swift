@@ -12,6 +12,9 @@ class FriendsTabViewModel: ObservableObject {
 	@Published var recommendedFriends: [User] = []
 	@Published var friends: [User] = []
 
+	@Published var friendRequestCreationMessage: String = ""
+	@Published var createdFriendRequest: FriendRequest?
+
 	var userId: UUID
 	var apiService: IAPIService
 
@@ -76,6 +79,24 @@ class FriendsTabViewModel: ObservableObject {
 					self.friends = []
 				}
 				print(apiService.errorMessage ?? "")
+			}
+		}
+	}
+
+	func addFriend(friendUserId: UUID) async {
+        let createdFriendRequest = FriendRequestCreationDTO(
+			id: UUID(),
+			senderUserId: userId,
+			receiverUserId: friendUserId
+		)
+		if let url = URL(string: APIService.baseURL + "users/friend-request") {
+			do {
+				try await self.apiService.sendData(createdFriendRequest, to: url)
+			} catch {
+				await MainActor.run {
+					friendRequestCreationMessage = "There was an error creating your friend request. Please try again"
+					print(apiService.errorMessage ?? "")
+				}
 			}
 		}
 	}

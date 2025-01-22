@@ -36,23 +36,28 @@ class MockAPIService: IAPIService {
 
 		/// FriendsTabViewModel.swift:
 
-		// fetchIncomingFriendRequests():
+		if let userIdForUrl = userId {
+			// fetchIncomingFriendRequests():
 
-		if url.absoluteString == APIService.baseURL + "users/\(userId)/friend-requests" {
-			return FriendRequest.mockFriendRequests as! T
+			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friend-requests" {
+				return FriendRequest.mockFriendRequests as! T
+			}
+
+			// fetchRecommendedFriends():
+
+			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/recommended-friends" {
+				let firstThreeUsers = Array(User.mockUsers.prefix(3))
+				return firstThreeUsers as! T
+			}
+
+			// fetchFriends():
+
+			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friends" {
+				return User.mockUsers as! T
+			}
 		}
 
-		// fetchRecommendedFriends():
 
-		if url.absoluteString == APIService.baseURL + "users/\(userId)/recommended-friends" {
-			return User.mockUsers as! T
-		}
-
-		// fetchFriends():
-
-		if url.absoluteString == APIService.baseURL + "users/\(userId)/friends" {
-			return User.mockUsers as! T
-		}
 
 		/// TagsViewModel.swift:
 
@@ -70,6 +75,12 @@ class MockAPIService: IAPIService {
 	}
 
 	func sendData<T>(_ object: T, to url: URL) async throws where T : Encodable {
+		/// `FriendsTabViewModel.swift`:
+
+		// addFriend():
+
+		if url.absoluteString == APIService.baseURL + "users/friend-request" {return} // just stop executing
+
 		throw APIError.invalidData
 	}
 }
