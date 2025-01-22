@@ -26,6 +26,7 @@ struct FriendsTabView: View {
             // accept friend req buttons
                 SearchView(searchPlaceholderText: "search or add friends")
         }
+        requestsSection
         .onAppear {
             Task{
                 await viewModel.fetchAllData()
@@ -38,7 +39,7 @@ struct FriendsTabView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("requests")
                 .font(.headline)
-                .foregroundColor(.black)
+                .foregroundColor(universalAccentColor)
             ScrollView(.horizontal, showsIndicators: false) {
 //                //TODO: figuring out how to display the requests as circles below the 'requests' text
                 VStack(spacing: 12) {
@@ -60,7 +61,7 @@ struct FriendsTabView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("recommended friends")
                 .font(.headline)
-                .foregroundColor(.black)
+                .foregroundColor(universalAccentColor)
             ScrollView(.horizontal, showsIndicators: false) {
 //                //TODO: figuring out how to display recommended friends
                 HStack(spacing: 12) {
@@ -80,7 +81,7 @@ struct FriendsTabView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("friends")
                 .font(.headline)
-                .foregroundColor(.black)
+                .foregroundColor(universalAccentColor)
             ScrollView(.horizontal, showsIndicators: false) {
 //                //TODO: figuring out how to display friends
                 HStack(spacing: 12) {
