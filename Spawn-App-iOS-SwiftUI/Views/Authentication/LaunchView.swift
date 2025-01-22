@@ -59,7 +59,7 @@ struct LaunchView: View {
 	private func loginWithGoogle() {
 		guard
 			let url = URL(
-				string: APIService.baseURL + "oauth2/authorization/google")
+				string: "https://spawn-app-back-end-production.up.railway.app/oauth2/authorization/google")
 		else {
 			print("Invalid URL")
 			return
