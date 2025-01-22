@@ -21,7 +21,6 @@ class MockAPIService: IAPIService {
 
 	func fetchData<T>(from url: URL) async throws -> T where T : Decodable {
 		/// FeedViewModel.swift:
-		print("nope")
 
 		// fetchEventsForUser():
 
@@ -42,7 +41,6 @@ class MockAPIService: IAPIService {
 			// fetchIncomingFriendRequests():
 
 			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friend-requests" {
-				print("yup")
 				return FriendRequest.mockFriendRequests as! T
 			}
 
