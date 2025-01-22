@@ -66,8 +66,9 @@ private extension FriendsView {
 @available(iOS 17.0, *)
 #Preview
 {
-	@Previewable @StateObject var observableUser: ObservableUser = ObservableUser(
-		user: .danielLee
-	)
+	@Previewable
+	@StateObject var observableUser = ObservableUser(user: .danielLee)
+
 	FriendsView(user: observableUser.user, source: .feed)
+		.environmentObject(observableUser)
 }
