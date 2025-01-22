@@ -79,4 +79,8 @@ class FriendsTabViewModel: ObservableObject {
 			}
 		}
 	}
+
+	func addFriend() async {
+		
+	}
 }

@@ -110,6 +110,9 @@ struct FriendsTabView: View {
 							Spacer()
 
 							Button(action: {
+								Task{
+									await viewModel.addFriend
+								}
 							}) {
 								ZStack {
 									Circle()
