@@ -11,18 +11,20 @@ struct AddTagButtonView: View {
 	@State private var isCreatingTag: Bool = false
 	@EnvironmentObject var viewModel: TagsViewModel
 
-    var color: Color
-    
-    var body: some View {
-		Button(action: {
-			toggleIsCreatingTag()
-			Task{
-				await viewModel.createTag()
-			}
-		}) {
-			VStack{
+	var color: Color
+
+	var body: some View {
+		VStack {
+			Button(action: {
+				toggleIsCreatingTag()
+				Task {
+					await viewModel.createTag()
+				}
+			}) {
 				RoundedRectangle(cornerRadius: 12)
-					.stroke(color, style: StrokeStyle(lineWidth: 2, dash: [4]))
+					.stroke(
+						color, style: StrokeStyle(lineWidth: 2, dash: [4])
+					)
 					.frame(height: 50)
 					.overlay(
 						Image(systemName: "plus")
@@ -32,14 +34,14 @@ struct AddTagButtonView: View {
 					.padding(.horizontal, 10)
 					.padding(.vertical, 5)
 					.padding(.bottom, 10)
-				if isCreatingTag {
-					CreatingTagRowView()
-				}
 			}
-        }
-    }
+			if isCreatingTag {
+				CreatingTagRowView()
+			}
+		}
+	}
 
-	private func toggleIsCreatingTag(){
+	private func toggleIsCreatingTag() {
 		if isCreatingTag {
 			isCreatingTag = false
 		} else {
