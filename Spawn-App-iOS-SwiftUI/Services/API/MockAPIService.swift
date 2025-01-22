@@ -36,7 +36,6 @@ class MockAPIService: IAPIService {
 
 		/// FriendsTabViewModel.swift:
 
-
 		if let userIdForUrl = userId {
 			// fetchIncomingFriendRequests():
 
@@ -58,6 +57,8 @@ class MockAPIService: IAPIService {
 			}
 		}
 
+
+
 		/// TagsViewModel.swift:
 
 		// fetchTags():
@@ -74,6 +75,12 @@ class MockAPIService: IAPIService {
 	}
 
 	func sendData<T>(_ object: T, to url: URL) async throws where T : Encodable {
+		/// `FriendsTabViewModel.swift`:
+
+		// addFriend():
+
+		if url.absoluteString == APIService.baseURL + "users/friend-request" {return} // just stop executing
+
 		throw APIError.invalidData
 	}
 }
