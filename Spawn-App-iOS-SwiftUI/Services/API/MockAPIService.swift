@@ -21,6 +21,7 @@ class MockAPIService: IAPIService {
 
 	func fetchData<T>(from url: URL) async throws -> T where T : Decodable {
 		/// FeedViewModel.swift:
+		print("nope")
 
 		// fetchEventsForUser():
 
@@ -36,22 +37,27 @@ class MockAPIService: IAPIService {
 
 		/// FriendsTabViewModel.swift:
 
-		// fetchIncomingFriendRequests():
 
-		if url.absoluteString == APIService.baseURL + "users/\(userId)/friend-requests" {
-			return FriendRequest.mockFriendRequests as! T
-		}
+		if let userIdForUrl = userId {
+			// fetchIncomingFriendRequests():
 
-		// fetchRecommendedFriends():
+			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friend-requests" {
+				print("yup")
+				return FriendRequest.mockFriendRequests as! T
+			}
 
-		if url.absoluteString == APIService.baseURL + "users/\(userId)/recommended-friends" {
-			return User.mockUsers as! T
-		}
+			// fetchRecommendedFriends():
 
-		// fetchFriends():
+			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/recommended-friends" {
+				let firstThreeUsers = Array(User.mockUsers.prefix(3))
+				return firstThreeUsers as! T
+			}
 
-		if url.absoluteString == APIService.baseURL + "users/\(userId)/friends" {
-			return User.mockUsers as! T
+			// fetchFriends():
+
+			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friends" {
+				return User.mockUsers as! T
+			}
 		}
 
 		/// TagsViewModel.swift:
