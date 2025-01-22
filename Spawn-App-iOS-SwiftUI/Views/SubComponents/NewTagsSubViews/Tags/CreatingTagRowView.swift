@@ -14,19 +14,21 @@ struct CreatingTagRowView: View {
 
 	// Friend Tag Creation Properties:
 	@State private var displayName: String = ""
-	@State private var colorHexCode: String = ""
+	@State private var colorHexCode: String = universalAccentColorHexCode
 
 	var body: some View {
-		VStack{
+		VStack {
 			HStack {
-				Group{
+				Group {
 					if isExpanded {
-						TextField("", text: $displayName)
+						TextField("New Tag", text: $displayName)
 							.underline()
+							.foregroundColor(.white)
 						Button(action: {
 							// TODO: fill in action to rename title later
 						}) {
 							Image(systemName: "done")
+								.foregroundColor(.white)
 						}
 					} else {
 						Text(displayName)
@@ -45,8 +47,7 @@ struct CreatingTagRowView: View {
 					}
 					Button(action: {
 						withAnimation {
-							isExpanded.toggle() // Toggle expanded state
-
+							isExpanded.toggle()  // Toggle expanded state
 						}
 					}) {
 						Image(systemName: "plus.circle")
@@ -60,18 +61,14 @@ struct CreatingTagRowView: View {
 				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
 					.fill(Color(hex: colorHexCode))
 			)
-			if isExpanded {
-				VStack(spacing: 15) {
-					HStack {
-						Spacer()
-					}
-
-					ColorOptions()
+			VStack(spacing: 15) {
+				HStack {
+					Spacer()
 				}
-				.padding(.horizontal)
-				.padding(.bottom)
+				ColorOptions(currentSelectedColorHexCode: $colorHexCode)
 			}
+			.padding(.horizontal)
+			.padding(.bottom)
 		}
-
 	}
 }
