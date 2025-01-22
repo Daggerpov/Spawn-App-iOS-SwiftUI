@@ -37,26 +37,6 @@ struct FriendsTabView: View {
         
     }
     
-//    var requestsSection: some View {
-//        VStack(alignment: .leading, spacing: 8) {
-//            Text("requests")
-//                .font(.headline)
-//                .foregroundColor(universalAccentColor)
-//            ScrollView(.horizontal, showsIndicators: false) {
-////                //TODO: figuring out how to display the requests as circles below the 'requests' text
-//                VStack(spacing: 12) {
-////                    ForEach(user, id: \.id) { request in
-////                        Image(request.imageName)
-////                            .resizable()
-////                            .frame(width: 50, height: 50)
-////                            .clipShape(Circle())
-////                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
-////                    }
-//                }
-//            }
-//        }
-//    }
-    
     //TODO: implement fetchIncomingFriendRequests() from FriendsTabViewModel here to show requests
     var requestsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -84,29 +64,6 @@ struct FriendsTabView: View {
         }
         .padding(.horizontal, 16)
     }
-    
-    //TODO: maybe a component for both recommended friends and friends?
-    
-//    var recommendedFriendsSection: some View {
-//        VStack(alignment: .leading, spacing: 8) {
-//            Text("recommended friends")
-//                .font(.headline)
-//                .foregroundColor(universalAccentColor)
-//            ScrollView(.horizontal, showsIndicators: false) {
-////                //TODO: figuring out how to display recommended friends
-//                HStack(spacing: 12) {
-////                    ForEach(user, id: \.id) { request in
-////                        Image(request.imageName)
-////                            .resizable()
-////                            .frame(width: 50, height: 50)
-////                            .clipShape(Circle())
-////                            .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
-////                    }
-//                }
-//            }
-//        }
-//        .padding(.horizontal, 16)
-//    }
     
     //TODO: refine this scetion to only show the greenbackground as the figma design
     //TODO: implement fetchRecommendedFriends() from FriendsTabViewModel here to show recommended friends
@@ -166,21 +123,6 @@ struct FriendsTabView: View {
         }
         .padding(.horizontal, 16)
     }
-    
-//    var friendsSection: some View {
-//        VStack(alignment: .leading, spacing: 8) {
-//            Text("friends")
-//                .font(.headline)
-//                .foregroundColor(universalAccentColor)
-//            ScrollView(.horizontal, showsIndicators: false) {
-////                //TODO: figuring out how to display friends
-//                HStack(spacing: 12) {
-////                    FriendRow(friend: user)
-//                }
-//            }
-//        }
-//        .padding(.horizontal, 16)
-//    }
     
     // TODO: implement fetchFriends() from FriendsTabViewModel here to display friends
     var friendsSection: some View {
