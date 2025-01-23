@@ -33,7 +33,7 @@ struct AddTagButtonView: View {
 					.padding(.bottom, 10)
 			}
 			if creationStatus == .creating {
-				CreatingTagRowView()
+				CreatingTagRowView(creationStatus: $creationStatus)
 					.background(
 						RoundedRectangle(cornerRadius: 12)
 							.fill(

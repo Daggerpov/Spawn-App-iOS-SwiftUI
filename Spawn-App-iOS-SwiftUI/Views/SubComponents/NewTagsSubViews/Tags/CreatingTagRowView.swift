@@ -10,6 +10,8 @@ import SwiftUI
 struct CreatingTagRowView: View {
 	@EnvironmentObject var viewModel: TagsViewModel
 
+	@Binding var creationStatus: CreationStatus
+
 	// Friend Tag Creation Properties:
 	@State private var displayName: String = ""
 	@State private var colorHexCode: String = universalAccentColorHexCode
@@ -24,8 +26,7 @@ struct CreatingTagRowView: View {
 						Task{
 							await viewModel.createTag(displayName: displayName, colorHexCode: colorHexCode)
 						}
-						// TODO: fill in logic to create tag
-						// TODO: fill in action to rename title later
+						creationStatus = .doneCreating
 					}) {
 						Image(systemName: "checkmark")
 					}
