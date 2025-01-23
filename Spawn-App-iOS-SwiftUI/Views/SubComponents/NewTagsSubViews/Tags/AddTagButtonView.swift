@@ -34,6 +34,16 @@ struct AddTagButtonView: View {
 			}
 			if isCreatingTag {
 				CreatingTagRowView()
+					.background(
+						RoundedRectangle(cornerRadius: 12)
+							.fill(
+								color
+									.opacity(0.5)
+							)
+							.cornerRadius(
+								universalRectangleCornerRadius
+							)
+					)
 			}
 		}
 	}

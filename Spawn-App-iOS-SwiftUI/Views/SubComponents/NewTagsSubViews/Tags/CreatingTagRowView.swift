@@ -18,7 +18,7 @@ struct CreatingTagRowView: View {
 		VStack {
 			HStack {
 				Group {
-					TextField("Enter New Tag Name", text: $displayName)
+					TextField("Enter Name", text: $displayName)
 						.underline()
 					Button(action: {
 						Task{
