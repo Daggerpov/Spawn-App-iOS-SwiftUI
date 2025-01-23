@@ -46,12 +46,22 @@ class TagsViewModel: ObservableObject {
 		}
 	}
 
-	func createTag(displayName: String, colorHexCode: String) async -> Void {
-		newTag = FriendTag(id: UUID(), displayName: displayName, colorHexCode: colorHexCode, ownerId: user.id)
+	func upsertTag(id: UUID? = nil, displayName: String, colorHexCode: String, upsertAction: UpsertActionType) async -> Void {
+		if displayName.isEmpty {
+			creationMessage = "Please enter a display name"
+			return
+		}
+
+		newTag = FriendTag(id: id ?? UUID(), displayName: displayName, colorHexCode: colorHexCode, ownerId: user.id)
 
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {
-				try await self.apiService.sendData(newTag, to: url)
+				switch upsertAction {
+					case .create:
+						try await self.apiService.sendData(newTag, to: url)
+					case .update:
+						try await self.apiService.updateData(newTag, to: url)
+				}
 			} catch {
 				await MainActor.run {
 					creationMessage = "There was an error creating your tag. Please try again"
