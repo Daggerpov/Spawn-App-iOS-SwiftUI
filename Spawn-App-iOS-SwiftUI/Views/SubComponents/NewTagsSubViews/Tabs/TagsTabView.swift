@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TagsTabView: View {
 	@ObservedObject var viewModel: TagsViewModel
+	@State private var creationStatus: CreationStatus = .notCreating
 
 	init(user: User) {
 		self.viewModel = TagsViewModel(
@@ -23,7 +24,7 @@ struct TagsTabView: View {
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
-				AddTagButtonView(color: universalAccentColor)
+				AddTagButtonView(creationStatus: $creationStatus, color: universalAccentColor)
 					.environmentObject(viewModel)
 			}
 			Spacer()

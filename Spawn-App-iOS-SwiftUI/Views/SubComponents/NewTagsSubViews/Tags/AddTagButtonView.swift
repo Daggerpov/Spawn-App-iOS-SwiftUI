@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct AddTagButtonView: View {
-	@State private var isCreatingTag: Bool = false
+	@Binding var creationStatus: CreationStatus
 	@EnvironmentObject var viewModel: TagsViewModel
 
 	var color: Color
@@ -16,7 +16,7 @@ struct AddTagButtonView: View {
 	var body: some View {
 		VStack {
 			Button(action: {
-				toggleIsCreatingTag()
+				creationStatus = .creating
 			}) {
 				RoundedRectangle(cornerRadius: 12)
 					.stroke(
@@ -32,7 +32,7 @@ struct AddTagButtonView: View {
 					.padding(.vertical, 5)
 					.padding(.bottom, 10)
 			}
-			if isCreatingTag {
+			if creationStatus == .creating {
 				CreatingTagRowView()
 					.background(
 						RoundedRectangle(cornerRadius: 12)
@@ -45,14 +45,6 @@ struct AddTagButtonView: View {
 							)
 					)
 			}
-		}
-	}
-
-	private func toggleIsCreatingTag() {
-		if isCreatingTag {
-			isCreatingTag = false
-		} else {
-			isCreatingTag = true
 		}
 	}
 }
