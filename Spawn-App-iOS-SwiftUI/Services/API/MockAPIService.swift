@@ -67,7 +67,9 @@ class MockAPIService: IAPIService {
 		if let userIdForUrl = userId {
 			// fetchTags():
 
-			if url.absoluteString == APIService.baseURL + "friendTags?ownerId=\(userIdForUrl)" {
+			if url.absoluteString == APIService.baseURL
+				+ "friendTags?ownerId=\(userIdForUrl)"
+			{
 				return FriendTag.mockTags as! T
 			}
 		}
@@ -96,11 +98,21 @@ class MockAPIService: IAPIService {
 
 		/// TagsViewModel.swift:
 
-		// createTag():
+		// upsertTag(upsertAction: .create):
 
 		if url.absoluteString == APIService.baseURL + "friendTags" { return }
 
 		// this means I need to include the url call in this mock `sendData` method:
+		throw APIError.invalidData
+	}
+
+	func updateData<T>(_ object: T, to url: URL) async throws where T: Encodable {
+		/// `TagsViewModel.swift`:
+
+		// upsertTag(upsertAction: .update):
+
+		if url.absoluteString == APIService.baseURL + "friendTags" { return }
+
 		throw APIError.invalidData
 	}
 }
