@@ -6,5 +6,5 @@
 //
 
 enum CreationStatus {
-	case creating, doneCreating, notCreating
+	case creating, doneCreating, notCreating, error
 }
