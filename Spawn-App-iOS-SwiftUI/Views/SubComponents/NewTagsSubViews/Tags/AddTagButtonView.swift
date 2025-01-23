@@ -16,7 +16,11 @@ struct AddTagButtonView: View {
 	var body: some View {
 		VStack {
 			Button(action: {
-				creationStatus = .creating
+				if creationStatus == .creating {
+					creationStatus = .notCreating
+				} else {
+					creationStatus = .creating
+				}
 			}) {
 				RoundedRectangle(cornerRadius: 12)
 					.stroke(

@@ -44,10 +44,7 @@ struct TagRow: View {
 										upsertAction: .update
 									)
 
-									// If successful, reset editing state
-									if !viewModel.creationMessage.isEmpty {
-										isEditingTitle = false
-									}
+									isEditingTitle = false
 								}
 							} else {
 								isEditingTitle = true
