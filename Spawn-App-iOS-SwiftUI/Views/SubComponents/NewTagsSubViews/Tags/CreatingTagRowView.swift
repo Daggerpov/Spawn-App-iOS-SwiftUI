@@ -10,8 +10,6 @@ import SwiftUI
 struct CreatingTagRowView: View {
 	@EnvironmentObject var viewModel: TagsViewModel
 
-	@State private var isExpanded: Bool = false
-
 	// Friend Tag Creation Properties:
 	@State private var displayName: String = ""
 	@State private var colorHexCode: String = universalAccentColorHexCode
@@ -20,18 +18,16 @@ struct CreatingTagRowView: View {
 		VStack {
 			HStack {
 				Group {
-					if isExpanded {
-						TextField("New Tag", text: $displayName)
-							.underline()
-							.foregroundColor(.white)
-						Button(action: {
-							// TODO: fill in action to rename title later
-						}) {
-							Image(systemName: "done")
-								.foregroundColor(.white)
+					TextField("New Tag", text: $displayName)
+						.underline()
+					Button(action: {
+						Task{
+							await viewModel.createTag(displayName: displayName, colorHexCode: colorHexCode)
 						}
-					} else {
-						Text(displayName)
+						// TODO: fill in logic to create tag
+						// TODO: fill in action to rename title later
+					}) {
+						Image(systemName: "checkmark")
 					}
 				}
 				.foregroundColor(.white)
@@ -39,22 +35,6 @@ struct CreatingTagRowView: View {
 				.fontWeight(.semibold)
 
 				Spacer()
-				HStack(spacing: -10) {
-					ForEach(0..<2) { _ in
-						Circle()
-							.frame(width: 30, height: 30)
-							.foregroundColor(.gray.opacity(0.2))
-					}
-					Button(action: {
-						withAnimation {
-							isExpanded.toggle()  // Toggle expanded state
-						}
-					}) {
-						Image(systemName: "plus.circle")
-							.font(.system(size: 24))
-							.foregroundColor(universalAccentColor)
-					}
-				}
 			}
 			.padding()
 			.background(

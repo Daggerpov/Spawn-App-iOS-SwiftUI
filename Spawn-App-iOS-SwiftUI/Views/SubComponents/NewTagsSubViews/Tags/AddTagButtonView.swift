@@ -17,9 +17,6 @@ struct AddTagButtonView: View {
 		VStack {
 			Button(action: {
 				toggleIsCreatingTag()
-				Task {
-					await viewModel.createTag()
-				}
 			}) {
 				RoundedRectangle(cornerRadius: 12)
 					.stroke(
