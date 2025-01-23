@@ -22,10 +22,12 @@ struct CreatingTagRowView: View {
 				Group {
 					TextField("Enter Name", text: $displayName)
 						.underline()
+
 					Button(action: {
 						Task{
-							await viewModel.createTag(displayName: displayName, colorHexCode: colorHexCode)
+							await viewModel.upsertTag(displayName: displayName, colorHexCode: colorHexCode, upsertAction: .create)
 						}
+
 						creationStatus = .doneCreating
 					}) {
 						Image(systemName: "checkmark")
