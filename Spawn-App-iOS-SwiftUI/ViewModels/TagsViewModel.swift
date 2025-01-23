@@ -46,7 +46,9 @@ class TagsViewModel: ObservableObject {
 		}
 	}
 
-	func createTag() async -> Void {
+	func createTag(displayName: String, colorHexCode: String) async -> Void {
+		newTag = FriendTag(id: UUID(), displayName: displayName, colorHexCode: colorHexCode, ownerId: user.id)
+
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {
 				try await self.apiService.sendData(newTag, to: url)
@@ -57,5 +59,9 @@ class TagsViewModel: ObservableObject {
 				}
 			}
 		}
+
+		// re-fetching tags after creation, since it's now
+		// been created and should be added to this group
+		await fetchTags()
 	}
 }
