@@ -8,22 +8,20 @@
 import SwiftUI
 
 struct ExpandedTagView: View {
-    var friendTag: FriendTag
-    
-    var body: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Spacer()
-            }
+	@Binding var currentSelectedColorHexCode: String
+	var friendTag: FriendTag
 
-			// TODO: change this later to be a properly shared hex code statep 
+	var body: some View {
+		VStack(spacing: 15) {
+			HStack {
+				Spacer()
+			}
+
 			ColorOptions(
-				currentSelectedColorHexCode:
-						.constant(universalAccentColorHexCode)
-			)
-            FriendContainer(friendTag: friendTag)
-        }
-        .padding(.horizontal)
-        .padding(.bottom)
-    }
+				currentSelectedColorHexCode: $currentSelectedColorHexCode)
+			FriendContainer(friendTag: friendTag)
+		}
+		.padding(.horizontal)
+		.padding(.bottom)
+	}
 }
