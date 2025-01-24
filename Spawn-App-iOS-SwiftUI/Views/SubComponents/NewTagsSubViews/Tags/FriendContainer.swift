@@ -10,11 +10,13 @@ import SwiftUI
 struct FriendContainer: View {
     var friendTag: FriendTag
     var action: () -> Void = {}
-    
+	@State var creationStatus: CreationStatus = .notCreating
+
     var body: some View {
         VStack {
-            AddTagButtonView(color: .white)
-            
+			// TODO: replace with `AddFriendToTagButtonView`:
+			AddTagButtonView(creationStatus: $creationStatus, color: .white)
+
             ScrollView {
                 if let friends = friendTag.friends, !friends.isEmpty {
                     ForEach(friends) { friend in

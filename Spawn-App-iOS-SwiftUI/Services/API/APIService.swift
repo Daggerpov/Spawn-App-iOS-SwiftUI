@@ -101,4 +101,30 @@ class APIService: IAPIService {
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 	}
+
+	internal func updateData<T: Encodable>(_ object: T, to url: URL) async throws {
+		let encoder = APIService.makeEncoder()
+		let encodedData = try encoder.encode(object)
+
+		var request = URLRequest(url: url)
+		request.httpMethod = "PUT" // only change from `sendData()`
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = encodedData
+
+		let (_, response) = try await URLSession.shared.data(for: request)
+
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+
+		guard httpResponse.statusCode == 200 else {
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+	}
 }

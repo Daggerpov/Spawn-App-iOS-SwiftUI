@@ -9,11 +9,12 @@ import SwiftUI
 
 struct TagsTabView: View {
 	@ObservedObject var viewModel: TagsViewModel
+	@State private var creationStatus: CreationStatus = .notCreating
 
 	init(user: User) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(), user: user)
+			? MockAPIService(userId: user.id) : APIService(), user: user)
 	}
 
 	var body: some View {
@@ -21,8 +22,9 @@ struct TagsTabView: View {
 			VStack(alignment: .leading, spacing: 15) {
 				Text("TAGS")
 					.font(.headline)
+					.foregroundColor(universalAccentColor)
 
-				AddTagButtonView(color: universalAccentColor)
+				AddTagButtonView(creationStatus: $creationStatus, color: universalAccentColor)
 					.environmentObject(viewModel)
 			}
 			Spacer()
@@ -55,6 +57,7 @@ extension TagsTabView {
 										universalRectangleCornerRadius
 									)
 							)
+							.environmentObject(viewModel)
 					}
 				}
 			}

@@ -19,7 +19,7 @@ class MockAPIService: IAPIService {
 		self.userId = userId
 	}
 
-	func fetchData<T>(from url: URL) async throws -> T where T : Decodable {
+	func fetchData<T>(from url: URL) async throws -> T where T: Decodable {
 		/// FeedViewModel.swift:
 
 		// fetchEventsForUser():
@@ -39,32 +39,39 @@ class MockAPIService: IAPIService {
 		if let userIdForUrl = userId {
 			// fetchIncomingFriendRequests():
 
-			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friend-requests" {
+			if url.absoluteString == APIService.baseURL
+				+ "users/\(userIdForUrl)/friend-requests"
+			{
 				return FriendRequest.mockFriendRequests as! T
 			}
 
 			// fetchRecommendedFriends():
 
-			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/recommended-friends" {
+			if url.absoluteString == APIService.baseURL
+				+ "users/\(userIdForUrl)/recommended-friends"
+			{
 				let firstThreeUsers = Array(User.mockUsers.prefix(3))
 				return firstThreeUsers as! T
 			}
 
 			// fetchFriends():
 
-			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friends" {
+			if url.absoluteString == APIService.baseURL
+				+ "users/\(userIdForUrl)/friends"
+			{
 				return User.mockUsers as! T
 			}
 		}
 
-
-
 		/// TagsViewModel.swift:
+		if let userIdForUrl = userId {
+			// fetchTags():
 
-		// fetchTags():
-
-		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FriendTag.mockTags as! T
+			if url.absoluteString == APIService.baseURL
+				+ "friendTags?ownerId=\(userIdForUrl)"
+			{
+				return FriendTag.mockTags as! T
+			}
 		}
 
 		if T.self == User.self {
@@ -74,26 +81,38 @@ class MockAPIService: IAPIService {
 		throw APIError.invalidData
 	}
 
-	func sendData<T>(_ object: T, to url: URL) async throws where T : Encodable {
+	func sendData<T>(_ object: T, to url: URL) async throws where T: Encodable {
 		/// `FriendsTabViewModel.swift`:
 
 		// addFriend():
 
-		if url.absoluteString == APIService.baseURL + "users/friend-request" {return} // just stop executing
+		if url.absoluteString == APIService.baseURL + "users/friend-request" {
+			return
+		}
 
 		/// `EventCreationViewModel.swift`:
 
 		// createEvent():
 
-		if url.absoluteString == APIService.baseURL + "events" {return}
+		if url.absoluteString == APIService.baseURL + "events" { return }
 
 		/// TagsViewModel.swift:
 
-		// createTag():
+		// upsertTag(upsertAction: .create):
 
-		if url.absoluteString == APIService.baseURL + "friendTags" {return}
+		if url.absoluteString == APIService.baseURL + "friendTags" { return }
 
 		// this means I need to include the url call in this mock `sendData` method:
+		throw APIError.invalidData
+	}
+
+	func updateData<T>(_ object: T, to url: URL) async throws where T: Encodable {
+		/// `TagsViewModel.swift`:
+
+		// upsertTag(upsertAction: .update):
+
+		if url.absoluteString == APIService.baseURL + "friendTags" { return }
+
 		throw APIError.invalidData
 	}
 }

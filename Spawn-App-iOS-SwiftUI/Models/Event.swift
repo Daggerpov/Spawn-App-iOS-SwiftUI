@@ -28,6 +28,8 @@ class Event: Identifiable, Codable {
     // `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
     var invited: [User]?
 	var chatMessages: [ChatMessage]?
+	var eventFriendTagColorHexCodeForRequestingUser: String?
+	var participationStatus: ParticipationStatus?
 
 	init(
 		id: UUID,
@@ -39,7 +41,9 @@ class Event: Identifiable, Codable {
 		creator: User? = User.danielAgapov,
 		participants: [User]? = nil,
 		chatMessages: [ChatMessage]? = nil,
-		invited: [User]? = nil
+		invited: [User]? = nil,
+		eventFriendTagColorHexCodeForRequestingUser: String? = nil,
+		participationStatus: ParticipationStatus? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -51,6 +55,8 @@ class Event: Identifiable, Codable {
 		self.participants = participants
 		self.chatMessages = chatMessages
 		self.invited = invited
+		self.eventFriendTagColorHexCodeForRequestingUser = eventFriendTagColorHexCodeForRequestingUser
+		self.participationStatus = participationStatus
 	}
 }
 
