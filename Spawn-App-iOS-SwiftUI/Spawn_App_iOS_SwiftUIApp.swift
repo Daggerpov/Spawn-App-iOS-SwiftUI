@@ -6,12 +6,16 @@
 //
 
 import SwiftUI
+import GoogleSignIn
 
 @main
 struct Spawn_App_iOS_SwiftUIApp: App {
     var body: some Scene {
         WindowGroup {
 			LaunchView()
+				.onOpenURL {url in
+					GIDSignIn.sharedInstance.handle(url)
+				}
 		}
     }
 }
