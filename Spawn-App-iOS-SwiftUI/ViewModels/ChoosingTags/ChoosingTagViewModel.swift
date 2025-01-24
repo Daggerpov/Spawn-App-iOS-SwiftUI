@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ChoosingTagViewModel: ObservableObject {
+class ChooseTagPopUpViewModel: ObservableObject {
     
     //TODO: figure out functions
     

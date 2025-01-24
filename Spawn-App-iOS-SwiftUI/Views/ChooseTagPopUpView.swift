@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ChoosingTagView: View {
+struct ChoosingTagPopupView: View {
     
     var body: some View {
         Text("ChoosingTagView")
