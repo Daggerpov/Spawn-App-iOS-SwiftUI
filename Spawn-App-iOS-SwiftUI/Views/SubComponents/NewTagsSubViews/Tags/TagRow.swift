@@ -89,7 +89,6 @@ extension TagRow {
 			Button(action: {
 				withAnimation {
 					isExpanded.toggle()  // Toggle expanded state
-
 				}
 			}) {
 				Image(systemName: "plus.circle")

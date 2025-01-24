@@ -14,6 +14,7 @@ struct FriendContainer: View {
 
     var body: some View {
         VStack {
+			// TODO: replace with `AddFriendToTagButtonView`:
 			AddTagButtonView(creationStatus: $creationStatus, color: .white)
 
             ScrollView {
