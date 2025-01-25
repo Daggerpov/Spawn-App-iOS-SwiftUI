@@ -10,7 +10,11 @@ import SwiftUI
 struct ChoosingTagPopupView: View {
     
     var body: some View {
-        Text("ChoosingTagView")
+        NavigationStack{
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Select your friend tags below")
+            }
+        }
     }
-    
+        
 }
