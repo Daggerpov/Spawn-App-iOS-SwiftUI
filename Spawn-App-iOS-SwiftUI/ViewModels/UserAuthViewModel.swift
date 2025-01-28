@@ -10,6 +10,7 @@ import GoogleSignIn
 import UIKit
 
 class UserAuthViewModel: ObservableObject {
+	static let shared: UserAuthViewModel = UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService()) // Singleton instance
 
 	@Published var givenName: String?
 	@Published var fullName: String?
@@ -21,7 +22,7 @@ class UserAuthViewModel: ObservableObject {
 
 	private var apiService: IAPIService
 
-	init(apiService: IAPIService){
+	private init(apiService: IAPIService){
 		self.apiService = apiService
 		check()
 	}
@@ -40,6 +41,9 @@ class UserAuthViewModel: ObservableObject {
 			self.isLoggedIn = false
 			self.givenName = ""
 			self.profilePicUrl =  ""
+			self.fullName = nil
+			self.familyName = nil
+			self.email = nil
 		}
 	}
 

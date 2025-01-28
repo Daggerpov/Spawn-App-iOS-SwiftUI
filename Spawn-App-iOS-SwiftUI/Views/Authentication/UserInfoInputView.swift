@@ -9,9 +9,9 @@ import SwiftUI
 
 struct UserInfoInputView: View {
 	@EnvironmentObject var observableUser: ObservableUser
-	@StateObject var userAuth: UserAuthViewModel = UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+	@StateObject var userAuth = UserAuthViewModel.shared
 
-	@State private var editedProfilePicture: String = "" // TODO: use this variable meaningfully, instead of just grabbing from user auth view model
+	@State private var editedProfilePicture: String = ""  // TODO: use this variable meaningfully, instead of just grabbing from user auth view model
 
 	// Validation flags
 	@State private var isFirstNameValid: Bool = true
@@ -116,16 +116,17 @@ struct UserInfoInputView: View {
 
 					.simultaneousGesture(
 						TapGesture().onEnded {
-							validateFields() // Perform field validation
+							validateFields()  // Perform field validation
 							if isFirstNameValid && isUsernameValid {
 								Task {
 									await userAuth.spawnSignIn(
 										username: username,
-										profilePicture: userAuth.profilePicUrl ?? "",
+										profilePicture: userAuth.profilePicUrl
+											?? "",
 										firstName: userAuth.givenName ?? "",
 										lastName: userAuth.familyName ?? ""
 									)
-									isNavigationActive = true // Activate navigation only if valid
+									isNavigationActive = true  // Activate navigation only if valid
 								}
 							}
 						}
@@ -138,7 +139,7 @@ struct UserInfoInputView: View {
 				Spacer()
 			}
 			.onAppear {
-				userAuth.objectWillChange.send() // Trigger initial UI update
+				userAuth.objectWillChange.send()  // Trigger initial UI update
 			}
 			.padding()
 			.background(Color(hex: "#8693FF"))
@@ -147,12 +148,13 @@ struct UserInfoInputView: View {
 	}
 
 	private func validateFields() {
-		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(
+			in: .whitespaces
+		).isEmpty
 		isUsernameValid = !(username)
 			.trimmingCharacters(in: .whitespaces).isEmpty
 	}
 }
-
 
 struct InputFieldView: View {
 	var label: String

@@ -10,7 +10,7 @@ import GoogleSignIn
 
 @main
 struct Spawn_App_iOS_SwiftUIApp: App {
-	@StateObject var userAuth: UserAuthViewModel =  UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+	@StateObject var userAuth = UserAuthViewModel.shared
 
 	@StateObject var observableUser: ObservableUser = ObservableUser(
 		user: .danielAgapov)

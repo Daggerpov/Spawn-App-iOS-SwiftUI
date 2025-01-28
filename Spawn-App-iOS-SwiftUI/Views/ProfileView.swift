@@ -12,7 +12,7 @@ struct ProfileView: View {
     @State private var bio: String
     @State private var editingState: ProfileEditText = .edit
 
-	@State private var userAuth: UserAuthViewModel = UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+	@StateObject var userAuth = UserAuthViewModel.shared
 
     init(user: User) {
         self.user = user

@@ -12,7 +12,7 @@ import GoogleSignIn
 struct LaunchView: View {
 	@StateObject var viewModel: LaunchViewModel = LaunchViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
-	@StateObject var userAuth: UserAuthViewModel =  UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+	@StateObject var userAuth = UserAuthViewModel.shared
 
 	fileprivate func SignOutButton() -> Button<Text> {
 		Button(action: {
