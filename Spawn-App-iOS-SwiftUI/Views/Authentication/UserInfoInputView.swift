@@ -9,12 +9,8 @@ import SwiftUI
 
 struct UserInfoInputView: View {
 	@EnvironmentObject var observableUser: ObservableUser
-
 	@StateObject var userAuth: UserAuthViewModel = UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
 
-	@State private var editedFirstName: String = ""
-	@State private var editedLastName: String = ""
-	@State private var editedUsername: String = ""
 	@State private var editedProfilePicture: String = "" // TODO: use this variable meaningfully, instead of just grabbing from user auth view model
 
 	// Validation flags
@@ -23,13 +19,19 @@ struct UserInfoInputView: View {
 
 	@State private var isNavigationActive: Bool = false
 
+	@State private var username: String = ""
+
 	fileprivate func ProfilePic() -> some View {
-		// TODO: make profile picture editable
 		Group {
 			if userAuth.isLoggedIn {
 				if let pfpUrl = userAuth.profilePicUrl {
-					AsyncImage(url: URL(string: pfpUrl))
-						.frame(width: 100, height: 100)
+					AsyncImage(url: URL(string: pfpUrl)) { image in
+						image
+							.ProfileImageModifier(imageType: .profilePage)
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+					}
 				} else {
 					Circle()
 						.fill(.white)
@@ -77,16 +79,23 @@ struct UserInfoInputView: View {
 						InputFieldView(
 							label: "First Name",
 							text: Binding(
-								get: { editedFirstName },
-								set: { editedFirstName = $0 }
+								get: { userAuth.givenName ?? "" },
+								set: { userAuth.givenName = $0 }
 							),
 							isValid: $isFirstNameValid
 						)
-						InputFieldView(label: "Last Name", text: Binding(get: { editedLastName }, set: { editedLastName = $0 }), isValid: .constant(true))
+						InputFieldView(
+							label: "Last Name",
+							text: Binding(
+								get: { userAuth.familyName ?? "" },
+								set: { userAuth.familyName = $0 }
+							),
+							isValid: .constant(true)
+						)
 					}
 					InputFieldView(
 						label: "Username",
-						text: Binding(get: { editedUsername }, set: { editedUsername = $0 }),
+						text: $username,
 						isValid: $isUsernameValid
 					)
 				}
@@ -111,10 +120,10 @@ struct UserInfoInputView: View {
 							if isFirstNameValid && isUsernameValid {
 								Task {
 									await userAuth.spawnSignIn(
-										username: editedUsername,
-										profilePicture: editedProfilePicture,
-										firstName: editedFirstName,
-										lastName: editedLastName
+										username: username,
+										profilePicture: userAuth.profilePicUrl ?? "",
+										firstName: userAuth.givenName ?? "",
+										lastName: userAuth.familyName ?? ""
 									)
 									isNavigationActive = true // Activate navigation only if valid
 								}
@@ -129,10 +138,7 @@ struct UserInfoInputView: View {
 				Spacer()
 			}
 			.onAppear {
-				populateFields() // Populate fields initially
-			}
-			.onReceive(userAuth.objectWillChange) { _ in
-				populateFields() // Populate fields whenever userAuth updates
+				userAuth.objectWillChange.send() // Trigger initial UI update
 			}
 			.padding()
 			.background(Color(hex: "#8693FF"))
@@ -141,17 +147,12 @@ struct UserInfoInputView: View {
 	}
 
 	private func validateFields() {
-		isFirstNameValid = !editedFirstName.trimmingCharacters(in: .whitespaces).isEmpty
-		isUsernameValid = !editedUsername.trimmingCharacters(in: .whitespaces).isEmpty
-	}
-
-	private func populateFields() {
-		// Dynamically update state variables from userAuth
-		editedFirstName = userAuth.givenName ?? ""
-		editedLastName = userAuth.familyName ?? ""
-		editedProfilePicture = userAuth.profilePicUrl ?? ""
+		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+		isUsernameValid = !(username)
+			.trimmingCharacters(in: .whitespaces).isEmpty
 	}
 }
+
 
 struct InputFieldView: View {
 	var label: String
@@ -180,7 +181,11 @@ struct InputFieldView: View {
 	}
 }
 
-
+@available(iOS 17.0, *)
 #Preview {
+	@Previewable
+	@StateObject var observableUser = ObservableUser(user: .danielLee)
+
 	UserInfoInputView()
+		.environmentObject(observableUser)
 }
