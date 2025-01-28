@@ -31,21 +31,19 @@ struct LaunchView: View {
 					.scaledToFit()
 					.frame(width: 300, height: 300)
 
-				if (!userAuth.isLoggedIn) {
-					NavigationLink(destination: {
-						UserInfoInputView()
-							.navigationBarTitle("")
-							.navigationBarHidden(true)
-					}) {
-						AuthProviderButtonView(authProviderType: .google)
-					}
-					.simultaneousGesture(
-						TapGesture().onEnded {
-							userAuth.signIn()
-						})
-				} else {
+				NavigationLink(destination: {
 					UserInfoInputView()
+						.navigationBarTitle("")
+						.navigationBarHidden(true)
+				}) {
+					AuthProviderButtonView(authProviderType: .google)
 				}
+				.simultaneousGesture(
+					TapGesture().onEnded {
+						if !userAuth.isLoggedIn {
+							userAuth.signIn()
+						}
+					})
 
 				NavigationLink(destination: {
 					UserInfoInputView()
