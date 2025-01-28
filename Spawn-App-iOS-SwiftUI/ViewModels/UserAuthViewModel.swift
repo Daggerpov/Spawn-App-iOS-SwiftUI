@@ -38,7 +38,7 @@ class UserAuthViewModel: ObservableObject {
 			self.isLoggedIn = true
 		}else{
 			self.isLoggedIn = false
-			self.givenName = "Not Logged In"
+			self.givenName = ""
 			self.profilePicUrl =  ""
 		}
 	}
@@ -70,8 +70,11 @@ class UserAuthViewModel: ObservableObject {
 
 			// Retrieve user info if sign-in is successful
 			guard let user = signInResult?.user else { return }
-			self.givenName = user.profile?.givenName ?? ""
 			self.profilePicUrl = user.profile?.imageURL(withDimension: 100)?.absoluteString ?? ""
+			self.fullName = user.profile?.name
+			self.givenName = user.profile?.givenName
+			self.familyName = user.profile?.familyName
+			self.email = user.profile?.email
 			self.isLoggedIn = true
 		}
 	}
