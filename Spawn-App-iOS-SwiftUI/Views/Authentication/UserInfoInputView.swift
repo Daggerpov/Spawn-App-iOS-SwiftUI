@@ -15,14 +15,19 @@ struct UserInfoInputView: View {
 	@State private var editedFirstName: String = ""
 	@State private var editedLastName: String = ""
 	@State private var editedUsername: String = ""
-
 	@State private var editedProfilePicture: String = "" // TODO: use this variable meaningfully, instead of just grabbing from user auth view model
+
+	// Validation flags
+	@State private var isFirstNameValid: Bool = true
+	@State private var isUsernameValid: Bool = true
+
+	@State private var isNavigationActive: Bool = false
 
 	fileprivate func ProfilePic() -> some View {
 		// TODO: make profile picture editable
-		Group{
-			if (userAuth.isLoggedIn) {
-				if let pfpUrl = userAuth.profilePicUrl{
+		Group {
+			if userAuth.isLoggedIn {
+				if let pfpUrl = userAuth.profilePicUrl {
 					AsyncImage(url: URL(string: pfpUrl))
 						.frame(width: 100, height: 100)
 				} else {
@@ -68,37 +73,54 @@ struct UserInfoInputView: View {
 				Spacer()
 
 				VStack(spacing: 16) {
-					HStack{
+					HStack {
 						InputFieldView(
 							label: "First Name",
 							text: Binding(
-								get: { userAuth.givenName ?? editedFirstName
-								},
-								set: { editedFirstName = $0})
+								get: { editedFirstName },
+								set: { editedFirstName = $0 }
+							),
+							isValid: $isFirstNameValid
 						)
-						InputFieldView(label: "Last Name", text: Binding(get: { userAuth.familyName ?? editedLastName}, set: { editedLastName = $0}))
+						InputFieldView(label: "Last Name", text: Binding(get: { editedLastName }, set: { editedLastName = $0 }), isValid: .constant(true))
 					}
-					InputFieldView(label: "Username", text: Binding(get: { editedUsername}, set: { editedUsername = $0}))
+					InputFieldView(
+						label: "Username",
+						text: Binding(get: { editedUsername }, set: { editedUsername = $0 }),
+						isValid: $isUsernameValid
+					)
 				}
 				.padding(.horizontal, 32)
 
 				HStack {
 					Spacer()
-					NavigationLink(destination: {
-						FeedView(user: observableUser.user)
+					NavigationLink(
+						destination: FeedView(user: observableUser.user)
 							.navigationBarTitle("")
-							.navigationBarHidden(true)
-					}) {
+							.navigationBarHidden(true),
+						isActive: $isNavigationActive
+					) {
 						Text("Enter Spawn >")
 							.font(.system(size: 20, weight: .semibold))
 							.foregroundColor(.white)
 					}
+
 					.simultaneousGesture(
 						TapGesture().onEnded {
-							Task{
-								await userAuth.spawnSignIn(username: editedUsername, profilePicture: editedProfilePicture, firstName: editedFirstName, lastName: editedLastName)
+							validateFields() // Perform field validation
+							if isFirstNameValid && isUsernameValid {
+								Task {
+									await userAuth.spawnSignIn(
+										username: editedUsername,
+										profilePicture: editedProfilePicture,
+										firstName: editedFirstName,
+										lastName: editedLastName
+									)
+									isNavigationActive = true // Activate navigation only if valid
+								}
 							}
-						})
+						}
+					)
 				}
 				.padding(.horizontal, 32)
 				Spacer()
@@ -107,27 +129,48 @@ struct UserInfoInputView: View {
 				Spacer()
 			}
 			.onAppear {
-				editedFirstName = userAuth.givenName ?? ""
-				editedLastName = userAuth.familyName ?? ""
-				editedProfilePicture = userAuth.profilePicUrl ?? ""
+				populateFields() // Populate fields initially
+			}
+			.onReceive(userAuth.objectWillChange) { _ in
+				populateFields() // Populate fields whenever userAuth updates
 			}
 			.padding()
 			.background(Color(hex: "#8693FF"))
 			.ignoresSafeArea()
 		}
 	}
+
+	private func validateFields() {
+		isFirstNameValid = !editedFirstName.trimmingCharacters(in: .whitespaces).isEmpty
+		isUsernameValid = !editedUsername.trimmingCharacters(in: .whitespaces).isEmpty
+	}
+
+	private func populateFields() {
+		// Dynamically update state variables from userAuth
+		editedFirstName = userAuth.givenName ?? ""
+		editedLastName = userAuth.familyName ?? ""
+		editedProfilePicture = userAuth.profilePicUrl ?? ""
+	}
 }
 
 struct InputFieldView: View {
 	var label: String
-
 	@Binding var text: String
+	@Binding var isValid: Bool
 
 	var body: some View {
 		VStack(alignment: .leading, spacing: 4) {
-			Text(label)
-				.font(.system(size: 18))
-				.foregroundColor(.white)
+			HStack {
+				Text(label)
+					.font(.system(size: 18))
+					.foregroundColor(.white)
+
+				if !isValid {
+					Image(systemName: "star.fill")
+						.foregroundColor(.red)
+						.font(.system(size: 12))
+				}
+			}
 
 			TextField("", text: $text)
 				.padding()
@@ -136,6 +179,7 @@ struct InputFieldView: View {
 		}
 	}
 }
+
 
 #Preview {
 	UserInfoInputView()
