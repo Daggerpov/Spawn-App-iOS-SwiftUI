@@ -22,8 +22,34 @@ func getRootViewController() -> UIViewController? {
 struct LaunchView: View {
 	@StateObject var viewModel: LaunchViewModel = LaunchViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+	@StateObject var userAuth: UserAuthViewModel =  UserAuthViewModel()
 	@StateObject var observableUser: ObservableUser = ObservableUser(
 		user: .danielAgapov)
+
+	fileprivate func SignInButton() -> Button<Text> {
+		Button(action: {
+			userAuth.signIn()
+		}) {
+			Text("Sign In")
+		}
+	}
+
+	fileprivate func SignOutButton() -> Button<Text> {
+		Button(action: {
+			userAuth.signOut()
+		}) {
+			Text("Sign Out")
+		}
+	}
+
+	fileprivate func ProfilePic() -> some View {
+		AsyncImage(url: URL(string: userAuth.profilePicUrl))
+			.frame(width: 100, height: 100)
+	}
+
+	fileprivate func UserInfo() -> Text {
+		return Text(userAuth.givenName)
+	}
 
 	var body: some View {
 		NavigationStack {
@@ -33,6 +59,18 @@ struct LaunchView: View {
 					.resizable()
 					.scaledToFit()
 					.frame(width: 300, height: 300)
+
+				// new attempt:
+				VStack{
+					UserInfo()
+					ProfilePic()
+					// add logic to determine whether use has also gone through onboarding flow -> therefore, 
+					if(userAuth.isLoggedIn){
+						SignOutButton()
+					}else{
+						SignInButton()
+					}
+				}
 
 				NavigationLink(destination: {
 					UserInfoInputView()
