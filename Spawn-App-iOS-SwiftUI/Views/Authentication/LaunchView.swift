@@ -12,10 +12,7 @@ import GoogleSignIn
 struct LaunchView: View {
 	@StateObject var viewModel: LaunchViewModel = LaunchViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
-	@StateObject var userAuth: UserAuthViewModel =  UserAuthViewModel()
-	@StateObject var observableUser: ObservableUser = ObservableUser(
-		user: .danielAgapov)
-
+	@StateObject var userAuth: UserAuthViewModel =  UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
 
 	fileprivate func SignOutButton() -> Button<Text> {
 		Button(action: {
@@ -23,15 +20,6 @@ struct LaunchView: View {
 		}) {
 			Text("Sign Out")
 		}
-	}
-
-	fileprivate func ProfilePic() -> some View {
-		AsyncImage(url: URL(string: userAuth.profilePicUrl))
-			.frame(width: 100, height: 100)
-	}
-
-	fileprivate func UserInfo() -> Text {
-		return Text(userAuth.givenName)
 	}
 
 	var body: some View {
@@ -43,14 +31,20 @@ struct LaunchView: View {
 					.scaledToFit()
 					.frame(width: 300, height: 300)
 
+				if (!userAuth.isLoggedIn) {
+					NavigationLink(destination: {
+						UserInfoInputView()
+							.navigationBarTitle("")
+							.navigationBarHidden(true)
+					}) {
+						AuthProviderButtonView(authProviderType: .google)
 					}
-				}
-
-				NavigationLink(destination: {
+					.simultaneousGesture(
+						TapGesture().onEnded {
+							userAuth.signIn()
+						})
+				} else {
 					UserInfoInputView()
-						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				}) {
 				}
 
 				NavigationLink(destination: {
