@@ -10,12 +10,23 @@ import GoogleSignIn
 
 @main
 struct Spawn_App_iOS_SwiftUIApp: App {
+	@StateObject var userAuth: UserAuthViewModel =  UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+
+	@StateObject var observableUser: ObservableUser = ObservableUser(
+		user: .danielAgapov)
+
     var body: some Scene {
         WindowGroup {
-			LaunchView()
-				.onOpenURL {url in
-					GIDSignIn.sharedInstance.handle(url)
-				}
+			if userAuth.isLoggedIn {
+				UserInfoInputView()
+					.environmentObject(observableUser)
+			} else {
+				LaunchView()
+					.environmentObject(observableUser)
+					.onOpenURL {url in
+						GIDSignIn.sharedInstance.handle(url)
+					}
+			}
 		}
     }
 }
