@@ -11,12 +11,18 @@ import UIKit
 
 class UserAuthViewModel: ObservableObject {
 
-	@Published var givenName: String = ""
-	@Published var profilePicUrl: String = ""
+	@Published var givenName: String?
+	@Published var fullName: String?
+	@Published var familyName: String?
+	@Published var email: String?
+	@Published var profilePicUrl: String?
 	@Published var isLoggedIn: Bool = false
-	@Published var errorMessage: String = ""
+	@Published var errorMessage: String?
 
-	init(){
+	private var apiService: IAPIService
+
+	init(apiService: IAPIService){
+		self.apiService = apiService
 		check()
 	}
 
@@ -24,10 +30,11 @@ class UserAuthViewModel: ObservableObject {
 		if(GIDSignIn.sharedInstance.currentUser != nil){
 			let user = GIDSignIn.sharedInstance.currentUser
 			guard let user = user else { return }
-			let givenName = user.profile?.givenName
-			let profilePicUrl = user.profile!.imageURL(withDimension: 100)!.absoluteString
-			self.givenName = givenName ?? ""
-			self.profilePicUrl = profilePicUrl
+			self.fullName = user.profile?.name
+			self.givenName = user.profile?.givenName
+			self.familyName = user.profile?.familyName
+			self.email = user.profile?.email
+			self.profilePicUrl = user.profile!.imageURL(withDimension: 100)!.absoluteString
 			self.isLoggedIn = true
 		}else{
 			self.isLoggedIn = false
@@ -72,5 +79,30 @@ class UserAuthViewModel: ObservableObject {
 	func signOut(){
 		GIDSignIn.sharedInstance.signOut()
 		self.checkStatus()
+	}
+
+	func spawnSignIn(username: String, profilePicture: String, firstName: String, lastName: String) async {
+		guard let unwrappedEmail = self.email else { return }
+		let newUser = User(
+			id: UUID(),
+			username: username,
+			profilePicture: profilePicture,
+			firstName: firstName,
+			lastName: lastName,
+			bio: "",
+			email: unwrappedEmail 
+		)
+
+		if let url = URL(string: APIService.baseURL + "users") {
+			do {
+				try await self.apiService.sendData(newUser, to: url)
+				print("User created successfully.")
+			} catch {
+				print("Error creating the user: \(error.localizedDescription)")
+				print(apiService.errorMessage ?? "")
+			}
+		} else {
+			print("Invalid URL for user creation.")
+		}
 	}
 }
