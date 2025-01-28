@@ -9,8 +9,34 @@ import SwiftUI
 
 struct UserInfoInputView: View {
 	@EnvironmentObject var observableUser: ObservableUser
-	@State private var name: String = ""
-	@State private var username: String = ""
+
+	@StateObject var userAuth: UserAuthViewModel = UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
+
+	@State private var editedFirstName: String = ""
+	@State private var editedLastName: String = ""
+	@State private var editedUsername: String = ""
+
+	@State private var editedProfilePicture: String = "" // TODO: use this variable meaningfully, instead of just grabbing from user auth view model
+
+	fileprivate func ProfilePic() -> some View {
+		// TODO: make profile picture editable
+		Group{
+			if (userAuth.isLoggedIn) {
+				if let pfpUrl = userAuth.profilePicUrl{
+					AsyncImage(url: URL(string: pfpUrl))
+						.frame(width: 100, height: 100)
+				} else {
+					Circle()
+						.fill(.white)
+						.frame(width: 100, height: 100)
+				}
+			} else {
+				Circle()
+					.fill(.white)
+					.frame(width: 100, height: 100)
+			}
+		}
+	}
 
 	var body: some View {
 		NavigationStack {
@@ -26,9 +52,7 @@ struct UserInfoInputView: View {
 				Spacer()
 
 				ZStack {
-					Circle()
-						.fill(.white)
-						.frame(width: 100, height: 100)
+					ProfilePic()
 
 					Circle()
 						.fill(.black)
@@ -44,8 +68,11 @@ struct UserInfoInputView: View {
 				Spacer()
 
 				VStack(spacing: 16) {
-					InputFieldView(label: "Name", text: Binding(get: { name }, set: { name = $0}))
-					InputFieldView(label: "Username", text: Binding(get: { username }, set: { username = $0}))
+					HStack{
+						InputFieldView(label: "First Name", text: Binding(get: { editedFirstName }, set: { editedFirstName = $0}))
+						InputFieldView(label: "Last Name", text: Binding(get: { editedLastName }, set: { editedLastName = $0}))
+					}
+					InputFieldView(label: "Username", text: Binding(get: { editedUsername }, set: { editedUsername = $0}))
 				}
 				.padding(.horizontal, 32)
 
@@ -60,12 +87,23 @@ struct UserInfoInputView: View {
 							.font(.system(size: 20, weight: .semibold))
 							.foregroundColor(.white)
 					}
+					.simultaneousGesture(
+						TapGesture().onEnded {
+							Task{
+								await userAuth.spawnSignIn(username: editedUsername, profilePicture: editedProfilePicture, firstName: editedFirstName, lastName: editedLastName)
+							}
+						})
 				}
 				.padding(.horizontal, 32)
 				Spacer()
 				Spacer()
 				Spacer()
 				Spacer()
+			}
+			.onAppear {
+				editedFirstName = userAuth.givenName ?? ""
+				editedLastName = userAuth.familyName ?? ""
+				editedProfilePicture = userAuth.profilePicUrl ?? ""
 			}
 			.padding()
 			.background(Color(hex: "#8693FF"))
