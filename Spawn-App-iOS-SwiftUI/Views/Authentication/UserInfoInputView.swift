@@ -69,10 +69,16 @@ struct UserInfoInputView: View {
 
 				VStack(spacing: 16) {
 					HStack{
-						InputFieldView(label: "First Name", text: Binding(get: { editedFirstName }, set: { editedFirstName = $0}))
-						InputFieldView(label: "Last Name", text: Binding(get: { editedLastName }, set: { editedLastName = $0}))
+						InputFieldView(
+							label: "First Name",
+							text: Binding(
+								get: { userAuth.givenName ?? editedFirstName
+								},
+								set: { editedFirstName = $0})
+						)
+						InputFieldView(label: "Last Name", text: Binding(get: { userAuth.familyName ?? editedLastName}, set: { editedLastName = $0}))
 					}
-					InputFieldView(label: "Username", text: Binding(get: { editedUsername }, set: { editedUsername = $0}))
+					InputFieldView(label: "Username", text: Binding(get: { editedUsername}, set: { editedUsername = $0}))
 				}
 				.padding(.horizontal, 32)
 
