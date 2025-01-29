@@ -97,10 +97,13 @@ class UserAuthViewModel: ObservableObject {
 	}
 
 	func spawnFetchUserIfAlreadyExists() async -> Void {
-		// TODO: supply externalUserId request param to get request
 		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
-				let fetchedSpawnUser: User = try await self.apiService.fetchData(from: url)
+				guard let unwrappedExternalUserId = self.externalUserId else { return } // logic might be off with this `return`
+				let fetchedSpawnUser: User = try await self.apiService.fetchData(
+					from: url,
+					parameters: ["externalUserId": unwrappedExternalUserId]
+				)
 
 				await MainActor.run {
 					self.spawnUser = fetchedSpawnUser
