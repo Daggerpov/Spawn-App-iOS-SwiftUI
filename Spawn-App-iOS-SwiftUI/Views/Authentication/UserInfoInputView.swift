@@ -109,9 +109,15 @@ struct UserInfoInputView: View {
 							.navigationBarHidden(true),
 						isActive: $isNavigationActive
 					) {
-						Text("Enter Spawn >")
-							.font(.system(size: 20, weight: .semibold))
-							.foregroundColor(.white)
+						HStack{
+							Text("Enter Spawn")
+								.font(.system(size: 20, weight: .semibold))
+
+							Image(systemName: "arrow.right")
+								.resizable()
+								.frame(width: 20, height: 20)
+						}
+						.foregroundColor(.white)
 					}
 
 					.simultaneousGesture(
@@ -166,7 +172,6 @@ struct InputFieldView: View {
 			HStack {
 				Text(label)
 					.font(.system(size: 18))
-					.foregroundColor(.white)
 
 				if !isValid {
 					Image(systemName: "star.fill")
@@ -177,8 +182,9 @@ struct InputFieldView: View {
 
 			TextField("", text: $text)
 				.padding()
-				.background(Color.white)
+				.background(.white)
 				.cornerRadius(universalRectangleCornerRadius)
+				.foregroundColor(.black)
 		}
 	}
 }
