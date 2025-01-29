@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		658297FA2CE07822003CFFD5 /* PopupView in Frameworks */ = {isa = PBXBuildFile; productRef = 658297F92CE07822003CFFD5 /* PopupView */; };
+		DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DC0171582D43507E003BF3DB /* GoogleSignIn */; };
+		DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DC01715A2D43507E003BF3DB /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -69,7 +71,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */,
 				658297FA2CE07822003CFFD5 /* PopupView in Frameworks */,
+				DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -131,6 +135,8 @@
 			name = "Spawn-App-iOS-SwiftUI";
 			packageProductDependencies = (
 				658297F92CE07822003CFFD5 /* PopupView */,
+				DC0171582D43507E003BF3DB /* GoogleSignIn */,
+				DC01715A2D43507E003BF3DB /* GoogleSignInSwift */,
 			);
 			productName = "Spawn-App-iOS-SwiftUI";
 			productReference = 65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */;
@@ -216,6 +222,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				658297F82CE07822003CFFD5 /* XCRemoteSwiftPackageReference "PopupView" */,
+				DC0171572D43507E003BF3DB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65D5035A2CD86EB300923A01 /* Products */;
@@ -596,6 +603,14 @@
 				minimumVersion = 3.1.4;
 			};
 		};
+		DC0171572D43507E003BF3DB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -603,6 +618,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 658297F82CE07822003CFFD5 /* XCRemoteSwiftPackageReference "PopupView" */;
 			productName = PopupView;
+		};
+		DC0171582D43507E003BF3DB /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC0171572D43507E003BF3DB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		DC01715A2D43507E003BF3DB /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC0171572D43507E003BF3DB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

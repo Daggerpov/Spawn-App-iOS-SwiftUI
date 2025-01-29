@@ -11,7 +11,9 @@ struct ProfileView: View {
     let user: User
     @State private var bio: String
     @State private var editingState: ProfileEditText = .edit
-    
+
+	@StateObject var userAuth = UserAuthViewModel.shared
+
     init(user: User) {
         self.user = user
         bio = user.bio ?? ""
@@ -93,6 +95,12 @@ struct ProfileView: View {
                             .background(profilPicPlusButtonColor)
                             .cornerRadius(20)
 					}
+					.simultaneousGesture(
+						TapGesture().onEnded {
+							if userAuth.isLoggedIn {
+								userAuth.signOut()
+							}
+						})
 
                     Spacer()
                     .padding(.horizontal)

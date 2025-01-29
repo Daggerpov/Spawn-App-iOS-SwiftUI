@@ -6,12 +6,21 @@
 //
 
 import SwiftUI
+import GoogleSignInSwift
+import GoogleSignIn
 
 struct LaunchView: View {
 	@StateObject var viewModel: LaunchViewModel = LaunchViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())
-	@StateObject var observableUser: ObservableUser = ObservableUser(
-		user: .danielAgapov)
+	@StateObject var userAuth = UserAuthViewModel.shared
+
+	fileprivate func SignOutButton() -> Button<Text> {
+		Button(action: {
+			userAuth.signOut()
+		}) {
+			Text("Sign Out")
+		}
+	}
 
 	var body: some View {
 		NavigationStack {
@@ -28,9 +37,12 @@ struct LaunchView: View {
 						.navigationBarHidden(true)
 				}) {
 					AuthProviderButtonView(authProviderType: .google)
-				}.simultaneousGesture(
+				}
+				.simultaneousGesture(
 					TapGesture().onEnded {
-						loginWithGoogle()
+						if !userAuth.isLoggedIn {
+							userAuth.signIn()
+						}
 					})
 
 				NavigationLink(destination: {
@@ -53,18 +65,6 @@ struct LaunchView: View {
 				User.setupFriends()
 			}
 		}
-		.environmentObject(observableUser)
-	}
-
-	private func loginWithGoogle() {
-		guard
-			let url = URL(
-				string: "https://spawn-app-back-end-production.up.railway.app/oauth2/authorization/google")
-		else {
-			print("Invalid URL")
-			return
-		}
-		UIApplication.shared.open(url)
 	}
 
 	private func loginWithApple() {
@@ -75,3 +75,4 @@ struct LaunchView: View {
 #Preview {
 	LaunchView()
 }
+
