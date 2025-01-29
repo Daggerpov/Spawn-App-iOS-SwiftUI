@@ -23,7 +23,10 @@ class FeedViewModel: ObservableObject {
 		// TODO DANIEL: change back to "events/user/\(user.id)" later
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
-				let fetchedEvents: [Event] = try await self.apiService.fetchData(from: url)
+				let fetchedEvents: [Event] = try await self.apiService.fetchData(
+					from: url,
+					parameters: nil
+				)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
@@ -42,7 +45,7 @@ class FeedViewModel: ObservableObject {
 		// TODO DANIEL: change back to "friendTags?ownerId=ownerId" later
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url)
+				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread
 				await MainActor.run {

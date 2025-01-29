@@ -19,7 +19,7 @@ class MockAPIService: IAPIService {
 		self.userId = userId
 	}
 
-	func fetchData<T>(from url: URL) async throws -> T where T: Decodable {
+	func fetchData<T>(from url: URL, parameters: [String: String]? = nil) async throws -> T where T: Decodable {
 		/// FeedViewModel.swift:
 
 		// fetchEventsForUser():

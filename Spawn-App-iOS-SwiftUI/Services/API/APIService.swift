@@ -49,7 +49,7 @@ class APIService: IAPIService {
 		return encoder
 	}
 
-	internal func fetchData<T: Decodable>(from url: URL, with parameters: [String: String]? = nil) async throws -> T where T: Decodable {
+	internal func fetchData<T: Decodable>(from url: URL, parameters: [String: String]? = nil) async throws -> T where T: Decodable {
 		// Create a URLComponents object from the URL
 		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
@@ -62,7 +62,7 @@ class APIService: IAPIService {
 		guard let finalURL = urlComponents?.url else {
 			errorMessage = "Invalid URL after adding query parameters"
 			print(errorMessage ?? "no error message to log")
-			throw APIError.invalidURL
+			throw APIError.URLError
 		}
 
 		let (data, response) = try await URLSession.shared.data(from: finalURL)
