@@ -98,7 +98,7 @@ class UserAuthViewModel: ObservableObject {
 
 	func spawnFetchUserIfAlreadyExists() async -> Void {
 		// TODO: supply externalUserId request param to get request
-		if let url = URL(string: APIService.baseURL + "sign-in") {
+		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
 				let fetchedSpawnUser: User = try await self.apiService.fetchData(from: url)
 
