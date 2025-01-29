@@ -49,20 +49,33 @@ class APIService: IAPIService {
 		return encoder
 	}
 
-	internal func fetchData<T: Decodable>(from url: URL) async throws -> T where T: Decodable {
-		let (data, response) = try await URLSession.shared.data(from: url)
+	internal func fetchData<T: Decodable>(from url: URL, with parameters: [String: String]? = nil) async throws -> T where T: Decodable {
+		// Create a URLComponents object from the URL
+		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+
+		// Add query items if parameters are provided
+		if let parameters = parameters {
+			urlComponents?.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+		}
+
+		// Ensure the URL is valid after adding query items
+		guard let finalURL = urlComponents?.url else {
+			errorMessage = "Invalid URL after adding query parameters"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidURL
+		}
+
+		let (data, response) = try await URLSession.shared.data(from: finalURL)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
-			errorMessage = "HTTP request failed for \(url)"
+			errorMessage = "HTTP request failed for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
-
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 
 		guard httpResponse.statusCode == 200 else {
-			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
-
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 
