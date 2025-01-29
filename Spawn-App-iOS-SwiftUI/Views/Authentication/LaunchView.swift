@@ -45,13 +45,14 @@ struct LaunchView: View {
 						}
 					})
 
-				NavigationLink(destination: {
-					UserInfoInputView()
-						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				}) {
-					AuthProviderButtonView(authProviderType: .apple)
-				}
+				// TODO: implement later
+//				NavigationLink(destination: {
+//					UserInfoInputView()
+//						.navigationBarTitle("")
+//						.navigationBarHidden(true)
+//				}) {
+//					AuthProviderButtonView(authProviderType: .apple)
+//				}
 				// TODO: implement later
 //				.simultaneousGesture(
 //					TapGesture().onEnded {
