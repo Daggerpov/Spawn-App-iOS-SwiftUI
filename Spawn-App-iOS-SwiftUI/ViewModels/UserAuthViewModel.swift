@@ -20,6 +20,11 @@ class UserAuthViewModel: ObservableObject {
 	@Published var isLoggedIn: Bool = false
 	@Published var errorMessage: String?
 
+	@Published var externalUserId: String?
+	@Published var spawnUser: User?
+
+	@Published var hasCheckedSpawnUserExistance: Bool = false
+
 	private var apiService: IAPIService
 
 	private init(apiService: IAPIService){
@@ -37,6 +42,7 @@ class UserAuthViewModel: ObservableObject {
 			self.email = user.profile?.email
 			self.profilePicUrl = user.profile!.imageURL(withDimension: 100)!.absoluteString
 			self.isLoggedIn = true
+			self.externalUserId = user.userID
 		}else{
 			self.isLoggedIn = false
 			self.givenName = ""
@@ -44,6 +50,7 @@ class UserAuthViewModel: ObservableObject {
 			self.fullName = nil
 			self.familyName = nil
 			self.email = nil
+			self.externalUserId = nil
 		}
 	}
 
@@ -80,12 +87,31 @@ class UserAuthViewModel: ObservableObject {
 			self.familyName = user.profile?.familyName
 			self.email = user.profile?.email
 			self.isLoggedIn = true
+			self.externalUserId = user.userID
 		}
 	}
 
 	func signOut(){
 		GIDSignIn.sharedInstance.signOut()
 		self.checkStatus()
+	}
+
+	func spawnFetchUserIfAlreadyExists() async -> Void {
+		// TODO: supply externalUserId request param to get request
+		if let url = URL(string: APIService.baseURL + "sign-in") {
+			do {
+				let fetchedSpawnUser: User = try await self.apiService.fetchData(from: url)
+
+				await MainActor.run {
+					self.spawnUser = fetchedSpawnUser
+				}
+			} catch {
+				print(apiService.errorMessage ?? "")
+			}
+			await MainActor.run {
+				self.hasCheckedSpawnUserExistance = true
+			}
+		}
 	}
 
 	func spawnSignIn(username: String, profilePicture: String, firstName: String, lastName: String) async {
