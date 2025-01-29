@@ -13,6 +13,7 @@ class APIService: IAPIService {
 	var errorMessage: String? // TODO: currently not being accessed; maybe use in alert to user
 
 	// Shared JSONDecoder for decoding data from the backend
+	/// Note: not currently being used
 	private static func makeDecoder() -> JSONDecoder {
 		let decoder = JSONDecoder()
 
@@ -35,6 +36,7 @@ class APIService: IAPIService {
 	}
 
 	// Shared JSONEncoder for encoding data to send to the backend
+	/// Note: not currently being used
 	private static func makeEncoder() -> JSONEncoder {
 		let encoder = JSONEncoder()
 		encoder.dateEncodingStrategy = .custom { date, encoder in
