@@ -20,110 +20,126 @@ struct User: Identifiable, Codable, Hashable {
 	}
 
 	var id: UUID
-	var friendIds: [UUID]?// TODO DANIEL: change to friendIds
+	var friends: [User]?
 	var username: String
 	var profilePicture: String?  // TODO: re-think data type later
 	var firstName: String?
 	var lastName: String?
 	var bio: String?
-	var friendTagIds: [UUID]? // TODO DANIEL: change to friendTagIds
+	var friendTags: [FriendTag]?
 	var email: String
 
 	init(
 		id: UUID,
-		friendIds: [UUID]? = nil,
+		friends: [User]? = nil,
 		username: String,
 		profilePicture: String? = nil,
 		firstName: String? = nil,
 		lastName: String? = nil,
 		bio: String? = nil,
-		friendTagIds: [UUID]? = nil,
+		friendTags: [FriendTag]? = nil,
 		email: String
 	) {
 		self.id = id
-		self.friendIds = friendIds
+		self.friends = friends
 		self.username = username
 		self.profilePicture = profilePicture
 		self.firstName = firstName
 		self.lastName = lastName
 		self.bio = bio
-		self.friendTagIds = friendTagIds
+		self.friendTags = friendTags
 		self.email = email
+
+		// Add friends to the user's default "Everyone" tag
+		if let friends = friends {
+			var everyoneTag = FriendTag(
+				id: UUID(),
+				displayName: "Everyone",
+				colorHexCode: "#asdfdf",
+				ownerId: id,
+				friends: []
+			)
+
+			everyoneTag.friends = friends
+
+			// Insert the "Everyone" tag at the beginning of the friend's tags array
+			self.friendTags?.insert(everyoneTag, at: 0)
+		}
 	}
 }
 
 extension User {
 	static var danielAgapov: User = {
 		let id: UUID = UUID()
-		let friendIds: [UUID] = [shannon.id, jennifer.id, michael.id, haley.id]
+		let friends: [User] = [shannon, jennifer, michael, haley]
 		return User(
 			id: id,
-			friendIds: friendIds,
+			friends: friends,
 			username: "daggerpov",
 			profilePicture: "Daniel_Agapov_pfp",
 			firstName: "Daniel",
 			lastName: "Agapov",
 			bio: "This is my bio.",
-			friendTagIds: [
+			friendTags: [
 				FriendTag(
 					id: UUID(),
 					displayName: "Biztech",
 					colorHexCode: eventColorHexCodes[0],
 					ownerId: id,
 					friends: [shannon, jennifer]
-				).id,
+				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Close Friends",
 					colorHexCode: eventColorHexCodes[1],
 					ownerId: id,
 					friends: [haley]
-				).id,
+				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Hobbies",
 					colorHexCode: eventColorHexCodes[2],
 					ownerId: id,
 					friends: [jennifer, haley, shannon]
-				).id,
+				),
 			],
 			email: "daniel@agapov.com"
 		)
 	}()
 
 	static var danielLee: User = {
-		let friendIds: [UUID] = [shannon.id, jennifer.id, michael.id, haley.id]
+		let friends: [User] = [shannon, jennifer, michael, haley]
 		let id: UUID = UUID()
 		return User(
 			id: id,
-			friendIds: friendIds,
+			friends: friends,
 			username: "uhdlee",
 			profilePicture: "Daniel_Lee_pfp",
 			firstName: "Daniel",
 			lastName: "Lee",
 			bio: "This is my bio.",
-			friendTagIds: [
+			friendTags: [
 				FriendTag(
 					id: UUID(),
 					displayName: "Biztech",
 					colorHexCode: eventColorHexCodes[0],
 					ownerId: id,
 					friends: [shannon]
-				).id,
+				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Close Friends",
 					colorHexCode: eventColorHexCodes[1],
 					ownerId: id,
 					friends: [haley]
-				).id,
+				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Hobbies",
 					colorHexCode: eventColorHexCodes[2],
 					ownerId: id,
 					friends: [jennifer, haley, shannon]
-				).id,
+				),
 			],
 			email: "daniel2456@gmail.com"
 		)
@@ -131,41 +147,41 @@ extension User {
 
 	static func setupFriends() {
 		// Set up mutual friends after all static properties are initialized
-		danielAgapov.friendIds = [shannon.id, jennifer.id, michael.id, haley.id]
-		danielAgapov.friendTagIds = [
+		danielAgapov.friends = [shannon, jennifer, michael, haley]
+		danielAgapov.friendTags = [
 			FriendTag(
 				id: UUID(),
 				displayName: "Biztech",
 				colorHexCode: eventColorHexCodes[0],
 				ownerId: danielAgapov.id,
 				friends: [shannon]
-			).id,
+			),
 			FriendTag(
 				id: UUID(),
 				displayName: "Close Friends",
 				colorHexCode: eventColorHexCodes[1],
 				ownerId: danielAgapov.id,
 				friends: [haley]
-			).id,
+			),
 			FriendTag(
 				id: UUID(),
 				displayName: "Hobbies",
 				colorHexCode: eventColorHexCodes[2],
 				ownerId: danielAgapov.id,
 				friends: [jennifer, haley, shannon]
-			).id,
+			),
 		]
 
-		shannon.friendIds = [danielAgapov.id]
-		jennifer.friendIds = [danielAgapov.id, shannon.id]
-		michael.friendIds = [danielAgapov.id, shannon.id, jennifer.id]
-		haley.friendIds = [danielAgapov.id, shannon.id, jennifer.id, michael.id]
+		shannon.friends = [danielAgapov]
+		jennifer.friends = [danielAgapov, shannon]
+		michael.friends = [danielAgapov, shannon, jennifer]
+		haley.friends = [danielAgapov, shannon, jennifer, michael]
 
 	}
 
 	static var shannon: User = User(
 		id: UUID(),
-		friendIds: [],
+		friends: [],
 		username: "shannonaurl",
 		profilePicture: "Shannon_pfp",
 		firstName: "Shannon",
@@ -175,7 +191,7 @@ extension User {
 
 	static var jennifer: User = User(
 		id: UUID(),
-		friendIds: [],
+		friends: [],
 		username: "jenntjen",
 		profilePicture: "Jennifer_pfp",
 		firstName: "Jennifer",
@@ -186,7 +202,7 @@ extension User {
 
 	static var michael: User = User(
 		id: UUID(),
-		friendIds: [],
+		friends: [],
 		username: "michaeltham",
 		profilePicture: "Michael_pfp",
 		firstName: "Michael",
@@ -197,7 +213,7 @@ extension User {
 
 	static var haley: User = User(
 		id: UUID(),
-		friendIds: [],
+		friends: [],
 		username: "haleyusername",
 		profilePicture: "Haley_pfp",
 		firstName: "Haley",
@@ -222,8 +238,8 @@ class ObservableUser: ObservableObject {
 		user.id
 	}
 
-	var friendIds: [UUID]? {
-		user.friendIds
+	var friends: [User]? {
+		user.friends
 	}
 	var username: String {
 		user.username
@@ -241,7 +257,7 @@ class ObservableUser: ObservableObject {
 	var bio: String? {
 		user.bio
 	}
-	var friendTagIds: [UUID]? {
-		user.friendTagIds
+	var friendTags: [FriendTag]? {
+		user.friendTags
 	}
 }
