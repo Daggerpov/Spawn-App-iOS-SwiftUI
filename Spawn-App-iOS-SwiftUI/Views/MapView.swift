@@ -154,7 +154,7 @@ extension MapView {
 								.foregroundColor(universalAccentColor)
 
 							let creatorOne: User =
-							mockEvent.creator ?? User.danielAgapov
+							mockEvent.creatorUser ?? User.danielAgapov
 
 							if let creatorPfp = creatorOne
 								.profilePicture

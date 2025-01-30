@@ -15,7 +15,7 @@ class EventCreationViewModel: ObservableObject {
 
 	init(apiService: IAPIService, creatingUser: User) {
 		self.apiService = apiService
-		self.event = Event(id: UUID(), title: "", creator: creatingUser)
+		self.event = Event(id: UUID(), title: "", creatorUser: creatingUser)
 	}
 
 	func createEvent() async -> Void {
