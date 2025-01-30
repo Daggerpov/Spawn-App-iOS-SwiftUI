@@ -25,8 +25,10 @@ class FeedViewModel: ObservableObject {
 			do {
 				let fetchedEvents: [Event] = try await self.apiService.fetchData(
 					from: url,
-					parameters: nil
+					parameters: ["full":"true"]
 				)
+
+				dump(fetchedEvents)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
