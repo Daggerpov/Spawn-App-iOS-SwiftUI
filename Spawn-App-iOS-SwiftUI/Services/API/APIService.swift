@@ -93,11 +93,30 @@ class APIService: IAPIService {
 		}
 	}
 
-	internal func sendData<T: Encodable>(_ object: T, to url: URL) async throws {
+	internal func sendData<T: Encodable>(
+		_ object: T,
+		to url: URL,
+		parameters: [String: String]? = nil
+	) async throws {
+		// Create a URLComponents object from the URL
+		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+
+		// Add query items if parameters are provided
+		if let parameters = parameters {
+			urlComponents?.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+		}
+
+		// Ensure the URL is valid after adding query items
+		guard let finalURL = urlComponents?.url else {
+			errorMessage = "Invalid URL after adding query parameters"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.URLError
+		}
+
 		let encoder = APIService.makeEncoder()
 		let encodedData = try encoder.encode(object)
 
-		var request = URLRequest(url: url)
+		var request = URLRequest(url: finalURL)
 		request.httpMethod = "POST"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
@@ -105,16 +124,14 @@ class APIService: IAPIService {
 		let (_, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
-			errorMessage = "HTTP request failed for \(url)"
+			errorMessage = "HTTP request failed for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
-
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 
 		guard httpResponse.statusCode == 200 else {
-			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
-
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 	}
