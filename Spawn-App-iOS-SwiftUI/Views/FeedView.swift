@@ -79,9 +79,7 @@ struct FeedView: View {
 						)
 						.offset(x: 0, y: descriptionOffset)
 						.onAppear {
-							withAnimation(.spring()) {
-								descriptionOffset = 0
-							}
+							descriptionOffset = 0
 						}
 					}
 					.ignoresSafeArea()
@@ -98,9 +96,7 @@ struct FeedView: View {
 					EventCreationView(creatingUser: user.user)
 						.offset(x: 0, y: creationOffset)
 						.onAppear {
-							withAnimation(.spring()) {
-								creationOffset = 0
-							}
+							creationOffset = 0
 						}
 				}
 				.ignoresSafeArea()
@@ -108,17 +104,13 @@ struct FeedView: View {
 		}
 	}
 	func closeDescription() {
-		withAnimation(.spring()) {
-			descriptionOffset = 1000
-			showingEventDescriptionPopup = false
-		}
+		descriptionOffset = 1000
+		showingEventDescriptionPopup = false
 	}
 
 	func closeCreation() {
-		withAnimation(.spring()) {
-			creationOffset = 1000
-			showingEventCreationPopup = false
-		}
+		creationOffset = 1000
+		showingEventCreationPopup = false
 	}
 }
 
