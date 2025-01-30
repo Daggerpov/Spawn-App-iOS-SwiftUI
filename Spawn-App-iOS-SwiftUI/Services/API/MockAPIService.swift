@@ -9,7 +9,7 @@ import Foundation
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = true
+	static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
 
@@ -81,7 +81,7 @@ class MockAPIService: IAPIService {
 		throw APIError.invalidData
 	}
 
-	func sendData<T>(_ object: T, to url: URL) async throws where T: Encodable {
+	func sendData<T>(_ object: T, to url: URL, parameters: [String: String]? = nil) async throws where T: Encodable {
 		/// `FriendsTabViewModel.swift`:
 
 		// addFriend():
