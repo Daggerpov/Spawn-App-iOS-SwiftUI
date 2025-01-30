@@ -131,7 +131,13 @@ class UserAuthViewModel: ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "oauth/make-user") {
 			do {
-				try await self.apiService.sendData(newUser, to: url)
+				var parameters: [String: String]? = [:]
+
+				if let unwrappedExternalUserId = externalUserId {
+					parameters = ["externalUserId": unwrappedExternalUserId]
+				}
+
+				try await self.apiService.sendData(newUser, to: url, parameters: parameters)
 				print("User created successfully.")
 			} catch {
 				print("Error creating the user: \(error.localizedDescription)")
