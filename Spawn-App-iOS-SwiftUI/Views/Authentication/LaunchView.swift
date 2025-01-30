@@ -31,27 +31,31 @@ struct LaunchView: View {
 					.scaledToFit()
 					.frame(width: 300, height: 300)
 
-				NavigationLink(destination: {
-					UserInfoInputView()
+				NavigationLink(destination:
+					getAuthNavDestinationView()
 						.navigationBarTitle("")
 						.navigationBarHidden(true)
-				}) {
+				, isActive: $userAuth.hasCheckedSpawnUserExistance) {
 					AuthProviderButtonView(authProviderType: .google)
 				}
 				.simultaneousGesture(
 					TapGesture().onEnded {
 						if !userAuth.isLoggedIn {
 							userAuth.signIn()
+							Task{
+								await userAuth.spawnFetchUserIfAlreadyExists()
+							}
 						}
 					})
 
-				NavigationLink(destination: {
-					UserInfoInputView()
-						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				}) {
-					AuthProviderButtonView(authProviderType: .apple)
-				}
+				// TODO: implement later
+//				NavigationLink(destination: {
+//					UserInfoInputView()
+//						.navigationBarTitle("")
+//						.navigationBarHidden(true)
+//				}) {
+//					AuthProviderButtonView(authProviderType: .apple)
+//				}
 				// TODO: implement later
 //				.simultaneousGesture(
 //					TapGesture().onEnded {
@@ -69,6 +73,14 @@ struct LaunchView: View {
 
 	private func loginWithApple() {
 		// TODO: implement later
+	}
+
+	private func getAuthNavDestinationView() -> AnyView {
+		if let loggedInSpawnUser = userAuth.spawnUser {
+			return AnyView(FeedView(user: loggedInSpawnUser))
+		} else {
+			return AnyView(UserInfoInputView())
+		}
 	}
 }
 

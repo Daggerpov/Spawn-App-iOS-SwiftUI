@@ -15,8 +15,8 @@ struct TagsScrollView: View {
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
-                ForEach(tags, id: \.self) { mockTag in
-                    TagButtonView(mockTag: mockTag.displayName, activeTag: $activeTag, animation: animation)
+                ForEach(tags, id: \.self) { tag in
+                    TagButtonView(tag: tag.displayName, activeTag: $activeTag, animation: animation)
                 }
             }
             .padding(.top, 10)

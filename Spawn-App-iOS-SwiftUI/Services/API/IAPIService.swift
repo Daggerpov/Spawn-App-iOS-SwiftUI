@@ -9,10 +9,10 @@ import Foundation
 
 protocol IAPIService {
 	var errorMessage: String? { get set }
-	/// generic function for fetching (GETting) data from API, given a model of type, T
-	func fetchData<T: Decodable>(from url: URL) async throws -> T where T: Decodable
+	/// generic function for fetching (GETting) data from API, given a model of type, T, and possibly other request parameters
+	func fetchData<T: Decodable>(from url: URL, parameters: [String: String]?) async throws -> T where T: Decodable
 	/// generic function for sending (POSTing)  data to an API, given a model of type, T
-	func sendData<T: Encodable>(_ object: T, to url: URL) async throws
+	func sendData<T: Encodable>(_ object: T, to url: URL, parameters: [String: String]?) async throws
 	/// generic function for updating (PUTting) data, given a model of type, T
 	func updateData<T: Encodable>(_ object: T, to url: URL) async throws
 }

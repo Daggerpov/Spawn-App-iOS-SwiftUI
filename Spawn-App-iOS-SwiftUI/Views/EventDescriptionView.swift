@@ -18,7 +18,7 @@ struct EventDescriptionView: View {
     }
     
     var body: some View {
-        ScrollView {
+        VStack {
             VStack(alignment: .leading, spacing: 20) {
                 // Title and Time Information
                 EventCardTopRowView(event: viewModel.event)
@@ -110,7 +110,7 @@ extension EventDescriptionView {
 
         var body: some View {
             HStack {
-                if let profilePictureString = chatMessage.userSender.profilePicture {
+                if let profilePictureString = chatMessage.senderUser.profilePicture {
                     Image(profilePictureString)
                         .ProfileImageModifier(imageType: .chatMessage)
                 }
@@ -121,7 +121,7 @@ extension EventDescriptionView {
                             .scaledToFit()
                             .frame(width: 15, height: 15)
                             .foregroundColor(universalAccentColor)
-                        Text(chatMessage.userSender.username)
+                        Text(chatMessage.senderUser.username)
                             .foregroundColor(universalAccentColor)
                             .bold()
                             .font(.caption)

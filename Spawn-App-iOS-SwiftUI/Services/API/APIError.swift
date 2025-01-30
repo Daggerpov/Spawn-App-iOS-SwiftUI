@@ -10,7 +10,7 @@ import Foundation
 enum APIError: LocalizedError {
 	case failedHTTPRequest(description: String)
 	case invalidStatusCode(statusCode: Int)
-	case failedJSONParsing
+	case failedJSONParsing(url: URL)
 	case invalidData
 	case URLError
 	case unknownError(error: Error)
@@ -21,8 +21,8 @@ enum APIError: LocalizedError {
 				return description
 			case let .invalidStatusCode(statusCode):
 				return "Invalid Status Code: \(statusCode)"
-			case .failedJSONParsing:
-				return "Failed to properly parse JSON received from request."
+			case let .failedJSONParsing(url):
+				return "Failed to properly parse JSON received from request to this url: \(url)"
 			case .invalidData:
 				return "Invalid data received."
 			case .URLError:

@@ -14,24 +14,25 @@ class TagsViewModel: ObservableObject {
 	var apiService: IAPIService
 	var user: User
 
-	var newTag: FriendTag
+	var newTag: FriendTagCreationDTO
 
 	init(apiService: IAPIService, user: User) {
 		self.apiService = apiService
 		self.user = user
-		self.newTag = FriendTag(
+		self.newTag = FriendTagCreationDTO(
 			id: UUID(),
 			displayName: "",
 			colorHexCode: "",
-			ownerId: user.id,
-			friends: nil
+			ownerUserId: user.id
 		)
     }
 
 	func fetchTags() async -> Void {
 		if let url = URL(string: APIService.baseURL + "friendTags?ownerId=\(user.id)") {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url)
+				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url,
+																				   parameters: nil
+				)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
@@ -52,13 +53,18 @@ class TagsViewModel: ObservableObject {
 			return
 		}
 
-		newTag = FriendTag(id: id ?? UUID(), displayName: displayName, colorHexCode: colorHexCode, ownerId: user.id)
+		newTag = FriendTagCreationDTO(
+			id: id ?? UUID(),
+			displayName: displayName,
+			colorHexCode: colorHexCode,
+			ownerUserId: user.id
+		)
 
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {
 				switch upsertAction {
 					case .create:
-						try await self.apiService.sendData(newTag, to: url)
+						try await self.apiService.sendData(newTag, to: url, parameters: [:])
 					case .update:
 						try await self.apiService.updateData(newTag, to: url)
 				}
