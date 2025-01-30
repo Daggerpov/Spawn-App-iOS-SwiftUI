@@ -23,7 +23,6 @@ class TagsViewModel: ObservableObject {
 			id: UUID(),
 			displayName: "",
 			colorHexCode: "",
-			ownerId: user.id,
 			friends: nil
 		)
     }
@@ -54,7 +53,7 @@ class TagsViewModel: ObservableObject {
 			return
 		}
 
-		newTag = FriendTag(id: id ?? UUID(), displayName: displayName, colorHexCode: colorHexCode, ownerId: user.id)
+		newTag = FriendTag(id: id ?? UUID(), displayName: displayName, colorHexCode: colorHexCode)
 
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {

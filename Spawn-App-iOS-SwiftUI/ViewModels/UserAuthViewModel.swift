@@ -129,7 +129,7 @@ class UserAuthViewModel: ObservableObject {
 			email: unwrappedEmail 
 		)
 
-		if let url = URL(string: APIService.baseURL + "users") {
+		if let url = URL(string: APIService.baseURL + "oauth/make-user") {
 			do {
 				try await self.apiService.sendData(newUser, to: url)
 				print("User created successfully.")

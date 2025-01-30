@@ -44,10 +44,10 @@ class FeedViewModel: ObservableObject {
 	}
 
 	func fetchTagsForUser() async -> Void {
-		// TODO DANIEL: change back to "friendTags?ownerId=ownerId" later
+		// TODO DANIEL: change back to "friendTags?ownerId=ownerId" later, once auth is setup
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: nil)
+				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["full": "true"])
 
 				// Ensure updating on the main thread
 				await MainActor.run {
