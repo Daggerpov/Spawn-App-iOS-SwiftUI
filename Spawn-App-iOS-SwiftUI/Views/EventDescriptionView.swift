@@ -18,7 +18,7 @@ struct EventDescriptionView: View {
     }
     
     var body: some View {
-        ScrollView {
+        VStack {
             VStack(alignment: .leading, spacing: 20) {
                 // Title and Time Information
                 EventCardTopRowView(event: viewModel.event)
