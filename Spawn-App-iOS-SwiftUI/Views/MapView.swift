@@ -118,14 +118,14 @@ struct MapView: View {
 extension MapView {
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
-			BottomNavButtonView(buttonType: .feed, source: .map)
+			BottomNavButtonView(user: viewModel.user, buttonType: .feed, source: .map)
 			Spacer()
 			EventCreationButtonView(
 				showingEventCreationPopup:
 					$showingEventCreationPopup
 			)
 			Spacer()
-			BottomNavButtonView(buttonType: .friends, source: .map)
+			BottomNavButtonView(user: viewModel.user, buttonType: .friends, source: .map)
 		}
 	}
 
@@ -187,6 +187,7 @@ extension MapView {
 						}
 
 					EventDescriptionView(
+						// TODO: adjust to real participants + creator
 						event: event,
 						users: User.mockUsers,
 						color: color
@@ -211,7 +212,7 @@ extension MapView {
 					closeCreation()
 				}
 
-			EventCreationView(creatingUser: user.user)
+			EventCreationView(creatingUser: viewModel.user)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
 					withAnimation(.spring()) {
@@ -226,12 +227,7 @@ extension MapView {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @StateObject var observableUser: ObservableUser =
-		ObservableUser(
-			user: .danielLee
-		)
-	MapView(user: observableUser.user)
-		.environmentObject(observableUser)
+	MapView(user: .danielLee)
 }
 
 struct Triangle: Shape {

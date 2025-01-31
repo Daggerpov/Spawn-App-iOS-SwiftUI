@@ -9,7 +9,6 @@ import SwiftUI
 
 struct EventCardView: View {
     @ObservedObject var viewModel: EventCardViewModel
-    @EnvironmentObject var user: ObservableUser
     var event: Event
     var color: Color
     var callback: (Event, Color) -> Void

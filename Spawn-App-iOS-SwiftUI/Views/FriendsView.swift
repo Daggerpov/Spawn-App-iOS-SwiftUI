@@ -39,7 +39,7 @@ struct FriendsView: View {
 private extension FriendsView {
     var header: some View {
         HStack {
-			BackButton(source: source)
+			BackButton(user: user, source: source)
             Spacer()
             Picker("", selection: $selectedTab) {
                 Text("friends")

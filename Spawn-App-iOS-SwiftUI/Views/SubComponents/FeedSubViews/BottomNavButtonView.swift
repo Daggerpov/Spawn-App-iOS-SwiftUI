@@ -8,13 +8,14 @@
 import SwiftUI
 
 struct BottomNavButtonView: View {
-    @EnvironmentObject var observableUser: ObservableUser
+    var user: User
     var buttonType: BottomNavButtonType
     var imageName: String
     var imageSize: CGFloat = 25
 	let source: BackButtonSourcePageType
 
-	init(buttonType: BottomNavButtonType, source: BackButtonSourcePageType = .feed) {
+	init(user: User, buttonType: BottomNavButtonType, source: BackButtonSourcePageType = .feed) {
+		self.user = user
         self.buttonType = buttonType
         switch(buttonType) {
             case .map:
@@ -41,7 +42,7 @@ struct BottomNavButtonView: View {
                     )
                     .overlay(
                         NavigationLink(destination: {
-							MapView(user: observableUser.user)
+							MapView(user: user)
                                 .navigationBarTitle("")
                                 .navigationBarHidden(true)
                         }) {
@@ -58,7 +59,7 @@ struct BottomNavButtonView: View {
                     ))
                     .overlay(
                         NavigationLink(destination: {
-							FeedView(user: observableUser.user)
+							FeedView(user: user)
                                 .navigationBarTitle("")
                                 .navigationBarHidden(true)
                         }) {
@@ -74,7 +75,7 @@ struct BottomNavButtonView: View {
                     .modifier(CircularButtonStyling(width: 25, height: 20, frameSize: 45, source: "map"))
                     .overlay(
                         NavigationLink(destination: {
-							FriendsView(user: observableUser.user, source: source)
+							FriendsView(user: user, source: source)
                                 .navigationBarTitle("")
                                 .navigationBarHidden(true)
                         }) {

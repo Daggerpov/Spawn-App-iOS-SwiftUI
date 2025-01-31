@@ -22,7 +22,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 					FeedView(user: unwrappedSpawnUser)
 				} else {
 					UserInfoInputView()
-						.environmentObject(observableUser)
 				}
 			} else {
 				LaunchView()

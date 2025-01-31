@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HeaderView: View {
-    @EnvironmentObject var user: ObservableUser
+    var user: User
     var body: some View {
         HStack{
             Spacer()
@@ -34,7 +34,7 @@ struct HeaderView: View {
             
             if let profilePictureString = user.profilePicture {
                 NavigationLink {
-                    ProfileView(user: user.user)
+                    ProfileView(user: user)
                 } label: {
                     Image(profilePictureString)
                         .ProfileImageModifier(imageType: .feedPage)

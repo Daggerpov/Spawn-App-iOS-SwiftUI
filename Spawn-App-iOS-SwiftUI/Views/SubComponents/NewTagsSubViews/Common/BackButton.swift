@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct BackButton: View {
-	@EnvironmentObject var observableUser: ObservableUser
+	var user: User
 	var source: BackButtonSourcePageType
 	var body: some View {
 		Image(systemName: "arrow.left")
@@ -18,11 +18,11 @@ struct BackButton: View {
 				NavigationLink(destination: {
 					switch source {
 					case .map:
-						MapView(user: observableUser.user)
+						MapView(user: user)
 							.navigationBarTitle("")
 							.navigationBarHidden(true)
 					case .feed:
-						FeedView(user: observableUser.user)
+						FeedView(user: user)
 							.navigationBarTitle("")
 							.navigationBarHidden(true)
 					}
