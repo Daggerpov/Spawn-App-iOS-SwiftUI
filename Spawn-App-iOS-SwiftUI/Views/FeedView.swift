@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct FeedView: View {
-	@EnvironmentObject var user: ObservableUser
-
 	@StateObject private var viewModel: FeedViewModel
 
 	@Namespace private var animation: Namespace.ID
@@ -37,7 +35,7 @@ struct FeedView: View {
 			NavigationStack {
 				VStack {
 					Spacer()
-					HeaderView().padding(.top, 50)
+					HeaderView(user: viewModel.user).padding(.top, 50)
 					Spacer()
 					TagsScrollView(tags: viewModel.tags)
 					// TODO: implement logic here to adjust search results when the tag clicked is changed
@@ -93,7 +91,7 @@ struct FeedView: View {
 							closeCreation()
 						}
 
-					EventCreationView(creatingUser: user.user)
+					EventCreationView(creatingUser: viewModel.user)
 						.offset(x: 0, y: creationOffset)
 						.onAppear {
 							creationOffset = 0
@@ -126,13 +124,13 @@ struct FeedView: View {
 extension FeedView {
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
-			BottomNavButtonView(buttonType: .map)
+			BottomNavButtonView(user: viewModel.user, buttonType: .map)
 			Spacer()
 			EventCreationButtonView(
 				showingEventCreationPopup:
 					$showingEventCreationPopup)
 			Spacer()
-			BottomNavButtonView(buttonType: .friends)
+			BottomNavButtonView(user: viewModel.user, buttonType: .friends)
 		}
 	}
 	var eventsListView: some View {
@@ -140,7 +138,7 @@ extension FeedView {
 			LazyVStack(spacing: 15) {
 				ForEach(viewModel.events) { mockEvent in
 					EventCardView(
-						user: user.user,
+						user: viewModel.user,
 						event: mockEvent,
 						// TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
 						color: eventColors.randomElement() ?? Color.blue
