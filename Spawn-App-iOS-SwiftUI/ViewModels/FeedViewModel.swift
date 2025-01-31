@@ -28,8 +28,6 @@ class FeedViewModel: ObservableObject {
 					parameters: ["full":"true"]
 				)
 
-				dump(fetchedEvents)
-
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.events = fetchedEvents
@@ -47,7 +45,7 @@ class FeedViewModel: ObservableObject {
 		// TODO DANIEL: change back to "friendTags?ownerId=ownerId" later, once auth is setup
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["full": "true"])
+				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["ownerId": user.id.uuidString, "full": "true"])
 
 				// Ensure updating on the main thread
 				await MainActor.run {
