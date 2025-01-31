@@ -17,9 +17,13 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 
     var body: some Scene {
         WindowGroup {
-			if userAuth.isLoggedIn {
-				UserInfoInputView()
-					.environmentObject(observableUser)
+			if userAuth.isLoggedIn{
+				if let unwrappedSpawnUser = userAuth.spawnUser {
+					FeedView(user: unwrappedSpawnUser)
+				} else {
+					UserInfoInputView()
+						.environmentObject(observableUser)
+				}
 			} else {
 				LaunchView()
 					.environmentObject(observableUser)
