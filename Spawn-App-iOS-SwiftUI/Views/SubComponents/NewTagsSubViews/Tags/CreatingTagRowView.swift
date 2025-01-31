@@ -22,6 +22,7 @@ struct CreatingTagRowView: View {
 				Group {
 					TextField("Enter Name", text: $displayName)
 						.underline()
+						.background(.white)
 
 					Button(action: {
 						Task{
