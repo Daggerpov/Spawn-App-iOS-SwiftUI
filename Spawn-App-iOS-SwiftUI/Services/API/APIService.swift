@@ -93,11 +93,11 @@ class APIService: IAPIService {
 		}
 	}
 
-	internal func sendData<T: Encodable>(
+	internal func sendData<T: Encodable, U: Decodable>(
 		_ object: T,
 		to url: URL,
 		parameters: [String: String]? = nil
-	) async throws {
+	) async throws -> U {
 		// Create a URLComponents object from the URL
 		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
@@ -121,7 +121,7 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 
-		let (_, response) = try await URLSession.shared.data(for: request)
+		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
@@ -133,6 +133,17 @@ class APIService: IAPIService {
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+
+		do {
+			let decoder = JSONDecoder()
+			decoder.dateDecodingStrategy = .iso8601
+			let decodedData = try decoder.decode(U.self, from: data)
+			return decodedData
+		} catch {
+			errorMessage = APIError.failedJSONParsing(url: finalURL).localizedDescription
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedJSONParsing(url: finalURL)
 		}
 	}
 
