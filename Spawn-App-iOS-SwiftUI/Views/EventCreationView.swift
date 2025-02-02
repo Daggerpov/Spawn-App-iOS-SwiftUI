@@ -17,8 +17,7 @@ struct EventCreationView: View {
 		self.viewModel = EventCreationViewModel(
 			apiService: MockAPIService.isMocking
 			? MockAPIService(userId: creatingUser.id) : APIService(),
-			creatingUser: creatingUser
-		)
+			creatingUser: creatingUser)
 	}
 
 	var body: some View {

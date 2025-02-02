@@ -81,26 +81,32 @@ class MockAPIService: IAPIService {
 		throw APIError.invalidData
 	}
 
-	func sendData<T>(_ object: T, to url: URL, parameters: [String: String]? = nil) async throws where T: Encodable {
+	func sendData<T: Encodable, U: Decodable>(_ object: T, to url: URL, parameters: [String: String]? = nil) async throws -> U {
 		/// `FriendsTabViewModel.swift`:
 
 		// addFriend():
 
 		if url.absoluteString == APIService.baseURL + "users/friend-request" {
-			return
+			return FriendRequest(
+				id: UUID(),
+				senderUser: User.danielAgapov,
+				receiverUser: User.danielLee
+			) as! U
 		}
 
 		/// `EventCreationViewModel.swift`:
 
 		// createEvent():
 
-		if url.absoluteString == APIService.baseURL + "events" { return }
+		if url.absoluteString == APIService.baseURL + "events" {
+			return Event.mockEvents as! U
+		}
 
 		/// TagsViewModel.swift:
 
 		// upsertTag(upsertAction: .create):
 
-		if url.absoluteString == APIService.baseURL + "friendTags" { return }
+		if url.absoluteString == APIService.baseURL + "friendTags" { return FriendTag.close as! U}
 
 		// this means I need to include the url call in this mock `sendData` method:
 		throw APIError.invalidData

@@ -28,10 +28,10 @@ class TagsViewModel: ObservableObject {
     }
 
 	func fetchTags() async -> Void {
-		if let url = URL(string: APIService.baseURL + "friendTags?ownerId=\(user.id)") {
+		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(user.id)") {
 			do {
 				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url,
-																				   parameters: nil
+																				   parameters: ["full": "true"]
 				)
 
 				// Ensure updating on the main thread
