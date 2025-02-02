@@ -68,7 +68,7 @@ class FriendsTabViewModel: ObservableObject {
 	internal func fetchFriends() async {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends") {
 			do {
-				let fetchedFriends: [User] = try await self.apiService.fetchData(from: url, parameters: nil)
+				let fetchedFriends: [FriendUserDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread
 				await MainActor.run {

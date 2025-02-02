@@ -12,7 +12,7 @@ struct FriendsView: View {
 	let source: BackButtonSourcePageType
 
     //TODO: fix the friendtag toggle to look like figma design
-    @State private var selectedTab: FriendTagToggle = .tags // TODO DANIEL: change back to tags later
+	@State private var selectedTab: FriendTagToggle = .friends
 
 	init(user: User, source: BackButtonSourcePageType) {
         self.user = user
@@ -74,5 +74,4 @@ private extension FriendsView {
 	@StateObject var observableUser = ObservableUser(user: .danielLee)
 
 	FriendsView(user: observableUser.user, source: .feed)
-		.environmentObject(observableUser)
 }

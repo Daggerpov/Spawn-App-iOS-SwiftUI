@@ -13,115 +13,151 @@ struct EventCreationView: View {
 	@State private var selectedDate: Date = Date()  // Local state for the selected date
 	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
 
+	private var creatingUser: User
+
 	init(creatingUser: User) {
+		self.creatingUser = creatingUser
 		self.viewModel = EventCreationViewModel(
 			apiService: MockAPIService.isMocking
-			? MockAPIService(userId: creatingUser.id) : APIService(),
+				? MockAPIService(userId: creatingUser.id) : APIService(),
 			creatingUser: creatingUser)
 	}
 
 	var body: some View {
-		VStack(alignment: .leading, spacing: 20) {
-			EventInputFieldLabel(text: "event name")
-			EventInputField(value: $viewModel.event.title)
+		NavigationStack{
+			VStack(alignment: .leading, spacing: 20) {
+				EventInputFieldLabel(text: "event name")
+				EventInputField(value: $viewModel.event.title)
 
-			HStack {
-				VStack(alignment: .leading) {
-					EventInputFieldLabel(text: "date")
-					HStack {
-						Image(systemName: "calendar")
-							.resizable()
-							.frame(width: 24, height: 24)
-							.foregroundColor(.secondary)
-							.padding(.leading)
-						Button(action: { showFullDatePicker = true }) {
-							Text(viewModel.formatDate(selectedDate))
-								.padding()
-								.foregroundColor(.primary)
-								.background(
-									Rectangle()
-										.foregroundColor(Color("#D9D9D2"))
-										.background(
-											Color(.init(gray: 0, alpha: 0.055))
-										)
-										.frame(
-											maxWidth: .infinity, minHeight: 46,
-											maxHeight: 46
-										)
-										.cornerRadius(15)
-								)
+				HStack {
+					VStack(alignment: .leading) {
+						EventInputFieldLabel(text: "date")
+						HStack {
+							Image(systemName: "calendar")
+								.resizable()
+								.frame(width: 24, height: 24)
+								.foregroundColor(.secondary)
+								.padding(.leading)
+							Button(action: { showFullDatePicker = true }) {
+								Text(viewModel.formatDate(selectedDate))
+									.padding()
+									.foregroundColor(.primary)
+									.background(
+										Rectangle()
+											.foregroundColor(Color("#D9D9D2"))
+											.background(
+												Color(.init(gray: 0, alpha: 0.055))
+											)
+											.frame(
+												maxWidth: .infinity, minHeight: 46,
+												maxHeight: 46
+											)
+											.cornerRadius(15)
+									)
+							}
+						}
+						.sheet(isPresented: $showFullDatePicker) {
+							fullDatePickerView
 						}
 					}
-					.sheet(isPresented: $showFullDatePicker) {
-						fullDatePickerView
+
+					Spacer()
+
+					VStack(alignment: .leading) {
+						EventInputFieldLabel(text: "invite friends")
+						Spacer()
+						NavigationLink(destination: {
+							InviteView(user: creatingUser)
+						}) {
+							HStack {
+								Spacer()
+								Circle()
+									.fill(Color.gray.opacity(0.2))
+									.frame(width: 30, height: 30)
+									.overlay(
+										Circle()
+											.stroke(
+												.secondary,
+												style: StrokeStyle(
+													lineWidth: 2,
+													dash: [5, 3]  // Length of dash and gap
+												)
+											)
+									)
+									.overlay(
+										Image(systemName: "plus")
+											.foregroundColor(.secondary)
+									)
+							}
+						}
 					}
 				}
-			}
 
-			HStack {
-				VStack(alignment: .leading) {
-					EventInputFieldLabel(text: "start time")
-					startTimeView
+				HStack {
+					VStack(alignment: .leading) {
+						EventInputFieldLabel(text: "start time")
+						startTimeView
+					}
+					Spacer()
+					VStack(alignment: .leading) {
+						EventInputFieldLabel(text: "end time")
+						endTimeView
+					}
 				}
-				VStack(alignment: .leading) {
-					EventInputFieldLabel(text: "end time")
-					endTimeView
-				}
-				Spacer()
-			}
 
-			EventInputFieldLabel(text: "location")
-			EventInputField(
-				iconName: "mappin.and.ellipse",
-				value: Binding(
-					get: {
-						viewModel.event.location?.name ?? ""
-					},
-					set: {
-						viewModel.event.location?.name =
+				EventInputFieldLabel(text: "location")
+				EventInputField(
+					iconName: "mappin.and.ellipse",
+					value: Binding(
+						get: {
+							viewModel.event.location?.name ?? ""
+						},
+						set: {
+							viewModel.event.location?.name =
 							((($0?.isEmpty) != nil) ? nil : $0) ?? ""
-					}
-				)
-			)
-
-			EventInputFieldLabel(text: "description")
-			EventInputField(
-				value: Binding(
-					get: {
-						viewModel.event.note ?? ""
-					},
-					set: {
-						viewModel.event.note = (($0?.isEmpty) != nil) ? nil : $0
-					}
-				)
-			)
-
-			Button(action: {
-				Task {
-					await viewModel.createEvent()
-				}
-			}) {
-				Text("spawn")
-					.font(Font.custom("Poppins", size: 20).weight(.medium))
-					.frame(maxWidth: .infinity)
-					.kerning(1)
-					.multilineTextAlignment(.center)
-					.padding()
-					.background(
-						RoundedRectangle(cornerRadius: 15).fill(
-							universalAccentColor)
+						}
 					)
-					.foregroundColor(.white)
-			}
-			.padding(.top, 20)
+				)
 
+				EventInputFieldLabel(text: "description")
+				EventInputField(
+					value: Binding(
+						get: {
+							viewModel.event.note ?? ""
+						},
+						set: {
+							viewModel.event.note = (($0?.isEmpty) != nil) ? nil : $0
+						}
+					)
+				)
+
+				Button(action: {
+					Task {
+						await viewModel.createEvent()
+					}
+				}) {
+					Text("spawn")
+						.font(Font.custom("Poppins", size: 16).weight(.medium))
+						.frame(maxWidth: .infinity)
+						.kerning(1)
+						.multilineTextAlignment(.center)
+						.padding()
+						.background(
+							RoundedRectangle(cornerRadius: 15).fill(
+								universalAccentColor)
+						)
+						.foregroundColor(.white)
+				}
+				.padding(.top, 20)
+
+			}
+			.padding(32)
+			.background(universalBackgroundColor)
+			.cornerRadius(15)
+			.shadow(radius: 10)
+			.padding(.horizontal, 20)
+			.padding(.vertical, 100)
 		}
-		.padding(32)
-		.background(universalBackgroundColor)
-		.cornerRadius(15)
-		.shadow(radius: 10)
-		.padding(.horizontal, 20)
-		.padding(.vertical, 100)
 	}
 }
 
@@ -130,7 +166,7 @@ struct EventInputFieldLabel: View {
 
 	var body: some View {
 		Text(text)
-			.font(Font.custom("Poppins", size: 20))
+			.font(Font.custom("Poppins", size: 16))
 			.kerning(1)
 			.foregroundColor(universalAccentColor)
 			.bold()
@@ -173,14 +209,22 @@ struct EventInputField: View {
 
 struct TimePicker: View {
 	var iconName: String
+	var wideImage: Bool?
 	@Binding var date: Date
 
 	var body: some View {
 		HStack {
-			Image(systemName: iconName)
-				.resizable()
-				.frame(width: 24, height: 24)
-				.foregroundColor(.secondary)
+			if let wide = wideImage {
+				Image(systemName: iconName)
+					.resizable()
+					.frame(width: 32, height: 26)
+					.foregroundColor(.secondary)
+			} else {
+				Image(systemName: iconName)
+					.resizable()
+					.frame(width: 24, height: 24)
+					.foregroundColor(.secondary)
+			}
 
 			DatePicker(
 				"",
@@ -220,7 +264,7 @@ struct TimePicker: View {
 extension EventCreationView {
 	var startTimeView: some View {
 		TimePicker(
-			iconName: "clock",
+			iconName: "clock.fill",
 			date: Binding(
 				get: {
 					viewModel.event.startTime
@@ -238,7 +282,8 @@ extension EventCreationView {
 
 	var endTimeView: some View {
 		TimePicker(
-			iconName: "clock.arrow.trianglehead.counterclockwise.rotate.90",
+			iconName: "clock.badge.checkmark.fill",
+			wideImage: true,
 			date: Binding(
 				get: {
 					viewModel.event.endTime
