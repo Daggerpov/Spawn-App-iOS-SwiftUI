@@ -79,6 +79,7 @@ struct FeedView: View {
 						.onAppear {
 							descriptionOffset = 0
 						}
+						.padding(32)
 					}
 					.ignoresSafeArea()
 				}
@@ -96,6 +97,7 @@ struct FeedView: View {
 						.onAppear {
 							creationOffset = 0
 						}
+						.padding(32)
 				}
 				.ignoresSafeArea()
 			}
@@ -118,7 +120,6 @@ struct FeedView: View {
 	@StateObject var observableUser = ObservableUser(user: .danielLee)
 
 	FeedView(user: observableUser.user)
-		.environmentObject(observableUser)
 }
 
 extension FeedView {
@@ -138,6 +139,7 @@ extension FeedView {
 			LazyVStack(spacing: 15) {
 				if viewModel.events.isEmpty {
 					Text("Add some friends to see what they're up to!")
+						.foregroundColor(universalAccentColor)
 				} else {
 					ForEach(viewModel.events) { event in
 						EventCardView(
