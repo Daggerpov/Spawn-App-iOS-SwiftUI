@@ -136,16 +136,20 @@ extension FeedView {
 	var eventsListView: some View {
 		ScrollView(.vertical) {
 			LazyVStack(spacing: 15) {
-				ForEach(viewModel.events) { mockEvent in
-					EventCardView(
-						user: viewModel.user,
-						event: mockEvent,
-						// TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
-						color: eventColors.randomElement() ?? Color.blue
-					) { event, color in
-						eventInPopup = event
-						colorInPopup = color
-						showingEventDescriptionPopup = true
+				if viewModel.events.isEmpty {
+					Text("Add some friends to see what they're up to!")
+				} else {
+					ForEach(viewModel.events) { event in
+						EventCardView(
+							user: viewModel.user,
+							event: event,
+							// TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
+							color: Color(hex: event.eventFriendTagColorHexCodeForRequestingUser ?? eventColorHexCodes[0])
+						) { event, color in
+							eventInPopup = event
+							colorInPopup = color
+							showingEventDescriptionPopup = true
+						}
 					}
 				}
 			}
