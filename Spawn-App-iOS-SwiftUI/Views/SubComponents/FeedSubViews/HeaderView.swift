@@ -36,8 +36,18 @@ struct HeaderView: View {
                 NavigationLink {
                     ProfileView(user: user)
                 } label: {
-                    Image(profilePictureString)
-                        .ProfileImageModifier(imageType: .feedPage)
+					if MockAPIService.isMocking {
+						Image(profilePictureString)
+							.ProfileImageModifier(imageType: .feedPage)
+					} else {
+							AsyncImage(url: URL(string: profilePictureString)) { image in
+								image
+									.ProfileImageModifier(imageType: .feedPage)
+							} placeholder: {
+								Circle()
+									.fill(Color.gray)
+							}
+						}
                 }
             }
             Spacer()
