@@ -20,8 +20,9 @@ class FeedViewModel: ObservableObject {
     }
 
 	func fetchEventsForUser() async -> Void {
-		// TODO DANIEL: change back to "events/user/\(user.id)" later
-		if let url = URL(string: APIService.baseURL + "events") {
+//		/api/v1/events/invitedEvents/{userId}?full=full
+		//  full path: /api/v1/events/invitedEvents/{userId}?full=full
+		if let url = URL(string: APIService.baseURL + "events/invitedEvents/\(user.id.uuidString)") {
 			do {
 				let fetchedEvents: [Event] = try await self.apiService.fetchData(
 					from: url,
@@ -42,10 +43,10 @@ class FeedViewModel: ObservableObject {
 	}
 
 	func fetchTagsForUser() async -> Void {
-		// TODO DANIEL: change back to "friendTags?ownerId=ownerId" later, once auth is setup
-		if let url = URL(string: APIService.baseURL + "friendTags") {
+		// /api/v1/friendTags/owner/{ownerId}?full=full
+		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(user.id.uuidString)") {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["ownerId": user.id.uuidString, "full": "true"])
+				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["full": "true"])
 
 				// Ensure updating on the main thread
 				await MainActor.run {
