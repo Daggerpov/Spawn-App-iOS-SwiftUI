@@ -12,9 +12,6 @@ import GoogleSignIn
 struct Spawn_App_iOS_SwiftUIApp: App {
 	@StateObject var userAuth = UserAuthViewModel.shared
 
-	@StateObject var observableUser: ObservableUser = ObservableUser(
-		user: .danielAgapov)
-
     var body: some Scene {
         WindowGroup {
 			if userAuth.isLoggedIn{
@@ -25,7 +22,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 				}
 			} else {
 				LaunchView()
-					.environmentObject(observableUser)
 					.onOpenURL {url in
 						GIDSignIn.sharedInstance.handle(url)
 					}

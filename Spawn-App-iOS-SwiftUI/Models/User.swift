@@ -22,7 +22,7 @@ struct User: Identifiable, Codable, Hashable {
 	var id: UUID
 	var friends: [User]?
 	var username: String
-	var profilePicture: String?  // TODO: re-think data type later
+	var profilePicture: String?
 	var firstName: String?
 	var lastName: String?
 	var bio: String?
