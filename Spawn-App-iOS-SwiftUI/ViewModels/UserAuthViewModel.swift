@@ -11,6 +11,7 @@ import UIKit
 
 class UserAuthViewModel: ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService()) // Singleton instance
+	@Published var errorMessage: String?
 
 	@Published var givenName: String?
 	@Published var fullName: String?
@@ -18,10 +19,20 @@ class UserAuthViewModel: ObservableObject {
 	@Published var email: String?
 	@Published var profilePicUrl: String?
 	@Published var isLoggedIn: Bool = false
-	@Published var errorMessage: String?
-
 	@Published var externalUserId: String?
-	@Published var spawnUser: User?
+
+	@Published var isFormValid: Bool = false
+	@Published var shouldProceedToFeed: Bool = false
+
+	@Published var spawnUser: User? {
+		didSet {
+			if spawnUser != nil {
+				shouldNavigateToFeedView = true
+			}
+		}
+	}
+
+	@Published var shouldNavigateToFeedView: Bool = false
 
 	@Published var hasCheckedSpawnUserExistance: Bool = false
 
@@ -30,6 +41,9 @@ class UserAuthViewModel: ObservableObject {
 	private init(apiService: IAPIService){
 		self.apiService = apiService
 		check()
+		Task {
+			await spawnFetchUserIfAlreadyExists()
+		}
 	}
 
 	func checkStatus(){
@@ -78,7 +92,6 @@ class UserAuthViewModel: ObservableObject {
 				self.errorMessage = "Error: \(error.localizedDescription)"
 				return
 			}
-
 			// Retrieve user info if sign-in is successful
 			guard let user = signInResult?.user else { return }
 			self.profilePicUrl = user.profile?.imageURL(withDimension: 100)?.absoluteString ?? ""
@@ -100,9 +113,10 @@ class UserAuthViewModel: ObservableObject {
 		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
 				guard let unwrappedExternalUserId = self.externalUserId else { return } // logic might be off with this `return`
+				guard let unwrappedEmail = self.email else { return } // logic might be off with this `return`
 				let fetchedSpawnUser: User = try await self.apiService.fetchData(
 					from: url,
-					parameters: ["externalUserId": unwrappedExternalUserId]
+					parameters: ["externalUserId": unwrappedExternalUserId, "email": unwrappedEmail]
 				)
 
 				await MainActor.run {
@@ -137,7 +151,12 @@ class UserAuthViewModel: ObservableObject {
 					parameters = ["externalUserId": unwrappedExternalUserId]
 				}
 
-				try await self.apiService.sendData(newUser, to: url, parameters: parameters)
+				let fetchedAuthenticatedSpawnUser: User = try await self.apiService.sendData(newUser, to: url, parameters: parameters)
+
+				await MainActor.run {
+					self.spawnUser = fetchedAuthenticatedSpawnUser
+				}
+
 				print("User created successfully.")
 			} catch {
 				print("Error creating the user: \(error.localizedDescription)")
@@ -146,5 +165,9 @@ class UserAuthViewModel: ObservableObject {
 		} else {
 			print("Invalid URL for user creation.")
 		}
+	}
+
+	func setShouldNavigateToFeedView() -> Void {
+		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
 	}
 }
