@@ -20,13 +20,12 @@ class FeedViewModel: ObservableObject {
     }
 
 	func fetchEventsForUser() async -> Void {
-//		/api/v1/events/invitedEvents/{userId}?full=full
-		//  full path: /api/v1/events/invitedEvents/{userId}?full=full
-		if let url = URL(string: APIService.baseURL + "events/invitedEvents/\(user.id.uuidString)") {
+		// /api/v1/events/feedEvents/{requestingUserId}
+		if let url = URL(string: APIService.baseURL + "events/feedEvents/\(user.id.uuidString)") {
 			do {
 				let fetchedEvents: [Event] = try await self.apiService.fetchData(
 					from: url,
-					parameters: ["full":"true"]
+					parameters: [:]
 				)
 
 				// Ensure updating on the main thread
