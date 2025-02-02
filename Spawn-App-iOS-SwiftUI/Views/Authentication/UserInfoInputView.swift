@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct UserInfoInputView: View {
-	@EnvironmentObject var observableUser: ObservableUser
 	@StateObject var userAuth = UserAuthViewModel.shared
 
 	@State private var editedProfilePicture: String = ""  // TODO: use this variable meaningfully, instead of just grabbing from user auth view model
@@ -17,7 +16,7 @@ struct UserInfoInputView: View {
 	@State private var isFirstNameValid: Bool = true
 	@State private var isUsernameValid: Bool = true
 
-	@State private var isNavigationActive: Bool = false
+	@State private var isFormValid: Bool = false
 
 	@State private var username: String = ""
 
@@ -48,6 +47,18 @@ struct UserInfoInputView: View {
 	var body: some View {
 		NavigationStack {
 			VStack(spacing: 16) {
+				if let unwrappedSpawnUser = userAuth.spawnUser {
+					NavigationLink(
+						destination: FeedView(user: unwrappedSpawnUser)
+							.navigationBarTitle("")
+							.navigationBarHidden(true),
+						isActive: $userAuth.shouldNavigateToFeedView
+					) {
+						EmptyView()
+					}
+					.hidden()
+				}
+
 				Spacer()
 				Spacer()
 
@@ -103,12 +114,22 @@ struct UserInfoInputView: View {
 
 				HStack {
 					Spacer()
-					NavigationLink(
-						destination: FeedView(user: observableUser.user)
-							.navigationBarTitle("")
-							.navigationBarHidden(true),
-						isActive: $isNavigationActive
-					) {
+					Button(action: {
+						validateFields()  // Perform field validation
+						if isFirstNameValid && isUsernameValid {
+							Task {
+								await userAuth.spawnSignIn(
+									username: username,
+									profilePicture: userAuth.profilePicUrl
+									?? "",
+									firstName: userAuth.givenName ?? "",
+									lastName: userAuth.familyName ?? ""
+								)
+							}
+							userAuth.isFormValid = true
+						}
+						userAuth.setShouldNavigateToFeedView()
+					}){
 						HStack{
 							Text("Enter Spawn")
 								.font(.system(size: 20, weight: .semibold))
@@ -119,24 +140,6 @@ struct UserInfoInputView: View {
 						}
 						.foregroundColor(.white)
 					}
-
-					.simultaneousGesture(
-						TapGesture().onEnded {
-							validateFields()  // Perform field validation
-							if isFirstNameValid && isUsernameValid {
-								Task {
-									await userAuth.spawnSignIn(
-										username: username,
-										profilePicture: userAuth.profilePicUrl
-											?? "",
-										firstName: userAuth.givenName ?? "",
-										lastName: userAuth.familyName ?? ""
-									)
-									isNavigationActive = true  // Activate navigation only if valid
-								}
-							}
-						}
-					)
 				}
 				.padding(.horizontal, 32)
 				Spacer()
@@ -146,6 +149,10 @@ struct UserInfoInputView: View {
 			}
 			.onAppear {
 				userAuth.objectWillChange.send()  // Trigger initial UI update
+				Task{
+					await userAuth.spawnFetchUserIfAlreadyExists()
+				}
+				userAuth.setShouldNavigateToFeedView()
 			}
 			.padding()
 			.background(Color(hex: "#8693FF"))
@@ -191,9 +198,5 @@ struct InputFieldView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable
-	@StateObject var observableUser = ObservableUser(user: .danielLee)
-
 	UserInfoInputView()
-		.environmentObject(observableUser)
 }
