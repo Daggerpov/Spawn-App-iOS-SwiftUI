@@ -10,7 +10,7 @@ import Foundation
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FriendRequest] = []
 	@Published var recommendedFriends: [User] = []
-	@Published var friends: [User] = []
+	@Published var friends: [FriendUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
 	@Published var createdFriendRequest: FriendRequest?
