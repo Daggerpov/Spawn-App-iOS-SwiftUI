@@ -65,12 +65,13 @@ struct EventCreationView: View {
 
 					VStack(alignment: .leading) {
 						EventInputFieldLabel(text: "invite friends")
+							.padding(.leading, 26)
+							.padding(.bottom, 10)
 						Spacer()
 						NavigationLink(destination: {
 							InviteView(user: creatingUser)
 						}) {
 							HStack {
-								Spacer()
 								Circle()
 									.fill(Color.gray.opacity(0.2))
 									.frame(width: 30, height: 30)
@@ -89,6 +90,9 @@ struct EventCreationView: View {
 											.foregroundColor(.secondary)
 									)
 							}
+							.padding(.leading, 40)
+							.padding(.bottom, 12)
+							Spacer()
 						}
 					}
 				}
