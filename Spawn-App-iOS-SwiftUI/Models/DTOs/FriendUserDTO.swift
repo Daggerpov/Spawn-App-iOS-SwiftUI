@@ -62,3 +62,69 @@ struct FriendUserDTO: Identifiable, Codable, Hashable {
 		}
 	}
 }
+
+extension FriendUserDTO {
+	static var danielAgapov: FriendUserDTO = {
+		let id: UUID = UUID()
+		return FriendUserDTO(
+			id: id,
+			username: "daggerpov",
+			profilePicture: "Daniel_Agapov_pfp",
+			firstName: "Daniel",
+			lastName: "Agapov",
+			bio: "This is my bio.",
+			friendTags: [
+				FriendTag(
+					id: UUID(),
+					displayName: "Biztech",
+					colorHexCode: eventColorHexCodes[0]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Close Friends",
+					colorHexCode: eventColorHexCodes[1]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Hobbies",
+					colorHexCode: eventColorHexCodes[2]
+				)
+			],
+			email: "daniel@agapov.com"
+		)
+	}()
+
+	static var danielLee: FriendUserDTO = {
+		let id: UUID = UUID()
+		return FriendUserDTO(
+			id: id,
+			username: "uhdlee",
+			profilePicture: "Daniel_Lee_pfp",
+			firstName: "Daniel",
+			lastName: "Lee",
+			bio: "This is my bio.",
+			friendTags: [
+				FriendTag(
+					id: UUID(),
+					displayName: "Biztech",
+					colorHexCode: eventColorHexCodes[0]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Close Friends",
+					colorHexCode: eventColorHexCodes[1]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Hobbies",
+					colorHexCode: eventColorHexCodes[2]
+				),
+			],
+			email: "daniel2456@gmail.com"
+		)
+	}()
+
+	static let mockUsers: [FriendUserDTO] = {
+		return [danielAgapov, danielLee]
+	}()
+}
