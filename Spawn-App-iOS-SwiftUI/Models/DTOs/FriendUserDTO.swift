@@ -94,11 +94,6 @@ extension FriendUserDTO {
 			associatedFriendTagsToOwner:[
 				FriendTag(
 					id: UUID(),
-					displayName: "Biztech",
-					colorHexCode: eventColorHexCodes[0]
-				),
-				FriendTag(
-					id: UUID(),
 					displayName: "Close Friends",
 					colorHexCode: eventColorHexCodes[1]
 				),

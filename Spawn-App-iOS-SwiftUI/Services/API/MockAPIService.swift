@@ -67,8 +67,10 @@ class MockAPIService: IAPIService {
 		if let userIdForUrl = userId {
 			// fetchTags():
 
+			// "friendTags/owner/\(user.id)"
+
 			if url.absoluteString == APIService.baseURL
-				+ "friendTags?ownerId=\(userIdForUrl)"
+				+ "friendTags/owner/\(userIdForUrl)"
 			{
 				return FriendTag.mockTags as! T
 			}
