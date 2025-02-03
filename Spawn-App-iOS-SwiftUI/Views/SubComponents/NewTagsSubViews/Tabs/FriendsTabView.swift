@@ -117,26 +117,18 @@ struct FriendsTabView: View {
 									.foregroundColor(universalBackgroundColor)
 
 								HStack(spacing: 8) {
-									// TODO: replace with real friend tags
-									Text("Close Friends")
-										.font(
-											.system(size: 14, weight: .medium)
-										)
-										.padding(.horizontal, 12)
-										.padding(.vertical, 6)
-										.background(Color("TagColorPurple"))
-										.foregroundColor(.white)
-										.cornerRadius(12)
+									ForEach(friend.associatedFriendTagsToOwner) { friendTag in
 
-									Text("Hobbies")
-										.font(
-											.system(size: 14, weight: .medium)
-										)
-										.padding(.horizontal, 12)
-										.padding(.vertical, 6)
-										.background(Color("TagColorGreen"))
-										.foregroundColor(.white)
-										.cornerRadius(12)
+										Text(friendTag.displayName)
+											.font(
+												.system(size: 14, weight: .medium)
+											)
+											.padding(.horizontal, 12)
+											.padding(.vertical, 6)
+											.background(Color(hex: friendTag.colorHexCode))
+											.foregroundColor(.white)
+											.cornerRadius(12)
+									}
 								}
 							}
 							.padding(.leading, 8)
