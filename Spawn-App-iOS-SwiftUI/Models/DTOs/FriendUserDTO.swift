@@ -90,7 +90,24 @@ extension FriendUserDTO {
 					colorHexCode: eventColorHexCodes[2]
 				)
 			],
-			email: "daniel@agapov.com"
+			email: "daniel@agapov.com",
+			associatedFriendTagsToOwner:[
+				FriendTag(
+					id: UUID(),
+					displayName: "Biztech",
+					colorHexCode: eventColorHexCodes[0]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Close Friends",
+					colorHexCode: eventColorHexCodes[1]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Hobbies",
+					colorHexCode: eventColorHexCodes[2]
+				)
+			]
 		)
 	}()
 
@@ -120,7 +137,24 @@ extension FriendUserDTO {
 					colorHexCode: eventColorHexCodes[2]
 				),
 			],
-			email: "daniel2456@gmail.com"
+			email: "daniel2456@gmail.com",
+			associatedFriendTagsToOwner:[
+				FriendTag(
+					id: UUID(),
+					displayName: "Biztech",
+					colorHexCode: eventColorHexCodes[0]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Close Friends",
+					colorHexCode: eventColorHexCodes[1]
+				),
+				FriendTag(
+					id: UUID(),
+					displayName: "Hobbies",
+					colorHexCode: eventColorHexCodes[2]
+				)
+			]
 		)
 	}()
 
