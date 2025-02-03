@@ -116,20 +116,7 @@ struct FriendsTabView: View {
 									.font(.system(size: 16, weight: .bold))
 									.foregroundColor(universalBackgroundColor)
 
-								HStack(spacing: 8) {
-									ForEach(friend.associatedFriendTagsToOwner) { friendTag in
-
-										Text(friendTag.displayName)
-											.font(
-												.system(size: 14, weight: .medium)
-											)
-											.padding(.horizontal, 12)
-											.padding(.vertical, 6)
-											.background(Color(hex: friendTag.colorHexCode))
-											.foregroundColor(.white)
-											.cornerRadius(12)
-									}
-								}
+								FriendTagsForFriendView(friend: friend)
 							}
 							.padding(.leading, 8)
 
@@ -209,6 +196,27 @@ struct FriendsTabView: View {
 			.padding(.horizontal, 16)
 			.background(universalAccentColor)
 			.cornerRadius(16)
+		}
+	}
+
+	struct FriendTagsForFriendView: View {
+		var friend: FriendUserDTO
+		var body: some View {
+			HStack(spacing: 8) {
+				ForEach(friend.associatedFriendTagsToOwner ?? []) { friendTag in
+
+					Text(friendTag.displayName)
+						.font(
+							.system(size: 14, weight: .medium)
+						)
+						.padding(.horizontal, 12)
+						.padding(.vertical, 6)
+						.background(Color(hex: friendTag.colorHexCode))
+						.foregroundColor(.white)
+						.cornerRadius(12)
+				}
+			}
+
 		}
 	}
 
