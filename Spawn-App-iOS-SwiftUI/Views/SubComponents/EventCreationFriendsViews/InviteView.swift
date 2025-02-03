@@ -66,8 +66,5 @@ private extension InviteView {
 @available(iOS 17.0, *)
 #Preview
 {
-	@Previewable
-	@StateObject var observableUser = ObservableUser(user: .danielLee)
-
-	FriendsView(user: observableUser.user, source: .feed)
+	InviteView(user: .danielLee)
 }

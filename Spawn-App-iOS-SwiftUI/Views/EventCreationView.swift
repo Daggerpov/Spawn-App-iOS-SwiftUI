@@ -13,7 +13,7 @@ struct EventCreationView: View {
 	@State private var selectedDate: Date = Date()  // Local state for the selected date
 	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
 
-	private var creatingUser: User
+	var creatingUser: User
 
 	init(creatingUser: User) {
 		self.creatingUser = creatingUser
