@@ -82,8 +82,7 @@ class APIService: IAPIService {
 		}
 
 		do {
-			let decoder = JSONDecoder()
-			decoder.dateDecodingStrategy = .iso8601
+			let decoder = APIService.makeDecoder()
 			let decodedData = try decoder.decode(T.self, from: data)
 			return decodedData
 		} catch {
