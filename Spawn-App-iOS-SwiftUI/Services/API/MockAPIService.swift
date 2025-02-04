@@ -24,9 +24,12 @@ class MockAPIService: IAPIService {
 
 		// fetchEventsForUser():
 
-		if url.absoluteString == APIService.baseURL + "events" {
-			return Event.mockEvents as! T
+		if let userIdForUrl = userId {
+			if url.absoluteString == APIService.baseURL + "events/feedEvents/\(userIdForUrl.uuidString)" {
+				return Event.mockEvents as! T
+			}
 		}
+
 
 		// fetchTagsForUser():
 
