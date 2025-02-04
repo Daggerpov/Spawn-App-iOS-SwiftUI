@@ -9,7 +9,7 @@ import Foundation
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = true
+	static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
 
