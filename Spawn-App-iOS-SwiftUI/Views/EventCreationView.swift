@@ -37,6 +37,12 @@ struct EventCreationView: View {
 								InviteView(user: creatingUser)
 							}) {
 								HStack {
+									ForEach(viewModel.selectedFriends ?? []) { friend in
+										if let profilePictureString = friend.profilePicture {
+											Image(profilePictureString)
+												.ProfileImageModifier(imageType: .eventParticipants)
+										}
+									}
 									Circle()
 										.fill(Color.gray.opacity(0.2))
 										.frame(width: 30, height: 30)
@@ -175,6 +181,7 @@ struct EventCreationView: View {
 			}
 			.background(universalBackgroundColor) // Set background color for the NavigationStack
 			.cornerRadius(universalRectangleCornerRadius) // Apply corner radius to the NavigationStack
+			.environmentObject(viewModel)
 	}
 }
 
