@@ -9,6 +9,7 @@ import SwiftUI
 
 struct InviteTagsView: View {
 	@ObservedObject var viewModel: TagsViewModel
+
 	@State private var creationStatus: CreationStatus = .notCreating
 
 	init(user: User) {
@@ -50,16 +51,6 @@ extension InviteTagsView {
 				VStack(spacing: 15) {
 					ForEach(viewModel.tags) { friendTag in
 						InviteTagRow(friendTag: friendTag)
-							.background(
-								RoundedRectangle(cornerRadius: 12)
-									.fill(
-										Color(hex: friendTag.colorHexCode)
-											.opacity(0.5)
-									)
-									.cornerRadius(
-										universalRectangleCornerRadius
-									)
-							)
 							.environmentObject(viewModel)
 					}
 				}
@@ -70,7 +61,10 @@ extension InviteTagsView {
 
 struct InviteTagRow: View {
 	@EnvironmentObject var viewModel: TagsViewModel
+	@EnvironmentObject var eventCreationViewModel: EventCreationViewModel
+
 	var friendTag: FriendTag
+	@State private var isClicked: Bool = false
 
 	init(friendTag: FriendTag) {
 		self.friendTag = friendTag
@@ -90,10 +84,20 @@ struct InviteTagRow: View {
 				InviteTagFriendsView(friends: friendTag.friends)
 			}
 			.padding()
-			.background(
+		}
+		.background(
+			ZStack {
+				// Fill the RoundedRectangle with color
 				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-					.fill(Color(hex: friendTag.colorHexCode))
-			)
+					.fill(Color(hex: friendTag.colorHexCode).opacity(0.5))
+
+				// Conditionally apply the stroke
+				if isClicked {
+					RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+						.stroke(universalAccentColor, lineWidth: 5)
+				}
+			}
+		)
 		.onTapGesture {
 			isClicked.toggle()
 			if isClicked {
