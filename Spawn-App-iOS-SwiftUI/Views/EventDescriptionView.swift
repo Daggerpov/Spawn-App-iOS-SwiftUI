@@ -68,8 +68,6 @@ struct EventDescriptionView: View {
             .cornerRadius(universalRectangleCornerRadius)
         }
 		.scrollDisabled(true) // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
-        .padding(.horizontal)
-        .padding(.top, 200)
     }
 }
 

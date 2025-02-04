@@ -24,144 +24,157 @@ struct EventCreationView: View {
 	}
 
 	var body: some View {
-		NavigationStack{
-			VStack(alignment: .leading, spacing: 20) {
-				EventInputFieldLabel(text: "event name")
-				EventInputField(value: $viewModel.event.title)
+			NavigationStack {
+				ScrollView {
+					VStack(alignment: .leading, spacing: 12) {
+						EventInputFieldLabel(text: "event name")
+						EventInputField(value: $viewModel.event.title)
 
-				HStack {
-					VStack(alignment: .leading) {
-						EventInputFieldLabel(text: "date")
-						HStack {
-							Image(systemName: "calendar")
-								.resizable()
-								.frame(width: 24, height: 24)
-								.foregroundColor(.secondary)
-								.padding(.leading)
-							Button(action: { showFullDatePicker = true }) {
-								Text(viewModel.formatDate(selectedDate))
-									.padding()
-									.foregroundColor(.primary)
-									.background(
-										Rectangle()
-											.foregroundColor(Color("#D9D9D2"))
-											.background(
-												Color(.init(gray: 0, alpha: 0.055))
-											)
-											.frame(
-												maxWidth: .infinity, minHeight: 46,
-												maxHeight: 46
-											)
-											.cornerRadius(15)
-									)
-							}
-						}
-						.sheet(isPresented: $showFullDatePicker) {
-							fullDatePickerView
-						}
-					}
-
-					Spacer()
-
-					VStack(alignment: .leading) {
-						EventInputFieldLabel(text: "invite friends")
-							.padding(.leading, 26)
-							.padding(.bottom, 10)
-						Spacer()
-						NavigationLink(destination: {
-							InviteView(user: creatingUser)
-						}) {
-							HStack {
-								Circle()
-									.fill(Color.gray.opacity(0.2))
-									.frame(width: 30, height: 30)
-									.overlay(
-										Circle()
-											.stroke(
-												.secondary,
-												style: StrokeStyle(
-													lineWidth: 2,
-													dash: [5, 3]  // Length of dash and gap
+						VStack(alignment: .leading) {
+							EventInputFieldLabel(text: "invite friends")
+							Spacer()
+							NavigationLink(destination: {
+								InviteView(user: creatingUser)
+							}) {
+								HStack {
+									Circle()
+										.fill(Color.gray.opacity(0.2))
+										.frame(width: 30, height: 30)
+										.overlay(
+											Circle()
+												.stroke(
+													.secondary,
+													style: StrokeStyle(
+														lineWidth: 2,
+														dash: [5, 3]  // Length of dash and gap
+													)
 												)
-											)
-									)
-									.overlay(
-										Image(systemName: "plus")
-											.foregroundColor(.secondary)
-									)
+										)
+										.overlay(
+											Image(systemName: "plus")
+												.foregroundColor(.secondary)
+										)
+								}
+								.padding(12)
 							}
-							.padding(.leading, 40)
-							.padding(.bottom, 12)
+						}
+
+						HStack {
+							VStack(alignment: .leading) {
+								EventInputFieldLabel(text: "start time")
+								startTimeView
+							}
+							Spacer()
+							VStack(alignment: .leading) {
+								EventInputFieldLabel(text: "end time")
+								endTimeView
+							}
+						}
+
+						HStack {
+							Spacer()
+							VStack(alignment: .leading) {
+								EventInputFieldLabel(text: "date")
+								HStack {
+									Image(systemName: "calendar")
+										.resizable()
+										.frame(width: 24, height: 24)
+										.foregroundColor(.secondary)
+										.padding(.leading)
+									Button(action: { showFullDatePicker = true }) {
+										Text(viewModel.formatDate(selectedDate))
+											.padding()
+											.foregroundColor(.primary)
+											.background(
+												Rectangle()
+													.foregroundColor(
+														Color(hex: "#D9D9D2")
+													)
+													.background(
+														Color(
+															.init(
+																gray: 0,
+																alpha: 0.055)
+														)
+													)
+													.frame(
+														maxWidth: .infinity,
+														minHeight: 46,
+														maxHeight: 46
+													)
+													.cornerRadius(15)
+											)
+									}
+								}
+								.sheet(isPresented: $showFullDatePicker) {
+									fullDatePickerView
+								}
+							}
+
 							Spacer()
 						}
-					}
-				}
 
-				HStack {
-					VStack(alignment: .leading) {
-						EventInputFieldLabel(text: "start time")
-						startTimeView
-					}
-					Spacer()
-					VStack(alignment: .leading) {
-						EventInputFieldLabel(text: "end time")
-						endTimeView
-					}
-				}
-
-				EventInputFieldLabel(text: "location")
-				EventInputField(
-					iconName: "mappin.and.ellipse",
-					value: Binding(
-						get: {
-							viewModel.event.location?.name ?? ""
-						},
-						set: {
-							viewModel.event.location?.name =
-							((($0?.isEmpty) != nil) ? nil : $0) ?? ""
-						}
-					)
-				)
-
-				EventInputFieldLabel(text: "description")
-				EventInputField(
-					value: Binding(
-						get: {
-							viewModel.event.note ?? ""
-						},
-						set: {
-							viewModel.event.note = (($0?.isEmpty) != nil) ? nil : $0
-						}
-					)
-				)
-
-				Button(action: {
-					Task {
-						await viewModel.createEvent()
-					}
-				}) {
-					Text("spawn")
-						.font(Font.custom("Poppins", size: 16).weight(.medium))
-						.frame(maxWidth: .infinity)
-						.kerning(1)
-						.multilineTextAlignment(.center)
-						.padding()
-						.background(
-							RoundedRectangle(cornerRadius: 15).fill(
-								universalAccentColor)
+						EventInputFieldLabel(text: "location")
+						EventInputField(
+							iconName: "mappin.and.ellipse",
+							value: Binding(
+								get: {
+									viewModel.event.location?.name ?? ""
+								},
+								set: {
+									viewModel.event.location?.name =
+									((($0?.isEmpty) != nil) ? nil : $0) ?? ""
+								}
+							)
 						)
-						.foregroundColor(.white)
-				}
-				.padding(.top, 20)
 
+						EventInputFieldLabel(text: "description")
+						EventInputField(
+							value: Binding(
+								get: {
+									viewModel.event.note ?? ""
+								},
+								set: {
+									viewModel.event.note =
+									(($0?.isEmpty) != nil) ? nil : $0
+								}
+							)
+						)
+
+						Button(action: {
+							Task {
+								await viewModel.createEvent()
+							}
+						}) {
+							Text("spawn")
+								.font(
+									Font.custom("Poppins", size: 16).weight(.medium)
+								)
+								.frame(maxWidth: .infinity)
+								.kerning(1)
+								.multilineTextAlignment(.center)
+								.padding()
+								.background(
+									RoundedRectangle(cornerRadius: 15).fill(
+										universalAccentColor)
+								)
+								.foregroundColor(.white)
+						}
+						.padding(.top, 20)
+
+					}
+					.padding(32)
+					.background(universalBackgroundColor)
+					.cornerRadius(universalRectangleCornerRadius) // Apply corner radius here
+					.shadow(radius: 10)
+					.padding(.horizontal, 20)
+				}
+				.scrollDisabled(true)
+				.background(universalBackgroundColor) // Set background color for the ScrollView
+				.frame(maxWidth: .infinity, maxHeight: .infinity)
 			}
-			.padding(32)
-			.background(universalBackgroundColor)
-			.cornerRadius(15)
-			.shadow(radius: 10)
-			.padding(.horizontal, 20)
-			.padding(.vertical, 100)
-		}
+			.background(universalBackgroundColor) // Set background color for the NavigationStack
+			.cornerRadius(universalRectangleCornerRadius) // Apply corner radius to the NavigationStack
 	}
 }
 
@@ -218,7 +231,7 @@ struct TimePicker: View {
 
 	var body: some View {
 		HStack {
-			if let wide = wideImage {
+			if wideImage != nil {
 				Image(systemName: iconName)
 					.resizable()
 					.frame(width: 32, height: 26)
