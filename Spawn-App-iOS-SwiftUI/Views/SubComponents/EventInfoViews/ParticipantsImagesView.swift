@@ -10,7 +10,8 @@ import Foundation
 
 struct ParticipantsImagesView: View {
     var event: Event
-    
+
+	// TODO DANIEL: maybe revisit this logic later
     func participantsCleanup(participants: [User]) -> [User]{
         var participantsFiltered = participants
         // Remove the creator if already in the list
