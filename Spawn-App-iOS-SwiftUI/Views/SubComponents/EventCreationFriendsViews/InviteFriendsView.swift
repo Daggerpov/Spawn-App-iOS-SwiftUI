@@ -9,6 +9,8 @@ import SwiftUI
 
 struct InviteFriendsView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
+	@EnvironmentObject var eventCreationViewModel: EventCreationViewModel
+	
 	let user: User
 
 	init(user: User) {
@@ -56,15 +58,18 @@ struct InviteFriendsView: View {
 }
 
 struct IndividualFriendView: View {
+	@EnvironmentObject var eventCreationViewModel: EventCreationViewModel
+
 	var friend: FriendUserDTO
 	@State private var isSelected: Bool = false
 
 	var body: some View {
 		Button(action: {
+			isSelected.toggle()
 			if isSelected {
-				isSelected = false
+				eventCreationViewModel.selectedFriends.append(friend) // Add to selected friends
 			} else {
-				isSelected = true
+				eventCreationViewModel.selectedFriends.removeAll { $0.id == friend.id } // Remove from selected friends, if it's already in
 			}
 		}) {
 			HStack {

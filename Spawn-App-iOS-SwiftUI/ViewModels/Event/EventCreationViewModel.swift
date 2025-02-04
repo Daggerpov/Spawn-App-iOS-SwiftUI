@@ -11,6 +11,9 @@ class EventCreationViewModel: ObservableObject {
 	@Published var event: Event
 	@Published var creationMessage: String = ""
 
+	@Published var selectedTags: [FriendTag] = []
+	@Published var selectedFriends: [FriendUserDTO] = []
+
 	private var apiService: IAPIService
 
 	init(apiService: IAPIService, creatingUser: User) {

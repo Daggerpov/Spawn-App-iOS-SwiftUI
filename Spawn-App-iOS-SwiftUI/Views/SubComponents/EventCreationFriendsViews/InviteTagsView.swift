@@ -94,6 +94,13 @@ struct InviteTagRow: View {
 				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
 					.fill(Color(hex: friendTag.colorHexCode))
 			)
+		.onTapGesture {
+			isClicked.toggle()
+			if isClicked {
+				eventCreationViewModel.selectedTags.append(friendTag) // Add to selected tags
+			} else {
+				eventCreationViewModel.selectedTags.removeAll { $0.id == friendTag.id } // Remove from selected tags, if it's already in
+			}
 		}
 
 	}
