@@ -8,7 +8,7 @@
 import Foundation
 
 class EventCreationViewModel: ObservableObject {
-	@Published var event: Event
+	@Published var event: EventCreationDTO
 	@Published var creationMessage: String = ""
 
 	@Published var selectedTags: [FriendTag] = []
@@ -18,7 +18,7 @@ class EventCreationViewModel: ObservableObject {
 
 	init(apiService: IAPIService, creatingUser: User) {
 		self.apiService = apiService
-		self.event = Event(id: UUID(), title: "", creatorUser: creatingUser)
+		self.event = EventCreationDTO(id: UUID(), title: "", creatorUserId: creatingUser.id)
 	}
 
 	func createEvent() async -> Void {
