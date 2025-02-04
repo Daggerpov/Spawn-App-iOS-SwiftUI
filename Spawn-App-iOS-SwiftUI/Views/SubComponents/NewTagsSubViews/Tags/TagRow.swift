@@ -63,7 +63,7 @@ struct TagRow: View {
 				.fontWeight(.semibold)
 
 				Spacer()
-				tagFriendsView
+				TagFriendsView(friends: friendTag.friends, isExpanded: $isExpanded)
 			}
 			.padding()
 			.background(
@@ -79,25 +79,6 @@ struct TagRow: View {
 }
 
 extension TagRow {
-	var tagFriendsView: some View {
-		HStack(spacing: -10) {
-			ForEach(0..<2) { _ in
-				Circle()
-					.frame(width: 30, height: 30)
-					.foregroundColor(.gray.opacity(0.2))
-			}
-			Button(action: {
-				withAnimation {
-					isExpanded.toggle()  // Toggle expanded state
-				}
-			}) {
-				Image(systemName: "plus.circle")
-					.font(.system(size: 24))
-					.foregroundColor(universalAccentColor)
-			}
-		}
-	}
-
 	var titleView: some View {
 		Group {
 			if isEditingTitle {
@@ -109,6 +90,31 @@ extension TagRow {
 			} else {
 				Text(friendTag.displayName)
 					.underline()
+			}
+		}
+	}
+}
+
+struct TagFriendsView: View {
+	var friends: [User]?
+	@Binding var isExpanded: Bool
+
+	var body: some View {
+		HStack(spacing: -10) {
+			ForEach(friends ?? []) { friend in
+				if let profilePictureString = friend.profilePicture {
+					Image(profilePictureString)
+						.ProfileImageModifier(imageType: .eventParticipants)
+				}
+			}
+			Button(action: {
+				withAnimation {
+					isExpanded.toggle()  // Toggle expanded state
+				}
+			}) {
+				Image(systemName: "plus.circle")
+					.font(.system(size: 24))
+					.foregroundColor(universalAccentColor)
 			}
 		}
 	}
