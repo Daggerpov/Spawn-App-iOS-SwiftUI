@@ -21,10 +21,10 @@ struct InviteFriendsView: View {
 
 	var body: some View {
 		ScrollView {
-			VStack {
+//			VStack {
 				// TODO: maybe we can implement this later for searching through friends
 				//				SearchView(searchPlaceholderText: "search or add friends")
-			}
+//			}
 			friendsSection
 		}
 		.onAppear {
@@ -38,7 +38,6 @@ struct InviteFriendsView: View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.friends.count > 0 {
 				Text("friends")
-					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
 				VStack(spacing: 16) {

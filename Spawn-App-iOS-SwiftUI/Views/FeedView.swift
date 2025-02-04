@@ -145,7 +145,6 @@ extension FeedView {
 						EventCardView(
 							user: viewModel.user,
 							event: event,
-							// TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
 							color: Color(hex: event.eventFriendTagColorHexCodeForRequestingUser ?? eventColorHexCodes[0])
 						) { event, color in
 							eventInPopup = event
