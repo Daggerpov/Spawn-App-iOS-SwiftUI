@@ -37,7 +37,7 @@ struct EventCreationView: View {
 								InviteView(user: creatingUser)
 							}) {
 								HStack {
-									ForEach(viewModel.selectedFriends ?? []) { friend in
+									ForEach(viewModel.selectedFriends) { friend in
 										if let profilePictureString = friend.profilePicture {
 											Image(profilePictureString)
 												.ProfileImageModifier(imageType: .eventParticipants)
@@ -62,6 +62,31 @@ struct EventCreationView: View {
 										)
 								}
 								.padding(12)
+								HStack {
+									let displayedTags = viewModel.selectedTags.prefix(2)
+									let remainingCount = viewModel.selectedTags.count - displayedTags.count
+
+									ForEach(displayedTags) { tag in
+										Text(tag.displayName)
+											.font(.system(size: 14, weight: .medium))
+											.padding(.horizontal, 10)
+											.padding(.vertical, 5)
+											.background(Color(hex: tag.colorHexCode))
+											.foregroundColor(.white)
+											.clipShape(Capsule())
+									}
+
+									if remainingCount > 0 {
+										Text("+\(remainingCount) more")
+											.font(.system(size: 14, weight: .medium))
+											.padding(.horizontal, 10)
+											.padding(.vertical, 5)
+											.background(universalAccentColor)
+											.foregroundColor(.white)
+											.clipShape(Capsule())
+									}
+								}
+
 							}
 						}
 
