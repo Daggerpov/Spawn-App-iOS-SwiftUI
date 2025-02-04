@@ -64,7 +64,7 @@ class TagsViewModel: ObservableObject {
 			do {
 				switch upsertAction {
 					case .create:
-						try await self.apiService.sendData(newTag, to: url, parameters: [:])
+						try await self.apiService.sendData(newTag, to: url, parameters: nil)
 					case .update:
 						try await self.apiService.updateData(newTag, to: url)
 				}

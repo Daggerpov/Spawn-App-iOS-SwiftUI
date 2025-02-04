@@ -91,7 +91,7 @@ class FriendsTabViewModel: ObservableObject {
 		)
 		if let url = URL(string: APIService.baseURL + "users/friend-request") {
 			do {
-				try await self.apiService.sendData(createdFriendRequest, to: url, parameters: [:])
+				try await self.apiService.sendData(createdFriendRequest, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {
 					friendRequestCreationMessage = "There was an error creating your friend request. Please try again"

@@ -24,8 +24,7 @@ class FeedViewModel: ObservableObject {
 		if let url = URL(string: APIService.baseURL + "events/feedEvents/\(user.id.uuidString)") {
 			do {
 				let fetchedEvents: [Event] = try await self.apiService.fetchData(
-					from: url,
-					parameters: [:]
+					from: url, parameters: nil
 				)
 
 				// Ensure updating on the main thread
