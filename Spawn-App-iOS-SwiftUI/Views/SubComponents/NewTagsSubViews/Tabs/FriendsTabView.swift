@@ -129,7 +129,9 @@ struct FriendsTabView: View {
 					}
 				}
 			} else {
-
+				Spacer()
+				Text("Add some friends!")
+					.foregroundColor(universalAccentColor)
 			}
 		}
 		.padding(.horizontal, 20)
