@@ -128,7 +128,8 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 
-		guard httpResponse.statusCode == 200 else {
+		// 200 means success || 201 means created
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
