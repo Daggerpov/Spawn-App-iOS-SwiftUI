@@ -55,6 +55,7 @@ struct FeedView: View {
 						|| showingEventCreationPopup
 				)
 			}
+			.background(universalBackgroundColor)
 			.onAppear {
 				Task {
 					await viewModel.fetchEventsForUser()
@@ -79,7 +80,8 @@ struct FeedView: View {
 						.onAppear {
 							descriptionOffset = 0
 						}
-						.padding(32)
+						.padding(.horizontal)
+						.padding(.vertical, 250)
 					}
 					.ignoresSafeArea()
 				}
@@ -91,6 +93,7 @@ struct FeedView: View {
 						.onTapGesture {
 							closeCreation()
 						}
+						.ignoresSafeArea()
 
 					EventCreationView(creatingUser: viewModel.user)
 						.offset(x: 0, y: creationOffset)
@@ -98,8 +101,8 @@ struct FeedView: View {
 							creationOffset = 0
 						}
 						.padding(32)
+						.cornerRadius(universalRectangleCornerRadius)
 				}
-				.ignoresSafeArea()
 			}
 		}
 	}
