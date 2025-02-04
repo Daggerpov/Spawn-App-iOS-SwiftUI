@@ -14,22 +14,24 @@ struct InviteTagsView: View {
 	init(user: User) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
-			? MockAPIService(userId: user.id) : APIService(), user: user)
+				? MockAPIService(userId: user.id) : APIService(), user: user)
 	}
 
 	var body: some View {
-		VStack {
-			VStack(alignment: .leading, spacing: 15) {
-				Text("TAGS")
-					.font(.headline)
+		ScrollView {
+			if viewModel.tags.count > 0 {
+				VStack(alignment: .leading, spacing: 15) {
+					Text("TAGS")
+						.font(.headline)
+						.foregroundColor(universalAccentColor)
+				}
+				Spacer()
+				Spacer()
+				tagsSection
+			} else {
+				Text("Create some friend tags to invite groups of friends to your events.")
 					.foregroundColor(universalAccentColor)
-
-				AddTagButtonView(creationStatus: $creationStatus, color: universalAccentColor)
-					.environmentObject(viewModel)
 			}
-			Spacer()
-			Spacer()
-			tagsSection
 		}
 		.onAppear {
 			Task {
@@ -37,6 +39,7 @@ struct InviteTagsView: View {
 			}
 		}
 		.padding()
+		.background(universalBackgroundColor)
 	}
 }
 
@@ -46,7 +49,7 @@ extension InviteTagsView {
 			ScrollView {
 				VStack(spacing: 15) {
 					ForEach(viewModel.tags) { friendTag in
-						TagRow(friendTag: friendTag)
+						InviteTagRow(friendTag: friendTag)
 							.background(
 								RoundedRectangle(cornerRadius: 12)
 									.fill(
@@ -59,6 +62,61 @@ extension InviteTagsView {
 							)
 							.environmentObject(viewModel)
 					}
+				}
+			}
+		}
+	}
+}
+
+struct InviteTagRow: View {
+	@EnvironmentObject var viewModel: TagsViewModel
+	var friendTag: FriendTag
+
+	init(friendTag: FriendTag) {
+		self.friendTag = friendTag
+	}
+
+	var body: some View {
+		VStack {
+			HStack {
+				HStack {
+					Text(friendTag.displayName)
+				}
+				.foregroundColor(.white)
+				.font(.title)
+				.fontWeight(.semibold)
+
+				Spacer()
+				InviteTagFriendsView(friends: friendTag.friends)
+			}
+			.padding()
+			.background(
+				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+					.fill(Color(hex: friendTag.colorHexCode))
+			)
+		}
+
+	}
+}
+
+extension InviteTagRow {
+
+	var titleView: some View {
+		Group {
+			Text(friendTag.displayName)
+				.underline()
+		}
+	}
+}
+
+struct InviteTagFriendsView: View {
+	var friends: [User]?
+	var body: some View {
+		ForEach(friends ?? []) { friend in
+			HStack(spacing: -10) {
+				if let profilePictureString = friend.profilePicture {
+					Image(profilePictureString)
+						.ProfileImageModifier(imageType: .eventParticipants)
 				}
 			}
 		}
