@@ -147,7 +147,7 @@ class APIService: IAPIService {
 		}
 	}
 
-	internal func updateData<T: Encodable>(_ object: T, to url: URL) async throws {
+	internal func updateData<T: Encodable, R: Decodable>(_ object: T, to url: URL) async throws -> R {
 		let encoder = APIService.makeEncoder()
 		let encodedData = try encoder.encode(object)
 
@@ -156,22 +156,25 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 
-		let (_, response) = try await URLSession.shared.data(for: request)
+		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
-			errorMessage = "HTTP request failed for \(url)"
-			print(errorMessage ?? "no error message to log")
-
-			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+			let message = "HTTP request failed for \(url)"
+			print(message)
+			throw APIError.failedHTTPRequest(description: message)
 		}
 
 		guard httpResponse.statusCode == 200 else {
-			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
-			print(errorMessage ?? "no error message to log")
-
+			let message = "Invalid status code \(httpResponse.statusCode) for \(url)"
+			print(message)
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
+
+		// Decode the response into the expected type `R`
+		let decoder = APIService.makeDecoder()
+		return try decoder.decode(R.self, from: data)
 	}
+
 
 	internal func deleteData(from url: URL) async throws {
 		var request = URLRequest(url: url)
