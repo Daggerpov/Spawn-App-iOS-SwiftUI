@@ -28,17 +28,29 @@ class EventCardViewModel: ObservableObject {
 
     }
     
-    public func toggleParticipation() -> Void {
-		// TODO DANIEL: switch to API call
-        if isParticipating {
-            // remove user
-            event.participantUsers?.removeAll(where: { user in
-                user.id == user.id
-            })
-            isParticipating = false
-        } else {
-            event.participantUsers?.append(user)
-            isParticipating = true
-        }
-    }
+	/// Toggles the user's participation status in the event
+	public func toggleParticipation() async {
+		let urlString = "\(APIService.baseURL)events/\(event.id)/toggleStatus/\(user.id)"
+		guard let url = URL(string: urlString) else {
+			print("Invalid URL")
+			return
+		}
+
+		do {
+			// Send a PUT request and receive the updated event in response
+			let updatedEvent: Event = try await apiService.updateData(EmptyBody(), to: url)
+
+			// Update local state after a successful API call
+			await MainActor.run {
+				self.event = updatedEvent
+				self.isParticipating.toggle()
+			}
+		} catch {
+			await MainActor.run {
+				print("Error toggling participation: \(error.localizedDescription)")
+			}
+		}
+	}
 }
+
+struct EmptyBody: Codable {}
