@@ -23,11 +23,14 @@ struct FeedView: View {
 	@State private var creationOffset: CGFloat = 1000
 	// --------
 
+	var user: User
+
 	init(user: User) {
+		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(), user: user))
+				? MockAPIService(userId: user.id) : APIService(), userId: user.id))
 	}
 
 	var body: some View {
@@ -35,7 +38,7 @@ struct FeedView: View {
 			NavigationStack {
 				VStack {
 					Spacer()
-					HeaderView(user: viewModel.user).padding(.top, 50)
+					HeaderView(user: user).padding(.top, 50)
 					Spacer()
 					TagsScrollView(tags: viewModel.tags)
 					// TODO: implement logic here to adjust search results when the tag clicked is changed
@@ -95,7 +98,7 @@ struct FeedView: View {
 						}
 						.ignoresSafeArea()
 
-					EventCreationView(creatingUser: viewModel.user)
+					EventCreationView(creatingUser: user)
 						.offset(x: 0, y: creationOffset)
 						.onAppear {
 							creationOffset = 0
@@ -128,13 +131,13 @@ struct FeedView: View {
 extension FeedView {
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
-			BottomNavButtonView(user: viewModel.user, buttonType: .map)
+			BottomNavButtonView(user: user, buttonType: .map)
 			Spacer()
 			EventCreationButtonView(
 				showingEventCreationPopup:
 					$showingEventCreationPopup)
 			Spacer()
-			BottomNavButtonView(user: viewModel.user, buttonType: .friends)
+			BottomNavButtonView(user: user, buttonType: .friends)
 		}
 	}
 	var eventsListView: some View {
@@ -146,7 +149,7 @@ extension FeedView {
 				} else {
 					ForEach(viewModel.events) { event in
 						EventCardView(
-							user: viewModel.user,
+							user: user,
 							event: event,
 							color: Color(hex: event.eventFriendTagColorHexCodeForRequestingUser ?? eventColorHexCodes[0])
 						) { event, color in

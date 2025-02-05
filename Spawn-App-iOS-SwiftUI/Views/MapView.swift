@@ -9,8 +9,6 @@ import MapKit
 import SwiftUI
 
 struct MapView: View {
-	@EnvironmentObject var user: ObservableUser
-
 	@StateObject private var viewModel: FeedViewModel
 
 	@State private var region = MKCoordinateRegion(
@@ -32,11 +30,14 @@ struct MapView: View {
 	@State private var creationOffset: CGFloat = 1000
 	// ------------
 
+	var user: User
+
 	init(user: User) {
+		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService(), user: user))
+					? MockAPIService(userId: user.id) : APIService(), userId: user.id))
 	}
 
 	var body: some View {
@@ -114,14 +115,14 @@ struct MapView: View {
 extension MapView {
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
-			BottomNavButtonView(user: viewModel.user, buttonType: .feed, source: .map)
+			BottomNavButtonView(user: user, buttonType: .feed, source: .map)
 			Spacer()
 			EventCreationButtonView(
 				showingEventCreationPopup:
 					$showingEventCreationPopup
 			)
 			Spacer()
-			BottomNavButtonView(user: viewModel.user, buttonType: .friends, source: .map)
+			BottomNavButtonView(user: user, buttonType: .friends, source: .map)
 		}
 	}
 
@@ -207,7 +208,7 @@ extension MapView {
 					closeCreation()
 				}
 
-			EventCreationView(creatingUser: viewModel.user)
+			EventCreationView(creatingUser: user)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
 					creationOffset = 0
