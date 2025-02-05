@@ -126,4 +126,8 @@ class MockAPIService: IAPIService {
 
 		throw APIError.invalidData
 	}
+
+	func deleteData(from url: URL) async throws {
+		// do nothing
+	}
 }

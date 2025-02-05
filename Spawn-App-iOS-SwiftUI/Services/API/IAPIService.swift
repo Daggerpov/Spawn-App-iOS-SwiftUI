@@ -15,4 +15,5 @@ protocol IAPIService {
 	func sendData<T: Encodable>(_ object: T, to url: URL, parameters: [String: String]?) async throws -> T where T: Decodable
 	/// generic function for updating (PUTting) data, given a model of type, T
 	func updateData<T: Encodable>(_ object: T, to url: URL) async throws
+	func deleteData(from url: URL) async throws
 }

@@ -172,4 +172,24 @@ class APIService: IAPIService {
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 	}
+
+	internal func deleteData(from url: URL) async throws {
+		var request = URLRequest(url: url)
+		request.httpMethod = "DELETE" // Set the HTTP method to DELETE
+
+		let (_, response) = try await URLSession.shared.data(for: request)
+
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+
+		// Check for a successful status code (204 is commonly used for successful deletions)
+		guard httpResponse.statusCode == 204 || httpResponse.statusCode == 200 else {
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+	}
 }
