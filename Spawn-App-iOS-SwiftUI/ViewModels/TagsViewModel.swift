@@ -58,7 +58,7 @@ class TagsViewModel: ObservableObject {
 			id: id ?? UUID(),
 			displayName: displayName,
 			colorHexCode: colorHexCode,
-			ownerUserId: user.id
+			ownerUserId: userId
 		)
 
 		if let url = URL(string: APIService.baseURL + "friendTags") {
@@ -80,5 +80,21 @@ class TagsViewModel: ObservableObject {
 		// re-fetching tags after creation, since it's now
 		// been created and should be added to this group
 		await fetchTags()
+	}
+
+	func deleteTag(id: UUID) async {
+		if let url = URL(string: APIService.baseURL + "friendTags/\(id)") {
+			do {
+				try await self.apiService.deleteData(from: url)
+				await MainActor.run {
+					self.tags.removeAll { $0.id == id } // Remove the tag from the local list
+				}
+			} catch {
+				await MainActor.run {
+					deletionMessage = "There was an error deleting the tag. Please try again."
+					print(apiService.errorMessage ?? "")
+				}
+			}
+		}
 	}
 }
