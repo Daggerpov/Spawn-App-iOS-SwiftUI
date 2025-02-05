@@ -22,7 +22,7 @@ struct InviteTagsView: View {
 		ScrollView {
 			if viewModel.tags.count > 0 {
 				VStack(alignment: .leading, spacing: 15) {
-					Text("TAGS")
+					Text("Invite friends by tag:")
 						.font(.headline)
 						.foregroundColor(universalAccentColor)
 				}
