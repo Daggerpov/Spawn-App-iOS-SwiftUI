@@ -11,7 +11,7 @@ struct InviteView: View {
 	let user: User
 
 	//TODO: fix the friendtag toggle to look like figma design
-	@State private var selectedTab: FriendTagToggle = .friends // TODO DANIEL: change back to tags later
+	@State private var selectedTab: FriendTagToggle = .friends 
 
 	init(user: User) {
 		self.user = user

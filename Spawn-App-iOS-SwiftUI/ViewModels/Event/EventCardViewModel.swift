@@ -21,7 +21,6 @@ class EventCardViewModel: ObservableObject {
     
     /// returns whether the logged in app user is part of the event's participants array
     public func fetchIsParticipating() -> Void {
-		// TODO DANIEL: switch to API call
         self.isParticipating = ((event.participantUsers?.contains(where: { user in
             user.id == user.id
         })) != nil)

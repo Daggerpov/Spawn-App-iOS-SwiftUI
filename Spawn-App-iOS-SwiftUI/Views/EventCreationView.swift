@@ -35,6 +35,7 @@ struct EventCreationView: View {
 							Spacer()
 							NavigationLink(destination: {
 								InviteView(user: creatingUser)
+									.environmentObject(viewModel)
 							}) {
 								HStack {
 									ForEach(viewModel.selectedFriends) { friend in
