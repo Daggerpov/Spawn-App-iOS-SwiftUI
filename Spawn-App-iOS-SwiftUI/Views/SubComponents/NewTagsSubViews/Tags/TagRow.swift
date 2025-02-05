@@ -18,6 +18,8 @@ struct TagRow: View {
 	@State private var editedTitleText: String
 	@State private var editedColorHexCode: String
 
+	@State private var showDeleteAlert: Bool = false
+
 	init(friendTag: FriendTag) {
 		self.friendTag = friendTag
 		self._titleText = State(initialValue: friendTag.displayName)
@@ -54,6 +56,16 @@ struct TagRow: View {
 								systemName: isEditingTitle
 								? "checkmark" : "pencil")
 						}
+						
+						if isEditingTitle {
+							Button(action: {
+								showDeleteAlert = true
+							}) {
+								Image(systemName: "trash")
+							}
+
+						}
+
 					} else {
 						Text(friendTag.displayName)
 					}
@@ -74,7 +86,16 @@ struct TagRow: View {
 				ExpandedTagView(currentSelectedColorHexCode: $editedColorHexCode,friendTag: friendTag)
 			}
 		}
-
+		.alert("Delete Friend Tag", isPresented: $showDeleteAlert) { // Add the alert
+			Button("Yes", role: .destructive) {
+				Task {
+					await viewModel.deleteTag(id: friendTag.id) // Call the delete method
+				}
+			}
+			Button("No, I'll keep it", role: .cancel) {}
+		} message: {
+			Text("Are you sure you want to delete this friend tag?")
+		}
 	}
 }
 
