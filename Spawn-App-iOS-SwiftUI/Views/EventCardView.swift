@@ -41,7 +41,9 @@ struct EventCardView: View {
                         .frame(width: 30)
                     Circle()
                         .CircularButton(systemName: viewModel.isParticipating ? "checkmark" : "star.fill", buttonActionCallback: {
-                            viewModel.toggleParticipation()
+							Task{
+								await viewModel.toggleParticipation()
+							}
                         })
                 }
                 .frame(alignment: .trailing)

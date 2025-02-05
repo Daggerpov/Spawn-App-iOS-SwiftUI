@@ -26,7 +26,7 @@ struct FriendsView: View {
                 if selectedTab == .friends {
                     FriendsTabView(user: user)
                 } else {
-                    TagsTabView(user: user)
+					TagsTabView(userId: user.id)
                 }
             }
             .padding()
