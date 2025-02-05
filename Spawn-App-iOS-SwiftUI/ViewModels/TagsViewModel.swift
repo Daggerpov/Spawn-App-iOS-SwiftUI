@@ -10,25 +10,26 @@ import Foundation
 class TagsViewModel: ObservableObject {
 	@Published var tags: [FriendTag] = []
 	@Published var creationMessage: String = ""
+	@Published var deletionMessage: String = ""
 
 	var apiService: IAPIService
-	var user: User
+	var userId: UUID
 
 	var newTag: FriendTagCreationDTO
 
-	init(apiService: IAPIService, user: User) {
+	init(apiService: IAPIService, userId: UUID) {
 		self.apiService = apiService
-		self.user = user
+		self.userId = userId
 		self.newTag = FriendTagCreationDTO(
 			id: UUID(),
 			displayName: "",
 			colorHexCode: "",
-			ownerUserId: user.id
+			ownerUserId: userId
 		)
     }
 
 	func fetchTags() async -> Void {
-		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(user.id)") {
+		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId)") {
 			do {
 				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url,
 																				   parameters: ["full": "true"]

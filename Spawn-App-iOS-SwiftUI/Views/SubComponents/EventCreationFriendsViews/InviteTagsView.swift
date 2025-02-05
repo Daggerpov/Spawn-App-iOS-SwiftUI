@@ -15,7 +15,7 @@ struct InviteTagsView: View {
 	init(user: User) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(), user: user)
+			? MockAPIService(userId: user.id) : APIService(), userId: user.id)
 	}
 
 	var body: some View {
