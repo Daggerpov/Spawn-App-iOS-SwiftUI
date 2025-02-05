@@ -132,5 +132,5 @@ struct IndividualFriendView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	InviteFriendsView(user: .danielLee)
+	InviteFriendsView(user: .danielAgapov)
 }

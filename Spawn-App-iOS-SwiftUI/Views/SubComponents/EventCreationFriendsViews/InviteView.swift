@@ -66,5 +66,5 @@ private extension InviteView {
 @available(iOS 17.0, *)
 #Preview
 {
-	InviteView(user: .danielLee)
+	InviteView(user: .danielAgapov)
 }

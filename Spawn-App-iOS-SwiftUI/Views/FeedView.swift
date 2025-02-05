@@ -123,7 +123,7 @@ struct FeedView: View {
 @available(iOS 17.0, *)
 #Preview {
 	@Previewable
-	@StateObject var observableUser = ObservableUser(user: .danielLee)
+	@StateObject var observableUser = ObservableUser(user: .danielAgapov)
 
 	FeedView(user: observableUser.user)
 }

@@ -222,7 +222,7 @@ extension MapView {
 
 @available(iOS 17.0, *)
 #Preview {
-	MapView(user: .danielLee)
+	MapView(user: .danielAgapov)
 }
 
 struct Triangle: Shape {

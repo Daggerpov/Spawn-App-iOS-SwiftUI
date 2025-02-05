@@ -70,5 +70,5 @@ private extension FriendsView {
 @available(iOS 17.0, *)
 #Preview
 {
-	FriendsView(user: .danielLee, source: .feed)
+	FriendsView(user: .danielAgapov, source: .feed)
 }
