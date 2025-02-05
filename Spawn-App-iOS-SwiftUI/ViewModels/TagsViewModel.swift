@@ -67,7 +67,7 @@ class TagsViewModel: ObservableObject {
 					case .create:
 						try await self.apiService.sendData(newTag, to: url, parameters: nil)
 					case .update:
-						try await self.apiService.updateData(newTag, to: url)
+						let update: FriendTagCreationDTO = try await self.apiService.updateData(newTag, to: url)
 				}
 			} catch {
 				await MainActor.run {
