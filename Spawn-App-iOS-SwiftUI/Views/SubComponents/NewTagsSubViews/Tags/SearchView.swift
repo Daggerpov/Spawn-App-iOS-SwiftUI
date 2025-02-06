@@ -8,8 +8,13 @@
 import SwiftUI
 
 struct SearchView: View {
-	@StateObject var viewModel: SearchViewModel = SearchViewModel()
+	@ObservedObject var viewModel: SearchViewModel
     var searchPlaceholderText: String
+
+	init(searchPlaceholderText: String, viewModel: SearchViewModel) {
+		self.searchPlaceholderText = searchPlaceholderText
+		self.viewModel = viewModel
+	}
 
 	var body: some View {
 		VStack{
