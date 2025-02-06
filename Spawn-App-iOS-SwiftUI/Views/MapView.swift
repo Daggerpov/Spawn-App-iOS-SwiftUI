@@ -107,6 +107,7 @@ struct MapView: View {
 	}
 
 	func closeCreation() {
+		EventCreationViewModel.reInitialize()
 		creationOffset = 1000
 		showingEventCreationPopup = false
 	}

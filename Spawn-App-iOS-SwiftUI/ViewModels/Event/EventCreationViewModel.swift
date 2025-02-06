@@ -8,8 +8,9 @@
 import Foundation
 
 class EventCreationViewModel: ObservableObject {
-	static let shared: EventCreationViewModel = EventCreationViewModel()
-	
+	// semi-singleton, that can only be reset upon calling `reInitialize()`
+	static var shared: EventCreationViewModel = EventCreationViewModel()
+
 	@Published var event: EventCreationDTO
 	@Published var creationMessage: String = ""
 
@@ -17,6 +18,10 @@ class EventCreationViewModel: ObservableObject {
 	@Published var selectedFriends: [FriendUserDTO] = []
 
 	private var apiService: IAPIService
+
+	public static func reInitialize() {
+		shared = EventCreationViewModel()
+	}
 
 	// Private initializer to enforce singleton pattern
 	private init() {

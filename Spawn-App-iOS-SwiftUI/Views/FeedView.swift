@@ -115,6 +115,7 @@ struct FeedView: View {
 	}
 
 	func closeCreation() {
+		EventCreationViewModel.reInitialize()
 		creationOffset = 1000
 		showingEventCreationPopup = false
 	}
