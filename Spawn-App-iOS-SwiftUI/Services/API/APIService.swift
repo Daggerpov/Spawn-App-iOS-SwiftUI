@@ -11,6 +11,12 @@ class APIService: IAPIService {
 	static var baseURL: String = "https://spawn-app-back-end-production.up.railway.app/api/v1/"
 
 	var errorMessage: String? // TODO: currently not being accessed; maybe use in alert to user
+	var errorStatusCode: Int? // if 404 -> just populate empty array, that's fine
+
+	private func resetState() -> Void {
+		errorMessage = nil
+		errorStatusCode = nil
+	}
 
 	// Shared JSONDecoder for decoding data from the backend
 	/// Note: not currently being used
@@ -52,6 +58,8 @@ class APIService: IAPIService {
 	}
 
 	internal func fetchData<T: Decodable>(from url: URL, parameters: [String: String]? = nil) async throws -> T where T: Decodable {
+		resetState()
+
 		// Create a URLComponents object from the URL
 		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
@@ -76,6 +84,7 @@ class APIService: IAPIService {
 		}
 
 		guard httpResponse.statusCode == 200 else {
+			errorStatusCode = httpResponse.statusCode
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
@@ -97,6 +106,8 @@ class APIService: IAPIService {
 		to url: URL,
 		parameters: [String: String]? = nil
 	) async throws -> U {
+		resetState()
+
 		// Create a URLComponents object from the URL
 		var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
@@ -128,7 +139,7 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 
-		// 200 means success || 201 means created
+		// 200 means success || 201 means created, which is also fine for a POST request
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
@@ -148,6 +159,8 @@ class APIService: IAPIService {
 	}
 
 	internal func updateData<T: Encodable, R: Decodable>(_ object: T, to url: URL) async throws -> R {
+		resetState()
+
 		let encoder = APIService.makeEncoder()
 		let encodedData = try encoder.encode(object)
 
@@ -165,6 +178,7 @@ class APIService: IAPIService {
 		}
 
 		guard httpResponse.statusCode == 200 else {
+			errorStatusCode = httpResponse.statusCode
 			let message = "Invalid status code \(httpResponse.statusCode) for \(url)"
 			print(message)
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
@@ -177,6 +191,8 @@ class APIService: IAPIService {
 
 
 	internal func deleteData(from url: URL) async throws {
+		resetState()
+
 		var request = URLRequest(url: url)
 		request.httpMethod = "DELETE" // Set the HTTP method to DELETE
 
@@ -190,6 +206,7 @@ class APIService: IAPIService {
 
 		// Check for a successful status code (204 is commonly used for successful deletions)
 		guard httpResponse.statusCode == 204 || httpResponse.statusCode == 200 else {
+			errorStatusCode = httpResponse.statusCode
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
