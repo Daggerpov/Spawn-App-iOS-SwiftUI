@@ -9,8 +9,8 @@ import SwiftUI
 
 struct InviteFriendsView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
-	@EnvironmentObject var eventCreationViewModel: EventCreationViewModel
-	
+	@ObservedObject var eventCreationViewModel: EventCreationViewModel = EventCreationViewModel.shared
+
 	let user: User
 
 	init(user: User) {
@@ -22,27 +22,32 @@ struct InviteFriendsView: View {
 	}
 
 	var body: some View {
-		ScrollView {
-//			VStack {
+		VStack{
+			Text("Invite friends:")
+				.font(.headline)
+				.foregroundColor(universalAccentColor)
+			ScrollView {
+				//			VStack {
 				// TODO: maybe we can implement this later for searching through friends
 				//				SearchView(searchPlaceholderText: "search or add friends")
-//			}
+				//			}
 
-			friendsSection
-		}
-		.onAppear {
-			Task {
-				await viewModel.fetchAllData()
+				friendsSection
 			}
+			.onAppear {
+				Task {
+					await viewModel.fetchAllData()
+				}
+			}
+			Spacer()
 		}
+		.padding()
+		.background(universalBackgroundColor)
 	}
 
 	var friendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.friends.count > 0 {
-				Text("Invite friends:")
-					.foregroundColor(universalAccentColor)
-
 				VStack(spacing: 16) {
 					ForEach(viewModel.friends) { friend in
 						IndividualFriendView(friend: friend)
@@ -59,10 +64,19 @@ struct InviteFriendsView: View {
 }
 
 struct IndividualFriendView: View {
-	@EnvironmentObject var eventCreationViewModel: EventCreationViewModel
+	@ObservedObject var eventCreationViewModel: EventCreationViewModel = EventCreationViewModel.shared
 
 	var friend: FriendUserDTO
 	@State private var isSelected: Bool = false
+
+	init(friend: FriendUserDTO) {
+		self.friend = friend
+		if eventCreationViewModel.selectedFriends.contains(friend) {
+			self._isSelected = State(initialValue: true)
+		} else {
+			self._isSelected = State(initialValue: false)
+		}
+	}
 
 	var body: some View {
 		Button(action: {

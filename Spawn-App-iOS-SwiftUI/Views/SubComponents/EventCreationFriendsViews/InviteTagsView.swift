@@ -15,29 +15,34 @@ struct InviteTagsView: View {
 	init(user: User) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
-			? MockAPIService(userId: user.id) : APIService(), userId: user.id)
+				? MockAPIService(userId: user.id) : APIService(),
+			userId: user.id)
 	}
 
 	var body: some View {
-		ScrollView {
-			if viewModel.tags.count > 0 {
-				VStack(alignment: .leading, spacing: 15) {
-					Text("Invite friends by tag:")
-						.font(.headline)
-						.foregroundColor(universalAccentColor)
-				}
-				Spacer()
-				Spacer()
-				tagsSection
-			} else {
-				Text("Create some friend tags to invite groups of friends to your events.")
+		VStack{
+			Text("Invite friends by tag:")
+				.font(.headline)
+				.foregroundColor(universalAccentColor)
+
+			ScrollView {
+				if viewModel.tags.count > 0 {
+					tagsSection
+						.padding(.top)
+				} else {
+					Text(
+						"Create some friend tags to invite groups of friends to your events."
+					)
 					.foregroundColor(universalAccentColor)
+				}
 			}
-		}
-		.onAppear {
-			Task {
-				await viewModel.fetchTags()
+			.onAppear {
+				Task {
+					await viewModel.fetchTags()
+				}
 			}
+
+			Spacer()
 		}
 		.padding()
 		.background(universalBackgroundColor)
@@ -61,13 +66,19 @@ extension InviteTagsView {
 
 struct InviteTagRow: View {
 	@EnvironmentObject var viewModel: TagsViewModel
-	@EnvironmentObject var eventCreationViewModel: EventCreationViewModel
+	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
+		EventCreationViewModel.shared
 
 	var friendTag: FriendTag
 	@State private var isClicked: Bool = false
 
 	init(friendTag: FriendTag) {
 		self.friendTag = friendTag
+		if eventCreationViewModel.selectedTags.contains(friendTag) {
+			self._isClicked = State(initialValue: true)
+		} else {
+			self._isClicked = State(initialValue: false)
+		}
 	}
 
 	var body: some View {
@@ -93,17 +104,21 @@ struct InviteTagRow: View {
 
 				// Conditionally apply the stroke
 				if isClicked {
-					RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-						.stroke(universalAccentColor, lineWidth: 5)
+					RoundedRectangle(
+						cornerRadius: universalRectangleCornerRadius
+					)
+					.stroke(universalAccentColor, lineWidth: 5)
 				}
 			}
 		)
 		.onTapGesture {
 			isClicked.toggle()
 			if isClicked {
-				eventCreationViewModel.selectedTags.append(friendTag) // Add to selected tags
+				eventCreationViewModel.selectedTags.append(friendTag)  // Add to selected tags
 			} else {
-				eventCreationViewModel.selectedTags.removeAll { $0.id == friendTag.id } // Remove from selected tags, if it's already in
+				eventCreationViewModel.selectedTags.removeAll {
+					$0.id == friendTag.id
+				}  // Remove from selected tags, if it's already in
 			}
 		}
 
