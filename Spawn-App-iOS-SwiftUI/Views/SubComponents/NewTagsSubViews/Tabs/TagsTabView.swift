@@ -11,10 +11,10 @@ struct TagsTabView: View {
 	@ObservedObject var viewModel: TagsViewModel
 	@State private var creationStatus: CreationStatus = .notCreating
 
-	init(user: User) {
+	init(userId: UUID) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
-			? MockAPIService(userId: user.id) : APIService(), user: user)
+			? MockAPIService(userId: userId) : APIService(), userId: userId)
 	}
 
 	var body: some View {

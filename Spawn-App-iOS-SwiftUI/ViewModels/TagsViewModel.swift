@@ -10,25 +10,26 @@ import Foundation
 class TagsViewModel: ObservableObject {
 	@Published var tags: [FriendTag] = []
 	@Published var creationMessage: String = ""
+	@Published var deletionMessage: String = ""
 
 	var apiService: IAPIService
-	var user: User
+	var userId: UUID
 
 	var newTag: FriendTagCreationDTO
 
-	init(apiService: IAPIService, user: User) {
+	init(apiService: IAPIService, userId: UUID) {
 		self.apiService = apiService
-		self.user = user
+		self.userId = userId
 		self.newTag = FriendTagCreationDTO(
 			id: UUID(),
 			displayName: "",
 			colorHexCode: "",
-			ownerUserId: user.id
+			ownerUserId: userId
 		)
     }
 
 	func fetchTags() async -> Void {
-		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(user.id)") {
+		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId)") {
 			do {
 				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url,
 																				   parameters: ["full": "true"]
@@ -39,10 +40,14 @@ class TagsViewModel: ObservableObject {
 					self.tags = fetchedTags
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
+
 				await MainActor.run {
 					self.tags = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
@@ -57,16 +62,16 @@ class TagsViewModel: ObservableObject {
 			id: id ?? UUID(),
 			displayName: displayName,
 			colorHexCode: colorHexCode,
-			ownerUserId: user.id
+			ownerUserId: userId
 		)
 
 		if let url = URL(string: APIService.baseURL + "friendTags") {
 			do {
 				switch upsertAction {
 					case .create:
-						try await self.apiService.sendData(newTag, to: url, parameters: [:])
+						try await self.apiService.sendData(newTag, to: url, parameters: nil)
 					case .update:
-						try await self.apiService.updateData(newTag, to: url)
+						let update: FriendTagCreationDTO = try await self.apiService.updateData(newTag, to: url)
 				}
 			} catch {
 				await MainActor.run {
@@ -79,5 +84,21 @@ class TagsViewModel: ObservableObject {
 		// re-fetching tags after creation, since it's now
 		// been created and should be added to this group
 		await fetchTags()
+	}
+
+	func deleteTag(id: UUID) async {
+		if let url = URL(string: APIService.baseURL + "friendTags/\(id)") {
+			do {
+				try await self.apiService.deleteData(from: url)
+				await MainActor.run {
+					self.tags.removeAll { $0.id == id } // Remove the tag from the local list
+				}
+			} catch {
+				await MainActor.run {
+					deletionMessage = "There was an error deleting the tag. Please try again."
+					print(apiService.errorMessage ?? "")
+				}
+			}
+		}
 	}
 }

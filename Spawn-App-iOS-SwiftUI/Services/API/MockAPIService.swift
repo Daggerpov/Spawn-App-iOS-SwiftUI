@@ -12,6 +12,7 @@ class MockAPIService: IAPIService {
 	static var isMocking: Bool = true
 
 	var errorMessage: String? = nil
+	var errorStatusCode: Int? = nil
 
 	var userId: UUID?
 
@@ -24,9 +25,12 @@ class MockAPIService: IAPIService {
 
 		// fetchEventsForUser():
 
-		if url.absoluteString == APIService.baseURL + "events" {
-			return Event.mockEvents as! T
+		if let userIdForUrl = userId {
+			if url.absoluteString == APIService.baseURL + "events/feedEvents/\(userIdForUrl.uuidString)" {
+				return Event.mockEvents as! T
+			}
 		}
+
 
 		// fetchTagsForUser():
 
@@ -59,7 +63,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/\(userIdForUrl)/friends"
 			{
-				return User.mockUsers as! T
+				return FriendUserDTO.mockUsers as! T
 			}
 		}
 
@@ -67,8 +71,10 @@ class MockAPIService: IAPIService {
 		if let userIdForUrl = userId {
 			// fetchTags():
 
+			// "friendTags/owner/\(user.id)"
+
 			if url.absoluteString == APIService.baseURL
-				+ "friendTags?ownerId=\(userIdForUrl)"
+				+ "friendTags/owner/\(userIdForUrl)"
 			{
 				return FriendTag.mockTags as! T
 			}
@@ -112,13 +118,24 @@ class MockAPIService: IAPIService {
 		throw APIError.invalidData
 	}
 
-	func updateData<T>(_ object: T, to url: URL) async throws where T: Encodable {
+	func updateData<T: Encodable, U: Decodable>(_ object: T, to url: URL) async throws -> U {
 		/// `TagsViewModel.swift`:
 
 		// upsertTag(upsertAction: .update):
+		if url.absoluteString == APIService.baseURL + "friendTags" {
+			return FriendTag.close as! U
+		}
 
-		if url.absoluteString == APIService.baseURL + "friendTags" { return }
+		// Example: Updating an event's participation status
+		if url.absoluteString.contains("events/") && url.absoluteString.contains("/toggleStatus") {
+			// do nothing; whatever
+		}
 
 		throw APIError.invalidData
+	}
+
+
+	func deleteData(from url: URL) async throws {
+		// do nothing
 	}
 }

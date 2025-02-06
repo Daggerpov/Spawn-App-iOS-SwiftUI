@@ -18,6 +18,8 @@ struct TagRow: View {
 	@State private var editedTitleText: String
 	@State private var editedColorHexCode: String
 
+	@State private var showDeleteAlert: Bool = false
+
 	init(friendTag: FriendTag) {
 		self.friendTag = friendTag
 		self._titleText = State(initialValue: friendTag.displayName)
@@ -54,6 +56,16 @@ struct TagRow: View {
 								systemName: isEditingTitle
 								? "checkmark" : "pencil")
 						}
+						
+						if isEditingTitle {
+							Button(action: {
+								showDeleteAlert = true
+							}) {
+								Image(systemName: "trash")
+							}
+
+						}
+
 					} else {
 						Text(friendTag.displayName)
 					}
@@ -63,7 +75,7 @@ struct TagRow: View {
 				.fontWeight(.semibold)
 
 				Spacer()
-				tagFriendsView
+				TagFriendsView(friends: friendTag.friends, isExpanded: $isExpanded)
 			}
 			.padding()
 			.background(
@@ -74,30 +86,20 @@ struct TagRow: View {
 				ExpandedTagView(currentSelectedColorHexCode: $editedColorHexCode,friendTag: friendTag)
 			}
 		}
-
+		.alert("Delete Friend Tag", isPresented: $showDeleteAlert) { // Add the alert
+			Button("Yes", role: .destructive) {
+				Task {
+					await viewModel.deleteTag(id: friendTag.id) // Call the delete method
+				}
+			}
+			Button("No, I'll keep it", role: .cancel) {}
+		} message: {
+			Text("Are you sure you want to delete this friend tag?")
+		}
 	}
 }
 
 extension TagRow {
-	var tagFriendsView: some View {
-		HStack(spacing: -10) {
-			ForEach(0..<2) { _ in
-				Circle()
-					.frame(width: 30, height: 30)
-					.foregroundColor(.gray.opacity(0.2))
-			}
-			Button(action: {
-				withAnimation {
-					isExpanded.toggle()  // Toggle expanded state
-				}
-			}) {
-				Image(systemName: "plus.circle")
-					.font(.system(size: 24))
-					.foregroundColor(universalAccentColor)
-			}
-		}
-	}
-
 	var titleView: some View {
 		Group {
 			if isEditingTitle {
@@ -109,6 +111,31 @@ extension TagRow {
 			} else {
 				Text(friendTag.displayName)
 					.underline()
+			}
+		}
+	}
+}
+
+struct TagFriendsView: View {
+	var friends: [User]?
+	@Binding var isExpanded: Bool
+
+	var body: some View {
+		HStack(spacing: -10) {
+			ForEach(friends ?? []) { friend in
+				if let profilePictureString = friend.profilePicture {
+					Image(profilePictureString)
+						.ProfileImageModifier(imageType: .eventParticipants)
+				}
+			}
+			Button(action: {
+				withAnimation {
+					isExpanded.toggle()  // Toggle expanded state
+				}
+			}) {
+				Image(systemName: "plus.circle")
+					.font(.system(size: 24))
+					.foregroundColor(universalAccentColor)
 			}
 		}
 	}

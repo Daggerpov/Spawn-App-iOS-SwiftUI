@@ -10,7 +10,7 @@ import Foundation
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FriendRequest] = []
 	@Published var recommendedFriends: [User] = []
-	@Published var friends: [User] = []
+	@Published var friends: [FriendUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
 	@Published var createdFriendRequest: FriendRequest?
@@ -39,10 +39,13 @@ class FriendsTabViewModel: ObservableObject {
 					self.incomingFriendRequests = fetchedIncomingFriendRequests
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.incomingFriendRequests = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
@@ -57,10 +60,13 @@ class FriendsTabViewModel: ObservableObject {
 					self.recommendedFriends = fetchedRecommendedFriends
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.recommendedFriends = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
@@ -68,17 +74,20 @@ class FriendsTabViewModel: ObservableObject {
 	internal func fetchFriends() async {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends") {
 			do {
-				let fetchedFriends: [User] = try await self.apiService.fetchData(from: url, parameters: nil)
+				let fetchedFriends: [FriendUserDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.friends = fetchedFriends
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.friends = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
@@ -91,7 +100,7 @@ class FriendsTabViewModel: ObservableObject {
 		)
 		if let url = URL(string: APIService.baseURL + "users/friend-request") {
 			do {
-				try await self.apiService.sendData(createdFriendRequest, to: url, parameters: [:])
+				try await self.apiService.sendData(createdFriendRequest, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {
 					friendRequestCreationMessage = "There was an error creating your friend request. Please try again"

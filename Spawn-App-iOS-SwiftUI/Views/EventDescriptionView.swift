@@ -18,7 +18,7 @@ struct EventDescriptionView: View {
     }
     
     var body: some View {
-        VStack {
+        ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Title and Time Information
                 EventCardTopRowView(event: viewModel.event)
@@ -67,8 +67,7 @@ struct EventDescriptionView: View {
             .background(color)
             .cornerRadius(universalRectangleCornerRadius)
         }
-        .padding(.horizontal)
-        .padding(.top, 200)
+		.scrollDisabled(true) // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
     }
 }
 

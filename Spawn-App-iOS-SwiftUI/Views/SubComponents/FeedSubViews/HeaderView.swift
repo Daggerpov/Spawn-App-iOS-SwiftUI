@@ -46,6 +46,7 @@ struct HeaderView: View {
 							} placeholder: {
 								Circle()
 									.fill(Color.gray)
+									.frame(width: 55, height: 55) // 55 matches .feedPage image type for `ProfileImageModifier`
 							}
 						}
                 }

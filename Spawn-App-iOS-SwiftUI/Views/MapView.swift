@@ -9,8 +9,6 @@ import MapKit
 import SwiftUI
 
 struct MapView: View {
-	@EnvironmentObject var user: ObservableUser
-
 	@StateObject private var viewModel: FeedViewModel
 
 	@State private var region = MKCoordinateRegion(
@@ -18,7 +16,6 @@ struct MapView: View {
 			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
 		span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
 	)
-	let mockTags: [FriendTag] = FriendTag.mockTags
 
 	// MARK - Event Description State Vars
 	@State private var showingEventDescriptionPopup: Bool = false
@@ -32,11 +29,14 @@ struct MapView: View {
 	@State private var creationOffset: CGFloat = 1000
 	// ------------
 
+	var user: User
+
 	init(user: User) {
+		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService(), user: user))
+					? MockAPIService(userId: user.id) : APIService(), userId: user.id))
 	}
 
 	var body: some View {
@@ -57,6 +57,8 @@ struct MapView: View {
 					.padding(.top, 50)
 				}
 				.ignoresSafeArea()
+				.dimmedBackground(isActive: showingEventDescriptionPopup || showingEventCreationPopup
+				)
 			}
 
 			.onAppear {
@@ -101,31 +103,28 @@ struct MapView: View {
 	}
 
 	func closeDescription() {
-		withAnimation(.spring()) {
-			descriptionOffset = 1000
-			showingEventDescriptionPopup = false
-		}
+		descriptionOffset = 1000
+		showingEventDescriptionPopup = false
 	}
 
 	func closeCreation() {
-		withAnimation(.spring()) {
-			creationOffset = 1000
-			showingEventCreationPopup = false
-		}
+		EventCreationViewModel.reInitialize()
+		creationOffset = 1000
+		showingEventCreationPopup = false
 	}
 }
 
 extension MapView {
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
-			BottomNavButtonView(user: viewModel.user, buttonType: .feed, source: .map)
+			BottomNavButtonView(user: user, buttonType: .feed, source: .map)
 			Spacer()
 			EventCreationButtonView(
 				showingEventCreationPopup:
 					$showingEventCreationPopup
 			)
 			Spacer()
-			BottomNavButtonView(user: viewModel.user, buttonType: .friends, source: .map)
+			BottomNavButtonView(user: user, buttonType: .friends, source: .map)
 		}
 	}
 
@@ -194,10 +193,9 @@ extension MapView {
 					)
 					.offset(x: 0, y: descriptionOffset)
 					.onAppear {
-						withAnimation(.spring()) {
-							descriptionOffset = 0
-						}
+						descriptionOffset = 0
 					}
+					.padding(32)
 				}
 				.ignoresSafeArea()
 			}
@@ -211,23 +209,24 @@ extension MapView {
 				.onTapGesture {
 					closeCreation()
 				}
+				.ignoresSafeArea()
 
-			EventCreationView(creatingUser: viewModel.user)
+			EventCreationView(creatingUser: user, closeCallback: closeCreation)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
-					withAnimation(.spring()) {
-						creationOffset = 0
-					}
+					creationOffset = 0
 				}
+				.padding(32)
+				.cornerRadius(universalRectangleCornerRadius)
+				.padding(.bottom, 50)
 		}
-		.ignoresSafeArea()
 	}
 
 }
 
 @available(iOS 17.0, *)
 #Preview {
-	MapView(user: .danielLee)
+	MapView(user: .danielAgapov)
 }
 
 struct Triangle: Shape {

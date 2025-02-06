@@ -21,6 +21,7 @@ struct CreatingTagRowView: View {
 			HStack {
 				Group {
 					TextField("Enter Name", text: $displayName)
+						.backgroundStyle(Color(hex: colorHexCode))
 						.underline()
 
 					Button(action: {

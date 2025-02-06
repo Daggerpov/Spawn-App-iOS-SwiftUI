@@ -9,5 +9,6 @@ import Foundation
 
 class SearchViewModel: ObservableObject {
 	@Published var searchText: String = ""
-	
+
+	// TODO: insert searching api call here later
 }

@@ -12,21 +12,19 @@ class FeedViewModel: ObservableObject {
 	@Published var tags: [FriendTag] = []
 
 	var apiService: IAPIService
-	var user: User
+	var userId: UUID
 
-	init(apiService: IAPIService, user: User) {
+	init(apiService: IAPIService, userId: UUID) {
 		self.apiService = apiService
-		self.user = user
+		self.userId = userId
     }
 
 	func fetchEventsForUser() async -> Void {
-//		/api/v1/events/invitedEvents/{userId}?full=full
-		//  full path: /api/v1/events/invitedEvents/{userId}?full=full
-		if let url = URL(string: APIService.baseURL + "events/invitedEvents/\(user.id.uuidString)") {
+		// /api/v1/events/feedEvents/{requestingUserId}
+		if let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId.uuidString)") {
 			do {
 				let fetchedEvents: [Event] = try await self.apiService.fetchData(
-					from: url,
-					parameters: ["full":"true"]
+					from: url, parameters: nil
 				)
 
 				// Ensure updating on the main thread
@@ -34,17 +32,20 @@ class FeedViewModel: ObservableObject {
 					self.events = fetchedEvents
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.events = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
 
 	func fetchTagsForUser() async -> Void {
 		// /api/v1/friendTags/owner/{ownerId}?full=full
-		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(user.id.uuidString)") {
+		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId.uuidString)") {
 			do {
 				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["full": "true"])
 
@@ -53,10 +54,13 @@ class FeedViewModel: ObservableObject {
 					self.tags = fetchedTags
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.tags = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}

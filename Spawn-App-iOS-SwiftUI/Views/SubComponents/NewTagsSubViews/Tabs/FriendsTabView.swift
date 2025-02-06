@@ -116,28 +116,7 @@ struct FriendsTabView: View {
 									.font(.system(size: 16, weight: .bold))
 									.foregroundColor(universalBackgroundColor)
 
-								HStack(spacing: 8) {
-									// TODO: replace with real friend tags
-									Text("Close Friends")
-										.font(
-											.system(size: 14, weight: .medium)
-										)
-										.padding(.horizontal, 12)
-										.padding(.vertical, 6)
-										.background(Color("TagColorPurple"))
-										.foregroundColor(.white)
-										.cornerRadius(12)
-
-									Text("Hobbies")
-										.font(
-											.system(size: 14, weight: .medium)
-										)
-										.padding(.horizontal, 12)
-										.padding(.vertical, 6)
-										.background(Color("TagColorGreen"))
-										.foregroundColor(.white)
-										.cornerRadius(12)
-								}
+								FriendTagsForFriendView(friend: friend)
 							}
 							.padding(.leading, 8)
 
@@ -150,7 +129,9 @@ struct FriendsTabView: View {
 					}
 				}
 			} else {
-
+				Spacer()
+				Text("Add some friends!")
+					.foregroundColor(universalAccentColor)
 			}
 		}
 		.padding(.horizontal, 20)
@@ -217,6 +198,34 @@ struct FriendsTabView: View {
 			.padding(.horizontal, 16)
 			.background(universalAccentColor)
 			.cornerRadius(16)
+		}
+	}
+
+	struct FriendTagsForFriendView: View {
+		var friend: FriendUserDTO
+		var body: some View {
+			HStack(spacing: 8) {
+				// Tags in groups of 2
+				let columns = [
+					GridItem(.flexible(), spacing: 8),
+					GridItem(.flexible(), spacing: 8)
+				]
+
+				LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+					ForEach(friend.associatedFriendTagsToOwner ?? []) { friendTag in
+						Text(friendTag.displayName)
+							.font(.system(size: 10, weight: .medium))
+							.padding(.horizontal, 12)
+							.padding(.vertical, 6)
+							.background(Color(hex: friendTag.colorHexCode))
+							.foregroundColor(.white)
+							.cornerRadius(12)
+							.lineLimit(1) // Ensure text doesn't wrap
+							.truncationMode(.tail) // Truncate with "..." if text is too long
+					}
+				}
+			}
+
 		}
 	}
 
