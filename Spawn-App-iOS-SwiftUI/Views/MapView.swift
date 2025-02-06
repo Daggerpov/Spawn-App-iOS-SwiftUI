@@ -25,7 +25,7 @@ struct MapView: View {
 	@State private var showingEventCreationPopup: Bool = false
 
 	// for pop-ups:
-	@State private var descriptionOffset: CGFloat = 1000
+	@State private var descriptionOffset: CGFloat = 1500
 	@State private var creationOffset: CGFloat = 1000
 	// ------------
 
@@ -103,7 +103,7 @@ struct MapView: View {
 	}
 
 	func closeDescription() {
-		descriptionOffset = 1000
+		descriptionOffset = 500
 		showingEventDescriptionPopup = false
 	}
 
@@ -132,15 +132,15 @@ extension MapView {
 		Map(
 			coordinateRegion: $region,
 			annotationItems: viewModel.events
-		) { mockEvent in
+		) { event in
 			MapAnnotation(
 				coordinate: CLLocationCoordinate2D(
-					latitude: mockEvent.location?.latitude ?? 0,
-					longitude: mockEvent.location?.longitude ?? 0
+					latitude: event.location?.latitude ?? 0,
+					longitude: event.location?.longitude ?? 0
 				), anchorPoint: CGPoint(x: 0.5, y: 1.0)
 			) {
 				Button(action: {
-					eventInPopup = mockEvent
+					eventInPopup = event
 					colorInPopup = eventColors.randomElement()
 					showingEventDescriptionPopup = true
 				}) {
@@ -153,7 +153,7 @@ extension MapView {
 								.foregroundColor(universalAccentColor)
 
 							let creatorOne: User =
-							mockEvent.creatorUser ?? User.danielAgapov
+							event.creatorUser ?? User.danielAgapov
 
 							if let creatorPfp = creatorOne
 								.profilePicture
@@ -176,7 +176,7 @@ extension MapView {
 
 
 	var eventDescriptionPopupView: some View {
-		Group {
+		Group{
 			if let event = eventInPopup, let color = colorInPopup {
 				ZStack {
 					Color(.black)
@@ -186,16 +186,20 @@ extension MapView {
 						}
 
 					EventDescriptionView(
-						// TODO: adjust to real participants + creator
 						event: event,
-						users: User.mockUsers,
+						users: event.participantUsers,
 						color: color
 					)
 					.offset(x: 0, y: descriptionOffset)
 					.onAppear {
 						descriptionOffset = 0
 					}
-					.padding(32)
+					.padding(.horizontal)
+					// brute-force algorithm I wrote
+					.padding(
+						.vertical,
+						max(330, 330 - CGFloat(100 * (event.chatMessages?.count ?? 0)) - CGFloat (event.note != nil ? 200 : 0))
+					)
 				}
 				.ignoresSafeArea()
 			}
