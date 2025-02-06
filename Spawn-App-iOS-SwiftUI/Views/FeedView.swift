@@ -133,7 +133,7 @@ extension FeedView {
 				}
 				.padding(32)
 				.cornerRadius(universalRectangleCornerRadius)
-				.padding(.bottom, 100)
+				.padding(.bottom, 50)
 		}
 	}
 	var bottomButtonsView: some View {

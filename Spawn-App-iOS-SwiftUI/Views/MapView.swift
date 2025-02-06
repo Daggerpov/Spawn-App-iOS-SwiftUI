@@ -218,7 +218,7 @@ extension MapView {
 				}
 				.padding(32)
 				.cornerRadius(universalRectangleCornerRadius)
-				.padding(.bottom, 100)
+				.padding(.bottom, 50)
 		}
 	}
 
