@@ -9,6 +9,7 @@ import Foundation
 
 protocol IAPIService {
 	var errorMessage: String? { get set }
+	var errorStatusCode: Int? { get set }
 	/// generic function for fetching (GETting) data from API, given a model of type, T, and possibly other request parameters
 	func fetchData<T: Decodable>(from url: URL, parameters: [String: String]?) async throws -> T where T: Decodable
 	/// generic function for sending (POSTing)  data to an API, given a model of type, T

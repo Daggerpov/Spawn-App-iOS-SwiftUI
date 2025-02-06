@@ -12,6 +12,7 @@ class MockAPIService: IAPIService {
 	static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
+	var errorStatusCode: Int? = nil
 
 	var userId: UUID?
 
