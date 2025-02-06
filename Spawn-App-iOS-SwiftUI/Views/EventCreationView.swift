@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct EventCreationView: View {
-	@ObservedObject var viewModel: EventCreationViewModel
+	@ObservedObject var viewModel: EventCreationViewModel = EventCreationViewModel.shared
 
 	@State private var selectedDate: Date = Date()  // Local state for the selected date
 	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
@@ -17,10 +17,6 @@ struct EventCreationView: View {
 
 	init(creatingUser: User) {
 		self.creatingUser = creatingUser
-		self.viewModel = EventCreationViewModel(
-			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: creatingUser.id) : APIService(),
-			creatingUser: creatingUser)
 	}
 
 	var body: some View {

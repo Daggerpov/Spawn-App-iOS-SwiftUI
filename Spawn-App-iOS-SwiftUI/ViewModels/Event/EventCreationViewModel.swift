@@ -8,6 +8,8 @@
 import Foundation
 
 class EventCreationViewModel: ObservableObject {
+	static let shared: EventCreationViewModel = EventCreationViewModel()
+	
 	@Published var event: EventCreationDTO
 	@Published var creationMessage: String = ""
 
@@ -16,9 +18,17 @@ class EventCreationViewModel: ObservableObject {
 
 	private var apiService: IAPIService
 
-	init(apiService: IAPIService, creatingUser: User) {
-		self.apiService = apiService
-		self.event = EventCreationDTO(id: UUID(), title: "", creatorUserId: creatingUser.id)
+	// Private initializer to enforce singleton pattern
+	private init() {
+		self.apiService = MockAPIService.isMocking
+		? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()) : APIService()
+
+		// Initialize the event with the logged-in user's ID
+		self.event = EventCreationDTO(
+			id: UUID(),
+			title: "",
+			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+		)
 	}
 
 	func createEvent() async -> Void {
