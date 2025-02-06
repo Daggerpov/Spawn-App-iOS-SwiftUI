@@ -11,7 +11,7 @@ struct EventCreationView: View {
 	@ObservedObject var viewModel: EventCreationViewModel =
 		EventCreationViewModel.shared
 
-	@State private var selectedDate: Date = Date()  // Local state for the selected date
+	@State private var selectedDate: Date = Date()
 	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
 
 	var creatingUser: User
@@ -31,73 +31,7 @@ struct EventCreationView: View {
 						EventInputFieldLabel(text: "invite friends")
 						Spacer()
 
-						HStack {
-							ForEach(viewModel.selectedFriends) { friend in
-								if let profilePictureString = friend
-									.profilePicture
-								{
-									Image(profilePictureString)
-										.ProfileImageModifier(
-											imageType: .eventParticipants)
-								}
-							}
-							NavigationLink(destination: {
-								InviteView(user: creatingUser)
-									.environmentObject(viewModel)
-							}) {
-								Circle()
-									.fill(Color.gray.opacity(0.2))
-									.frame(width: 30, height: 30)
-									.overlay(
-										Circle()
-											.stroke(
-												.secondary,
-												style: StrokeStyle(
-													lineWidth: 2,
-													dash: [5, 3]  // Length of dash and gap
-												)
-											)
-									)
-									.overlay(
-										Image(systemName: "plus")
-											.foregroundColor(.secondary)
-									)
-							}
-							HStack {
-								let displayedTags = viewModel.selectedTags
-									.prefix(2)
-								let remainingCount =
-									viewModel.selectedTags.count
-									- displayedTags.count
-
-								ForEach(displayedTags) { tag in
-									Text(tag.displayName)
-										.font(
-											.system(size: 14, weight: .medium)
-										)
-										.padding(.horizontal, 10)
-										.padding(.vertical, 5)
-										.background(
-											Color(hex: tag.colorHexCode)
-										)
-										.foregroundColor(.white)
-										.clipShape(Capsule())
-								}
-
-								if remainingCount > 0 {
-									Text("+\(remainingCount) more")
-										.font(
-											.system(size: 14, weight: .medium)
-										)
-										.padding(.horizontal, 10)
-										.padding(.vertical, 5)
-										.background(universalAccentColor)
-										.foregroundColor(.white)
-										.clipShape(Capsule())
-								}
-							}
-						}
-						.padding(12)
+						invitationsRowView
 					}
 
 					HStack {
@@ -116,51 +50,30 @@ struct EventCreationView: View {
 						Spacer()
 						VStack(alignment: .leading) {
 							EventInputFieldLabel(text: "date")
-							HStack {
-								Image(systemName: "calendar")
-									.resizable()
-									.frame(width: 24, height: 24)
-									.foregroundColor(.secondary)
-									.padding(.leading)
-								Button(action: { showFullDatePicker = true }) {
-									Text(viewModel.formatDate(selectedDate))
-										.padding()
-										.foregroundColor(.primary)
-										.background(
-											Rectangle()
-												.foregroundColor(
-													Color(hex: "#D9D9D2")
-												)
-												.background(
-													Color(
-														.init(
-															gray: 0,
-															alpha: 0.055)
-													)
-												)
-												.frame(
-													maxWidth: .infinity,
-													minHeight: 46,
-													maxHeight: 46
-												)
-												.cornerRadius(15)
-										)
-								}
-							}
-							.sheet(isPresented: $showFullDatePicker) {
-								fullDatePickerView
-							}
+							datePickerView
 						}
 
 						Spacer()
 					}
-					EventInputField(value: $viewModel.event.title)
 
 					EventInputFieldLabel(text: "location")
 					EventInputField(
 						iconName: "mappin.and.ellipse",
 						// TODO DANIEL: change to also include input for lat & long by some map API selection
-						value: $viewModel.event.location.name
+						value: Binding(
+							get: { viewModel.event.location?.name ?? "" },
+							set: { newValue in
+								if let unwrappedNewValue = newValue {
+									if viewModel.event.location == nil {
+										viewModel.event.location = Location(
+											id: UUID(), name: unwrappedNewValue,
+											latitude: 0, longitude: 0)
+									} else {
+										viewModel.event.location?.name =
+											unwrappedNewValue
+									}
+								}
+							}
 						)
 					)
 
@@ -308,6 +221,86 @@ struct TimePicker: View {
 }
 
 extension EventCreationView {
+	var invitationsRowView: some View {
+		HStack {
+			selectedFriendsView
+			Spacer()
+			selectedTagsView
+		}
+	}
+
+	var selectedFriendsView: some View {
+		HStack {
+			ForEach(viewModel.selectedFriends) { friend in
+				if let profilePictureString = friend
+					.profilePicture
+				{
+					Image(profilePictureString)
+						.ProfileImageModifier(
+							imageType: .eventParticipants)
+				}
+			}
+			NavigationLink(destination: {
+				InviteView(user: creatingUser)
+					.environmentObject(viewModel)
+			}) {
+				Circle()
+					.fill(Color.gray.opacity(0.2))
+					.frame(width: 30, height: 30)
+					.overlay(
+						Circle()
+							.stroke(
+								.secondary,
+								style: StrokeStyle(
+									lineWidth: 2,
+									dash: [5, 3]  // Length of dash and gap
+								)
+							)
+					)
+					.overlay(
+						Image(systemName: "plus")
+							.foregroundColor(.secondary)
+					)
+			}
+		}
+	}
+
+	var selectedTagsView: some View {
+		HStack {
+			let displayedTags = viewModel.selectedTags
+				.prefix(2)
+			let remainingCount =
+				viewModel.selectedTags.count
+				- displayedTags.count
+
+			ForEach(displayedTags) { tag in
+				Text(tag.displayName)
+					.font(
+						.system(size: 14, weight: .medium)
+					)
+					.padding(.horizontal, 10)
+					.padding(.vertical, 5)
+					.background(
+						Color(hex: tag.colorHexCode)
+					)
+					.foregroundColor(.white)
+					.clipShape(Capsule())
+			}
+
+			if remainingCount > 0 {
+				Text("+\(remainingCount) more")
+					.font(
+						.system(size: 14, weight: .medium)
+					)
+					.padding(.horizontal, 10)
+					.padding(.vertical, 5)
+					.background(universalAccentColor)
+					.foregroundColor(.white)
+					.clipShape(Capsule())
+			}
+		}
+	}
+
 	var startTimeView: some View {
 		TimePicker(
 			iconName: "clock.fill",
@@ -371,6 +364,43 @@ extension EventCreationView {
 			.padding()
 		}
 		.presentationDetents([.medium])
+	}
+
+	var datePickerView: some View {
+		HStack {
+			Image(systemName: "calendar")
+				.resizable()
+				.frame(width: 24, height: 24)
+				.foregroundColor(.secondary)
+				.padding(.leading)
+			Button(action: { showFullDatePicker = true }) {
+				Text(viewModel.formatDate(selectedDate))
+					.padding()
+					.foregroundColor(.primary)
+					.background(
+						Rectangle()
+							.foregroundColor(
+								Color(hex: "#D9D9D2")
+							)
+							.background(
+								Color(
+									.init(
+										gray: 0,
+										alpha: 0.055)
+								)
+							)
+							.frame(
+								maxWidth: .infinity,
+								minHeight: 46,
+								maxHeight: 46
+							)
+							.cornerRadius(15)
+					)
+			}
+		}
+		.sheet(isPresented: $showFullDatePicker) {
+			fullDatePickerView
+		}
 	}
 }
 
