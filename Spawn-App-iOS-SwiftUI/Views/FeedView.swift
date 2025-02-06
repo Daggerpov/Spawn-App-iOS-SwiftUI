@@ -103,7 +103,7 @@ extension FeedView {
 					
 					EventDescriptionView(
 						event: event,
-						users: User.mockUsers,
+						users: event.participantUsers,
 						color: color
 					)
 					.offset(x: 0, y: descriptionOffset)
@@ -111,7 +111,11 @@ extension FeedView {
 						descriptionOffset = 0
 					}
 					.padding(.horizontal)
-					.padding(.vertical, 250)
+					// brute-force algorithm I wrote
+					.padding(
+						.vertical,
+						max(330, 330 - CGFloat(100 * (event.chatMessages?.count ?? 0)) - CGFloat (event.note != nil ? 200 : 0))
+					)
 				}
 				.ignoresSafeArea()
 			}
