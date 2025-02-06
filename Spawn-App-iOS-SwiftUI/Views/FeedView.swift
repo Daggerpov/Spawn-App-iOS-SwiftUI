@@ -66,46 +66,10 @@ struct FeedView: View {
 				}
 			}
 			if showingEventDescriptionPopup {
-				if let event = eventInPopup, let color = colorInPopup {
-					ZStack {
-						Color(.black)
-							.opacity(0.5)
-							.onTapGesture {
-								closeDescription()
-							}
-
-						EventDescriptionView(
-							event: event,
-							users: User.mockUsers,
-							color: color
-						)
-						.offset(x: 0, y: descriptionOffset)
-						.onAppear {
-							descriptionOffset = 0
-						}
-						.padding(.horizontal)
-						.padding(.vertical, 250)
-					}
-					.ignoresSafeArea()
-				}
+				eventDescriptionPopupView
 			}
 			if showingEventCreationPopup {
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeCreation()
-						}
-						.ignoresSafeArea()
-
-					EventCreationView(creatingUser: user, closeCallback: closeCreation)
-						.offset(x: 0, y: creationOffset)
-						.onAppear {
-							creationOffset = 0
-						}
-						.padding(32)
-						.cornerRadius(universalRectangleCornerRadius)
-				}
+				eventCreationPopupView
 			}
 		}
 	}
@@ -123,13 +87,55 @@ struct FeedView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable
-	@StateObject var observableUser = ObservableUser(user: .danielAgapov)
-
-	FeedView(user: observableUser.user)
+	FeedView(user: .danielAgapov)
 }
 
 extension FeedView {
+	var eventDescriptionPopupView: some View {
+		Group{
+			if let event = eventInPopup, let color = colorInPopup {
+				ZStack {
+					Color(.black)
+						.opacity(0.5)
+						.onTapGesture {
+							closeDescription()
+						}
+					
+					EventDescriptionView(
+						event: event,
+						users: User.mockUsers,
+						color: color
+					)
+					.offset(x: 0, y: descriptionOffset)
+					.onAppear {
+						descriptionOffset = 0
+					}
+					.padding(.horizontal)
+					.padding(.vertical, 250)
+				}
+				.ignoresSafeArea()
+			}
+		}
+	}
+	var eventCreationPopupView: some View {
+		ZStack {
+			Color(.black)
+				.opacity(0.5)
+				.onTapGesture {
+					closeCreation()
+				}
+				.ignoresSafeArea()
+
+			EventCreationView(creatingUser: user, closeCallback: closeCreation)
+				.offset(x: 0, y: creationOffset)
+				.onAppear {
+					creationOffset = 0
+				}
+				.padding(32)
+				.cornerRadius(universalRectangleCornerRadius)
+				.padding(.bottom, 100)
+		}
+	}
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
 			BottomNavButtonView(user: user, buttonType: .map)

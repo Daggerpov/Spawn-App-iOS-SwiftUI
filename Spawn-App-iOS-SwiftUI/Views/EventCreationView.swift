@@ -109,13 +109,13 @@ struct EventCreationView: View {
 				}
 				.padding(32)
 				.background(universalBackgroundColor)
-				.cornerRadius(universalRectangleCornerRadius)  // Apply corner radius here
+				.cornerRadius(universalRectangleCornerRadius)
 				.shadow(radius: 10)
 				.padding(.horizontal, 20)
+				.frame(maxWidth: .infinity, maxHeight: .infinity)
 			}
 			.scrollDisabled(true)
 			.background(universalBackgroundColor)  // Set background color for the ScrollView
-			.frame(maxWidth: .infinity, maxHeight: .infinity)
 		}
 		.background(universalBackgroundColor)  // Set background color for the NavigationStack
 		.cornerRadius(universalRectangleCornerRadius)  // Apply corner radius to the NavigationStack
@@ -265,6 +265,7 @@ extension EventCreationView {
 							.foregroundColor(.secondary)
 					)
 			}
+			.padding(.leading, 12)
 		}
 	}
 

@@ -16,7 +16,6 @@ struct MapView: View {
 			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
 		span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
 	)
-	let mockTags: [FriendTag] = FriendTag.mockTags
 
 	// MARK - Event Description State Vars
 	@State private var showingEventDescriptionPopup: Bool = false
@@ -58,6 +57,8 @@ struct MapView: View {
 					.padding(.top, 50)
 				}
 				.ignoresSafeArea()
+				.dimmedBackground(isActive: showingEventDescriptionPopup || showingEventCreationPopup
+				)
 			}
 
 			.onAppear {
@@ -208,6 +209,7 @@ extension MapView {
 				.onTapGesture {
 					closeCreation()
 				}
+				.ignoresSafeArea()
 
 			EventCreationView(creatingUser: user, closeCallback: closeCreation)
 				.offset(x: 0, y: creationOffset)
@@ -215,8 +217,9 @@ extension MapView {
 					creationOffset = 0
 				}
 				.padding(32)
+				.cornerRadius(universalRectangleCornerRadius)
+				.padding(.bottom, 100)
 		}
-		.ignoresSafeArea()
 	}
 
 }
