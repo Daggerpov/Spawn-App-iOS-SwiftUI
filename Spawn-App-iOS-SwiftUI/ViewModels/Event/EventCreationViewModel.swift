@@ -32,6 +32,9 @@ class EventCreationViewModel: ObservableObject {
 		self.event = EventCreationDTO(
 			id: UUID(),
 			title: "",
+			// location name is input from `EventCreationView`
+			// TODO DANIEL: make lat & long inputtable through clicking on a map
+			location: Location(id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}
