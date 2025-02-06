@@ -23,7 +23,7 @@ class EventCreationViewModel: ObservableObject {
 		self.apiService = MockAPIService.isMocking
 		? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()) : APIService()
 
-		// Initialize the event with the logged-in user's ID
+		// Initialize the event with the logged-in user's `userId`, and a random `id`
 		self.event = EventCreationDTO(
 			id: UUID(),
 			title: "",

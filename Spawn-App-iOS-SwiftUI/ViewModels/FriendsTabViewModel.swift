@@ -39,10 +39,13 @@ class FriendsTabViewModel: ObservableObject {
 					self.incomingFriendRequests = fetchedIncomingFriendRequests
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.incomingFriendRequests = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
@@ -57,10 +60,13 @@ class FriendsTabViewModel: ObservableObject {
 					self.recommendedFriends = fetchedRecommendedFriends
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.recommendedFriends = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
@@ -75,10 +81,13 @@ class FriendsTabViewModel: ObservableObject {
 					self.friends = fetchedFriends
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.friends = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}

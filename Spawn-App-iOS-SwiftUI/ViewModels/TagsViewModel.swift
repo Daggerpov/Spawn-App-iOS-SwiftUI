@@ -40,10 +40,14 @@ class TagsViewModel: ObservableObject {
 					self.tags = fetchedTags
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
+
 				await MainActor.run {
 					self.tags = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
