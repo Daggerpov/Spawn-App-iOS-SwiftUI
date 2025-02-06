@@ -123,6 +123,9 @@ class UserAuthViewModel: ObservableObject {
 					self.spawnUser = fetchedSpawnUser
 				}
 			} catch {
+				await MainActor.run {
+					self.spawnUser = nil
+				}
 				print(apiService.errorMessage ?? "")
 			}
 			await MainActor.run {

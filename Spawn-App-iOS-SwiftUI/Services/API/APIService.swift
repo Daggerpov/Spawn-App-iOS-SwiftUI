@@ -83,7 +83,8 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 
-		guard httpResponse.statusCode == 200 else {
+		// 404 is fine in the context of our back-end
+		guard httpResponse.statusCode == 200  || httpResponse.statusCode == 404 else {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
 			print(errorMessage ?? "no error message to log")
