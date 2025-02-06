@@ -11,6 +11,8 @@ struct FriendsTabView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
 	let user: User
 
+	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
+
 	init(user: User) {
 		self.user = user
 		self.viewModel = FriendsTabViewModel(
@@ -25,7 +27,7 @@ struct FriendsTabView: View {
 				// add friends buttons
 
 				// accept friend req buttons
-				SearchView(searchPlaceholderText: "search or add friends")
+				SearchView(searchPlaceholderText: "search or add friends", viewModel: searchViewModel)
 			}
 			requestsSection
 			recommendedFriendsSection

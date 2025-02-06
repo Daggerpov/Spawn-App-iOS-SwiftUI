@@ -10,7 +10,7 @@ import SwiftUI
 struct FriendRow: View {
     var friend: User
     var action: () -> Void = {}
-    
+
     var body: some View {
         HStack {
             if let profilePictureString = friend.profilePicture {
