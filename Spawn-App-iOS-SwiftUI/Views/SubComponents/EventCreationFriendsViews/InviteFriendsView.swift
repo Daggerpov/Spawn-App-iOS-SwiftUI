@@ -41,8 +41,8 @@ struct InviteFriendsView: View {
 			}
 			Spacer()
 		}
-		.padding()
 		.background(universalBackgroundColor)
+		.frame(maxWidth: .infinity, maxHeight: .infinity)
 	}
 
 	var friendsSection: some View {
@@ -59,7 +59,7 @@ struct InviteFriendsView: View {
 					.foregroundColor(universalAccentColor)
 			}
 		}
-		.padding(.horizontal, 20)
+		.padding()
 	}
 }
 

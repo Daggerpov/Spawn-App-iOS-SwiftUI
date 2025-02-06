@@ -27,7 +27,6 @@ struct InviteView: View {
 					InviteTagsView(user: user)
 				}
 			}
-			.padding()
 			.background(universalBackgroundColor)
 		}
 	}
