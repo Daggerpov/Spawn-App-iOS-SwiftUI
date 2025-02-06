@@ -105,7 +105,8 @@ class MockAPIService: IAPIService {
 		// createEvent():
 
 		if url.absoluteString == APIService.baseURL + "events" {
-			return Event.mockEvents as! U
+//			return Event.mockEvents as! U
+			// do nothing; whatever
 		}
 
 		/// TagsViewModel.swift:
