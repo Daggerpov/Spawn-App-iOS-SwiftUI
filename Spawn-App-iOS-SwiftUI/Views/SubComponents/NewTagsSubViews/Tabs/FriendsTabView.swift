@@ -372,7 +372,7 @@ extension FriendsTabView {
                         // call your new view here
                     
                     
-                    FriendRequestView(user: unwrappedFriendInPopUp, friendRequestId: unwrappedFriendRequestIdInPopup)
+					FriendRequestView(user: unwrappedFriendInPopUp, friendRequestId: unwrappedFriendRequestIdInPopup, closeCallback: closeFriendPopUp)
                 }
             } else {
                 // do nothing; maybe figure something out later
