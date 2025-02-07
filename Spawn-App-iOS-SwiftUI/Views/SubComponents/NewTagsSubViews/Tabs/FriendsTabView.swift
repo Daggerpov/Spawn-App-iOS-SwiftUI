@@ -146,18 +146,36 @@ struct FriendsTabView: View {
 
 		var body: some View {
 			HStack {
-				if let pfp = friend.profilePicture {
-					Image(pfp)
-						.resizable()
-						.scaledToFill()
-						.frame(width: 50, height: 50)
-						.clipShape(Circle())
-						.overlay(
-							Circle().stroke(
-								universalAccentColor, lineWidth: 2)
-						)
+				if MockAPIService.isMocking {
+					if let pfp = friend.profilePicture {
+						Image(pfp)
+							.resizable()
+							.scaledToFill()
+							.frame(width: 50, height: 50)
+							.clipShape(Circle())
+							.overlay(
+								Circle().stroke(
+									universalAccentColor, lineWidth: 2)
+							)
 
+					}
+				} else {
+					if let pfpUrl = friend.profilePicture {
+						AsyncImage(url: URL(string: pfpUrl)) { image in
+							image
+								.ProfileImageModifier(imageType: .friendsListView)
+						} placeholder: {
+							Circle()
+								.fill(Color.gray)
+								.frame(width: 50, height: 50)
+						}
+					} else {
+						Circle()
+							.fill(.white)
+							.frame(width: 25, height: 25)
+					}
 				}
+
 				VStack(alignment: .leading, spacing: 2) {
 					Text(friend.username)
 						.font(.system(size: 16, weight: .bold))
