@@ -12,6 +12,8 @@ class FriendRequestViewModel: ObservableObject {
     var userId: UUID
     var friendRequestId: UUID
 
+	@Published var creationMessage: String = ""
+
     init(apiService: IAPIService, userId: UUID, friendRequestId: UUID) {
         self.apiService = apiService
         self.userId = userId
@@ -27,15 +29,33 @@ class FriendRequestViewModel: ObservableObject {
      
      */
     func acceptFriendRequest() async -> Void {
-//        if let url = URL(string: APIService.baseURL + "") {
-//            do {
-//                try await self.apiService.sendData(event, to: url, parameters: nil)
-//            } catch {
-//                await MainActor.run {
-//                    creationMessage = "There was an error creating your event. Please try again"
-//                    print(apiService.errorMessage ?? "")
-//                }
-//            }
-//        }
+        if let url = URL(string: APIService.baseURL + "users/\(userId)/friend-requests/\(friendRequestId)/accept") {
+            do {
+				let _: EmptyResponse = try await self.apiService.updateData(EmptyRequestBody(), to: url)
+				print("accepted friend request at url: \(url.absoluteString)")
+            } catch {
+                await MainActor.run {
+                    creationMessage = "There was an error accepting the friend request. Please try again"
+                    print(apiService.errorMessage ?? "")
+                }
+            }
+        }
+    }
+
+	func declineFriendRequest() async -> Void {
+        if let url = URL(string: APIService.baseURL + "users/\(userId)/friend-requests/\(friendRequestId)/decline") {
+            do {
+				let _: EmptyResponse = try await self.apiService.updateData(EmptyRequestBody(), to: url)
+				print("declined friend request at url: \(url.absoluteString)")
+            } catch {
+                await MainActor.run {
+                    creationMessage = "There was an error declining the friend request. Please try again"
+                    print(apiService.errorMessage ?? "")
+                }
+            }
+        }
     }
 }
+
+struct EmptyRequestBody: Codable {}
+struct EmptyResponse: Codable {}
