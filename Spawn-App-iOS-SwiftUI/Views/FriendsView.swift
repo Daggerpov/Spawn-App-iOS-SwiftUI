@@ -12,7 +12,7 @@ struct FriendsView: View {
 	let source: BackButtonSourcePageType
 
 	//TODO: fix the friendtag toggle to look like figma design
-	@State private var selectedTab: FriendTagToggle = .tags  // TODO DANIEL: switch back to friends later
+	@State private var selectedTab: FriendTagToggle = .friends 
 
 	// for add friend to tag popup:
 	@State private var showAddFriendToTagButtonPressedPopupView: Bool = false

@@ -50,20 +50,48 @@ struct FriendsTabView: View {
 					HStack(spacing: 12) {
 						ForEach(viewModel.incomingFriendRequests) {
 							friendRequest in
-							if let senderPfp = friendRequest.senderUser
-								.profilePicture
-							{
-								Image(senderPfp)
-									.resizable()
-									.scaledToFill()
-									.frame(width: 50, height: 50)
-									.clipShape(Circle())
-									.overlay(
-										Circle().stroke(
-											universalAccentColor, lineWidth: 2)
-									)
-									.padding(.horizontal, 1)
+							if MockAPIService.isMocking {
+								if let senderPfp = friendRequest.senderUser
+									.profilePicture
+								{
+									Image(senderPfp)
+										.resizable()
+										.scaledToFill()
+										.frame(width: 50, height: 50)
+										.clipShape(Circle())
+										.overlay(
+											Circle().stroke(
+												universalAccentColor, lineWidth: 2)
+										)
+										.padding(.horizontal, 1)
+								}
+							} else {
+								if let pfpUrl = friendRequest.senderUser
+									.profilePicture {
+									AsyncImage(url: URL(string: pfpUrl)) { image in
+										image
+											.resizable()
+											.scaledToFill()
+											.frame(width: 50, height: 50)
+											.clipShape(Circle())
+											.overlay(
+												Circle().stroke(
+													universalAccentColor, lineWidth: 2)
+											)
+											.padding(.horizontal, 1)
+									} placeholder: {
+										Circle()
+											.fill(Color.gray)
+											.frame(width: 50, height: 50)
+									}
+								} else {
+									Circle()
+										.fill(.white)
+										.frame(width: 50, height: 50)
+								}
 							}
+
+
 						}
 					}
 					.padding(.vertical, 2)  // Adjust padding for alignment
@@ -101,16 +129,40 @@ struct FriendsTabView: View {
 				VStack(spacing: 16) {
 					ForEach(viewModel.friends) { friend in
 						HStack {
-							if let pfp = friend.profilePicture {
-								Image(pfp)
-									.resizable()
-									.scaledToFill()
-									.frame(width: 60, height: 60)
-									.clipShape(Circle())
-									.overlay(
-										Circle().stroke(
-											Color.white, lineWidth: 2)
-									)
+							if MockAPIService.isMocking {
+								if let pfp = friend.profilePicture {
+									Image(pfp)
+										.resizable()
+										.scaledToFill()
+										.frame(width: 60, height: 60)
+										.clipShape(Circle())
+										.overlay(
+											Circle().stroke(
+												Color.white, lineWidth: 2)
+										)
+								}
+							} else {
+								if let pfpUrl = friend.profilePicture {
+									AsyncImage(url: URL(string: pfpUrl)) { image in
+										image
+											.resizable()
+											.scaledToFill()
+											.frame(width: 60, height: 60)
+											.clipShape(Circle())
+											.overlay(
+												Circle().stroke(
+													Color.white, lineWidth: 2)
+											)
+									} placeholder: {
+										Circle()
+											.fill(Color.gray)
+											.frame(width: 60, height: 60)
+									}
+								} else {
+									Circle()
+										.fill(.white)
+										.frame(width: 60, height: 60)
+								}
 							}
 
 							VStack(alignment: .leading, spacing: 8) {
@@ -146,18 +198,36 @@ struct FriendsTabView: View {
 
 		var body: some View {
 			HStack {
-				if let pfp = friend.profilePicture {
-					Image(pfp)
-						.resizable()
-						.scaledToFill()
-						.frame(width: 50, height: 50)
-						.clipShape(Circle())
-						.overlay(
-							Circle().stroke(
-								universalAccentColor, lineWidth: 2)
-						)
+				if MockAPIService.isMocking {
+					if let pfp = friend.profilePicture {
+						Image(pfp)
+							.resizable()
+							.scaledToFill()
+							.frame(width: 50, height: 50)
+							.clipShape(Circle())
+							.overlay(
+								Circle().stroke(
+									universalAccentColor, lineWidth: 2)
+							)
 
+					}
+				} else {
+					if let pfpUrl = friend.profilePicture {
+						AsyncImage(url: URL(string: pfpUrl)) { image in
+							image
+								.ProfileImageModifier(imageType: .friendsListView)
+						} placeholder: {
+							Circle()
+								.fill(Color.gray)
+								.frame(width: 50, height: 50)
+						}
+					} else {
+						Circle()
+							.fill(.white)
+							.frame(width: 50, height: 50)
+					}
 				}
+
 				VStack(alignment: .leading, spacing: 2) {
 					Text(friend.username)
 						.font(.system(size: 16, weight: .bold))
