@@ -10,7 +10,15 @@ import SwiftUI
 struct FriendsTabView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
 	let user: User
-
+    
+    @State private var showingFriendRequestPopup: Bool = false
+    @State private var friendInPopUp: FriendRequest?
+    
+    // for pop-ups:
+    @State private var friendRequestOffset: CGFloat = 1000
+    // ------------
+    
+    
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
 
 	init(user: User) {
@@ -22,22 +30,28 @@ struct FriendsTabView: View {
 	}
 
 	var body: some View {
-		ScrollView {
-			VStack {
-				// add friends buttons
-
-				// accept friend req buttons
-				SearchView(searchPlaceholderText: "search or add friends", viewModel: searchViewModel)
-			}
-			requestsSection
-			recommendedFriendsSection
-			friendsSection
-		}
-		.onAppear {
-			Task {
-				await viewModel.fetchAllData()
-			}
-		}
+        ZStack{
+            ScrollView {
+                VStack {
+                    // add friends buttons
+                    
+                    // accept friend req buttons
+                    SearchView(searchPlaceholderText: "search or add friends")
+                }
+                requestsSection
+                recommendedFriendsSection
+                friendsSection
+            }
+            .onAppear {
+                Task {
+                    await viewModel.fetchAllData()
+                }
+            }
+            
+            if showingFriendRequestPopup {
+                friendRequestPopUpView
+            }
+        }
 	}
 
 	var requestsSection: some View {
@@ -190,6 +204,11 @@ struct FriendsTabView: View {
 		}
 		.padding(.horizontal, 20)
 	}
+    
+    func closeFriendPopUp() {
+        friendRequestOffset = 1000
+        showingFriendRequestPopup = false
+    }
 
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
@@ -301,4 +320,49 @@ struct FriendsTabView: View {
 		}
 	}
 
+}
+
+extension FriendsTabView {
+    var friendRequestPopUpView: some View {
+        //        Group {
+        //            if let event = eventInPopup, let color = colorInPopup {
+        //                ZStack {
+        //                    Color(.black)
+        //                        .opacity(0.5)
+        //                        .onTapGesture {
+        //                            closeDescription()
+        //                        }
+        //
+        //                    EventDescriptionView(
+        //                        // TODO: adjust to real participants + creator
+        //                        event: event,
+        //                        users: User.mockUsers,
+        //                        color: color
+        //                    )
+        //                    .offset(x: 0, y: descriptionOffset)
+        //                    .onAppear {
+        //                        descriptionOffset = 0
+        //                    }
+        //                    .padding(32)
+        //                }
+        //                .ignoresSafeArea()
+        //            }
+        //        }
+        Group {
+            if let friendRequest = friendInPopUp {
+                ZStack {
+                    Color(.black)
+                        .opacity(0.5)
+                        .onTapGesture {
+                            closeFriendPopUp()
+                        }
+                        .ignoresSafeArea()
+                    
+                    
+                    
+                    
+                }
+            }
+        }
+    }
 }
