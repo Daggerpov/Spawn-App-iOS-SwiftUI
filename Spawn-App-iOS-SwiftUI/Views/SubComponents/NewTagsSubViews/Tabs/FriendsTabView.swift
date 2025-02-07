@@ -12,12 +12,12 @@ struct FriendsTabView: View {
 	let user: User
     
     @State private var showingFriendRequestPopup: Bool = false
-    @State private var friendInPopUp: FriendRequest?
+    @State private var friendInPopUp: User?
+    @State private var friendRequestIdInPopup: UUID?
     
     // for pop-ups:
     @State private var friendRequestOffset: CGFloat = 1000
     // ------------
-    
     
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
 
@@ -36,7 +36,7 @@ struct FriendsTabView: View {
                     // add friends buttons
                     
                     // accept friend req buttons
-                    SearchView(searchPlaceholderText: "search or add friends")
+                    SearchView(searchPlaceholderText: "search or add friends", viewModel: searchViewModel)
                 }
                 requestsSection
                 recommendedFriendsSection
@@ -64,46 +64,57 @@ struct FriendsTabView: View {
 					HStack(spacing: 12) {
 						ForEach(viewModel.incomingFriendRequests) {
 							friendRequest in
-							if MockAPIService.isMocking {
-								if let senderPfp = friendRequest.senderUser
-									.profilePicture
-								{
-									Image(senderPfp)
-										.resizable()
-										.scaledToFill()
-										.frame(width: 50, height: 50)
-										.clipShape(Circle())
-										.overlay(
-											Circle().stroke(
-												universalAccentColor, lineWidth: 2)
-										)
-										.padding(.horizontal, 1)
-								}
-							} else {
-								if let pfpUrl = friendRequest.senderUser
-									.profilePicture {
-									AsyncImage(url: URL(string: pfpUrl)) { image in
-										image
-											.resizable()
-											.scaledToFill()
-											.frame(width: 50, height: 50)
-											.clipShape(Circle())
-											.overlay(
-												Circle().stroke(
-													universalAccentColor, lineWidth: 2)
-											)
-											.padding(.horizontal, 1)
-									} placeholder: {
-										Circle()
-											.fill(Color.gray)
-											.frame(width: 50, height: 50)
-									}
-								} else {
-									Circle()
-										.fill(.white)
-										.frame(width: 50, height: 50)
-								}
-							}
+                            Button(action: {
+                                // this executes like .onTapGesture() in JS
+                                print("button clicked")
+                                print(friendRequest.senderUser.username)
+                                friendInPopUp = friendRequest.senderUser
+                                friendRequestIdInPopup = friendRequest.id
+                                showingFriendRequestPopup = true
+                            }) {
+                                // this is the Button's display
+                                if MockAPIService.isMocking {
+                                    if let senderPfp = friendRequest.senderUser
+                                        .profilePicture
+                                    {
+                                        Image(senderPfp)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 50, height: 50)
+                                            .clipShape(Circle())
+                                            .overlay(
+                                                Circle().stroke(
+                                                    universalAccentColor, lineWidth: 2)
+                                            )
+                                            .padding(.horizontal, 1)
+                                    }
+                                } else {
+                                    if let pfpUrl = friendRequest.senderUser
+                                        .profilePicture {
+                                        AsyncImage(url: URL(string: pfpUrl)) { image in
+                                            image
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 50, height: 50)
+                                                .clipShape(Circle())
+                                                .overlay(
+                                                    Circle().stroke(
+                                                        universalAccentColor, lineWidth: 2)
+                                                )
+                                                .padding(.horizontal, 1)
+                                        } placeholder: {
+                                            Circle()
+                                                .fill(Color.gray)
+                                                .frame(width: 50, height: 50)
+                                        }
+                                    } else {
+                                        Circle()
+                                            .fill(.white)
+                                            .frame(width: 50, height: 50)
+                                    }
+                                }
+                            }
+							
 
 
 						}
@@ -349,7 +360,7 @@ extension FriendsTabView {
         //            }
         //        }
         Group {
-            if let friendRequest = friendInPopUp {
+            if let unwrappedFriendInPopUp = friendInPopUp, let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup { // ensuring it isn't null
                 ZStack {
                     Color(.black)
                         .opacity(0.5)
@@ -358,9 +369,25 @@ extension FriendsTabView {
                         }
                         .ignoresSafeArea()
                     
+                        // call your new view here
                     
                     
+                    FriendRequestView(user: unwrappedFriendInPopUp, friendRequestId: unwrappedFriendRequestIdInPopup)
+                }
+            } else {
+                // do nothing; maybe figure something out later
+                ZStack {
+                    Color(.black)
+                        .opacity(0.5)
+                        .onTapGesture {
+                            closeFriendPopUp()
+                        }
+                        .ignoresSafeArea()
                     
+                        // call your new view here
+                    
+                    
+                    Text("Sorry, this friend request cannot be viewed at the moment. There is an error.")
                 }
             }
         }

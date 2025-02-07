@@ -8,11 +8,13 @@
 import SwiftUI
 
 struct FriendRequestView: View {
+    @ObservedObject var viewModel: FriendRequestViewModel
     
     let user: User
     
-    init(user: User) {
+    init(user: User, friendRequestId: UUID) {
         self.user = user
+        self.viewModel = FriendRequestViewModel(apiService: MockAPIService.isMocking ? MockAPIService() : APIService(), userId: user.id, friendRequestId: friendRequestId)
     }
 
     
@@ -20,8 +22,17 @@ struct FriendRequestView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .center, spacing: 12) {
+                    // UI, using `user.` properties like: profile picture, username, and name
                     
+                    // call buttons that you make
                     
+                    // TODO SHANNON
+                    
+                    Text(user.username)
+                    Text(FormatterService.shared.formatName(user: user))
+                    Text(user.bio ?? "")
+                    FriendRequestAcceptButton()
+                    FriendRequestDeclineButton()
                 }
                 .padding(32)
                 .background(universalBackgroundColor)
@@ -30,6 +41,7 @@ struct FriendRequestView: View {
                 .padding(.horizontal, 20)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .scrollDisabled(true)
         }
     }
 }
@@ -37,10 +49,25 @@ struct FriendRequestView: View {
 // TODO: grab friend's username
 // TODO: grab friend's name
 //
-//struct FriendRequestAcceptButton: View {
-//    
-//}
+struct FriendRequestAcceptButton: View {
+    var body: some View {
+        Button(action: {
+            // TODO DANIEL
+        }) {
+            Text("accept")
+            // TODO SHANNON
+        }
+    }
+}
 //
-//struct FriendRequestDeclineButton: View {
-//    
-//}
+struct FriendRequestDeclineButton: View {
+    var body: some View {
+        Button(action: {
+            // TODO DANIEL
+        }) {
+            Text("decline")
+            // TODO SHANNON
+        }
+        
+    }
+}
