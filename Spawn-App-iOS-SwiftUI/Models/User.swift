@@ -14,6 +14,7 @@ import SwiftUI
 // tech note: for new friend searching, it should first be done by username, but
 // we could also search by first name and last name, if provided (thus, optional types).
 
+/// corresponds to `FullUserDTO` in the back-end
 struct User: Identifiable, Codable, Hashable {
 	static func == (lhs: User, rhs: User) -> Bool {
 		return lhs.id == rhs.id

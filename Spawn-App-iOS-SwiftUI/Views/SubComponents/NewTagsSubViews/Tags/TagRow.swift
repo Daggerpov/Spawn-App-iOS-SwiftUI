@@ -20,8 +20,11 @@ struct TagRow: View {
 
 	@State private var showDeleteAlert: Bool = false
 
-	init(friendTag: FriendTag) {
+	var addFriendToTagButtonPressedCallback: (UUID) -> Void
+
+	init(friendTag: FriendTag, addFriendToTagButtonPressedCallback: @escaping (UUID) -> Void) {
 		self.friendTag = friendTag
+		self.addFriendToTagButtonPressedCallback = addFriendToTagButtonPressedCallback
 		self._titleText = State(initialValue: friendTag.displayName)
 		self._editedTitleText = State(initialValue: friendTag.displayName)
 		self._editedColorHexCode = State(initialValue: friendTag.colorHexCode)
@@ -83,7 +86,7 @@ struct TagRow: View {
 					.fill(Color(hex: editedColorHexCode))
 			)
 			if isExpanded {
-				ExpandedTagView(currentSelectedColorHexCode: $editedColorHexCode,friendTag: friendTag)
+				ExpandedTagView(currentSelectedColorHexCode: $editedColorHexCode,friendTag: friendTag, isEditingTag: $isEditingTitle, addFriendToTagButtonPressedCallback: addFriendToTagButtonPressedCallback)
 			}
 		}
 		.alert("Delete Friend Tag", isPresented: $showDeleteAlert) { // Add the alert

@@ -11,6 +11,11 @@ struct AddTagButtonView: View {
 	@Binding var creationStatus: CreationStatus
 	@EnvironmentObject var viewModel: TagsViewModel
 
+	// these are for if this button is being used as UI for the add friend to friend tag button, instead of the add tag button (kinda confusing, I know)
+	var addFriendsToTagButtonPressedCallback: ((UUID) -> Void)? = { thing in }
+	var closeCallback: (() -> ())?
+	var friendTagId: UUID?
+
 	var color: Color
 
 	var body: some View {
@@ -20,6 +25,9 @@ struct AddTagButtonView: View {
 					creationStatus = .notCreating
 				} else {
 					creationStatus = .creating
+				}
+				if let tagId = friendTagId, let callback = addFriendsToTagButtonPressedCallback {
+					callback(tagId)
 				}
 			}) {
 				RoundedRectangle(cornerRadius: 12)

@@ -56,7 +56,9 @@ extension InviteTagsView {
 				VStack(spacing: 15) {
 					ForEach(viewModel.tags) { friendTag in
 						InviteTagRow(friendTag: friendTag)
+							.padding(.top, 6)
 							.environmentObject(viewModel)
+
 					}
 				}
 			}
@@ -111,6 +113,7 @@ struct InviteTagRow: View {
 				}
 			}
 		)
+		.padding(.horizontal, 6)
 		.onTapGesture {
 			isClicked.toggle()
 			if isClicked {
