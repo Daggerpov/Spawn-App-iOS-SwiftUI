@@ -7,7 +7,7 @@
 
 import Foundation
 
-/// as defined in the back-end `FriendRequestDTO.java`
+/// as defined in the back-end `FullFriendRequestDTO.java`
 ///
 /// except, the ids are straight-up `User` objects here
 struct FriendRequest: Identifiable, Codable, Hashable {

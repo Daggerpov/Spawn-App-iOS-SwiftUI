@@ -50,8 +50,6 @@ struct FriendsTabView: View {
 					HStack(spacing: 12) {
 						ForEach(viewModel.incomingFriendRequests) {
 							friendRequest in
-
-
 							if MockAPIService.isMocking {
 								if let senderPfp = friendRequest.senderUser
 									.profilePicture
