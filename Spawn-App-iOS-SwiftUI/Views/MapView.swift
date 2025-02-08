@@ -204,12 +204,12 @@ extension MapView {
 				.ignoresSafeArea()
 			}
 		}
-	}
+	} 
 
 	var eventCreationPopupView: some View {
 		ZStack {
 			Color(.black)
-				.opacity(0.5)
+				.opacity(0.5) 
 				.onTapGesture {
 					closeCreation()
 				}
@@ -243,3 +243,5 @@ struct Triangle: Shape {
 		return path
 	}
 }
+
+  
