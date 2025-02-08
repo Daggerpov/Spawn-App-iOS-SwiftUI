@@ -66,8 +66,6 @@ struct FriendsTabView: View {
 							friendRequest in
                             Button(action: {
                                 // this executes like .onTapGesture() in JS
-                                print("button clicked")
-                                print(friendRequest.senderUser.username)
                                 friendInPopUp = friendRequest.senderUser
                                 friendRequestIdInPopup = friendRequest.id
                                 showingFriendRequestPopup = true
@@ -335,30 +333,6 @@ struct FriendsTabView: View {
 
 extension FriendsTabView {
     var friendRequestPopUpView: some View {
-        //        Group {
-        //            if let event = eventInPopup, let color = colorInPopup {
-        //                ZStack {
-        //                    Color(.black)
-        //                        .opacity(0.5)
-        //                        .onTapGesture {
-        //                            closeDescription()
-        //                        }
-        //
-        //                    EventDescriptionView(
-        //                        // TODO: adjust to real participants + creator
-        //                        event: event,
-        //                        users: User.mockUsers,
-        //                        color: color
-        //                    )
-        //                    .offset(x: 0, y: descriptionOffset)
-        //                    .onAppear {
-        //                        descriptionOffset = 0
-        //                    }
-        //                    .padding(32)
-        //                }
-        //                .ignoresSafeArea()
-        //            }
-        //        }
         Group {
             if let unwrappedFriendInPopUp = friendInPopUp, let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup { // ensuring it isn't null
                 ZStack {
