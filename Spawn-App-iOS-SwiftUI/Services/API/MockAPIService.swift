@@ -9,9 +9,10 @@ import Foundation
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = true
+	static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
+	var errorStatusCode: Int? = nil
 
 	var userId: UUID?
 
@@ -19,14 +20,17 @@ class MockAPIService: IAPIService {
 		self.userId = userId
 	}
 
-	func fetchData<T>(from url: URL) async throws -> T where T : Decodable {
+	func fetchData<T>(from url: URL, parameters: [String: String]? = nil) async throws -> T where T: Decodable {
 		/// FeedViewModel.swift:
 
 		// fetchEventsForUser():
 
-		if url.absoluteString == APIService.baseURL + "events" {
-			return Event.mockEvents as! T
+		if let userIdForUrl = userId {
+			if url.absoluteString == APIService.baseURL + "events/feedEvents/\(userIdForUrl.uuidString)" {
+				return Event.mockEvents as! T
+			}
 		}
+
 
 		// fetchTagsForUser():
 
@@ -39,32 +43,41 @@ class MockAPIService: IAPIService {
 		if let userIdForUrl = userId {
 			// fetchIncomingFriendRequests():
 
-			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friend-requests" {
+			if url.absoluteString == APIService.baseURL
+				+ "users/\(userIdForUrl)/friend-requests"
+			{
 				return FriendRequest.mockFriendRequests as! T
 			}
 
 			// fetchRecommendedFriends():
 
-			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/recommended-friends" {
+			if url.absoluteString == APIService.baseURL
+				+ "users/\(userIdForUrl)/recommended-friends"
+			{
 				let firstThreeUsers = Array(User.mockUsers.prefix(3))
 				return firstThreeUsers as! T
 			}
 
 			// fetchFriends():
 
-			if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/friends" {
-				return User.mockUsers as! T
+			if url.absoluteString == APIService.baseURL
+				+ "users/\(userIdForUrl)/friends"
+			{
+				return FriendUserDTO.mockUsers as! T
 			}
 		}
 
-
-
 		/// TagsViewModel.swift:
+		if let userIdForUrl = userId {
+			// fetchTags():
 
-		// fetchTags():
+			// "friendTags/owner/\(user.id)"
 
-		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FriendTag.mockTags as! T
+			if url.absoluteString == APIService.baseURL
+				+ "friendTags/owner/\(userIdForUrl)"
+			{
+				return FriendTag.mockTags as! T
+			}
 		}
 
 		if T.self == User.self {
@@ -74,26 +87,56 @@ class MockAPIService: IAPIService {
 		throw APIError.invalidData
 	}
 
-	func sendData<T>(_ object: T, to url: URL) async throws where T : Encodable {
+	func sendData<T: Encodable, U: Decodable>(_ object: T, to url: URL, parameters: [String: String]? = nil) async throws -> U {
 		/// `FriendsTabViewModel.swift`:
 
 		// addFriend():
 
-		if url.absoluteString == APIService.baseURL + "users/friend-request" {return} // just stop executing
+		if url.absoluteString == APIService.baseURL + "users/friend-request" {
+			return FriendRequest(
+				id: UUID(),
+				senderUser: User.danielAgapov,
+				receiverUser: User.danielLee
+			) as! U
+		}
 
 		/// `EventCreationViewModel.swift`:
 
 		// createEvent():
 
-		if url.absoluteString == APIService.baseURL + "events" {return}
+		if url.absoluteString == APIService.baseURL + "events" {
+//			return Event.mockEvents as! U
+			// do nothing; whatever
+		}
 
 		/// TagsViewModel.swift:
 
-		// createTag():
+		// upsertTag(upsertAction: .create):
 
-		if url.absoluteString == APIService.baseURL + "friendTags" {return}
+		if url.absoluteString == APIService.baseURL + "friendTags" { return FriendTag.close as! U}
 
 		// this means I need to include the url call in this mock `sendData` method:
 		throw APIError.invalidData
+	}
+
+	func updateData<T: Encodable, U: Decodable>(_ object: T, to url: URL) async throws -> U {
+		/// `TagsViewModel.swift`:
+
+		// upsertTag(upsertAction: .update):
+		if url.absoluteString == APIService.baseURL + "friendTags" {
+			return FriendTag.close as! U
+		}
+
+		// Example: Updating an event's participation status
+		if url.absoluteString.contains("events/") && url.absoluteString.contains("/toggleStatus") {
+			// do nothing; whatever
+		}
+
+		throw APIError.invalidData
+	}
+
+
+	func deleteData(from url: URL) async throws {
+		// do nothing
 	}
 }

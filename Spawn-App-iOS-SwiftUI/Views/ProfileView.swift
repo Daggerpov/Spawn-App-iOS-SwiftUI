@@ -11,7 +11,9 @@ struct ProfileView: View {
     let user: User
     @State private var bio: String
     @State private var editingState: ProfileEditText = .edit
-    
+
+	@StateObject var userAuth = UserAuthViewModel.shared
+
     init(user: User) {
         self.user = user
         bio = user.bio ?? ""
@@ -24,15 +26,25 @@ struct ProfileView: View {
                     // Profile Picture
                     
                     if let profilePictureString = user.profilePicture {
-                        Image(profilePictureString)
-                            .ProfileImageModifier(imageType: .profilePage)
+						if MockAPIService.isMocking {
+							Image(profilePictureString)
+								.ProfileImageModifier(imageType: .profilePage)
+						} else {
+							AsyncImage(url: URL(string: profilePictureString)) { image in
+								image
+									.ProfileImageModifier(imageType: .profilePage)
+							} placeholder: {
+								Circle()
+									.fill(Color.gray)
+							}
+						}
                     } else {
                         Image(systemName: "person.crop.circle.fill")
                             .ProfileImageModifier(imageType: .profilePage)
                     }
-                                            
+
                     Circle()
-                        .fill(profilPicPlusButtonColor)
+                        .fill(profilePicPlusButtonColor)
                         .frame(width: 30, height: 30)
                         .overlay(
                             Image(systemName: "plus")
@@ -90,9 +102,15 @@ struct ProfileView: View {
                             .foregroundColor(.white)
                             .padding()
                             .frame(maxWidth: 170)
-                            .background(profilPicPlusButtonColor)
+                            .background(profilePicPlusButtonColor)
                             .cornerRadius(20)
 					}
+					.simultaneousGesture(
+						TapGesture().onEnded {
+							if userAuth.isLoggedIn {
+								userAuth.signOut()
+							}
+						})
 
                     Spacer()
                     .padding(.horizontal)

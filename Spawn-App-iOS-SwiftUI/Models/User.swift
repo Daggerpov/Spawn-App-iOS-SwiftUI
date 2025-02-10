@@ -14,6 +14,7 @@ import SwiftUI
 // tech note: for new friend searching, it should first be done by username, but
 // we could also search by first name and last name, if provided (thus, optional types).
 
+/// corresponds to `FullUserDTO` in the back-end
 struct User: Identifiable, Codable, Hashable {
 	static func == (lhs: User, rhs: User) -> Bool {
 		return lhs.id == rhs.id
@@ -22,7 +23,7 @@ struct User: Identifiable, Codable, Hashable {
 	var id: UUID
 	var friends: [User]?
 	var username: String
-	var profilePicture: String?  // TODO: re-think data type later
+	var profilePicture: String?
 	var firstName: String?
 	var lastName: String?
 	var bio: String?
@@ -56,7 +57,6 @@ struct User: Identifiable, Codable, Hashable {
 				id: UUID(),
 				displayName: "Everyone",
 				colorHexCode: "#asdfdf",
-				ownerId: id,
 				friends: []
 			)
 
@@ -85,21 +85,18 @@ extension User {
 					id: UUID(),
 					displayName: "Biztech",
 					colorHexCode: eventColorHexCodes[0],
-					ownerId: id,
 					friends: [shannon, jennifer]
 				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Close Friends",
 					colorHexCode: eventColorHexCodes[1],
-					ownerId: id,
 					friends: [haley]
 				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Hobbies",
 					colorHexCode: eventColorHexCodes[2],
-					ownerId: id,
 					friends: [jennifer, haley, shannon]
 				),
 			],
@@ -123,21 +120,18 @@ extension User {
 					id: UUID(),
 					displayName: "Biztech",
 					colorHexCode: eventColorHexCodes[0],
-					ownerId: id,
 					friends: [shannon]
 				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Close Friends",
 					colorHexCode: eventColorHexCodes[1],
-					ownerId: id,
 					friends: [haley]
 				),
 				FriendTag(
 					id: UUID(),
 					displayName: "Hobbies",
 					colorHexCode: eventColorHexCodes[2],
-					ownerId: id,
 					friends: [jennifer, haley, shannon]
 				),
 			],
@@ -153,21 +147,18 @@ extension User {
 				id: UUID(),
 				displayName: "Biztech",
 				colorHexCode: eventColorHexCodes[0],
-				ownerId: danielAgapov.id,
 				friends: [shannon]
 			),
 			FriendTag(
 				id: UUID(),
 				displayName: "Close Friends",
 				colorHexCode: eventColorHexCodes[1],
-				ownerId: danielAgapov.id,
 				friends: [haley]
 			),
 			FriendTag(
 				id: UUID(),
 				displayName: "Hobbies",
 				colorHexCode: eventColorHexCodes[2],
-				ownerId: danielAgapov.id,
 				friends: [jennifer, haley, shannon]
 			),
 		]

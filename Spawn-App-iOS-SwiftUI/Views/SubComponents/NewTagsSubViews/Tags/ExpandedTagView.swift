@@ -8,18 +8,26 @@
 import SwiftUI
 
 struct ExpandedTagView: View {
-    var friendTag: FriendTag
-    
-    var body: some View {
-        VStack(spacing: 15) {
-            HStack {
-                Spacer()
-            }
+	@Binding var currentSelectedColorHexCode: String
+	var friendTag: FriendTag
+	@Binding var isEditingTag: Bool
+	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
-            ColorOptions()
-            FriendContainer(friendTag: friendTag)
-        }
-        .padding(.horizontal)
-        .padding(.bottom)
-    }
+	var body: some View {
+		VStack(spacing: 15) {
+			HStack {
+				Spacer()
+			}
+			if isEditingTag{
+				ColorOptions(
+					currentSelectedColorHexCode: $currentSelectedColorHexCode)
+			}
+			FriendContainer(
+				friendTag: friendTag,
+				addFriendsToTagButtonPressedCallback: addFriendToTagButtonPressedCallback
+			)
+		}
+		.padding(.horizontal)
+		.padding(.bottom)
+	}
 }

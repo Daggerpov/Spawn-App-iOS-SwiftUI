@@ -8,20 +8,41 @@
 import Foundation
 
 class EventCreationViewModel: ObservableObject {
-	@Published var event: Event
+	// semi-singleton, that can only be reset upon calling `reInitialize()`
+	static var shared: EventCreationViewModel = EventCreationViewModel()
+
+	@Published var event: EventCreationDTO
 	@Published var creationMessage: String = ""
+
+	@Published var selectedTags: [FriendTag] = []
+	@Published var selectedFriends: [FriendUserDTO] = []
 
 	private var apiService: IAPIService
 
-	init(apiService: IAPIService, creatingUser: User) {
-		self.apiService = apiService
-		self.event = Event(id: UUID(), title: "", creator: creatingUser)
+	public static func reInitialize() {
+		shared = EventCreationViewModel()
+	}
+
+	// Private initializer to enforce singleton pattern
+	private init() {
+		self.apiService = MockAPIService.isMocking
+		? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()) : APIService()
+
+		// Initialize the event with the logged-in user's `userId`, and a random `id`
+		self.event = EventCreationDTO(
+			id: UUID(),
+			title: "",
+			// location name is input from `EventCreationView`
+			// TODO DANIEL: make lat & long inputtable through clicking on a map
+			location: Location(id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
+			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+		)
 	}
 
 	func createEvent() async -> Void {
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
-				try await self.apiService.sendData(event, to: url)
+				try await self.apiService.sendData(event, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {
 					creationMessage = "There was an error creating your event. Please try again"

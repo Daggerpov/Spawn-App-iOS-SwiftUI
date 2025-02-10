@@ -10,15 +10,16 @@ import Foundation
 
 struct ParticipantsImagesView: View {
     var event: Event
-    
+
+	// TODO DANIEL: maybe revisit this logic later
     func participantsCleanup(participants: [User]) -> [User]{
         var participantsFiltered = participants
         // Remove the creator if already in the list
-		let userCreator: User = event.creator ?? User.danielAgapov
+		let userCreator: User = event.creatorUser ?? User.danielAgapov
         participantsFiltered.removeAll { $0.id == userCreator.id }
 
         // Prepend the creator to the participants list
-		participantsFiltered.insert(event.creator ?? User.danielAgapov, at: 0)
+		participantsFiltered.insert(event.creatorUser ?? User.danielAgapov, at: 0)
 
         // Sort the rest of the participants (if necessary)
         participantsFiltered.sort { participant1, participant2 in
@@ -31,7 +32,7 @@ struct ParticipantsImagesView: View {
     var body: some View {
         HStack {
             Spacer()
-            ForEach(participantsCleanup(participants: event.participants ?? []), id: \.self.id) { participant in
+            ForEach(participantsCleanup(participants: event.participantUsers ?? []), id: \.self.id) { participant in
                 NavigationLink(
                     destination: ProfileView(user: participant),
                     label: {

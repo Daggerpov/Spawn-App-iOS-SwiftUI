@@ -6,12 +6,26 @@
 //
 
 import SwiftUI
+import GoogleSignIn
 
 @main
 struct Spawn_App_iOS_SwiftUIApp: App {
+	@StateObject var userAuth = UserAuthViewModel.shared
+
     var body: some Scene {
         WindowGroup {
-			LaunchView()
+			if userAuth.isLoggedIn{
+				if let unwrappedSpawnUser = userAuth.spawnUser {
+					FeedView(user: unwrappedSpawnUser)
+				} else {
+					UserInfoInputView()
+				}
+			} else {
+				LaunchView()
+					.onOpenURL {url in
+						GIDSignIn.sharedInstance.handle(url)
+					}
+			}
 		}
     }
 }

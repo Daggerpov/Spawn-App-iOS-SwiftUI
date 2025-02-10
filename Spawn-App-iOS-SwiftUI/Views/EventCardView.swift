@@ -9,7 +9,6 @@ import SwiftUI
 
 struct EventCardView: View {
     @ObservedObject var viewModel: EventCardViewModel
-    @EnvironmentObject var user: ObservableUser
     var event: Event
     var color: Color
     var callback: (Event, Color) -> Void
@@ -42,7 +41,9 @@ struct EventCardView: View {
                         .frame(width: 30)
                     Circle()
                         .CircularButton(systemName: viewModel.isParticipating ? "checkmark" : "star.fill", buttonActionCallback: {
-                            viewModel.toggleParticipation()
+							Task{
+								await viewModel.toggleParticipation()
+							}
                         })
                 }
                 .frame(alignment: .trailing)

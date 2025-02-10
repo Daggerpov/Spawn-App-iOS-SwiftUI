@@ -9,8 +9,6 @@ import MapKit
 import SwiftUI
 
 struct MapView: View {
-	@EnvironmentObject var user: ObservableUser
-
 	@StateObject private var viewModel: FeedViewModel
 
 	@State private var region = MKCoordinateRegion(
@@ -18,7 +16,6 @@ struct MapView: View {
 			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
 		span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
 	)
-	let mockTags: [FriendTag] = FriendTag.mockTags
 
 	// MARK - Event Description State Vars
 	@State private var showingEventDescriptionPopup: Bool = false
@@ -28,15 +25,18 @@ struct MapView: View {
 	@State private var showingEventCreationPopup: Bool = false
 
 	// for pop-ups:
-	@State private var descriptionOffset: CGFloat = 1000
+	@State private var descriptionOffset: CGFloat = 1500
 	@State private var creationOffset: CGFloat = 1000
 	// ------------
 
+	var user: User
+
 	init(user: User) {
+		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService(), user: user))
+					? MockAPIService(userId: user.id) : APIService(), userId: user.id))
 	}
 
 	var body: some View {
@@ -57,6 +57,8 @@ struct MapView: View {
 					.padding(.top, 50)
 				}
 				.ignoresSafeArea()
+				.dimmedBackground(isActive: showingEventDescriptionPopup || showingEventCreationPopup
+				)
 			}
 
 			.onAppear {
@@ -101,31 +103,28 @@ struct MapView: View {
 	}
 
 	func closeDescription() {
-		withAnimation(.spring()) {
-			descriptionOffset = 1000
-			showingEventDescriptionPopup = false
-		}
+		descriptionOffset = 500
+		showingEventDescriptionPopup = false
 	}
 
 	func closeCreation() {
-		withAnimation(.spring()) {
-			creationOffset = 1000
-			showingEventCreationPopup = false
-		}
+		EventCreationViewModel.reInitialize()
+		creationOffset = 1000
+		showingEventCreationPopup = false
 	}
 }
 
 extension MapView {
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
-			BottomNavButtonView(buttonType: .feed, source: .map)
+			BottomNavButtonView(user: user, buttonType: .feed, source: .map)
 			Spacer()
 			EventCreationButtonView(
 				showingEventCreationPopup:
 					$showingEventCreationPopup
 			)
 			Spacer()
-			BottomNavButtonView(buttonType: .friends, source: .map)
+			BottomNavButtonView(user: user, buttonType: .friends, source: .map)
 		}
 	}
 
@@ -133,15 +132,15 @@ extension MapView {
 		Map(
 			coordinateRegion: $region,
 			annotationItems: viewModel.events
-		) { mockEvent in
+		) { event in
 			MapAnnotation(
 				coordinate: CLLocationCoordinate2D(
-					latitude: mockEvent.location?.latitude ?? 0,
-					longitude: mockEvent.location?.longitude ?? 0
+					latitude: event.location?.latitude ?? 0,
+					longitude: event.location?.longitude ?? 0
 				), anchorPoint: CGPoint(x: 0.5, y: 1.0)
 			) {
 				Button(action: {
-					eventInPopup = mockEvent
+					eventInPopup = event
 					colorInPopup = eventColors.randomElement()
 					showingEventDescriptionPopup = true
 				}) {
@@ -154,7 +153,7 @@ extension MapView {
 								.foregroundColor(universalAccentColor)
 
 							let creatorOne: User =
-							mockEvent.creator ?? User.danielAgapov
+							event.creatorUser ?? User.danielAgapov
 
 							if let creatorPfp = creatorOne
 								.profilePicture
@@ -177,7 +176,7 @@ extension MapView {
 
 
 	var eventDescriptionPopupView: some View {
-		Group {
+		Group{
 			if let event = eventInPopup, let color = colorInPopup {
 				ZStack {
 					Color(.black)
@@ -188,50 +187,50 @@ extension MapView {
 
 					EventDescriptionView(
 						event: event,
-						users: User.mockUsers,
+						users: event.participantUsers,
 						color: color
 					)
 					.offset(x: 0, y: descriptionOffset)
 					.onAppear {
-						withAnimation(.spring()) {
-							descriptionOffset = 0
-						}
+						descriptionOffset = 0
 					}
+					.padding(.horizontal)
+					// brute-force algorithm I wrote
+					.padding(
+						.vertical,
+						max(330, 330 - CGFloat(100 * (event.chatMessages?.count ?? 0)) - CGFloat (event.note != nil ? 200 : 0))
+					)
 				}
 				.ignoresSafeArea()
 			}
 		}
-	}
+	} 
 
 	var eventCreationPopupView: some View {
 		ZStack {
 			Color(.black)
-				.opacity(0.5)
+				.opacity(0.5) 
 				.onTapGesture {
 					closeCreation()
 				}
+				.ignoresSafeArea()
 
-			EventCreationView(creatingUser: user.user)
+			EventCreationView(creatingUser: user, closeCallback: closeCreation)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
-					withAnimation(.spring()) {
-						creationOffset = 0
-					}
+					creationOffset = 0
 				}
+				.padding(32)
+				.cornerRadius(universalRectangleCornerRadius)
+				.padding(.bottom, 50)
 		}
-		.ignoresSafeArea()
 	}
 
 }
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @StateObject var observableUser: ObservableUser =
-		ObservableUser(
-			user: .danielLee
-		)
-	MapView(user: observableUser.user)
-		.environmentObject(observableUser)
+	MapView(user: .danielAgapov)
 }
 
 struct Triangle: Shape {
@@ -244,3 +243,5 @@ struct Triangle: Shape {
 		return path
 	}
 }
+
+  

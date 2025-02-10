@@ -9,12 +9,19 @@ import SwiftUI
 
 struct FriendContainer: View {
     var friendTag: FriendTag
-    var action: () -> Void = {}
-    
+	@State var creationStatus: CreationStatus = .notCreating
+	var addFriendsToTagButtonPressedCallback: ((UUID) -> Void)?
+
     var body: some View {
         VStack {
-            AddTagButtonView(color: .white)
-            
+			// purely for UI, as logic is handled in `FriendsView`:
+			AddTagButtonView(
+				creationStatus: $creationStatus,
+				addFriendsToTagButtonPressedCallback: addFriendsToTagButtonPressedCallback,
+				friendTagId: friendTag.id,
+				color: .white
+			)
+
             ScrollView {
                 if let friends = friendTag.friends, !friends.isEmpty {
                     ForEach(friends) { friend in

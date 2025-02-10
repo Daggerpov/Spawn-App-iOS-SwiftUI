@@ -8,8 +8,6 @@
 import SwiftUI
 
 struct FeedView: View {
-	@EnvironmentObject var user: ObservableUser
-
 	@StateObject private var viewModel: FeedViewModel
 
 	@Namespace private var animation: Namespace.ID
@@ -25,11 +23,14 @@ struct FeedView: View {
 	@State private var creationOffset: CGFloat = 1000
 	// --------
 
+	var user: User
+
 	init(user: User) {
+		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(), user: user))
+				? MockAPIService(userId: user.id) : APIService(), userId: user.id))
 	}
 
 	var body: some View {
@@ -37,7 +38,7 @@ struct FeedView: View {
 			NavigationStack {
 				VStack {
 					Spacer()
-					HeaderView().padding(.top, 50)
+					HeaderView(user: user).padding(.top, 50)
 					Spacer()
 					TagsScrollView(tags: viewModel.tags)
 					// TODO: implement logic here to adjust search results when the tag clicked is changed
@@ -57,6 +58,7 @@ struct FeedView: View {
 						|| showingEventCreationPopup
 				)
 			}
+			.background(universalBackgroundColor)
 			.onAppear {
 				Task {
 					await viewModel.fetchEventsForUser()
@@ -64,98 +66,108 @@ struct FeedView: View {
 				}
 			}
 			if showingEventDescriptionPopup {
-				if let event = eventInPopup, let color = colorInPopup {
-					ZStack {
-						Color(.black)
-							.opacity(0.5)
-							.onTapGesture {
-								closeDescription()
-							}
-
-						EventDescriptionView(
-							event: event,
-							users: User.mockUsers,
-							color: color
-						)
-						.offset(x: 0, y: descriptionOffset)
-						.onAppear {
-							withAnimation(.spring()) {
-								descriptionOffset = 0
-							}
-						}
-					}
-					.ignoresSafeArea()
-				}
+				eventDescriptionPopupView
 			}
 			if showingEventCreationPopup {
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeCreation()
-						}
-
-					EventCreationView(creatingUser: user.user)
-						.offset(x: 0, y: creationOffset)
-						.onAppear {
-							withAnimation(.spring()) {
-								creationOffset = 0
-							}
-						}
-				}
-				.ignoresSafeArea()
+				eventCreationPopupView
 			}
 		}
 	}
 	func closeDescription() {
-		withAnimation(.spring()) {
-			descriptionOffset = 1000
-			showingEventDescriptionPopup = false
-		}
+		descriptionOffset = 1000
+		showingEventDescriptionPopup = false
 	}
 
 	func closeCreation() {
-		withAnimation(.spring()) {
-			creationOffset = 1000
-			showingEventCreationPopup = false
-		}
+		EventCreationViewModel.reInitialize()
+		creationOffset = 1000
+		showingEventCreationPopup = false
 	}
 }
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable
-	@StateObject var observableUser = ObservableUser(user: .danielLee)
-
-	FeedView(user: observableUser.user)
-		.environmentObject(observableUser)
+	FeedView(user: .danielAgapov)
 }
 
 extension FeedView {
+	var eventDescriptionPopupView: some View {
+		Group{
+			if let event = eventInPopup, let color = colorInPopup {
+				ZStack {
+					Color(.black)
+						.opacity(0.5)
+						.onTapGesture {
+							closeDescription()
+						}
+					
+					EventDescriptionView(
+						event: event,
+						users: event.participantUsers,
+						color: color
+					)
+					.offset(x: 0, y: descriptionOffset)
+					.onAppear {
+						descriptionOffset = 0
+					}
+					.padding(.horizontal)
+					// brute-force algorithm I wrote
+					.padding(
+						.vertical,
+						max(330, 330 - CGFloat(100 * (event.chatMessages?.count ?? 0)) - CGFloat (event.note != nil ? 200 : 0))
+					)
+				}
+				.ignoresSafeArea()
+			}
+		}
+	}
+	var eventCreationPopupView: some View {
+		ZStack {
+			Color(.black)
+				.opacity(0.5)
+				.onTapGesture {
+					closeCreation()
+				}
+				.ignoresSafeArea()
+
+			EventCreationView(creatingUser: user, closeCallback: closeCreation)
+				.offset(x: 0, y: creationOffset)
+				.onAppear {
+					creationOffset = 0
+				}
+				.padding(32)
+				.cornerRadius(universalRectangleCornerRadius)
+				.padding(.bottom, 50)
+		}
+	}
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
-			BottomNavButtonView(buttonType: .map)
+			BottomNavButtonView(user: user, buttonType: .map)
 			Spacer()
 			EventCreationButtonView(
 				showingEventCreationPopup:
 					$showingEventCreationPopup)
 			Spacer()
-			BottomNavButtonView(buttonType: .friends)
+			BottomNavButtonView(user: user, buttonType: .friends)
 		}
 	}
 	var eventsListView: some View {
 		ScrollView(.vertical) {
 			LazyVStack(spacing: 15) {
-				ForEach(viewModel.events) { mockEvent in
-					EventCardView(
-						user: user.user,
-						event: mockEvent,
-						// TODO: change this logic to be based on the event in relation to which friend tag the creator belongs to
-						color: eventColors.randomElement() ?? Color.blue
-					) { event, color in
-						eventInPopup = event
-						colorInPopup = color
-						showingEventDescriptionPopup = true
+				if viewModel.events.isEmpty {
+					Text("Add some friends to see what they're up to!")
+						.foregroundColor(universalAccentColor)
+				} else {
+					ForEach(viewModel.events) { event in
+						EventCardView(
+							user: user,
+							event: event,
+							color: Color(hex: event.eventFriendTagColorHexCodeForRequestingUser ?? eventColorHexCodes[0])
+						) { event, color in
+							eventInPopup = event
+							colorInPopup = color
+							showingEventDescriptionPopup = true
+						}
 					}
 				}
 			}

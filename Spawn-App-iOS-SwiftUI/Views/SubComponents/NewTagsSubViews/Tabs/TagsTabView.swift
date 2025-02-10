@@ -9,11 +9,15 @@ import SwiftUI
 
 struct TagsTabView: View {
 	@ObservedObject var viewModel: TagsViewModel
+	@State private var creationStatus: CreationStatus = .notCreating
 
-	init(user: User) {
+	var addFriendToTagButtonPressedCallback: (UUID) -> Void
+
+	init(userId: UUID, addFriendToTagButtonPressedCallback: @escaping(UUID) -> Void) {
+		self.addFriendToTagButtonPressedCallback = addFriendToTagButtonPressedCallback
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(), user: user)
+			? MockAPIService(userId: userId) : APIService(), userId: userId)
 	}
 
 	var body: some View {
@@ -21,8 +25,9 @@ struct TagsTabView: View {
 			VStack(alignment: .leading, spacing: 15) {
 				Text("TAGS")
 					.font(.headline)
+					.foregroundColor(universalAccentColor)
 
-				AddTagButtonView(color: universalAccentColor)
+				AddTagButtonView(creationStatus: $creationStatus, color: universalAccentColor)
 					.environmentObject(viewModel)
 			}
 			Spacer()
@@ -44,7 +49,7 @@ extension TagsTabView {
 			ScrollView {
 				VStack(spacing: 15) {
 					ForEach(viewModel.tags) { friendTag in
-						TagRow(friendTag: friendTag)
+						TagRow(friendTag: friendTag, addFriendToTagButtonPressedCallback: addFriendToTagButtonPressedCallback)
 							.background(
 								RoundedRectangle(cornerRadius: 12)
 									.fill(
@@ -55,6 +60,7 @@ extension TagsTabView {
 										universalRectangleCornerRadius
 									)
 							)
+							.environmentObject(viewModel)
 					}
 				}
 			}

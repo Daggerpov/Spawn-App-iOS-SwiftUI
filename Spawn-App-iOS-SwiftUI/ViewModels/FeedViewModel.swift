@@ -12,47 +12,55 @@ class FeedViewModel: ObservableObject {
 	@Published var tags: [FriendTag] = []
 
 	var apiService: IAPIService
-	var user: User
+	var userId: UUID
 
-	init(apiService: IAPIService, user: User) {
+	init(apiService: IAPIService, userId: UUID) {
 		self.apiService = apiService
-		self.user = user
+		self.userId = userId
     }
 
 	func fetchEventsForUser() async -> Void {
-		// TODO DANIEL: change back to "events/user/\(user.id)" later
-		if let url = URL(string: APIService.baseURL + "events") {
+		// /api/v1/events/feedEvents/{requestingUserId}
+		if let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId.uuidString)") {
 			do {
-				let fetchedEvents: [Event] = try await self.apiService.fetchData(from: url)
+				let fetchedEvents: [Event] = try await self.apiService.fetchData(
+					from: url, parameters: nil
+				)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.events = fetchedEvents
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.events = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
 
 	func fetchTagsForUser() async -> Void {
-		// TODO DANIEL: change back to "friendTags?ownerId=ownerId" later
-		if let url = URL(string: APIService.baseURL + "friendTags") {
+		// /api/v1/friendTags/owner/{ownerId}?full=full
+		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId.uuidString)") {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url)
+				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["full": "true"])
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.tags = fetchedTags
 				}
 			} catch {
+				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+					print("Invalid status code from response: \(statusCode)")
+					print(apiService.errorMessage ?? "")
+				}
 				await MainActor.run {
 					self.tags = []
 				}
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}

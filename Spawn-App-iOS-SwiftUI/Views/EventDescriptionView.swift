@@ -12,7 +12,7 @@ struct EventDescriptionView: View {
     @ObservedObject var viewModel: EventDescriptionViewModel
     var color: Color
     
-    init(event: Event, users: [User], color: Color) {
+    init(event: Event, users: [User]?, color: Color) {
         self.viewModel = EventDescriptionViewModel(event: event, users: users)
         self.color = color
     }
@@ -67,8 +67,7 @@ struct EventDescriptionView: View {
             .background(color)
             .cornerRadius(universalRectangleCornerRadius)
         }
-        .padding(.horizontal)
-        .padding(.top, 200)
+		.scrollDisabled(true) // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
     }
 }
 
@@ -110,7 +109,7 @@ extension EventDescriptionView {
 
         var body: some View {
             HStack {
-                if let profilePictureString = chatMessage.userSender.profilePicture {
+                if let profilePictureString = chatMessage.senderUser.profilePicture {
                     Image(profilePictureString)
                         .ProfileImageModifier(imageType: .chatMessage)
                 }
@@ -121,7 +120,7 @@ extension EventDescriptionView {
                             .scaledToFit()
                             .frame(width: 15, height: 15)
                             .foregroundColor(universalAccentColor)
-                        Text(chatMessage.userSender.username)
+                        Text(chatMessage.senderUser.username)
                             .foregroundColor(universalAccentColor)
                             .bold()
                             .font(.caption)

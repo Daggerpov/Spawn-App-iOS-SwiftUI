@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HeaderView: View {
-    @EnvironmentObject var user: ObservableUser
+    var user: User
     var body: some View {
         HStack{
             Spacer()
@@ -34,10 +34,21 @@ struct HeaderView: View {
             
             if let profilePictureString = user.profilePicture {
                 NavigationLink {
-                    ProfileView(user: user.user)
+                    ProfileView(user: user)
                 } label: {
-                    Image(profilePictureString)
-                        .ProfileImageModifier(imageType: .feedPage)
+					if MockAPIService.isMocking {
+						Image(profilePictureString)
+							.ProfileImageModifier(imageType: .feedPage)
+					} else {
+							AsyncImage(url: URL(string: profilePictureString)) { image in
+								image
+									.ProfileImageModifier(imageType: .feedPage)
+							} placeholder: {
+								Circle()
+									.fill(Color.gray)
+									.frame(width: 55, height: 55) // 55 matches .feedPage image type for `ProfileImageModifier`
+							}
+						}
                 }
             }
             Spacer()
