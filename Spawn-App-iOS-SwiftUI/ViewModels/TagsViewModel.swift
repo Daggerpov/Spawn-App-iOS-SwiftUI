@@ -26,21 +26,27 @@ class TagsViewModel: ObservableObject {
 			colorHexCode: "",
 			ownerUserId: userId
 		)
-    }
+	}
 
-	func fetchTags() async -> Void {
-		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId)") {
+	func fetchTags() async {
+		if let url = URL(
+			string: APIService.baseURL + "friendTags/owner/\(userId)")
+		{
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url,
-																				   parameters: ["full": "true"]
-				)
+				let fetchedTags: [FriendTag] = try await self.apiService
+					.fetchData(
+						from: url,
+						parameters: ["full": "true"]
+					)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.tags = fetchedTags
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+				if let statusCode = apiService.errorStatusCode,
+					apiService.errorStatusCode != 404
+				{
 					print("Invalid status code from response: \(statusCode)")
 					print(apiService.errorMessage ?? "")
 				}
