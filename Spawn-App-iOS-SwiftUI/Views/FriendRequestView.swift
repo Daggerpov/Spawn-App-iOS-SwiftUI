@@ -53,7 +53,8 @@ extension FriendRequestView {
 	var friendRequestAcceptButton: some View {
 		Button(action: {
 			Task {
-				await viewModel.acceptFriendRequest(action: .accept)
+				await viewModel
+					.friendRequestAction(action: FriendRequestAction.accept)
 			}
 			closeCallback()  // closes the popup
 		}) {
@@ -64,7 +65,7 @@ extension FriendRequestView {
 	var friendRequestDeclineButton: some View {
 		Button(action: {
 			Task {
-				await viewModel.acceptFriendRequest(action: .decline)
+				await viewModel.friendRequestAction(action: FriendRequestAction.decline)
 			}
 			closeCallback()  // closes the popup
 		}) {

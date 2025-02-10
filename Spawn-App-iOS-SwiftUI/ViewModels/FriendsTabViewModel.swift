@@ -108,5 +108,6 @@ class FriendsTabViewModel: ObservableObject {
 				}
 			}
 		}
+		await fetchAllData()
 	}
 }
