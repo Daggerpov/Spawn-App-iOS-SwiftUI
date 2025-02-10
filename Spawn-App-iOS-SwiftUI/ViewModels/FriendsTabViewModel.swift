@@ -48,6 +48,7 @@ class FriendsTabViewModel: ObservableObject {
 				}
 			}
 		}
+		await fetchAllData()
 	}
 
 	internal func fetchRecommendedFriends() async {
@@ -69,6 +70,7 @@ class FriendsTabViewModel: ObservableObject {
 				}
 			}
 		}
+		await fetchAllData()
 	}
 
 	internal func fetchFriends() async {
@@ -90,6 +92,7 @@ class FriendsTabViewModel: ObservableObject {
 				}
 			}
 		}
+		await fetchAllData()
 	}
 
 	func addFriend(friendUserId: UUID) async {
@@ -108,5 +111,6 @@ class FriendsTabViewModel: ObservableObject {
 				}
 			}
 		}
+		await fetchAllData()
 	}
 }

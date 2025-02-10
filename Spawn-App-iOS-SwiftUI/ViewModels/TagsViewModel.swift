@@ -52,7 +52,10 @@ class TagsViewModel: ObservableObject {
 		}
 	}
 
-	func upsertTag(id: UUID? = nil, displayName: String, colorHexCode: String, upsertAction: UpsertActionType) async -> Void {
+	func upsertTag(
+		id: UUID? = nil, displayName: String, colorHexCode: String,
+		upsertAction: UpsertActionType
+	) async {
 		if displayName.isEmpty {
 			creationMessage = "Please enter a display name"
 			return
@@ -65,19 +68,26 @@ class TagsViewModel: ObservableObject {
 			ownerUserId: userId
 		)
 
-		if let url = URL(string: APIService.baseURL + "friendTags") {
-			do {
-				switch upsertAction {
-					case .create:
-						try await self.apiService.sendData(newTag, to: url, parameters: nil)
-					case .update:
-						let update: FriendTagCreationDTO = try await self.apiService.updateData(newTag, to: url)
-				}
-			} catch {
-				await MainActor.run {
-					creationMessage = "There was an error creating your tag. Please try again"
-					print(apiService.errorMessage ?? "")
-				}
+		do {
+			switch upsertAction {
+			case .create:
+				guard let url = URL(string: APIService.baseURL + "friendTags")
+				else { return }
+				try await self.apiService.sendData(
+					newTag, to: url, parameters: nil)
+			case .update:
+				guard
+					let url = URL(
+						string: APIService.baseURL + "friendTags/\(newTag.id)")
+				else { return }
+				let update: FriendTagCreationDTO = try await self.apiService
+					.updateData(newTag, to: url)
+			}
+		} catch {
+			await MainActor.run {
+				creationMessage =
+					"There was an error creating your tag. Please try again"
+				print(apiService.errorMessage ?? "")
 			}
 		}
 
@@ -91,14 +101,16 @@ class TagsViewModel: ObservableObject {
 			do {
 				try await self.apiService.deleteData(from: url)
 				await MainActor.run {
-					self.tags.removeAll { $0.id == id } // Remove the tag from the local list
+					self.tags.removeAll { $0.id == id }  // Remove the tag from the local list
 				}
 			} catch {
 				await MainActor.run {
-					deletionMessage = "There was an error deleting the tag. Please try again."
+					deletionMessage =
+						"There was an error deleting the tag. Please try again."
 					print(apiService.errorMessage ?? "")
 				}
 			}
 		}
+		await fetchTags()
 	}
 }
