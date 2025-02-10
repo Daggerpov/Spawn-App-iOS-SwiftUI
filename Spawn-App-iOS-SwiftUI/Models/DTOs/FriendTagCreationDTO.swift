@@ -16,6 +16,8 @@ struct FriendTagCreationDTO: Identifiable, Codable, Hashable {
 	var displayName: String
 	var colorHexCode: String
 	var ownerUserId: UUID
+	var friendUserIds: [UUID] = []
+	var isEveryone: Bool = false
 
 	init(id: UUID, displayName: String, colorHexCode: String, ownerUserId: UUID){
 		self.id = id
