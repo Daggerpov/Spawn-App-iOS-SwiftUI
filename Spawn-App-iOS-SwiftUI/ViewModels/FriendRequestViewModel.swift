@@ -32,7 +32,6 @@ class FriendRequestViewModel: ObservableObject {
 						string: APIService.baseURL
 							+ "users/\(userId)/friend-requests/\(friendRequestId)/accept"
 					)
-						print("making request to: \(unwrappedUrl)")
 				else { return }
 				url = unwrappedUrl
 			case .decline:
@@ -42,7 +41,6 @@ class FriendRequestViewModel: ObservableObject {
 						string: APIService.baseURL
 							+ "users/\(userId)/friend-requests/\(friendRequestId)/decline"
 					)
-						print("making request to: \(unwrappedUrl)")
 
 
 				else { return }
