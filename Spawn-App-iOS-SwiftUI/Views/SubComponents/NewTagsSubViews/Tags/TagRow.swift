@@ -138,7 +138,7 @@ struct TagFriendsView: View {
 			}) {
 				Image(systemName: "plus.circle")
 					.font(.system(size: 24))
-					.foregroundColor(universalAccentColor)
+					.foregroundColor(.white)
 			}
 		}
 	}
