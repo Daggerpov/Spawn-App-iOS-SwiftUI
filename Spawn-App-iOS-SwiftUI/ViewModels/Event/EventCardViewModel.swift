@@ -37,7 +37,7 @@ class EventCardViewModel: ObservableObject {
 
 		do {
 			// Send a PUT request and receive the updated event in response
-			let updatedEvent: Event = try await apiService.updateData(EmptyBody(), to: url)
+			let updatedEvent: Event = try await apiService.updateData(EmptyBody(), to: url, parameters: nil)
 
 			// Update local state after a successful API call
 			await MainActor.run {

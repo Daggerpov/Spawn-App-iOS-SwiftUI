@@ -32,7 +32,7 @@ class FriendRequestViewModel: ObservableObject {
 
 			// make API call:
 			let _: EmptyResponse = try await self.apiService.updateData(
-				EmptyRequestBody(), to: url)
+				EmptyRequestBody(), to: url, parameters: nil)
 			print("accepted friend request at url: \(url.absoluteString)")
 		} catch {
 			await MainActor.run {

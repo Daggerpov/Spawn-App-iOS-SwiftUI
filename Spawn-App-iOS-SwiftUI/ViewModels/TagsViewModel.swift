@@ -87,7 +87,7 @@ class TagsViewModel: ObservableObject {
 						string: APIService.baseURL + "friendTags/\(newTag.id)")
 				else { return }
 				let update: FriendTagCreationDTO = try await self.apiService
-					.updateData(newTag, to: url)
+						.updateData(newTag, to: url, parameters: nil)
 			}
 		} catch {
 			await MainActor.run {
