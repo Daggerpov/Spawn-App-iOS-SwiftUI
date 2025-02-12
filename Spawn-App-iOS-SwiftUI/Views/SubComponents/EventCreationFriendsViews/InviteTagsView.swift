@@ -144,6 +144,7 @@ struct InviteTagFriendsView: View {
 		ForEach(friends ?? []) { friend in
 			HStack(spacing: -10) {
 				if let profilePictureString = friend.profilePicture {
+					// TODO: make async
 					Image(profilePictureString)
 						.ProfileImageModifier(imageType: .eventParticipants)
 				}

@@ -37,6 +37,7 @@ struct ParticipantsImagesView: View {
                     destination: ProfileView(user: participant),
                     label: {
                         if let profilePictureString = participant.profilePicture {
+							// TODO: make async
                             Image(profilePictureString)
                                 .ProfileImageModifier(imageType: .eventParticipants)
                         }

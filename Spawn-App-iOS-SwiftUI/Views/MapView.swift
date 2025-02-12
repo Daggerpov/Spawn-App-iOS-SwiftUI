@@ -158,6 +158,7 @@ extension MapView {
 							if let creatorPfp = creatorOne
 								.profilePicture
 							{
+								// TODO: make async
 								Image(creatorPfp)
 									.ProfileImageModifier(
 										imageType: .mapView)

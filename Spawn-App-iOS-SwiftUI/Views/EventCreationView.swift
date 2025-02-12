@@ -239,6 +239,7 @@ extension EventCreationView {
 					.profilePicture
 				{
 					Image(profilePictureString)
+						// TODO: make async
 						.ProfileImageModifier(
 							imageType: .eventParticipants)
 				}

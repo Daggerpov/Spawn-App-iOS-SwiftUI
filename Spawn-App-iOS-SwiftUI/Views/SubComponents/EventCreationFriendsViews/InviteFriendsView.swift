@@ -88,6 +88,7 @@ struct IndividualFriendView: View {
 			}
 		}) {
 			HStack {
+				// TODO: make async
 				if let pfp = friend.profilePicture {
 					Image(pfp)
 						.resizable()

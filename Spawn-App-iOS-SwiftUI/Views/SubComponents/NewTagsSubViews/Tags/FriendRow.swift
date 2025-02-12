@@ -14,6 +14,7 @@ struct FriendRow: View {
     var body: some View {
         HStack {
             if let profilePictureString = friend.profilePicture {
+				// TODO: make async
                 Image(profilePictureString)
 					.ProfileImageModifier(imageType: .tagFriends)
             }

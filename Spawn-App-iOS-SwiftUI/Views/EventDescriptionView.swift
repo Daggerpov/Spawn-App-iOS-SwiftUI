@@ -110,6 +110,7 @@ extension EventDescriptionView {
         var body: some View {
             HStack {
                 if let profilePictureString = chatMessage.senderUser.profilePicture {
+					// TODO: make async
                     Image(profilePictureString)
                         .ProfileImageModifier(imageType: .chatMessage)
                 }
