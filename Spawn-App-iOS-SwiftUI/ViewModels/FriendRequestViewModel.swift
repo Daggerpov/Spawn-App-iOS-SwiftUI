@@ -26,13 +26,13 @@ class FriendRequestViewModel: ObservableObject {
 			guard
 				let url = URL(
 					string: APIService.baseURL
-						+ "friend-requests/\(friendRequestId)/\(action.rawValue)"
+						+ "friend-requests/\(friendRequestId)"
 				)
 			else { return }
 
 			// make API call:
 			let _: EmptyResponse = try await self.apiService.updateData(
-				EmptyRequestBody(), to: url, parameters: nil)
+				EmptyRequestBody(), to: url, parameters: ["friendRequestAction": action.rawValue])
 			print("accepted friend request at url: \(url.absoluteString)")
 		} catch {
 			await MainActor.run {
