@@ -7,6 +7,7 @@
 
 import SwiftUI
 import GoogleSignIn
+import AuthenticationServices
 import UIKit
 
 class UserAuthViewModel: ObservableObject {
@@ -19,7 +20,7 @@ class UserAuthViewModel: ObservableObject {
 	@Published var email: String?
 	@Published var profilePicUrl: String?
 	@Published var isLoggedIn: Bool = false
-	@Published var externalUserId: String?
+	@State var googleExternalUserId: String?
 
 	@Published var isFormValid: Bool = false
 	@Published var shouldProceedToFeed: Bool = false
@@ -56,7 +57,7 @@ class UserAuthViewModel: ObservableObject {
 			self.email = user.profile?.email
 			self.profilePicUrl = user.profile!.imageURL(withDimension: 100)!.absoluteString
 			self.isLoggedIn = true
-			self.externalUserId = user.userID
+			self.googleExternalUserId = user.userID
 		}else{
 			self.isLoggedIn = false
 			self.givenName = ""
@@ -64,7 +65,7 @@ class UserAuthViewModel: ObservableObject {
 			self.fullName = nil
 			self.familyName = nil
 			self.email = nil
-			self.externalUserId = nil
+			self.googleExternalUserId = nil
 		}
 	}
 
@@ -75,6 +76,32 @@ class UserAuthViewModel: ObservableObject {
 			}
 
 			self.checkStatus()
+		}
+	}
+
+	func handleAppleSignInResult(_ result: Result<ASAuthorization, Error>) {
+		switch result {
+			case .success(let authorization):
+				if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+					// Extract user information
+					let userIdentifier = appleIDCredential.user // Unique identifier
+					let email = appleIDCredential.email ?? "No email provided" // May be hidden
+					let fullName = "\(appleIDCredential.fullName?.givenName ?? "") \(appleIDCredential.fullName?.familyName ?? "")"
+
+					// Store user information
+					self.fullName = fullName
+					self.givenName = appleIDCredential.fullName?.givenName
+					self.familyName = appleIDCredential.fullName?.familyName
+					self.email = email
+					self.isLoggedIn = true
+
+					// Send the userIdentifier and email to your backend
+//					Task {
+//						await self.spawnFetchUserIfAlreadyExists(appleUserIdentifier: userIdentifier, email: email)
+//					}
+				}
+			case .failure(let error):
+				self.errorMessage = "Apple Sign-In failed: \(error.localizedDescription)"
 		}
 	}
 
@@ -100,7 +127,7 @@ class UserAuthViewModel: ObservableObject {
 			self.familyName = user.profile?.familyName
 			self.email = user.profile?.email
 			self.isLoggedIn = true
-			self.externalUserId = user.userID
+			self.googleExternalUserId = user.userID
 		}
 	}
 
@@ -112,11 +139,11 @@ class UserAuthViewModel: ObservableObject {
 	func spawnFetchUserIfAlreadyExists() async -> Void {
 		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
-				guard let unwrappedExternalUserId = self.externalUserId else { return } // logic might be off with this `return`
+				guard let unwrappedgoogleExternalUserId = self.googleExternalUserId else { return } // logic might be off with this `return`
 				guard let unwrappedEmail = self.email else { return } // logic might be off with this `return`
 				let fetchedSpawnUser: User = try await self.apiService.fetchData(
 					from: url,
-					parameters: ["externalUserId": unwrappedExternalUserId, "email": unwrappedEmail]
+					parameters: ["googleExternalUserId": unwrappedgoogleExternalUserId, "email": unwrappedEmail]
 				)
 
 				await MainActor.run {
@@ -150,8 +177,14 @@ class UserAuthViewModel: ObservableObject {
 			do {
 				var parameters: [String: String]? = [:]
 
-				if let unwrappedExternalUserId = externalUserId {
-					parameters = ["externalUserId": unwrappedExternalUserId]
+				// TODO: adjust to work with apple as well:
+
+//				switch (currentSignInMethod) {
+//
+//				}
+
+				if let unwrappedgoogleExternalUserId = googleExternalUserId {
+					parameters = ["googleExternalUserId": unwrappedgoogleExternalUserId]
 				}
 
 				let fetchedAuthenticatedSpawnUser: User = try await self.apiService.sendData(newUser, to: url, parameters: parameters)
@@ -173,4 +206,8 @@ class UserAuthViewModel: ObservableObject {
 	func setShouldNavigateToFeedView() -> Void {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
 	}
+}
+
+enum CurrentSignInMethod {
+	case google, apple// TODO: implement later, email
 }
