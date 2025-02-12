@@ -22,30 +22,13 @@ class FriendRequestViewModel: ObservableObject {
 
 	func friendRequestAction(action: FriendRequestAction) async {
 		do {
-			let url: URL
-			// determine which URL to hit with a PUT request:
-			switch action {
-			case .accept:
-				// full path: /api/v1/users/{userId}/friend-requests/{friendRequestId}/accept
-				guard
-					let unwrappedUrl = URL(
-						string: APIService.baseURL
-							+ "users/\(userId)/friend-requests/\(friendRequestId)/accept"
-					)
-				else { return }
-				url = unwrappedUrl
-			case .decline:
-				// full path: /api/v1/users/{userId}/friend-requests/{friendRequestId}/decline
-				guard
-					let unwrappedUrl = URL(
-						string: APIService.baseURL
-							+ "users/\(userId)/friend-requests/\(friendRequestId)/decline"
-					)
-
-
-				else { return }
-				url = unwrappedUrl
-			}
+			// full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
+			guard
+				let url = URL(
+					string: APIService.baseURL
+						+ "friend-requests/\(friendRequestId)/\(action.rawValue)"
+				)
+			else { return }
 
 			// make API call:
 			let _: EmptyResponse = try await self.apiService.updateData(
@@ -54,7 +37,7 @@ class FriendRequestViewModel: ObservableObject {
 		} catch {
 			await MainActor.run {
 				creationMessage =
-					"There was an error \(action == .accept ? "accepting" : "declining") the friend request. Please try again"
+				"There was an error \(action == .accept ? "accepting" : "declining") the friend request. Please try again"
 				print(apiService.errorMessage ?? "")
 			}
 		}
@@ -65,6 +48,7 @@ class FriendRequestViewModel: ObservableObject {
 struct EmptyRequestBody: Codable {}
 struct EmptyResponse: Codable {}
 
-enum FriendRequestAction {
-	case accept, decline
+enum FriendRequestAction: String {
+	case accept = "accept"
+	case decline = "reject"
 }
