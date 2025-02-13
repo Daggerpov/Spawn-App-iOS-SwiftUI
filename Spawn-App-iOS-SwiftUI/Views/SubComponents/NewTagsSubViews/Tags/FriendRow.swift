@@ -8,8 +8,9 @@
 import SwiftUI
 
 struct FriendRow: View {
+	@EnvironmentObject var viewModel: TagsViewModel
     var friend: User
-    var action: () -> Void = {}
+	var friendTag: FriendTag
 
     var body: some View {
         HStack {
@@ -35,7 +36,11 @@ struct FriendRow: View {
             Text(friend.username)
                 .font(.headline)
             Spacer()
-            Button(action: action) {
+			Button(action: {
+				Task{
+					await viewModel.removeFriendFromFriendTag(friendUserId: friend.id, friendTagId: friendTag.id)
+				}
+			}) {
                 Image(systemName: "xmark")
             }
         }
