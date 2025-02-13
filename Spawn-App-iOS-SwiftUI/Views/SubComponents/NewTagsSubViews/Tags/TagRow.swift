@@ -149,10 +149,6 @@ struct TagFriendsView: View {
 					.font(.system(size: 24))
 					.foregroundColor(.white)
 					.clipShape(Circle())
-					.background(
-						Circle()
-							.stroke(universalAccentColor, lineWidth: 2)
-					)
 			}
 			.offset(x: CGFloat((friends?.count ?? 0)) * 15)  // Position the button after the last profile picture
 			
