@@ -5,10 +5,10 @@
 //  Created by Daniel Agapov on 2024-12-30.
 //
 
-import SwiftUI
-import GoogleSignInSwift
+import AuthenticationServices  // apple auth
 import GoogleSignIn
-import AuthenticationServices // apple auth
+import GoogleSignInSwift
+import SwiftUI
 
 struct LaunchView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
@@ -22,18 +22,20 @@ struct LaunchView: View {
 					.scaledToFit()
 					.frame(width: 300, height: 300)
 
-				NavigationLink(destination:
-					getAuthNavDestinationView()
+				NavigationLink(
+					destination:
+						getAuthNavDestinationView()
 						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				, isActive: $userAuth.hasCheckedSpawnUserExistance) {
+						.navigationBarHidden(true),
+					isActive: $userAuth.hasCheckedSpawnUserExistance
+				) {
 					AuthProviderButtonView(authProviderType: .google)
 				}
 				.simultaneousGesture(
 					TapGesture().onEnded {
 						if !userAuth.isLoggedIn {
 							userAuth.signIn()
-							Task{
+							Task {
 								await userAuth.spawnFetchUserIfAlreadyExists()
 							}
 						}
@@ -46,18 +48,20 @@ struct LaunchView: View {
 					// completion handler that is called when the sign-in completes
 				}
 
-				NavigationLink(destination: {
-					UserInfoInputView()
+				NavigationLink(
+					destination:
+						getAuthNavDestinationView()
 						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				}) {
+						.navigationBarHidden(true),
+					isActive: $userAuth.hasCheckedSpawnUserExistance
+				) {
 					AuthProviderButtonView(authProviderType: .apple)
 				}
 				.simultaneousGesture(
 					TapGesture().onEnded {
 						if !userAuth.isLoggedIn {
 							userAuth.signIn()
-							Task{
+							Task {
 								await userAuth.spawnFetchUserIfAlreadyExists()
 							}
 						}
@@ -88,4 +92,3 @@ struct LaunchView: View {
 #Preview {
 	LaunchView()
 }
-
