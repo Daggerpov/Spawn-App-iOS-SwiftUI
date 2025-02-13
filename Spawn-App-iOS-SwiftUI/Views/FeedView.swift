@@ -33,6 +33,7 @@ struct FeedView: View {
 				? MockAPIService(userId: user.id) : APIService(), userId: user.id))
 	}
 
+
 	var body: some View {
 		ZStack {
 			NavigationStack {
@@ -40,8 +41,10 @@ struct FeedView: View {
 					Spacer()
 					HeaderView(user: user).padding(.top, 50)
 					Spacer()
-					TagsScrollView(tags: viewModel.tags)
-					// TODO: implement logic here to adjust search results when the tag clicked is changed
+					TagsScrollView(
+						tags: viewModel.tags,
+						activeTag: $viewModel.activeTag
+					)
 					Spacer()
 					Spacer()
 					VStack {

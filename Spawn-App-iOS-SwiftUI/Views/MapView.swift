@@ -47,7 +47,7 @@ struct MapView: View {
 					mapView
 					VStack {
 						VStack {
-							TagsScrollView(tags: viewModel.tags)
+							TagsScrollView(tags: viewModel.tags, activeTag: $viewModel.activeTag)
 						}
 						.padding(.horizontal)
 						.padding(.top, 20)
