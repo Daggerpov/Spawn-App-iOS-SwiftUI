@@ -88,13 +88,23 @@ struct IndividualFriendView: View {
 			}
 		}) {
 			HStack {
-				// TODO: make async
-				if let pfp = friend.profilePicture {
-					Image(pfp)
-						.resizable()
-						.scaledToFill()
+				if let pfpUrl = friend.profilePicture {
+					AsyncImage(url: URL(string: pfpUrl)) {
+						image in
+						image
+							.resizable()
+							.scaledToFill()
+							.frame(width: 60, height: 60)
+							.clipShape(Circle())
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 60, height: 60)
+					}
+				} else {
+					Circle()
+						.fill(.gray)
 						.frame(width: 60, height: 60)
-						.clipShape(Circle())
 				}
 
 				VStack(alignment: .leading, spacing: 8) {

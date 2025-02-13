@@ -235,13 +235,20 @@ extension EventCreationView {
 	var selectedFriendsView: some View {
 		HStack {
 			ForEach(viewModel.selectedFriends) { friend in
-				if let profilePictureString = friend
-					.profilePicture
-				{
-					Image(profilePictureString)
-						// TODO: make async
-						.ProfileImageModifier(
-							imageType: .eventParticipants)
+				if let pfpUrl = friend.profilePicture {
+					AsyncImage(url: URL(string: pfpUrl)) {
+						image in
+						image
+							.ProfileImageModifier(imageType: .eventParticipants)
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 25, height: 25)
+					}
+				} else {
+					Circle()
+						.fill(Color.gray)
+						.frame(width: 25, height: 25)
 				}
 			}
 			NavigationLink(destination: {
