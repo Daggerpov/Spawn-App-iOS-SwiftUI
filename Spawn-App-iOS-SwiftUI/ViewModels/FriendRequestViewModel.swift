@@ -44,9 +44,7 @@ class FriendRequestViewModel: ObservableObject {
 	}
 }
 
-// since the PUT requests don't need any `@RequestBody` in the back-end
-struct EmptyRequestBody: Codable {}
-struct EmptyResponse: Codable {}
+
 
 enum FriendRequestAction: String {
 	case accept = "accept"

@@ -237,3 +237,8 @@ class APIService: IAPIService {
 		}
 	}
 }
+
+// since the PUT requests don't need any `@RequestBody` in the back-end
+struct EmptyRequestBody: Codable {}
+// for empty responses from requests:
+struct EmptyResponse: Codable {}
