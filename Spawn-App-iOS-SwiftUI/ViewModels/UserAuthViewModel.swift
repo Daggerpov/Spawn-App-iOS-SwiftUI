@@ -34,7 +34,7 @@ class UserAuthViewModel: ObservableObject {
 	}
 
 	@Published var shouldNavigateToFeedView: Bool = false
-	@Published var hasCheckedSpawnUserExistance: Bool = false
+	@Published var hasCheckedSpawnUserExistence: Bool = false
 
 	private var apiService: IAPIService
 
@@ -150,7 +150,7 @@ class UserAuthViewModel: ObservableObject {
 				print(apiService.errorMessage ?? "")
 			}
 			await MainActor.run {
-				self.hasCheckedSpawnUserExistance = true
+				self.hasCheckedSpawnUserExistence = true
 			}
 		}
 	}

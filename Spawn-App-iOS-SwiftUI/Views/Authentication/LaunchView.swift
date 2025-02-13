@@ -27,7 +27,7 @@ struct LaunchView: View {
 						getAuthNavDestinationView()
 						.navigationBarTitle("")
 						.navigationBarHidden(true),
-					isActive: $userAuth.hasCheckedSpawnUserExistance
+					isActive: $userAuth.hasCheckedSpawnUserExistence
 				) {
 					AuthProviderButtonView(authProviderType: .google)
 				}
@@ -54,7 +54,7 @@ struct LaunchView: View {
 						getAuthNavDestinationView()
 						.navigationBarTitle("")
 						.navigationBarHidden(true),
-					isActive: $userAuth.hasCheckedSpawnUserExistance
+					isActive: $userAuth.hasCheckedSpawnUserExistence
 				) {
 					AuthProviderButtonView(authProviderType: .apple)
 				}
