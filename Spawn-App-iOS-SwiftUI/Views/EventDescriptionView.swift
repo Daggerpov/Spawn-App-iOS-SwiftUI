@@ -109,10 +109,22 @@ extension EventDescriptionView {
 
         var body: some View {
             HStack {
-                if let profilePictureString = chatMessage.senderUser.profilePicture {
-                    Image(profilePictureString)
-                        .ProfileImageModifier(imageType: .chatMessage)
-                }
+				if let pfpUrl = chatMessage.senderUser.profilePicture {
+					AsyncImage(url: URL(string: pfpUrl)) {
+						image in
+						image
+							.ProfileImageModifier(imageType: .chatMessage)
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 25, height: 25)
+					}
+				} else {
+					Circle()
+						.fill(Color.gray)
+						.frame(width: 25, height: 25)
+				}
+
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
                         Image(systemName: "star.fill")

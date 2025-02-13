@@ -119,7 +119,7 @@ class MockAPIService: IAPIService {
 		throw APIError.invalidData
 	}
 
-	func updateData<T: Encodable, U: Decodable>(_ object: T, to url: URL) async throws -> U {
+	func updateData<T: Encodable, U: Decodable>(_ object: T, to url: URL, parameters: [String: String]? = nil) async throws -> U {
 		/// `TagsViewModel.swift`:
 
 		// upsertTag(upsertAction: .update):

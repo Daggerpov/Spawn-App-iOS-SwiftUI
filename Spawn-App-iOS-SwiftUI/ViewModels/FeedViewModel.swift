@@ -8,8 +8,9 @@
 import Foundation
 
 class FeedViewModel: ObservableObject {
-    @Published var events: [Event] = []
+	@Published var events: [Event] = []
 	@Published var tags: [FriendTag] = []
+	@Published var activeTag: FriendTag?
 
 	var apiService: IAPIService
 	var userId: UUID
@@ -17,44 +18,70 @@ class FeedViewModel: ObservableObject {
 	init(apiService: IAPIService, userId: UUID) {
 		self.apiService = apiService
 		self.userId = userId
-    }
+		self._activeTag = Published(initialValue: tags.first)  // this will automatically null-check
+	}
 
-	func fetchEventsForUser() async -> Void {
-		// /api/v1/events/feedEvents/{requestingUserId}
-		if let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId.uuidString)") {
-			do {
-				let fetchedEvents: [Event] = try await self.apiService.fetchData(
-					from: url, parameters: nil
-				)
+	func fetchAllData() async {
+		await fetchEventsForUser()
+		await fetchTagsForUser()
+	}
 
-				// Ensure updating on the main thread
-				await MainActor.run {
-					self.events = fetchedEvents
-				}
-			} catch {
-				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
-				await MainActor.run {
-					self.events = []
-				}
+	func fetchEventsForUser() async {
+		// Declare `setUrl` as an optional URL
+		var setUrl: URL?
+
+		if let unwrappedActiveTag = activeTag, !unwrappedActiveTag.isEveryone {
+			// Full path: /api/v1/events/friendTag/{friendTagFilterId}
+			setUrl = URL(string: APIService.baseURL + "events/friendTag/\(unwrappedActiveTag.id)")
+		} else {
+			// Path: /api/v1/events/feedEvents/{requestingUserId}
+			setUrl = URL(string: APIService.baseURL + "events/feedEvents/\(userId)")
+		}
+
+		// Safely unwrap `setUrl` using `guard let`
+		guard let url = setUrl else {
+			print("Failed to construct URL")
+			return
+		}
+
+		do {
+			let fetchedEvents: [Event] = try await self.apiService.fetchData(
+				from: url, parameters: nil
+			)
+
+			// Ensure updating on the main thread
+			await MainActor.run {
+				self.events = fetchedEvents
+			}
+		} catch {
+			if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404
+			{
+				print("Invalid status code from response: \(statusCode)")
+				print(apiService.errorMessage ?? "")
+			}
+			await MainActor.run {
+				self.events = []
 			}
 		}
 	}
 
-	func fetchTagsForUser() async -> Void {
+	func fetchTagsForUser() async {
 		// /api/v1/friendTags/owner/{ownerId}?full=full
-		if let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId.uuidString)") {
+		if let url = URL(
+			string: APIService.baseURL + "friendTags/owner/\(userId)"
+		) {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService.fetchData(from: url, parameters: ["full": "true"])
+				let fetchedTags: [FriendTag] = try await self.apiService
+					.fetchData(from: url, parameters: ["full": "true"])
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.tags = fetchedTags
+					self.activeTag = fetchedTags.first
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+				if let statusCode = apiService.errorStatusCode
+				{
 					print("Invalid status code from response: \(statusCode)")
 					print(apiService.errorMessage ?? "")
 				}

@@ -8,21 +8,39 @@
 import SwiftUI
 
 struct FriendRow: View {
+	@EnvironmentObject var viewModel: TagsViewModel
     var friend: User
-    var action: () -> Void = {}
+	var friendTag: FriendTag
 
     var body: some View {
         HStack {
-            if let profilePictureString = friend.profilePicture {
-                Image(profilePictureString)
-					.ProfileImageModifier(imageType: .tagFriends)
-            }
+			if let pfpUrl = friend.profilePicture {
+				AsyncImage(url: URL(string: pfpUrl)) {
+					image in
+					image
+						.ProfileImageModifier(imageType: .tagFriends)
+				} placeholder: {
+					Circle()
+						.fill(Color.gray)
+						.frame(width: 35, height: 35)
+				}
+			} else {
+				Circle()
+					.fill(Color.gray)
+					.frame(width: 35, height: 35)
+			}
+
+
             Image(systemName: "star.fill")
                 .font(.system(size: 10))
             Text(friend.username)
                 .font(.headline)
             Spacer()
-            Button(action: action) {
+			Button(action: {
+				Task{
+					await viewModel.removeFriendFromFriendTag(friendUserId: friend.id, friendTagId: friendTag.id)
+				}
+			}) {
                 Image(systemName: "xmark")
             }
         }
