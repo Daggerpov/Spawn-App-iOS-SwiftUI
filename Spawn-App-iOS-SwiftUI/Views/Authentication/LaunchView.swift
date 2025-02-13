@@ -34,7 +34,7 @@ struct LaunchView: View {
 				.simultaneousGesture(
 					TapGesture().onEnded {
 						if !userAuth.isLoggedIn {
-							userAuth.signIn()
+							userAuth.signInWithGoogle()
 							Task {
 								await userAuth.spawnFetchUserIfAlreadyExists()
 							}
@@ -61,7 +61,7 @@ struct LaunchView: View {
 				.simultaneousGesture(
 					TapGesture().onEnded {
 						if !userAuth.isLoggedIn {
-							userAuth.signIn()
+							userAuth.signInWithGoogle() // TODO: switch for apple
 							Task {
 								await userAuth.spawnFetchUserIfAlreadyExists()
 							}
@@ -77,15 +77,13 @@ struct LaunchView: View {
 		}
 	}
 
-	private func loginWithApple() {
-		// TODO: implement later
-	}
-
 	private func getAuthNavDestinationView() -> AnyView {
-		if let loggedInSpawnUser = userAuth.spawnUser {
+		if userAuth.shouldNavigateToUserInfoInputView {
+			return AnyView(UserInfoInputView())
+		} else if let loggedInSpawnUser = userAuth.spawnUser {
 			return AnyView(FeedView(user: loggedInSpawnUser))
 		} else {
-			return AnyView(UserInfoInputView())
+			return AnyView(EmptyView()) // Fallback, though this should not happen
 		}
 	}
 }

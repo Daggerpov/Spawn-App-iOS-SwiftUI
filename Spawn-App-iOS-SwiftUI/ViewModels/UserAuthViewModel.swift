@@ -35,6 +35,7 @@ class UserAuthViewModel: ObservableObject {
 
 	@Published var shouldNavigateToFeedView: Bool = false
 	@Published var hasCheckedSpawnUserExistence: Bool = false
+	@Published var shouldNavigateToUserInfoInputView: Bool = false // New property for navigation
 
 	private var apiService: IAPIService
 
@@ -130,6 +131,12 @@ class UserAuthViewModel: ObservableObject {
 		}
 	}
 
+	func signOut(){
+		GIDSignIn.sharedInstance.signOut()
+		// TODO: also sign out of apple auth
+		self.checkStatus()
+	}
+
 	func spawnFetchUserIfAlreadyExists() async {
 		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
@@ -142,10 +149,12 @@ class UserAuthViewModel: ObservableObject {
 
 				await MainActor.run {
 					self.spawnUser = fetchedSpawnUser
+					self.shouldNavigateToUserInfoInputView = false // User exists, no need to navigate to UserInfoInputView
 				}
 			} catch {
 				await MainActor.run {
 					self.spawnUser = nil
+					self.shouldNavigateToUserInfoInputView = true // User does not exist, navigate to UserInfoInputView
 				}
 				print(apiService.errorMessage ?? "")
 			}
@@ -178,6 +187,7 @@ class UserAuthViewModel: ObservableObject {
 
 				await MainActor.run {
 					self.spawnUser = fetchedAuthenticatedSpawnUser
+					self.shouldNavigateToUserInfoInputView = false // User created, no need to navigate to UserInfoInputView
 				}
 
 				print("User created successfully.")
@@ -189,6 +199,7 @@ class UserAuthViewModel: ObservableObject {
 			print("Invalid URL for user creation.")
 		}
 	}
+
 	func setShouldNavigateToFeedView() -> Void {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
 	}
