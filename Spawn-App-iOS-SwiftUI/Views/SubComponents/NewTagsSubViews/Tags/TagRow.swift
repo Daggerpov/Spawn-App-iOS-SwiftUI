@@ -22,9 +22,13 @@ struct TagRow: View {
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
-	init(friendTag: FriendTag, addFriendToTagButtonPressedCallback: @escaping (UUID) -> Void) {
+	init(
+		friendTag: FriendTag,
+		addFriendToTagButtonPressedCallback: @escaping (UUID) -> Void
+	) {
 		self.friendTag = friendTag
-		self.addFriendToTagButtonPressedCallback = addFriendToTagButtonPressedCallback
+		self.addFriendToTagButtonPressedCallback =
+			addFriendToTagButtonPressedCallback
 		self._titleText = State(initialValue: friendTag.displayName)
 		self._editedTitleText = State(initialValue: friendTag.displayName)
 		self._editedColorHexCode = State(initialValue: friendTag.colorHexCode)
@@ -57,9 +61,9 @@ struct TagRow: View {
 						}) {
 							Image(
 								systemName: isEditingTitle
-								? "checkmark" : "pencil")
+									? "checkmark" : "pencil")
 						}
-						
+
 						if isEditingTitle {
 							Button(action: {
 								showDeleteAlert = true
@@ -78,7 +82,8 @@ struct TagRow: View {
 				.fontWeight(.semibold)
 
 				Spacer()
-				TagFriendsView(friends: friendTag.friends, isExpanded: $isExpanded)
+				TagFriendsView(
+					friends: friendTag.friends, isExpanded: $isExpanded)
 			}
 			.padding()
 			.background(
@@ -86,13 +91,17 @@ struct TagRow: View {
 					.fill(Color(hex: editedColorHexCode))
 			)
 			if isExpanded {
-				ExpandedTagView(currentSelectedColorHexCode: $editedColorHexCode,friendTag: friendTag, isEditingTag: $isEditingTitle, addFriendToTagButtonPressedCallback: addFriendToTagButtonPressedCallback)
+				ExpandedTagView(
+					currentSelectedColorHexCode: $editedColorHexCode,
+					friendTag: friendTag, isEditingTag: $isEditingTitle,
+					addFriendToTagButtonPressedCallback:
+						addFriendToTagButtonPressedCallback)
 			}
 		}
-		.alert("Delete Friend Tag", isPresented: $showDeleteAlert) { // Add the alert
+		.alert("Delete Friend Tag", isPresented: $showDeleteAlert) {  // Add the alert
 			Button("Yes", role: .destructive) {
 				Task {
-					await viewModel.deleteTag(id: friendTag.id) // Call the delete method
+					await viewModel.deleteTag(id: friendTag.id)  // Call the delete method
 				}
 			}
 			Button("No, I'll keep it", role: .cancel) {}
@@ -150,6 +159,11 @@ struct TagFriendsView: View {
 				Image(systemName: "plus.circle")
 					.font(.system(size: 24))
 					.foregroundColor(.white)
+					.clipShape(Circle())
+					.background(
+						Circle()
+							.stroke(universalAccentColor, lineWidth: 2)
+					)
 			}
 		}
 	}
