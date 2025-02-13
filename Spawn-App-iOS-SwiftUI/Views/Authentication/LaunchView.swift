@@ -42,11 +42,12 @@ struct LaunchView: View {
 					})
 
 				SignInWithAppleButton(.signUp) { request in
-					// authorization request for an Apple ID
-					request.requestedScopes = [.email, .fullName]
+					request.requestedScopes = [.fullName, .email]
 				} onCompletion: { result in
-					// completion handler that is called when the sign-in completes
+					userAuth.handleAppleSignInResult(result)
 				}
+				.frame(height: 50)
+				.padding()
 
 				NavigationLink(
 					destination:
