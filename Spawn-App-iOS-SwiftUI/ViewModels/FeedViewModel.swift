@@ -19,6 +19,11 @@ class FeedViewModel: ObservableObject {
 		self.userId = userId
     }
 
+	func fetchAllData() async -> Void {
+		await fetchEventsForUser()
+		await fetchTagsForUser()
+	}
+
 	func fetchEventsForUser() async -> Void {
 		// /api/v1/events/feedEvents/{requestingUserId}
 		if let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId.uuidString)") {

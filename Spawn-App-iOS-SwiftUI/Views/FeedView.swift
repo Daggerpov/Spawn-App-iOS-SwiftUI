@@ -61,8 +61,7 @@ struct FeedView: View {
 			.background(universalBackgroundColor)
 			.onAppear {
 				Task {
-					await viewModel.fetchEventsForUser()
-					await viewModel.fetchTagsForUser()
+					await viewModel.fetchAllData()
 				}
 			}
 			if showingEventDescriptionPopup {

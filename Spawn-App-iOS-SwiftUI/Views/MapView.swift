@@ -67,8 +67,7 @@ struct MapView: View {
 			.onAppear {
 				adjustRegionForEvents()
 				Task {
-					await viewModel.fetchEventsForUser()
-					await viewModel.fetchTagsForUser()
+					await viewModel.fetchAllData()
 				}
 			}
 			if showingEventDescriptionPopup {
