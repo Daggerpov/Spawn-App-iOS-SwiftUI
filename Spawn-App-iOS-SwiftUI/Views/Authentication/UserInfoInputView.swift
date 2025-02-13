@@ -22,24 +22,19 @@ struct UserInfoInputView: View {
 
 	fileprivate func ProfilePic() -> some View {
 		Group {
-			if userAuth.isLoggedIn {
-				if let pfpUrl = userAuth.profilePicUrl {
-					AsyncImage(url: URL(string: pfpUrl)) { image in
-						image
-							.ProfileImageModifier(imageType: .profilePage)
-					} placeholder: {
-						Circle()
-							.fill(Color.gray)
-					}
-				} else {
+			if userAuth.isLoggedIn, let pfpUrl = userAuth.profilePicUrl {
+				AsyncImage(url: URL(string: pfpUrl)) { image in
+					image
+						.ProfileImageModifier(imageType: .profilePage)
+				} placeholder: {
 					Circle()
-						.fill(.white)
-						.frame(width: 100, height: 100)
+						.fill(Color.gray)
+						.frame(width: 150, height: 150)
 				}
 			} else {
 				Circle()
-					.fill(.white)
-					.frame(width: 100, height: 100)
+					.fill(.gray)
+					.frame(width: 150, height: 150)
 			}
 		}
 	}
@@ -121,7 +116,7 @@ struct UserInfoInputView: View {
 								await userAuth.spawnSignIn(
 									username: username,
 									profilePicture: userAuth.profilePicUrl
-									?? "",
+										?? "",
 									firstName: userAuth.givenName ?? "",
 									lastName: userAuth.familyName ?? ""
 								)
@@ -129,8 +124,8 @@ struct UserInfoInputView: View {
 							userAuth.isFormValid = true
 						}
 						userAuth.setShouldNavigateToFeedView()
-					}){
-						HStack{
+					}) {
+						HStack {
 							Text("Enter Spawn")
 								.font(.system(size: 20, weight: .semibold))
 
@@ -149,7 +144,7 @@ struct UserInfoInputView: View {
 			}
 			.onAppear {
 				userAuth.objectWillChange.send()  // Trigger initial UI update
-				Task{
+				Task {
 					await userAuth.spawnFetchUserIfAlreadyExists()
 				}
 				userAuth.setShouldNavigateToFeedView()
