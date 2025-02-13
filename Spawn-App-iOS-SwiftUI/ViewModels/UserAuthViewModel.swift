@@ -20,7 +20,7 @@ class UserAuthViewModel: ObservableObject {
 	@Published var email: String?
 	@Published var profilePicUrl: String?
 	@Published var isLoggedIn: Bool = false
-	@State var googleExternalUserId: String?
+	@State var externalUserId: String?
 
 	@Published var isFormValid: Bool = false
 	@Published var shouldProceedToFeed: Bool = false
@@ -57,7 +57,7 @@ class UserAuthViewModel: ObservableObject {
 			self.email = user.profile?.email
 			self.profilePicUrl = user.profile!.imageURL(withDimension: 100)!.absoluteString
 			self.isLoggedIn = true
-			self.googleExternalUserId = user.userID
+			self.externalUserId = user.userID
 		}else{
 			self.isLoggedIn = false
 			self.givenName = ""
@@ -65,7 +65,7 @@ class UserAuthViewModel: ObservableObject {
 			self.fullName = nil
 			self.familyName = nil
 			self.email = nil
-			self.googleExternalUserId = nil
+			self.externalUserId = nil
 		}
 	}
 
@@ -127,7 +127,7 @@ class UserAuthViewModel: ObservableObject {
 			self.familyName = user.profile?.familyName
 			self.email = user.profile?.email
 			self.isLoggedIn = true
-			self.googleExternalUserId = user.userID
+			self.externalUserId = user.userID
 		}
 	}
 
@@ -139,11 +139,11 @@ class UserAuthViewModel: ObservableObject {
 	func spawnFetchUserIfAlreadyExists() async -> Void {
 		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
-				guard let unwrappedgoogleExternalUserId = self.googleExternalUserId else { return } // logic might be off with this `return`
+				guard let unwrappedexternalUserId = self.externalUserId else { return } // logic might be off with this `return`
 				guard let unwrappedEmail = self.email else { return } // logic might be off with this `return`
 				let fetchedSpawnUser: User = try await self.apiService.fetchData(
 					from: url,
-					parameters: ["googleExternalUserId": unwrappedgoogleExternalUserId, "email": unwrappedEmail]
+					parameters: ["externalUserId": unwrappedexternalUserId, "email": unwrappedEmail]
 				)
 
 				await MainActor.run {
@@ -183,8 +183,8 @@ class UserAuthViewModel: ObservableObject {
 //
 //				}
 
-				if let unwrappedgoogleExternalUserId = googleExternalUserId {
-					parameters = ["googleExternalUserId": unwrappedgoogleExternalUserId]
+				if let unwrappedexternalUserId = externalUserId {
+					parameters = ["externalUserId": unwrappedexternalUserId]
 				}
 
 				let fetchedAuthenticatedSpawnUser: User = try await self.apiService.sendData(newUser, to: url, parameters: parameters)
