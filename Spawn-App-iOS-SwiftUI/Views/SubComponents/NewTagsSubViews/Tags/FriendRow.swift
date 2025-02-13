@@ -13,11 +13,23 @@ struct FriendRow: View {
 
     var body: some View {
         HStack {
-            if let profilePictureString = friend.profilePicture {
-				// TODO: make async
-                Image(profilePictureString)
-					.ProfileImageModifier(imageType: .tagFriends)
-            }
+			if let pfpUrl = friend.profilePicture {
+				AsyncImage(url: URL(string: pfpUrl)) {
+					image in
+					image
+						.ProfileImageModifier(imageType: .tagFriends)
+				} placeholder: {
+					Circle()
+						.fill(Color.gray)
+						.frame(width: 35, height: 35)
+				}
+			} else {
+				Circle()
+					.fill(Color.gray)
+					.frame(width: 35, height: 35)
+			}
+
+
             Image(systemName: "star.fill")
                 .font(.system(size: 10))
             Text(friend.username)

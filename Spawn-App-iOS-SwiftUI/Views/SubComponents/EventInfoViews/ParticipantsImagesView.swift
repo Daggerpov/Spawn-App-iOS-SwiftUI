@@ -36,11 +36,21 @@ struct ParticipantsImagesView: View {
                 NavigationLink(
                     destination: ProfileView(user: participant),
                     label: {
-                        if let profilePictureString = participant.profilePicture {
-							// TODO: make async
-                            Image(profilePictureString)
-                                .ProfileImageModifier(imageType: .eventParticipants)
-                        }
+						if let pfpUrl = participant.profilePicture {
+							AsyncImage(url: URL(string: pfpUrl)) {
+								image in
+								image
+									.ProfileImageModifier(imageType: .eventParticipants)
+							} placeholder: {
+								Circle()
+									.fill(Color.gray)
+									.frame(width: 25, height: 25)
+							}
+						} else {
+							Circle()
+								.fill(Color.gray)
+								.frame(width: 25, height: 25)
+						}
                     }
                 )
             }

@@ -36,12 +36,13 @@ struct MapView: View {
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService(), userId: user.id))
+					? MockAPIService(userId: user.id) : APIService(),
+				userId: user.id))
 	}
 
 	var body: some View {
 		ZStack {
-			VStack{
+			VStack {
 				ZStack {
 					mapView
 					VStack {
@@ -57,7 +58,9 @@ struct MapView: View {
 					.padding(.top, 50)
 				}
 				.ignoresSafeArea()
-				.dimmedBackground(isActive: showingEventDescriptionPopup || showingEventCreationPopup
+				.dimmedBackground(
+					isActive: showingEventDescriptionPopup
+						|| showingEventCreationPopup
 				)
 			}
 
@@ -152,16 +155,23 @@ extension MapView {
 								.frame(width: 60, height: 60)
 								.foregroundColor(universalAccentColor)
 
-							let creatorOne: User =
-							event.creatorUser ?? User.danielAgapov
 
-							if let creatorPfp = creatorOne
-								.profilePicture
+							if let pfpUrl = event.creatorUser?.profilePicture
 							{
-								// TODO: make async
-								Image(creatorPfp)
-									.ProfileImageModifier(
-										imageType: .mapView)
+								AsyncImage(url: URL(string: pfpUrl)) {
+									image in
+									image
+										.ProfileImageModifier(
+											imageType: .mapView)
+								} placeholder: {
+									Circle()
+										.fill(Color.gray)
+										.frame(width: 40, height: 40)
+								}
+							} else {
+								Circle()
+									.fill(Color.gray)
+									.frame(width: 40, height: 40)
 							}
 						}
 						Triangle()
@@ -175,9 +185,8 @@ extension MapView {
 
 	}
 
-
 	var eventDescriptionPopupView: some View {
-		Group{
+		Group {
 			if let event = eventInPopup, let color = colorInPopup {
 				ZStack {
 					Color(.black)
@@ -199,18 +208,23 @@ extension MapView {
 					// brute-force algorithm I wrote
 					.padding(
 						.vertical,
-						max(330, 330 - CGFloat(100 * (event.chatMessages?.count ?? 0)) - CGFloat (event.note != nil ? 200 : 0))
+						max(
+							330,
+							330
+								- CGFloat(
+									100 * (event.chatMessages?.count ?? 0))
+								- CGFloat(event.note != nil ? 200 : 0))
 					)
 				}
 				.ignoresSafeArea()
 			}
 		}
-	} 
+	}
 
 	var eventCreationPopupView: some View {
 		ZStack {
 			Color(.black)
-				.opacity(0.5) 
+				.opacity(0.5)
 				.onTapGesture {
 					closeCreation()
 				}
@@ -245,4 +259,3 @@ struct Triangle: Shape {
 	}
 }
 
-  
