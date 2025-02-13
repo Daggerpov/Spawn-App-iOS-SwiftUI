@@ -138,10 +138,22 @@ class UserAuthViewModel: ObservableObject {
 	}
 
 	func spawnFetchUserIfAlreadyExists() async {
+		guard let unwrappedExternalUserId = self.externalUserId else {
+			await MainActor.run {
+				self.errorMessage = "External User ID is missing."
+			}
+			return
+		}
+
+		guard let unwrappedEmail = self.email, unwrappedEmail != "No email provided" else {
+			await MainActor.run {
+				self.errorMessage = "Email is missing or invalid."
+			}
+			return
+		}
+
 		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
-				guard let unwrappedExternalUserId = self.externalUserId else { return }
-				guard let unwrappedEmail = self.email else { return }
 				let fetchedSpawnUser: User = try await self.apiService.fetchData(
 					from: url,
 					parameters: ["externalUserId": unwrappedExternalUserId, "email": unwrappedEmail]
@@ -155,6 +167,7 @@ class UserAuthViewModel: ObservableObject {
 				await MainActor.run {
 					self.spawnUser = nil
 					self.shouldNavigateToUserInfoInputView = true // User does not exist, navigate to UserInfoInputView
+					self.errorMessage = "Failed to fetch user: \(error.localizedDescription)"
 				}
 				print(apiService.errorMessage ?? "")
 			}
