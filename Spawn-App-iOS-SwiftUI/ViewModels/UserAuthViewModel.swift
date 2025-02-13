@@ -20,7 +20,7 @@ class UserAuthViewModel: ObservableObject {
 	@Published var email: String?
 	@Published var profilePicUrl: String?
 	@Published var isLoggedIn: Bool = false
-	@State var externalUserId: String?
+	@Published var externalUserId: String? // For both Google and Apple
 
 	@Published var isFormValid: Bool = false
 	@Published var shouldProceedToFeed: Bool = false
@@ -34,12 +34,11 @@ class UserAuthViewModel: ObservableObject {
 	}
 
 	@Published var shouldNavigateToFeedView: Bool = false
-
 	@Published var hasCheckedSpawnUserExistance: Bool = false
 
 	private var apiService: IAPIService
 
-	private init(apiService: IAPIService){
+	private init(apiService: IAPIService) {
 		self.apiService = apiService
 		check()
 		Task {
@@ -47,21 +46,21 @@ class UserAuthViewModel: ObservableObject {
 		}
 	}
 
-	func checkStatus(){
-		if(GIDSignIn.sharedInstance.currentUser != nil){
+	func checkStatus() {
+		if GIDSignIn.sharedInstance.currentUser != nil {
 			let user = GIDSignIn.sharedInstance.currentUser
 			guard let user = user else { return }
 			self.fullName = user.profile?.name
 			self.givenName = user.profile?.givenName
 			self.familyName = user.profile?.familyName
 			self.email = user.profile?.email
-			self.profilePicUrl = user.profile!.imageURL(withDimension: 100)!.absoluteString
+			self.profilePicUrl = user.profile?.imageURL(withDimension: 100)?.absoluteString
 			self.isLoggedIn = true
-			self.externalUserId = user.userID
-		}else{
+			self.externalUserId = user.userID // Google's externalUserId
+		} else {
 			self.isLoggedIn = false
 			self.givenName = ""
-			self.profilePicUrl =  ""
+			self.profilePicUrl = ""
 			self.fullName = nil
 			self.familyName = nil
 			self.email = nil
@@ -69,12 +68,11 @@ class UserAuthViewModel: ObservableObject {
 		}
 	}
 
-	func check(){
+	func check() {
 		GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
 			if let error = error {
 				self.errorMessage = "error: \(error.localizedDescription)"
 			}
-
 			self.checkStatus()
 		}
 	}
@@ -94,18 +92,19 @@ class UserAuthViewModel: ObservableObject {
 					self.familyName = appleIDCredential.fullName?.familyName
 					self.email = email
 					self.isLoggedIn = true
+					self.externalUserId = userIdentifier // Apple's externalUserId
 
-					// Send the userIdentifier and email to your backend
-//					Task {
-//						await self.spawnFetchUserIfAlreadyExists(appleUserIdentifier: userIdentifier, email: email)
-//					}
+					// Fetch or create user
+					Task {
+						await self.spawnFetchUserIfAlreadyExists()
+					}
 				}
 			case .failure(let error):
 				self.errorMessage = "Apple Sign-In failed: \(error.localizedDescription)"
 		}
 	}
 
-	func signIn() {
+	func signInWithGoogle() {
 		guard let presentingViewController = (UIApplication.shared.connectedScenes.first as? UIWindowScene)?.windows.first?.rootViewController else {
 			self.errorMessage = "Error: Unable to get the presenting view controller."
 			return
@@ -127,23 +126,18 @@ class UserAuthViewModel: ObservableObject {
 			self.familyName = user.profile?.familyName
 			self.email = user.profile?.email
 			self.isLoggedIn = true
-			self.externalUserId = user.userID
+			self.externalUserId = user.userID // Google's externalUserId
 		}
 	}
 
-	func signOut(){
-		GIDSignIn.sharedInstance.signOut()
-		self.checkStatus()
-	}
-
-	func spawnFetchUserIfAlreadyExists() async -> Void {
+	func spawnFetchUserIfAlreadyExists() async {
 		if let url = URL(string: APIService.baseURL + "oauth/sign-in") {
 			do {
-				guard let unwrappedexternalUserId = self.externalUserId else { return } // logic might be off with this `return`
-				guard let unwrappedEmail = self.email else { return } // logic might be off with this `return`
+				guard let unwrappedExternalUserId = self.externalUserId else { return }
+				guard let unwrappedEmail = self.email else { return }
 				let fetchedSpawnUser: User = try await self.apiService.fetchData(
 					from: url,
-					parameters: ["externalUserId": unwrappedexternalUserId, "email": unwrappedEmail]
+					parameters: ["externalUserId": unwrappedExternalUserId, "email": unwrappedEmail]
 				)
 
 				await MainActor.run {
@@ -170,21 +164,14 @@ class UserAuthViewModel: ObservableObject {
 			firstName: firstName,
 			lastName: lastName,
 			bio: "",
-			email: unwrappedEmail 
+			email: unwrappedEmail
 		)
 
 		if let url = URL(string: APIService.baseURL + "oauth/make-user") {
 			do {
 				var parameters: [String: String]? = [:]
-
-				// TODO: adjust to work with apple as well:
-
-//				switch (currentSignInMethod) {
-//
-//				}
-
-				if let unwrappedexternalUserId = externalUserId {
-					parameters = ["externalUserId": unwrappedexternalUserId]
+				if let unwrappedExternalUserId = externalUserId {
+					parameters = ["externalUserId": unwrappedExternalUserId]
 				}
 
 				let fetchedAuthenticatedSpawnUser: User = try await self.apiService.sendData(newUser, to: url, parameters: parameters)
@@ -202,12 +189,7 @@ class UserAuthViewModel: ObservableObject {
 			print("Invalid URL for user creation.")
 		}
 	}
-
 	func setShouldNavigateToFeedView() -> Void {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
 	}
-}
-
-enum CurrentSignInMethod {
-	case google, apple// TODO: implement later, email
 }
