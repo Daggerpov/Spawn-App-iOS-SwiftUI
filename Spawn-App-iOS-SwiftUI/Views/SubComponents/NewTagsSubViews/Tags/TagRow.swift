@@ -22,9 +22,13 @@ struct TagRow: View {
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
-	init(friendTag: FriendTag, addFriendToTagButtonPressedCallback: @escaping (UUID) -> Void) {
+	init(
+		friendTag: FriendTag,
+		addFriendToTagButtonPressedCallback: @escaping (UUID) -> Void
+	) {
 		self.friendTag = friendTag
-		self.addFriendToTagButtonPressedCallback = addFriendToTagButtonPressedCallback
+		self.addFriendToTagButtonPressedCallback =
+			addFriendToTagButtonPressedCallback
 		self._titleText = State(initialValue: friendTag.displayName)
 		self._editedTitleText = State(initialValue: friendTag.displayName)
 		self._editedColorHexCode = State(initialValue: friendTag.colorHexCode)
@@ -32,67 +36,78 @@ struct TagRow: View {
 
 	var body: some View {
 		VStack {
-			HStack {
+			Button(action: {
+				isExpanded = true
+			}) {
 				HStack {
-					if isExpanded {
-						titleView
+					HStack {
+						if isExpanded {
+							titleView
 
-						Button(action: {
-							if isEditingTitle {
-								// this means they're submitting the new title/color
-								Task {
-									// Attempt to update the tag
-									await viewModel.upsertTag(
-										id: friendTag.id,
-										displayName: editedTitleText,
-										colorHexCode: editedColorHexCode,
-										upsertAction: .update
-									)
-
-									isEditingTitle = false
-								}
-							} else {
-								isEditingTitle = true
-							}
-						}) {
-							Image(
-								systemName: isEditingTitle
-								? "checkmark" : "pencil")
-						}
-						
-						if isEditingTitle {
 							Button(action: {
-								showDeleteAlert = true
+								if isEditingTitle {
+									// this means they're submitting the new title/color
+									Task {
+										// Attempt to update the tag
+										await viewModel.upsertTag(
+											id: friendTag.id,
+											displayName: editedTitleText,
+											colorHexCode: editedColorHexCode,
+											upsertAction: .update
+										)
+
+										isEditingTitle = false
+									}
+								} else {
+									isEditingTitle = true
+								}
 							}) {
-								Image(systemName: "trash")
+								Image(
+									systemName: isEditingTitle
+										? "checkmark" : "pencil")
 							}
 
+							if isEditingTitle {
+								Button(action: {
+									showDeleteAlert = true
+								}) {
+									Image(systemName: "trash")
+								}
+
+							}
+
+						} else {
+							Text(friendTag.displayName)
 						}
-
-					} else {
-						Text(friendTag.displayName)
 					}
-				}
-				.foregroundColor(.white)
-				.font(.title)
-				.fontWeight(.semibold)
+					.foregroundColor(.white)
+					.font(.title)
+					.fontWeight(.semibold)
 
-				Spacer()
-				TagFriendsView(friends: friendTag.friends, isExpanded: $isExpanded)
-			}
-			.padding()
-			.background(
-				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+					Spacer()
+					TagFriendsView(
+						friends: friendTag.friends, isExpanded: $isExpanded)
+				}
+				.padding()
+				.background(
+					RoundedRectangle(
+						cornerRadius: universalRectangleCornerRadius
+					)
 					.fill(Color(hex: editedColorHexCode))
-			)
+				)
+			}
 			if isExpanded {
-				ExpandedTagView(currentSelectedColorHexCode: $editedColorHexCode,friendTag: friendTag, isEditingTag: $isEditingTitle, addFriendToTagButtonPressedCallback: addFriendToTagButtonPressedCallback)
+				ExpandedTagView(
+					currentSelectedColorHexCode: $editedColorHexCode,
+					friendTag: friendTag, isEditingTag: $isEditingTitle,
+					addFriendToTagButtonPressedCallback:
+						addFriendToTagButtonPressedCallback)
 			}
 		}
-		.alert("Delete Friend Tag", isPresented: $showDeleteAlert) { // Add the alert
+		.alert("Delete Friend Tag", isPresented: $showDeleteAlert) {  // Add the alert
 			Button("Yes", role: .destructive) {
 				Task {
-					await viewModel.deleteTag(id: friendTag.id) // Call the delete method
+					await viewModel.deleteTag(id: friendTag.id)  // Call the delete method
 				}
 			}
 			Button("No, I'll keep it", role: .cancel) {}
@@ -124,24 +139,7 @@ struct TagFriendsView: View {
 	@Binding var isExpanded: Bool
 
 	var body: some View {
-		HStack(spacing: -10) {
-			ForEach(friends ?? []) { friend in
-				if let pfpUrl = friend.profilePicture {
-					AsyncImage(url: URL(string: pfpUrl)) {
-						image in
-						image
-							.ProfileImageModifier(imageType: .eventParticipants)
-					} placeholder: {
-						Circle()
-							.fill(Color.gray)
-							.frame(width: 25, height: 25)
-					}
-				} else {
-					Circle()
-						.fill(.gray)
-						.frame(width: 25, height: 25)
-				}
-			}
+		ZStack {
 			Button(action: {
 				withAnimation {
 					isExpanded.toggle()  // Toggle expanded state
@@ -150,7 +148,35 @@ struct TagFriendsView: View {
 				Image(systemName: "plus.circle")
 					.font(.system(size: 24))
 					.foregroundColor(.white)
+					.clipShape(Circle())
+					.background(
+						Circle()
+							.stroke(universalAccentColor, lineWidth: 2)
+					)
 			}
+			.offset(x: CGFloat((friends?.count ?? 0)) * 15)  // Position the button after the last profile picture
+			
+			ForEach(Array((friends ?? []).enumerated().reversed()), id: \.element.id) {
+				index, friend in
+				if let pfpUrl = friend.profilePicture {
+					AsyncImage(url: URL(string: pfpUrl)) { image in
+						image
+							.ProfileImageModifier(imageType: .eventParticipants)
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 25, height: 25)
+					}
+					.offset(x: CGFloat(index) * 15)  // Adjust overlap spacing
+				} else {
+					Circle()
+						.fill(.gray)
+						.frame(width: 25, height: 25)
+						.offset(x: CGFloat(index) * 15)  // Adjust overlap spacing
+				}
+			}
+
 		}
+		.padding(.trailing, CGFloat((friends?.count ?? 0) * 15))
 	}
 }

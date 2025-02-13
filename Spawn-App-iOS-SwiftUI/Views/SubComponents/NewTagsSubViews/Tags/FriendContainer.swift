@@ -25,7 +25,7 @@ struct FriendContainer: View {
             ScrollView {
                 if let friends = friendTag.friends, !friends.isEmpty {
                     ForEach(friends) { friend in
-                        FriendRow(friend: friend)
+						FriendRow(friend: friend, friendTag: friendTag)
                             .padding(.horizontal)
                     }
                 } else {

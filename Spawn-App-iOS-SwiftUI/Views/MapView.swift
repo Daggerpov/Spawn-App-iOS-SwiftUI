@@ -47,7 +47,9 @@ struct MapView: View {
 					mapView
 					VStack {
 						VStack {
-							TagsScrollView(tags: viewModel.tags)
+							TagsScrollView(
+								tags: viewModel.tags,
+								activeTag: $viewModel.activeTag)
 						}
 						.padding(.horizontal)
 						.padding(.top, 20)
@@ -67,8 +69,12 @@ struct MapView: View {
 			.onAppear {
 				adjustRegionForEvents()
 				Task {
+					await viewModel.fetchAllData()
+				}
+			}
+			.onChange(of: viewModel.activeTag) { _ in
+				Task {
 					await viewModel.fetchEventsForUser()
-					await viewModel.fetchTagsForUser()
 				}
 			}
 			if showingEventDescriptionPopup {
@@ -155,9 +161,7 @@ extension MapView {
 								.frame(width: 60, height: 60)
 								.foregroundColor(universalAccentColor)
 
-
-							if let pfpUrl = event.creatorUser?.profilePicture
-							{
+							if let pfpUrl = event.creatorUser?.profilePicture {
 								AsyncImage(url: URL(string: pfpUrl)) {
 									image in
 									image
@@ -258,4 +262,3 @@ struct Triangle: Shape {
 		return path
 	}
 }
-
