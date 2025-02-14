@@ -10,7 +10,7 @@ import GoogleSignIn
 import SwiftUI
 import UIKit
 
-class UserAuthViewModel: ObservableObject {
+class UserAuthViewModel: NSObject, ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
 	@Published var errorMessage: String?
@@ -50,6 +50,8 @@ class UserAuthViewModel: ObservableObject {
 			self.isLoggedIn = true
 		}
 
+		super.init() // Call super.init() before using `self`
+
 		check()
 		Task {
 			await spawnFetchUserIfAlreadyExists()
@@ -83,7 +85,7 @@ class UserAuthViewModel: ObservableObject {
 		GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
 			if let error = error {
 				self.errorMessage = "error: \(error.localizedDescription)"
-				print(self.errorMessage)
+				print(self.errorMessage as Any)
 
 			}
 			self.checkStatus()
@@ -118,7 +120,7 @@ class UserAuthViewModel: ObservableObject {
 		case .failure(let error):
 			self.errorMessage =
 				"Apple Sign-In failed: \(error.localizedDescription)"
-			print(self.errorMessage)
+				print(self.errorMessage as Any)
 
 		}
 	}
@@ -131,7 +133,7 @@ class UserAuthViewModel: ObservableObject {
 		else {
 			self.errorMessage =
 				"Error: Unable to get the presenting view controller."
-			print(self.errorMessage)
+			print(self.errorMessage as Any)
 
 			return
 		}
@@ -147,7 +149,7 @@ class UserAuthViewModel: ObservableObject {
 		) { signInResult, error in
 			if let error = error {
 				self.errorMessage = "Error: \(error.localizedDescription)"
-				print(self.errorMessage)
+				print(self.errorMessage as Any)
 				return
 			}
 			// Retrieve user info if sign-in is successful
@@ -161,6 +163,16 @@ class UserAuthViewModel: ObservableObject {
 			self.isLoggedIn = true
 			self.externalUserId = user.userID  // Google's externalUserId
 		}
+	}
+
+	func signInWithApple() {
+		let appleIDProvider = ASAuthorizationAppleIDProvider()
+		let request = appleIDProvider.createRequest()
+		request.requestedScopes = [.fullName, .email]
+
+		let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+		authorizationController.delegate = self
+		authorizationController.performRequests()
 	}
 
 	func signOut() {
@@ -209,7 +221,7 @@ class UserAuthViewModel: ObservableObject {
 		guard let unwrappedExternalUserId = self.externalUserId else {
 			await MainActor.run {
 				self.errorMessage = "External User ID is missing."
-				print(self.errorMessage)
+				print(self.errorMessage as Any)
 
 			}
 			return
@@ -220,7 +232,7 @@ class UserAuthViewModel: ObservableObject {
 		else {
 			await MainActor.run {
 				self.errorMessage = "Email is missing or invalid."
-				print(self.errorMessage)
+				print(self.errorMessage as Any)
 			}
 			return
 		}
@@ -246,7 +258,7 @@ class UserAuthViewModel: ObservableObject {
 					self.shouldNavigateToUserInfoInputView = true  // User does not exist, navigate to UserInfoInputView
 					self.errorMessage =
 						"Failed to fetch user: \(error.localizedDescription)"
-					print(self.errorMessage)
+					print(self.errorMessage as Any)
 
 				}
 				print(apiService.errorMessage ?? "")
@@ -309,5 +321,17 @@ class UserAuthViewModel: ObservableObject {
 
 	func setShouldNavigateToFeedView() {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
+	}
+}
+
+
+// Conform to ASAuthorizationControllerDelegate
+extension UserAuthViewModel: ASAuthorizationControllerDelegate {
+	func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+		handleAppleSignInResult(.success(authorization))
+	}
+
+	func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+		handleAppleSignInResult(.failure(error))
 	}
 }

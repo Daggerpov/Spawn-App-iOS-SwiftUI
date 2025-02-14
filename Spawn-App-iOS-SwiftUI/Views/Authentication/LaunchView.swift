@@ -41,20 +41,12 @@ struct LaunchView: View {
 						}
 					})
 
-				SignInWithAppleButton(.signUp) { request in
-					request.requestedScopes = [.fullName, .email]
-				} onCompletion: { result in
-					userAuth.handleAppleSignInResult(result)
+				Button(action: {
+					userAuth.signInWithApple()
+				}) {
+					AuthProviderButtonView(authProviderType: .apple)
 				}
-				.frame(height: 50)
-				.frame(maxWidth: .infinity)
-				.cornerRadius(8)
-				.foregroundColor(.white)
-				.background(
-					RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-						.fill(.black)
-				)
-				.padding(.horizontal, 32)
+
 				Spacer()
 			}
 			.background(Color(hex: "#8693FF"))
