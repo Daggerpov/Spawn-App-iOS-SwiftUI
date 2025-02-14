@@ -47,7 +47,14 @@ struct LaunchView: View {
 					userAuth.handleAppleSignInResult(result)
 				}
 				.frame(height: 50)
-				.padding()
+				.frame(maxWidth: .infinity)
+				.cornerRadius(8)
+				.foregroundColor(.white)
+				.background(
+					RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+						.fill(.black)
+				)
+				.padding(.horizontal, 32)
 
 				NavigationLink(
 					destination:
