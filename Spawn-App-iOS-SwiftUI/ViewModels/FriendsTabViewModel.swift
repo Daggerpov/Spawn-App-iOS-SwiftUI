@@ -30,7 +30,8 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests () async {
-		if let url = URL(string: APIService.baseURL + "users/\(userId)/friend-requests") {
+		// full path: /api/v1/friend-requests/incoming/{userId}
+		if let url = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") {
 			do {
 				let fetchedIncomingFriendRequests: [FriendRequest] = try await self.apiService.fetchData(from: url, parameters: nil)
 
@@ -98,7 +99,8 @@ class FriendsTabViewModel: ObservableObject {
 			senderUserId: userId,
 			receiverUserId: friendUserId
 		)
-		if let url = URL(string: APIService.baseURL + "users/friend-request") {
+		// full path: /api/v1/friend-requests
+		if let url = URL(string: APIService.baseURL + "friend-requests") {
 			do {
 				try await self.apiService.sendData(createdFriendRequest, to: url, parameters: nil)
 			} catch {

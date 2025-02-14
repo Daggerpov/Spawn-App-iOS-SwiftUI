@@ -11,6 +11,7 @@ class TagsViewModel: ObservableObject {
 	@Published var tags: [FriendTag] = []
 	@Published var creationMessage: String = ""
 	@Published var deletionMessage: String = ""
+	@Published var friendRemovalMessage: String = ""
 
 	var apiService: IAPIService
 	var userId: UUID
@@ -87,7 +88,7 @@ class TagsViewModel: ObservableObject {
 						string: APIService.baseURL + "friendTags/\(newTag.id)")
 				else { return }
 				let update: FriendTagCreationDTO = try await self.apiService
-					.updateData(newTag, to: url)
+					.updateData(newTag, to: url, parameters: nil)
 			}
 		} catch {
 			await MainActor.run {
@@ -113,6 +114,29 @@ class TagsViewModel: ObservableObject {
 				await MainActor.run {
 					deletionMessage =
 						"There was an error deleting the tag. Please try again."
+					print(apiService.errorMessage ?? "")
+				}
+			}
+		}
+		await fetchTags()
+	}
+
+	func removeFriendFromFriendTag(friendUserId: UUID, friendTagId: UUID) async
+	{
+		if let url = URL(
+			string: APIService.baseURL + "friendTags/\(friendTagId)")
+		{
+			do {
+				try await self.apiService.sendData(EmptyBody(),
+to: url,
+					parameters: [
+						"friendTagAction": "removeFriend",
+						"userId": friendUserId.uuidString,
+					])
+			} catch {
+				await MainActor.run {
+					friendRemovalMessage =
+						"There was an error removing your friend from the friend tag. Please try again."
 					print(apiService.errorMessage ?? "")
 				}
 			}

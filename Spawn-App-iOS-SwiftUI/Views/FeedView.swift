@@ -30,7 +30,8 @@ struct FeedView: View {
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
 				apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(), userId: user.id))
+					? MockAPIService(userId: user.id) : APIService(),
+				userId: user.id))
 	}
 
 	var body: some View {
@@ -40,8 +41,10 @@ struct FeedView: View {
 					Spacer()
 					HeaderView(user: user).padding(.top, 50)
 					Spacer()
-					TagsScrollView(tags: viewModel.tags)
-					// TODO: implement logic here to adjust search results when the tag clicked is changed
+					TagsScrollView(
+						tags: viewModel.tags,
+						activeTag: $viewModel.activeTag
+					)
 					Spacer()
 					Spacer()
 					VStack {
@@ -61,8 +64,12 @@ struct FeedView: View {
 			.background(universalBackgroundColor)
 			.onAppear {
 				Task {
+					await viewModel.fetchAllData()
+				}
+			}
+			.onChange(of: viewModel.activeTag) { _ in
+				Task {
 					await viewModel.fetchEventsForUser()
-					await viewModel.fetchTagsForUser()
 				}
 			}
 			if showingEventDescriptionPopup {
@@ -92,7 +99,7 @@ struct FeedView: View {
 
 extension FeedView {
 	var eventDescriptionPopupView: some View {
-		Group{
+		Group {
 			if let event = eventInPopup, let color = colorInPopup {
 				ZStack {
 					Color(.black)
@@ -100,7 +107,7 @@ extension FeedView {
 						.onTapGesture {
 							closeDescription()
 						}
-					
+
 					EventDescriptionView(
 						event: event,
 						users: event.participantUsers,
@@ -114,7 +121,12 @@ extension FeedView {
 					// brute-force algorithm I wrote
 					.padding(
 						.vertical,
-						max(330, 330 - CGFloat(100 * (event.chatMessages?.count ?? 0)) - CGFloat (event.note != nil ? 200 : 0))
+						max(
+							330,
+							330
+								- CGFloat(
+									100 * (event.chatMessages?.count ?? 0))
+								- CGFloat(event.note != nil ? 200 : 0))
 					)
 				}
 				.ignoresSafeArea()
@@ -162,7 +174,10 @@ extension FeedView {
 						EventCardView(
 							user: user,
 							event: event,
-							color: Color(hex: event.eventFriendTagColorHexCodeForRequestingUser ?? eventColorHexCodes[0])
+							color: Color(
+								hex: event
+									.eventFriendTagColorHexCodeForRequestingUser
+									?? eventColorHexCodes[0])
 						) { event, color in
 							eventInPopup = event
 							colorInPopup = color

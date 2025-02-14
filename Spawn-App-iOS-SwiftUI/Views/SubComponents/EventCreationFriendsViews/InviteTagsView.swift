@@ -143,10 +143,23 @@ struct InviteTagFriendsView: View {
 	var body: some View {
 		ForEach(friends ?? []) { friend in
 			HStack(spacing: -10) {
-				if let profilePictureString = friend.profilePicture {
-					Image(profilePictureString)
-						.ProfileImageModifier(imageType: .eventParticipants)
+				if let pfpUrl = friend.profilePicture {
+					AsyncImage(url: URL(string: pfpUrl)) {
+						image in
+						image
+							.ProfileImageModifier(imageType: .eventParticipants)
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 25, height: 25)
+					}
+				} else {
+					Circle()
+						.fill(Color.gray)
+						.frame(width: 25, height: 25)
 				}
+
+				
 			}
 		}
 	}

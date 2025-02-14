@@ -82,10 +82,23 @@ struct FriendRowForAddingFriendsToTag: View {
 			viewModel.toggleFriendSelection(friend)
 		}) {
 			HStack {
-				if let profilePictureString = friend.profilePicture {
-					Image(profilePictureString)
-						.ProfileImageModifier(imageType: .tagFriends)
+				if let pfpUrl = friend.profilePicture {
+					AsyncImage(url: URL(string: pfpUrl)) {
+						image in
+						image
+							.ProfileImageModifier(imageType: .tagFriends)
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 35, height: 35)
+					}
+				} else {
+					Circle()
+						.fill(Color.gray)
+						.frame(width: 35, height: 35)
 				}
+
+
 				Image(systemName: "star.fill")
 					.font(.system(size: 10))
 				Text(FormatterService.shared.formatName(user: friend))
