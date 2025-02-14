@@ -165,7 +165,17 @@ class UserAuthViewModel: ObservableObject {
 
 	func signOut() {
 		GIDSignIn.sharedInstance.signOut()
-		// TODO: also sign out of apple auth
+
+		// Clear externalUserId from Keychain
+		let success = KeychainService.shared.delete(key: "externalUserId")
+		if !success {
+			print("Failed to delete externalUserId from Keychain")
+		}
+
+		// Reset user state
+		self.isLoggedIn = false
+		self.externalUserId = nil
+		self.spawnUser = nil
 		self.checkStatus()
 	}
 
