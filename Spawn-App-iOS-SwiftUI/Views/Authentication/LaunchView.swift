@@ -55,25 +55,6 @@ struct LaunchView: View {
 						.fill(.black)
 				)
 				.padding(.horizontal, 32)
-
-				NavigationLink(
-					destination:
-						getAuthNavDestinationView()
-						.navigationBarTitle("")
-						.navigationBarHidden(true),
-					isActive: $userAuth.hasCheckedSpawnUserExistence
-				) {
-					AuthProviderButtonView(authProviderType: .apple)
-				}
-				.simultaneousGesture(
-					TapGesture().onEnded {
-						if !userAuth.isLoggedIn {
-							userAuth.signInWithGoogle() // TODO: switch for apple
-							Task {
-								await userAuth.spawnFetchUserIfAlreadyExists()
-							}
-						}
-					})
 				Spacer()
 			}
 			.background(Color(hex: "#8693FF"))
