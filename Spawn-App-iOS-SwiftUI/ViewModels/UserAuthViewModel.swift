@@ -45,12 +45,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		// Retrieve externalUserId from Keychain
 		if let data = KeychainService.shared.load(key: "externalUserId"),
-		   let externalUserId = String(data: data, encoding: .utf8) {
+			let externalUserId = String(data: data, encoding: .utf8)
+		{
 			self.externalUserId = externalUserId
 			self.isLoggedIn = true
 		}
 
-		super.init() // Call super.init() before using `self`
+		super.init()  // Call super.init() before using `self`
 
 		check()
 		Task {
@@ -120,7 +121,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		case .failure(let error):
 			self.errorMessage =
 				"Apple Sign-In failed: \(error.localizedDescription)"
-				print(self.errorMessage as Any)
+			print(self.errorMessage as Any)
 
 		}
 	}
@@ -170,7 +171,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		let request = appleIDProvider.createRequest()
 		request.requestedScopes = [.fullName, .email]
 
-		let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+		let authorizationController = ASAuthorizationController(
+			authorizationRequests: [request])
 		authorizationController.delegate = self
 		authorizationController.performRequests()
 	}
@@ -183,23 +185,26 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if let externalUserId = self.externalUserId {
 			// Invalidate Apple ID credential state (optional but recommended)
 			let appleIDProvider = ASAuthorizationAppleIDProvider()
-			appleIDProvider.getCredentialState(forUserID: externalUserId) { credentialState, error in
+			appleIDProvider.getCredentialState(forUserID: externalUserId) {
+				credentialState, error in
 				if let error = error {
-					print("Failed to get Apple ID credential state: \(error.localizedDescription)")
+					print(
+						"Failed to get Apple ID credential state: \(error.localizedDescription)"
+					)
 					return
 				}
 				switch credentialState {
-					case .authorized:
-						// The user is still authorized. You can optionally revoke the token.
-						print("User is still authorized with Apple ID.")
-					case .revoked:
-						// The user has revoked access. Clear local state.
-						print("User has revoked Apple ID access.")
-					case .notFound:
-						// The user is not found. Clear local state.
-						print("User not found in Apple ID system.")
-					default:
-						break
+				case .authorized:
+					// The user is still authorized. You can optionally revoke the token.
+					print("User is still authorized with Apple ID.")
+				case .revoked:
+					// The user has revoked access. Clear local state.
+					print("User has revoked Apple ID access.")
+				case .notFound:
+					// The user is not found. Clear local state.
+					print("User not found in Apple ID system.")
+				default:
+					break
 				}
 			}
 		}
@@ -222,7 +227,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			await MainActor.run {
 				self.errorMessage = "External User ID is missing."
 				print(self.errorMessage as Any)
-
 			}
 			return
 		}
@@ -233,6 +237,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			await MainActor.run {
 				self.errorMessage = "Email is missing or invalid."
 				print(self.errorMessage as Any)
+				self.shouldNavigateToUserInfoInputView = true  // Navigate to UserInfoInputView
 			}
 			return
 		}
@@ -259,7 +264,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					self.errorMessage =
 						"Failed to fetch user: \(error.localizedDescription)"
 					print(self.errorMessage as Any)
-
 				}
 				print(apiService.errorMessage ?? "")
 			}
@@ -292,8 +296,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				let fetchedAuthenticatedSpawnUser: User =
-				try await self.apiService.sendData(
-					newUser, to: url, parameters: parameters)
+					try await self.apiService.sendData(
+						newUser, to: url, parameters: parameters)
 
 				await MainActor.run {
 					self.spawnUser = fetchedAuthenticatedSpawnUser
@@ -302,8 +306,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 				// Save externalUserId to Keychain after account creation
 				if let externalUserId = self.externalUserId,
-				   let data = externalUserId.data(using: .utf8) {
-					let success = KeychainService.shared.save(key: "externalUserId", data: data)
+					let data = externalUserId.data(using: .utf8)
+				{
+					let success = KeychainService.shared.save(
+						key: "externalUserId", data: data)
 					if !success {
 						print("Failed to save externalUserId to Keychain")
 					}
@@ -324,14 +330,18 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 }
 
-
 // Conform to ASAuthorizationControllerDelegate
 extension UserAuthViewModel: ASAuthorizationControllerDelegate {
-	func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
+	func authorizationController(
+		controller: ASAuthorizationController,
+		didCompleteWithAuthorization authorization: ASAuthorization
+	) {
 		handleAppleSignInResult(.success(authorization))
 	}
 
-	func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+	func authorizationController(
+		controller: ASAuthorizationController, didCompleteWithError error: Error
+	) {
 		handleAppleSignInResult(.failure(error))
 	}
 }
