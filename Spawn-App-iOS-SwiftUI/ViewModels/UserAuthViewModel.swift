@@ -42,6 +42,14 @@ class UserAuthViewModel: ObservableObject {
 
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
+
+		// Retrieve externalUserId from Keychain
+		if let data = KeychainService.shared.load(key: "externalUserId"),
+		   let externalUserId = String(data: data, encoding: .utf8) {
+			self.externalUserId = externalUserId
+			self.isLoggedIn = true
+		}
+
 		check()
 		Task {
 			await spawnFetchUserIfAlreadyExists()
@@ -236,12 +244,21 @@ class UserAuthViewModel: ObservableObject {
 				}
 
 				let fetchedAuthenticatedSpawnUser: User =
-					try await self.apiService.sendData(
-						newUser, to: url, parameters: parameters)
+				try await self.apiService.sendData(
+					newUser, to: url, parameters: parameters)
 
 				await MainActor.run {
 					self.spawnUser = fetchedAuthenticatedSpawnUser
 					self.shouldNavigateToUserInfoInputView = false  // User created, no need to navigate to UserInfoInputView
+				}
+
+				// Save externalUserId to Keychain after account creation
+				if let externalUserId = self.externalUserId,
+				   let data = externalUserId.data(using: .utf8) {
+					let success = KeychainService.shared.save(key: "externalUserId", data: data)
+					if !success {
+						print("Failed to save externalUserId to Keychain")
+					}
 				}
 
 				print("User created successfully.")
