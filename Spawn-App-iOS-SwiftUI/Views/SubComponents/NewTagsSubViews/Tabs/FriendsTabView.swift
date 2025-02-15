@@ -365,19 +365,43 @@ struct FriendsTabView: View {
 
 extension FriendsTabView {
 	var choosingTagViewPopup: some View {
-		ZStack {
-			Color(.black)
-				.opacity(0.5)
-				.onTapGesture {
-					closeChoosingTagPopUp()
-				}
-				.ignoresSafeArea()
+        Group {
+            if let unwrappedFriendInPopUp = friendInPopUp
+            {  // ensuring it isn't null
+                ZStack {
+                    Color(.black)
+                        .opacity(0.5)
+                        .onTapGesture {
+                            closeChoosingTagPopUp()
+                        }
+                        .ignoresSafeArea()
 
-			// call your new view here
+                    // call your new view here
+                    ChoosingTagPopupView(
+                        friend: unwrappedFriendInPopUp
+                    )
+                    
+                }
+            } else {
+                // do nothing; maybe figure something out later
+                ZStack {
+                    Color(.black)
+                        .opacity(0.5)
+                        .onTapGesture {
+                            closeChoosingTagPopUp()
+                        }
+                        .ignoresSafeArea()
 
-			ChoosingTagPopupView()
-		}
+                    // call your new view here
+
+                    Text(
+                        "Sorry, this friend request cannot be viewed at the moment. There is an error."
+                    )
+                }
+            }
+        }
 	}
+
 	var friendRequestPopUpView: some View {
 		Group {
 			if let unwrappedFriendInPopUp = friendInPopUp,

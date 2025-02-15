@@ -9,12 +9,26 @@ import SwiftUI
 
 struct ChoosingTagPopupView: View {
     
+    var friend: User
+    
     var body: some View {
-        NavigationStack{
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Select your friend tags below")
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {                    Text(friend.username)
+                }
+                .frame(
+                    minHeight: 300,
+                    idealHeight: 340,
+                    maxHeight: 380
+                )
+                .padding(20)
+                .background(universalBackgroundColor)
+                .cornerRadius(universalRectangleCornerRadius)
             }
+            .scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
+//            .onAppear {
+//                Task {
+//                    await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
+//                }
+//            }
         }
-    }
-        
 }

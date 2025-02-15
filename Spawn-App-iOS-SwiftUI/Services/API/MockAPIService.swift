@@ -44,7 +44,7 @@ class MockAPIService: IAPIService {
 			// fetchIncomingFriendRequests():
 
 			if url.absoluteString == APIService.baseURL
-				+ "users/\(userIdForUrl)/friend-requests"
+				+ "friend-requests/incoming/\(userIdForUrl)"
 			{
 				return FriendRequest.mockFriendRequests as! T
 			}
