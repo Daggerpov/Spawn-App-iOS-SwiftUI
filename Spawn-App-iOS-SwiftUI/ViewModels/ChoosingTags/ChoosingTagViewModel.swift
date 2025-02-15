@@ -9,6 +9,7 @@ import Foundation
 
 class ChooseTagPopUpViewModel: ObservableObject {
 	@Published var chooseTagErrorMessage: String = ""
+    //TODO: make new published var for tags
 
 	//TODO: figure out functions
 
@@ -38,4 +39,6 @@ class ChooseTagPopUpViewModel: ObservableObject {
 			}
 		}
 	}
+    
+    //TODO: add API call to fetch tags
 }

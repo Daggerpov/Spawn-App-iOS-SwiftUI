@@ -10,10 +10,15 @@ import SwiftUI
 struct ChoosingTagPopupView: View {
     
     var friend: User
+    //TODO: init view model -> friendRequestView
     
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {                    Text(friend.username)
+                    //TODO: fill in rest of user info
+                    //TODO: show tags
+                    //TODO: add button for each tag, when clicked will add to viewModel.tags
+                    //TODO: done button, when clicked call viewmodel.AddTagsToFriend
                 }
                 .frame(
                     minHeight: 300,
@@ -31,4 +36,5 @@ struct ChoosingTagPopupView: View {
 //                }
 //            }
         }
+    //TODO: change onAppear await to viewModel.fetchTagsToAddToFriend
 }
