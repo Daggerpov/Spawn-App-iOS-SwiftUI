@@ -12,11 +12,13 @@ struct FriendsTabView: View {
 	let user: User
 
 	@State private var showingFriendRequestPopup: Bool = false
+	@State var showingChooseTagsPopup: Bool = false
 	@State private var friendInPopUp: User?
 	@State private var friendRequestIdInPopup: UUID?
 
 	// for pop-ups:
 	@State private var friendRequestOffset: CGFloat = 1000
+	@State private var chooseTagsOffset: CGFloat = 1000
 	// ------------
 
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
@@ -53,6 +55,10 @@ struct FriendsTabView: View {
 
 			if showingFriendRequestPopup {
 				friendRequestPopUpView
+			}
+
+			if showingChooseTagsPopup {
+				choosingTagViewPopup
 			}
 		}
 	}
@@ -233,6 +239,11 @@ struct FriendsTabView: View {
 		showingFriendRequestPopup = false
 	}
 
+	func closeChoosingTagPopUp() {
+		chooseTagsOffset = 1000
+		showingChooseTagsPopup = false
+	}
+
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
 		var friend: User
@@ -353,6 +364,20 @@ struct FriendsTabView: View {
 }
 
 extension FriendsTabView {
+	var choosingTagViewPopup: some View {
+		ZStack {
+			Color(.black)
+				.opacity(0.5)
+				.onTapGesture {
+					closeChoosingTagPopUp()
+				}
+				.ignoresSafeArea()
+
+			// call your new view here
+
+			ChoosingTagPopupView()
+		}
+	}
 	var friendRequestPopUpView: some View {
 		Group {
 			if let unwrappedFriendInPopUp = friendInPopUp,
@@ -371,7 +396,9 @@ extension FriendsTabView {
 					FriendRequestView(
 						user: unwrappedFriendInPopUp,
 						friendRequestId: unwrappedFriendRequestIdInPopup,
-						closeCallback: closeFriendPopUp)
+						closeCallback: closeFriendPopUp,
+						showingChoosingTagView: $showingChooseTagsPopup
+					)
 				}
 			} else {
 				// do nothing; maybe figure something out later
@@ -392,4 +419,9 @@ extension FriendsTabView {
 			}
 		}
 	}
+}
+
+@available(iOS 17.0, *)
+#Preview {
+	FriendsTabView(user: .danielAgapov)
 }

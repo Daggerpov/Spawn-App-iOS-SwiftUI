@@ -10,10 +10,12 @@ import SwiftUI
 struct FriendRequestView: View {
 	@ObservedObject var viewModel: FriendRequestViewModel
 
+	@Binding var showingChoosingTagView: Bool
+
 	let user: User
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
-	init(user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void)
+	init(user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void, showingChoosingTagView: Binding<Bool>)
 	{
 		self.user = user
 		self.closeCallback = closeCallback
@@ -21,6 +23,7 @@ struct FriendRequestView: View {
 			apiService: MockAPIService.isMocking
 				? MockAPIService() : APIService(), userId: user.id,
 			friendRequestId: friendRequestId)
+		self._showingChoosingTagView = showingChoosingTagView
 	}
 
 	var body: some View {
@@ -57,6 +60,7 @@ extension FriendRequestView {
 					.friendRequestAction(action: FriendRequestAction.accept)
 			}
 			closeCallback()  // closes the popup
+			showingChoosingTagView = true
 		}) {
 			Text("accept")
 			// TODO SHANNON
@@ -74,5 +78,7 @@ extension FriendRequestView {
 		}
 
 	}
+
+	
 
 }
