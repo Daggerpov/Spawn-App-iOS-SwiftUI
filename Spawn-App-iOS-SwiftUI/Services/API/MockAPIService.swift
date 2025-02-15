@@ -9,7 +9,7 @@ import Foundation
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = false
+	static var isMocking: Bool = true
 
 	var errorMessage: String? = nil
 	var errorStatusCode: Int? = nil
@@ -44,7 +44,7 @@ class MockAPIService: IAPIService {
 			// fetchIncomingFriendRequests():
 
 			if url.absoluteString == APIService.baseURL
-				+ "users/\(userIdForUrl)/friend-requests"
+				+ "friend-requests/incoming/\(userIdForUrl)"
 			{
 				return FriendRequest.mockFriendRequests as! T
 			}
