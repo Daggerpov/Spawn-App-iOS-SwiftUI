@@ -24,11 +24,9 @@ struct LaunchView: View {
 
 				// Google Sign-In Button
 				Button(action: {
-					if !userAuth.isLoggedIn {
-						userAuth.signInWithGoogle()
-						Task {
-							await userAuth.spawnFetchUserIfAlreadyExists()
-						}
+					userAuth.signInWithGoogle()
+					Task {
+						await userAuth.spawnFetchUserIfAlreadyExists()
 					}
 				}) {
 					AuthProviderButtonView(authProviderType: .google)

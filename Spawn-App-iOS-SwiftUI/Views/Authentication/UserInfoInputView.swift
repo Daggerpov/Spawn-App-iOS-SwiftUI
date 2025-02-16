@@ -103,8 +103,7 @@ struct UserInfoInputView: View {
 						)
 					}
 					if userAuth.authProvider == .apple
-						&& (userAuth.email == nil
-							|| userAuth.email == "No email provided")
+						&& userAuth.email == nil
 					{
 						InputFieldView(
 							label: "Email",
@@ -169,7 +168,7 @@ struct UserInfoInputView: View {
 	}
 
 	private var needsEmail: Bool {
-		return userAuth.authProvider == .apple && (userAuth.email == nil || userAuth.email == "No email provided")
+		return userAuth.authProvider == .apple && userAuth.email == nil
 	}
 
 	private func validateFields() {

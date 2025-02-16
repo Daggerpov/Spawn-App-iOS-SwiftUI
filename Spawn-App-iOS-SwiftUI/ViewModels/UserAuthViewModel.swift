@@ -252,8 +252,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 
-		guard let unwrappedEmail = self.email,
-			  unwrappedEmail != "No email provided" else {
+		guard let unwrappedEmail = self.email else {
 			await MainActor.run {
 				self.errorMessage = "Email is missing or invalid."
 				print(self.errorMessage as Any)
