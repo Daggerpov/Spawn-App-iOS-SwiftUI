@@ -15,6 +15,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
 	@Published var errorMessage: String?
 
+	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider
+
 	@Published var givenName: String?
 	@Published var fullName: String?
 	@Published var familyName: String?
@@ -141,7 +143,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		GIDConfiguration(
 			clientID:
-				"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
+				"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com" // shouldn't be a secret
 		)
 
 		// Trigger the sign-in flow
@@ -163,6 +165,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.email = user.profile?.email
 			self.isLoggedIn = true
 			self.externalUserId = user.userID  // Google's externalUserId
+
+			self.authProvider = .google
 		}
 	}
 
@@ -175,6 +179,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			authorizationRequests: [request])
 		authorizationController.delegate = self
 		authorizationController.performRequests()
+
+		self.authProvider = .apple
 	}
 
 	func signOut() {
@@ -219,7 +225,20 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.isLoggedIn = false
 		self.externalUserId = nil
 		self.spawnUser = nil
-		self.checkStatus()
+//		self.checkStatus()
+		self.authProvider = nil
+
+		self.givenName = ""
+		self.profilePicUrl = ""
+		self.fullName = nil
+		self.familyName = nil
+		self.email = nil
+		self.errorMessage = nil
+		self.profilePicUrl = nil
+		self.isFormValid = false
+		self.shouldProceedToFeed = false
+		self.shouldNavigateToUserInfoInputView = false
+		self.shouldNavigateToFeedView = false
 	}
 
 	func spawnFetchUserIfAlreadyExists() async {
@@ -232,12 +251,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		guard let unwrappedEmail = self.email,
-			unwrappedEmail != "No email provided"
-		else {
+			  unwrappedEmail != "No email provided" else {
 			await MainActor.run {
 				self.errorMessage = "Email is missing or invalid."
 				print(self.errorMessage as Any)
-				self.shouldNavigateToUserInfoInputView = true  // Navigate to UserInfoInputView
+				self.shouldNavigateToUserInfoInputView = true
 			}
 			return
 		}
@@ -273,11 +291,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func spawnSignIn(
+	func spawnMakeUser(
 		username: String, profilePicture: String, firstName: String,
-		lastName: String
+		lastName: String, email: String
 	) async {
-		guard let unwrappedEmail = self.email else { return }
 		let newUser = User(
 			id: UUID(),
 			username: username,
@@ -285,19 +302,23 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			firstName: firstName,
 			lastName: lastName,
 			bio: "",
-			email: unwrappedEmail
+			email: email
 		)
 
 		if let url = URL(string: APIService.baseURL + "oauth/make-user") {
 			do {
-				var parameters: [String: String]? = [:]
+				var parameters: [String: String] = [:]
 				if let unwrappedExternalUserId = externalUserId {
-					parameters = ["externalUserId": unwrappedExternalUserId]
+					parameters["externalUserId"] = unwrappedExternalUserId
+				}
+				// Add provider to parameters using authProvider.rawValue
+				if let authProvider = self.authProvider {
+					parameters["provider"] = authProvider.rawValue
 				}
 
-				let fetchedAuthenticatedSpawnUser: User =
-					try await self.apiService.sendData(
-						newUser, to: url, parameters: parameters)
+				let fetchedAuthenticatedSpawnUser: User = try await self.apiService.sendData(
+					newUser, to: url, parameters: parameters
+				)
 
 				await MainActor.run {
 					self.spawnUser = fetchedAuthenticatedSpawnUser
@@ -306,10 +327,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 				// Save externalUserId to Keychain after account creation
 				if let externalUserId = self.externalUserId,
-					let data = externalUserId.data(using: .utf8)
-				{
-					let success = KeychainService.shared.save(
-						key: "externalUserId", data: data)
+				   let data = externalUserId.data(using: .utf8) {
+					let success = KeychainService.shared.save(key: "externalUserId", data: data)
 					if !success {
 						print("Failed to save externalUserId to Keychain")
 					}
