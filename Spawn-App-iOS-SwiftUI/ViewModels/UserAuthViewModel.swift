@@ -145,7 +145,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func signInWithGoogle() {
+	func signInWithGoogle() async {
 		guard
 			let presentingViewController =
 				(UIApplication.shared.connectedScenes.first as? UIWindowScene)?
@@ -184,10 +184,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.externalUserId = user.userID  // Google's externalUserId
 
 			self.authProvider = .google
+
+			await spawnFetchUserIfAlreadyExists()
 		}
 	}
 
-	func signInWithApple() {
+	func signInWithApple() async {
 		let appleIDProvider = ASAuthorizationAppleIDProvider()
 		let request = appleIDProvider.createRequest()
 		request.requestedScopes = [.fullName, .email]
@@ -198,6 +200,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		authorizationController.performRequests()
 
 		self.authProvider = .apple
+
+		await spawnFetchUserIfAlreadyExists()
 	}
 
 	func signOut() {

@@ -24,9 +24,8 @@ struct LaunchView: View {
 
 				// Google Sign-In Button
 				Button(action: {
-					userAuth.signInWithGoogle()
 					Task {
-						await userAuth.spawnFetchUserIfAlreadyExists()
+						await userAuth.signInWithGoogle()
 					}
 				}) {
 					AuthProviderButtonView(authProviderType: .google)
@@ -34,7 +33,9 @@ struct LaunchView: View {
 
 				// Apple Sign-In Button
 				Button(action: {
-					userAuth.signInWithApple()
+					Task {
+						await userAuth.signInWithApple()
+					}
 				}) {
 					AuthProviderButtonView(authProviderType: .apple)
 				}
@@ -46,7 +47,9 @@ struct LaunchView: View {
 			.onAppear {
 				User.setupFriends()
 			}
-			.navigationDestination(isPresented: $userAuth.hasCheckedSpawnUserExistence) {
+			.navigationDestination(
+				isPresented: $userAuth.hasCheckedSpawnUserExistence
+			) {
 				getAuthNavDestinationView()
 					.navigationBarTitle("")
 					.navigationBarHidden(true)
