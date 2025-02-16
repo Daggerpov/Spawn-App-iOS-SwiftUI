@@ -41,6 +41,25 @@ struct LaunchView: View {
 						}
 					})
 
+				NavigationLink(
+					destination:
+						getAuthNavDestinationView()
+						.navigationBarTitle("")
+						.navigationBarHidden(true),
+					isActive: $userAuth.hasCheckedSpawnUserExistence
+				) {
+					AuthProviderButtonView(authProviderType: .apple)
+				}
+				.simultaneousGesture(
+					TapGesture().onEnded {
+						if !userAuth.isLoggedIn {
+							userAuth.signInWithApple()
+							Task {
+								await userAuth.spawnFetchUserIfAlreadyExists()
+							}
+						}
+					})
+
 				Button(action: {
 					userAuth.signInWithApple()
 				}) {
@@ -49,7 +68,7 @@ struct LaunchView: View {
 
 				Spacer()
 			}
-			.background(Color(hex: "#8693FF"))
+			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
 			.onAppear {
 				User.setupFriends()
@@ -63,7 +82,7 @@ struct LaunchView: View {
 		} else if let loggedInSpawnUser = userAuth.spawnUser {
 			return AnyView(FeedView(user: loggedInSpawnUser))
 		} else {
-			return AnyView(EmptyView()) // Fallback, though this should not happen
+			return AnyView(EmptyView())  // Fallback, though this should not happen
 		}
 	}
 }
