@@ -16,18 +16,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var errorMessage: String?
 
 	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider
-
-	@Published var givenName: String?
-	@Published var fullName: String?
-	@Published var familyName: String?
-	@Published var email: String?
-	@Published var profilePicUrl: String?
-	@Published var isLoggedIn: Bool = false
 	@Published var externalUserId: String?  // For both Google and Apple
-
-	@Published var isFormValid: Bool = false
-	@Published var shouldProceedToFeed: Bool = false
-
+	@Published var isLoggedIn: Bool = false
+	@Published var hasCheckedSpawnUserExistence: Bool = false
 	@Published var spawnUser: User? {
 		didSet {
 			if spawnUser != nil {
@@ -36,8 +27,16 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
+	@Published var givenName: String?
+	@Published var fullName: String?
+	@Published var familyName: String?
+	@Published var email: String?
+	@Published var profilePicUrl: String?
+
+	@Published var isFormValid: Bool = false
+
+	@Published var shouldProceedToFeed: Bool = false
 	@Published var shouldNavigateToFeedView: Bool = false
-	@Published var hasCheckedSpawnUserExistence: Bool = false
 	@Published var shouldNavigateToUserInfoInputView: Bool = false  // New property for navigation
 
 	private var apiService: IAPIService
@@ -74,14 +73,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.isLoggedIn = true
 			self.externalUserId = user.userID  // Google's externalUserId
 		} else {
-			self.isLoggedIn = false
-			self.givenName = ""
-			self.profilePicUrl = ""
-			self.fullName = nil
-			self.familyName = nil
-			self.email = nil
-			self.externalUserId = nil
+			resetState()
 		}
+	}
+
+	func resetState() {
+		// Reset user state
+		self.errorMessage = nil
+		self.authProvider = nil
+		self.externalUserId = nil
+		self.isLoggedIn = false
+		self.hasCheckedSpawnUserExistence = false
+		self.spawnUser = nil
+
+		self.givenName = ""
+		self.fullName = nil
+		self.familyName = nil
+		self.email = nil
+		self.profilePicUrl = nil
+
+		self.isFormValid = false
+
+		self.shouldProceedToFeed = false
+		self.shouldNavigateToFeedView = false
+		self.shouldNavigateToUserInfoInputView = false
 	}
 
 	func check() {
@@ -223,24 +238,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			print("Failed to delete externalUserId from Keychain")
 		}
 
-		// Reset user state
-		self.isLoggedIn = false
-		self.externalUserId = nil
-		self.spawnUser = nil
-//		self.checkStatus()
-		self.authProvider = nil
-
-		self.givenName = ""
-		self.profilePicUrl = ""
-		self.fullName = nil
-		self.familyName = nil
-		self.email = nil
-		self.errorMessage = nil
-		self.profilePicUrl = nil
-		self.isFormValid = false
-		self.shouldProceedToFeed = false
-		self.shouldNavigateToUserInfoInputView = false
-		self.shouldNavigateToFeedView = false
+		resetState()
 	}
 
 	func spawnFetchUserIfAlreadyExists() async {
