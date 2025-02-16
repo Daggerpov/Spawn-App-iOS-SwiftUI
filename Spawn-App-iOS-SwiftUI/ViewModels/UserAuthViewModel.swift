@@ -103,7 +103,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			{
 				// Extract user information
 				let userIdentifier = appleIDCredential.user  // Unique identifier
-				let email = appleIDCredential.email ?? "No email provided"  // May be hidden
+
+				if let unwrappedEmail = appleIDCredential.email {
+					self.email = unwrappedEmail
+				}
 				let fullName =
 					"\(appleIDCredential.fullName?.givenName ?? "") \(appleIDCredential.fullName?.familyName ?? "")"
 
@@ -111,7 +114,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.fullName = fullName
 				self.givenName = appleIDCredential.fullName?.givenName
 				self.familyName = appleIDCredential.fullName?.familyName
-				self.email = email
 				self.isLoggedIn = true
 				self.externalUserId = userIdentifier  // Apple's externalUserId
 

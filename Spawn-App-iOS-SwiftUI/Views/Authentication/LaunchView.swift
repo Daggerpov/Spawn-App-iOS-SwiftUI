@@ -22,44 +22,19 @@ struct LaunchView: View {
 					.scaledToFit()
 					.frame(width: 300, height: 300)
 
-				NavigationLink(
-					destination:
-						getAuthNavDestinationView()
-						.navigationBarTitle("")
-						.navigationBarHidden(true),
-					isActive: $userAuth.hasCheckedSpawnUserExistence
-				) {
+				// Google Sign-In Button
+				Button(action: {
+					if !userAuth.isLoggedIn {
+						userAuth.signInWithGoogle()
+						Task {
+							await userAuth.spawnFetchUserIfAlreadyExists()
+						}
+					}
+				}) {
 					AuthProviderButtonView(authProviderType: .google)
 				}
-				.simultaneousGesture(
-					TapGesture().onEnded {
-						if !userAuth.isLoggedIn {
-							userAuth.signInWithGoogle()
-							Task {
-								await userAuth.spawnFetchUserIfAlreadyExists()
-							}
-						}
-					})
 
-				NavigationLink(
-					destination:
-						getAuthNavDestinationView()
-						.navigationBarTitle("")
-						.navigationBarHidden(true),
-					isActive: $userAuth.hasCheckedSpawnUserExistence
-				) {
-					AuthProviderButtonView(authProviderType: .apple)
-				}
-				.simultaneousGesture(
-					TapGesture().onEnded {
-						if !userAuth.isLoggedIn {
-							userAuth.signInWithApple()
-							Task {
-								await userAuth.spawnFetchUserIfAlreadyExists()
-							}
-						}
-					})
-
+				// Apple Sign-In Button
 				Button(action: {
 					userAuth.signInWithApple()
 				}) {
@@ -73,16 +48,24 @@ struct LaunchView: View {
 			.onAppear {
 				User.setupFriends()
 			}
+			.navigationDestination(isPresented: $userAuth.hasCheckedSpawnUserExistence) {
+				getAuthNavDestinationView()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}
 		}
 	}
 
-	private func getAuthNavDestinationView() -> AnyView {
-		if userAuth.shouldNavigateToUserInfoInputView {
-			return AnyView(UserInfoInputView())
-		} else if let loggedInSpawnUser = userAuth.spawnUser {
-			return AnyView(FeedView(user: loggedInSpawnUser))
-		} else {
-			return AnyView(EmptyView())  // Fallback, though this should not happen
+	private func getAuthNavDestinationView() -> some View {
+		Group {
+			if userAuth.shouldNavigateToUserInfoInputView {
+				UserInfoInputView()
+			} else if let loggedInSpawnUser = userAuth.spawnUser {
+				FeedView(user: loggedInSpawnUser)
+			} else {
+				// Fallback: Stay on LaunchView
+				EmptyView()
+			}
 		}
 	}
 }
