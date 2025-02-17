@@ -39,6 +39,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var shouldNavigateToFeedView: Bool = false
 	@Published var shouldNavigateToUserInfoInputView: Bool = false  // New property for navigation
 
+	@Published var isLoading: Bool = false
+
 	private var apiService: IAPIService
 
 	private init(apiService: IAPIService) {
@@ -112,96 +114,78 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	func handleAppleSignInResult(_ result: Result<ASAuthorization, Error>) {
 		switch result {
-		case .success(let authorization):
-			if let appleIDCredential = authorization.credential
-				as? ASAuthorizationAppleIDCredential
-			{
-				// Extract user information
-				let userIdentifier = appleIDCredential.user  // Unique identifier
+			case .success(let authorization):
+				if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
+					let userIdentifier = appleIDCredential.user
+					let email = appleIDCredential.email ?? "No email provided"
 
-				if let unwrappedEmail = appleIDCredential.email {
-					self.email = unwrappedEmail
+					// Set user details
+					self.email = email
+					self.givenName = appleIDCredential.fullName?.givenName
+					self.familyName = appleIDCredential.fullName?.familyName
+					self.isLoggedIn = true
+					self.externalUserId = userIdentifier
+
+					// Check user existence AFTER setting credentials
+					Task {
+						await self.spawnFetchUserIfAlreadyExists()
+					}
 				}
-				let fullName =
-					"\(appleIDCredential.fullName?.givenName ?? "") \(appleIDCredential.fullName?.familyName ?? "")"
-
-				// Store user information
-				self.fullName = fullName
-				self.givenName = appleIDCredential.fullName?.givenName
-				self.familyName = appleIDCredential.fullName?.familyName
-				self.isLoggedIn = true
-				self.externalUserId = userIdentifier  // Apple's externalUserId
-
-				// Fetch or create user
-				Task {
-					await self.spawnFetchUserIfAlreadyExists()
-				}
-			}
-		case .failure(let error):
-			self.errorMessage =
-				"Apple Sign-In failed: \(error.localizedDescription)"
-			print(self.errorMessage as Any)
-
+			case .failure(let error):
+				self.errorMessage = "Apple Sign-In failed: \(error.localizedDescription)"
+				print(self.errorMessage as Any)
 		}
 	}
 
 	func signInWithGoogle() async {
-		guard
-			let presentingViewController =
-				(UIApplication.shared.connectedScenes.first as? UIWindowScene)?
-				.windows.first?.rootViewController
-		else {
-			self.errorMessage =
-				"Error: Unable to get the presenting view controller."
-			print(self.errorMessage as Any)
-
-			return
-		}
-
-		GIDConfiguration(
-			clientID:
-				"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com" // shouldn't be a secret
-		)
-
-		// Trigger the sign-in flow
-		GIDSignIn.sharedInstance.signIn(
-			withPresenting: presentingViewController
-		) { signInResult, error in
-			if let error = error {
-				self.errorMessage = "Error: \(error.localizedDescription)"
+		await MainActor.run {
+			guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+				  let presentingViewController = windowScene.windows.first?.rootViewController else {
+				self.errorMessage = "Error: Unable to get the presenting view controller."
 				print(self.errorMessage as Any)
 				return
 			}
-			// Retrieve user info if sign-in is successful
-			guard let user = signInResult?.user else { return }
-			self.profilePicUrl =
-				user.profile?.imageURL(withDimension: 100)?.absoluteString ?? ""
-			self.fullName = user.profile?.name
-			self.givenName = user.profile?.givenName
-			self.familyName = user.profile?.familyName
-			self.email = user.profile?.email
-			self.isLoggedIn = true
-			self.externalUserId = user.userID  // Google's externalUserId
 
-			self.authProvider = .google
+			GIDConfiguration(
+				clientID: "822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
+			)
 
-			await spawnFetchUserIfAlreadyExists()
+			GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController) { signInResult, error in
+				if let error = error {
+					self.errorMessage = "Error: \(error.localizedDescription)"
+					print(self.errorMessage as Any)
+					return
+				}
+
+				guard let user = signInResult?.user else { return }
+				self.profilePicUrl = user.profile?.imageURL(withDimension: 100)?.absoluteString ?? ""
+				self.fullName = user.profile?.name
+				self.givenName = user.profile?.givenName
+				self.familyName = user.profile?.familyName
+				self.email = user.profile?.email
+				self.isLoggedIn = true
+				self.externalUserId = user.userID
+				self.authProvider = .google
+
+				Task {
+					await self.spawnFetchUserIfAlreadyExists()
+				}
+			}
 		}
 	}
 
-	func signInWithApple() async {
+	func signInWithApple() {
 		let appleIDProvider = ASAuthorizationAppleIDProvider()
 		let request = appleIDProvider.createRequest()
 		request.requestedScopes = [.fullName, .email]
 
 		let authorizationController = ASAuthorizationController(
-			authorizationRequests: [request])
-		authorizationController.delegate = self
+			authorizationRequests: [request]
+		)
+		authorizationController.delegate = self // Ensure delegate is set
 		authorizationController.performRequests()
 
 		self.authProvider = .apple
-
-		await spawnFetchUserIfAlreadyExists()
 	}
 
 	func signOut() {
