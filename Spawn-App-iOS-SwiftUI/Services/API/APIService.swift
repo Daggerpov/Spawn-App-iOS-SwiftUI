@@ -97,6 +97,11 @@ class APIService: IAPIService {
 
 		do {
 			let decoder = APIService.makeDecoder()
+
+			if let jsonString = String(data: data, encoding: .utf8){
+				print("from this URL: \(url)")
+				print("Received JSON: \(jsonString)")
+			}
 			let decodedData = try decoder.decode(T.self, from: data)
 			return decodedData
 		} catch {
