@@ -25,7 +25,7 @@ struct FriendTagToggleView: View {
                                 RoundedRectangle(cornerRadius: 22)
                                     .fill(universalBackgroundColor)
                                     .matchedGeometryEffect(id: "pickerSelection", in: animationNamespace)
-                                    .frame(width: 80, height: 30)
+                                    .frame(width: 80, height: 33)
                             }
                         }
                     )
