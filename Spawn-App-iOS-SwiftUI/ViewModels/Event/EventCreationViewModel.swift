@@ -11,6 +11,7 @@ class EventCreationViewModel: ObservableObject {
 	// semi-singleton, that can only be reset upon calling `reInitialize()`
 	static var shared: EventCreationViewModel = EventCreationViewModel()
 
+	@Published var selectedDate: Date = Date()
 	@Published var event: EventCreationDTO
 	@Published var creationMessage: String = ""
 
@@ -28,18 +29,32 @@ class EventCreationViewModel: ObservableObject {
 		self.apiService = MockAPIService.isMocking
 		? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()) : APIService()
 
-		// Initialize the event with the logged-in user's `userId`, and a random `id`
+		let defaultStart = Date()
+		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60) // 2 hours later
 		self.event = EventCreationDTO(
 			id: UUID(),
 			title: "",
-			// location name is input from `EventCreationView`
-			// TODO DANIEL: make lat & long inputtable through clicking on a map
+			startTime: defaultStart,
+			endTime: defaultEnd,
 			location: Location(id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}
 
+
 	func createEvent() async -> Void {
+		// Ensure times are set if not already provided
+		if event.startTime == nil {
+			event.startTime = combineDateAndTime(selectedDate, time: Date())
+		}
+		if event.endTime == nil {
+			event.endTime = combineDateAndTime(selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
+		}
+
+		// Populate invited user and tag IDs from the selected arrays
+		event.invitedFriendUserIds = selectedFriends.map { $0.id }
+		event.invitedFriendTagIds = selectedTags.map { $0.id }
+
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
 				try await self.apiService.sendData(event, to: url, parameters: nil)
@@ -51,6 +66,7 @@ class EventCreationViewModel: ObservableObject {
 			}
 		}
 	}
+
 
 	// Helper function to combine a date and a time into a single Date
 	func combineDateAndTime(_ date: Date, time: Date) -> Date {
