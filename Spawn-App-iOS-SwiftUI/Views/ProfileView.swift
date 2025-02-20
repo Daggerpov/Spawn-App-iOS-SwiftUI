@@ -36,8 +36,6 @@ struct ProfileView: View {
 								image
 									.ProfileImageModifier(
 										imageType: .profilePage)
-									.ProfileImageModifier(
-										imageType: .profilePage)
 							} placeholder: {
 								Circle()
 									.fill(Color.gray)
@@ -48,57 +46,6 @@ struct ProfileView: View {
 							.ProfileImageModifier(imageType: .profilePage)
 					}
 
-					Circle()
-						.fill(profilePicPlusButtonColor)
-						.frame(width: 30, height: 30)
-						.overlay(
-							Image(systemName: "plus")
-								.foregroundColor(universalBackgroundColor)
-						)
-						.offset(x: 45, y: -45)
-
-					VStack(alignment: .leading, spacing: 25) {
-						ProfileField(
-							label: "Name",
-							value:
-								"\(user.firstName ?? "") \(user.lastName ?? "")"
-						)
-						ProfileField(label: "Username", value: user.username)
-						ProfileField(label: "Email", value: user.email)
-						BioField(
-							label: "Bio",
-							bio: Binding(
-								get: { bio },
-								set: { bio = $0 }
-							))
-					}
-					.padding(.horizontal)
-
-					Spacer()
-					Divider().background(universalAccentColor)
-					Spacer()
-
-					Button(action: {
-						switch editingState {
-						case .edit:
-							editingState = .save
-						case .save:
-							editingState = .edit
-						}
-					}) {
-						Text(editingState.displayText())
-							.font(.headline)
-							.foregroundColor(universalAccentColor)
-							.frame(maxWidth: 135)
-							.padding()
-							.background(
-								RoundedRectangle(
-									cornerRadius: universalRectangleCornerRadius
-								)
-								.stroke(universalAccentColor, lineWidth: 1)
-							)
-					}
-					.padding(.horizontal)
 					Circle()
 						.fill(profilePicPlusButtonColor)
 						.frame(width: 30, height: 30)
