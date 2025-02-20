@@ -43,6 +43,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	private var apiService: IAPIService
 
+	// delete account:
+
+	@Published var activeAlert: DeleteAccountAlertType?
+
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
 
@@ -137,6 +141,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.errorMessage =
 				"Apple Sign-In failed: \(error.localizedDescription)"
 			print(self.errorMessage as Any)
+			// Check user existence AFTER setting credentials
+			Task {
+				await self.spawnFetchUserIfAlreadyExists()
+			}
 		}
 	}
 
@@ -292,63 +300,167 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func spawnMakeUser(
-		username: String, profilePicture: String, firstName: String,
-		lastName: String, email: String
+		username: String,
+		profilePicture: UIImage?,
+		firstName: String,
+		lastName: String,
+		email: String
 	) async {
+		// Create the User object
 		let newUser = User(
 			id: UUID(),
 			username: username,
-			profilePicture: profilePicture,
+			profilePicture: nil,  // This will be set by the backend
 			firstName: firstName,
 			lastName: lastName,
 			bio: "",
 			email: email
 		)
 
-		if let url = URL(string: APIService.baseURL + "oauth/make-user") {
-			do {
-				var parameters: [String: String] = [:]
-				if let unwrappedExternalUserId = externalUserId {
-					parameters["externalUserId"] = unwrappedExternalUserId
-				}
-				// Add provider to parameters using authProvider.rawValue
-				if let authProvider = self.authProvider {
-					parameters["provider"] = authProvider.rawValue
-				}
+		// Prepare the URL with query parameters
+		var urlComponents = URLComponents(
+			string: APIService.baseURL + "oauth/make-user")!
+		var queryItems: [URLQueryItem] = []
 
-				let fetchedAuthenticatedSpawnUser: User =
-					try await self.apiService.sendData(
-						newUser, to: url, parameters: parameters
-					)
+		if let unwrappedExternalUserId = externalUserId {
+			queryItems.append(
+				URLQueryItem(
+					name: "externalUserId", value: unwrappedExternalUserId))
+		}
 
-				await MainActor.run {
-					self.spawnUser = fetchedAuthenticatedSpawnUser
-					self.shouldNavigateToUserInfoInputView = false  // User created, no need to navigate to UserInfoInputView
-				}
+		if let authProvider = self.authProvider {
+			queryItems.append(
+				URLQueryItem(name: "provider", value: authProvider.rawValue))
+		}
 
-				// Save externalUserId to Keychain after account creation
-				if let externalUserId = self.externalUserId,
-					let data = externalUserId.data(using: .utf8)
-				{
-					let success = KeychainService.shared.save(
-						key: "externalUserId", data: data)
-					if !success {
-						print("Failed to save externalUserId to Keychain")
-					}
-				}
+		urlComponents.queryItems = queryItems
 
-				print("User created successfully.")
-			} catch {
-				print("Error creating the user: \(error.localizedDescription)")
-				print(apiService.errorMessage ?? "")
-			}
-		} else {
+		guard let url = urlComponents.url else {
 			print("Invalid URL for user creation.")
+			return
+		}
+
+		// Create the request
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+
+		// Convert profile picture to JPEG data if it exists
+		let profilePictureData = profilePicture?.jpegData(
+			compressionQuality: 0.8)
+
+		// Always use multipart/form-data when sending the request
+		let boundary = "Boundary-\(UUID().uuidString)"
+		request.setValue(
+			"multipart/form-data; boundary=\(boundary)",
+			forHTTPHeaderField: "Content-Type")
+
+		var body = Data()
+
+		// Add UserDTO as JSON part
+		body.append("--\(boundary)\r\n".data(using: .utf8)!)
+		body.append(
+			"Content-Disposition: form-data; name=\"userDTO\"\r\n".data(
+				using: .utf8)!)
+		body.append(
+			"Content-Type: application/json\r\n\r\n".data(using: .utf8)!)
+
+		// Encode user data
+		if let userData = try? JSONEncoder().encode(newUser) {
+			body.append(userData)
+			body.append("\r\n".data(using: .utf8)!)
+		} else {
+			print("Failed to encode user data")
+			return
+		}
+
+		// Add profile picture part if it exists
+		if let imageData = profilePictureData {
+			body.append("--\(boundary)\r\n".data(using: .utf8)!)
+			body.append(
+				"Content-Disposition: form-data; name=\"profilePicture\"; filename=\"profile.jpg\"\r\n"
+					.data(using: .utf8)!)
+			body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+			body.append(imageData)
+			body.append("\r\n".data(using: .utf8)!)
+		}
+
+		// Add final boundary
+		body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+		// Set the request body
+		request.httpBody = body
+
+		// Send the request
+		do {
+			let (data, response) = try await URLSession.shared.data(
+				for: request)
+
+			// Print response for debugging
+			if let httpResponse = response as? HTTPURLResponse {
+				print("Response status code: \(httpResponse.statusCode)")
+			}
+
+			// Try to decode the response
+			let fetchedUser = try JSONDecoder().decode(User.self, from: data)
+
+			await MainActor.run {
+				self.spawnUser = fetchedUser
+				self.shouldNavigateToUserInfoInputView = false
+			}
+
+			// Save externalUserId to Keychain
+			if let externalUserId = self.externalUserId,
+				let data = externalUserId.data(using: .utf8)
+			{
+				let success = KeychainService.shared.save(
+					key: "externalUserId", data: data)
+				if !success {
+					print("Failed to save externalUserId to Keychain")
+				}
+			}
+
+			print("User created successfully.")
+		} catch {
+			print("Error creating the user: \(error)")
+			// Print more detailed error information
+			if let decodingError = error as? DecodingError {
+				print("Decoding error: \(decodingError)")
+			}
 		}
 	}
 
 	func setShouldNavigateToFeedView() {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
+	}
+
+	func deleteAccount() async {
+		guard let userId = spawnUser?.id else {
+			await MainActor.run {
+				activeAlert = .deleteError
+			}
+			return
+		}
+
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
+			do {
+				try await self.apiService.deleteData(from: url)
+				let success = KeychainService.shared.delete(
+					key: "externalUserId")
+				if !success {
+					print("Failed to delete externalUserId from Keychain")
+				}
+
+				await MainActor.run {
+					resetState()
+					activeAlert = .deleteSuccess
+				}
+			} catch {
+				print("Error deleting account: \(error.localizedDescription)")
+				await MainActor.run {
+					activeAlert = .deleteError
+				}
+			}
+		}
 	}
 }
 
@@ -366,4 +478,5 @@ extension UserAuthViewModel: ASAuthorizationControllerDelegate {
 	) {
 		handleAppleSignInResult(.failure(error))
 	}
+
 }
