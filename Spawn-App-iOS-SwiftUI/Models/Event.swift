@@ -13,8 +13,8 @@ class Event: Identifiable, Codable {
 	var title: String?
 
     // MARK: Info
-    var startTime: Date? // TODO: change to proper time later
-    var endTime: Date? // TODO: change to proper time later
+    var startTime: Date?
+    var endTime: Date?
     var location: Location?
     var note: String? // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
     
@@ -58,34 +58,6 @@ class Event: Identifiable, Codable {
 		self.chatMessages = chatMessages
 		self.eventFriendTagColorHexCodeForRequestingUser = eventFriendTagColorHexCodeForRequestingUser
 		self.participationStatus = participationStatus
-	}
-
-	private enum CodingKeys: String, CodingKey {
-		case id, title, startTime, endTime, location, note, creatorUser, participantUsers, invitedUsers, chatMessages, eventFriendTagColorHexCodeForRequestingUser, participationStatus
-	}
-
-	required init(from decoder: Decoder) throws {
-		let container = try decoder.container(keyedBy: CodingKeys.self)
-
-		// Decode UUID and optional fields
-		self.id = try container.decode(UUID.self, forKey: .id)
-		self.title = try container.decodeIfPresent(String.self, forKey: .title)
-		self.note = try container.decodeIfPresent(String.self, forKey: .note)
-		self.eventFriendTagColorHexCodeForRequestingUser = try container.decodeIfPresent(String.self, forKey: .eventFriendTagColorHexCodeForRequestingUser)
-
-		// Custom decoding for startTime and endTime (handling OffsetDateTime to Date)
-		let dateFormatter = ISO8601DateFormatter()
-		self.startTime = try container.decodeIfPresent(String.self, forKey: .startTime).flatMap { dateFormatter.date(from: $0) }
-		self.endTime = try container.decodeIfPresent(String.self, forKey: .endTime).flatMap { dateFormatter.date(from: $0) }
-
-		// Handle the rest of the nested objects
-		self.creatorUser = try container.decodeIfPresent(User.self, forKey: .creatorUser)
-		self.participantUsers = try container.decodeIfPresent([User].self, forKey: .participantUsers)
-		self.invitedUsers = try container.decodeIfPresent([User].self, forKey: .invitedUsers)
-		self.chatMessages = try container.decodeIfPresent([ChatMessage].self, forKey: .chatMessages)
-
-		// Participation status might need a specific decoder as well
-		self.participationStatus = try container.decodeIfPresent(ParticipationStatus.self, forKey: .participationStatus)
 	}
 }
 
