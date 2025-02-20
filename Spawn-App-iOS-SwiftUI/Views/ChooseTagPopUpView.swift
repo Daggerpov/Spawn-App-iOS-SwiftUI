@@ -11,10 +11,12 @@ struct ChoosingTagPopupView: View {
     
     var friend: User
     //TODO: init view model -> friendRequestView
-    
+    let closeCallback: () -> ()?
+
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    //TODO: add user profile pic
                         HStack(spacing: 6) {
                             Image(systemName: "star.fill")
                                 .resizable()
@@ -33,7 +35,6 @@ struct ChoosingTagPopupView: View {
 
                     Text(fullName.isEmpty ? "Unknown" : fullName)
                     Text("Select your friend tags below")
-                    //TODO: fill in rest of user info
                     //TODO: show tags
                     //TODO: add button for each tag, when clicked will add to viewModel.tags
                     //TODO: done button, when clicked call viewmodel.AddTagsToFriend
