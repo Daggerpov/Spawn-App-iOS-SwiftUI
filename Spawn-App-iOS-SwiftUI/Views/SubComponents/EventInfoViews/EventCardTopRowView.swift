@@ -8,24 +8,24 @@
 import SwiftUI
 
 struct EventCardTopRowView: View {
-    var event: Event
-    
-    var body: some View {
-        VStack (spacing: 10) {
-            HStack{
+	var event: Event
+
+	var body: some View {
+		VStack(spacing: 10) {
+			HStack {
 				if let title = event.title {
 					EventCardTitleView(eventTitle: title)
 				}
-                Spacer()
-                VStack{
-                    ParticipantsImagesView(event: event)
-                    Spacer()
-                }
-            }
-        }
-        .foregroundColor(.white)
-        .frame(alignment: .leading)
-    }
+				Spacer()
+				VStack {
+					ParticipantsImagesView(event: event)
+					Spacer()
+				}
+			}
+		}
+		.foregroundColor(.white)
+		.frame(alignment: .leading)
+	}
 }
 
 struct EventCardTitleView: View {

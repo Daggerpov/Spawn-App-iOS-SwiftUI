@@ -21,7 +21,7 @@ struct FriendUserDTO: Identifiable, Codable, Hashable {
 	var bio: String?
 	var friendTags: [FriendTag]?
 	var email: String
-	var associatedFriendTagsToOwner: [FriendTag]? // only added property from `User`
+	var associatedFriendTagsToOwner: [FriendTag]?  // only added property from `User`
 
 	init(
 		id: UUID,
@@ -88,10 +88,10 @@ extension FriendUserDTO {
 					id: UUID(),
 					displayName: "Hobbies",
 					colorHexCode: eventColorHexCodes[2]
-				)
+				),
 			],
 			email: "daniel@agapov.com",
-			associatedFriendTagsToOwner:[
+			associatedFriendTagsToOwner: [
 				FriendTag(
 					id: UUID(),
 					displayName: "Close Friends",
@@ -101,7 +101,7 @@ extension FriendUserDTO {
 					id: UUID(),
 					displayName: "Hobbies",
 					colorHexCode: eventColorHexCodes[2]
-				)
+				),
 			]
 		)
 	}()
@@ -133,7 +133,7 @@ extension FriendUserDTO {
 				),
 			],
 			email: "daniel2456@gmail.com",
-			associatedFriendTagsToOwner:[
+			associatedFriendTagsToOwner: [
 				FriendTag(
 					id: UUID(),
 					displayName: "Biztech",
@@ -148,7 +148,7 @@ extension FriendUserDTO {
 					id: UUID(),
 					displayName: "Hobbies",
 					colorHexCode: eventColorHexCodes[2]
-				)
+				),
 			]
 		)
 	}()

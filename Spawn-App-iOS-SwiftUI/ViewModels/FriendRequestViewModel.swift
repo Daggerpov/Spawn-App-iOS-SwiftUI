@@ -32,19 +32,18 @@ class FriendRequestViewModel: ObservableObject {
 
 			// make API call:
 			let _: EmptyResponse = try await self.apiService.updateData(
-				EmptyRequestBody(), to: url, parameters: ["friendRequestAction": action.rawValue])
+				EmptyRequestBody(), to: url,
+				parameters: ["friendRequestAction": action.rawValue])
 			print("accepted friend request at url: \(url.absoluteString)")
 		} catch {
 			await MainActor.run {
 				creationMessage =
-				"There was an error \(action == .accept ? "accepting" : "declining") the friend request. Please try again"
+					"There was an error \(action == .accept ? "accepting" : "declining") the friend request. Please try again"
 				print(apiService.errorMessage ?? "")
 			}
 		}
 	}
 }
-
-
 
 enum FriendRequestAction: String {
 	case accept = "accept"

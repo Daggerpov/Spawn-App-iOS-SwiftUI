@@ -25,7 +25,10 @@ struct FriendTag: Identifiable, Codable, Hashable {
 	var friends: [User]?
 	var isEveryone: Bool
 
-	init(id: UUID, displayName: String, colorHexCode: String, friends: [User]? = nil, isEveryone: Bool = false) {
+	init(
+		id: UUID, displayName: String, colorHexCode: String,
+		friends: [User]? = nil, isEveryone: Bool = false
+	) {
 		self.id = id
 		self.displayName = displayName
 		self.colorHexCode = colorHexCode
@@ -41,8 +44,14 @@ extension FriendTag {
 		colorHexCode: universalAccentColorHexCode,
 		friends: [User.haley, User.jennifer, User.shannon, User.michael]
 	)
-	static let close = FriendTag(id: UUID(), displayName: "Close Friends", colorHexCode: eventColorHexCodes[0], friends: [User.danielAgapov])
-	static let sports = FriendTag(id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[1], friends: [User.danielLee])
-	static let hobbies = FriendTag(id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[2], friends: [User.danielLee])
+	static let close = FriendTag(
+		id: UUID(), displayName: "Close Friends",
+		colorHexCode: eventColorHexCodes[0], friends: [User.danielAgapov])
+	static let sports = FriendTag(
+		id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[1],
+		friends: [User.danielLee])
+	static let hobbies = FriendTag(
+		id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[2],
+		friends: [User.danielLee])
 	static let mockTags = [everyone, close, sports, hobbies]
 }

@@ -8,7 +8,8 @@
 import Foundation
 
 class AddFriendToTagViewModel: ObservableObject {
-	@Published var friends: [User] = MockAPIService.isMocking ? User.mockUsers : []
+	@Published var friends: [User] =
+		MockAPIService.isMocking ? User.mockUsers : []
 	@Published var selectedFriends: [User] = []
 
 	var userId: UUID
@@ -21,16 +22,22 @@ class AddFriendToTagViewModel: ObservableObject {
 
 	internal func fetchFriendsToAddToTag(friendTagId: UUID) async {
 		// full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
-		if let url = URL(string: APIService.baseURL + "friendTags/friendsNotAddedToTag/\(friendTagId)") {
+		if let url = URL(
+			string: APIService.baseURL
+				+ "friendTags/friendsNotAddedToTag/\(friendTagId)")
+		{
 			do {
-				let fetchedFriends: [User] = try await self.apiService.fetchData(from: url, parameters: nil)
+				let fetchedFriends: [User] = try await self.apiService
+					.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.friends = fetchedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+				if let statusCode = apiService.errorStatusCode,
+					apiService.errorStatusCode != 404
+				{
 					print("Invalid status code from response: \(statusCode)")
 					print(apiService.errorMessage ?? "")
 				}
@@ -44,19 +51,25 @@ class AddFriendToTagViewModel: ObservableObject {
 	// Toggle friend selection
 	func toggleFriendSelection(_ friend: User) {
 		if selectedFriends.contains(where: { $0.id == friend.id }) {
-			selectedFriends.removeAll { $0.id == friend.id } // Deselect
+			selectedFriends.removeAll { $0.id == friend.id }  // Deselect
 		} else {
-			selectedFriends.append(friend) // Select
+			selectedFriends.append(friend)  // Select
 		}
 	}
 
 	func addSelectedFriendsToTag(friendTagId: UUID) async {
-		if let url = URL(string: APIService.baseURL + "friendTags/bulkAddFriendsToTag") {
+		if let url = URL(
+			string: APIService.baseURL + "friendTags/bulkAddFriendsToTag")
+		{
 			do {
-				try await self.apiService.sendData(selectedFriends, to: url, parameters: ["friendTagId": friendTagId.uuidString])
+				try await self.apiService.sendData(
+					selectedFriends, to: url,
+					parameters: ["friendTagId": friendTagId.uuidString])
 			} catch {
 				await MainActor.run {
-					print("Error adding friends to tag: \(apiService.errorMessage ?? "")")
+					print(
+						"Error adding friends to tag: \(apiService.errorMessage ?? "")"
+					)
 				}
 			}
 		}

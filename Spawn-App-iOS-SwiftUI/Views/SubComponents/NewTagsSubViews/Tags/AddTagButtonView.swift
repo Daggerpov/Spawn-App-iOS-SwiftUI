@@ -13,7 +13,7 @@ struct AddTagButtonView: View {
 
 	// these are for if this button is being used as UI for the add friend to friend tag button, instead of the add tag button (kinda confusing, I know)
 	var addFriendsToTagButtonPressedCallback: ((UUID) -> Void)? = { thing in }
-	var closeCallback: (() -> ())?
+	var closeCallback: (() -> Void)?
 	var friendTagId: UUID?
 
 	var color: Color
@@ -26,7 +26,9 @@ struct AddTagButtonView: View {
 				} else {
 					creationStatus = .creating
 				}
-				if let tagId = friendTagId, let callback = addFriendsToTagButtonPressedCallback {
+				if let tagId = friendTagId,
+					let callback = addFriendsToTagButtonPressedCallback
+				{
 					callback(tagId)
 				}
 			}) {

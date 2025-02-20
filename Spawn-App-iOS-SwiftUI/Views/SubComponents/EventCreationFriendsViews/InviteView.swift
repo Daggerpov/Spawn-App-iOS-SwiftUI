@@ -11,7 +11,7 @@ struct InviteView: View {
 	let user: User
 
 	//TODO: fix the friendtag toggle to look like figma design
-	@State private var selectedTab: FriendTagToggle = .friends 
+	@State private var selectedTab: FriendTagToggle = .friends
 
 	init(user: User) {
 		self.user = user
@@ -32,8 +32,8 @@ struct InviteView: View {
 	}
 }
 
-private extension InviteView {
-	var header: some View {
+extension InviteView {
+	fileprivate var header: some View {
 		HStack {
 			Spacer()
 			Picker("", selection: $selectedTab) {
@@ -63,7 +63,6 @@ private extension InviteView {
 }
 
 @available(iOS 17.0, *)
-#Preview
-{
+#Preview {
 	InviteView(user: .danielAgapov)
 }

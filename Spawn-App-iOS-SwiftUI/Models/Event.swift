@@ -9,25 +9,25 @@ import Foundation
 
 // Should match `FullFeedEventDTO`, as written in back-end:
 class Event: Identifiable, Codable {
-    var id: UUID
+	var id: UUID
 	var title: String?
 
-    // MARK: Info
-    var startTime: Date?
-    var endTime: Date?
-    var location: Location?
-    var note: String? // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
-    
-    // MARK: Relations
-    var creatorUser: User?
+	// MARK: Info
+	var startTime: Date?
+	var endTime: Date?
+	var location: Location?
+	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
 
-    // tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
-    var participantUsers: [User]?
+	// MARK: Relations
+	var creatorUser: User?
 
-    // tech note: this will be determined by the `User`'s specified `FriendTag`s on
-    // the event, which will populate this `invited` property with the `FriendTag`s'
-    // `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
-    var invitedUsers: [User]?
+	// tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
+	var participantUsers: [User]?
+
+	// tech note: this will be determined by the `User`'s specified `FriendTag`s on
+	// the event, which will populate this `invited` property with the `FriendTag`s'
+	// `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
+	var invitedUsers: [User]?
 	var chatMessages: [ChatMessage]?
 	var eventFriendTagColorHexCodeForRequestingUser: String?
 	var participationStatus: ParticipationStatus?
@@ -56,7 +56,8 @@ class Event: Identifiable, Codable {
 		self.participantUsers = participantUsers
 		self.invitedUsers = invitedUsers
 		self.chatMessages = chatMessages
-		self.eventFriendTagColorHexCodeForRequestingUser = eventFriendTagColorHexCodeForRequestingUser
+		self.eventFriendTagColorHexCodeForRequestingUser =
+			eventFriendTagColorHexCodeForRequestingUser
 		self.participationStatus = participationStatus
 	}
 }
@@ -65,7 +66,7 @@ extension Event {
 
 	static func dateFromTimeString(_ timeString: String) -> Date? {
 		let dateFormatter = DateFormatter()
-		dateFormatter.dateFormat = "h:mm a" // Parse time in 12-hour format with AM/PM
+		dateFormatter.dateFormat = "h:mm a"  // Parse time in 12-hour format with AM/PM
 		dateFormatter.timeZone = .current
 		dateFormatter.locale = .current
 
@@ -73,10 +74,11 @@ extension Event {
 		if let parsedTime = dateFormatter.date(from: timeString) {
 			let calendar = Calendar.current
 			let now = Date()
-			return calendar.date(bySettingHour: calendar.component(.hour, from: parsedTime),
-								 minute: calendar.component(.minute, from: parsedTime),
-								 second: 0,
-								 of: now)
+			return calendar.date(
+				bySettingHour: calendar.component(.hour, from: parsedTime),
+				minute: calendar.component(.minute, from: parsedTime),
+				second: 0,
+				of: now)
 		}
 		return nil
 	}
@@ -86,14 +88,16 @@ extension Event {
 		title: "Dinner time!!!!!!",
 		startTime: dateFromTimeString("10:00 PM"),
 		endTime: dateFromTimeString("11:30 PM"),
-		location: Location(id: UUID(), name: "Gather - Place Vanier", latitude: 49.26468617023799, longitude: -123.25859833051356),
+		location: Location(
+			id: UUID(), name: "Gather - Place Vanier",
+			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
 		creatorUser: User.jennifer,
 		participantUsers: [
 			User.danielLee,
 			User.haley,
 			User.jennifer,
-			User.michael
+			User.michael,
 		]
 	)
 
@@ -103,31 +107,38 @@ extension Event {
 			id: UUID(),
 			title: "wanna run 5k with me?",
 			startTime: Date(),
-			location: Location(id: UUID(), name: "Wesbrook Mall", latitude: 49.25997722657244, longitude: -123.23986523529379),
+			location: Location(
+				id: UUID(), name: "Wesbrook Mall", latitude: 49.25997722657244,
+				longitude: -123.23986523529379),
 			creatorUser: User.danielAgapov,
-			participantUsers: [User.danielAgapov, User.jennifer, User.shannon, User.haley, User.danielLee],
+			participantUsers: [
+				User.danielAgapov, User.jennifer, User.shannon, User.haley,
+				User.danielLee,
+			],
 			chatMessages: [
 				ChatMessage(
 					id: UUID(),
 					content: "yo guys, wya?",
-					timestamp: Date().addingTimeInterval(-30), // 30 seconds ago
+					timestamp: Date().addingTimeInterval(-30),  // 30 seconds ago
 					senderUser: User.danielAgapov,
 					eventId: mockDinnerEvent.id
 				),
 				ChatMessage(
 					id: UUID(),
 					content: "I just saw you",
-					timestamp: Date().addingTimeInterval(-120), // 2 minutes ago
+					timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
 					senderUser: User.danielLee,
 					eventId: mockDinnerEvent.id
-				)
+				),
 			]
 		),
 		Event(
 			id: UUID(),
 			title: "playing basketball!!!",
 			endTime: Date(),
-			location: Location(id: UUID(), name: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
+			location: Location(
+				id: UUID(), name: "UBC Student Recreation Centre",
+				latitude: 49.2687302352351, longitude: -123.24897582888525),
 			note: "let's play basketball!",
 			creatorUser: User.danielAgapov
 		),
@@ -136,7 +147,9 @@ extension Event {
 			title: "Im painting rn lol",
 			startTime: Date(),
 			endTime: Date(),
-			location: Location(id: UUID(), name: "Ross Drive - Wesbrook Mall", latitude: 49.25189587512135, longitude: -123.237051932404),
+			location: Location(
+				id: UUID(), name: "Ross Drive - Wesbrook Mall",
+				latitude: 49.25189587512135, longitude: -123.237051932404),
 			creatorUser: User.shannon,
 			participantUsers: [User.danielLee]
 		),
@@ -145,7 +158,9 @@ extension Event {
 			title: "Grabbing Udon",
 			startTime: Date(),
 			endTime: Date(),
-			location: Location(id: UUID(), name: "Marugame Udon", latitude: 49.28032597998406, longitude: -123.11026665974741),
+			location: Location(
+				id: UUID(), name: "Marugame Udon", latitude: 49.28032597998406,
+				longitude: -123.11026665974741),
 			creatorUser: User.danielAgapov
 		),
 		Event(
@@ -153,7 +168,9 @@ extension Event {
 			title: "Calendar Party",
 			startTime: Date(),
 			endTime: Date(),
-			location: Location(id: UUID(), name: "The Pit - Nest", latitude: 49.26694140754859, longitude: -123.25036565366581),
+			location: Location(
+				id: UUID(), name: "The Pit - Nest", latitude: 49.26694140754859,
+				longitude: -123.25036565366581),
 			creatorUser: User.danielLee
 		),
 		Event(
@@ -161,8 +178,10 @@ extension Event {
 			title: "Gym - Leg Day",
 			startTime: Date(),
 			endTime: Date(),
-			location: Location(id: UUID(), name: "UBC Student Recreation Centre", latitude: 49.2687302352351, longitude: -123.24897582888525),
+			location: Location(
+				id: UUID(), name: "UBC Student Recreation Centre",
+				latitude: 49.2687302352351, longitude: -123.24897582888525),
 			creatorUser: User.michael
-		)
+		),
 	]
 }

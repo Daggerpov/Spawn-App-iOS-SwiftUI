@@ -9,7 +9,7 @@ import SwiftUI
 
 struct SearchView: View {
 	@ObservedObject var viewModel: SearchViewModel
-    var searchPlaceholderText: String
+	var searchPlaceholderText: String
 
 	init(searchPlaceholderText: String, viewModel: SearchViewModel) {
 		self.searchPlaceholderText = searchPlaceholderText
@@ -17,14 +17,16 @@ struct SearchView: View {
 	}
 
 	var body: some View {
-		VStack{
+		VStack {
 			HStack {
 				Image(systemName: "magnifyingglass")
 					.font(.title3)
 					.foregroundColor(universalAccentColor)
 				TextField(searchPlaceholderText, text: $viewModel.searchText)
 					.foregroundColor(universalAccentColor)
-                    .placeholderColor(color: universalAccentColor, text: searchPlaceholderText)
+					.placeholderColor(
+						color: universalAccentColor, text: searchPlaceholderText
+					)
 			}
 			.padding(.vertical, 20)
 			.padding(.horizontal, 15)

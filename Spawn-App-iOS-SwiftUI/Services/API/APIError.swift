@@ -17,18 +17,20 @@ enum APIError: LocalizedError {
 
 	var errorDescription: String? {
 		switch self {
-			case let .failedHTTPRequest(description):
-				return description
-			case let .invalidStatusCode(statusCode):
-				return "Invalid Status Code: \(statusCode)"
-			case let .failedJSONParsing(url):
-				return "Failed to properly parse JSON received from request to this url: \(url)"
-			case .invalidData:
-				return "Invalid data received."
-			case .URLError:
-				return "URL Error: Please check the URL or if the server is currently down."
-			case let .unknownError(error):
-				return "An unknown error occurred: \(error.localizedDescription)"
+		case let .failedHTTPRequest(description):
+			return description
+		case let .invalidStatusCode(statusCode):
+			return "Invalid Status Code: \(statusCode)"
+		case let .failedJSONParsing(url):
+			return
+				"Failed to properly parse JSON received from request to this url: \(url)"
+		case .invalidData:
+			return "Invalid data received."
+		case .URLError:
+			return
+				"URL Error: Please check the URL or if the server is currently down."
+		case let .unknownError(error):
+			return "An unknown error occurred: \(error.localizedDescription)"
 		}
 	}
 }

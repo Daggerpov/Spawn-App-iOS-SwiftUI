@@ -12,7 +12,7 @@ struct FriendsView: View {
 	let source: BackButtonSourcePageType
 
 	//TODO: fix the friendtag toggle to look like figma design
-	@State private var selectedTab: FriendTagToggle = .friends 
+	@State private var selectedTab: FriendTagToggle = .friends
 
 	// for add friend to tag popup:
 	@State private var showAddFriendToTagButtonPressedPopupView: Bool = false
@@ -70,7 +70,8 @@ extension FriendsView {
 						}
 
 					AddFriendToTagView(
-						userId: user.id, friendTagId: friendTagIdForPopup, closeCallback: closePopup
+						userId: user.id, friendTagId: friendTagIdForPopup,
+						closeCallback: closePopup
 					)
 					.offset(x: 0, y: popupOffset)
 					.onAppear {

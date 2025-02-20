@@ -127,8 +127,9 @@ class TagsViewModel: ObservableObject {
 			string: APIService.baseURL + "friendTags/\(friendTagId)")
 		{
 			do {
-				try await self.apiService.sendData(EmptyBody(),
-to: url,
+				try await self.apiService.sendData(
+					EmptyBody(),
+					to: url,
 					parameters: [
 						"friendTagAction": "removeFriend",
 						"userId": friendUserId.uuidString,
