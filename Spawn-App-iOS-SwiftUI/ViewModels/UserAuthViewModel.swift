@@ -431,6 +431,18 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		{
 			do {
 				try await self.apiService.deleteData(from: url)
+				
+				// Clear Keychain
+				let success = KeychainService.shared.delete(key: "externalUserId")
+				if !success {
+					print("Failed to delete externalUserId from Keychain")
+				}
+
+				// Reset state (same as signOut)
+				await MainActor.run {
+					resetState()
+					deleteAccountSuccess = true
+				}
 			} catch {
 				print("Error deleting account: \(error.localizedDescription)")
 				await MainActor.run {
