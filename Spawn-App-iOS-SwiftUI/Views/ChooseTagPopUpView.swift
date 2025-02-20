@@ -15,6 +15,7 @@ struct ChoosingTagPopupView: View {
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {                    Text(friend.username)
+                    Text("Select your friend tags below")
                     //TODO: fill in rest of user info
                     //TODO: show tags
                     //TODO: add button for each tag, when clicked will add to viewModel.tags
