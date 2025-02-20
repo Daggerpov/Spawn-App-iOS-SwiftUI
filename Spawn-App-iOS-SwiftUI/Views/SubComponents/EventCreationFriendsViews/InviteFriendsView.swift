@@ -9,7 +9,8 @@ import SwiftUI
 
 struct InviteFriendsView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
-	@ObservedObject var eventCreationViewModel: EventCreationViewModel = EventCreationViewModel.shared
+	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
+		EventCreationViewModel.shared
 
 	let user: User
 
@@ -22,7 +23,7 @@ struct InviteFriendsView: View {
 	}
 
 	var body: some View {
-		VStack{
+		VStack {
 			Text("Invite friends:")
 				.font(.headline)
 				.foregroundColor(universalAccentColor)
@@ -64,7 +65,8 @@ struct InviteFriendsView: View {
 }
 
 struct IndividualFriendView: View {
-	@ObservedObject var eventCreationViewModel: EventCreationViewModel = EventCreationViewModel.shared
+	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
+		EventCreationViewModel.shared
 
 	var friend: FriendUserDTO
 	@State private var isSelected: Bool = false
@@ -82,9 +84,11 @@ struct IndividualFriendView: View {
 		Button(action: {
 			isSelected.toggle()
 			if isSelected {
-				eventCreationViewModel.selectedFriends.append(friend) // Add to selected friends
+				eventCreationViewModel.selectedFriends.append(friend)  // Add to selected friends
 			} else {
-				eventCreationViewModel.selectedFriends.removeAll { $0.id == friend.id } // Remove from selected friends, if it's already in
+				eventCreationViewModel.selectedFriends.removeAll {
+					$0.id == friend.id
+				}  // Remove from selected friends, if it's already in
 			}
 		}) {
 			HStack {
@@ -119,11 +123,13 @@ struct IndividualFriendView: View {
 					// Tags in groups of 2
 					let columns = [
 						GridItem(.flexible(), spacing: 8),
-						GridItem(.flexible(), spacing: 8)
+						GridItem(.flexible(), spacing: 8),
 					]
 
-					LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-						ForEach(friend.associatedFriendTagsToOwner ?? []) { friendTag in
+					LazyVGrid(columns: columns, alignment: .leading, spacing: 8)
+					{
+						ForEach(friend.associatedFriendTagsToOwner ?? []) {
+							friendTag in
 							Text(friendTag.displayName)
 								.font(.system(size: 10, weight: .medium))
 								.padding(.horizontal, 12)
@@ -131,8 +137,8 @@ struct IndividualFriendView: View {
 								.background(Color(hex: friendTag.colorHexCode))
 								.foregroundColor(.white)
 								.cornerRadius(12)
-								.lineLimit(1) // Ensure text doesn't wrap
-								.truncationMode(.tail) // Truncate with "..." if text is too long
+								.lineLimit(1)  // Ensure text doesn't wrap
+								.truncationMode(.tail)  // Truncate with "..." if text is too long
 						}
 					}
 				}

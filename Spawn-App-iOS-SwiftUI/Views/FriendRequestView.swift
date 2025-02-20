@@ -69,7 +69,8 @@ extension FriendRequestView {
 	var friendRequestDeclineButton: some View {
 		Button(action: {
 			Task {
-				await viewModel.friendRequestAction(action: FriendRequestAction.decline)
+				await viewModel.friendRequestAction(
+					action: FriendRequestAction.decline)
 			}
 			closeCallback()  // closes the popup
 		}) {

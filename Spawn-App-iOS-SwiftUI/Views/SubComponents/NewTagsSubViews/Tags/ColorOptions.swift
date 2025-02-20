@@ -33,22 +33,22 @@ struct ColorOptions: View {
 			}
 
 			// TODO: re-enable this custom color feature again later:
-//			Circle()
-//				.fill(Color.gray.opacity(0.2))
-//				.frame(width: 30, height: 30)
-//				.overlay(
-//					Circle()
-//						.stroke(
-//							Color.white,
-//							style: StrokeStyle(
-//								lineWidth: 2,
-//								dash: [5, 3]  // Length of dash and gap
-//							)
-//						)
-//				)
-//				.overlay(
-//					Image(systemName: "plus").foregroundColor(.white)
-//				)
+			//			Circle()
+			//				.fill(Color.gray.opacity(0.2))
+			//				.frame(width: 30, height: 30)
+			//				.overlay(
+			//					Circle()
+			//						.stroke(
+			//							Color.white,
+			//							style: StrokeStyle(
+			//								lineWidth: 2,
+			//								dash: [5, 3]  // Length of dash and gap
+			//							)
+			//						)
+			//				)
+			//				.overlay(
+			//					Image(systemName: "plus").foregroundColor(.white)
+			//				)
 			Spacer()
 		}
 		.padding(.horizontal, 5)

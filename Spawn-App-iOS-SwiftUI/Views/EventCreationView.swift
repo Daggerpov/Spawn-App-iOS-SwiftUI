@@ -11,13 +11,12 @@ struct EventCreationView: View {
 	@ObservedObject var viewModel: EventCreationViewModel =
 		EventCreationViewModel.shared
 
-	@State private var selectedDate: Date = Date()
 	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
 
 	var creatingUser: User
-	var closeCallback: () -> ()
+	var closeCallback: () -> Void
 
-	init(creatingUser: User, closeCallback: @escaping () -> ()) {
+	init(creatingUser: User, closeCallback: @escaping () -> Void) {
 		self.creatingUser = creatingUser
 		self.closeCallback = closeCallback
 	}
@@ -149,7 +148,12 @@ struct EventInputField: View {
 				"",
 				text: Binding(
 					get: { value ?? "" },
-					set: { value = $0.isEmpty ? nil : $0 }
+					set: { newValue in
+						// Safely update the value outside of the view update
+						DispatchQueue.main.async {
+							value = newValue.isEmpty ? nil : newValue
+						}
+					}
 				)
 			)
 			.foregroundColor(.primary)
@@ -320,12 +324,12 @@ extension EventCreationView {
 				get: {
 					viewModel.event.startTime
 						?? viewModel.combineDateAndTime(
-							selectedDate, time: Date())
+							viewModel.selectedDate, time: Date())
 				},
 				set: { time in
 					viewModel.event.startTime =
 						viewModel.combineDateAndTime(
-							selectedDate, time: time)
+							viewModel.selectedDate, time: time)
 				}
 			)
 		)
@@ -339,14 +343,14 @@ extension EventCreationView {
 				get: {
 					viewModel.event.endTime
 						?? viewModel.combineDateAndTime(
-							selectedDate,
+							viewModel.selectedDate,
 							time: Date()
 								.addingTimeInterval(2 * 60 * 60)  // adds 2 hours
 						)
 				},
 				set: { time in
 					viewModel.event.endTime = viewModel.combineDateAndTime(
-						selectedDate, time: time)
+						viewModel.selectedDate, time: time)
 				}
 			)
 		)
@@ -359,7 +363,7 @@ extension EventCreationView {
 				.padding()
 			DatePicker(
 				"Select Date",
-				selection: $selectedDate,
+				selection: $viewModel.selectedDate,
 				displayedComponents: .date
 			)
 			.datePickerStyle(GraphicalDatePickerStyle())
@@ -386,7 +390,7 @@ extension EventCreationView {
 				.foregroundColor(.secondary)
 				.padding(.leading)
 			Button(action: { showFullDatePicker = true }) {
-				Text(viewModel.formatDate(selectedDate))
+				Text(viewModel.formatDate(viewModel.selectedDate))
 					.padding()
 					.foregroundColor(.primary)
 					.background(

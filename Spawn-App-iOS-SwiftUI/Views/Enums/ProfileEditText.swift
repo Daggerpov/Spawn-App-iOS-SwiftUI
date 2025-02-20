@@ -6,11 +6,11 @@
 //
 
 enum ProfileEditText {
-    case edit, save
-    func displayText() -> String {
-        switch self {
-            case .edit: return "Edit"
-            case .save: return "Save"
-        }
-    }
+	case edit, save
+	func displayText() -> String {
+		switch self {
+		case .edit: return "Edit"
+		case .save: return "Save"
+		}
+	}
 }

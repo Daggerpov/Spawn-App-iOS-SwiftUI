@@ -8,12 +8,14 @@
 import SwiftUI
 
 struct EventParticipateButtonView: View {
-    var toggleParticipationCallback: () -> Void
-    var isParticipating: Bool
-    var body: some View {
-        Circle()
-            .CircularButton(systemName: isParticipating ? "checkmark" : "star.fill", buttonActionCallback: {
-                toggleParticipationCallback()
-            })
-    }
+	var toggleParticipationCallback: () -> Void
+	var isParticipating: Bool
+	var body: some View {
+		Circle()
+			.CircularButton(
+				systemName: isParticipating ? "checkmark" : "star.fill",
+				buttonActionCallback: {
+					toggleParticipationCallback()
+				})
+	}
 }

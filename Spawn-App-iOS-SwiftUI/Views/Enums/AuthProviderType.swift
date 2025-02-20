@@ -7,4 +7,14 @@
 
 enum AuthProviderType {
 	case google, apple
+
+	var rawValue: String {
+		switch self {
+		case .google:
+			return "google"
+		case .apple:
+			return "apple"
+		}
+	}
+
 }

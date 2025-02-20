@@ -5,20 +5,13 @@
 //  Created by Daniel Agapov on 2024-12-30.
 //
 
-import SwiftUI
-import GoogleSignInSwift
+import AuthenticationServices  // apple auth
 import GoogleSignIn
+import GoogleSignInSwift
+import SwiftUI
 
 struct LaunchView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
-
-	fileprivate func SignOutButton() -> Button<Text> {
-		Button(action: {
-			userAuth.signOut()
-		}) {
-			Text("Sign Out")
-		}
-	}
 
 	var body: some View {
 		NavigationStack {
@@ -29,55 +22,51 @@ struct LaunchView: View {
 					.scaledToFit()
 					.frame(width: 300, height: 300)
 
-				NavigationLink(destination:
-					getAuthNavDestinationView()
-						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				, isActive: $userAuth.hasCheckedSpawnUserExistance) {
+				// Google Sign-In Button
+				Button(action: {
+					Task {
+						await userAuth.signInWithGoogle()
+					}
+				}) {
 					AuthProviderButtonView(authProviderType: .google)
 				}
-				.simultaneousGesture(
-					TapGesture().onEnded {
-						if !userAuth.isLoggedIn {
-							userAuth.signIn()
-							Task{
-								await userAuth.spawnFetchUserIfAlreadyExists()
-							}
-						}
-					})
 
-				// TODO: implement later
-//				NavigationLink(destination: {
-//					UserInfoInputView()
-//						.navigationBarTitle("")
-//						.navigationBarHidden(true)
-//				}) {
-//					AuthProviderButtonView(authProviderType: .apple)
-//				}
-				// TODO: implement later
-//				.simultaneousGesture(
-//					TapGesture().onEnded {
-//						loginWithApple()
-//					})
+				// Apple Sign-In Button
+				Button(action: {
+					Task {
+						await userAuth.signInWithApple()
+					}
+				}) {
+					AuthProviderButtonView(authProviderType: .apple)
+				}
+
 				Spacer()
 			}
-			.background(Color(hex: "#8693FF"))
+			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
 			.onAppear {
 				User.setupFriends()
 			}
+			.navigationDestination(
+				isPresented: $userAuth.hasCheckedSpawnUserExistence
+			) {
+				getAuthNavDestinationView()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}
 		}
 	}
 
-	private func loginWithApple() {
-		// TODO: implement later
-	}
-
-	private func getAuthNavDestinationView() -> AnyView {
-		if let loggedInSpawnUser = userAuth.spawnUser {
-			return AnyView(FeedView(user: loggedInSpawnUser))
-		} else {
-			return AnyView(UserInfoInputView())
+	private func getAuthNavDestinationView() -> some View {
+		Group {
+			if userAuth.shouldNavigateToUserInfoInputView {
+				UserInfoInputView()
+			} else if let loggedInSpawnUser = userAuth.spawnUser {
+				FeedView(user: loggedInSpawnUser)
+			} else {
+				// Fallback: Stay on LaunchView
+				EmptyView()
+			}
 		}
 	}
 }
@@ -85,4 +74,3 @@ struct LaunchView: View {
 #Preview {
 	LaunchView()
 }
-

@@ -13,13 +13,13 @@ class EventInfoViewModel: ObservableObject {
 
 	init(event: Event, eventInfoType: EventInfoType) {
 		switch eventInfoType {
-			case .location:
-				imageSystemName = "map"
-				self.eventInfoDisplayString = event.location?.name ?? "No Location"
-			case .time:
-				imageSystemName = "clock"
-				self.eventInfoDisplayString = FormatterService.shared.formatEventTime(event: event)
+		case .location:
+			imageSystemName = "map"
+			self.eventInfoDisplayString = event.location?.name ?? "No Location"
+		case .time:
+			imageSystemName = "clock"
+			self.eventInfoDisplayString = FormatterService.shared
+				.formatEventTime(event: event)
 		}
 	}
 }
-

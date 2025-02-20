@@ -6,5 +6,5 @@
 //
 
 enum FriendTagToggle {
-    case friends, tags
+	case friends, tags
 }

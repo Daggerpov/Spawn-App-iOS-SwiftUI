@@ -20,26 +20,24 @@ struct UserInfoInputView: View {
 
 	@State private var username: String = ""
 
+	@State private var email: String = ""
+	@State private var isEmailValid: Bool = true
+
 	fileprivate func ProfilePic() -> some View {
 		Group {
-			if userAuth.isLoggedIn {
-				if let pfpUrl = userAuth.profilePicUrl {
-					AsyncImage(url: URL(string: pfpUrl)) { image in
-						image
-							.ProfileImageModifier(imageType: .profilePage)
-					} placeholder: {
-						Circle()
-							.fill(Color.gray)
-					}
-				} else {
+			if userAuth.isLoggedIn, let pfpUrl = userAuth.profilePicUrl {
+				AsyncImage(url: URL(string: pfpUrl)) { image in
+					image
+						.ProfileImageModifier(imageType: .profilePage)
+				} placeholder: {
 					Circle()
-						.fill(.white)
-						.frame(width: 100, height: 100)
+						.fill(Color.gray)
+						.frame(width: 150, height: 150)
 				}
 			} else {
 				Circle()
-					.fill(.white)
-					.frame(width: 100, height: 100)
+					.fill(.gray)
+					.frame(width: 150, height: 150)
 			}
 		}
 	}
@@ -104,6 +102,15 @@ struct UserInfoInputView: View {
 							isValid: .constant(true)
 						)
 					}
+					if userAuth.authProvider == .apple
+						&& userAuth.email == nil
+					{
+						InputFieldView(
+							label: "Email",
+							text: $email,
+							isValid: $isEmailValid
+						)
+					}
 					InputFieldView(
 						label: "Username",
 						text: $username,
@@ -112,34 +119,34 @@ struct UserInfoInputView: View {
 				}
 				.padding(.horizontal, 32)
 
-				HStack {
-					Spacer()
-					Button(action: {
-						validateFields()  // Perform field validation
-						if isFirstNameValid && isUsernameValid {
-							Task {
-								await userAuth.spawnSignIn(
-									username: username,
-									profilePicture: userAuth.profilePicUrl
-									?? "",
-									firstName: userAuth.givenName ?? "",
-									lastName: userAuth.familyName ?? ""
-								)
-							}
-							userAuth.isFormValid = true
+				Button(action: {
+					validateFields()  // Perform field validation
+					if isFirstNameValid && isUsernameValid
+						&& (!needsEmail || isEmailValid)
+					{
+						Task {
+							await userAuth.spawnMakeUser(
+								username: username,
+								profilePicture: userAuth.profilePicUrl ?? "",
+								firstName: userAuth.givenName ?? "",
+								lastName: userAuth.familyName ?? "",
+								email: userAuth.authProvider == .apple
+									? email : userAuth.email ?? ""
+							)
 						}
-						userAuth.setShouldNavigateToFeedView()
-					}){
-						HStack{
-							Text("Enter Spawn")
-								.font(.system(size: 20, weight: .semibold))
-
-							Image(systemName: "arrow.right")
-								.resizable()
-								.frame(width: 20, height: 20)
-						}
-						.foregroundColor(.white)
+						userAuth.isFormValid = true
 					}
+					userAuth.setShouldNavigateToFeedView()
+				}) {
+					HStack {
+						Text("Enter Spawn")
+							.font(.system(size: 20, weight: .semibold))
+
+						Image(systemName: "arrow.right")
+							.resizable()
+							.frame(width: 20, height: 20)
+					}
+					.foregroundColor(.white)
 				}
 				.padding(.horizontal, 32)
 				Spacer()
@@ -149,23 +156,31 @@ struct UserInfoInputView: View {
 			}
 			.onAppear {
 				userAuth.objectWillChange.send()  // Trigger initial UI update
-				Task{
+				Task {
 					await userAuth.spawnFetchUserIfAlreadyExists()
 				}
 				userAuth.setShouldNavigateToFeedView()
 			}
 			.padding()
-			.background(Color(hex: "#8693FF"))
+			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
 		}
+	}
+
+	private var needsEmail: Bool {
+		return userAuth.authProvider == .apple && userAuth.email == nil
 	}
 
 	private func validateFields() {
 		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(
 			in: .whitespaces
 		).isEmpty
-		isUsernameValid = !(username)
-			.trimmingCharacters(in: .whitespaces).isEmpty
+		isUsernameValid = !username.trimmingCharacters(in: .whitespaces).isEmpty
+		if needsEmail {
+			isEmailValid =
+				!email.trimmingCharacters(in: .whitespaces).isEmpty
+				&& email.contains("@")  // Simple email validation
+		}
 	}
 }
 

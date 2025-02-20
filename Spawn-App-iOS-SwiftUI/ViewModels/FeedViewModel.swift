@@ -32,10 +32,13 @@ class FeedViewModel: ObservableObject {
 
 		if let unwrappedActiveTag = activeTag, !unwrappedActiveTag.isEveryone {
 			// Full path: /api/v1/events/friendTag/{friendTagFilterId}
-			setUrl = URL(string: APIService.baseURL + "events/friendTag/\(unwrappedActiveTag.id)")
+			setUrl = URL(
+				string: APIService.baseURL
+					+ "events/friendTag/\(unwrappedActiveTag.id)")
 		} else {
 			// Path: /api/v1/events/feedEvents/{requestingUserId}
-			setUrl = URL(string: APIService.baseURL + "events/feedEvents/\(userId)")
+			setUrl = URL(
+				string: APIService.baseURL + "events/feedEvents/\(userId)")
 		}
 
 		// Safely unwrap `setUrl` using `guard let`
@@ -54,7 +57,8 @@ class FeedViewModel: ObservableObject {
 				self.events = fetchedEvents
 			}
 		} catch {
-			if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404
+			if let statusCode = apiService.errorStatusCode,
+				apiService.errorStatusCode != 404
 			{
 				print("Invalid status code from response: \(statusCode)")
 				print(apiService.errorMessage ?? "")
@@ -80,8 +84,7 @@ class FeedViewModel: ObservableObject {
 					self.activeTag = fetchedTags.first
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode
-				{
+				if let statusCode = apiService.errorStatusCode {
 					print("Invalid status code from response: \(statusCode)")
 					print(apiService.errorMessage ?? "")
 				}
