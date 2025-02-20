@@ -14,7 +14,13 @@ struct ChoosingTagPopupView: View {
     
     var body: some View {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {                    Text(friend.username)
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(friend.username)
+                    let firstName = friend.firstName ?? ""
+                    let lastName = friend.lastName ?? ""
+                    let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
+
+                    Text(fullName.isEmpty ? "Unknown" : fullName)
                     Text("Select your friend tags below")
                     //TODO: fill in rest of user info
                     //TODO: show tags
