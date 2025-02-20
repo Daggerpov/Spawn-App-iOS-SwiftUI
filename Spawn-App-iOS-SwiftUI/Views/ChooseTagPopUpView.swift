@@ -15,7 +15,18 @@ struct ChoosingTagPopupView: View {
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    Text(friend.username)
+                        HStack(spacing: 6) {
+                            Image(systemName: "star.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 18, height: 18)
+                                .foregroundColor(universalAccentColor)
+                                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 2)
+
+                            Text(friend.username)
+                                .font(.system(size: 20, weight: .bold))
+                                .foregroundColor(universalAccentColor)
+                        }
                     let firstName = friend.firstName ?? ""
                     let lastName = friend.lastName ?? ""
                     let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
