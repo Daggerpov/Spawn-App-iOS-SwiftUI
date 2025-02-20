@@ -148,7 +148,12 @@ struct EventInputField: View {
 				"",
 				text: Binding(
 					get: { value ?? "" },
-					set: { value = $0.isEmpty ? nil : $0 }
+					set: { newValue in
+						// Safely update the value outside of the view update
+						DispatchQueue.main.async {
+							value = newValue.isEmpty ? nil : newValue
+						}
+					}
 				)
 			)
 			.foregroundColor(.primary)
