@@ -8,20 +8,23 @@
 import Foundation
 
 class ChatMessage: Identifiable, Codable {
-    var id: UUID
-    var content: String
-    var timestamp: Date
-    var senderUser: User
+	var id: UUID
+	var content: String
+	var timestamp: Date
+	var senderUser: User
 	var eventId: UUID
-    // do I even need an `event` var here, if each `Event` has a list of chats?
-    // -> it's a (event) 1 <-> many (chat) relationship
-    var likedBy: [User]?
-    // tech note: in user's view of event, check if that user is in
-    // the `ChatMessage`'s `likedBy` array (`[User]`)
+	// do I even need an `event` var here, if each `Event` has a list of chats?
+	// -> it's a (event) 1 <-> many (chat) relationship
+	var likedBy: [User]?
+	// tech note: in user's view of event, check if that user is in
+	// the `ChatMessage`'s `likedBy` array (`[User]`)
 
-	init(id: UUID, content: String, timestamp: Date, senderUser: User, eventId: UUID, likedBy: [User]? = nil) {
+	init(
+		id: UUID, content: String, timestamp: Date, senderUser: User,
+		eventId: UUID, likedBy: [User]? = nil
+	) {
 		self.id = id
-        self.content = content
+		self.content = content
 		self.timestamp = timestamp
 		self.senderUser = senderUser
 		self.eventId = eventId
@@ -33,7 +36,7 @@ extension ChatMessage {
 	var formattedTimestamp: String {
 		return FormatterService.shared.timeAgo(from: timestamp)
 	}
-	
+
 	static let dateFormatter: DateFormatter = {
 		let formatter = DateFormatter()
 		formatter.dateStyle = .short
@@ -43,7 +46,7 @@ extension ChatMessage {
 	static let guysWya: ChatMessage = ChatMessage(
 		id: UUID(),
 		content: "yo guys, wya?",
-		timestamp: Date().addingTimeInterval(-120), // 2 minutes ago
+		timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
 		senderUser: User.michael,
 		eventId: Event.mockDinnerEvent.id,
 		likedBy: User.mockUsers

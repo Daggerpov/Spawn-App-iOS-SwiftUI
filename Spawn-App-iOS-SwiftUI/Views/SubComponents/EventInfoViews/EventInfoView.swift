@@ -11,10 +11,11 @@ struct EventInfoView: View {
 	@ObservedObject var viewModel: EventInfoViewModel
 
 	init(event: Event, eventInfoType: EventInfoType) {
-		self.viewModel = EventInfoViewModel(event: event, eventInfoType: eventInfoType)
+		self.viewModel = EventInfoViewModel(
+			event: event, eventInfoType: eventInfoType)
 	}
 
-    var body: some View {
+	var body: some View {
 		HStack(spacing: 5) {
 			Image(systemName: viewModel.imageSystemName)
 				.padding(5)
@@ -38,5 +39,5 @@ struct EventInfoView: View {
 		}
 		.fixedSize()
 
-    }
+	}
 }

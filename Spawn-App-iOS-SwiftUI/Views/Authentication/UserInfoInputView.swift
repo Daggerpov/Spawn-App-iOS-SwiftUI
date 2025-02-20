@@ -185,10 +185,14 @@ struct UserInfoInputView: View {
 	}
 
 	private func validateFields() {
-		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(in: .whitespaces).isEmpty
+		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(
+			in: .whitespaces
+		).isEmpty
 		isUsernameValid = !username.trimmingCharacters(in: .whitespaces).isEmpty
 		if needsEmail {
-			isEmailValid = !email.trimmingCharacters(in: .whitespaces).isEmpty && email.contains("@")  // Simple email validation
+			isEmailValid =
+				!email.trimmingCharacters(in: .whitespaces).isEmpty
+				&& email.contains("@")  // Simple email validation
 		}
 	}
 }

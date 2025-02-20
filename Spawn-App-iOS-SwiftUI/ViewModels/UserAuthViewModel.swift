@@ -124,6 +124,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			{
 				let userIdentifier = appleIDCredential.user
 				let email = appleIDCredential.email ?? "No email provided"
+		case .success(let authorization):
+			if let appleIDCredential = authorization.credential
+				as? ASAuthorizationAppleIDCredential
+			{
+				let userIdentifier = appleIDCredential.user
+				let email = appleIDCredential.email ?? "No email provided"
 
 				// Set user details
 				self.email = email
@@ -131,7 +137,22 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.familyName = appleIDCredential.fullName?.familyName
 				self.isLoggedIn = true
 				self.externalUserId = userIdentifier
+				// Set user details
+				self.email = email
+				self.givenName = appleIDCredential.fullName?.givenName
+				self.familyName = appleIDCredential.fullName?.familyName
+				self.isLoggedIn = true
+				self.externalUserId = userIdentifier
 
+				// Check user existence AFTER setting credentials
+				Task {
+					await self.spawnFetchUserIfAlreadyExists()
+				}
+			}
+		case .failure(let error):
+			self.errorMessage =
+				"Apple Sign-In failed: \(error.localizedDescription)"
+			print(self.errorMessage as Any)
 				// Check user existence AFTER setting credentials
 				Task {
 					await self.spawnFetchUserIfAlreadyExists()
@@ -154,6 +175,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			else {
 				self.errorMessage =
 					"Error: Unable to get the presenting view controller."
+			guard
+				let windowScene = UIApplication.shared.connectedScenes.first
+					as? UIWindowScene,
+				let presentingViewController = windowScene.windows.first?
+					.rootViewController
+			else {
+				self.errorMessage =
+					"Error: Unable to get the presenting view controller."
 				print(self.errorMessage as Any)
 				return
 			}
@@ -161,8 +190,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			GIDConfiguration(
 				clientID:
 					"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
+				clientID:
+					"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
 			)
 
+			GIDSignIn.sharedInstance.signIn(
+				withPresenting: presentingViewController
+			) { signInResult, error in
 			GIDSignIn.sharedInstance.signIn(
 				withPresenting: presentingViewController
 			) { signInResult, error in
@@ -173,6 +207,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				guard let user = signInResult?.user else { return }
+				self.profilePicUrl =
+					user.profile?.imageURL(withDimension: 100)?.absoluteString
+					?? ""
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 100)?.absoluteString
 					?? ""
@@ -199,6 +236,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		let authorizationController = ASAuthorizationController(
 			authorizationRequests: [request]
 		)
+		authorizationController.delegate = self  // Ensure delegate is set
 		authorizationController.delegate = self  // Ensure delegate is set
 		authorizationController.performRequests()
 

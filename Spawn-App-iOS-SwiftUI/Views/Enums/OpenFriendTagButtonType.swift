@@ -6,13 +6,13 @@
 //
 
 enum OpenFriendTagButtonType {
-    case friends, tags
-    func getDisplayName() -> String {
-        switch self {
-            case .friends:
-                return "Friends"
-            case .tags:
-                return "Tags"
-        }
-    }
+	case friends, tags
+	func getDisplayName() -> String {
+		switch self {
+		case .friends:
+			return "Friends"
+		case .tags:
+			return "Tags"
+		}
+	}
 }

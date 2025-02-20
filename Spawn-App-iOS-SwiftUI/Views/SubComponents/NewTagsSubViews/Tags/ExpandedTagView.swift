@@ -18,13 +18,14 @@ struct ExpandedTagView: View {
 			HStack {
 				Spacer()
 			}
-			if isEditingTag{
+			if isEditingTag {
 				ColorOptions(
 					currentSelectedColorHexCode: $currentSelectedColorHexCode)
 			}
 			FriendContainer(
 				friendTag: friendTag,
-				addFriendsToTagButtonPressedCallback: addFriendToTagButtonPressedCallback
+				addFriendsToTagButtonPressedCallback:
+					addFriendToTagButtonPressedCallback
 			)
 		}
 		.padding(.horizontal)

@@ -9,7 +9,9 @@ import Foundation
 
 /// as defined in the back-end `FriendRequestDTO.java`
 struct FriendRequestCreationDTO: Identifiable, Codable, Hashable {
-	static func == (lhs: FriendRequestCreationDTO, rhs: FriendRequestCreationDTO) -> Bool {
+	static func == (
+		lhs: FriendRequestCreationDTO, rhs: FriendRequestCreationDTO
+	) -> Bool {
 		return lhs.id == rhs.id
 	}
 

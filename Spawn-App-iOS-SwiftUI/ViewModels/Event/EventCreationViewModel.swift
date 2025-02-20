@@ -26,29 +26,33 @@ class EventCreationViewModel: ObservableObject {
 
 	// Private initializer to enforce singleton pattern
 	private init() {
-		self.apiService = MockAPIService.isMocking
-		? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()) : APIService()
+		self.apiService =
+			MockAPIService.isMocking
+			? MockAPIService(
+				userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
+			: APIService()
 
 		let defaultStart = Date()
-		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60) // 2 hours later
+		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
 		self.event = EventCreationDTO(
 			id: UUID(),
 			title: "",
 			startTime: defaultStart,
 			endTime: defaultEnd,
-			location: Location(id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
+			location: Location(
+				id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}
 
-
-	func createEvent() async -> Void {
+	func createEvent() async {
 		// Ensure times are set if not already provided
 		if event.startTime == nil {
 			event.startTime = combineDateAndTime(selectedDate, time: Date())
 		}
 		if event.endTime == nil {
-			event.endTime = combineDateAndTime(selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
+			event.endTime = combineDateAndTime(
+				selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
 		}
 
 		// Populate invited user and tag IDs from the selected arrays
@@ -57,16 +61,17 @@ class EventCreationViewModel: ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
-				try await self.apiService.sendData(event, to: url, parameters: nil)
+				try await self.apiService.sendData(
+					event, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {
-					creationMessage = "There was an error creating your event. Please try again"
+					creationMessage =
+						"There was an error creating your event. Please try again"
 					print(apiService.errorMessage ?? "")
 				}
 			}
 		}
 	}
-
 
 	// Helper function to combine a date and a time into a single Date
 	func combineDateAndTime(_ date: Date, time: Date) -> Date {

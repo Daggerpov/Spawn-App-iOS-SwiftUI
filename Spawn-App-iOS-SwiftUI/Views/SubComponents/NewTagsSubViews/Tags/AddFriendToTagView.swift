@@ -13,9 +13,9 @@ struct AddFriendToTagView: View {
 	var friendTagId: UUID
 
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
-	var closeCallback: (() -> ())?
+	var closeCallback: (() -> Void)?
 
-	init(userId: UUID, friendTagId: UUID, closeCallback: @escaping() -> ()) {
+	init(userId: UUID, friendTagId: UUID, closeCallback: @escaping () -> Void) {
 		self.userId = userId
 		self.friendTagId = friendTagId
 		self.closeCallback = closeCallback
@@ -34,8 +34,10 @@ struct AddFriendToTagView: View {
 					if viewModel.friends.count > 0 {
 						ScrollView {
 							ForEach(viewModel.friends) { friend in
-								FriendRowForAddingFriendsToTag(friend: friend, viewModel: viewModel)
-									.padding(.horizontal)
+								FriendRowForAddingFriendsToTag(
+									friend: friend, viewModel: viewModel
+								)
+								.padding(.horizontal)
 							}
 						}
 					} else {
@@ -98,7 +100,6 @@ struct FriendRowForAddingFriendsToTag: View {
 						.frame(width: 35, height: 35)
 				}
 
-
 				Image(systemName: "star.fill")
 					.font(.system(size: 10))
 				Text(FormatterService.shared.formatName(user: friend))
@@ -128,7 +129,8 @@ extension AddFriendToTagView {
 	var doneButtonView: some View {
 		Button(action: {
 			Task {
-				await viewModel.addSelectedFriendsToTag(friendTagId: friendTagId)
+				await viewModel.addSelectedFriendsToTag(
+					friendTagId: friendTagId)
 			}
 			closeCallback
 		}) {
