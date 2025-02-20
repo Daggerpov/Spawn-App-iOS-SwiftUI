@@ -13,11 +13,15 @@ struct TagsTabView: View {
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
-	init(userId: UUID, addFriendToTagButtonPressedCallback: @escaping(UUID) -> Void) {
-		self.addFriendToTagButtonPressedCallback = addFriendToTagButtonPressedCallback
+	init(
+		userId: UUID,
+		addFriendToTagButtonPressedCallback: @escaping (UUID) -> Void
+	) {
+		self.addFriendToTagButtonPressedCallback =
+			addFriendToTagButtonPressedCallback
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
-			? MockAPIService(userId: userId) : APIService(), userId: userId)
+				? MockAPIService(userId: userId) : APIService(), userId: userId)
 	}
 
 	var body: some View {
@@ -27,8 +31,10 @@ struct TagsTabView: View {
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
-				AddTagButtonView(creationStatus: $creationStatus, color: universalAccentColor)
-					.environmentObject(viewModel)
+				AddTagButtonView(
+					creationStatus: $creationStatus, color: universalAccentColor
+				)
+				.environmentObject(viewModel)
 			}
 			Spacer()
 			Spacer()
@@ -49,18 +55,22 @@ extension TagsTabView {
 			ScrollView {
 				VStack(spacing: 15) {
 					ForEach(viewModel.tags) { friendTag in
-						TagRow(friendTag: friendTag, addFriendToTagButtonPressedCallback: addFriendToTagButtonPressedCallback)
-							.background(
-								RoundedRectangle(cornerRadius: 12)
-									.fill(
-										Color(hex: friendTag.colorHexCode)
-											.opacity(0.5)
-									)
-									.cornerRadius(
-										universalRectangleCornerRadius
-									)
-							)
-							.environmentObject(viewModel)
+						TagRow(
+							friendTag: friendTag,
+							addFriendToTagButtonPressedCallback:
+								addFriendToTagButtonPressedCallback
+						)
+						.background(
+							RoundedRectangle(cornerRadius: 12)
+								.fill(
+									Color(hex: friendTag.colorHexCode)
+										.opacity(0.5)
+								)
+								.cornerRadius(
+									universalRectangleCornerRadius
+								)
+						)
+						.environmentObject(viewModel)
 					}
 				}
 			}

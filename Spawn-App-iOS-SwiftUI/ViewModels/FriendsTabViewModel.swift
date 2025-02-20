@@ -29,18 +29,24 @@ class FriendsTabViewModel: ObservableObject {
 		await fetchFriends()
 	}
 
-	internal func fetchIncomingFriendRequests () async {
+	internal func fetchIncomingFriendRequests() async {
 		// full path: /api/v1/friend-requests/incoming/{userId}
-		if let url = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") {
+		if let url = URL(
+			string: APIService.baseURL + "friend-requests/incoming/\(userId)")
+		{
 			do {
-				let fetchedIncomingFriendRequests: [FriendRequest] = try await self.apiService.fetchData(from: url, parameters: nil)
+				let fetchedIncomingFriendRequests: [FriendRequest] =
+					try await self.apiService.fetchData(
+						from: url, parameters: nil)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.incomingFriendRequests = fetchedIncomingFriendRequests
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+				if let statusCode = apiService.errorStatusCode,
+					apiService.errorStatusCode != 404
+				{
 					print("Invalid status code from response: \(statusCode)")
 					print(apiService.errorMessage ?? "")
 				}
@@ -52,16 +58,22 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchRecommendedFriends() async {
-		if let url = URL(string: APIService.baseURL + "users/\(userId)/recommended-friends") {
+		if let url = URL(
+			string: APIService.baseURL + "users/\(userId)/recommended-friends")
+		{
 			do {
-				let fetchedRecommendedFriends: [User] = try await self.apiService.fetchData(from: url, parameters: nil)
+				let fetchedRecommendedFriends: [User] =
+					try await self.apiService.fetchData(
+						from: url, parameters: nil)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.recommendedFriends = fetchedRecommendedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+				if let statusCode = apiService.errorStatusCode,
+					apiService.errorStatusCode != 404
+				{
 					print("Invalid status code from response: \(statusCode)")
 					print(apiService.errorMessage ?? "")
 				}
@@ -73,16 +85,20 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchFriends() async {
-		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends") {
+		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends")
+		{
 			do {
-				let fetchedFriends: [FriendUserDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+				let fetchedFriends: [FriendUserDTO] = try await self.apiService
+					.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.friends = fetchedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode, apiService.errorStatusCode != 404 {
+				if let statusCode = apiService.errorStatusCode,
+					apiService.errorStatusCode != 404
+				{
 					print("Invalid status code from response: \(statusCode)")
 					print(apiService.errorMessage ?? "")
 				}
@@ -94,7 +110,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	func addFriend(friendUserId: UUID) async {
-        let createdFriendRequest = FriendRequestCreationDTO(
+		let createdFriendRequest = FriendRequestCreationDTO(
 			id: UUID(),
 			senderUserId: userId,
 			receiverUserId: friendUserId
@@ -102,10 +118,12 @@ class FriendsTabViewModel: ObservableObject {
 		// full path: /api/v1/friend-requests
 		if let url = URL(string: APIService.baseURL + "friend-requests") {
 			do {
-				try await self.apiService.sendData(createdFriendRequest, to: url, parameters: nil)
+				try await self.apiService.sendData(
+					createdFriendRequest, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {
-					friendRequestCreationMessage = "There was an error creating your friend request. Please try again"
+					friendRequestCreationMessage =
+						"There was an error creating your friend request. Please try again"
 					print(apiService.errorMessage ?? "")
 				}
 			}

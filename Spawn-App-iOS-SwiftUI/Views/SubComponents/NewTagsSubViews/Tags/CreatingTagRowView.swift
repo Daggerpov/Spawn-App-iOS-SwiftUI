@@ -25,8 +25,11 @@ struct CreatingTagRowView: View {
 						.underline()
 
 					Button(action: {
-						Task{
-							await viewModel.upsertTag(displayName: displayName, colorHexCode: colorHexCode, upsertAction: .create)
+						Task {
+							await viewModel.upsertTag(
+								displayName: displayName,
+								colorHexCode: colorHexCode,
+								upsertAction: .create)
 						}
 
 						creationStatus = .doneCreating

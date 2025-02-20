@@ -8,7 +8,9 @@
 import Foundation
 
 struct FriendTagCreationDTO: Identifiable, Codable, Hashable {
-	static func == (lhs: FriendTagCreationDTO, rhs: FriendTagCreationDTO) -> Bool {
+	static func == (lhs: FriendTagCreationDTO, rhs: FriendTagCreationDTO)
+		-> Bool
+	{
 		return lhs.id == rhs.id
 	}
 
@@ -19,7 +21,8 @@ struct FriendTagCreationDTO: Identifiable, Codable, Hashable {
 	var friendUserIds: [UUID] = []
 	var isEveryone: Bool = false
 
-	init(id: UUID, displayName: String, colorHexCode: String, ownerUserId: UUID){
+	init(id: UUID, displayName: String, colorHexCode: String, ownerUserId: UUID)
+	{
 		self.id = id
 		self.displayName = displayName
 		self.colorHexCode = colorHexCode

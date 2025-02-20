@@ -151,8 +151,10 @@ struct TagFriendsView: View {
 					.clipShape(Circle())
 			}
 			.offset(x: CGFloat((friends?.count ?? 0)) * 15)  // Position the button after the last profile picture
-			
-			ForEach(Array((friends ?? []).enumerated().reversed()), id: \.element.id) {
+
+			ForEach(
+				Array((friends ?? []).enumerated().reversed()), id: \.element.id
+			) {
 				index, friend in
 				if let pfpUrl = friend.profilePicture {
 					AsyncImage(url: URL(string: pfpUrl)) { image in

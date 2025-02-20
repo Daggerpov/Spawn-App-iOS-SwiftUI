@@ -20,7 +20,7 @@ struct InviteTagsView: View {
 	}
 
 	var body: some View {
-		VStack{
+		VStack {
 			Text("Invite friends by tag:")
 				.font(.headline)
 				.foregroundColor(universalAccentColor)
@@ -159,7 +159,6 @@ struct InviteTagFriendsView: View {
 						.frame(width: 25, height: 25)
 				}
 
-				
 			}
 		}
 	}

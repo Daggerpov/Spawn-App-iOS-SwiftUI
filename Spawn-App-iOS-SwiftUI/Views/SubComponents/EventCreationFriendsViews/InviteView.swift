@@ -19,23 +19,21 @@ struct InviteView: View {
 	var body: some View {
 		NavigationStack {
 			VStack(spacing: 20) {
-                FriendTagToggleView(selectedTab: $selectedTab)
-                
-                if selectedTab == .friends {
-                    InviteFriendsView(user: user)
-                } else {
-                    InviteTagsView(user: user)
-                }
+				FriendTagToggleView(selectedTab: $selectedTab)
+
+				if selectedTab == .friends {
+					InviteFriendsView(user: user)
+				} else {
+					InviteTagsView(user: user)
+				}
 			}
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+			.frame(maxWidth: .infinity, maxHeight: .infinity)
 			.background(universalBackgroundColor)
 		}
 	}
 }
 
-
 @available(iOS 17.0, *)
-#Preview
-{
+#Preview {
 	InviteView(user: .danielAgapov)
 }

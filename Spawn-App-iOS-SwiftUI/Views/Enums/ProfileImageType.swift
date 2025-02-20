@@ -6,5 +6,6 @@
 //
 
 enum ProfileImageType {
-    case feedPage, eventParticipants, profilePage, chatMessage, friendsListView, mapView, tagFriends
+	case feedPage, eventParticipants, profilePage, chatMessage, friendsListView,
+		mapView, tagFriends
 }

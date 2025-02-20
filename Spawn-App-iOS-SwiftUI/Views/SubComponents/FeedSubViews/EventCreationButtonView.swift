@@ -9,7 +9,7 @@ import SwiftUI
 
 struct EventCreationButtonView: View {
 	@Binding var showingEventCreationPopup: Bool
-    var body: some View {
+	var body: some View {
 		RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
 			.frame(width: 100, height: 45)
 			.foregroundColor(universalBackgroundColor)
@@ -21,7 +21,7 @@ struct EventCreationButtonView: View {
 				Button(action: {
 					showingEventCreationPopup = true
 				}) {
-					HStack{
+					HStack {
 						Spacer()
 						Image(systemName: "plus")
 							.resizable()
@@ -34,5 +34,5 @@ struct EventCreationButtonView: View {
 					}
 				}
 			)
-    }
+	}
 }

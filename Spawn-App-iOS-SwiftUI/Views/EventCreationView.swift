@@ -14,9 +14,9 @@ struct EventCreationView: View {
 	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
 
 	var creatingUser: User
-	var closeCallback: () -> ()
+	var closeCallback: () -> Void
 
-	init(creatingUser: User, closeCallback: @escaping () -> ()) {
+	init(creatingUser: User, closeCallback: @escaping () -> Void) {
 		self.creatingUser = creatingUser
 		self.closeCallback = closeCallback
 	}
@@ -148,7 +148,12 @@ struct EventInputField: View {
 				"",
 				text: Binding(
 					get: { value ?? "" },
-					set: { value = $0.isEmpty ? nil : $0 }
+					set: { newValue in
+						// Safely update the value outside of the view update
+						DispatchQueue.main.async {
+							value = newValue.isEmpty ? nil : newValue
+						}
+					}
 				)
 			)
 			.foregroundColor(.primary)
