@@ -126,6 +126,7 @@ struct ProfileView: View {
 					// Delete Account Button
 					Button(action: {
 						userAuth.showDeleteAlert = true
+						print("showing delete account alert, supposedly.")
 					}) {
 						Text("Delete Account")
 							.font(.headline)
@@ -142,7 +143,9 @@ struct ProfileView: View {
 								"Are you sure you want to delete your account? This action cannot be undone."
 							),
 							primaryButton: .destructive(Text("Delete")) {
-								userAuth.deleteAccount()
+								Task {
+									await userAuth.deleteAccount()
+								}
 							},
 							secondaryButton: .cancel()
 						)
