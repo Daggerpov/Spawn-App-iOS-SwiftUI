@@ -27,24 +27,10 @@ struct ProfileView: View {
 					// Profile Picture
 
 					if let profilePictureString = user.profilePicture {
-	init(user: User) {
-		self.user = user
-		bio = user.bio ?? ""
-	}
-
-	var body: some View {
-		NavigationStack {
-			VStack {
-				VStack(alignment: .center, spacing: 20) {
-					// Profile Picture
-
-					if let profilePictureString = user.profilePicture {
 						if MockAPIService.isMocking {
 							Image(profilePictureString)
 								.ProfileImageModifier(imageType: .profilePage)
 						} else {
-							AsyncImage(url: URL(string: profilePictureString)) {
-								image in
 							AsyncImage(url: URL(string: profilePictureString)) {
 								image in
 								image
@@ -61,10 +47,6 @@ struct ProfileView: View {
 						Image(systemName: "person.crop.circle.fill")
 							.ProfileImageModifier(imageType: .profilePage)
 					}
-					} else {
-						Image(systemName: "person.crop.circle.fill")
-							.ProfileImageModifier(imageType: .profilePage)
-					}
 
 					Circle()
 						.fill(profilePicPlusButtonColor)
@@ -169,10 +151,6 @@ struct ProfileView: View {
 					}
 					.padding(.horizontal)
 
-					Spacer()
-					Spacer()
-					Spacer()
-					Spacer()
 					Spacer()
 					Spacer()
 					Spacer()
@@ -184,12 +162,6 @@ struct ProfileView: View {
 							.navigationBarHidden(true)
 					}) {
 						Text("Log Out")
-							.font(.headline)
-							.foregroundColor(.white)
-							.padding()
-							.frame(maxWidth: 170)
-							.background(profilePicPlusButtonColor)
-							.cornerRadius(20)
 							.font(.headline)
 							.foregroundColor(.white)
 							.padding()
@@ -264,21 +236,7 @@ struct ProfileView: View {
 struct ProfileField: View {
 	let label: String
 	let value: String
-	let label: String
-	let value: String
 
-	var body: some View {
-		HStack {
-			Text(label)
-				.font(.headline)
-				.frame(width: 100, alignment: .leading)
-			Spacer()
-			Text(value)
-				.font(.body)
-				.multilineTextAlignment(.trailing)
-		}
-		.foregroundColor(universalAccentColor)
-	}
 	var body: some View {
 		HStack {
 			Text(label)
@@ -296,25 +254,7 @@ struct ProfileField: View {
 struct BioField: View {
 	let label: String
 	@Binding var bio: String
-	let label: String
-	@Binding var bio: String
 
-	var body: some View {
-		HStack {
-			Text(label)
-				.font(.headline)
-				.frame(width: 80, alignment: .leading)
-			Spacer()
-			TextField(
-				"",
-				text: $bio,
-				prompt: Text("Bio")
-			)
-			.multilineTextAlignment(.trailing)
-			.font(.body)
-		}
-		.foregroundColor(universalAccentColor)
-	}
 	var body: some View {
 		HStack {
 			Text(label)
