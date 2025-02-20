@@ -141,11 +141,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.errorMessage =
 				"Apple Sign-In failed: \(error.localizedDescription)"
 			print(self.errorMessage as Any)
-				// Check user existence AFTER setting credentials
-				Task {
-					await self.spawnFetchUserIfAlreadyExists()
-				}
+			// Check user existence AFTER setting credentials
+			Task {
+				await self.spawnFetchUserIfAlreadyExists()
 			}
+		}
 	}
 
 	func signInWithGoogle() async {
@@ -300,15 +300,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func spawnMakeUser(
-		username: String, profilePicture: UIImage?, firstName: String,
-		lastName: String, email: String
+		username: String,
+		profilePicture: UIImage?,
+		firstName: String,
+		lastName: String,
+		email: String
 	) async {
-		// Convert UIImage to byte array (JPEG format)
-		var profilePictureData: Data? = nil
-		if let image = profilePicture {
-			profilePictureData = image.jpegData(compressionQuality: 0.8)
-		}
-
 		// Create the User object
 		let newUser = User(
 			id: UUID(),
@@ -346,39 +343,38 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Create the request
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
-		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-		// Add the UserDTO to the request body
-		do {
-			let userData = try JSONEncoder().encode(newUser)
-			request.httpBody = userData
-		} catch {
-			print("Failed to encode user data: \(error.localizedDescription)")
+		// Convert profile picture to JPEG data if it exists
+		let profilePictureData = profilePicture?.jpegData(
+			compressionQuality: 0.8)
+
+		// Always use multipart/form-data when sending the request
+		let boundary = "Boundary-\(UUID().uuidString)"
+		request.setValue(
+			"multipart/form-data; boundary=\(boundary)",
+			forHTTPHeaderField: "Content-Type")
+
+		var body = Data()
+
+		// Add UserDTO as JSON part
+		body.append("--\(boundary)\r\n".data(using: .utf8)!)
+		body.append(
+			"Content-Disposition: form-data; name=\"userDTO\"\r\n".data(
+				using: .utf8)!)
+		body.append(
+			"Content-Type: application/json\r\n\r\n".data(using: .utf8)!)
+
+		// Encode user data
+		if let userData = try? JSONEncoder().encode(newUser) {
+			body.append(userData)
+			body.append("\r\n".data(using: .utf8)!)
+		} else {
+			print("Failed to encode user data")
 			return
 		}
 
-		// Add the profile picture as multipart form data if it exists
+		// Add profile picture part if it exists
 		if let imageData = profilePictureData {
-			let boundary = "Boundary-\(UUID().uuidString)"
-			request.setValue(
-				"multipart/form-data; boundary=\(boundary)",
-				forHTTPHeaderField: "Content-Type")
-
-			var body = Data()
-
-			// Add UserDTO as JSON part
-			body.append("--\(boundary)\r\n".data(using: .utf8)!)
-			body.append(
-				"Content-Disposition: form-data; name=\"userDTO\"\r\n".data(
-					using: .utf8)!)
-			body.append(
-				"Content-Type: application/json\r\n\r\n".data(using: .utf8)!)
-			if let userData = try? JSONEncoder().encode(newUser) {
-				body.append(userData)
-			}
-			body.append("\r\n".data(using: .utf8)!)
-
-			// Add profile picture as binary part
 			body.append("--\(boundary)\r\n".data(using: .utf8)!)
 			body.append(
 				"Content-Disposition: form-data; name=\"profilePicture\"; filename=\"profile.jpg\"\r\n"
@@ -386,14 +382,25 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
 			body.append(imageData)
 			body.append("\r\n".data(using: .utf8)!)
-			body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-
-			request.httpBody = body
 		}
+
+		// Add final boundary
+		body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+		// Set the request body
+		request.httpBody = body
 
 		// Send the request
 		do {
-			let (data, _) = try await URLSession.shared.data(for: request)
+			let (data, response) = try await URLSession.shared.data(
+				for: request)
+
+			// Print response for debugging
+			if let httpResponse = response as? HTTPURLResponse {
+				print("Response status code: \(httpResponse.statusCode)")
+			}
+
+			// Try to decode the response
 			let fetchedUser = try JSONDecoder().decode(User.self, from: data)
 
 			await MainActor.run {
@@ -401,7 +408,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.shouldNavigateToUserInfoInputView = false
 			}
 
-			// Save externalUserId to Keychain after account creation
+			// Save externalUserId to Keychain
 			if let externalUserId = self.externalUserId,
 				let data = externalUserId.data(using: .utf8)
 			{
@@ -414,7 +421,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 			print("User created successfully.")
 		} catch {
-			print("Error creating the user: \(error.localizedDescription)")
+			print("Error creating the user: \(error)")
+			// Print more detailed error information
+			if let decodingError = error as? DecodingError {
+				print("Decoding error: \(decodingError)")
+			}
 		}
 	}
 
@@ -433,7 +444,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
 				try await self.apiService.deleteData(from: url)
-				let success = KeychainService.shared.delete(key: "externalUserId")
+				let success = KeychainService.shared.delete(
+					key: "externalUserId")
 				if !success {
 					print("Failed to delete externalUserId from Keychain")
 				}
