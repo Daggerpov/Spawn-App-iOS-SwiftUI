@@ -45,9 +45,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	// delete account:
 
-	@Published var showDeleteAlert: Bool = false
-	@Published var deleteAccountSuccess: Bool = false
-	@Published var deleteAccountError: Bool = false
+	@Published var activeAlert: DeleteAccountAlertType?
 
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
@@ -422,32 +420,28 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	func deleteAccount() async {
 		guard let userId = spawnUser?.id else {
-			deleteAccountError = true
+			await MainActor.run {
+				activeAlert = .deleteError
+			}
 			return
 		}
 
-		if let url = URL(
-			string: APIService.baseURL + "users/\(userId)")
-		{
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
 				try await self.apiService.deleteData(from: url)
-
-				// Clear Keychain
 				let success = KeychainService.shared.delete(key: "externalUserId")
 				if !success {
 					print("Failed to delete externalUserId from Keychain")
 				}
 
-				// Reset state (same as signOut)
 				await MainActor.run {
 					resetState()
-					deleteAccountSuccess = true
+					activeAlert = .deleteSuccess
 				}
 			} catch {
 				print("Error deleting account: \(error.localizedDescription)")
 				await MainActor.run {
-
-					self.deleteAccountError = true
+					activeAlert = .deleteError
 				}
 			}
 		}

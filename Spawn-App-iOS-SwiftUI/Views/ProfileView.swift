@@ -125,8 +125,7 @@ struct ProfileView: View {
 
 					// Delete Account Button
 					Button(action: {
-						userAuth.showDeleteAlert = true
-						print("showing delete account alert, supposedly.")
+						userAuth.activeAlert = .deleteConfirmation
 					}) {
 						Text("Delete Account")
 							.font(.headline)
@@ -136,39 +135,6 @@ struct ProfileView: View {
 							.background(Color.red)
 							.cornerRadius(20)
 					}
-					.alert(isPresented: $userAuth.showDeleteAlert) {
-						Alert(
-							title: Text("Delete Account"),
-							message: Text(
-								"Are you sure you want to delete your account? This action cannot be undone."
-							),
-							primaryButton: .destructive(Text("Delete")) {
-								Task {
-									await userAuth.deleteAccount()
-								}
-							},
-							secondaryButton: .cancel()
-						)
-					}
-					.alert(isPresented: $userAuth.deleteAccountSuccess) {
-						Alert(
-							title: Text("Account Deleted"),
-							message: Text(
-								"Your account has been successfully deleted."),
-							dismissButton: .default(Text("OK")) {
-								userAuth.signOut()
-							}
-						)
-					}
-					.alert(isPresented: $userAuth.deleteAccountError) {
-						Alert(
-							title: Text("Error"),
-							message: Text(
-								"Failed to delete your account. Please try again later."
-							),
-							dismissButton: .default(Text("OK"))
-						)
-					}
 
 					Spacer()
 						.padding(.horizontal)
@@ -176,6 +142,40 @@ struct ProfileView: View {
 				.padding()
 			}
 			.background(universalBackgroundColor)
+			.alert(item: $userAuth.activeAlert) { alertType in
+				switch alertType {
+				case .deleteConfirmation:
+					return Alert(
+						title: Text("Delete Account"),
+						message: Text(
+							"Are you sure you want to delete your account? This action cannot be undone."
+						),
+						primaryButton: .destructive(Text("Delete")) {
+							Task {
+								await userAuth.deleteAccount()
+							}
+						},
+						secondaryButton: .cancel()
+					)
+				case .deleteSuccess:
+					return Alert(
+						title: Text("Account Deleted"),
+						message: Text(
+							"Your account has been successfully deleted."),
+						dismissButton: .default(Text("OK")) {
+							userAuth.signOut()
+						}
+					)
+				case .deleteError:
+					return Alert(
+						title: Text("Error"),
+						message: Text(
+							"Failed to delete your account. Please try again later."
+						),
+						dismissButton: .default(Text("OK"))
+					)
+				}
+			}
 		}
 	}
 }
