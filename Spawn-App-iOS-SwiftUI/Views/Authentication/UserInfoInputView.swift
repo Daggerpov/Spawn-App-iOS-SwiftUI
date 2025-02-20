@@ -6,26 +6,36 @@
 //
 
 import SwiftUI
+import PhotosUI
+import UIKit
 
 struct UserInfoInputView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
 
-	@State private var editedProfilePicture: String = ""  // TODO: use this variable meaningfully, instead of just grabbing from user auth view model
+	@State private var username: String = ""
 
 	// Validation flags
 	@State private var isFirstNameValid: Bool = true
 	@State private var isUsernameValid: Bool = true
-
 	@State private var isFormValid: Bool = false
-
-	@State private var username: String = ""
-
-	@State private var email: String = ""
 	@State private var isEmailValid: Bool = true
+
+	// If not through Google:
+	@State private var email: String = ""
+
+	// uploading custom image:
+	@State private var selectedImage: UIImage?
+	@State private var showImagePicker: Bool = false
 
 	fileprivate func ProfilePic() -> some View {
 		Group {
-			if userAuth.isLoggedIn, let pfpUrl = userAuth.profilePicUrl {
+			if let selectedImage = selectedImage {
+				Image(uiImage: selectedImage)
+					.resizable()
+					.scaledToFill()
+					.frame(width: 150, height: 150)
+					.clipShape(Circle())
+			} else if userAuth.isLoggedIn, let pfpUrl = userAuth.profilePicUrl {
 				AsyncImage(url: URL(string: pfpUrl)) { image in
 					image
 						.ProfileImageModifier(imageType: .profilePage)
@@ -80,6 +90,12 @@ struct UserInfoInputView: View {
 						)
 						.offset(x: 35, y: 35)
 				}
+				.onTapGesture {
+					showImagePicker = true
+				}
+				.sheet(isPresented: $showImagePicker) {
+					ImagePicker(selectedImage: $selectedImage)
+				}
 
 				Spacer()
 
@@ -120,18 +136,15 @@ struct UserInfoInputView: View {
 				.padding(.horizontal, 32)
 
 				Button(action: {
-					validateFields()  // Perform field validation
-					if isFirstNameValid && isUsernameValid
-						&& (!needsEmail || isEmailValid)
-					{
+					validateFields()
+					if isFirstNameValid && isUsernameValid && (!needsEmail || isEmailValid) {
 						Task {
 							await userAuth.spawnMakeUser(
 								username: username,
-								profilePicture: userAuth.profilePicUrl ?? "",
+								profilePicture: selectedImage, // Pass the selected image
 								firstName: userAuth.givenName ?? "",
 								lastName: userAuth.familyName ?? "",
-								email: userAuth.authProvider == .apple
-									? email : userAuth.email ?? ""
+								email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
 							)
 						}
 						userAuth.isFormValid = true
@@ -203,6 +216,47 @@ struct InputFieldView: View {
 				.background(.white)
 				.cornerRadius(universalRectangleCornerRadius)
 				.foregroundColor(.black)
+		}
+	}
+}
+
+struct ImagePicker: UIViewControllerRepresentable {
+	@Binding var selectedImage: UIImage?
+	@Environment(\.presentationMode) private var presentationMode
+
+	func makeUIViewController(context: Context) -> PHPickerViewController {
+		var config = PHPickerConfiguration()
+		config.filter = .images
+		let picker = PHPickerViewController(configuration: config)
+		picker.delegate = context.coordinator
+		return picker
+	}
+
+	func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+
+	func makeCoordinator() -> Coordinator {
+		Coordinator(self)
+	}
+
+	class Coordinator: NSObject, PHPickerViewControllerDelegate {
+		let parent: ImagePicker
+
+		init(_ parent: ImagePicker) {
+			self.parent = parent
+		}
+
+		func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+			picker.dismiss(animated: true)
+
+			guard let provider = results.first?.itemProvider else { return }
+
+			if provider.canLoadObject(ofClass: UIImage.self) {
+				provider.loadObject(ofClass: UIImage.self) { image, _ in
+					DispatchQueue.main.async {
+						self.parent.selectedImage = image as? UIImage
+					}
+				}
+			}
 		}
 	}
 }
