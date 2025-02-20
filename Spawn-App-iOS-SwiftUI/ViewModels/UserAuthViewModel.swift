@@ -279,55 +279,108 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func spawnMakeUser(
-		username: String, profilePicture: String, firstName: String,
+		username: String, profilePicture: UIImage?, firstName: String,
 		lastName: String, email: String
 	) async {
+		// Convert UIImage to byte array (JPEG format)
+		var profilePictureData: Data? = nil
+		if let image = profilePicture {
+			profilePictureData = image.jpegData(compressionQuality: 0.8)
+		}
+
+		// Create the User object
 		let newUser = User(
 			id: UUID(),
 			username: username,
-			profilePicture: profilePicture,
+			profilePicture: nil, // This will be set by the backend
 			firstName: firstName,
 			lastName: lastName,
 			bio: "",
 			email: email
 		)
 
-		if let url = URL(string: APIService.baseURL + "oauth/make-user") {
-			do {
-				var parameters: [String: String] = [:]
-				if let unwrappedExternalUserId = externalUserId {
-					parameters["externalUserId"] = unwrappedExternalUserId
-				}
-				// Add provider to parameters using authProvider.rawValue
-				if let authProvider = self.authProvider {
-					parameters["provider"] = authProvider.rawValue
-				}
+		// Prepare the URL with query parameters
+		var urlComponents = URLComponents(string: APIService.baseURL + "oauth/make-user")!
+		var queryItems: [URLQueryItem] = []
 
-				let fetchedAuthenticatedSpawnUser: User = try await self.apiService.sendData(
-					newUser, to: url, parameters: parameters
-				)
+		if let unwrappedExternalUserId = externalUserId {
+			queryItems.append(URLQueryItem(name: "externalUserId", value: unwrappedExternalUserId))
+		}
 
-				await MainActor.run {
-					self.spawnUser = fetchedAuthenticatedSpawnUser
-					self.shouldNavigateToUserInfoInputView = false  // User created, no need to navigate to UserInfoInputView
-				}
+		if let authProvider = self.authProvider {
+			queryItems.append(URLQueryItem(name: "provider", value: authProvider.rawValue))
+		}
 
-				// Save externalUserId to Keychain after account creation
-				if let externalUserId = self.externalUserId,
-				   let data = externalUserId.data(using: .utf8) {
-					let success = KeychainService.shared.save(key: "externalUserId", data: data)
-					if !success {
-						print("Failed to save externalUserId to Keychain")
-					}
-				}
+		urlComponents.queryItems = queryItems
 
-				print("User created successfully.")
-			} catch {
-				print("Error creating the user: \(error.localizedDescription)")
-				print(apiService.errorMessage ?? "")
-			}
-		} else {
+		guard let url = urlComponents.url else {
 			print("Invalid URL for user creation.")
+			return
+		}
+
+		// Create the request
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+		// Add the UserDTO to the request body
+		do {
+			let userData = try JSONEncoder().encode(newUser)
+			request.httpBody = userData
+		} catch {
+			print("Failed to encode user data: \(error.localizedDescription)")
+			return
+		}
+
+		// Add the profile picture as multipart form data if it exists
+		if let imageData = profilePictureData {
+			let boundary = "Boundary-\(UUID().uuidString)"
+			request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+			var body = Data()
+
+			// Add UserDTO as JSON part
+			body.append("--\(boundary)\r\n".data(using: .utf8)!)
+			body.append("Content-Disposition: form-data; name=\"userDTO\"\r\n".data(using: .utf8)!)
+			body.append("Content-Type: application/json\r\n\r\n".data(using: .utf8)!)
+			if let userData = try? JSONEncoder().encode(newUser) {
+				body.append(userData)
+			}
+			body.append("\r\n".data(using: .utf8)!)
+
+			// Add profile picture as binary part
+			body.append("--\(boundary)\r\n".data(using: .utf8)!)
+			body.append("Content-Disposition: form-data; name=\"profilePicture\"; filename=\"profile.jpg\"\r\n".data(using: .utf8)!)
+			body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+			body.append(imageData)
+			body.append("\r\n".data(using: .utf8)!)
+			body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+
+			request.httpBody = body
+		}
+
+		// Send the request
+		do {
+			let (data, _) = try await URLSession.shared.data(for: request)
+			let fetchedUser = try JSONDecoder().decode(User.self, from: data)
+
+			await MainActor.run {
+				self.spawnUser = fetchedUser
+				self.shouldNavigateToUserInfoInputView = false
+			}
+
+			// Save externalUserId to Keychain after account creation
+			if let externalUserId = self.externalUserId,
+			   let data = externalUserId.data(using: .utf8) {
+				let success = KeychainService.shared.save(key: "externalUserId", data: data)
+				if !success {
+					print("Failed to save externalUserId to Keychain")
+				}
+			}
+
+			print("User created successfully.")
+		} catch {
+			print("Error creating the user: \(error.localizedDescription)")
 		}
 	}
 
