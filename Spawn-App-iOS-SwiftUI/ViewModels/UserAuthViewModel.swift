@@ -43,6 +43,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	private var apiService: IAPIService
 
+	// delete account:
+
+	@Published var showDeleteAlert: Bool = false
+	@Published var deleteAccountSuccess: Bool = false
+	@Published var deleteAccountError: Bool = false
+
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
 
@@ -387,6 +393,36 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	func setShouldNavigateToFeedView() {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
 	}
+
+	func deleteAccount() {
+		guard let userId = spawnUser?.id else {
+			deleteAccountError = true
+			return
+		}
+
+		let url = URL(string: "\(APIService.baseURL)/api/v1/users/\(userId)")!
+		var request = URLRequest(url: url)
+		request.httpMethod = "DELETE"
+
+		URLSession.shared.dataTask(with: request) { data, response, error in
+			if let httpResponse = response as? HTTPURLResponse {
+				if httpResponse.statusCode == 204 {
+					DispatchQueue.main.async {
+						self.deleteAccountSuccess = true
+					}
+				} else {
+					DispatchQueue.main.async {
+						self.deleteAccountError = true
+					}
+				}
+			} else if let error = error {
+				print("Error deleting account: \(error.localizedDescription)")
+				DispatchQueue.main.async {
+					self.deleteAccountError = true
+				}
+			}
+		}.resume()
+	}
 }
 
 // Conform to ASAuthorizationControllerDelegate
@@ -403,4 +439,6 @@ extension UserAuthViewModel: ASAuthorizationControllerDelegate {
 	) {
 		handleAppleSignInResult(.failure(error))
 	}
+
+
 }

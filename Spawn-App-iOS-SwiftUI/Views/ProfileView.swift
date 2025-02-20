@@ -12,9 +12,6 @@ struct ProfileView: View {
 	let user: User
 	@State private var bio: String
 	@State private var editingState: ProfileEditText = .edit
-	@State private var showDeleteAlert: Bool = false
-	@State private var deleteAccountSuccess: Bool = false
-	@State private var deleteAccountError: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 
@@ -128,7 +125,7 @@ struct ProfileView: View {
 
 					// Delete Account Button
 					Button(action: {
-						showDeleteAlert = true
+						userAuth.showDeleteAlert = true
 					}) {
 						Text("Delete Account")
 							.font(.headline)
@@ -138,19 +135,19 @@ struct ProfileView: View {
 							.background(Color.red)
 							.cornerRadius(20)
 					}
-					.alert(isPresented: $showDeleteAlert) {
+					.alert(isPresented: $userAuth.showDeleteAlert) {
 						Alert(
 							title: Text("Delete Account"),
 							message: Text(
 								"Are you sure you want to delete your account? This action cannot be undone."
 							),
 							primaryButton: .destructive(Text("Delete")) {
-								deleteAccount()
+								userAuth.deleteAccount()
 							},
 							secondaryButton: .cancel()
 						)
 					}
-					.alert(isPresented: $deleteAccountSuccess) {
+					.alert(isPresented: $userAuth.deleteAccountSuccess) {
 						Alert(
 							title: Text("Account Deleted"),
 							message: Text(
@@ -160,7 +157,7 @@ struct ProfileView: View {
 							}
 						)
 					}
-					.alert(isPresented: $deleteAccountError) {
+					.alert(isPresented: $userAuth.deleteAccountError) {
 						Alert(
 							title: Text("Error"),
 							message: Text(
@@ -177,36 +174,6 @@ struct ProfileView: View {
 			}
 			.background(universalBackgroundColor)
 		}
-	}
-
-	private func deleteAccount() {
-		guard let userId = user.id else {
-			deleteAccountError = true
-			return
-		}
-
-		let url = URL(string: "\(APIService.baseURL)/api/v1/users/\(userId)")!
-		var request = URLRequest(url: url)
-		request.httpMethod = "DELETE"
-
-		URLSession.shared.dataTask(with: request) { data, response, error in
-			if let httpResponse = response as? HTTPURLResponse {
-				if httpResponse.statusCode == 204 {
-					DispatchQueue.main.async {
-						deleteAccountSuccess = true
-					}
-				} else {
-					DispatchQueue.main.async {
-						deleteAccountError = true
-					}
-				}
-			} else if let error = error {
-				print("Error deleting account: \(error.localizedDescription)")
-				DispatchQueue.main.async {
-					deleteAccountError = true
-				}
-			}
-		}.resume()
 	}
 }
 
