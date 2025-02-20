@@ -431,7 +431,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		{
 			do {
 				try await self.apiService.deleteData(from: url)
-				
+
 				// Clear Keychain
 				let success = KeychainService.shared.delete(key: "externalUserId")
 				if !success {
