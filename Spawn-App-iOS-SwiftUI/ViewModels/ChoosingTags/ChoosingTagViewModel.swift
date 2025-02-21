@@ -40,8 +40,6 @@ class ChooseTagPopUpViewModel: ObservableObject {
 		}
 	}
     
-    //TODO: add API call to fetch tags
-    
     func fetchTags(friendUserId: UUID, friendTagIds: [UUID]) async {
         if let url = URL(
             string: APIService.baseURL + "friendTags/addUserToTags")
@@ -49,9 +47,7 @@ class ChooseTagPopUpViewModel: ObservableObject {
             do {
                 let fetchedTags: [User] = try await self.apiService.fetchData(
                     from: url,
-                    parameters: [
-                        "userId": friendUserId.uuidString
-                    ])
+                    parameters: nil)
             } catch {
                 await MainActor.run {
                     chooseTagErrorMessage =
