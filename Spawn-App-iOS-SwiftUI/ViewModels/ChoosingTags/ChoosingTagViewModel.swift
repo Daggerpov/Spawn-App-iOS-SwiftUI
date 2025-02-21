@@ -55,7 +55,7 @@ class ChooseTagPopUpViewModel: ObservableObject {
             } catch {
                 await MainActor.run {
                     chooseTagErrorMessage =
-                        "There was an error select a tag for your friend. Please try again."
+                        "There was an error showing your tags. Please try again."
                     print(apiService.errorMessage ?? "")
                 }
             }
