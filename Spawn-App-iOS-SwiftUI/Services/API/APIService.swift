@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import UIKit
 
 class APIService: IAPIService {
 	static var baseURL: String =
@@ -268,6 +269,143 @@ class APIService: IAPIService {
 				statusCode: httpResponse.statusCode)
 		}
 	}
+
+	func sendMultipartData<T: Encodable, U: Decodable>(
+		_ object: T,
+		imageData: Data?,
+		to url: URL,
+		parameters: [String: String]? = nil
+	) async throws -> U {
+		resetState()
+
+		// Create URL with parameters
+		var urlComponents = URLComponents(
+			url: url, resolvingAgainstBaseURL: false)
+		if let parameters = parameters {
+			urlComponents?.queryItems = parameters.map {
+				URLQueryItem(name: $0.key, value: $0.value)
+			}
+		}
+
+		guard let finalURL = urlComponents?.url else {
+			throw APIError.URLError
+		}
+
+		// Create multipart request
+		var request = URLRequest(url: finalURL)
+		request.httpMethod = "POST"
+
+		let boundary = "Boundary-\(UUID().uuidString)"
+		request.setValue(
+			"multipart/form-data; boundary=\(boundary)",
+			forHTTPHeaderField: "Content-Type")
+
+		var body = Data()
+
+		// Add JSON part
+		body.append("--\(boundary)\r\n".data(using: .utf8)!)
+		body.append(
+			"Content-Disposition: form-data; name=\"userDTO\"\r\n".data(
+				using: .utf8)!)
+		body.append(
+			"Content-Type: application/json\r\n\r\n".data(using: .utf8)!)
+
+		let encoder = APIService.makeEncoder()
+		let encodedData = try encoder.encode(object)
+		body.append(encodedData)
+		body.append("\r\n".data(using: .utf8)!)
+
+		// Add image part if it exists
+		if let imageData = imageData {
+			body.append("--\(boundary)\r\n".data(using: .utf8)!)
+			body.append(
+				"Content-Disposition: form-data; name=\"profilePicture\"; filename=\"profile.jpg\"\r\n"
+					.data(using: .utf8)!)
+			body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+			body.append(imageData)
+			body.append("\r\n".data(using: .utf8)!)
+		}
+
+		body.append("--\(boundary)--\r\n".data(using: .utf8)!)
+		request.httpBody = body
+
+		// Send request
+		let (data, response) = try await URLSession.shared.data(for: request)
+
+		guard let httpResponse = response as? HTTPURLResponse else {
+			throw APIError.failedHTTPRequest(description: "HTTP request failed")
+		}
+
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201
+		else {
+			if let errorString = String(data: data, encoding: .utf8) {
+				print("Error response body: \(errorString)")
+			}
+			throw APIError.invalidStatusCode(
+				statusCode: httpResponse.statusCode)
+		}
+
+		let decoder = APIService.makeDecoder()
+		return try decoder.decode(U.self, from: data)
+	}
+
+	func createUser(userDTO: UserCreateDTO, profilePicture: UIImage?, parameters: [String: String]?) async throws -> User {
+		resetState()
+
+		// Create URL with parameters
+		guard let baseURL = URL(string: APIService.baseURL + "oauth/make-user") else {
+			throw APIError.URLError
+		}
+
+		var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+		if let parameters = parameters {
+			urlComponents?.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+		}
+
+		guard let finalURL = urlComponents?.url else {
+			throw APIError.URLError
+		}
+
+		// Convert UserCreateDTO to UserCreationDTO format
+		var userCreationDTO: [String: Any] = [
+			"username": userDTO.username,
+			"firstName": userDTO.firstName,
+			"lastName": userDTO.lastName,
+			"bio": userDTO.bio,
+			"email": userDTO.email
+		]
+
+		// Add profile picture data if available
+		if let image = profilePicture,
+		   let imageData = image.jpegData(compressionQuality: 0.8) {
+			userCreationDTO["profilePictureData"] = imageData.base64EncodedString()
+		}
+
+		// Create the request
+		var request = URLRequest(url: finalURL)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+		// Encode the body
+		let jsonData = try JSONSerialization.data(withJSONObject: userCreationDTO)
+		request.httpBody = jsonData
+
+		// Send the request
+		let (data, response) = try await URLSession.shared.data(for: request)
+
+		guard let httpResponse = response as? HTTPURLResponse else {
+			throw APIError.failedHTTPRequest(description: "HTTP request failed")
+		}
+
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+
+		// Decode the response
+		let decoder = APIService.makeDecoder()
+		return try decoder.decode(User.self, from: data)
+	}
+
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end

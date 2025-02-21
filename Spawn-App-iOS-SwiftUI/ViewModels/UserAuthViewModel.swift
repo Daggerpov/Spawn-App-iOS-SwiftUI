@@ -123,10 +123,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				as? ASAuthorizationAppleIDCredential
 			{
 				let userIdentifier = appleIDCredential.user
-				let email = appleIDCredential.email ?? "No email provided"
+				if let email = appleIDCredential.email {
+					self.email = email
+				}
 
 				// Set user details
-				self.email = email
 				self.givenName = appleIDCredential.fullName?.givenName
 				self.familyName = appleIDCredential.fullName?.familyName
 				self.isLoggedIn = true
@@ -306,102 +307,32 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		lastName: String,
 		email: String
 	) async {
-		// Create the User object
-		let newUser = User(
-			id: UUID(),
+		// Create the DTO
+		let userDTO = UserCreateDTO(
 			username: username,
-			profilePicture: nil,  // This will be set by the backend
 			firstName: firstName,
 			lastName: lastName,
 			bio: "",
 			email: email
 		)
 
-		// Prepare the URL with query parameters
-		var urlComponents = URLComponents(
-			string: APIService.baseURL + "oauth/make-user")!
-		var queryItems: [URLQueryItem] = []
-
+		// Prepare parameters
+		var parameters: [String: String] = [:]
 		if let unwrappedExternalUserId = externalUserId {
-			queryItems.append(
-				URLQueryItem(
-					name: "externalUserId", value: unwrappedExternalUserId))
+			parameters["externalUserId"] = unwrappedExternalUserId
 		}
-
 		if let authProvider = self.authProvider {
-			queryItems.append(
-				URLQueryItem(name: "provider", value: authProvider.rawValue))
+			parameters["provider"] = authProvider.rawValue
 		}
 
-		urlComponents.queryItems = queryItems
-
-		guard let url = urlComponents.url else {
-			print("Invalid URL for user creation.")
-			return
-		}
-
-		// Create the request
-		var request = URLRequest(url: url)
-		request.httpMethod = "POST"
-
-		// Convert profile picture to JPEG data if it exists
-		let profilePictureData = profilePicture?.jpegData(
-			compressionQuality: 0.8)
-
-		// Always use multipart/form-data when sending the request
-		let boundary = "Boundary-\(UUID().uuidString)"
-		request.setValue(
-			"multipart/form-data; boundary=\(boundary)",
-			forHTTPHeaderField: "Content-Type")
-
-		var body = Data()
-
-		// Add UserDTO as JSON part
-		body.append("--\(boundary)\r\n".data(using: .utf8)!)
-		body.append(
-			"Content-Disposition: form-data; name=\"userDTO\"\r\n".data(
-				using: .utf8)!)
-		body.append(
-			"Content-Type: application/json\r\n\r\n".data(using: .utf8)!)
-
-		// Encode user data
-		if let userData = try? JSONEncoder().encode(newUser) {
-			body.append(userData)
-			body.append("\r\n".data(using: .utf8)!)
-		} else {
-			print("Failed to encode user data")
-			return
-		}
-
-		// Add profile picture part if it exists
-		if let imageData = profilePictureData {
-			body.append("--\(boundary)\r\n".data(using: .utf8)!)
-			body.append(
-				"Content-Disposition: form-data; name=\"profilePicture\"; filename=\"profile.jpg\"\r\n"
-					.data(using: .utf8)!)
-			body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-			body.append(imageData)
-			body.append("\r\n".data(using: .utf8)!)
-		}
-
-		// Add final boundary
-		body.append("--\(boundary)--\r\n".data(using: .utf8)!)
-
-		// Set the request body
-		request.httpBody = body
-
-		// Send the request
 		do {
-			let (data, response) = try await URLSession.shared.data(
-				for: request)
-
-			// Print response for debugging
-			if let httpResponse = response as? HTTPURLResponse {
-				print("Response status code: \(httpResponse.statusCode)")
-			}
-
-			// Try to decode the response
-			let fetchedUser = try JSONDecoder().decode(User.self, from: data)
+			// Use the new createUser method
+			let fetchedUser: User = try await (apiService as! APIService)
+				.createUser(
+					userDTO: userDTO,
+					profilePicture: profilePicture,
+					parameters: parameters
+				)
 
 			await MainActor.run {
 				self.spawnUser = fetchedUser
@@ -419,12 +350,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 			}
 
-			print("User created successfully.")
+			print("User created successfully")
+
 		} catch {
 			print("Error creating the user: \(error)")
-			// Print more detailed error information
-			if let decodingError = error as? DecodingError {
-				print("Decoding error: \(decodingError)")
+			if let apiError = error as? APIError {
+				print("API Error: \(apiError.localizedDescription)")
 			}
 		}
 	}
@@ -479,4 +410,12 @@ extension UserAuthViewModel: ASAuthorizationControllerDelegate {
 		handleAppleSignInResult(.failure(error))
 	}
 
+}
+
+struct UserCreateDTO: Codable {
+	let username: String
+	let firstName: String
+	let lastName: String
+	let bio: String
+	let email: String
 }
