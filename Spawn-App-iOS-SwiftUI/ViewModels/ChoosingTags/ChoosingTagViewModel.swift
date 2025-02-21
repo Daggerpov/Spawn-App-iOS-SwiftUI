@@ -41,4 +41,25 @@ class ChooseTagPopUpViewModel: ObservableObject {
 	}
     
     //TODO: add API call to fetch tags
+    
+    func fetchTags(friendUserId: UUID, friendTagIds: [UUID]) async {
+        if let url = URL(
+            string: APIService.baseURL + "friendTags/addUserToTags")
+        {
+            do {
+                try await self.apiService.sendData(
+                    friendTagIds,
+                    to: url,
+                    parameters: [
+                        "userId": friendUserId.uuidString
+                    ])
+            } catch {
+                await MainActor.run {
+                    chooseTagErrorMessage =
+                        "There was an error select a tag for your friend. Please try again."
+                    print(apiService.errorMessage ?? "")
+                }
+            }
+        }
+    }
 }
