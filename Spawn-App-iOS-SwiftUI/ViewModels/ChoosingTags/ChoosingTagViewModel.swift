@@ -47,9 +47,8 @@ class ChooseTagPopUpViewModel: ObservableObject {
             string: APIService.baseURL + "friendTags/addUserToTags")
         {
             do {
-                try await self.apiService.sendData(
-                    friendTagIds,
-                    to: url,
+                try await self.apiService.fetchData(
+                    from: url,
                     parameters: [
                         "userId": friendUserId.uuidString
                     ])
