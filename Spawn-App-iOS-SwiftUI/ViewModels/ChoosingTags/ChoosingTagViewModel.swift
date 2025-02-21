@@ -10,6 +10,7 @@ import Foundation
 class ChooseTagPopUpViewModel: ObservableObject {
 	@Published var chooseTagErrorMessage: String = ""
     //TODO: make new published var for tags
+//    @Published var tags: [Tag] = []
 
 	//TODO: figure out functions
 
