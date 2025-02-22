@@ -41,7 +41,7 @@ class ChooseTagPopUpViewModel: ObservableObject {
 		}
 	}
     
-    func fetchTagsForFriend(friendUserId: UUID, friendTagIds: [UUID]) async {
+    func fetchTagsToAddToFriend(friendUserId: UUID, friendTagIds: [UUID]) async {
         if let url = URL(
             string: APIService.baseURL + "friendTags/addUserToTags")
         {
