@@ -26,7 +26,6 @@ struct ChoosingTagPopupView: View {
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    //TODO: add user profile pic
                     if let pfpUrl = friend.profilePicture
                     {
                         AsyncImage(url: URL(string: pfpUrl)) {
