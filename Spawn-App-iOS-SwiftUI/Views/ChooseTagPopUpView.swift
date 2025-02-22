@@ -11,12 +11,36 @@ struct ChoosingTagPopupView: View {
     
     var friend: User
     //TODO: init view model -> friendRequestView
-    let closeCallback: () -> ()?
-
+    
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     //TODO: add user profile pic
+                    if let pfpUrl = friend.profilePicture
+                    {
+                        AsyncImage(url: URL(string: pfpUrl)) {
+                            image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 70, height: 70)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle().stroke(
+                                        universalAccentColor,
+                                        lineWidth: 2)
+                                )
+                                .padding(.horizontal, 1)
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 70, height: 70)
+                        }
+                    } else {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 50, height: 50)
+                    }
                         HStack(spacing: 6) {
                             Image(systemName: "star.fill")
                                 .resizable()
