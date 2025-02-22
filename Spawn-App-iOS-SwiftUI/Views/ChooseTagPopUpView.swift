@@ -34,6 +34,9 @@ struct ChoosingTagPopupView: View {
                         .foregroundColor(universalAccentColor)
                         .frame(maxWidth: .infinity)
                     
+                VStack(alignment: .leading, spacing: 20) {                    Text(friend.username)
+                    //TODO: fill in rest of user info
+
                     //TODO: show tags
                     tagListView(for: viewModel)
                     
