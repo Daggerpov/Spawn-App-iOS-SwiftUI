@@ -71,5 +71,13 @@ class ChooseTagPopUpViewModel: ObservableObject {
             }
         }
     }
+    
+    func toggleTagSelection(_ tagId: UUID) {
+        if selectedTags.contains(tagId) {
+            selectedTags.remove(tagId)
+        } else {
+            selectedTags.insert(tagId)
+        }
+    }
 }
 
