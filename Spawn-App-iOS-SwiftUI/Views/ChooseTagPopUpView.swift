@@ -35,9 +35,11 @@ struct ChoosingTagPopupView: View {
                     Text("Select your friend tags below")
                     
                     //TODO: show tags
+//                    tagListView(for:)
                     
                     //TODO: add button for each tag, when clicked will add to viewModel.tags
                     //TODO: done button, when clicked call viewmodel.AddTagsToFriend
+                    doneButton(for: friend, viewModel: viewModel, closeCallback: closeCallback)
                 }
                 .frame(
                     minHeight: 300,
@@ -100,4 +102,22 @@ private func userNameView(for friend: User) -> some View {
         let fullName = FormatterService.shared.formatName(user: friend)
         Text(fullName.isEmpty ? "Unknown" : fullName)
     }
+}
+
+private func doneButton(for friend: User, viewModel: ChooseTagPopUpViewModel, closeCallback: @escaping () -> Void) -> some View {
+    Button(action: {
+        Task {
+            await viewModel.AddTagsToFriend(friendUserId: friend.id, friendTagIds: Array(viewModel.selectedTags))
+            closeCallback()
+        }
+    }) {
+        Text("Done")
+            .font(.system(size: 18, weight: .bold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(universalAccentColor)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+    }
+    .padding(.top, 5)
 }
