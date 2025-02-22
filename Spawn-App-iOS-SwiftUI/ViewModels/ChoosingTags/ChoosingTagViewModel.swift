@@ -11,12 +11,14 @@ class ChooseTagPopUpViewModel: ObservableObject {
 	@Published var chooseTagErrorMessage: String = ""
     //TODO: make new published var for tags
     @Published var tags: [UUID] = []
+    var userId: UUID
 
 	//TODO: figure out functions
 
 	var apiService: IAPIService
 
-	init(apiService: IAPIService) {
+    init(userId: UUID, apiService: IAPIService) {
+        self.userId = userId
 		self.apiService = apiService
 	}
 

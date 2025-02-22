@@ -10,15 +10,19 @@ import SwiftUI
 struct ChoosingTagPopupView: View {
     @ObservedObject var viewModel: ChooseTagPopUpViewModel
     var friend: User
+    var userId: UUID
     var closeCallback: () -> Void
     
-    init(friend: User, closeCallback: @escaping () -> Void) {
+    init(friend: User, userId: UUID, closeCallback: @escaping () -> Void) {
         self.friend = friend
+        self.userId = userId
         self.closeCallback = closeCallback
-        self.viewModel = ChoosingTagPopupViewModel()
+        self.viewModel = ChooseTagPopUpViewModel(
+            userId: userId,
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: userId) : APIService())
     }
         
-    
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
