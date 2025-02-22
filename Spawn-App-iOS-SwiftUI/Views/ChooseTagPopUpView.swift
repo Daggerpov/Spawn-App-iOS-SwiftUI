@@ -30,24 +30,7 @@ struct ChoosingTagPopupView: View {
                     profilePictureView(for: friend)
                     
                     // star with username
-                    HStack(spacing: 6) {
-                            Image(systemName: "star.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 18, height: 18)
-                                .foregroundColor(universalAccentColor)
-                                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 2)
-
-                            Text(friend.username)
-                                .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(universalAccentColor)
-                    }
-//                    let firstName = friend.firstName ?? ""
-//                    let lastName = friend.lastName ?? ""
-//                    let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
-                    let fullName = FormatterService.shared.formatName(user: friend)
-
-                    Text(fullName.isEmpty ? "Unknown" : fullName)
+                    userNameView(for: friend)
                     
                     Text("Select your friend tags below")
                     
@@ -99,3 +82,22 @@ private func profilePictureView(for friend: User) -> some View {
     }
 }
 
+private func userNameView(for friend: User) -> some View {
+    VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: 6) {
+            Image(systemName: "star.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .foregroundColor(universalAccentColor)
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 2)
+
+            Text(friend.username)
+                .font(.system(size: 20, weight: .bold))
+                .foregroundColor(universalAccentColor)
+        }
+
+        let fullName = FormatterService.shared.formatName(user: friend)
+        Text(fullName.isEmpty ? "Unknown" : fullName)
+    }
+}
