@@ -10,7 +10,7 @@ import Foundation
 class ChooseTagPopUpViewModel: ObservableObject {
 	@Published var chooseTagErrorMessage: String = ""
     //TODO: make new published var for tags
-//    @Published var tags: [Tag] = []
+    @Published var tags: [UUID] = []
 
 	//TODO: figure out functions
 
@@ -41,21 +41,34 @@ class ChooseTagPopUpViewModel: ObservableObject {
 		}
 	}
     
-    func fetchTagsToAddToFriend(friendUserId: UUID, friendTagIds: [UUID]) async {
-        if let url = URL(
-            string: APIService.baseURL + "friendTags/addUserToTags")
-        {
-            do {
-                let fetchedTags: [User] = try await self.apiService.fetchData(
-                    from: url,
-                    parameters: nil)
-            } catch {
-                await MainActor.run {
-                    chooseTagErrorMessage =
-                        "There was an error showing your tags. Please try again."
-                    print(apiService.errorMessage ?? "")
-                }
-            }
-        }
-    }
+//    func fetchTagsToAddToFriend(friendUserId: UUID, friendTagIds: [UUID]) async {
+//        let urlString = APIService.baseURL + "friendTags/addUserToTags"
+//        
+//        if let url = URL(string: urlString) {
+//            let parameters: [String: String] = [
+//                "friendTagIds": friendTagIds.map { $0.uuidString }
+//            ]
+//        
+//            do {
+//                let fetchedTags: [UUID] = try await self.apiService.fetchData(
+//                    from: url, parameters: parameters
+//                )
+//
+//                await MainActor.run {
+//                    self.tags = fetchedTags
+//                }
+//            } catch {
+//                if let statusCode = apiService.errorStatusCode,
+//                    apiService.errorStatusCode != 404
+//                {
+//                    print("Invalid status code from response: \(statusCode)")
+//                    print(apiService.errorMessage ?? "")
+//                }
+//                await MainActor.run {
+//                    self.tags = []
+//                }
+//            }
+//        }
+//    }
 }
+
