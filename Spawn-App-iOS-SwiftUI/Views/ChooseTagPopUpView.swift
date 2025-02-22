@@ -26,13 +26,12 @@ struct ChoosingTagPopupView: View {
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    // profile pic
                     profilePictureView(for: friend)
                     
-                    // star with username
-                    userNameView(for: friend)
+                    userInfoView(for: friend)
                     
                     Text("Select your friend tags below")
+                        .foregroundColor(universalAccentColor)
                     
                     //TODO: show tags
                     tagListView(for: viewModel)
@@ -61,7 +60,7 @@ struct ChoosingTagPopupView: View {
 }
 
 private func profilePictureView(for friend: User) -> some View {
-    Group {
+    VStack {
         if let pfpUrl = friend.profilePicture {
             AsyncImage(url: URL(string: pfpUrl)) { image in
                 image
@@ -84,23 +83,25 @@ private func profilePictureView(for friend: User) -> some View {
     }
 }
 
-private func userNameView(for friend: User) -> some View {
-    VStack(alignment: .leading, spacing: 6) {
+private func userInfoView(for friend: User) -> some View {
+    VStack(spacing: 4) {
         HStack(spacing: 6) {
             Image(systemName: "star.fill")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 18, height: 18)
+                .frame(width: 14, height: 14)
                 .foregroundColor(universalAccentColor)
                 .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 2)
 
             Text(friend.username)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 15, weight: .bold))
                 .foregroundColor(universalAccentColor)
         }
 
         let fullName = FormatterService.shared.formatName(user: friend)
         Text(fullName.isEmpty ? "Unknown" : fullName)
+            .font(.system(size:12))
+            .foregroundColor(universalAccentColor)
     }
 }
 
