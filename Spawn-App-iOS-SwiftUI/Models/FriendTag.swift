@@ -41,17 +41,17 @@ extension FriendTag {
 	static let everyone = FriendTag(
 		id: UUID(),
 		displayName: "Everyone",
-		colorHexCode: universalAccentColorHexCode,
+        colorHexCode: universalSecondaryColor,
 		friends: [User.haley, User.jennifer, User.shannon, User.michael]
 	)
 	static let close = FriendTag(
 		id: UUID(), displayName: "Close Friends",
-		colorHexCode: eventColorHexCodes[0], friends: [User.danielAgapov])
+		colorHexCode: eventColorHexCodes[1], friends: [User.danielAgapov])
 	static let sports = FriendTag(
-		id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[1],
+		id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[2],
 		friends: [User.danielLee])
 	static let hobbies = FriendTag(
-		id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[2],
+		id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[3],
 		friends: [User.danielLee])
 	static let mockTags = [everyone, close, sports, hobbies]
 }
