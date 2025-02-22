@@ -9,11 +9,8 @@ import Foundation
 
 class ChooseTagPopUpViewModel: ObservableObject {
 	@Published var chooseTagErrorMessage: String = ""
-    //TODO: make new published var for tags
     @Published var tags: [UUID] = []
     var userId: UUID
-
-	//TODO: figure out functions
 
 	var apiService: IAPIService
 
