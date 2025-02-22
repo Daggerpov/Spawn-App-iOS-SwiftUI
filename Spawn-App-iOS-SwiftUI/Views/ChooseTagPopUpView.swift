@@ -8,9 +8,18 @@
 import SwiftUI
 
 struct ChoosingTagPopupView: View {
-    
+//    @ObservedObject var viewModel: ChooseTagPopUpViewModel
+//    var userId: UUID
+//    var friendTagId: UUID
+
     var friend: User
     //TODO: init view model -> friendRequestView
+    init(friend: User, closeCallback: @escaping () -> Void) {
+        self.friend = friend
+        self.closeCallback = closeCallback
+        self.viewModel = ChoosingTagPopupViewModel()
+    }
+        
     
     var body: some View {
             ScrollView {
@@ -81,3 +90,5 @@ struct ChoosingTagPopupView: View {
         }
     //TODO: change onAppear await to viewModel.fetchTagsToAddToFriend
 }
+
+
