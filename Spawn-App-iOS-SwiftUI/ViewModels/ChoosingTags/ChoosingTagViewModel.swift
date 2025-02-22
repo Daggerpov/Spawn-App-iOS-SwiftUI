@@ -21,14 +21,14 @@ class ChooseTagPopUpViewModel: ObservableObject {
 
 	func AddTagsToFriend(friendUserId: UUID, friendTagIds: [UUID]) async {
 		if let url = URL(
-			string: APIService.baseURL + "friendTags/addUserToTags")
+			string: APIService.baseURL + "friendTags/addUserToTags/\(userId)")
 		{
 			do {
 				try await self.apiService.sendData(
 					friendTagIds,
 					to: url,
 					parameters: [
-						"userId": friendUserId.uuidString
+						"friendUserId": friendUserId.uuidString
 					])
 			} catch {
 				await MainActor.run {
@@ -41,11 +41,11 @@ class ChooseTagPopUpViewModel: ObservableObject {
 	}
     
     func fetchTagsToAddToFriend(friendUserId: UUID) async {
-        let urlString = APIService.baseURL + "friendTags/addUserToTags"
+        let urlString = APIService.baseURL + "friendTags/addUserToTags/\(userId)"
         
         if let url = URL(string: urlString) {
             let parameters: [String: String] = [
-                "userId": friendUserId.uuidString
+                "friendUserId": friendUserId.uuidString
             ]
         
             do {
