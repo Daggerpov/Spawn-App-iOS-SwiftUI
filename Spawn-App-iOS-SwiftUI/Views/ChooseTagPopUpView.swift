@@ -8,12 +8,10 @@
 import SwiftUI
 
 struct ChoosingTagPopupView: View {
-//    @ObservedObject var viewModel: ChooseTagPopUpViewModel
-//    var userId: UUID
-//    var friendTagId: UUID
-
+    @ObservedObject var viewModel: ChooseTagPopUpViewModel
     var friend: User
-    //TODO: init view model -> friendRequestView
+    var closeCallback: () -> Void
+    
     init(friend: User, closeCallback: @escaping () -> Void) {
         self.friend = friend
         self.closeCallback = closeCallback
