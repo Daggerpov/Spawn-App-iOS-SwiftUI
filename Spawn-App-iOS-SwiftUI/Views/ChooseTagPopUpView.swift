@@ -32,6 +32,7 @@ struct ChoosingTagPopupView: View {
                     
                     Text("Select your friend tags below")
                         .foregroundColor(universalAccentColor)
+                        .frame(maxWidth: .infinity)
                     
                     //TODO: show tags
                     tagListView(for: viewModel)
@@ -78,9 +79,10 @@ private func profilePictureView(for friend: User) -> some View {
         } else {
             Circle()
                 .fill(Color.gray.opacity(0.3))
-                .frame(width: 50, height: 50)
+                .frame(width: 70, height: 70)
         }
     }
+    .frame(maxWidth: .infinity)
 }
 
 private func userInfoView(for friend: User) -> some View {
@@ -103,6 +105,7 @@ private func userInfoView(for friend: User) -> some View {
             .font(.system(size:12))
             .foregroundColor(universalAccentColor)
     }
+    .frame(maxWidth: .infinity)
 }
 
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
@@ -120,6 +123,7 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
             }
         }
     }
+    .frame(maxWidth: .infinity)
 }
 
 private func doneButton(for friend: User, viewModel: ChooseTagPopUpViewModel, closeCallback: @escaping () -> Void) -> some View {
