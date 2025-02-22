@@ -27,31 +27,7 @@ struct ChoosingTagPopupView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     // profile pic
-                    if let pfpUrl = friend.profilePicture
-                    {
-                        AsyncImage(url: URL(string: pfpUrl)) {
-                            image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 70, height: 70)
-                                .clipShape(Circle())
-                                .overlay(
-                                    Circle().stroke(
-                                        universalAccentColor,
-                                        lineWidth: 2)
-                                )
-                                .padding(.horizontal, 1)
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 70, height: 70)
-                        }
-                    } else {
-                        Circle()
-                            .fill(.white)
-                            .frame(width: 50, height: 50)
-                    }
+                    profilePictureView(for: friend)
                     
                     // star with username
                     HStack(spacing: 6) {
@@ -99,4 +75,27 @@ struct ChoosingTagPopupView: View {
     //TODO: change onAppear await to viewModel.fetchTagsToAddToFriend
 }
 
+private func profilePictureView(for friend: User) -> some View {
+    Group {
+        if let pfpUrl = friend.profilePicture {
+            AsyncImage(url: URL(string: pfpUrl)) { image in
+                image
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 70, height: 70)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
+                    .padding(.horizontal, 1)
+            } placeholder: {
+                Circle()
+                    .fill(Color.gray)
+                    .frame(width: 70, height: 70)
+            }
+        } else {
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 50, height: 50)
+        }
+    }
+}
 
