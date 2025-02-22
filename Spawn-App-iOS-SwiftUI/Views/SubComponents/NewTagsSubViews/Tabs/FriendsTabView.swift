@@ -378,7 +378,11 @@ extension FriendsTabView {
 
                     // call your new view here
                     ChoosingTagPopupView(
-                        friend: unwrappedFriendInPopUp
+                        friend: unwrappedFriendInPopUp,
+                        userId: user.id,
+                        closeCallback: {
+                            closeChoosingTagPopUp()
+                        }
                     )
                     
                 }

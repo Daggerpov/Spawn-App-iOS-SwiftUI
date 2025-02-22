@@ -66,9 +66,10 @@ struct ChoosingTagPopupView: View {
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(universalAccentColor)
                     }
-                    let firstName = friend.firstName ?? ""
-                    let lastName = friend.lastName ?? ""
-                    let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
+//                    let firstName = friend.firstName ?? ""
+//                    let lastName = friend.lastName ?? ""
+//                    let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
+                    let fullName = FormatterService.shared.formatName(user: friend)
 
                     Text(fullName.isEmpty ? "Unknown" : fullName)
                     
