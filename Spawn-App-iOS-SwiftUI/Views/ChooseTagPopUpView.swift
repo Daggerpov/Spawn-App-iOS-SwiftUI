@@ -26,6 +26,7 @@ struct ChoosingTagPopupView: View {
     var body: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // profile pic
                     if let pfpUrl = friend.profilePicture
                     {
                         AsyncImage(url: URL(string: pfpUrl)) {
@@ -51,7 +52,9 @@ struct ChoosingTagPopupView: View {
                             .fill(.white)
                             .frame(width: 50, height: 50)
                     }
-                        HStack(spacing: 6) {
+                    
+                    // star with username
+                    HStack(spacing: 6) {
                             Image(systemName: "star.fill")
                                 .resizable()
                                 .scaledToFit()
@@ -62,14 +65,17 @@ struct ChoosingTagPopupView: View {
                             Text(friend.username)
                                 .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(universalAccentColor)
-                        }
+                    }
                     let firstName = friend.firstName ?? ""
                     let lastName = friend.lastName ?? ""
                     let fullName = [firstName, lastName].filter { !$0.isEmpty }.joined(separator: " ")
 
                     Text(fullName.isEmpty ? "Unknown" : fullName)
+                    
                     Text("Select your friend tags below")
+                    
                     //TODO: show tags
+                    
                     //TODO: add button for each tag, when clicked will add to viewModel.tags
                     //TODO: done button, when clicked call viewmodel.AddTagsToFriend
                 }
