@@ -64,56 +64,62 @@ class APIService: IAPIService {
 		return encoder
 	}
 
-	func fetchData<T: Codable>(from url: URL, parameters: [String: String]? = nil) async throws -> T {
-		var components = URLComponents(url: url, resolvingAgainstBaseURL: true)!
+	internal func fetchData<T: Decodable>(
+		from url: URL, parameters: [String: String]? = nil
+	) async throws -> T where T: Decodable {
+		resetState()
 
+		// Create a URLComponents object from the URL
+		var urlComponents = URLComponents(
+			url: url, resolvingAgainstBaseURL: false)
+
+		// Add query items if parameters are provided
 		if let parameters = parameters {
-			components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+			urlComponents?.queryItems = parameters.map {
+				URLQueryItem(name: $0.key, value: $0.value)
+			}
 		}
 
-		var request = URLRequest(url: components.url!)
-		request.httpMethod = "GET"
-		// Add any necessary headers
-		request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+		// Ensure the URL is valid after adding query items
+		guard let finalURL = urlComponents?.url else {
+			errorMessage = "Invalid URL after adding query parameters"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.URLError
+		}
 
-		let (data, response) = try await URLSession.shared.data(for: request)
+		let (data, response) = try await URLSession.shared.data(from: finalURL)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
-			throw APIError.invalidResponse
+			errorMessage = "HTTP request failed for \(finalURL)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(
+				description: "The HTTP request has failed.")
 		}
 
-		// Handle different response status codes
-		switch httpResponse.statusCode {
-			case 200:
-				do {
-					// First try to decode as APIResponse
-					let apiResponse = try JSONDecoder().decode(APIResponse<T>.self, from: data)
+		guard httpResponse.statusCode == 200 else {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage =
+				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
 
-					// Store tokens if they exist
-					if let tokens = apiResponse.tokens {
-						KeychainService.shared.saveTokens(tokens)
-					}
+			// 404 is fine in the context of our back-end; don't clutter output
+			if httpResponse.statusCode != 404 {
+				print(errorMessage ?? "no error message to log")
+			}
 
-					// If data is null, throw appropriate error
-					guard let responseData = apiResponse.data else {
-						if apiResponse.error != nil {
-							throw APIError.serverError(apiResponse.error!)
-						}
-						// This is the case where user doesn't exist - return null
-						return apiResponse as! T
-					}
+			throw APIError.invalidStatusCode(
+				statusCode: httpResponse.statusCode)
+		}
 
-					return responseData
-				} catch {
-					// If APIResponse decode fails, try direct decode
-					return try JSONDecoder().decode(T.self, from: data)
-				}
-			case 400..<500:
-				throw APIError.clientError(httpResponse.statusCode)
-			case 500..<600:
-				throw APIError.serverError("Server error: \(httpResponse.statusCode)")
-			default:
-				throw APIError.unexpectedStatusCode(httpResponse.statusCode)
+		do {
+			let decoder = APIService.makeDecoder()
+
+			let decodedData = try decoder.decode(T.self, from: data)
+			return decodedData
+		} catch {
+			errorMessage =
+				APIError.failedJSONParsing(url: finalURL).localizedDescription
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedJSONParsing(url: finalURL)
 		}
 	}
 
