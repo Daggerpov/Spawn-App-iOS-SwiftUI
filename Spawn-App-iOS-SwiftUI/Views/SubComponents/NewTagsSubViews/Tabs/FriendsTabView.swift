@@ -40,6 +40,8 @@ struct FriendsTabView: View {
 					SearchView(
 						searchPlaceholderText: "search or add friends",
 						viewModel: searchViewModel)
+                    Spacer()
+                    Spacer()
 				}
 				requestsSection
 				recommendedFriendsSection
@@ -133,7 +135,7 @@ struct FriendsTabView: View {
 	var recommendedFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.recommendedFriends.count > 0 {
-				Text("recommended friends")
+				Text("Recommended friends")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
@@ -155,7 +157,7 @@ struct FriendsTabView: View {
 			Spacer()
 
 			if viewModel.friends.count > 0 {
-				Text("friends")
+				Text("Friends")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
@@ -164,7 +166,7 @@ struct FriendsTabView: View {
 						ForEach(viewModel.friends) { friend in
 							HStack {
 								if MockAPIService.isMocking {
-									if let pfp = friend.profilePicture {
+gif let pfp = friend.profilePicture {
 										Image(pfp)
 											.resizable()
 											.scaledToFill()

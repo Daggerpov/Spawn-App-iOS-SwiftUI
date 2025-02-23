@@ -21,6 +21,8 @@ let universalAccentColorHexCode: String = "#000000"
 let universalAccentColor: Color = Color(
 	hex: universalAccentColorHexCode
 )
+let universalPassiveColorHex: String = "#DADADA"
+let universalPassiveColor: Color = Color(hex: universalPassiveColorHex)
 let profilePicPlusButtonColor: Color = Color(hex: "#8693FF")
 let universalPlaceHolderTextColor: Color = Color(hex: "#B0AFAF")
 let authPageBackgroundColor: Color = Color(hex: "#8693FF")

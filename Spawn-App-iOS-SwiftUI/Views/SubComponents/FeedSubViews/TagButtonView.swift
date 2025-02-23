@@ -21,13 +21,13 @@ struct TagButtonView: View {
 			Text(tag.displayName)
 				.font(.callout)
 				.foregroundColor(
-					activeTag == tag ? .white : universalAccentColor
+                    activeTag == tag ? universalPassiveColor : universalAccentColor
 				)
 				.padding(.vertical, 8)
 				.padding(.horizontal, 15)
 				.background {
 					Capsule()
-						.fill(activeTag == tag ? universalAccentColor : .white)
+						.fill(activeTag == tag ? universalAccentColor : universalPassiveColor)
 						.matchedGeometryEffect(
 							id: "ACTIVETAG_\(tag.displayName)", in: animation)
 				}
