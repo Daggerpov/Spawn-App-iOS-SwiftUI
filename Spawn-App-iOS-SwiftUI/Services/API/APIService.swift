@@ -65,7 +65,8 @@ class APIService: IAPIService {
 	}
 
 	internal func fetchData<T: Decodable>(
-		from url: URL, parameters: [String: String]? = nil
+		from url: URL,
+		parameters: [String: String]? = nil
 	) async throws -> T where T: Decodable {
 		resetState()
 
@@ -96,10 +97,13 @@ class APIService: IAPIService {
 				description: "The HTTP request has failed.")
 		}
 
+		// Handle auth tokens if present
+		try handleAuthTokens(from: httpResponse, for: finalURL)
+
 		guard httpResponse.statusCode == 200 else {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage =
-				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
+			"invalid status code \(httpResponse.statusCode) for \(finalURL)"
 
 			// 404 is fine in the context of our back-end; don't clutter output
 			if httpResponse.statusCode != 404 {
@@ -117,7 +121,7 @@ class APIService: IAPIService {
 			return decodedData
 		} catch {
 			errorMessage =
-				APIError.failedJSONParsing(url: finalURL).localizedDescription
+			APIError.failedJSONParsing(url: finalURL).localizedDescription
 			print(errorMessage ?? "no error message to log")
 			throw APIError.failedJSONParsing(url: finalURL)
 		}
@@ -327,6 +331,33 @@ class APIService: IAPIService {
 		return try decoder.decode(User.self, from: data)
 	}
 
+	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL) throws {
+		// Check if this is an auth endpoint
+		let authEndpoints = [
+			APIService.baseURL + "auth/sign-in",
+			APIService.baseURL + "auth/make-user"
+		]
+
+		guard authEndpoints.contains(where: { url.absoluteString.contains($0) }),
+			  let accessToken = response.allHeaderFields["Authorization"] as? String,
+			  let refreshToken = response.allHeaderFields["Refresh Token"] as? String else {
+			return
+		}
+
+		// Remove "Bearer " prefix from access token
+		let cleanAccessToken = accessToken.replacingOccurrences(of: "Bearer ", with: "")
+
+		// Store both tokens in keychain
+		if let accessTokenData = cleanAccessToken.data(using: .utf8),
+		   let refreshTokenData = refreshToken.data(using: .utf8) {
+			if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
+				throw APIError.failedTokenSaving(tokenType: "accessToken")
+			}
+			if !KeychainService.shared.save(key: "refreshToken", data: refreshTokenData) {
+				throw APIError.failedTokenSaving(tokenType: "refreshToken")
+			}
+		}
+	}
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end
