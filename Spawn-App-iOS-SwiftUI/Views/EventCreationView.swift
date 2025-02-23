@@ -89,19 +89,23 @@ struct EventCreationView: View {
 						}
 						closeCallback()
 					}) {
-						Text("spawn")
-							.font(
-								Font.custom("Poppins", size: 16).weight(.medium)
-							)
-							.frame(maxWidth: .infinity)
-							.kerning(1)
-							.multilineTextAlignment(.center)
-							.padding()
-							.background(
-								RoundedRectangle(cornerRadius: 15).fill(
-									universalAccentColor)
-							)
-							.foregroundColor(.white)
+                        HStack {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.white)
+                            Text("Spawn")
+                                .font(
+                                    Font.custom("Poppins", size: 16).weight(.bold)
+                                )
+                        }
+                        .frame(maxWidth: .infinity)
+                        .kerning(1)
+                        .multilineTextAlignment(.center)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 15).fill(
+                                universalSecondaryColor)
+                        )
+                        .foregroundColor(.white)
 					}
 					.padding(.top, 20)
 
