@@ -100,10 +100,17 @@ class APIService: IAPIService {
 		// Handle auth tokens if present
 		try handleAuthTokens(from: httpResponse, for: finalURL)
 
+		// Print response headers for debugging
+		print("Response Headers: \(httpResponse.allHeaderFields)")
+
 		guard httpResponse.statusCode == 200 else {
 			errorStatusCode = httpResponse.statusCode
-			errorMessage =
-			"invalid status code \(httpResponse.statusCode) for \(finalURL)"
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
+
+			// Try to parse error message from response if possible
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+				print("Error Response: \(errorJson)")
+			}
 
 			// 404 is fine in the context of our back-end; don't clutter output
 			if httpResponse.statusCode != 404 {
@@ -115,14 +122,33 @@ class APIService: IAPIService {
 		}
 
 		do {
+			// Print received data for debugging
+			if let jsonString = String(data: data, encoding: .utf8) {
+				print("Received JSON: \(jsonString)")
+			}
+
 			let decoder = APIService.makeDecoder()
 
-			let decodedData = try decoder.decode(T.self, from: data)
-			return decodedData
+			// Try parsing with more detailed error handling
+			do {
+				let decodedData = try decoder.decode(T.self, from: data)
+				return decodedData
+			} catch DecodingError.keyNotFound(let key, let context) {
+				print("Missing key: \(key.stringValue) - \(context.debugDescription)")
+				throw APIError.failedJSONParsing(url: finalURL)
+			} catch DecodingError.typeMismatch(let type, let context) {
+				print("Type mismatch: expected \(type) - \(context.debugDescription)")
+				throw APIError.failedJSONParsing(url: finalURL)
+			} catch DecodingError.valueNotFound(let type, let context) {
+				print("Value not found: expected \(type) - \(context.debugDescription)")
+				throw APIError.failedJSONParsing(url: finalURL)
+			} catch DecodingError.dataCorrupted(let context) {
+				print("Data corrupted: \(context.debugDescription)")
+				throw APIError.failedJSONParsing(url: finalURL)
+			}
 		} catch {
-			errorMessage =
-			APIError.failedJSONParsing(url: finalURL).localizedDescription
-			print(errorMessage ?? "no error message to log")
+			errorMessage = APIError.failedJSONParsing(url: finalURL).localizedDescription
+			print("JSON Parsing Error: \(error)")
 			throw APIError.failedJSONParsing(url: finalURL)
 		}
 	}
