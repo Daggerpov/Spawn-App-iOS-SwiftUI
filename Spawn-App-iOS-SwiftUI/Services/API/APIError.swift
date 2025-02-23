@@ -14,6 +14,7 @@ enum APIError: LocalizedError {
 	case invalidData
 	case URLError
 	case unknownError(error: Error)
+	case failedTokenSaving(tokenType: String)
 
 	var errorDescription: String? {
 		switch self {
@@ -31,6 +32,8 @@ enum APIError: LocalizedError {
 				"URL Error: Please check the URL or if the server is currently down."
 		case let .unknownError(error):
 			return "An unknown error occurred: \(error.localizedDescription)"
+		case let .failedTokenSaving(tokenType):
+			return "An error occurred saving the JWT (for \(tokenType)) to keychain."
 		}
 	}
 }
