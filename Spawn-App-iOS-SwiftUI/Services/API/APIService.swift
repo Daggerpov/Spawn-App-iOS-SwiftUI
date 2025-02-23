@@ -353,7 +353,7 @@ class APIService: IAPIService {
 		resetState()
 
 		// Create URL with parameters
-		guard let baseURL = URL(string: APIService.baseURL + "oauth/make-user") else {
+		guard let baseURL = URL(string: APIService.baseURL + "auth/make-user") else {
 			throw APIError.URLError
 		}
 
