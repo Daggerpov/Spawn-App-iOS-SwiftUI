@@ -20,28 +20,28 @@ struct ChoosingTagPopupView: View {
         self.viewModel = ChooseTagPopUpViewModel(
             userId: userId,
             apiService: MockAPIService.isMocking
-                ? MockAPIService(userId: userId) : APIService())
+            ? MockAPIService(userId: userId) : APIService())
     }
-        
+    
     var body: some View {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    profilePictureView(for: friend)
-                    
-                    userInfoView(for: friend)
-                    
-                    Text("Select your friend tags below")
-                        .foregroundColor(universalAccentColor)
-                        .frame(maxWidth: .infinity)
-                    
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                profilePictureView(for: friend)
+                
+                userInfoView(for: friend)
+                
+                Text("Select your friend tags below")
+                    .foregroundColor(universalAccentColor)
+                    .frame(maxWidth: .infinity)
+                
                 VStack(alignment: .leading, spacing: 20) {                    Text(friend.username)
                     //TODO: fill in rest of user info
-
+                    
                     //TODO: show tags
                     tagListView(for: viewModel)
                     
                     //TODO: add button for each tag, when clicked will add to viewModel.tags
-        
+                    
                     //TODO: addTagButtonView
                     
                     //TODO: done button, when clicked call viewmodel.AddTagsToFriend
@@ -57,13 +57,14 @@ struct ChoosingTagPopupView: View {
                 .cornerRadius(universalRectangleCornerRadius)
             }
             .scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
-//            .onAppear {
-//                Task {
-//                    await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
-//                }
-//            }
+            //            .onAppear {
+            //                Task {
+            //                    await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
+            //                }
+            //            }
         }
-    //TODO: change onAppear await to viewModel.fetchTagsToAddToFriend
+        //TODO: change onAppear await to viewModel.fetchTagsToAddToFriend
+    }
 }
 
 private func profilePictureView(for friend: User) -> some View {

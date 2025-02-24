@@ -82,6 +82,15 @@ class MockAPIService: IAPIService {
 				return FriendTag.mockTags as! T
 			}
 		}
+        
+        /// ChoosingTagViewModel.swift:
+        if let userIdForUrl = userId {
+            if url.absoluteString == APIService.baseURL
+                + "friendTags/addUserToTags/\(userIdForUrl)"
+            {
+                return FriendTag.mockTags as! T
+            }
+        }
 
 		if T.self == User.self {
 			return User.danielAgapov as! T
