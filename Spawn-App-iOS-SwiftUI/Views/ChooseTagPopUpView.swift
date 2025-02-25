@@ -47,7 +47,7 @@ struct ChoosingTagPopupView: View {
             .padding(20)
             .background(universalBackgroundColor)
             .cornerRadius(universalRectangleCornerRadius)
-            .frame(maxWidth: .infinity, maxHeight: 500)
+            .frame(maxWidth: UIScreen.main.bounds.width * 0.85, maxHeight: 500)
             .shadow(radius: 10)
             
             .scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
