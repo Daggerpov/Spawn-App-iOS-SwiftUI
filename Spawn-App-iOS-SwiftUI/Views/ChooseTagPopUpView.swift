@@ -35,10 +35,7 @@ struct ChoosingTagPopupView: View {
                     .frame(maxWidth: .infinity)
                 
                 VStack(alignment: .leading, spacing: 20) {
-                    //TODO: show tags
                     tagListView(for: viewModel)
-                    
-                    //TODO: add button for each tag, when clicked will add to viewModel.tags
                     
                     //TODO: addTagButtonView
                 }
@@ -57,7 +54,6 @@ struct ChoosingTagPopupView: View {
                 }
             }
         }
-        //TODO: change onAppear await to viewModel.fetchTagsToAddToFriend
     }
 }
 
