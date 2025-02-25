@@ -47,14 +47,6 @@ struct ChoosingTagPopupView: View {
                     //TODO: done button, when clicked call viewmodel.AddTagsToFriend
                 }
                 doneButton(for: friend, viewModel: viewModel, closeCallback: closeCallback)
-//                .frame(
-//                    minHeight: 300,
-//                    idealHeight: 350,
-//                    maxHeight: 500
-//                )
-//                .padding(20)
-//                .background(universalBackgroundColor)
-//                .cornerRadius(universalRectangleCornerRadius)
             }
             .padding(20)
             .background(universalBackgroundColor)
