@@ -108,19 +108,21 @@ private func userInfoView(for friend: User) -> some View {
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
     VStack(spacing: 10) {
         ForEach(viewModel.tags, id: \.self) { tagId in
-            Button(action: {
-                viewModel.toggleTagSelection(tagId)
-            }) {
-                Text("Tag \(tagId.uuidString.prefix(6))")
-                    .padding(.vertical, 10)
-                    .frame(maxWidth: .infinity)
-                    .background(viewModel.selectedTags.contains(tagId) ? universalAccentColor : Color.clear)
-                    .foregroundColor(universalPlaceHolderTextColor)
-                    .cornerRadius(10)
+            if let tag = FriendTag.mockTags.first(where: { $0.id == tagId }){
+                Button(action: {
+                    viewModel.toggleTagSelection(tagId)
+                }) {
+                    Text("Tag \(tagId.uuidString.prefix(6))")
+                        .padding(.vertical, 10)
+                        .frame(maxWidth: .infinity)
+                        .background(Color(hex: tag.colorHexCode))
+                        .foregroundColor(universalPlaceHolderTextColor)
+                        .cornerRadius(10)
+                }
             }
         }
+        .frame(maxWidth: .infinity)
     }
-    .frame(maxWidth: .infinity)
 }
 
 private func doneButton(for friend: User, viewModel: ChooseTagPopUpViewModel, closeCallback: @escaping () -> Void) -> some View {
