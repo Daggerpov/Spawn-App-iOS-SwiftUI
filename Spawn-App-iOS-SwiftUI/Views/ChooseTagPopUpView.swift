@@ -134,7 +134,7 @@ private func doneButton(for friend: User, viewModel: ChooseTagPopUpViewModel, cl
             closeCallback()
         }
     }) {
-        Text("done")
+        Text("Done")
             .font(.system(size: 18, weight: .bold))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
