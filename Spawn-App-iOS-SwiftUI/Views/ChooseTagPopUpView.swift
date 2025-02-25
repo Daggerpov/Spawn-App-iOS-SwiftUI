@@ -51,11 +51,11 @@ struct ChoosingTagPopupView: View {
             .shadow(radius: 10)
             
             .scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
-            //            .onAppear {
-            //                Task {
-            //                    await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
-            //                }
-            //            }
+//            .onAppear {
+//                Task {
+//                    await viewModel.fetchTagsToAddToFriend(friendUserId: friend.id)
+//                }
+//            }
         }
         //TODO: change onAppear await to viewModel.fetchTagsToAddToFriend
     }

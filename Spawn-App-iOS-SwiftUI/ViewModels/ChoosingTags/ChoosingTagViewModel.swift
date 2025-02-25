@@ -51,12 +51,12 @@ class ChooseTagPopUpViewModel: ObservableObject {
             ]
         
             do {
-                let fetchedTags: [UUID] = try await self.apiService.fetchData(
+                let fetchedTags: [FriendTag] = try await self.apiService.fetchData(
                     from: url, parameters: parameters
                 )
 
                 await MainActor.run {
-                    self.tags = fetchedTags
+                    self.tags = fetchedTags.map { $0.id }
                 }
             } catch {
                 if let statusCode = apiService.errorStatusCode,
