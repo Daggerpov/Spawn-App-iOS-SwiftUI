@@ -113,6 +113,7 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
                     viewModel.toggleTagSelection(tagId)
                 }) {
                     Text(tag.displayName)
+                        .font(.system(size: 18, weight: .bold))
                         .padding(.vertical, 10)
                         .frame(maxWidth: .infinity)
                         .background(Color(hex: tag.colorHexCode))
