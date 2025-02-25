@@ -114,8 +114,8 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
                 Text("Tag \(tagId.uuidString.prefix(6))")
                     .padding(.vertical, 10)
                     .frame(maxWidth: .infinity)
-                    .background(viewModel.selectedTags.contains(tagId) ? universalAccentColor : Color.gray.opacity(0.2))
-                    .foregroundColor(.white)
+                    .background(viewModel.selectedTags.contains(tagId) ? universalAccentColor : Color.clear)
+                    .foregroundColor(universalPlaceHolderTextColor)
                     .cornerRadius(10)
             }
         }
