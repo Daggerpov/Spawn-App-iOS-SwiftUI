@@ -45,17 +45,23 @@ struct ChoosingTagPopupView: View {
                     //TODO: addTagButtonView
                     
                     //TODO: done button, when clicked call viewmodel.AddTagsToFriend
-                    doneButton(for: friend, viewModel: viewModel, closeCallback: closeCallback)
                 }
-                .frame(
-                    minHeight: 300,
-                    idealHeight: 340,
-                    maxHeight: 380
-                )
-                .padding(20)
-                .background(universalBackgroundColor)
-                .cornerRadius(universalRectangleCornerRadius)
+                doneButton(for: friend, viewModel: viewModel, closeCallback: closeCallback)
+//                .frame(
+//                    minHeight: 300,
+//                    idealHeight: 350,
+//                    maxHeight: 500
+//                )
+//                .padding(20)
+//                .background(universalBackgroundColor)
+//                .cornerRadius(universalRectangleCornerRadius)
             }
+            .padding(20)
+            .background(universalBackgroundColor)
+            .cornerRadius(universalRectangleCornerRadius)
+            .frame(maxWidth: .infinity, maxHeight: 500)
+            .shadow(radius: 10)
+            
             .scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
             //            .onAppear {
             //                Task {
