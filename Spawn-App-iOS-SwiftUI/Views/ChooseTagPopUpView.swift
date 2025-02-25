@@ -112,11 +112,11 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
                 Button(action: {
                     viewModel.toggleTagSelection(tagId)
                 }) {
-                    Text("Tag \(tagId.uuidString.prefix(6))")
+                    Text(tag.displayName)
                         .padding(.vertical, 10)
                         .frame(maxWidth: .infinity)
                         .background(Color(hex: tag.colorHexCode))
-                        .foregroundColor(universalPlaceHolderTextColor)
+                        .foregroundColor(.white)
                         .cornerRadius(10)
                 }
             }
