@@ -29,7 +29,7 @@ class MockAPIService: IAPIService {
 
 		if let userIdForUrl = userId {
 			if url.absoluteString == APIService.baseURL
-				+ "events/feedEvents/\(userIdForUrl.uuidString)"
+				+ "events/feedEvents/\(userIdForUrl)"
 			{
 				return Event.mockEvents as! T
 			}
