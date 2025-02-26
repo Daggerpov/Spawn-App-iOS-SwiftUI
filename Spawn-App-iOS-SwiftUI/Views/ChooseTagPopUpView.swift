@@ -59,7 +59,19 @@ struct ChoosingTagPopupView: View {
 }
 
 private func profilePictureView(for friend: User) -> some View {
-    VStack {
+    ZStack {
+        Image("glow")
+          .frame(width: 84, height: 84)
+          .background(
+            EllipticalGradient(
+              stops: [
+                Gradient.Stop(color: Color(red: 0.56, green: 0.39, blue: 0.91), location: 0.00),
+                Gradient.Stop(color: Color(red: 0.48, green: 0.74, blue: 0.9), location: 1.00),
+              ],
+              center: UnitPoint(x: 0.81, y: 0.86)
+            )
+          )
+          .blur(radius: 6)
         if let profilePictureString = friend.profilePicture {
             if MockAPIService.isMocking {
                 Image(profilePictureString)
