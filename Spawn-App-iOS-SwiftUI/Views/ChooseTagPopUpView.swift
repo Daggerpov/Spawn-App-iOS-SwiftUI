@@ -59,7 +59,7 @@ struct ChoosingTagPopupView: View {
 }
 
 private func profilePictureView(for friend: User) -> some View {
-    ZStack {
+    ZStack {//to change to circle
         Image("glow")
           .frame(width: 84, height: 84)
           .background(
@@ -75,21 +75,17 @@ private func profilePictureView(for friend: User) -> some View {
         if let profilePictureString = friend.profilePicture {
             if MockAPIService.isMocking {
                 Image(profilePictureString)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 80, height: 80)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    .ProfileImageModifier(imageType: .choosingFriendTags)
             } else {
                 AsyncImage(url: URL(string: profilePictureString)) {
                     image in
                     image
                         .ProfileImageModifier(
-                            imageType: .profilePage)
+                            imageType: .choosingFriendTags)
                 } placeholder: {
                     Circle()
                         .fill(Color.gray)
-                        .frame(width: 60, height: 60)
+                        .frame(width: 80, height: 80)
                 }
             }
         } else {
