@@ -25,6 +25,8 @@ struct ChoosingTagPopupView: View {
     
     var body: some View {
         ScrollView {
+            Spacer()
+            Spacer()
             VStack(alignment: .leading, spacing: 20) {
                 profilePictureView(for: friend)
                 
@@ -88,12 +90,12 @@ private func userInfoView(for friend: User) -> some View {
             Image(systemName: "star.fill")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 14, height: 14)
+                .frame(width: 20, height: 20)
                 .foregroundColor(universalAccentColor)
                 .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 2)
 
             Text(friend.username)
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 20, weight: .bold))
                 .foregroundColor(universalAccentColor)
         }
 
