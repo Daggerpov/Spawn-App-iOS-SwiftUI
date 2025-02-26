@@ -59,8 +59,8 @@ struct ChoosingTagPopupView: View {
 }
 
 private func profilePictureView(for friend: User) -> some View {
-    ZStack {//to change to circle
-        Image("glow")
+    ZStack {
+        Image("Spawn_Glow")
           .frame(width: 84, height: 84)
           .background(
             EllipticalGradient(
@@ -128,7 +128,7 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
                 }) {
                     Text(tag.displayName)
                         .font(.system(size: 18, weight: .bold))
-                        .padding(.vertical, 10)
+                        .padding(.vertical, 8)
                         .frame(maxWidth: .infinity)
                         .background(Color(hex: tag.colorHexCode))
                         .foregroundColor(.white)
