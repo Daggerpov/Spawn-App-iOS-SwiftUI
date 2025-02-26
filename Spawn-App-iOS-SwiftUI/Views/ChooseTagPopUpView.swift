@@ -60,28 +60,14 @@ struct ChoosingTagPopupView: View {
 
 private func profilePictureView(for friend: User) -> some View {
     VStack {
-//        if let pfpUrl = friend.profilePicture {
-//            AsyncImage(url: URL(string: pfpUrl)) {
-//                image in
-//                image
-//                    .resizable()
-//                    .scaledToFill()
-//                    .frame(width: 60, height: 60)
-//                    .clipShape(Circle())
-//            } placeholder: {
-//                Circle()
-//                    .fill(Color.gray)
-//                    .frame(width: 60, height: 60)
-//            }
-//        } else {
-//            Circle()
-//                .fill(.gray)
-//                .frame(width: 60, height: 60)
-//        }
         if let profilePictureString = friend.profilePicture {
             if MockAPIService.isMocking {
                 Image(profilePictureString)
-                    .ProfileImageModifier(imageType: .profilePage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 80, height: 80)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
             } else {
                 AsyncImage(url: URL(string: profilePictureString)) {
                     image in
@@ -91,6 +77,7 @@ private func profilePictureView(for friend: User) -> some View {
                 } placeholder: {
                     Circle()
                         .fill(Color.gray)
+                        .frame(width: 60, height: 60)
                 }
             }
         } else {
