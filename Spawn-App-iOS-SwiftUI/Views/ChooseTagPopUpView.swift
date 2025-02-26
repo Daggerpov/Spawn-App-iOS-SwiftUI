@@ -120,23 +120,25 @@ private func userInfoView(for friend: User) -> some View {
 }
 
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
-    VStack(spacing: 10) {
-        ForEach(viewModel.tags, id: \.self) { tagId in
-            if let tag = FriendTag.mockTags.first(where: { $0.id == tagId }){
-                Button(action: {
-                    viewModel.toggleTagSelection(tagId)
-                }) {
-                    Text(tag.displayName)
-                        .font(.system(size: 18, weight: .bold))
-                        .padding(.vertical, 8)
-                        .frame(maxWidth: .infinity)
-                        .background(Color(hex: tag.colorHexCode))
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+    ScrollView {
+        VStack(spacing: 10) {
+            ForEach(viewModel.tags, id: \.self) { tagId in
+                if let tag = FriendTag.mockTags.first(where: { $0.id == tagId }){
+                    Button(action: {
+                        viewModel.toggleTagSelection(tagId)
+                    }) {
+                        Text(tag.displayName)
+                            .font(.system(size: 18, weight: .bold))
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity)
+                            .background(Color(hex: tag.colorHexCode))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
                 }
             }
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
     }
 }
 
