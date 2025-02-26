@@ -25,6 +25,7 @@ struct ChoosingTagPopupView: View {
     
     var body: some View {
         ScrollView {
+            Spacer().frame(height: 80)
             VStack(alignment: .leading, spacing: 20) {
                 profilePictureView(for: friend)
                 
