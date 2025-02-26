@@ -25,8 +25,6 @@ struct ChoosingTagPopupView: View {
     
     var body: some View {
         ScrollView {
-            Spacer()
-            Spacer()
             VStack(alignment: .leading, spacing: 20) {
                 profilePictureView(for: friend)
                 
@@ -49,7 +47,7 @@ struct ChoosingTagPopupView: View {
             .frame(maxWidth: UIScreen.main.bounds.width * 0.85, maxHeight: 500)
             .shadow(radius: 10)
             
-            .scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
+            .scrollDisabled(true)
             .onAppear {
                 Task {
                     await viewModel.fetchTagsToAddToFriend(friendUserId: friend.id)
@@ -61,24 +59,42 @@ struct ChoosingTagPopupView: View {
 
 private func profilePictureView(for friend: User) -> some View {
     VStack {
-        if let pfpUrl = friend.profilePicture {
-            AsyncImage(url: URL(string: pfpUrl)) { image in
-                image
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 70, height: 70)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(universalAccentColor, lineWidth: 2))
-                    .padding(.horizontal, 1)
-            } placeholder: {
-                Circle()
-                    .fill(Color.gray)
-                    .frame(width: 70, height: 70)
+//        if let pfpUrl = friend.profilePicture {
+//            AsyncImage(url: URL(string: pfpUrl)) {
+//                image in
+//                image
+//                    .resizable()
+//                    .scaledToFill()
+//                    .frame(width: 60, height: 60)
+//                    .clipShape(Circle())
+//            } placeholder: {
+//                Circle()
+//                    .fill(Color.gray)
+//                    .frame(width: 60, height: 60)
+//            }
+//        } else {
+//            Circle()
+//                .fill(.gray)
+//                .frame(width: 60, height: 60)
+//        }
+        if let profilePictureString = friend.profilePicture {
+            if MockAPIService.isMocking {
+                Image(profilePictureString)
+                    .ProfileImageModifier(imageType: .profilePage)
+            } else {
+                AsyncImage(url: URL(string: profilePictureString)) {
+                    image in
+                    image
+                        .ProfileImageModifier(
+                            imageType: .profilePage)
+                } placeholder: {
+                    Circle()
+                        .fill(Color.gray)
+                }
             }
         } else {
-            Circle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 70, height: 70)
+            Image(systemName: "person.crop.circle.fill")
+                .ProfileImageModifier(imageType: .profilePage)
         }
     }
     .frame(maxWidth: .infinity)
