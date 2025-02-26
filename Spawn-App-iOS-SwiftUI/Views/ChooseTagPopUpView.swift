@@ -126,6 +126,7 @@ private func userInfoView(for friend: User) -> some View {
     .frame(maxWidth: .infinity)
 }
 
+//TODO: add functionality where when tag selected, tag name shifts left and checkmark appears on right
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
     ScrollView {
         VStack(spacing: 10) {
