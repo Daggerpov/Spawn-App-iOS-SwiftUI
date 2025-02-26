@@ -30,7 +30,7 @@ extension Image {
 		case .tagFriends:
 			imageSize = 35
 			lineWidth = 0
-        case .friendRequest, .choosingFriendTags:
+        case .choosingFriendTags:
             imageSize = 80
 		}
 

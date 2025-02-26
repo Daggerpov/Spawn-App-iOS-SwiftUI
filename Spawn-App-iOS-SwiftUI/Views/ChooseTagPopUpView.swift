@@ -24,8 +24,6 @@ struct ChoosingTagPopupView: View {
     }
     
     var body: some View {
-        ScrollView {
-            Spacer().frame(height: 80)
             VStack(alignment: .leading, spacing: 20) {
                 profilePictureView(for: friend)
                 
@@ -54,24 +52,33 @@ struct ChoosingTagPopupView: View {
                     await viewModel.fetchTagsToAddToFriend(friendUserId: friend.id)
                 }
             }
-        }
     }
 }
 
 private func profilePictureView(for friend: User) -> some View {
     ZStack {
-        Image("Spawn_Glow")
-          .frame(width: 84, height: 84)
-          .background(
-            EllipticalGradient(
-              stops: [
-                Gradient.Stop(color: Color(red: 0.56, green: 0.39, blue: 0.91), location: 0.00),
-                Gradient.Stop(color: Color(red: 0.48, green: 0.74, blue: 0.9), location: 1.00),
-              ],
-              center: UnitPoint(x: 0.81, y: 0.86)
+        Circle()
+            .fill(
+                RadialGradient(
+                    gradient: Gradient(stops: [
+                        Gradient.Stop(color: Color(red: 0.56, green: 0.39, blue: 0.91).opacity(0.6), location: 0.0),
+                        Gradient.Stop(color: Color(red: 0.48, green: 0.74, blue: 0.9).opacity(0.3), location: 1.0),
+                        Gradient.Stop(color: Color.clear, location: 1.2)
+                    ]),
+                    center: .center,
+                    startRadius: 40,
+                    endRadius: 60
+                )
             )
-          )
-          .blur(radius: 6)
+            .frame(width: 90, height: 90)
+            .blur(radius: 8)
+
+        Image("Spawn_Glow")
+            .resizable()
+            .scaledToFill()
+            .frame(width: 84, height: 84)
+            .clipShape(Circle())
+        
         if let profilePictureString = friend.profilePicture {
             if MockAPIService.isMocking {
                 Image(profilePictureString)
