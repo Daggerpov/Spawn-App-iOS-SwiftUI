@@ -9,8 +9,9 @@ import Foundation
 import UIKit
 
 class APIService: IAPIService {
+	// randomly partition server calls between prod & staging to test both
 	static var baseURL: String =
-		"https://spawn-app-back-end-production.up.railway.app/api/v1/"
+	"https://spawn-app-back-end-production.up.railway.app/api/v1/" 
 
 	var errorMessage: String?  // TODO: currently not being accessed; maybe use in alert to user
 	var errorStatusCode: Int?  // if 404 -> just populate empty array, that's fine
@@ -366,7 +367,7 @@ class APIService: IAPIService {
 
 		guard authEndpoints.contains(where: { url.absoluteString.contains($0) }),
 			  let accessToken = response.allHeaderFields["Authorization"] as? String,
-			  let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String else {
+			  let refreshToken = response.allHeaderFields["x-refresh-token"] as? String else {
 			return
 		}
 
