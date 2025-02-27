@@ -25,11 +25,11 @@ struct EventCreationView: View {
 		NavigationStack {
 			ScrollView {
 				VStack(alignment: .leading, spacing: 12) {
-					EventInputFieldLabel(text: "event name")
+					EventInputFieldLabel(text: "Event Name")
 					EventInputField(value: $viewModel.event.title)
 
 					VStack(alignment: .leading) {
-						EventInputFieldLabel(text: "invite friends")
+						EventInputFieldLabel(text: "Invite Friends")
 						Spacer()
 
 						invitationsRowView
@@ -37,12 +37,12 @@ struct EventCreationView: View {
 
 					HStack {
 						VStack(alignment: .leading) {
-							EventInputFieldLabel(text: "start time")
+							EventInputFieldLabel(text: "Start Time")
 							startTimeView
 						}
 						Spacer()
 						VStack(alignment: .leading) {
-							EventInputFieldLabel(text: "end time")
+							EventInputFieldLabel(text: "End Time")
 							endTimeView
 						}
 					}
@@ -50,14 +50,14 @@ struct EventCreationView: View {
 					HStack {
 						Spacer()
 						VStack(alignment: .leading) {
-							EventInputFieldLabel(text: "date")
+							EventInputFieldLabel(text: "Date")
 							datePickerView
 						}
 
 						Spacer()
 					}
 
-					EventInputFieldLabel(text: "location")
+					EventInputFieldLabel(text: "Location")
 					EventInputField(
 						iconName: "mappin.and.ellipse",
 						// TODO DANIEL: change to also include input for lat & long by some map API selection
@@ -78,7 +78,7 @@ struct EventCreationView: View {
 						)
 					)
 
-					EventInputFieldLabel(text: "description")
+					EventInputFieldLabel(text: "Description")
 					EventInputField(
 						value: $viewModel.event.note
 					)

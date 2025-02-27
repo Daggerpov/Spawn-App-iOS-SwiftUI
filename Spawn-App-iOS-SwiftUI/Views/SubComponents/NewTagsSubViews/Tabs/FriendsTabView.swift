@@ -135,7 +135,7 @@ struct FriendsTabView: View {
 	var recommendedFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.recommendedFriends.count > 0 {
-				Text("Recommended friends")
+				Text("Recommended Friends")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
@@ -166,7 +166,7 @@ struct FriendsTabView: View {
 						ForEach(viewModel.friends) { friend in
 							HStack {
 								if MockAPIService.isMocking {
-gif let pfp = friend.profilePicture {
+if let pfp = friend.profilePicture {
 										Image(pfp)
 											.resizable()
 											.scaledToFill()
