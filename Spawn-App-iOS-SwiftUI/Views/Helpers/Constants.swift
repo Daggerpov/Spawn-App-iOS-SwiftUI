@@ -13,11 +13,16 @@ let eventColors = eventColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
 }
 let universalBackgroundColor: Color = Color(hex: "#F8F8F8")
-let universalSecondaryColor: String = "#8693FF"
+let universalSecondaryColorHexCode: String = "#8693FF"
+let universalSecondaryColor: Color = Color(
+    hex: universalSecondaryColorHexCode
+)
 let universalAccentColorHexCode: String = "#000000"
 let universalAccentColor: Color = Color(
 	hex: universalAccentColorHexCode
 )
+let universalPassiveColorHex: String = "#DADADA"
+let universalPassiveColor: Color = Color(hex: universalPassiveColorHex)
 let profilePicPlusButtonColor: Color = Color(hex: "#8693FF")
 let universalPlaceHolderTextColor: Color = Color(hex: "#B0AFAF")
 let authPageBackgroundColor: Color = Color(hex: "#8693FF")
