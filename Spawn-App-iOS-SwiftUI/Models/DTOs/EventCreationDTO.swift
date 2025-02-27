@@ -10,7 +10,7 @@ import Foundation
 // Should match `EventCreationDTO`, as written in back-end:
 class EventCreationDTO: Identifiable, Codable {
 	var id: UUID
-	var title: String?
+	var title: String
 
 	// MARK: Info
 	var startTime: Date?
@@ -25,7 +25,7 @@ class EventCreationDTO: Identifiable, Codable {
 
 	init(
 		id: UUID,
-		title: String? = nil,
+		title: String,
 		startTime: Date? = nil,
 		endTime: Date? = nil,
 		location: Location? = nil,

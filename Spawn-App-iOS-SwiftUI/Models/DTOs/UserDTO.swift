@@ -1,21 +1,14 @@
 //
-//  User.swift
+//  UserDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 11/6/24.
+//  Created by Daniel Agapov on 2025-02-27.
 //
 
 import Foundation
 
-// My idea for now is that I'll be able to link a `User` to its `User`, such
-// that the `User` struct still comforms to `Codable` (which an `Image` property
-// would prevent if I included it in that struct).
-
-// tech note: for new friend searching, it should first be done by username, but
-// we could also search by first name and last name, if provided (thus, optional types).
-
-struct User: Identifiable, Codable, Hashable {
-	static func == (lhs: User, rhs: User) -> Bool {
+struct UserDTO: Identifiable, Codable, Hashable {
+	static func == (lhs: UserDTO, rhs: User) -> Bool {
 		return lhs.id == rhs.id
 	}
 
