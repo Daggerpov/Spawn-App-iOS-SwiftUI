@@ -77,3 +77,10 @@ extension FriendRequestView {
 	}
 
 }
+
+@available(iOS 17.0, *)
+#Preview {
+    FriendRequestView(user: .danielAgapov, friendRequestId: UUID(), closeCallback: {})
+    // UUID: UNIQUE UNIVERSAL IDENTIFIER 
+}
+
