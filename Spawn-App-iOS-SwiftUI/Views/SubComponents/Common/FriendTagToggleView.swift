@@ -14,7 +14,7 @@ struct FriendTagToggleView: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach([FriendTagToggle.friends, FriendTagToggle.tags], id: \.self) { tab in
-                Text(tab == .friends ? "friends" : "tags")
+                Text(tab == .friends ? "Friends" : "Tags")
                     .foregroundColor(selectedTab == tab ? universalAccentColor : .white)
                     .frame(width: 65, height: 33)
                     .padding(.horizontal, 10)
