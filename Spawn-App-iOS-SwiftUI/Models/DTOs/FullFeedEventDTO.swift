@@ -6,8 +6,6 @@
 //
 
 /// updated to match back-end's `FullFeedEventDTO`, after Shane's PR here: https://github.com/Daggerpov/Spawn-App-Back-End/pull/222/files
-///
-/// 
 
 import Foundation
 

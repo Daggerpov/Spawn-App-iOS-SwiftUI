@@ -101,9 +101,6 @@ class APIService: IAPIService {
 		// Handle auth tokens if present
 		try handleAuthTokens(from: httpResponse, for: finalURL)
 
-		// Print response headers for debugging
-		print("Response Headers: \(httpResponse.allHeaderFields)")
-
 		guard httpResponse.statusCode == 200 else {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
@@ -123,11 +120,6 @@ class APIService: IAPIService {
 		}
 
 		do {
-			// Print received data for debugging
-			if let jsonString = String(data: data, encoding: .utf8) {
-				print("Received JSON: \(jsonString)")
-			}
-
 			let decoder = APIService.makeDecoder()
 
 			// Try parsing with more detailed error handling
@@ -150,6 +142,10 @@ class APIService: IAPIService {
 		} catch {
 			errorMessage = APIError.failedJSONParsing(url: finalURL).localizedDescription
 			print("JSON Parsing Error: \(error)")
+			// Print received data for debugging
+			if let jsonString = String(data: data, encoding: .utf8) {
+				print("Received JSON: \(jsonString)")
+			}
 			throw APIError.failedJSONParsing(url: finalURL)
 		}
 	}
