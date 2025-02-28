@@ -14,7 +14,7 @@ class ChooseTagPopUpViewModel: ObservableObject {
     
     var userId: UUID
 
-    var apiService: IAPIService = MockAPIService()
+    var apiService: IAPIService
 
     init(userId: UUID, apiService: IAPIService) {
         self.userId = userId
