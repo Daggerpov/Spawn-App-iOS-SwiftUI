@@ -9,8 +9,8 @@ import SwiftUI
 
 struct FriendRequestView: View {
 	@ObservedObject var viewModel: FriendRequestViewModel
-	@State private var isClickedAccept = false
-	@State private var isClickedDecline = false
+	@State private var hasClickedAccept = false
+	@State private var hasClickedDecline = false
 
 	let user: User
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
@@ -93,7 +93,7 @@ extension FriendRequestView {
 					.friendRequestAction(action: FriendRequestAction.accept)
 			}
 			closeCallback()
-			isClickedAccept.toggle()
+			hasClickedAccept.toggle()
 		}) {
 			Text("Accept")
 				.foregroundColor(.white)
@@ -103,7 +103,7 @@ extension FriendRequestView {
 				.background(
 					RoundedRectangle(cornerRadius: 12)
 						.fill(
-							isClickedAccept
+							hasClickedAccept
 								? universalBackgroundColor
 								: authPageBackgroundColor
 
@@ -121,7 +121,7 @@ extension FriendRequestView {
 					.friendRequestAction(action: FriendRequestAction.decline)
 			}
 			closeCallback()
-			isClickedDecline.toggle()
+			hasClickedDecline.toggle()
 		}) {
 			Text("Decline")
 				.fontWeight(.bold)
@@ -131,7 +131,7 @@ extension FriendRequestView {
 				.background(
 					RoundedRectangle(cornerRadius: 12)
 						.fill(
-							isClickedDecline
+							hasClickedDecline
 								? universalBackgroundColor.opacity(0.9)
 								: universalBackgroundColor.opacity(0.9)
 						)
