@@ -76,4 +76,50 @@ extension UserDTO {
 			email: "daniel2456@gmail.com"
 		)
 	}()
+
+	static var shannon: UserDTO = UserDTO(
+		id: UUID(),
+		friendUserIds: [],
+		username: "shannonaurl",
+		profilePicture: "Shannon_pfp",
+		firstName: "Shannon",
+		bio: "This is my bio.",
+		email: "shannon@gmail.com"
+	)
+
+	static var jennifer: UserDTO = UserDTO(
+		id: UUID(),
+		friendUserIds: [],
+		username: "jenntjen",
+		profilePicture: "Jennifer_pfp",
+		firstName: "Jennifer",
+		lastName: "Tjen",
+		bio: "This is my bio.",
+		email: "jennifer@gmail.com"
+	)
+
+	static var michael: UserDTO = UserDTO(
+		id: UUID(),
+		friendUserIds: [],
+		username: "michaeltham",
+		profilePicture: "Michael_pfp",
+		firstName: "Michael",
+		lastName: "Tham",
+		bio: "This is my bio.",
+		email: "haley@gmail.com"
+	)
+
+	static var haley: UserDTO = UserDTO(
+		id: UUID(),
+		friendUserIds: [],
+		username: "haleyusername",
+		profilePicture: "Haley_pfp",
+		firstName: "Haley",
+		bio: "This is my bio.",
+		email: "haley@gmail.com"
+	)
+
+	static let mockUsers: [UserDTO] = {
+		return [danielAgapov, shannon, jennifer, michael, haley]
+	}()
 }

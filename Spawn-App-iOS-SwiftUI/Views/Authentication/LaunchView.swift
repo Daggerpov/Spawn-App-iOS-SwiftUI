@@ -42,9 +42,6 @@ struct LaunchView: View {
 			}
 			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
-			.onAppear {
-				UserDTO.setupFriends()
-			}
 			.navigationDestination(
 				isPresented: $userAuth.hasCheckedSpawnUserExistence
 			) {
