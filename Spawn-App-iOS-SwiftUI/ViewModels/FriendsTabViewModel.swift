@@ -8,12 +8,12 @@
 import Foundation
 
 class FriendsTabViewModel: ObservableObject {
-	@Published var incomingFriendRequests: [FriendRequest] = []
+	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
 	@Published var recommendedFriends: [User] = []
 	@Published var friends: [FriendUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
-	@Published var createdFriendRequest: FriendRequest?
+	@Published var createdFriendRequest: FetchFriendRequestDTO?
 
 	var userId: UUID
 	var apiService: IAPIService
@@ -35,7 +35,7 @@ class FriendsTabViewModel: ObservableObject {
 			string: APIService.baseURL + "friend-requests/incoming/\(userId)")
 		{
 			do {
-				let fetchedIncomingFriendRequests: [FriendRequest] =
+				let fetchedIncomingFriendRequests: [FetchFriendRequestDTO] =
 					try await self.apiService.fetchData(
 						from: url, parameters: nil)
 
