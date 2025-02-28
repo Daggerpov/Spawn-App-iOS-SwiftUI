@@ -297,7 +297,7 @@ class APIService: IAPIService {
 		}
 	}
 
-	func createUser(userDTO: UserCreateDTO, profilePicture: UIImage?, parameters: [String: String]?) async throws -> User {
+	func createUser(userDTO: UserCreateDTO, profilePicture: UIImage?, parameters: [String: String]?) async throws -> UserDTO {
 		resetState()
 
 		// Create URL with parameters
@@ -351,7 +351,7 @@ class APIService: IAPIService {
 
 		// Decode the response
 		let decoder = APIService.makeDecoder()
-		return try decoder.decode(User.self, from: data)
+		return try decoder.decode(UserDTO.self, from: data)
 	}
 
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL) throws {

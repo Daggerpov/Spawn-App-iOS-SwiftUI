@@ -57,7 +57,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/\(userIdForUrl)/recommended-friends"
 			{
-				let firstThreeUsers = Array(User.mockUsers.prefix(3))
+				let firstThreeUsers = Array(UserDTO.mockUsers.prefix(3))
 				return firstThreeUsers as! T
 			}
 
@@ -83,8 +83,8 @@ class MockAPIService: IAPIService {
 			}
 		}
 
-		if T.self == User.self {
-			return User.danielAgapov as! T
+		if T.self == UserDTO.self {
+			return UserDTO.danielAgapov as! T
 		}
 
 		throw APIError.invalidData
@@ -100,8 +100,7 @@ class MockAPIService: IAPIService {
 		if url.absoluteString == APIService.baseURL + "users/friend-request" {
 			return FetchFriendRequestDTO(
 				id: UUID(),
-				senderUser: User.danielAgapov,
-				receiverUser: User.danielLee
+				senderUser: UserDTO.danielAgapov
 			) as! U
 		}
 

@@ -14,7 +14,7 @@ struct EventCardView: View {
 	var callback: (Event, Color) -> Void
 
 	init(
-		user: User, event: Event, color: Color,
+		user: UserDTO, event: Event, color: Color,
 		callback: @escaping (Event, Color) -> Void
 	) {
 		self.event = event

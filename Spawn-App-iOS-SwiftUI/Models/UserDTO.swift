@@ -14,13 +14,13 @@ import Foundation
 // tech note: for new friend searching, it should first be done by username, but
 // we could also search by first name and last name, if provided (thus, optional types).
 
-struct User: Identifiable, Codable, Hashable {
-	static func == (lhs: User, rhs: User) -> Bool {
+struct UserDTO: Identifiable, Codable, Hashable {
+	static func == (lhs: UserDTO, rhs: UserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
 
 	var id: UUID
-	var friends: [User]?
+	var friends: [UserDTO]?
 	var username: String
 	var profilePicture: String?
 	var firstName: String?
@@ -31,7 +31,7 @@ struct User: Identifiable, Codable, Hashable {
 
 	init(
 		id: UUID,
-		friends: [User]? = nil,
+		friends: [UserDTO]? = nil,
 		username: String,
 		profilePicture: String? = nil,
 		firstName: String? = nil,
@@ -67,11 +67,11 @@ struct User: Identifiable, Codable, Hashable {
 	}
 }
 
-extension User {
-	static var danielAgapov: User = {
+extension UserDTO {
+	static var danielAgapov: UserDTO = {
 		let id: UUID = UUID()
-		let friends: [User] = [shannon, jennifer, michael, haley]
-		return User(
+		let friends: [UserDTO] = [shannon, jennifer, michael, haley]
+		return UserDTO(
 			id: id,
 			friends: friends,
 			username: "daggerpov",
@@ -103,10 +103,10 @@ extension User {
 		)
 	}()
 
-	static var danielLee: User = {
-		let friends: [User] = [shannon, jennifer, michael, haley]
+	static var danielLee: UserDTO = {
+		let friends: [UserDTO] = [shannon, jennifer, michael, haley]
 		let id: UUID = UUID()
-		return User(
+		return UserDTO(
 			id: id,
 			friends: friends,
 			username: "uhdlee",
@@ -169,7 +169,7 @@ extension User {
 
 	}
 
-	static var shannon: User = User(
+	static var shannon: UserDTO = UserDTO(
 		id: UUID(),
 		friends: [],
 		username: "shannonaurl",
@@ -179,7 +179,7 @@ extension User {
 		email: "shannon@gmail.com"
 	)
 
-	static var jennifer: User = User(
+	static var jennifer: UserDTO = UserDTO(
 		id: UUID(),
 		friends: [],
 		username: "jenntjen",
@@ -190,7 +190,7 @@ extension User {
 		email: "jennifer@gmail.com"
 	)
 
-	static var michael: User = User(
+	static var michael: UserDTO = UserDTO(
 		id: UUID(),
 		friends: [],
 		username: "michaeltham",
@@ -201,7 +201,7 @@ extension User {
 		email: "haley@gmail.com"
 	)
 
-	static var haley: User = User(
+	static var haley: UserDTO = UserDTO(
 		id: UUID(),
 		friends: [],
 		username: "haleyusername",
@@ -211,16 +211,16 @@ extension User {
 		email: "haley@gmail.com"
 	)
 
-	static let mockUsers: [User] = {
+	static let mockUsers: [UserDTO] = {
 		return [danielAgapov, shannon, jennifer, michael, haley]
 	}()
 }
 
 // temporary, until we have real data, to help with user mock objects:
 class ObservableUser: ObservableObject {
-	@Published private(set) var user: User
+	@Published private(set) var user: UserDTO
 
-	init(user: User) {
+	init(user: UserDTO) {
 		self.user = user
 	}
 
@@ -228,7 +228,7 @@ class ObservableUser: ObservableObject {
 		user.id
 	}
 
-	var friends: [User]? {
+	var friends: [UserDTO]? {
 		user.friends
 	}
 	var username: String {

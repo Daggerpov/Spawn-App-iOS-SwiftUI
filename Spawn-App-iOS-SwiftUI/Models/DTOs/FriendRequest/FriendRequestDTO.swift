@@ -14,25 +14,25 @@ struct FriendRequestDTO: Identifiable, Codable, Hashable {
 	}
 
 	var id: UUID
-	var senderUser: UUID
-	var receiverUser: UUID
+	var senderUserId: UUID
+	var receiverUserId: UUID
 
-	init(id: UUID, senderUser: UUID, receiverUser: UUID) {
+	init(id: UUID, senderUserId: UUID, receiverUserId: UUID) {
 		self.id = id
-		self.senderUser = senderUser
-		self.receiverUser = receiverUser
+		self.senderUserId = senderUserId
+		self.receiverUserId = receiverUserId
 	}
 }
 
 extension FriendRequestDTO {
 	static let mockFriendRequests: [FriendRequestDTO] = [
 		FriendRequestDTO(
-			id: UUID(), senderUser: UUID.michael,
-			receiverUser: UUID.danielAgapov),
+			id: UUID(), senderUserId: UUID(),
+			receiverUserId: UUID()),
 		FriendRequestDTO(
 			id: UUID(),
-			senderUser: UUID.shannon,
-			receiverUser: UUID.danielAgapov
+			senderUserId: UUID(),
+			receiverUserId: UUID()
 		),
 	]
 }

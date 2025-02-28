@@ -12,9 +12,9 @@ struct InviteFriendsView: View {
 	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
 		EventCreationViewModel.shared
 
-	let user: User
+	let user: UserDTO
 
-	init(user: User) {
+	init(user: UserDTO) {
 		self.user = user
 		self.viewModel = FriendsTabViewModel(
 			userId: user.id,

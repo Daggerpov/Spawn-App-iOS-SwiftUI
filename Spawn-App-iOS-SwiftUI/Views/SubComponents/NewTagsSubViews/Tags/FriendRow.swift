@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendRow: View {
 	@EnvironmentObject var viewModel: TagsViewModel
-	var friend: User
+	var friend: UserDTO
 	var friendTag: FriendTag
 
 	var body: some View {

@@ -8,54 +8,72 @@
 import Foundation
 
 struct UserDTO: Identifiable, Codable, Hashable {
-	static func == (lhs: UserDTO, rhs: User) -> Bool {
+	static func == (lhs: UserDTO, rhs: UserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
 
 	var id: UUID
-	var friends: [User]?
+	var friendUserIds: [UUID]?
 	var username: String
 	var profilePicture: String?
 	var firstName: String?
 	var lastName: String?
 	var bio: String?
-	var friendTags: [FriendTag]?
+	var friendTagIds: [UUID]?
 	var email: String
 
 	init(
 		id: UUID,
-		friends: [User]? = nil,
+		friendUserIds: [UUID]? = nil,
 		username: String,
 		profilePicture: String? = nil,
 		firstName: String? = nil,
 		lastName: String? = nil,
 		bio: String? = nil,
-		friendTags: [FriendTag]? = nil,
+		friendTagIds: [UUID]? = nil,
 		email: String
 	) {
 		self.id = id
-		self.friends = friends
+		self.friendUserIds = friendUserIds
 		self.username = username
 		self.profilePicture = profilePicture
 		self.firstName = firstName
 		self.lastName = lastName
 		self.bio = bio
-		self.friendTags = friendTags
+		self.friendTagIds = friendTagIds
 		self.email = email
-
-		// Add friends to the user's default "Everyone" tag
-		if let friends = friends {
-			var everyoneTag = FriendTag(
-				id: UUID(),
-				displayName: "Everyone",
-				colorHexCode: "#asdfdf",
-				friends: []
-			)
-
-			everyoneTag.friends = friends
-
-			// Insert the "Everyone" tag at the beginning of the friend's tags array
-			self.friendTags?.insert(everyoneTag, at: 0)
-		}
 	}
+}
+
+extension UserDTO {
+	static var danielAgapov: UserDTO = {
+		let id: UUID = UUID()
+		let friendIds: [UUID] = [UUID(), UUID()]
+		return UserDTO(
+			id: id,
+			friendUserIds: friendIds,
+			username: "daggerpov",
+			profilePicture: "Daniel_Agapov_pfp",
+			firstName: "Daniel",
+			lastName: "Agapov",
+			bio: "This is my bio.",
+			friendTagIds: [UUID(), UUID()],
+			email: "daniel@agapov.com"
+		)
+	}()
+
+	static var danielLee: UserDTO = {
+		let id: UUID = UUID()
+		return UserDTO(
+			id: id,
+			friendUserIds: [UUID(), UUID()],
+			username: "uhdlee",
+			profilePicture: "Daniel_Lee_pfp",
+			firstName: "Daniel",
+			lastName: "Lee",
+			bio: "This is my bio.",
+			friendTagIds: [UUID(), UUID()],
+			email: "daniel2456@gmail.com"
+		)
+	}()
 }

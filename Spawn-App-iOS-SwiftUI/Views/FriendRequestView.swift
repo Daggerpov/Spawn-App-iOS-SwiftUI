@@ -10,10 +10,10 @@ import SwiftUI
 struct FriendRequestView: View {
 	@ObservedObject var viewModel: FriendRequestViewModel
 
-	let user: User
+	let user: UserDTO
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
-	init(user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void)
+	init(user: UserDTO, friendRequestId: UUID, closeCallback: @escaping () -> Void)
 	{
 		self.user = user
 		self.closeCallback = closeCallback

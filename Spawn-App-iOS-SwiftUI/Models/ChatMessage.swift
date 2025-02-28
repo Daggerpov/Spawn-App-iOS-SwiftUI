@@ -47,8 +47,8 @@ extension ChatMessage {
 		id: UUID(),
 		content: "yo guys, wya?",
 		timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
-		senderUser: UserDTO.michael,
+		senderUser: UserDTO.danielAgapov,
 		eventId: Event.mockDinnerEvent.id,
-		likedBy: UserDTO.mockUsers
+		likedBy: [UserDTO.danielAgapov, UserDTO.danielLee]
 	)
 }

@@ -19,7 +19,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var externalUserId: String?  // For both Google and Apple
 	@Published var isLoggedIn: Bool = false
 	@Published var hasCheckedSpawnUserExistence: Bool = false
-	@Published var spawnUser: User? {
+	@Published var spawnUser: UserDTO? {
 		didSet {
 			if spawnUser != nil {
 				shouldNavigateToFeedView = true
@@ -271,7 +271,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 			do {
-				let fetchedSpawnUser: User = try await self.apiService
+				let fetchedSpawnUser: UserDTO = try await self.apiService
 					.fetchData(
 						from: url,
 						parameters: [
@@ -327,7 +327,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		do {
 			// Use the new createUser method
-			let fetchedUser: User = try await (apiService as! APIService)
+			let fetchedUser: UserDTO = try await (apiService as! APIService)
 				.createUser(
 					userDTO: userDTO,
 					profilePicture: profilePicture,

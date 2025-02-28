@@ -135,7 +135,7 @@ extension TagRow {
 }
 
 struct TagFriendsView: View {
-	var friends: [User]?
+	var friends: [UserDTO]?
 	@Binding var isExpanded: Bool
 
 	var body: some View {

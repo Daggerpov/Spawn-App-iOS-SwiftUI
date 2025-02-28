@@ -10,10 +10,10 @@ import Foundation
 class EventCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	var apiService: IAPIService
-	var user: User
+	var user: UserDTO
 	var event: Event
 
-	init(apiService: IAPIService, user: User, event: Event) {
+	init(apiService: IAPIService, user: UserDTO, event: Event) {
 		self.apiService = apiService
 		self.user = user
 		self.event = event

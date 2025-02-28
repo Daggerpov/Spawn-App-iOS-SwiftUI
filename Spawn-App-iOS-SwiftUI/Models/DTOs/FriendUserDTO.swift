@@ -13,7 +13,7 @@ struct FriendUserDTO: Identifiable, Codable, Hashable {
 	}
 
 	var id: UUID
-	var friends: [User]?
+	var friends: [UserDTO]?
 	var username: String
 	var profilePicture: String?
 	var firstName: String?
@@ -25,7 +25,7 @@ struct FriendUserDTO: Identifiable, Codable, Hashable {
 
 	init(
 		id: UUID,
-		friends: [User]? = nil,
+		friends: [UserDTO]? = nil,
 		username: String,
 		profilePicture: String? = nil,
 		firstName: String? = nil,

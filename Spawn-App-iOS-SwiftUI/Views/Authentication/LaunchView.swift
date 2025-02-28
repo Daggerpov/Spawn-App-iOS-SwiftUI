@@ -43,7 +43,7 @@ struct LaunchView: View {
 			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
 			.onAppear {
-				User.setupFriends()
+				UserDTO.setupFriends()
 			}
 			.navigationDestination(
 				isPresented: $userAuth.hasCheckedSpawnUserExistence

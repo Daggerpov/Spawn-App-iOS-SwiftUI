@@ -12,7 +12,7 @@ class FormatterService {
 
 	private init() {}
 
-	public func formatName(user: User) -> String {
+	public func formatName(user: UserDTO) -> String {
 		if let firstName = user.firstName {
 			if let lastName = user.lastName {
 				return "\(firstName) \(lastName)"

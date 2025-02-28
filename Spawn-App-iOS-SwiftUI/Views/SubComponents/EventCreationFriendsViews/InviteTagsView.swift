@@ -12,7 +12,7 @@ struct InviteTagsView: View {
 
 	@State private var creationStatus: CreationStatus = .notCreating
 
-	init(user: User) {
+	init(user: UserDTO) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(userId: user.id) : APIService(),
@@ -139,7 +139,7 @@ extension InviteTagRow {
 }
 
 struct InviteTagFriendsView: View {
-	var friends: [User]?
+	var friends: [UserDTO]?
 	var body: some View {
 		ForEach(friends ?? []) { friend in
 			HStack(spacing: -10) {

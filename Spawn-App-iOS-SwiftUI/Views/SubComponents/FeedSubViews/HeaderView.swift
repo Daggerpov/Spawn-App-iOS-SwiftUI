@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HeaderView: View {
-	var user: User
+	var user: UserDTO
 	var body: some View {
 		HStack {
 			Spacer()
