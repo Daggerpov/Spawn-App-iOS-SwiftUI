@@ -41,7 +41,7 @@ extension FriendTag {
 	static let everyone: FriendTag = FriendTag(
 		id: UUID(),
 		displayName: "Everyone",
-        colorHexCode: universalSecondaryColor,
+        colorHexCode: universalSecondaryColorHexCode,
 		friends: [User.haley, User.jennifer, User.shannon, User.michael]
 	)
 	static let close = FriendTag(

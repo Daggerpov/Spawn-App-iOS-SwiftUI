@@ -270,6 +270,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
+		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 			do {
 				let fetchedSpawnUser: User = try await self.apiService
 					.fetchData(
