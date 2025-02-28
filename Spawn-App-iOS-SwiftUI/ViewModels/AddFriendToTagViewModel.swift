@@ -62,7 +62,7 @@ class AddFriendToTagViewModel: ObservableObject {
 			string: APIService.baseURL + "friendTags/bulkAddFriendsToTag")
 		{
 			do {
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					selectedFriends, to: url,
 					parameters: ["friendTagId": friendTagId.uuidString])
 			} catch {

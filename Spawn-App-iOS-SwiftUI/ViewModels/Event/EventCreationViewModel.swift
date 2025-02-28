@@ -61,7 +61,7 @@ class EventCreationViewModel: ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					event, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {

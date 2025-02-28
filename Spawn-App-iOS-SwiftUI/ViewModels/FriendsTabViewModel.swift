@@ -118,7 +118,7 @@ class FriendsTabViewModel: ObservableObject {
 		// full path: /api/v1/friend-requests
 		if let url = URL(string: APIService.baseURL + "friend-requests") {
 			do {
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					createdFriendRequest, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {

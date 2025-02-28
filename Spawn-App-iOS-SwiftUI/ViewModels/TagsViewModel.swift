@@ -80,14 +80,14 @@ class TagsViewModel: ObservableObject {
 			case .create:
 				guard let url = URL(string: APIService.baseURL + "friendTags")
 				else { return }
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					newTag, to: url, parameters: nil)
 			case .update:
 				guard
 					let url = URL(
 						string: APIService.baseURL + "friendTags/\(newTag.id)")
 				else { return }
-				let update: FriendTagCreationDTO = try await self.apiService
+					let _: FriendTagCreationDTO = try await self.apiService
 					.updateData(newTag, to: url, parameters: nil)
 			}
 		} catch {
@@ -127,7 +127,7 @@ class TagsViewModel: ObservableObject {
 			string: APIService.baseURL + "friendTags/\(friendTagId)")
 		{
 			do {
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					EmptyBody(),
 					to: url,
 					parameters: [

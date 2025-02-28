@@ -38,7 +38,7 @@ struct FriendTag: Identifiable, Codable, Hashable {
 }
 
 extension FriendTag {
-	static let everyone = FriendTag(
+	static let everyone: FriendTag = FriendTag(
 		id: UUID(),
 		displayName: "Everyone",
         colorHexCode: universalSecondaryColor,
