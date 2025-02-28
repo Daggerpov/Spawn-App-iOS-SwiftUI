@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// as defined in the back-end `FriendRequestDTO.java`
-struct FriendRequestDTO: Identifiable, Codable, Hashable {
-	static func == (lhs: FriendRequestDTO, rhs: FriendRequestDTO) -> Bool {
+/// as defined in the back-end `CreateFriendRequestDTO.java`
+struct CreateFriendRequestDTO: Identifiable, Codable, Hashable {
+	static func == (lhs: CreateFriendRequestDTO, rhs: CreateFriendRequestDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
 
@@ -24,12 +24,12 @@ struct FriendRequestDTO: Identifiable, Codable, Hashable {
 	}
 }
 
-extension FriendRequestDTO {
-	static let mockFriendRequests: [FriendRequestDTO] = [
-		FriendRequestDTO(
+extension CreateFriendRequestDTO {
+	static let mockFriendRequests: [CreateFriendRequestDTO] = [
+		CreateFriendRequestDTO(
 			id: UUID(), senderUserId: UUID(),
 			receiverUserId: UUID()),
-		FriendRequestDTO(
+		CreateFriendRequestDTO(
 			id: UUID(),
 			senderUserId: UUID(),
 			receiverUserId: UUID()

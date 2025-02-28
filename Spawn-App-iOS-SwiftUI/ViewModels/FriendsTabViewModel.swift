@@ -110,7 +110,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	func addFriend(friendUserId: UUID) async {
-		let createdFriendRequest = FriendRequestDTO(
+		let createdFriendRequest = CreateFriendRequestDTO(
 			id: UUID(),
 			senderUserId: userId,
 			receiverUserId: friendUserId
