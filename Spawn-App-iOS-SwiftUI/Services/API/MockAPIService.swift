@@ -10,6 +10,7 @@ import Foundation
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
 	static var isMocking: Bool = false
+	static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
 	var errorStatusCode: Int? = nil
@@ -48,6 +49,7 @@ class MockAPIService: IAPIService {
 
 			if url.absoluteString == APIService.baseURL
 				+ "friend-requests/incoming/\(userIdForUrl)"
+				+ "friend-requests/incoming/\(userIdForUrl)"
 			{
 				return FetchFriendRequestDTO.mockFriendRequests as! T
 			}
@@ -78,6 +80,24 @@ class MockAPIService: IAPIService {
 
 			if url.absoluteString == APIService.baseURL
 				+ "friendTags/owner/\(userIdForUrl)"
+			{
+				return FriendTag.mockTags as! T
+			}
+		}
+
+		/// ChoosingTagViewModel.swift:
+		if let userIdForUrl = userId {
+			if url.absoluteString == APIService.baseURL
+				+ "friendTags/addUserToTags/\(userIdForUrl)"
+			{
+				return FriendTag.mockTags as! T
+			}
+		}
+
+		/// ChoosingTagViewModel.swift:
+		if let userIdForUrl = userId {
+			if url.absoluteString == APIService.baseURL
+				+ "friendTags/addUserToTags/\(userIdForUrl)"
 			{
 				return FriendTag.mockTags as! T
 			}

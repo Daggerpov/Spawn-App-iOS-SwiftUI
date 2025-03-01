@@ -12,11 +12,13 @@ struct FriendsTabView: View {
 	let user: UserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
+	@State var showingChooseTagsPopup: Bool = false
 	@State private var friendInPopUp: UserDTO?
 	@State private var friendRequestIdInPopup: UUID?
 
 	// for pop-ups:
 	@State private var friendRequestOffset: CGFloat = 1000
+	@State private var chooseTagsOffset: CGFloat = 1000
 	// ------------
 
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
@@ -55,6 +57,10 @@ struct FriendsTabView: View {
 
 			if showingFriendRequestPopup {
 				friendRequestPopUpView
+			}
+
+			if showingChooseTagsPopup {
+				choosingTagViewPopup
 			}
 		}
 	}
@@ -235,6 +241,11 @@ if let pfp = friend.profilePicture {
 		showingFriendRequestPopup = false
 	}
 
+	func closeChoosingTagPopUp() {
+		chooseTagsOffset = 1000
+		showingChooseTagsPopup = false
+	}
+
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
 		var friend: UserDTO
@@ -355,6 +366,48 @@ if let pfp = friend.profilePicture {
 }
 
 extension FriendsTabView {
+	var choosingTagViewPopup: some View {
+        Group {
+            if let unwrappedFriendInPopUp = friendInPopUp
+            {  // ensuring it isn't null
+                ZStack {
+                    Color(.black)
+                        .opacity(0.5)
+                        .onTapGesture {
+                            closeChoosingTagPopUp()
+                        }
+                        .ignoresSafeArea()
+
+                    // call your new view here
+                    ChoosingTagPopupView(
+                        friend: unwrappedFriendInPopUp,
+                        userId: user.id,
+                        closeCallback: {
+                            closeChoosingTagPopUp()
+                        }
+                    )
+                    
+                }
+            } else {
+                // do nothing; maybe figure something out later
+                ZStack {
+                    Color(.black)
+                        .opacity(0.5)
+                        .onTapGesture {
+                            closeChoosingTagPopUp()
+                        }
+                        .ignoresSafeArea()
+
+                    // call your new view here
+
+                    Text(
+                        "Sorry, this friend request cannot be viewed at the moment. There is an error."
+                    )
+                }
+            }
+        }
+	}
+
 	var friendRequestPopUpView: some View {
 		Group {
 			if let unwrappedFriendInPopUp = friendInPopUp,
@@ -373,7 +426,9 @@ extension FriendsTabView {
 					FriendRequestView(
 						user: unwrappedFriendInPopUp,
 						friendRequestId: unwrappedFriendRequestIdInPopup,
-						closeCallback: closeFriendPopUp)
+						closeCallback: closeFriendPopUp,
+						showingChoosingTagView: $showingChooseTagsPopup
+					)
 				}
 			} else {
 				// do nothing; maybe figure something out later
@@ -394,4 +449,9 @@ extension FriendsTabView {
 			}
 		}
 	}
+}
+
+@available(iOS 17.0, *)
+#Preview {
+	FriendsTabView(user: .danielAgapov)
 }
