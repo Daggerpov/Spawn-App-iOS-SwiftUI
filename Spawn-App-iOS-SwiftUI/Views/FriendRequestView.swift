@@ -98,6 +98,7 @@ extension FriendRequestView {
 					.friendRequestAction(action: FriendRequestAction.accept)
 			}
 			closeCallback()
+			showingChoosingTagView = true
 			hasClickedAccept.toggle()
 		}) {
 			Text("Accept")
