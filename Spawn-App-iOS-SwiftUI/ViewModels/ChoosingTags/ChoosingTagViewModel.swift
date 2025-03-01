@@ -9,7 +9,7 @@ import Foundation
 
 class ChooseTagPopUpViewModel: ObservableObject {
 	@Published var chooseTagErrorMessage: String = ""
-    @Published var tags: [UUID] = []
+    @Published var tags: [FriendTag] = []
     @Published var selectedTags: Set<UUID> = []
     
     var userId: UUID
@@ -21,13 +21,13 @@ class ChooseTagPopUpViewModel: ObservableObject {
 		self.apiService = apiService
 	}
 
-	func addTagsToFriend(friendUserId: UUID, friendTagIds: [UUID]) async {
+	func addTagsToFriend(friendUserId: UUID) async {
 		if let url = URL(
 			string: APIService.baseURL + "friendTags/addUserToTags/\(userId)")
 		{
 			do {
 				try await self.apiService.sendData(
-					friendTagIds,
+                    friendUserId,
 					to: url,
 					parameters: [
 						"friendUserId": friendUserId.uuidString
@@ -56,7 +56,7 @@ class ChooseTagPopUpViewModel: ObservableObject {
                 )
 
                 await MainActor.run {
-                    self.tags = fetchedTags.map { $0.id }
+                    self.tags = fetchedTags
                 }
             } catch {
                 if let statusCode = apiService.errorStatusCode,

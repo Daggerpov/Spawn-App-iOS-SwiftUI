@@ -130,23 +130,28 @@ private func userInfoView(for friend: User) -> some View {
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
     ScrollView {
         VStack(spacing: 10) {
-            ForEach(viewModel.tags, id: \.self) { tagId in
-                if let tag = FriendTag.mockTags.first(where: { $0.id == tagId }) {
-                    Button(action: {
-                        viewModel.toggleTagSelection(tagId)
-                    }) {
-                        Text(tag.displayName)
+            ForEach(viewModel.tags, id: \.id) { friendTag in
+                Button(action: {
+                    viewModel.toggleTagSelection(friendTag.id)
+                }) {
+                    HStack {
+                        Text(friendTag.displayName)
                             .font(.system(size: 18, weight: .bold))
-                            .padding(.vertical, 8)
-                            .frame(maxWidth: .infinity)
-                            .background(Color(hex: tag.colorHexCode))
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
+                            .frame(maxWidth: .infinity, alignment: viewModel.selectedTags.contains(friendTag.id) ? .leading : .center)
+
+                        if viewModel.selectedTags.contains(friendTag.id) {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.white)
+                                .padding(.trailing, 10)
+                        }
                     }
+                    .padding()
+                    .background(Color(hex: friendTag.colorHexCode))
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
                 }
             }
         }
-        .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
     }
     .frame(height: 200)
@@ -156,7 +161,7 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
 private func doneButton(for friend: User, viewModel: ChooseTagPopUpViewModel, closeCallback: @escaping () -> Void) -> some View {
     Button(action: {
         Task {
-            await viewModel.AddTagsToFriend(friendUserId: friend.id, friendTagIds: Array(viewModel.selectedTags))
+            await viewModel.addTagsToFriend(friendUserId: friend.id)
             closeCallback()
         }
     }) {
