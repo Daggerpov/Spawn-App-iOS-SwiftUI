@@ -12,17 +12,22 @@ struct FriendRequestView: View {
 	@State private var hasClickedAccept = false
 	@State private var hasClickedDecline = false
 
+	@Binding var showingChoosingTagView: Bool
+
 	let user: User
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
-	init(user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void)
-	{
+	init(
+		user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void,
+		showingChoosingTagView: Binding<Bool>
+	) {
 		self.user = user
 		self.closeCallback = closeCallback
 		self.viewModel = FriendRequestViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService() : APIService(), userId: user.id,
 			friendRequestId: friendRequestId)
+		self._showingChoosingTagView = showingChoosingTagView
 	}
 
 	var body: some View {
@@ -153,6 +158,11 @@ extension FriendRequestView {
 
 @available(iOS 17.0, *)
 #Preview {
+	@Previewable @State var showing: Bool = false
 	FriendRequestView(
-		user: .danielAgapov, friendRequestId: UUID(), closeCallback: {})
+		user: .danielAgapov,
+		friendRequestId: UUID(),
+		closeCallback: {
+		},
+		showingChoosingTagView: $showing)
 }

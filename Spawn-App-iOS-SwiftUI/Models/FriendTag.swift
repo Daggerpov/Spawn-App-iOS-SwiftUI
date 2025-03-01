@@ -53,5 +53,8 @@ extension FriendTag {
 	static let hobbies = FriendTag(
 		id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[3],
 		friends: [User.danielLee])
-	static let mockTags = [everyone, close, sports, hobbies]
+    static let study = FriendTag(
+        id: UUID(), displayName: "Study", colorHexCode: eventColorHexCodes[3],
+        friends: [User.danielLee])
+	static let mockTags = [everyone, close, sports, hobbies, study]
 }
