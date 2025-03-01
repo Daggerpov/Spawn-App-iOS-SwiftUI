@@ -158,6 +158,11 @@ extension FriendRequestView {
 
 @available(iOS 17.0, *)
 #Preview {
+	@Previewable @State var showing: Bool = false
 	FriendRequestView(
-		user: .danielAgapov, friendRequestId: UUID(), closeCallback: {})
+		user: .danielAgapov,
+		friendRequestId: UUID(),
+		closeCallback: {
+		},
+		showingChoosingTagView: $showing)
 }
