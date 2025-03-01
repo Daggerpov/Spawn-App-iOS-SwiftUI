@@ -14,8 +14,6 @@ struct FriendRequestView: View {
 
 	@Binding var showingChoosingTagView: Bool
 
-	@Binding var showingChoosingTagView: Bool
-
 	let user: UserDTO
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
