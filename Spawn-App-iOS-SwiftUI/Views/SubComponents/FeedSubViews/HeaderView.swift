@@ -14,7 +14,7 @@ struct HeaderView: View {
 			Spacer()
 			VStack {
 				HStack {
-					Text("hello,")
+					Text("Hello,")
 						.font(.title)
 					Spacer()
 				}
