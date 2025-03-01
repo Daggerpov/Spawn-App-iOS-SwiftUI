@@ -10,7 +10,7 @@ import Foundation
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
 	@Published var recommendedFriends: [UserDTO] = []
-	@Published var friends: [FriendUserDTO] = []
+	@Published var friends: [FullFriendUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
 	@Published var createdFriendRequest: FetchFriendRequestDTO?
@@ -88,7 +88,7 @@ class FriendsTabViewModel: ObservableObject {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends")
 		{
 			do {
-				let fetchedFriends: [FriendUserDTO] = try await self.apiService
+				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService
 					.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread

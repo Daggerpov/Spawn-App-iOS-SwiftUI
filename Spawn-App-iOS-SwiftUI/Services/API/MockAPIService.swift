@@ -66,7 +66,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/\(userIdForUrl)/friends"
 			{
-				return FriendUserDTO.mockUsers as! T
+				return FullFriendUserDTO.mockUsers as! T
 			}
 		}
 

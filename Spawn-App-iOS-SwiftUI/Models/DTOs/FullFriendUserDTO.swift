@@ -1,5 +1,5 @@
 //
-//  FriendUserDTO.swift
+//  FullFriendUserDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-02-02.
@@ -7,8 +7,9 @@
 
 import Foundation
 
-struct FriendUserDTO: Identifiable, Codable, Hashable {
-	static func == (lhs: FriendUserDTO, rhs: FriendUserDTO) -> Bool {
+/// matches `FullFriendUserDTO` in the back-end
+struct FullFriendUserDTO: Identifiable, Codable, Hashable {
+	static func == (lhs: FullFriendUserDTO, rhs: FullFriendUserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
 
@@ -63,10 +64,10 @@ struct FriendUserDTO: Identifiable, Codable, Hashable {
 	}
 }
 
-extension FriendUserDTO {
-	static var danielAgapov: FriendUserDTO = {
+extension FullFriendUserDTO {
+	static var danielAgapov: FullFriendUserDTO = {
 		let id: UUID = UUID()
-		return FriendUserDTO(
+		return FullFriendUserDTO(
 			id: id,
 			username: "daggerpov",
 			profilePicture: "Daniel_Agapov_pfp",
@@ -106,9 +107,9 @@ extension FriendUserDTO {
 		)
 	}()
 
-	static var danielLee: FriendUserDTO = {
+	static var danielLee: FullFriendUserDTO = {
 		let id: UUID = UUID()
-		return FriendUserDTO(
+		return FullFriendUserDTO(
 			id: id,
 			username: "uhdlee",
 			profilePicture: "Daniel_Lee_pfp",
@@ -153,7 +154,7 @@ extension FriendUserDTO {
 		)
 	}()
 
-	static let mockUsers: [FriendUserDTO] = {
+	static let mockUsers: [FullFriendUserDTO] = {
 		return [danielAgapov, danielLee]
 	}()
 }

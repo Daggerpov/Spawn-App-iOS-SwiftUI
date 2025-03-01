@@ -322,7 +322,7 @@ if let pfp = friend.profilePicture {
 	}
 
 	struct FriendTagsForFriendView: View {
-		var friend: FriendUserDTO
+		var friend: FullFriendUserDTO
 		var body: some View {
 			HStack(spacing: 8) {
 				// Tags in groups of 2
