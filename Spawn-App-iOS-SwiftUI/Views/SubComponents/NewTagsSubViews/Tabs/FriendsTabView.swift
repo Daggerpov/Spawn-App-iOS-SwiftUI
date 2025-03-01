@@ -375,6 +375,7 @@ extension FriendsTabView {
                         .opacity(0.5)
                         .onTapGesture {
                             closeChoosingTagPopUp()
+							closeFriendPopUp()
                         }
                         .ignoresSafeArea()
 
@@ -418,6 +419,7 @@ extension FriendsTabView {
 						.opacity(0.5)
 						.onTapGesture {
 							closeFriendPopUp()
+							closeChoosingTagPopUp()
 						}
 						.ignoresSafeArea()
 
