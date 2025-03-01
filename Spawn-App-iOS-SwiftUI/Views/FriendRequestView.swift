@@ -17,8 +17,10 @@ struct FriendRequestView: View {
 	let user: User
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
-	init(user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void, showingChoosingTagView: Binding<Bool>)
-	{
+	init(
+		user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void,
+		showingChoosingTagView: Binding<Bool>
+	) {
 		self.user = user
 		self.closeCallback = closeCallback
 		self.viewModel = FriendRequestViewModel(
@@ -151,8 +153,6 @@ extension FriendRequestView {
 		}
 
 	}
-
-	
 
 }
 
