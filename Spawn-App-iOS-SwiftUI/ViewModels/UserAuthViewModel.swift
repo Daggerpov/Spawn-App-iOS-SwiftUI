@@ -163,7 +163,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				return
 			}
 
-			GIDConfiguration(
+			_ = GIDConfiguration(
 				clientID:
 					"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
 			)

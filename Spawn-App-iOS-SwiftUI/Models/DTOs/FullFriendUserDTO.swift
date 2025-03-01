@@ -30,7 +30,7 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable {
 		lastName: String? = nil,
 		bio: String? = nil,
 		email: String,
-		associatedFriendTagsToOwner: [FriendTag]? = nil
+		associatedFriendTagsToOwner: [FriendTagDTO]? = nil
 	) {
 		self.id = id
 		self.username = username
@@ -55,14 +55,16 @@ extension FullFriendUserDTO {
 			bio: "This is my bio.",
 			email: "daniel@agapov.com",
 			associatedFriendTagsToOwner: [
-				FriendTag(
+				FriendTagDTO(
 					id: UUID(),
 					displayName: "Close Friends",
+					ownerUserId: UUID(),
 					colorHexCode: eventColorHexCodes[1]
 				),
-				FriendTag(
+				FriendTagDTO(
 					id: UUID(),
 					displayName: "Hobbies",
+					ownerUserId: UUID(),
 					colorHexCode: eventColorHexCodes[2]
 				),
 			]
@@ -80,19 +82,22 @@ extension FullFriendUserDTO {
 			bio: "This is my bio.",
 			email: "daniel2456@gmail.com",
 			associatedFriendTagsToOwner: [
-				FriendTag(
+				FriendTagDTO(
 					id: UUID(),
 					displayName: "Biztech",
+					ownerUserId: UUID(),
 					colorHexCode: eventColorHexCodes[0]
 				),
-				FriendTag(
+				FriendTagDTO(
 					id: UUID(),
 					displayName: "Close Friends",
+					ownerUserId: UUID(),
 					colorHexCode: eventColorHexCodes[1]
 				),
-				FriendTag(
+				FriendTagDTO(
 					id: UUID(),
 					displayName: "Hobbies",
+					ownerUserId: UUID(),
 					colorHexCode: eventColorHexCodes[2]
 				),
 			]

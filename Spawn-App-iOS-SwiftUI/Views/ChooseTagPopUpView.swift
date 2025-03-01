@@ -9,11 +9,11 @@ import SwiftUI
 
 struct ChoosingTagPopupView: View {
 	@ObservedObject var viewModel: ChooseTagPopUpViewModel
-	var friend: User
+	var friend: UserDTO
 	var userId: UUID
 	var closeCallback: () -> Void
 
-	init(friend: User, userId: UUID, closeCallback: @escaping () -> Void) {
+	init(friend: UserDTO, userId: UUID, closeCallback: @escaping () -> Void) {
 		self.friend = friend
 		self.userId = userId
 		self.closeCallback = closeCallback
@@ -56,7 +56,7 @@ struct ChoosingTagPopupView: View {
 	}
 }
 
-private func profilePictureView(for friend: User) -> some View {
+private func profilePictureView(for friend: UserDTO) -> some View {
 	ZStack {
 		Circle()
 			.fill(
@@ -108,7 +108,7 @@ private func profilePictureView(for friend: User) -> some View {
 	.frame(maxWidth: .infinity)
 }
 
-private func userInfoView(for friend: User) -> some View {
+private func userInfoView(for friend: UserDTO) -> some View {
 	VStack(spacing: 4) {
 		HStack(spacing: 6) {
 			Image(systemName: "star.fill")
@@ -167,7 +167,7 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
 }
 
 private func doneButton(
-	for friend: User, viewModel: ChooseTagPopUpViewModel,
+	for friend: UserDTO, viewModel: ChooseTagPopUpViewModel,
 	closeCallback: @escaping () -> Void
 ) -> some View {
 	Button(action: {
