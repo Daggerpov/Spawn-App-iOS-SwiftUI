@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct UserDTO: Identifiable, Codable, Hashable {
+struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 	static func == (lhs: UserDTO, rhs: UserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}

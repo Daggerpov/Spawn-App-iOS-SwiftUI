@@ -12,7 +12,9 @@ class FormatterService {
 
 	private init() {}
 
-	public func formatName(user: UserDTO) -> String {
+	// `Nameable` applies to either `UserDTO` or `PotentialFriendUserDTO`, making
+	// either of those a valid param to this method.
+	public func formatName(user: Nameable) -> String {
 		if let firstName = user.firstName {
 			if let lastName = user.lastName {
 				return "\(firstName) \(lastName)"

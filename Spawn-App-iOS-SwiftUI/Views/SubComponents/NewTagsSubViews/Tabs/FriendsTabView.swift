@@ -13,7 +13,7 @@ struct FriendsTabView: View {
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
-	@State private var friendInPopUp: UserDTO?
+	@State private var friendInPopUp: PotentialFriendUserDTO?
 	@State private var friendRequestIdInPopup: UUID?
 
 	// for pop-ups:

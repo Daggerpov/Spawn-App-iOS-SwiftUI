@@ -118,7 +118,7 @@ class MockAPIService: IAPIService {
 		if url.absoluteString == APIService.baseURL + "users/friend-request" {
 			return FetchFriendRequestDTO(
 				id: UUID(),
-				senderUser: UserDTO.danielAgapov
+				senderUser: PotentialFriendUserDTO.danielAgapov
 			) as! U
 		}
 
