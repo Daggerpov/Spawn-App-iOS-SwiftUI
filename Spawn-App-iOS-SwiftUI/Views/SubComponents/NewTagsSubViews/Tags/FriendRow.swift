@@ -35,13 +35,15 @@ struct FriendRow: View {
 			Text(friend.username)
 				.font(.headline)
 			Spacer()
-			Button(action: {
-				Task {
-					await viewModel.removeFriendFromFriendTag(
-						friendUserId: friend.id, friendTagId: friendTag.id)
+			if !friendTag.isEveryone{
+				Button(action: {
+					Task {
+						await viewModel.removeFriendFromFriendTag(
+							friendUserId: friend.id, friendTagId: friendTag.id)
+					}
+				}) {
+					Image(systemName: "xmark")
 				}
-			}) {
-				Image(systemName: "xmark")
 			}
 		}
 		.foregroundColor(.white)
