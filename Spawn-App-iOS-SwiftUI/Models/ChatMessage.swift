@@ -11,17 +11,17 @@ class ChatMessage: Identifiable, Codable {
 	var id: UUID
 	var content: String
 	var timestamp: Date
-	var senderUser: User
+	var senderUser: UserDTO
 	var eventId: UUID
 	// do I even need an `event` var here, if each `Event` has a list of chats?
 	// -> it's a (event) 1 <-> many (chat) relationship
-	var likedBy: [User]?
+	var likedBy: [UserDTO]?
 	// tech note: in user's view of event, check if that user is in
 	// the `ChatMessage`'s `likedBy` array (`[User]`)
 
 	init(
-		id: UUID, content: String, timestamp: Date, senderUser: User,
-		eventId: UUID, likedBy: [User]? = nil
+		id: UUID, content: String, timestamp: Date, senderUser: UserDTO,
+		eventId: UUID, likedBy: [UserDTO]? = nil
 	) {
 		self.id = id
 		self.content = content
@@ -47,8 +47,8 @@ extension ChatMessage {
 		id: UUID(),
 		content: "yo guys, wya?",
 		timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
-		senderUser: User.michael,
+		senderUser: UserDTO.danielAgapov,
 		eventId: Event.mockDinnerEvent.id,
-		likedBy: User.mockUsers
+		likedBy: [UserDTO.danielAgapov, UserDTO.danielLee]
 	)
 }

@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct InviteView: View {
-	let user: User
+	let user: UserDTO
 
 	@State private var selectedTab: FriendTagToggle = .friends
 
-	init(user: User) {
+	init(user: UserDTO) {
 		self.user = user
 	}
 

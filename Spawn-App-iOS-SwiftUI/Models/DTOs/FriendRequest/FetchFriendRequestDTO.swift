@@ -1,0 +1,34 @@
+//
+//  FriendRequestDTO.swift
+//  Spawn-App-iOS-SwiftUI
+//
+//  Created by Daniel Agapov on 2025-01-20.
+//
+
+import Foundation
+
+/// as defined in the back-end `FetchFriendRequestDTO.java`
+struct FetchFriendRequestDTO: Identifiable, Codable, Hashable {
+	static func == (lhs: FetchFriendRequestDTO, rhs: FetchFriendRequestDTO) -> Bool {
+		return lhs.id == rhs.id
+	}
+
+	var id: UUID
+	var senderUser: PotentialFriendUserDTO
+
+	init(id: UUID, senderUser: PotentialFriendUserDTO) {
+		self.id = id
+		self.senderUser = senderUser
+	}
+}
+
+extension FetchFriendRequestDTO {
+	static let mockFriendRequests: [FetchFriendRequestDTO] = [
+		FetchFriendRequestDTO(
+			id: UUID(), senderUser: PotentialFriendUserDTO.danielAgapov),
+		FetchFriendRequestDTO(
+			id: UUID(),
+			senderUser: PotentialFriendUserDTO.danielLee
+		)
+	]
+}

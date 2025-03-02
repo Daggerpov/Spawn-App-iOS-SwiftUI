@@ -8,12 +8,12 @@
 import Foundation
 
 class FriendsTabViewModel: ObservableObject {
-	@Published var incomingFriendRequests: [FriendRequest] = []
-	@Published var recommendedFriends: [User] = []
-	@Published var friends: [FriendUserDTO] = []
+	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
+	@Published var recommendedFriends: [UserDTO] = []
+	@Published var friends: [FullFriendUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
-	@Published var createdFriendRequest: FriendRequest?
+	@Published var createdFriendRequest: FetchFriendRequestDTO?
 
 	var userId: UUID
 	var apiService: IAPIService
@@ -35,7 +35,7 @@ class FriendsTabViewModel: ObservableObject {
 			string: APIService.baseURL + "friend-requests/incoming/\(userId)")
 		{
 			do {
-				let fetchedIncomingFriendRequests: [FriendRequest] =
+				let fetchedIncomingFriendRequests: [FetchFriendRequestDTO] =
 					try await self.apiService.fetchData(
 						from: url, parameters: nil)
 
@@ -62,7 +62,7 @@ class FriendsTabViewModel: ObservableObject {
 			string: APIService.baseURL + "users/\(userId)/recommended-friends")
 		{
 			do {
-				let fetchedRecommendedFriends: [User] =
+				let fetchedRecommendedFriends: [UserDTO] =
 					try await self.apiService.fetchData(
 						from: url, parameters: nil)
 
@@ -88,7 +88,7 @@ class FriendsTabViewModel: ObservableObject {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends")
 		{
 			do {
-				let fetchedFriends: [FriendUserDTO] = try await self.apiService
+				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService
 					.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread
@@ -110,7 +110,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	func addFriend(friendUserId: UUID) async {
-		let createdFriendRequest = FriendRequestCreationDTO(
+		let createdFriendRequest = CreateFriendRequestDTO(
 			id: UUID(),
 			senderUserId: userId,
 			receiverUserId: friendUserId
@@ -118,7 +118,7 @@ class FriendsTabViewModel: ObservableObject {
 		// full path: /api/v1/friend-requests
 		if let url = URL(string: APIService.baseURL + "friend-requests") {
 			do {
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					createdFriendRequest, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {

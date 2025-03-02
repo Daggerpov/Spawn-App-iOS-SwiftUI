@@ -13,10 +13,10 @@ struct EventCreationView: View {
 
 	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
 
-	var creatingUser: User
+	var creatingUser: UserDTO
 	var closeCallback: () -> Void
 
-	init(creatingUser: User, closeCallback: @escaping () -> Void) {
+	init(creatingUser: UserDTO, closeCallback: @escaping () -> Void) {
 		self.creatingUser = creatingUser
 		self.closeCallback = closeCallback
 	}
@@ -425,5 +425,5 @@ extension EventCreationView {
 }
 
 #Preview {
-	EventCreationView(creatingUser: User.danielAgapov, closeCallback: {})
+	EventCreationView(creatingUser: UserDTO.danielAgapov, closeCallback: {})
 }

@@ -33,9 +33,7 @@ struct LaunchView: View {
 
 				// Apple Sign-In Button
 				Button(action: {
-					Task {
-						await userAuth.signInWithApple()
-					}
+					userAuth.signInWithApple()
 				}) {
 					AuthProviderButtonView(authProviderType: .apple)
 				}
@@ -44,9 +42,6 @@ struct LaunchView: View {
 			}
 			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
-			.onAppear {
-				User.setupFriends()
-			}
 			.navigationDestination(
 				isPresented: $userAuth.hasCheckedSpawnUserExistence
 			) {

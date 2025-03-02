@@ -19,7 +19,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var externalUserId: String?  // For both Google and Apple
 	@Published var isLoggedIn: Bool = false
 	@Published var hasCheckedSpawnUserExistence: Bool = false
-	@Published var spawnUser: User? {
+	@Published var spawnUser: UserDTO? {
 		didSet {
 			if spawnUser != nil {
 				shouldNavigateToFeedView = true
@@ -42,6 +42,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var isLoading: Bool = false
 
 	private var apiService: IAPIService
+
+	// delete account:
+
+	@Published var activeAlert: DeleteAccountAlertType?
 
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
@@ -119,10 +123,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				as? ASAuthorizationAppleIDCredential
 			{
 				let userIdentifier = appleIDCredential.user
-				let email = appleIDCredential.email ?? "No email provided"
+				if let email = appleIDCredential.email {
+					self.email = email
+				}
 
 				// Set user details
-				self.email = email
 				self.givenName = appleIDCredential.fullName?.givenName
 				self.familyName = appleIDCredential.fullName?.familyName
 				self.isLoggedIn = true
@@ -137,6 +142,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.errorMessage =
 				"Apple Sign-In failed: \(error.localizedDescription)"
 			print(self.errorMessage as Any)
+			// Check user existence AFTER setting credentials
+			Task {
+				await self.spawnFetchUserIfAlreadyExists()
+			}
 		}
 	}
 
@@ -154,7 +163,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				return
 			}
 
-			GIDConfiguration(
+			_ = GIDConfiguration(
 				clientID:
 					"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
 			)
@@ -262,7 +271,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 			do {
-				let fetchedSpawnUser: User = try await self.apiService
+				let fetchedSpawnUser: UserDTO = try await self.apiService
 					.fetchData(
 						from: url,
 						parameters: [
@@ -292,63 +301,97 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func spawnMakeUser(
-		username: String, profilePicture: String, firstName: String,
-		lastName: String, email: String
+		username: String,
+		profilePicture: UIImage?,
+		firstName: String,
+		lastName: String,
+		email: String
 	) async {
-		let newUser = User(
-			id: UUID(),
+		// Create the DTO
+		let userDTO = UserCreateDTO(
 			username: username,
-			profilePicture: profilePicture,
 			firstName: firstName,
 			lastName: lastName,
 			bio: "",
 			email: email
 		)
 
-		if let url = URL(string: APIService.baseURL + "auth/make-user") {
-			do {
-				var parameters: [String: String] = [:]
-				if let unwrappedExternalUserId = externalUserId {
-					parameters["externalUserId"] = unwrappedExternalUserId
-				}
-				// Add provider to parameters using authProvider.rawValue
-				if let authProvider = self.authProvider {
-					parameters["provider"] = authProvider.rawValue
-				}
+		// Prepare parameters
+		var parameters: [String: String] = [:]
+		if let unwrappedExternalUserId = externalUserId {
+			parameters["externalUserId"] = unwrappedExternalUserId
+		}
+		if let authProvider = self.authProvider {
+			parameters["provider"] = authProvider.rawValue
+		}
 
-				let fetchedAuthenticatedSpawnUser: User =
-					try await self.apiService.sendData(
-						newUser, to: url, parameters: parameters
-					)
+		do {
+			// Use the new createUser method
+			let fetchedUser: UserDTO = try await (apiService as! APIService)
+				.createUser(
+					userDTO: userDTO,
+					profilePicture: profilePicture,
+					parameters: parameters
+				)
 
-				await MainActor.run {
-					self.spawnUser = fetchedAuthenticatedSpawnUser
-					self.shouldNavigateToUserInfoInputView = false  // User created, no need to navigate to UserInfoInputView
-				}
-
-				// Save externalUserId to Keychain after account creation
-				if let externalUserId = self.externalUserId,
-					let data = externalUserId.data(using: .utf8)
-				{
-					let success = KeychainService.shared.save(
-						key: "externalUserId", data: data)
-					if !success {
-						print("Failed to save externalUserId to Keychain")
-					}
-				}
-
-				print("User created successfully.")
-			} catch {
-				print("Error creating the user: \(error.localizedDescription)")
-				print(apiService.errorMessage ?? "")
+			await MainActor.run {
+				self.spawnUser = fetchedUser
+				self.shouldNavigateToUserInfoInputView = false
 			}
-		} else {
-			print("Invalid URL for user creation.")
+
+			// Save externalUserId to Keychain
+			if let externalUserId = self.externalUserId,
+				let data = externalUserId.data(using: .utf8)
+			{
+				let success = KeychainService.shared.save(
+					key: "externalUserId", data: data)
+				if !success {
+					print("Failed to save externalUserId to Keychain")
+				}
+			}
+
+			print("User created successfully")
+
+		} catch {
+			print("Error creating the user: \(error)")
+			if let apiError = error as? APIError {
+				print("API Error: \(apiError.localizedDescription)")
+			}
 		}
 	}
 
 	func setShouldNavigateToFeedView() {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
+	}
+
+	func deleteAccount() async {
+		guard let userId = spawnUser?.id else {
+			await MainActor.run {
+				activeAlert = .deleteError
+			}
+			return
+		}
+
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
+			do {
+				try await self.apiService.deleteData(from: url)
+				let success = KeychainService.shared.delete(
+					key: "externalUserId")
+				if !success {
+					print("Failed to delete externalUserId from Keychain")
+				}
+
+				await MainActor.run {
+					resetState()
+					activeAlert = .deleteSuccess
+				}
+			} catch {
+				print("Error deleting account: \(error.localizedDescription)")
+				await MainActor.run {
+					activeAlert = .deleteError
+				}
+			}
+		}
 	}
 }
 
@@ -366,4 +409,13 @@ extension UserAuthViewModel: ASAuthorizationControllerDelegate {
 	) {
 		handleAppleSignInResult(.failure(error))
 	}
+
+}
+
+struct UserCreateDTO: Codable {
+	let username: String
+	let firstName: String
+	let lastName: String
+	let bio: String
+	let email: String
 }

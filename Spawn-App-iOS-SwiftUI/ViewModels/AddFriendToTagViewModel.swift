@@ -8,9 +8,9 @@
 import Foundation
 
 class AddFriendToTagViewModel: ObservableObject {
-	@Published var friends: [User] =
-		MockAPIService.isMocking ? User.mockUsers : []
-	@Published var selectedFriends: [User] = []
+	@Published var friends: [UserDTO] =
+		MockAPIService.isMocking ? UserDTO.mockUsers : []
+	@Published var selectedFriends: [UserDTO] = []
 
 	var userId: UUID
 	var apiService: IAPIService
@@ -27,7 +27,7 @@ class AddFriendToTagViewModel: ObservableObject {
 				+ "friendTags/friendsNotAddedToTag/\(friendTagId)")
 		{
 			do {
-				let fetchedFriends: [User] = try await self.apiService
+				let fetchedFriends: [UserDTO] = try await self.apiService
 					.fetchData(from: url, parameters: nil)
 
 				// Ensure updating on the main thread
@@ -49,7 +49,7 @@ class AddFriendToTagViewModel: ObservableObject {
 	}
 
 	// Toggle friend selection
-	func toggleFriendSelection(_ friend: User) {
+	func toggleFriendSelection(_ friend: UserDTO) {
 		if selectedFriends.contains(where: { $0.id == friend.id }) {
 			selectedFriends.removeAll { $0.id == friend.id }  // Deselect
 		} else {
@@ -62,7 +62,7 @@ class AddFriendToTagViewModel: ObservableObject {
 			string: APIService.baseURL + "friendTags/bulkAddFriendsToTag")
 		{
 			do {
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					selectedFriends, to: url,
 					parameters: ["friendTagId": friendTagId.uuidString])
 			} catch {

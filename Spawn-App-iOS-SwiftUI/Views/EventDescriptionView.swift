@@ -12,7 +12,7 @@ struct EventDescriptionView: View {
 	@ObservedObject var viewModel: EventDescriptionViewModel
 	var color: Color
 
-	init(event: Event, users: [User]?, color: Color) {
+	init(event: Event, users: [UserDTO]?, color: Color) {
 		self.viewModel = EventDescriptionViewModel(event: event, users: users)
 		self.color = color
 	}

@@ -9,15 +9,13 @@ import SwiftUI
 
 struct ProfileView: View {
 	// TODO DANIEL: make a real API call here, using a new view model -> for editing bio and maybe other user details
-
-	// TODO DANIEL: make "delete account" button after back-end is done for that (https://github.com/Daggerpov/Spawn-App-Back-End/issues/172)
-	let user: User
+	let user: UserDTO
 	@State private var bio: String
 	@State private var editingState: ProfileEditText = .edit
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 
-	init(user: User) {
+	init(user: UserDTO) {
 		self.user = user
 		bio = user.bio ?? ""
 	}
@@ -125,12 +123,59 @@ struct ProfileView: View {
 							}
 						})
 
+					// Delete Account Button
+					Button(action: {
+						userAuth.activeAlert = .deleteConfirmation
+					}) {
+						Text("Delete Account")
+							.font(.headline)
+							.foregroundColor(.white)
+							.padding()
+							.frame(maxWidth: 170)
+							.background(Color.red)
+							.cornerRadius(20)
+					}
+
 					Spacer()
 						.padding(.horizontal)
 				}
 				.padding()
 			}
 			.background(universalBackgroundColor)
+			.alert(item: $userAuth.activeAlert) { alertType in
+				switch alertType {
+				case .deleteConfirmation:
+					return Alert(
+						title: Text("Delete Account"),
+						message: Text(
+							"Are you sure you want to delete your account? This action cannot be undone."
+						),
+						primaryButton: .destructive(Text("Delete")) {
+							Task {
+								await userAuth.deleteAccount()
+							}
+						},
+						secondaryButton: .cancel()
+					)
+				case .deleteSuccess:
+					return Alert(
+						title: Text("Account Deleted"),
+						message: Text(
+							"Your account has been successfully deleted."),
+						dismissButton: .default(Text("OK")) {
+							userAuth.signOut()
+						}
+					)
+				case .deleteError:
+					return Alert(
+						title: Text("Error"),
+						message: Text(
+							"Failed to delete your account. Please try again later."
+						),
+						dismissButton: .default(Text("OK"))
+					)
+				}
+			}
 		}
 	}
 }

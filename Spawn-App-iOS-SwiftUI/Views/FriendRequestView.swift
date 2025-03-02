@@ -14,11 +14,11 @@ struct FriendRequestView: View {
 
 	@Binding var showingChoosingTagView: Bool
 
-	let user: User
+	let user: PotentialFriendUserDTO
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
 	init(
-		user: User, friendRequestId: UUID, closeCallback: @escaping () -> Void,
+		user: PotentialFriendUserDTO, friendRequestId: UUID, closeCallback: @escaping () -> Void,
 		showingChoosingTagView: Binding<Bool>
 	) {
 		self.user = user
@@ -98,6 +98,7 @@ extension FriendRequestView {
 					.friendRequestAction(action: FriendRequestAction.accept)
 			}
 			closeCallback()
+			showingChoosingTagView = true
 			hasClickedAccept.toggle()
 		}) {
 			Text("Accept")

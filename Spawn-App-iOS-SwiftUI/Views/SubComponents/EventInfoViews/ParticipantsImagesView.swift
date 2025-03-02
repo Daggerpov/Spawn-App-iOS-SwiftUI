@@ -11,16 +11,16 @@ import SwiftUI
 struct ParticipantsImagesView: View {
 	var event: Event
 
-	func participantsCleanup(participants: [User]) -> [User] {
+	func participantsCleanup(participants: [UserDTO]) -> [UserDTO] {
 		var participantsFiltered = participants
 
-		if let userCreator: User = event.creatorUser {
+		if let userCreator: UserDTO = event.creatorUser {
 			// Remove the creator if already in the list
 			participantsFiltered.removeAll { $0.id == userCreator.id }
 
 			// Prepend the creator to the participants list
 			participantsFiltered.insert(
-				event.creatorUser ?? User.danielAgapov, at: 0)
+				event.creatorUser ?? UserDTO.danielAgapov, at: 0)
 		}
 
 		return participantsFiltered

@@ -16,7 +16,7 @@ class EventCreationViewModel: ObservableObject {
 	@Published var creationMessage: String = ""
 
 	@Published var selectedTags: [FriendTag] = []
-	@Published var selectedFriends: [FriendUserDTO] = []
+	@Published var selectedFriends: [FullFriendUserDTO] = []
 
 	private var apiService: IAPIService
 
@@ -61,7 +61,7 @@ class EventCreationViewModel: ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
-				try await self.apiService.sendData(
+				_ = try await self.apiService.sendData(
 					event, to: url, parameters: nil)
 			} catch {
 				await MainActor.run {

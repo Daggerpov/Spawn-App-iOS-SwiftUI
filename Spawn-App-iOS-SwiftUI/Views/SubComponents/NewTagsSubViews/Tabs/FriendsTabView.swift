@@ -9,11 +9,11 @@ import SwiftUI
 
 struct FriendsTabView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
-	let user: User
+	let user: UserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
-	@State private var friendInPopUp: User?
+	@State private var friendInPopUp: PotentialFriendUserDTO?
 	@State private var friendRequestIdInPopup: UUID?
 
 	// for pop-ups:
@@ -23,7 +23,7 @@ struct FriendsTabView: View {
 
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
 
-	init(user: User) {
+	init(user: UserDTO) {
 		self.user = user
 		self.viewModel = FriendsTabViewModel(
 			userId: user.id,
@@ -40,7 +40,7 @@ struct FriendsTabView: View {
 
 					// accept friend req buttons
 					SearchView(
-						searchPlaceholderText: "search or add friends",
+						searchPlaceholderText: "Search or add friends",
 						viewModel: searchViewModel)
                     Spacer()
                     Spacer()
@@ -248,7 +248,7 @@ if let pfp = friend.profilePicture {
 
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
-		var friend: User
+		var friend: UserDTO
 		@State private var isAdded: Bool = false
 
 		var body: some View {
@@ -333,7 +333,7 @@ if let pfp = friend.profilePicture {
 	}
 
 	struct FriendTagsForFriendView: View {
-		var friend: FriendUserDTO
+		var friend: FullFriendUserDTO
 		var body: some View {
 			HStack(spacing: 8) {
 				// Tags in groups of 2
@@ -375,6 +375,7 @@ extension FriendsTabView {
                         .opacity(0.5)
                         .onTapGesture {
                             closeChoosingTagPopUp()
+							closeFriendPopUp()
                         }
                         .ignoresSafeArea()
 
@@ -418,6 +419,7 @@ extension FriendsTabView {
 						.opacity(0.5)
 						.onTapGesture {
 							closeFriendPopUp()
+							closeChoosingTagPopUp()
 						}
 						.ignoresSafeArea()
 

@@ -12,9 +12,9 @@ struct InviteFriendsView: View {
 	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
 		EventCreationViewModel.shared
 
-	let user: User
+	let user: UserDTO
 
-	init(user: User) {
+	init(user: UserDTO) {
 		self.user = user
 		self.viewModel = FriendsTabViewModel(
 			userId: user.id,
@@ -68,10 +68,10 @@ struct IndividualFriendView: View {
 	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
 		EventCreationViewModel.shared
 
-	var friend: FriendUserDTO
+	var friend: FullFriendUserDTO
 	@State private var isSelected: Bool = false
 
-	init(friend: FriendUserDTO) {
+	init(friend: FullFriendUserDTO) {
 		self.friend = friend
 		if eventCreationViewModel.selectedFriends.contains(friend) {
 			self._isSelected = State(initialValue: true)

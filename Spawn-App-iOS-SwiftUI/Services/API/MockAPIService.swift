@@ -49,7 +49,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "friend-requests/incoming/\(userIdForUrl)"
 			{
-				return FriendRequest.mockFriendRequests as! T
+				return FetchFriendRequestDTO.mockFriendRequests as! T
 			}
 
 			// fetchRecommendedFriends():
@@ -57,7 +57,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/\(userIdForUrl)/recommended-friends"
 			{
-				let firstThreeUsers = Array(User.mockUsers.prefix(3))
+				let firstThreeUsers = Array(UserDTO.mockUsers.prefix(3))
 				return firstThreeUsers as! T
 			}
 
@@ -66,7 +66,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/\(userIdForUrl)/friends"
 			{
-				return FriendUserDTO.mockUsers as! T
+				return FullFriendUserDTO.mockUsers as! T
 			}
 		}
 
@@ -92,8 +92,17 @@ class MockAPIService: IAPIService {
 			}
 		}
 
-		if T.self == User.self {
-			return User.danielAgapov as! T
+		/// ChoosingTagViewModel.swift:
+		if let userIdForUrl = userId {
+			if url.absoluteString == APIService.baseURL
+				+ "friendTags/addUserToTags/\(userIdForUrl)"
+			{
+				return FriendTag.mockTags as! T
+			}
+		}
+
+		if T.self == UserDTO.self {
+			return UserDTO.danielAgapov as! T
 		}
 
 		throw APIError.invalidData
@@ -107,10 +116,9 @@ class MockAPIService: IAPIService {
 		// addFriend():
 
 		if url.absoluteString == APIService.baseURL + "users/friend-request" {
-			return FriendRequest(
+			return FetchFriendRequestDTO(
 				id: UUID(),
-				senderUser: User.danielAgapov,
-				receiverUser: User.danielLee
+				senderUser: PotentialFriendUserDTO.danielAgapov
 			) as! U
 		}
 

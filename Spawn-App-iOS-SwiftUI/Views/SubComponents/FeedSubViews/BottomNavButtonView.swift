@@ -8,14 +8,14 @@
 import SwiftUI
 
 struct BottomNavButtonView: View {
-	var user: User
+	var user: UserDTO
 	var buttonType: BottomNavButtonType
 	var imageName: String
 	var imageSize: CGFloat = 25
 	let source: BackButtonSourcePageType
 
 	init(
-		user: User, buttonType: BottomNavButtonType,
+		user: UserDTO, buttonType: BottomNavButtonType,
 		source: BackButtonSourcePageType = .feed
 	) {
 		self.user = user

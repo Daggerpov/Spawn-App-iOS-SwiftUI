@@ -28,7 +28,7 @@ struct AddFriendToTagView: View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 20) {
 				SearchView(
-					searchPlaceholderText: "search or add friends",
+					searchPlaceholderText: "Search or add friends",
 					viewModel: searchViewModel)
 				Group {
 					if viewModel.friends.count > 0 {
@@ -68,11 +68,11 @@ struct AddFriendToTagView: View {
 }
 
 struct FriendRowForAddingFriendsToTag: View {
-	var friend: User
+	var friend: UserDTO
 	@State private var isClicked: Bool = false
 	@ObservedObject var viewModel: AddFriendToTagViewModel
 
-	init(friend: User, viewModel: AddFriendToTagViewModel) {
+	init(friend: UserDTO, viewModel: AddFriendToTagViewModel) {
 		self.friend = friend
 		self.viewModel = viewModel
 	}
