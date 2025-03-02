@@ -78,7 +78,7 @@ struct EventCreationView: View {
 						)
 					)
 
-					EventInputFieldLabel(text: "Description")
+					EventInputFieldLabel(text: "Note")
 					EventInputField(
 						value: $viewModel.event.note
 					)
@@ -160,8 +160,8 @@ struct EventInputField: View {
 					}
 				)
 			)
-			.foregroundColor(.primary)
 		}
+		.foregroundColor(universalAccentColor)
 		.padding()
 		.background(
 			Rectangle()

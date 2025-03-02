@@ -68,7 +68,7 @@ struct FriendsTabView: View {
 	var requestsSection: some View {
 		VStack(alignment: .leading, spacing: 10) {
 			if viewModel.incomingFriendRequests.count > 0 {
-				Text("requests")
+				Text("Friend Requests")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 				ScrollView(.horizontal, showsIndicators: false) {
