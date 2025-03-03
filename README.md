@@ -161,11 +161,9 @@ More complicated case, to supply initial state and `init()` parameters:
 
 </details>
 
-</br>
-
 # Current App Look
 
-Note that this is usually behind our actual 'current' app; stay tuned on [getspawn.com/]([url](https://getspawn.com/)) for our beta for the actual app
+Note that this is usually behind our actual 'current' app; stay tuned on [getspawn.com](https://getspawn.com/) for our beta for the actual app
 
 <img src="https://github.com/user-attachments/assets/1d9f156e-39d9-4d03-b9f4-5eff24b68b4e" width="200" height="400" />
 <img src="images/current-app-look-images/map-view.png" width="200" height="400" />
