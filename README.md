@@ -157,7 +157,7 @@ More complicated case, to supply initial state and `init()` parameters:
 
 ### MVVM Architecture
 
-![alt text](Spawn-App-iOS-SwiftUI/mvvm-architecture-explanation.png)
+![alt text](images/mvvm-architecture-explanation.png)
 
 </details>
 
@@ -189,4 +189,4 @@ Note that this is usually behind our actual 'current' app; stay tuned on [getspa
 
 # Entity Relationship Diagram
 
-![erd-nov-21](entity-relationship-diagram.png)
+![erd-nov-21](images/entity-relationship-diagram.png)
