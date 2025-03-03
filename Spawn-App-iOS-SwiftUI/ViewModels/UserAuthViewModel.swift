@@ -103,6 +103,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.shouldProceedToFeed = false
 		self.shouldNavigateToFeedView = false
 		self.shouldNavigateToUserInfoInputView = false
+		self.activeAlert = nil
 	}
 
 	func check() {
@@ -382,7 +383,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				await MainActor.run {
-					resetState()
 					activeAlert = .deleteSuccess
 				}
 			} catch {

@@ -158,9 +158,6 @@ struct ProfileView: View {
 						secondaryButton: .cancel()
 					)
 				case .deleteSuccess:
-					MainActor.run {
-						userAuth.activeAlert = nil
-					}
 					return Alert(
 						title: Text("Account Deleted"),
 						message: Text(
