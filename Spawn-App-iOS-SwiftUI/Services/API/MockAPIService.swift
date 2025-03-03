@@ -55,7 +55,7 @@ class MockAPIService: IAPIService {
 			// fetchRecommendedFriends():
 
 			if url.absoluteString == APIService.baseURL
-				+ "users/\(userIdForUrl)/recommended-friends"
+				+ "users/recommended-friends/\(userIdForUrl)"
 			{
 				let firstThreeUsers = Array(UserDTO.mockUsers.prefix(3))
 				return firstThreeUsers as! T
@@ -64,7 +64,7 @@ class MockAPIService: IAPIService {
 			// fetchFriends():
 
 			if url.absoluteString == APIService.baseURL
-				+ "users/\(userIdForUrl)/friends"
+				+ "users/friends/\(userIdForUrl)"
 			{
 				return FullFriendUserDTO.mockUsers as! T
 			}

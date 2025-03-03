@@ -59,7 +59,7 @@ class FriendsTabViewModel: ObservableObject {
 
 	internal func fetchRecommendedFriends() async {
 		if let url = URL(
-			string: APIService.baseURL + "users/\(userId)/recommended-friends")
+			string: APIService.baseURL + "users/recommended-friends/\(userId)")
 		{
 			do {
 				let fetchedRecommendedFriends: [UserDTO] =
@@ -85,7 +85,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchFriends() async {
-		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends")
+		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)")
 		{
 			do {
 				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService
