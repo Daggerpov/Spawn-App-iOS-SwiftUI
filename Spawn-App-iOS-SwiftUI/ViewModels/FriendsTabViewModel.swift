@@ -65,11 +65,6 @@ class FriendsTabViewModel: ObservableObject {
 					self.recommendedFriends = fetchedRecommendedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-				}
 				await MainActor.run {
 					self.recommendedFriends = []
 				}
@@ -89,11 +84,6 @@ class FriendsTabViewModel: ObservableObject {
 					self.friends = fetchedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-				}
 				await MainActor.run {
 					self.friends = []
 				}

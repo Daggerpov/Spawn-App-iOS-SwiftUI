@@ -78,9 +78,6 @@ class FeedViewModel: ObservableObject {
 					self.activeTag = fetchedTags.first
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode {
-					print("Invalid status code from response: \(statusCode)")
-				}
 				await MainActor.run {
 					self.tags = []
 				}
