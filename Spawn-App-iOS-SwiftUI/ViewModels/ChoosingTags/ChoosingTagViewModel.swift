@@ -23,7 +23,7 @@ class ChooseTagPopUpViewModel: ObservableObject {
 
 	func addTagsToFriend(friendUserId: UUID) async {
 		if let url = URL(
-			string: APIService.baseURL + "friendTags/addUserToTags/\(userId)")
+			string: APIService.baseURL + "friendTags/addUserToTags")
 		{
 			do {
 				_ = try await self.apiService.sendData(
