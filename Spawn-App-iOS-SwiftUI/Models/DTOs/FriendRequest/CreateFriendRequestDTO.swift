@@ -24,6 +24,8 @@ struct CreateFriendRequestDTO: Identifiable, Codable, Hashable {
 	}
 }
 
+
+
 extension CreateFriendRequestDTO {
 	static let mockFriendRequests: [CreateFriendRequestDTO] = [
 		CreateFriendRequestDTO(

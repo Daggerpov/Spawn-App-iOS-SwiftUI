@@ -9,7 +9,6 @@ import Foundation
 import UIKit
 
 class APIService: IAPIService {
-	// randomly partition server calls between prod & staging to test both
 	static var baseURL: String =
 		"https://spawn-app-back-end-production.up.railway.app/api/v1/"
 
