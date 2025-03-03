@@ -135,7 +135,7 @@ private func userInfoView(for friend: PotentialFriendUserDTO) -> some View {
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
 	ScrollView {
 		VStack(spacing: 10) {
-			if !viewModels.tags.isEmpty {
+			if !viewModel.tags.isEmpty {
 				ForEach(viewModel.tags, id: \.id) { friendTag in
 					Button(action: {
 						viewModel.toggleTagSelection(friendTag.id)

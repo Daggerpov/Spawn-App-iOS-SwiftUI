@@ -102,7 +102,7 @@ class APIService: IAPIService {
 		try handleAuthTokens(from: httpResponse, for: finalURL)
 
 		// TODO: once solved in back-end, remove this
-		guard httpResponse.statusCode == 200, 404 else {
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 404 else {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
@@ -114,12 +114,9 @@ class APIService: IAPIService {
 				print("Error Response: \(errorJson)")
 			}
 
-			// 404 is fine in the context of our back-end; don't clutter output
-			if httpResponse.statusCode != 404 {
-				print(errorMessage ?? "no error message to log")
-				throw APIError.invalidStatusCode(
-					statusCode: httpResponse.statusCode)
-			}
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(
+				statusCode: httpResponse.statusCode)
 		}
 
 		do {
@@ -164,7 +161,7 @@ class APIService: IAPIService {
 		_ object: T,
 		to url: URL,
 		parameters: [String: String]? = nil
-	) async throws -> U {
+	) async throws -> U? {
 		resetState()
 
 		// Create a URLComponents object from the URL
@@ -212,17 +209,22 @@ class APIService: IAPIService {
 				statusCode: httpResponse.statusCode)
 		}
 
-		do {
-			let decoder = JSONDecoder()
-			decoder.dateDecodingStrategy = .iso8601
-			let decodedData = try decoder.decode(U.self, from: data)
-			return decodedData
-		} catch {
-			errorMessage =
-				APIError.failedJSONParsing(url: finalURL).localizedDescription
-			print(errorMessage ?? "no error message to log")
-			throw APIError.failedJSONParsing(url: finalURL)
+		if !data.isEmpty {
+			do {
+				let decoder = JSONDecoder()
+				decoder.dateDecodingStrategy = .iso8601
+				let decodedData = try decoder.decode(U.self, from: data)
+				return decodedData
+			} catch {
+				errorMessage =
+					APIError.failedJSONParsing(url: finalURL)
+					.localizedDescription
+				print(errorMessage ?? "no error message to log")
+				throw APIError.failedJSONParsing(url: finalURL)
+			}
 		}
+
+		return nil
 	}
 
 	internal func updateData<T: Encodable, R: Decodable>(

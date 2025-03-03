@@ -110,7 +110,7 @@ class MockAPIService: IAPIService {
 
 	func sendData<T: Encodable, U: Decodable>(
 		_ object: T, to url: URL, parameters: [String: String]? = nil
-	) async throws -> U {
+	) async throws -> U? {
 		/// `FriendsTabViewModel.swift`:
 
 		// addFriend():
@@ -119,7 +119,7 @@ class MockAPIService: IAPIService {
 			return FetchFriendRequestDTO(
 				id: UUID(),
 				senderUser: PotentialFriendUserDTO.danielAgapov
-			) as! U
+			) as! U?
 		}
 
 		/// `EventCreationViewModel.swift`:
@@ -136,7 +136,7 @@ class MockAPIService: IAPIService {
 		// upsertTag(upsertAction: .create):
 
 		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FriendTag.close as! U
+			return FriendTag.close as! U?
 		}
 
 		// this means I need to include the url call in this mock `sendData` method:
