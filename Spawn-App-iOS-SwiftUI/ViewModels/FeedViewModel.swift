@@ -57,12 +57,6 @@ class FeedViewModel: ObservableObject {
 				self.events = fetchedEvents
 			}
 		} catch {
-			if let statusCode = apiService.errorStatusCode,
-				apiService.errorStatusCode != 404
-			{
-				print("Invalid status code from response: \(statusCode)")
-				print(apiService.errorMessage ?? "")
-			}
 			await MainActor.run {
 				self.events = []
 			}
@@ -84,10 +78,6 @@ class FeedViewModel: ObservableObject {
 					self.activeTag = fetchedTags.first
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode {
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
 				await MainActor.run {
 					self.tags = []
 				}

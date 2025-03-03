@@ -103,6 +103,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.shouldProceedToFeed = false
 		self.shouldNavigateToFeedView = false
 		self.shouldNavigateToUserInfoInputView = false
+		self.activeAlert = nil
 	}
 
 	func check() {
@@ -172,8 +173,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				withPresenting: presentingViewController
 			) { signInResult, error in
 				if let error = error {
-					self.errorMessage = "Error: \(error.localizedDescription)"
-					print(self.errorMessage as Any)
+					print(error.localizedDescription)
 					return
 				}
 
@@ -292,7 +292,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						"Failed to fetch user: \(error.localizedDescription)"
 					print(self.errorMessage as Any)
 				}
-				print(apiService.errorMessage ?? "")
 			}
 			await MainActor.run {
 				self.hasCheckedSpawnUserExistence = true
@@ -382,7 +381,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				await MainActor.run {
-					resetState()
 					activeAlert = .deleteSuccess
 				}
 			} catch {

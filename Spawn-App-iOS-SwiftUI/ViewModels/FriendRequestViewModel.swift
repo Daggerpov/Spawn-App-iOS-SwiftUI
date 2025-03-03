@@ -39,7 +39,6 @@ class FriendRequestViewModel: ObservableObject {
 			await MainActor.run {
 				creationMessage =
 					"There was an error \(action == .accept ? "accepting" : "declining") the friend request. Please try again"
-				print(apiService.errorMessage ?? "")
 			}
 		}
 	}

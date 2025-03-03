@@ -11,7 +11,7 @@ import UIKit
 class APIService: IAPIService {
 	// randomly partition server calls between prod & staging to test both
 	static var baseURL: String =
-	"https://spawn-app-back-end-production.up.railway.app/api/v1/" 
+		"https://spawn-app-back-end-production.up.railway.app/api/v1/"
 
 	var errorMessage: String?  // TODO: currently not being accessed; maybe use in alert to user
 	var errorStatusCode: Int?  // if 404 -> just populate empty array, that's fine
@@ -101,20 +101,20 @@ class APIService: IAPIService {
 		// Handle auth tokens if present
 		try handleAuthTokens(from: httpResponse, for: finalURL)
 
-		guard httpResponse.statusCode == 200 else {
+		// TODO: once solved in back-end, remove this
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 404 else {
 			errorStatusCode = httpResponse.statusCode
-			errorMessage = "invalid status code \(httpResponse.statusCode) for \(finalURL)"
+			errorMessage =
+				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
 
 			// Try to parse error message from response if possible
-			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+			if let errorJson = try? JSONSerialization.jsonObject(with: data)
+				as? [String: Any]
+			{
 				print("Error Response: \(errorJson)")
 			}
 
-			// 404 is fine in the context of our back-end; don't clutter output
-			if httpResponse.statusCode != 404 {
-				print(errorMessage ?? "no error message to log")
-			}
-
+			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
@@ -127,20 +127,27 @@ class APIService: IAPIService {
 				let decodedData = try decoder.decode(T.self, from: data)
 				return decodedData
 			} catch DecodingError.keyNotFound(let key, let context) {
-				print("Missing key: \(key.stringValue) - \(context.debugDescription)")
+				print(
+					"Missing key: \(key.stringValue) - \(context.debugDescription)"
+				)
 				throw APIError.failedJSONParsing(url: finalURL)
 			} catch DecodingError.typeMismatch(let type, let context) {
-				print("Type mismatch: expected \(type) - \(context.debugDescription)")
+				print(
+					"Type mismatch: expected \(type) - \(context.debugDescription)"
+				)
 				throw APIError.failedJSONParsing(url: finalURL)
 			} catch DecodingError.valueNotFound(let type, let context) {
-				print("Value not found: expected \(type) - \(context.debugDescription)")
+				print(
+					"Value not found: expected \(type) - \(context.debugDescription)"
+				)
 				throw APIError.failedJSONParsing(url: finalURL)
 			} catch DecodingError.dataCorrupted(let context) {
 				print("Data corrupted: \(context.debugDescription)")
 				throw APIError.failedJSONParsing(url: finalURL)
 			}
 		} catch {
-			errorMessage = APIError.failedJSONParsing(url: finalURL).localizedDescription
+			errorMessage =
+				APIError.failedJSONParsing(url: finalURL).localizedDescription
 			print("JSON Parsing Error: \(error)")
 			// Print received data for debugging
 			if let jsonString = String(data: data, encoding: .utf8) {
@@ -154,7 +161,7 @@ class APIService: IAPIService {
 		_ object: T,
 		to url: URL,
 		parameters: [String: String]? = nil
-	) async throws -> U {
+	) async throws -> U? {
 		resetState()
 
 		// Create a URLComponents object from the URL
@@ -202,17 +209,22 @@ class APIService: IAPIService {
 				statusCode: httpResponse.statusCode)
 		}
 
-		do {
-			let decoder = JSONDecoder()
-			decoder.dateDecodingStrategy = .iso8601
-			let decodedData = try decoder.decode(U.self, from: data)
-			return decodedData
-		} catch {
-			errorMessage =
-				APIError.failedJSONParsing(url: finalURL).localizedDescription
-			print(errorMessage ?? "no error message to log")
-			throw APIError.failedJSONParsing(url: finalURL)
+		if !data.isEmpty {
+			do {
+				let decoder = JSONDecoder()
+				decoder.dateDecodingStrategy = .iso8601
+				let decodedData = try decoder.decode(U.self, from: data)
+				return decodedData
+			} catch {
+				errorMessage =
+					APIError.failedJSONParsing(url: finalURL)
+					.localizedDescription
+				print(errorMessage ?? "no error message to log")
+				throw APIError.failedJSONParsing(url: finalURL)
+			}
 		}
+
+		return nil
 	}
 
 	internal func updateData<T: Encodable, R: Decodable>(
@@ -297,17 +309,24 @@ class APIService: IAPIService {
 		}
 	}
 
-	func createUser(userDTO: UserCreateDTO, profilePicture: UIImage?, parameters: [String: String]?) async throws -> UserDTO {
+	func createUser(
+		userDTO: UserCreateDTO, profilePicture: UIImage?,
+		parameters: [String: String]?
+	) async throws -> UserDTO {
 		resetState()
 
 		// Create URL with parameters
-		guard let baseURL = URL(string: APIService.baseURL + "auth/make-user") else {
+		guard let baseURL = URL(string: APIService.baseURL + "auth/make-user")
+		else {
 			throw APIError.URLError
 		}
 
-		var urlComponents = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)
+		var urlComponents = URLComponents(
+			url: baseURL, resolvingAgainstBaseURL: false)
 		if let parameters = parameters {
-			urlComponents?.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+			urlComponents?.queryItems = parameters.map {
+				URLQueryItem(name: $0.key, value: $0.value)
+			}
 		}
 
 		guard let finalURL = urlComponents?.url else {
@@ -320,13 +339,15 @@ class APIService: IAPIService {
 			"firstName": userDTO.firstName,
 			"lastName": userDTO.lastName,
 			"bio": userDTO.bio,
-			"email": userDTO.email
+			"email": userDTO.email,
 		]
 
 		// Add profile picture data if available
 		if let image = profilePicture,
-		   let imageData = image.jpegData(compressionQuality: 0.8) {
-			userCreationDTO["profilePictureData"] = imageData.base64EncodedString()
+			let imageData = image.jpegData(compressionQuality: 0.8)
+		{
+			userCreationDTO["profilePictureData"] =
+				imageData.base64EncodedString()
 		}
 
 		// Create the request
@@ -335,7 +356,8 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
 		// Encode the body
-		let jsonData = try JSONSerialization.data(withJSONObject: userCreationDTO)
+		let jsonData = try JSONSerialization.data(
+			withJSONObject: userCreationDTO)
 		request.httpBody = jsonData
 
 		// Send the request
@@ -345,8 +367,10 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: "HTTP request failed")
 		}
 
-		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
-			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201
+		else {
+			throw APIError.invalidStatusCode(
+				statusCode: httpResponse.statusCode)
 		}
 
 		// Decode the response
@@ -354,29 +378,41 @@ class APIService: IAPIService {
 		return try decoder.decode(UserDTO.self, from: data)
 	}
 
-	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL) throws {
+	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
+		throws
+	{
 		// Check if this is an auth endpoint
 		let authEndpoints = [
 			APIService.baseURL + "auth/sign-in",
-			APIService.baseURL + "auth/make-user"
+			APIService.baseURL + "auth/make-user",
 		]
 
-		guard authEndpoints.contains(where: { url.absoluteString.contains($0) }),
-			  let accessToken = response.allHeaderFields["Authorization"] as? String,
-			  let refreshToken = response.allHeaderFields["x-refresh-token"] as? String else {
+		guard
+			authEndpoints.contains(where: { url.absoluteString.contains($0) }),
+			let accessToken = response.allHeaderFields["Authorization"]
+				as? String,
+			let refreshToken = response.allHeaderFields["x-refresh-token"]
+				as? String
+		else {
 			return
 		}
 
 		// Remove "Bearer " prefix from access token
-		let cleanAccessToken = accessToken.replacingOccurrences(of: "Bearer ", with: "")
+		let cleanAccessToken = accessToken.replacingOccurrences(
+			of: "Bearer ", with: "")
 
 		// Store both tokens in keychain
 		if let accessTokenData = cleanAccessToken.data(using: .utf8),
-		   let refreshTokenData = refreshToken.data(using: .utf8) {
-			if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
+			let refreshTokenData = refreshToken.data(using: .utf8)
+		{
+			if !KeychainService.shared.save(
+				key: "accessToken", data: accessTokenData)
+			{
 				throw APIError.failedTokenSaving(tokenType: "accessToken")
 			}
-			if !KeychainService.shared.save(key: "refreshToken", data: refreshTokenData) {
+			if !KeychainService.shared.save(
+				key: "refreshToken", data: refreshTokenData)
+			{
 				throw APIError.failedTokenSaving(tokenType: "refreshToken")
 			}
 		}

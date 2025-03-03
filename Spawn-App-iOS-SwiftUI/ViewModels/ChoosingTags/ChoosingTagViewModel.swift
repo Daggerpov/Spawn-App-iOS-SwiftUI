@@ -23,11 +23,11 @@ class ChooseTagPopUpViewModel: ObservableObject {
 
 	func addTagsToFriend(friendUserId: UUID) async {
 		if let url = URL(
-			string: APIService.baseURL + "friendTags/addUserToTags/\(userId)")
+			string: APIService.baseURL + "friendTags/addUserToTags")
 		{
 			do {
 				_ = try await self.apiService.sendData(
-					friendUserId,
+					selectedTags,
 					to: url,
 					parameters: [
 						"friendUserId": friendUserId.uuidString
@@ -36,7 +36,6 @@ class ChooseTagPopUpViewModel: ObservableObject {
 				await MainActor.run {
 					chooseTagErrorMessage =
 						"There was an error select a tag for your friend. Please try again."
-					print(apiService.errorMessage ?? "")
 				}
 			}
 		}
@@ -61,12 +60,6 @@ class ChooseTagPopUpViewModel: ObservableObject {
 					self.tags = fetchedTags
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
 				await MainActor.run {
 					self.tags = []
 				}

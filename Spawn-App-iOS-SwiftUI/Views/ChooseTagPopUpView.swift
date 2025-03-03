@@ -135,29 +135,37 @@ private func userInfoView(for friend: PotentialFriendUserDTO) -> some View {
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
 	ScrollView {
 		VStack(spacing: 10) {
-			ForEach(viewModel.tags, id: \.id) { friendTag in
-				Button(action: {
-					viewModel.toggleTagSelection(friendTag.id)
-				}) {
-					HStack {
-						Text(friendTag.displayName)
-							.font(.system(size: 18, weight: .bold))
-							.frame(
-								maxWidth: .infinity,
-								alignment: viewModel.selectedTags.contains(
-									friendTag.id) ? .leading : .center)
+			if !viewModel.tags.isEmpty {
+				ForEach(viewModel.tags, id: \.id) { friendTag in
+					Button(action: {
+						viewModel.toggleTagSelection(friendTag.id)
+					}) {
+						HStack {
+							Text(friendTag.displayName)
+								.font(.system(size: 18, weight: .bold))
+								.frame(
+									maxWidth: .infinity,
+									alignment: viewModel.selectedTags.contains(
+										friendTag.id) ? .leading : .center)
 
-						if viewModel.selectedTags.contains(friendTag.id) {
-							Image(systemName: "checkmark")
-								.foregroundColor(.white)
-								.padding(.trailing, 10)
+							if viewModel.selectedTags.contains(friendTag.id) {
+								Image(systemName: "checkmark")
+									.foregroundColor(.white)
+									.padding(.trailing, 10)
+							}
 						}
+						.padding()
+						.background(Color(hex: friendTag.colorHexCode))
+						.foregroundColor(.white)
+						.cornerRadius(10)
 					}
-					.padding()
-					.background(Color(hex: friendTag.colorHexCode))
-					.foregroundColor(.white)
-					.cornerRadius(10)
 				}
+			} else {
+				// empty tags
+				Text("Create some friend tags to add to your new friends!")
+					.font(.system(size: 18, weight: .bold))
+					.frame(maxWidth: .infinity)
+					.foregroundColor(universalAccentColor)
 			}
 		}
 		.padding(.horizontal, 16)

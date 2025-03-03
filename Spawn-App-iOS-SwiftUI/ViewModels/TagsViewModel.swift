@@ -45,13 +45,6 @@ class TagsViewModel: ObservableObject {
 					self.tags = fetchedTags
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
-
 				await MainActor.run {
 					self.tags = []
 				}
@@ -94,7 +87,6 @@ class TagsViewModel: ObservableObject {
 			await MainActor.run {
 				creationMessage =
 					"There was an error creating your tag. Please try again"
-				print(apiService.errorMessage ?? "")
 			}
 		}
 
@@ -114,7 +106,6 @@ class TagsViewModel: ObservableObject {
 				await MainActor.run {
 					deletionMessage =
 						"There was an error deleting the tag. Please try again."
-					print(apiService.errorMessage ?? "")
 				}
 			}
 		}
@@ -138,7 +129,6 @@ class TagsViewModel: ObservableObject {
 				await MainActor.run {
 					friendRemovalMessage =
 						"There was an error removing your friend from the friend tag. Please try again."
-					print(apiService.errorMessage ?? "")
 				}
 			}
 		}

@@ -24,6 +24,7 @@ struct ProfileView: View {
 		NavigationStack {
 			VStack {
 				VStack(alignment: .center, spacing: 20) {
+					Spacer()
 					// Profile Picture
 
 					if let profilePictureString = user.profilePicture {
@@ -137,7 +138,6 @@ struct ProfileView: View {
 					}
 
 					Spacer()
-						.padding(.horizontal)
 				}
 				.padding()
 			}

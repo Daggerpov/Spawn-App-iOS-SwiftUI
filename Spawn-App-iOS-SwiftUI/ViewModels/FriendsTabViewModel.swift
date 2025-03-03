@@ -44,12 +44,6 @@ class FriendsTabViewModel: ObservableObject {
 					self.incomingFriendRequests = fetchedIncomingFriendRequests
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
 				await MainActor.run {
 					self.incomingFriendRequests = []
 				}
@@ -59,7 +53,7 @@ class FriendsTabViewModel: ObservableObject {
 
 	internal func fetchRecommendedFriends() async {
 		if let url = URL(
-			string: APIService.baseURL + "users/\(userId)/recommended-friends")
+			string: APIService.baseURL + "users/recommended-friends/\(userId)")
 		{
 			do {
 				let fetchedRecommendedFriends: [UserDTO] =
@@ -71,12 +65,6 @@ class FriendsTabViewModel: ObservableObject {
 					self.recommendedFriends = fetchedRecommendedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
 				await MainActor.run {
 					self.recommendedFriends = []
 				}
@@ -85,7 +73,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchFriends() async {
-		if let url = URL(string: APIService.baseURL + "users/\(userId)/friends")
+		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)")
 		{
 			do {
 				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService
@@ -96,12 +84,6 @@ class FriendsTabViewModel: ObservableObject {
 					self.friends = fetchedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
 				await MainActor.run {
 					self.friends = []
 				}
@@ -124,7 +106,6 @@ class FriendsTabViewModel: ObservableObject {
 				await MainActor.run {
 					friendRequestCreationMessage =
 						"There was an error creating your friend request. Please try again"
-					print(apiService.errorMessage ?? "")
 				}
 			}
 		}

@@ -35,12 +35,6 @@ class AddFriendToTagViewModel: ObservableObject {
 					self.friends = fetchedFriends
 				}
 			} catch {
-				if let statusCode = apiService.errorStatusCode,
-					apiService.errorStatusCode != 404
-				{
-					print("Invalid status code from response: \(statusCode)")
-					print(apiService.errorMessage ?? "")
-				}
 				await MainActor.run {
 					self.friends = []
 				}

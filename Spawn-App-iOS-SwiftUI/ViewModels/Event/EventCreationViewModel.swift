@@ -67,7 +67,6 @@ class EventCreationViewModel: ObservableObject {
 				await MainActor.run {
 					creationMessage =
 						"There was an error creating your event. Please try again"
-					print(apiService.errorMessage ?? "")
 				}
 			}
 		}
