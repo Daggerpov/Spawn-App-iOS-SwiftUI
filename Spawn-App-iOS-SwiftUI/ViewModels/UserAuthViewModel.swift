@@ -173,8 +173,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				withPresenting: presentingViewController
 			) { signInResult, error in
 				if let error = error {
-					self.errorMessage = "Error: \(error.localizedDescription)"
-					print(self.errorMessage as Any)
+					print(error.localizedDescription)
 					return
 				}
 
@@ -293,7 +292,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						"Failed to fetch user: \(error.localizedDescription)"
 					print(self.errorMessage as Any)
 				}
-				print(apiService.errorMessage ?? "")
 			}
 			await MainActor.run {
 				self.hasCheckedSpawnUserExistence = true
