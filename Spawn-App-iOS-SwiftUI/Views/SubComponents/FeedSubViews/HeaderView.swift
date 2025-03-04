@@ -23,7 +23,6 @@ struct HeaderView: View {
 					Image(systemName: "star.fill")
 					Text(user.username)
 						.bold()
-						.font(.largeTitle)
 					Spacer()
 				}
 				.font(.title)

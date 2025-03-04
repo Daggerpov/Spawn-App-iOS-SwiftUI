@@ -28,7 +28,7 @@ class FormatterService {
 		return ""
 	}
 
-	func formatEventTime(event: Event) -> String {
+	func formatEventTime(event: FullFeedEventDTO) -> String {
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "h:mm a"
 		dateFormatter.timeZone = .current

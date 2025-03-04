@@ -9,13 +9,13 @@ import SwiftUI
 
 struct EventCardView: View {
 	@ObservedObject var viewModel: EventCardViewModel
-	var event: Event
+	var event: FullFeedEventDTO
 	var color: Color
-	var callback: (Event, Color) -> Void
+	var callback: (FullFeedEventDTO, Color) -> Void
 
 	init(
-		user: UserDTO, event: Event, color: Color,
-		callback: @escaping (Event, Color) -> Void
+		user: UserDTO, event: FullFeedEventDTO, color: Color,
+		callback: @escaping (FullFeedEventDTO, Color) -> Void
 	) {
 		self.event = event
 		self.color = color
@@ -74,7 +74,7 @@ struct EventCardView: View {
 #Preview {
 	EventCardView(
 		user: UserDTO.danielAgapov,
-		event: Event.mockDinnerEvent,
+		event: FullFeedEventDTO.mockDinnerEvent,
 		color: universalAccentColor,
 		callback: {_, _ in}
 	)

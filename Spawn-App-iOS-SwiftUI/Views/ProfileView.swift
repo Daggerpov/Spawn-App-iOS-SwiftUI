@@ -49,7 +49,7 @@ struct ProfileView: View {
 
 					Circle()
 						.fill(profilePicPlusButtonColor)
-						.frame(width: 30, height: 30)
+						.frame(width: 150, height: 150)
 						.overlay(
 							Image(systemName: "plus")
 								.foregroundColor(universalBackgroundColor)

@@ -8,7 +8,7 @@
 import Foundation
 
 class FeedViewModel: ObservableObject {
-	@Published var events: [Event] = []
+	@Published var events: [FullFeedEventDTO] = []
 	@Published var tags: [FriendTag] = []
 	@Published var activeTag: FriendTag?
 
@@ -48,7 +48,7 @@ class FeedViewModel: ObservableObject {
 		}
 
 		do {
-			let fetchedEvents: [Event] = try await self.apiService.fetchData(
+			let fetchedEvents: [FullFeedEventDTO] = try await self.apiService.fetchData(
 				from: url, parameters: nil
 			)
 

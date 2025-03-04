@@ -9,19 +9,19 @@ import Foundation
 import SwiftUI
 
 struct ParticipantsImagesView: View {
-	var event: Event
+	var event: FullFeedEventDTO
 
 	func participantsCleanup(participants: [UserDTO]) -> [UserDTO] {
 		var participantsFiltered = participants
 
-		if let userCreator: UserDTO = event.creatorUser {
-			// Remove the creator if already in the list
-			participantsFiltered.removeAll { $0.id == userCreator.id }
+		let userCreator: UserDTO = event.creatorUser
+		// Remove the creator if already in the list
+		participantsFiltered.removeAll { $0.id == userCreator.id }
 
-			// Prepend the creator to the participants list
-			participantsFiltered.insert(
-				event.creatorUser ?? UserDTO.danielAgapov, at: 0)
-		}
+		// Prepend the creator to the participants list
+		participantsFiltered.insert(
+			event.creatorUser, at: 0)
+
 
 		return participantsFiltered
 	}
@@ -60,5 +60,5 @@ struct ParticipantsImagesView: View {
 }
 
 #Preview {
-	ParticipantsImagesView(event: Event.mockDinnerEvent)
+	ParticipantsImagesView(event: FullFeedEventDTO.mockDinnerEvent)
 }

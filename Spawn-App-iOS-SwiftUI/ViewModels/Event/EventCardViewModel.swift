@@ -11,9 +11,9 @@ class EventCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	var apiService: IAPIService
 	var user: UserDTO
-	var event: Event
+	var event: FullFeedEventDTO
 
-	init(apiService: IAPIService, user: UserDTO, event: Event) {
+	init(apiService: IAPIService, user: UserDTO, event: FullFeedEventDTO) {
 		self.apiService = apiService
 		self.user = user
 		self.event = event
@@ -39,7 +39,7 @@ class EventCardViewModel: ObservableObject {
 
 		do {
 			// Send a PUT request and receive the updated event in response
-			let updatedEvent: Event = try await apiService.updateData(
+			let updatedEvent: FullFeedEventDTO = try await apiService.updateData(
 				EmptyBody(), to: url, parameters: nil)
 
 			// Update local state after a successful API call

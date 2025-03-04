@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct EventCardTopRowView: View {
-	var event: Event
+	var event: FullFeedEventDTO
 
 	var body: some View {
 		VStack(spacing: 10) {
@@ -40,5 +40,5 @@ struct EventCardTitleView: View {
 }
 
 #Preview {
-	EventCardTopRowView(event: Event.mockDinnerEvent)
+	EventCardTopRowView(event: FullFeedEventDTO.mockDinnerEvent)
 }
