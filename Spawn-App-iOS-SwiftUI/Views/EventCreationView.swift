@@ -24,43 +24,41 @@ struct EventCreationView: View {
 	var body: some View {
 		NavigationStack {
 			ScrollView {
-				VStack(alignment: .leading, spacing: 12) {
+				VStack(alignment: .leading, spacing: 16) {
 					EventInputFieldLabel(text: "Event Name")
 					EventInputField(value: $viewModel.event.title)
+						.padding(.bottom, 8)
 
-					VStack(alignment: .leading) {
+					VStack(alignment: .leading, spacing: 10) {
 						EventInputFieldLabel(text: "Invite Friends")
-						Spacer()
-
 						invitationsRowView
+							.padding(.bottom, 8)
 					}
 
-					HStack {
-						VStack(alignment: .leading) {
+					HStack(spacing: 20) {
+						VStack(alignment: .leading, spacing: 10) {
 							EventInputFieldLabel(text: "Start Time")
 							startTimeView
 						}
-						Spacer()
-						VStack(alignment: .leading) {
+						.frame(minWidth: 0, maxWidth: .infinity)
+
+						VStack(alignment: .leading, spacing: 10) {
 							EventInputFieldLabel(text: "End Time")
 							endTimeView
 						}
+						.frame(minWidth: 0, maxWidth: .infinity)
 					}
+					.padding(.bottom, 12)
 
-					HStack {
-						Spacer()
-						VStack(alignment: .leading) {
-							EventInputFieldLabel(text: "Date")
-							datePickerView
-						}
-
-						Spacer()
+					VStack(alignment: .leading, spacing: 10) {
+						EventInputFieldLabel(text: "Date")
+						datePickerView
+							.padding(.bottom, 8)
 					}
 
 					EventInputFieldLabel(text: "Location")
 					EventInputField(
 						iconName: "mappin.and.ellipse",
-						// TODO DANIEL: change to also include input for lat & long by some map API selection
 						value: Binding(
 							get: { viewModel.event.location?.name ?? "" },
 							set: { newValue in
@@ -70,18 +68,17 @@ struct EventCreationView: View {
 											id: UUID(), name: unwrappedNewValue,
 											latitude: 0, longitude: 0)
 									} else {
-										viewModel.event.location?.name =
-											unwrappedNewValue
+										viewModel.event.location?.name = unwrappedNewValue
 									}
 								}
 							}
 						)
 					)
+					.padding(.bottom, 8)
 
 					EventInputFieldLabel(text: "Note")
-					EventInputField(
-						value: $viewModel.event.note
-					)
+					EventInputField(value: $viewModel.event.note)
+						.padding(.bottom, 16)
 
 					Button(action: {
 						Task {
@@ -89,39 +86,39 @@ struct EventCreationView: View {
 						}
 						closeCallback()
 					}) {
-                        HStack {
-                            Image(systemName: "star.fill")
-                                .foregroundColor(.white)
-                            Text("Spawn")
-                                .font(
-                                    Font.custom("Poppins", size: 16).weight(.bold)
-                                )
-                        }
-                        .frame(maxWidth: .infinity)
-                        .kerning(1)
-                        .multilineTextAlignment(.center)
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 15).fill(
-                                universalSecondaryColor)
-                        )
-                        .foregroundColor(.white)
+						HStack {
+							Image(systemName: "star.fill")
+								.foregroundColor(.white)
+							Text("Spawn")
+								.font(
+									Font.custom("Poppins", size: 16).weight(.bold)
+								)
+						}
+						.frame(maxWidth: .infinity)
+						.kerning(1)
+						.multilineTextAlignment(.center)
+						.padding()
+						.background(
+							RoundedRectangle(cornerRadius: 15).fill(
+								universalSecondaryColor)
+						)
+						.foregroundColor(.white)
 					}
-					.padding(.top, 20)
-
+					.padding(.top, 24) // Increased padding
 				}
-				.padding(32)
+				.padding(.horizontal, 16) // Reduced horizontal padding from 32
+				.padding(.vertical, 24) // Added vertical padding
 				.background(universalBackgroundColor)
 				.cornerRadius(universalRectangleCornerRadius)
 				.shadow(radius: 10)
-				.padding(.horizontal, 20)
+				.padding(.horizontal, 8) // Reduced from 20
 				.frame(maxWidth: .infinity, maxHeight: .infinity)
 			}
-			.scrollDisabled(true)
-			.background(universalBackgroundColor)  // Set background color for the ScrollView
+			.scrollIndicators(.hidden) // Hide scroll indicators
+			.background(universalBackgroundColor)
 		}
-		.background(universalBackgroundColor)  // Set background color for the NavigationStack
-		.cornerRadius(universalRectangleCornerRadius)  // Apply corner radius to the NavigationStack
+		.background(universalBackgroundColor)
+		.cornerRadius(universalRectangleCornerRadius)
 		.environmentObject(viewModel)
 	}
 }
