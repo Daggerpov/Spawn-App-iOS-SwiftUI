@@ -179,3 +179,11 @@ extension EventDescriptionView {
 		.cornerRadius(15)
 	}
 }
+
+#Preview {
+	EventDescriptionView(
+		event: Event.mockDinnerEvent,
+		users: UserDTO.mockUsers,
+		color: universalAccentColor
+	)
+}

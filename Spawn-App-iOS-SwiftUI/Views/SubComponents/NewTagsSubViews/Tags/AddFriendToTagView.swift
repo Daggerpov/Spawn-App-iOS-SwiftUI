@@ -151,3 +151,7 @@ extension AddFriendToTagView {
 		}
 	}
 }
+
+#Preview {
+	AddFriendToTagView(userId: UUID(), friendTagId: UUID(), closeCallback: {})
+}

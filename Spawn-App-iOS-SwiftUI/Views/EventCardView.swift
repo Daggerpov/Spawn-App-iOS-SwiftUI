@@ -70,3 +70,12 @@ struct EventCardView: View {
 		}
 	}
 }
+
+#Preview {
+	EventCardView(
+		user: UserDTO.danielAgapov,
+		event: Event.mockDinnerEvent,
+		color: universalAccentColor,
+		callback: {_, _ in}
+	)
+}

@@ -77,3 +77,7 @@ extension TagsTabView {
 		}
 	}
 }
+
+#Preview {
+	TagsTabView(userId: UUID(), addFriendToTagButtonPressedCallback: {_ in })
+}

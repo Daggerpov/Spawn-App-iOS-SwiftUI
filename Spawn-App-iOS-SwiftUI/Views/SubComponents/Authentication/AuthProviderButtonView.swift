@@ -40,3 +40,7 @@ struct AuthProviderButtonView: View {
 	}
 
 }
+
+#Preview {
+	AuthProviderButtonView(authProviderType: AuthProviderType.google)
+}

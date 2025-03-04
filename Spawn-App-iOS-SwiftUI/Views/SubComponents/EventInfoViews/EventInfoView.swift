@@ -41,3 +41,7 @@ struct EventInfoView: View {
 
 	}
 }
+
+#Preview {
+	EventInfoView(event: Event.mockDinnerEvent, eventInfoType: EventInfoType.location)
+}

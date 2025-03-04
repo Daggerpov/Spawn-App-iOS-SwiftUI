@@ -35,3 +35,10 @@ struct TagButtonView: View {
 		.buttonStyle(.plain)
 	}
 }
+
+@available(iOS 17, *)
+#Preview {
+	@Previewable @Namespace var animation: Namespace.ID
+	@Previewable @State var tag: FriendTag? = FriendTag.close
+	TagButtonView(tag: FriendTag.close, activeTag: $tag, animation: animation)
+}

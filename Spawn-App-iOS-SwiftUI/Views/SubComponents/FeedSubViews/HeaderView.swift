@@ -58,3 +58,8 @@ struct HeaderView: View {
 		.padding(.vertical, 2)
 	}
 }
+
+#Preview {
+	HeaderView(user: UserDTO.danielAgapov)
+}
+

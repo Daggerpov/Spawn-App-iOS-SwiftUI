@@ -55,3 +55,9 @@ struct ColorOptions: View {
 		.padding(.bottom, 3)
 	}
 }
+
+@available(iOS 17, *)
+#Preview {
+	@Previewable @State var hexCodeState: String = universalAccentColorHexCode
+	ColorOptions(currentSelectedColorHexCode: $hexCodeState, currentSelectedColorIndex: 2)
+}

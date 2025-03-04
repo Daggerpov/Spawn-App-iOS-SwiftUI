@@ -34,3 +34,7 @@ struct BackButton: View {
 			)
 	}
 }
+
+#Preview {
+	BackButton(user: UserDTO.danielAgapov, source: BackButtonSourcePageType.feed)
+}

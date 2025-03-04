@@ -108,3 +108,11 @@ extension BottomNavButtonView {
 			.foregroundColor(universalAccentColor)
 	}
 }
+
+#Preview {
+	BottomNavButtonView(
+		user: UserDTO.danielAgapov,
+		buttonType: BottomNavButtonType.map,
+		source: BackButtonSourcePageType.feed
+	)
+}

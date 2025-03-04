@@ -32,5 +32,10 @@ struct TagsScrollView: View {
 			.padding(.horizontal, 16)
 		}
 	}
+}
 
+@available(iOS 17, *)
+#Preview {
+	@Previewable @State var tag: FriendTag? = FriendTag.close
+	TagsScrollView(tags: FriendTag.mockTags, activeTag: $tag)
 }

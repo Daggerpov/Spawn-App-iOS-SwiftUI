@@ -178,3 +178,7 @@ struct TagFriendsView: View {
 		.padding(.trailing, CGFloat((friends?.count ?? 0) * 15))
 	}
 }
+
+#Preview {
+	TagRow(friendTag: FriendTag.close, addFriendToTagButtonPressedCallback: {_ in})
+}

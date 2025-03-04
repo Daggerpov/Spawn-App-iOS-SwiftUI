@@ -59,3 +59,14 @@ struct CreatingTagRowView: View {
 		}
 	}
 }
+
+@available(iOS 17.0, *)
+#Preview {
+	@Previewable @StateObject var viewModel: TagsViewModel = TagsViewModel(
+		apiService: MockAPIService(userId: UUID()),
+		userId: UUID()
+	)
+	@Previewable @State var creationStatus: CreationStatus = .creating
+	CreatingTagRowView(creationStatus: $creationStatus)
+	.environmentObject(viewModel)
+}

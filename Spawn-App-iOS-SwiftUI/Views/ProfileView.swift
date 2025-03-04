@@ -219,3 +219,7 @@ struct BioField: View {
 		.foregroundColor(universalAccentColor)
 	}
 }
+
+#Preview {
+	ProfileView(user: UserDTO.danielAgapov)
+}
