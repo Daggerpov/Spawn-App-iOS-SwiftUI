@@ -244,6 +244,9 @@ if let pfp = friend.profilePicture {
 	func closeChoosingTagPopUp() {
 		chooseTagsOffset = 1000
 		showingChooseTagsPopup = false
+		Task {
+			await viewModel.fetchAllData()
+		}
 	}
 
 	struct RecommendedFriendView: View {
