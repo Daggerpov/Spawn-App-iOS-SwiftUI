@@ -58,3 +58,7 @@ struct ParticipantsImagesView: View {
 		}
 	}
 }
+
+#Preview {
+	ParticipantsImagesView(event: Event.mockDinnerEvent)
+}

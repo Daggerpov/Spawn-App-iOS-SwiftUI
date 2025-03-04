@@ -163,3 +163,7 @@ struct InviteTagFriendsView: View {
 		}
 	}
 }
+
+#Preview {
+	InviteTagsView(user: UserDTO.danielAgapov)
+}

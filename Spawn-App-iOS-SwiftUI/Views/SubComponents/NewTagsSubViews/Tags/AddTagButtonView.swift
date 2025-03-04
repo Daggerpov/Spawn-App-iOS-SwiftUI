@@ -62,3 +62,12 @@ struct AddTagButtonView: View {
 		}
 	}
 }
+
+@available(iOS 17.0, *)
+#Preview {
+	@Previewable @State var creationStatus: CreationStatus = .creating
+	AddTagButtonView(
+		creationStatus: $creationStatus,
+		color: Color(universalAccentColor)
+	)
+}

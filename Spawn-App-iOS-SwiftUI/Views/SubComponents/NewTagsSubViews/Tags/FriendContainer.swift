@@ -45,3 +45,10 @@ struct FriendContainer: View {
 		.cornerRadius(10)
 	}
 }
+
+#Preview {
+	FriendContainer(
+		friendTag: FriendTag.close,
+		addFriendsToTagButtonPressedCallback: {_ in }
+	)
+}

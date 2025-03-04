@@ -424,3 +424,4 @@ extension EventCreationView {
 #Preview {
 	EventCreationView(creatingUser: UserDTO.danielAgapov, closeCallback: {})
 }
+

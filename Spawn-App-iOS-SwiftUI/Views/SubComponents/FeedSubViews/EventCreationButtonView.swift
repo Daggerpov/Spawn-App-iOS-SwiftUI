@@ -36,3 +36,9 @@ struct EventCreationButtonView: View {
 			)
 	}
 }
+
+@available(iOS 17, *)
+#Preview {
+	@Previewable @State var state: Bool = false
+	EventCreationButtonView(showingEventCreationPopup: $state)
+}

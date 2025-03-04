@@ -32,3 +32,15 @@ struct ExpandedTagView: View {
 		.padding(.bottom)
 	}
 }
+
+@available(iOS 17, *)
+#Preview {
+	@Previewable @State var currentHex: String = universalAccentColorHexCode
+	@Previewable @State var isEditing: Bool = true
+	ExpandedTagView(
+		currentSelectedColorHexCode: $currentHex,
+		friendTag: FriendTag.close,
+		isEditingTag: $isEditing,
+		addFriendToTagButtonPressedCallback: {_ in}
+	)
+}

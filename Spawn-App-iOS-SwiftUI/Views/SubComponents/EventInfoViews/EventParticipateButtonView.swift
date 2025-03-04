@@ -19,3 +19,7 @@ struct EventParticipateButtonView: View {
 				})
 	}
 }
+
+#Preview {
+	EventParticipateButtonView(toggleParticipationCallback: {}, isParticipating: true)
+}

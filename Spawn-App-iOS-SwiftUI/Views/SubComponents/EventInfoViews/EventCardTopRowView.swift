@@ -38,3 +38,7 @@ struct EventCardTitleView: View {
 			.multilineTextAlignment(.leading)
 	}
 }
+
+#Preview {
+	EventCardTopRowView(event: Event.mockDinnerEvent)
+}

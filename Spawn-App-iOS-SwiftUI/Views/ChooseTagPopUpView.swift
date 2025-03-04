@@ -193,3 +193,7 @@ private func doneButton(
 	}
 	.padding(.top, 5)
 }
+
+#Preview {
+	ChoosingTagPopupView(friend: PotentialFriendUserDTO.danielAgapov, userId: UUID(), closeCallback: {})
+}

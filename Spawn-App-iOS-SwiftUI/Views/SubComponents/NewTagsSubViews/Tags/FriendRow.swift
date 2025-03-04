@@ -60,3 +60,12 @@ struct FriendRow: View {
 		)
 	}
 }
+@available(iOS 17.0, *)
+#Preview {
+	@Previewable @StateObject var viewModel: TagsViewModel = TagsViewModel(
+		apiService: MockAPIService(userId: UUID()),
+		userId: UUID()
+		)
+
+	FriendRow(friend: UserDTO.danielAgapov, friendTag: FriendTag.close).environmentObject(viewModel)
+}

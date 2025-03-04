@@ -43,3 +43,9 @@ struct SearchView: View {
 		.padding(.horizontal)
 	}
 }
+
+@available(iOS 17.0, *)
+#Preview {
+	@Previewable @StateObject var viewModel: SearchViewModel = SearchViewModel()
+	SearchView(searchPlaceholderText: "asdf", viewModel: viewModel)
+}
