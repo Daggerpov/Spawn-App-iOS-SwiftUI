@@ -13,7 +13,10 @@ struct ChoosingTagPopupView: View {
 	var userId: UUID
 	var closeCallback: () -> Void
 
-	init(friend: PotentialFriendUserDTO, userId: UUID, closeCallback: @escaping () -> Void) {
+	init(
+		friend: PotentialFriendUserDTO, userId: UUID,
+		closeCallback: @escaping () -> Void
+	) {
 		self.friend = friend
 		self.userId = userId
 		self.closeCallback = closeCallback
@@ -28,10 +31,6 @@ struct ChoosingTagPopupView: View {
 			profilePictureView(for: friend)
 
 			userInfoView(for: friend)
-
-			Text("Select your friend tags below")
-				.foregroundColor(universalAccentColor)
-				.frame(maxWidth: .infinity)
 
 			VStack(alignment: .leading, spacing: 20) {
 				tagListView(for: viewModel)
@@ -56,7 +55,8 @@ struct ChoosingTagPopupView: View {
 	}
 }
 
-private func profilePictureView(for friend: PotentialFriendUserDTO) -> some View {
+private func profilePictureView(for friend: PotentialFriendUserDTO) -> some View
+{
 	ZStack {
 		Circle()
 			.fill(
@@ -135,37 +135,36 @@ private func userInfoView(for friend: PotentialFriendUserDTO) -> some View {
 private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
 	ScrollView {
 		VStack(spacing: 10) {
-			if !viewModel.tags.isEmpty {
-				ForEach(viewModel.tags, id: \.id) { friendTag in
-					Button(action: {
-						viewModel.toggleTagSelection(friendTag.id)
-					}) {
-						HStack {
-							Text(friendTag.displayName)
-								.font(.system(size: 18, weight: .bold))
-								.frame(
-									maxWidth: .infinity,
-									alignment: viewModel.selectedTags.contains(
-										friendTag.id) ? .leading : .center)
+			Text(
+				viewModel.tags.isEmpty
+					? "Create some friend tags to add to your new friends!"
+					: "Which tags would you like to add to this new friend?"
+			)
+			.foregroundColor(universalAccentColor)
+			.frame(maxWidth: .infinity)
+			ForEach(viewModel.tags, id: \.id) { friendTag in
+				Button(action: {
+					viewModel.toggleTagSelection(friendTag.id)
+				}) {
+					HStack {
+						Text(friendTag.displayName)
+							.font(.system(size: 18, weight: .bold))
+							.frame(
+								maxWidth: .infinity,
+								alignment: viewModel.selectedTags.contains(
+									friendTag.id) ? .leading : .center)
 
-							if viewModel.selectedTags.contains(friendTag.id) {
-								Image(systemName: "checkmark")
-									.foregroundColor(.white)
-									.padding(.trailing, 10)
-							}
+						if viewModel.selectedTags.contains(friendTag.id) {
+							Image(systemName: "checkmark")
+								.foregroundColor(.white)
+								.padding(.trailing, 10)
 						}
-						.padding()
-						.background(Color(hex: friendTag.colorHexCode))
-						.foregroundColor(.white)
-						.cornerRadius(10)
 					}
+					.padding()
+					.background(Color(hex: friendTag.colorHexCode))
+					.foregroundColor(.white)
+					.cornerRadius(10)
 				}
-			} else {
-				// empty tags
-				Text("Create some friend tags to add to your new friends!")
-					.font(.system(size: 18, weight: .bold))
-					.frame(maxWidth: .infinity)
-					.foregroundColor(universalAccentColor)
 			}
 		}
 		.padding(.horizontal, 16)
