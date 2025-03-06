@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct TagsScrollView: View {
-	var tags: [FriendTag]
-	@Binding private var activeTag: FriendTag?
+	var tags: [FullFriendTagDTO]
+	@Binding private var activeTag: FullFriendTagDTO?
 	@Namespace private var animation: Namespace.ID
 
-	init(tags: [FriendTag], activeTag: Binding<FriendTag?>) {
+	init(tags: [FullFriendTagDTO], activeTag: Binding<FullFriendTagDTO?>) {
 		self.tags = tags
 		self._activeTag = activeTag
 	}
@@ -36,6 +36,6 @@ struct TagsScrollView: View {
 
 @available(iOS 17, *)
 #Preview {
-	@Previewable @State var tag: FriendTag? = FriendTag.close
-	TagsScrollView(tags: FriendTag.mockTags, activeTag: $tag)
+	@Previewable @State var tag: FullFriendTagDTO? = FullFriendTagDTO.close
+	TagsScrollView(tags: FullFriendTagDTO.mockTags, activeTag: $tag)
 }

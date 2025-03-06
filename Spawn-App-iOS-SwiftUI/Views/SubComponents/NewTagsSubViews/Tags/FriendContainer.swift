@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FriendContainer: View {
-	var friendTag: FriendTag
+	var friendTag: FullFriendTagDTO
 	@State var creationStatus: CreationStatus = .notCreating
 	var addFriendsToTagButtonPressedCallback: ((UUID) -> Void)?
 
@@ -48,7 +48,7 @@ struct FriendContainer: View {
 
 #Preview {
 	FriendContainer(
-		friendTag: FriendTag.close,
+		friendTag: FullFriendTagDTO.close,
 		addFriendsToTagButtonPressedCallback: {_ in }
 	)
 }

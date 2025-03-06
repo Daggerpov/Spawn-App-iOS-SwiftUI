@@ -71,10 +71,10 @@ struct InviteTagRow: View {
 	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
 		EventCreationViewModel.shared
 
-	var friendTag: FriendTag
+	var friendTag: FullFriendTagDTO
 	@State private var isClicked: Bool = false
 
-	init(friendTag: FriendTag) {
+	init(friendTag: FullFriendTagDTO) {
 		self.friendTag = friendTag
 		if eventCreationViewModel.selectedTags.contains(friendTag) {
 			self._isClicked = State(initialValue: true)

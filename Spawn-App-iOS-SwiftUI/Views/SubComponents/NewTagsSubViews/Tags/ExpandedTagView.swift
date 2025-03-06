@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ExpandedTagView: View {
 	@Binding var currentSelectedColorHexCode: String
-	var friendTag: FriendTag
+	var friendTag: FullFriendTagDTO
 	@Binding var isEditingTag: Bool
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
@@ -39,7 +39,7 @@ struct ExpandedTagView: View {
 	@Previewable @State var isEditing: Bool = true
 	ExpandedTagView(
 		currentSelectedColorHexCode: $currentHex,
-		friendTag: FriendTag.close,
+		friendTag: FullFriendTagDTO.close,
 		isEditingTag: $isEditing,
 		addFriendToTagButtonPressedCallback: {_ in}
 	)

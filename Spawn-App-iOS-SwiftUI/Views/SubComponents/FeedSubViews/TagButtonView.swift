@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct TagButtonView: View {
-	let tag: FriendTag
-	@Binding var activeTag: FriendTag?  // Make activeTag optional
+	let tag: FullFriendTagDTO
+	@Binding var activeTag: FullFriendTagDTO?  // Make activeTag optional
 	var animation: Namespace.ID
 
 	var body: some View {
@@ -39,6 +39,6 @@ struct TagButtonView: View {
 @available(iOS 17, *)
 #Preview {
 	@Previewable @Namespace var animation: Namespace.ID
-	@Previewable @State var tag: FriendTag? = FriendTag.close
-	TagButtonView(tag: FriendTag.close, activeTag: $tag, animation: animation)
+	@Previewable @State var tag: FullFriendTagDTO? = FullFriendTagDTO.close
+	TagButtonView(tag: FullFriendTagDTO.close, activeTag: $tag, animation: animation)
 }
