@@ -23,12 +23,12 @@ struct FullFriendTagDTO: Identifiable, Codable, Hashable {
 	var id: UUID
 	var displayName: String
 	var colorHexCode: String
-	var friends: [UserDTO]?
+	var friends: [BaseUserDTO]?
 	var isEveryone: Bool
 
 	init(
 		id: UUID, displayName: String, colorHexCode: String,
-		friends: [UserDTO]? = nil, isEveryone: Bool = false
+		friends: [BaseUserDTO]? = nil, isEveryone: Bool = false
 	) {
 		self.id = id
 		self.displayName = displayName
@@ -43,16 +43,16 @@ extension FullFriendTagDTO {
 		id: UUID(),
 		displayName: "Everyone",
         colorHexCode: universalSecondaryColorHexCode,
-		friends: [UserDTO.haley, UserDTO.jennifer, UserDTO.shannon, UserDTO.michael]
+		friends: [BaseUserDTO.haley, BaseUserDTO.jennifer, BaseUserDTO.shannon, BaseUserDTO.michael]
 	)
 	static let close = FullFriendTagDTO(
 		id: UUID(), displayName: "Close Friends",
-		colorHexCode: eventColorHexCodes[1], friends: [UserDTO.danielAgapov])
+		colorHexCode: eventColorHexCodes[1], friends: [BaseUserDTO.danielAgapov])
 	static let sports = FullFriendTagDTO(
 		id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[2],
-		friends: [UserDTO.danielLee])
+		friends: [BaseUserDTO.danielLee])
 	static let hobbies = FullFriendTagDTO(
 		id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[3],
-		friends: [UserDTO.danielLee])
+		friends: [BaseUserDTO.danielLee])
 	static let mockTags = [everyone, close, sports, hobbies]
 }

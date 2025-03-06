@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendRow: View {
 	@EnvironmentObject var viewModel: TagsViewModel
-	var friend: UserDTO
+	var friend: BaseUserDTO
 	var friendTag: FullFriendTagDTO
 
 	var body: some View {
@@ -67,5 +67,5 @@ struct FriendRow: View {
 		userId: UUID()
 		)
 
-	FriendRow(friend: UserDTO.danielAgapov, friendTag: FullFriendTagDTO.close).environmentObject(viewModel)
+	FriendRow(friend: .danielAgapov, friendTag: FullFriendTagDTO.close).environmentObject(viewModel)
 }

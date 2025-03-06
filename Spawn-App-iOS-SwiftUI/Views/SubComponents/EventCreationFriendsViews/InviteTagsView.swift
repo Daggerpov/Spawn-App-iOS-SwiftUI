@@ -139,7 +139,7 @@ extension InviteTagRow {
 }
 
 struct InviteTagFriendsView: View {
-	var friends: [UserDTO]?
+	var friends: [BaseUserDTO]?
 	var body: some View {
 		ForEach(friends ?? []) { friend in
 			HStack(spacing: -10) {
