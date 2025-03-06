@@ -14,11 +14,11 @@ struct FriendRequestView: View {
 
 	@Binding var showingChoosingTagView: Bool
 
-	let user: PotentialFriendUserDTO
+	let user: BaseUserDTO
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
 	init(
-		user: PotentialFriendUserDTO, friendRequestId: UUID, closeCallback: @escaping () -> Void,
+		user: BaseUserDTO, friendRequestId: UUID, closeCallback: @escaping () -> Void,
 		showingChoosingTagView: Binding<Bool>
 	) {
 		self.user = user

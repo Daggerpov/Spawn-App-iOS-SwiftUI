@@ -9,12 +9,12 @@ import SwiftUI
 
 struct ChoosingTagPopupView: View {
 	@ObservedObject var viewModel: ChooseTagPopUpViewModel
-	var friend: PotentialFriendUserDTO
+	var friend: BaseUserDTO
 	var userId: UUID
 	var closeCallback: () -> Void
 
 	init(
-		friend: PotentialFriendUserDTO, userId: UUID,
+		friend: BaseUserDTO, userId: UUID,
 		closeCallback: @escaping () -> Void
 	) {
 		self.friend = friend
@@ -55,7 +55,7 @@ struct ChoosingTagPopupView: View {
 	}
 }
 
-private func profilePictureView(for friend: PotentialFriendUserDTO) -> some View
+private func profilePictureView(for friend: BaseUserDTO) -> some View
 {
 	ZStack {
 		Circle()
@@ -108,7 +108,7 @@ private func profilePictureView(for friend: PotentialFriendUserDTO) -> some View
 	.frame(maxWidth: .infinity)
 }
 
-private func userInfoView(for friend: PotentialFriendUserDTO) -> some View {
+private func userInfoView(for friend: BaseUserDTO) -> some View {
 	VStack(spacing: 4) {
 		HStack(spacing: 6) {
 			Image(systemName: "star.fill")
@@ -174,7 +174,7 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
 }
 
 private func doneButton(
-	for friend: PotentialFriendUserDTO, viewModel: ChooseTagPopUpViewModel,
+	for friend: BaseUserDTO, viewModel: ChooseTagPopUpViewModel,
 	closeCallback: @escaping () -> Void
 ) -> some View {
 	Button(action: {
@@ -195,5 +195,5 @@ private func doneButton(
 }
 
 #Preview {
-	ChoosingTagPopupView(friend: PotentialFriendUserDTO.danielAgapov, userId: UUID(), closeCallback: {})
+	ChoosingTagPopupView(friend: .danielAgapov, userId: UUID(), closeCallback: {})
 }
