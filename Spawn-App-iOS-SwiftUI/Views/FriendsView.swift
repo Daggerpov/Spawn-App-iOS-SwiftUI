@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FriendsView: View {
-	let user: UserDTO
+	let user: BaseUserDTO
 	let source: BackButtonSourcePageType
 
 	@State private var selectedTab: FriendTagToggle = .friends
@@ -18,7 +18,7 @@ struct FriendsView: View {
 	@State private var popupOffset: CGFloat = 1000
 	@State private var selectedFriendTagId: UUID? = nil
 
-	init(user: UserDTO, source: BackButtonSourcePageType) {
+	init(user: BaseUserDTO, source: BackButtonSourcePageType) {
 		self.user = user
 		self.source = source
 	}

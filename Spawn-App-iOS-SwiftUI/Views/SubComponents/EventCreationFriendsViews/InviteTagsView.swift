@@ -12,7 +12,7 @@ struct InviteTagsView: View {
 
 	@State private var creationStatus: CreationStatus = .notCreating
 
-	init(user: UserDTO) {
+	init(user: BaseUserDTO) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(userId: user.id) : APIService(),
@@ -165,5 +165,5 @@ struct InviteTagFriendsView: View {
 }
 
 #Preview {
-	InviteTagsView(user: UserDTO.danielAgapov)
+	InviteTagsView(user: .danielAgapov)
 }

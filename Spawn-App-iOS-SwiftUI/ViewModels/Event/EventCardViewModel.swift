@@ -10,12 +10,12 @@ import Foundation
 class EventCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	var apiService: IAPIService
-	var user: UserDTO
+	var userId: UUID
 	var event: FullFeedEventDTO
 
-	init(apiService: IAPIService, user: UserDTO, event: FullFeedEventDTO) {
+	init(apiService: IAPIService, userId: UUID, event: FullFeedEventDTO) {
 		self.apiService = apiService
-		self.user = user
+		self.userId = userId
 		self.event = event
 	}
 
@@ -23,7 +23,7 @@ class EventCardViewModel: ObservableObject {
 	public func fetchIsParticipating() {
 		self.isParticipating =
 			((event.participantUsers?.contains(where: { user in
-				user.id == user.id
+				user.id == userId
 			})) != nil)
 
 	}
@@ -31,7 +31,7 @@ class EventCardViewModel: ObservableObject {
 	/// Toggles the user's participation status in the event
 	public func toggleParticipation() async {
 		let urlString =
-			"\(APIService.baseURL)events/\(event.id)/toggleStatus/\(user.id)"
+			"\(APIService.baseURL)events/\(event.id)/toggleStatus/\(userId)"
 		guard let url = URL(string: urlString) else {
 			print("Invalid URL")
 			return

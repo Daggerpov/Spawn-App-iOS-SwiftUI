@@ -14,14 +14,14 @@ struct EventCardView: View {
 	var callback: (FullFeedEventDTO, Color) -> Void
 
 	init(
-		user: UserDTO, event: FullFeedEventDTO, color: Color,
+		userId: UUID, event: FullFeedEventDTO, color: Color,
 		callback: @escaping (FullFeedEventDTO, Color) -> Void
 	) {
 		self.event = event
 		self.color = color
 		self.viewModel = EventCardViewModel(
 			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(), user: user,
+				? MockAPIService(userId: userId) : APIService(), userId: userId,
 			event: event)
 		self.callback = callback
 	}
@@ -73,7 +73,7 @@ struct EventCardView: View {
 
 #Preview {
 	EventCardView(
-		user: UserDTO.danielAgapov,
+		userId: UUID(),
 		event: FullFeedEventDTO.mockDinnerEvent,
 		color: universalAccentColor,
 		callback: {_, _ in}

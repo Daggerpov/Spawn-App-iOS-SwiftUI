@@ -12,7 +12,7 @@ struct EventDescriptionView: View {
 	@ObservedObject var viewModel: EventDescriptionViewModel
 	var color: Color
 
-	init(event: FullFeedEventDTO, users: [UserDTO]?, color: Color) {
+	init(event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color) {
 		self.viewModel = EventDescriptionViewModel(event: event, users: users)
 		self.color = color
 	}
@@ -183,7 +183,7 @@ extension EventDescriptionView {
 #Preview {
 	EventDescriptionView(
 		event: FullFeedEventDTO.mockDinnerEvent,
-		users: UserDTO.mockUsers,
+		users: BaseUserDTO.mockUsers,
 		color: universalAccentColor
 	)
 }

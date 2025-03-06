@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendsTabView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
-	let user: UserDTO
+	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -23,7 +23,7 @@ struct FriendsTabView: View {
 
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
 
-	init(user: UserDTO) {
+	init(user: BaseUserDTO) {
 		self.user = user
 		self.viewModel = FriendsTabViewModel(
 			userId: user.id,

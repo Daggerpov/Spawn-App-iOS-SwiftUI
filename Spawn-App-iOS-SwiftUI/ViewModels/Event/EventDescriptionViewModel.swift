@@ -8,10 +8,10 @@
 import Foundation
 
 class EventDescriptionViewModel: ObservableObject {
-	@Published var users: [UserDTO]?
+	@Published var users: [BaseUserDTO]?
 	var event: FullFeedEventDTO
 
-	init(event: FullFeedEventDTO, users: [UserDTO]? = []) {
+	init(event: FullFeedEventDTO, users: [BaseUserDTO]? = []) {
 		self.event = event
 		self.users = users
 	}

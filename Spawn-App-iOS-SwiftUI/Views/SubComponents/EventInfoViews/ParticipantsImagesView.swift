@@ -11,10 +11,10 @@ import SwiftUI
 struct ParticipantsImagesView: View {
 	var event: FullFeedEventDTO
 
-	func participantsCleanup(participants: [UserDTO]) -> [UserDTO] {
+	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
 		var participantsFiltered = participants
 
-		let userCreator: UserDTO = event.creatorUser
+		let userCreator: BaseUserDTO = event.creatorUser
 		// Remove the creator if already in the list
 		participantsFiltered.removeAll { $0.id == userCreator.id }
 

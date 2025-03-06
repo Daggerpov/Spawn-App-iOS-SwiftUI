@@ -29,9 +29,9 @@ struct MapView: View {
 	@State private var creationOffset: CGFloat = 1000
 	// ------------
 
-	var user: UserDTO
+	var user: BaseUserDTO
 
-	init(user: UserDTO) {
+	init(user: BaseUserDTO) {
 		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(

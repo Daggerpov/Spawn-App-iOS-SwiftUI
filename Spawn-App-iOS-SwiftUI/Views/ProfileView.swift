@@ -9,13 +9,13 @@ import SwiftUI
 
 struct ProfileView: View {
 	// TODO DANIEL: make a real API call here, using a new view model -> for editing bio and maybe other user details
-	let user: UserDTO
+	let user: BaseUserDTO
 	@State private var bio: String
 	@State private var editingState: ProfileEditText = .edit
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 
-	init(user: UserDTO) {
+	init(user: BaseUserDTO) {
 		self.user = user
 		bio = user.bio ?? ""
 	}
@@ -221,5 +221,5 @@ struct BioField: View {
 }
 
 #Preview {
-	ProfileView(user: UserDTO.danielAgapov)
+	ProfileView(user: BaseUserDTO.danielAgapov)
 }
