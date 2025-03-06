@@ -29,7 +29,7 @@ class FullFeedEventDTO: Identifiable, Codable {
 	// the event, which will populate this `invited` property with the `FriendTag`s'
 	// `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
 	var invitedUsers: [UserDTO]?
-	var chatMessages: [ChatMessage]?
+	var chatMessages: [FullEventChatMessageDTO]?
 	var eventFriendTagColorHexCodeForRequestingUser: String?
 	var participationStatus: ParticipationStatus?
 
@@ -43,7 +43,7 @@ class FullFeedEventDTO: Identifiable, Codable {
 		creatorUser: UserDTO,
 		participantUsers: [UserDTO]? = nil,
 		invitedUsers: [UserDTO]? = nil,
-		chatMessages: [ChatMessage]? = nil,
+		chatMessages: [FullEventChatMessageDTO]? = nil,
 		eventFriendTagColorHexCodeForRequestingUser: String? = nil,
 		participationStatus: ParticipationStatus? = nil
 	) {

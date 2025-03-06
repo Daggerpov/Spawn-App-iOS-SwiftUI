@@ -92,7 +92,7 @@ extension EventDescriptionView {
 	}
 
 	struct ChatMessageRow: View {
-		let chatMessage: ChatMessage
+		let chatMessage: FullEventChatMessageDTO
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [

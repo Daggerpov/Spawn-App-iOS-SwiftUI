@@ -1,5 +1,5 @@
 //
-//  ChatMessage.swift
+//  FullEventChatMessageDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/6/24.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ChatMessage: Identifiable, Codable {
+class FullEventChatMessageDTO: Identifiable, Codable {
 	var id: UUID
 	var content: String
 	var timestamp: Date
@@ -15,24 +15,24 @@ class ChatMessage: Identifiable, Codable {
 	var eventId: UUID
 	// do I even need an `event` var here, if each `Event` has a list of chats?
 	// -> it's a (event) 1 <-> many (chat) relationship
-	var likedBy: [UserDTO]?
+	var likedByUsers: [UserDTO]?
 	// tech note: in user's view of event, check if that user is in
 	// the `ChatMessage`'s `likedBy` array (`[User]`)
 
 	init(
 		id: UUID, content: String, timestamp: Date, senderUser: UserDTO,
-		eventId: UUID, likedBy: [UserDTO]? = nil
+		eventId: UUID, likedByUsers: [UserDTO]? = nil
 	) {
 		self.id = id
 		self.content = content
 		self.timestamp = timestamp
 		self.senderUser = senderUser
 		self.eventId = eventId
-		self.likedBy = likedBy
+		self.likedByUsers = likedByUsers
 	}
 }
 
-extension ChatMessage {
+extension FullEventChatMessageDTO {
 	var formattedTimestamp: String {
 		return FormatterService.shared.timeAgo(from: timestamp)
 	}
@@ -43,12 +43,12 @@ extension ChatMessage {
 		formatter.timeStyle = .short
 		return formatter
 	}()
-	static let guysWya: ChatMessage = ChatMessage(
+	static let guysWya: FullEventChatMessageDTO = FullEventChatMessageDTO(
 		id: UUID(),
 		content: "yo guys, wya?",
 		timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
 		senderUser: UserDTO.danielAgapov,
 		eventId: Event.mockDinnerEvent.id,
-		likedBy: [UserDTO.danielAgapov, UserDTO.danielLee]
+		likedByUsers: [UserDTO.danielAgapov, UserDTO.danielLee]
 	)
 }
