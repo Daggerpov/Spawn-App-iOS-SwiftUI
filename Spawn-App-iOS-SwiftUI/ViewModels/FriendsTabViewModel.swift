@@ -9,7 +9,7 @@ import Foundation
 
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-	@Published var recommendedFriends: [UserDTO] = []
+	@Published var recommendedFriends: [BaseUserDTO] = []
 	@Published var friends: [FullFriendUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
@@ -56,7 +56,7 @@ class FriendsTabViewModel: ObservableObject {
 			string: APIService.baseURL + "users/recommended-friends/\(userId)")
 		{
 			do {
-				let fetchedRecommendedFriends: [UserDTO] =
+				let fetchedRecommendedFriends: [BaseUserDTO] =
 					try await self.apiService.fetchData(
 						from: url, parameters: nil)
 

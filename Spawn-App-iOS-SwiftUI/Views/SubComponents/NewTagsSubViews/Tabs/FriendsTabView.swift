@@ -251,7 +251,7 @@ if let pfp = friend.profilePicture {
 
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
-		var friend: UserDTO
+		var friend: BaseUserDTO
 		@State private var isAdded: Bool = false
 
 		var body: some View {
