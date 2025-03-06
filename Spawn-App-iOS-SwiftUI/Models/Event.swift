@@ -119,14 +119,14 @@ extension Event {
 					id: UUID(),
 					content: "yo guys, wya?",
 					timestamp: Date().addingTimeInterval(-30),  // 30 seconds ago
-					senderUser: UserDTO.danielAgapov,
+					senderUser: BaseUserDTO.danielAgapov,
 					eventId: mockDinnerEvent.id
 				),
 				FullEventChatMessageDTO(
 					id: UUID(),
 					content: "I just saw you",
 					timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
-					senderUser: UserDTO.danielLee,
+					senderUser: BaseUserDTO.danielLee,
 					eventId: mockDinnerEvent.id
 				),
 			]
