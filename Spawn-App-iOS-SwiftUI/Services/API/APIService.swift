@@ -30,18 +30,26 @@ class APIService: IAPIService {
 			let container = try decoder.singleValueContainer()
 			let dateString = try container.decode(String.self)
 
-			let formatter = ISO8601DateFormatter()
-			formatter.formatOptions = [
-				.withInternetDateTime, .withFractionalSeconds,
-			]
-
-			if let date = formatter.date(from: dateString) {
+			// Try with fractional seconds first
+			let formatterWithFractional = ISO8601DateFormatter()
+			formatterWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+			
+			if let date = formatterWithFractional.date(from: dateString) {
 				return date
-			} else {
-				throw DecodingError.dataCorruptedError(
-					in: container,
-					debugDescription: "Invalid date format: \(dateString)")
 			}
+			
+			// If that fails, try without fractional seconds
+			let formatterWithoutFractional = ISO8601DateFormatter()
+			formatterWithoutFractional.formatOptions = [.withInternetDateTime]
+			
+			if let date = formatterWithoutFractional.date(from: dateString) {
+				return date
+			}
+			
+			// If both fail, throw an error
+			throw DecodingError.dataCorruptedError(
+				in: container,
+				debugDescription: "Invalid date format: \(dateString)")
 		}
 		return decoder
 	}
@@ -54,9 +62,7 @@ class APIService: IAPIService {
 			var container = encoder.singleValueContainer()
 
 			let formatter = ISO8601DateFormatter()
-			formatter.formatOptions = [
-				.withInternetDateTime, .withFractionalSeconds,
-			]
+			formatter.formatOptions = [.withInternetDateTime]  // Use standard ISO8601 without fractional seconds
 
 			let dateString = formatter.string(from: date)
 			try container.encode(dateString)
