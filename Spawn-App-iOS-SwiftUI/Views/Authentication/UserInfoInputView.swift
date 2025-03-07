@@ -55,18 +55,6 @@ struct UserInfoInputView: View {
 	var body: some View {
 		NavigationStack {
 			VStack(spacing: 16) {
-				if let unwrappedSpawnUser = userAuth.spawnUser {
-					NavigationLink(
-						destination: FeedView(user: unwrappedSpawnUser)
-							.navigationBarTitle("")
-							.navigationBarHidden(true),
-						isActive: $userAuth.shouldNavigateToFeedView
-					) {
-						EmptyView()
-					}
-					.hidden()
-				}
-
 				Spacer()
 				Spacer()
 
@@ -166,6 +154,13 @@ struct UserInfoInputView: View {
 				Spacer()
 				Spacer()
 				Spacer()
+			}
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToFeedView) {
+				if let unwrappedSpawnUser = userAuth.spawnUser {
+					FeedView(user: unwrappedSpawnUser)
+						.navigationBarTitle("")
+						.navigationBarHidden(true)
+				}
 			}
 			.onAppear {
 				userAuth.objectWillChange.send()  // Trigger initial UI update
