@@ -45,7 +45,7 @@ struct EventCardView: View {
 							Spacer()
 							HStack {
 								// Only show location if it exists
-								if event.location?.name != nil && !(event.location?.name?.isEmpty ?? true) {
+								if event.location?.name != nil && !(event.location?.name.isEmpty ?? true) {
 									EventInfoView(
 										event: event, eventInfoType: .location)
 									Spacer()
@@ -98,6 +98,7 @@ struct EventCardView: View {
 						.frame(maxHeight: .infinity)
 						.padding(.horizontal, 8)
 					}
+					.background(.clear)
 				}
 			}
 			.onAppear {

@@ -425,6 +425,10 @@ extension EventCreationView {
 }
 
 #Preview {
-	EventCreationView(creatingUser: .danielAgapov, closeCallback: {})
+	EventCreationView(
+		creatingUser: .danielAgapov,
+		feedViewModel: FeedViewModel(apiService: MockAPIService(userId: UUID()), userId: UUID()),
+		closeCallback: {
+		})
 }
 

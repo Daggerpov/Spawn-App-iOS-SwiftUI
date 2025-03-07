@@ -63,11 +63,32 @@ class EventDescriptionViewModel: ObservableObject {
 			do {
 				_ = try await self.apiService.sendData(
 					chatMessage, to: url, parameters: nil)
+				
+				// After successfully sending the message, fetch the updated event data
+				await fetchUpdatedEventData()
 			} catch {
 				await MainActor.run {
 					creationMessage =
 					"There was an error sending your chat message. Please try again"
 				}
+			}
+		}
+	}
+
+	// Add a new method to fetch updated event data
+	private func fetchUpdatedEventData() async {
+		// Construct URL for fetching the updated event
+		if let url = URL(string: APIService.baseURL + "events/\(event.id)") {
+			do {
+				let updatedEvent: FullFeedEventDTO = try await self.apiService.fetchData(
+					from: url, parameters: nil)
+				
+				// Update the event on the main thread
+				await MainActor.run {
+					self.event = updatedEvent
+				}
+			} catch {
+				print("Error fetching updated event data: \(error)")
 			}
 		}
 	}
