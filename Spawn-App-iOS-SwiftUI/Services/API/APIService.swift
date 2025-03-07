@@ -390,11 +390,6 @@ class APIService: IAPIService {
 			let jsonData = try JSONSerialization.data(
 				withJSONObject: userCreationDTO)
 			request.httpBody = jsonData
-			
-			// Debug: Print the request body for troubleshooting
-			if let jsonString = String(data: jsonData, encoding: .utf8) {
-				print("Request body: \(jsonString)")
-			}
 		} catch {
 			print("Error encoding request body: \(error)")
 			throw APIError.failedJSONParsing(url: finalURL)
