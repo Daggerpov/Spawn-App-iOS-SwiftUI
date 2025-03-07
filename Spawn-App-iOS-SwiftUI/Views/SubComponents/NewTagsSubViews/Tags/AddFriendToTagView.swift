@@ -132,7 +132,7 @@ extension AddFriendToTagView {
 				await viewModel.addSelectedFriendsToTag(
 					friendTagId: friendTagId)
 			}
-			closeCallback
+			closeCallback?()
 		}) {
 			HStack {
 				Text("done")
