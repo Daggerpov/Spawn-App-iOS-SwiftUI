@@ -32,6 +32,7 @@ class FullFeedEventDTO: Identifiable, Codable {
 	var chatMessages: [FullEventChatMessageDTO]?
 	var eventFriendTagColorHexCodeForRequestingUser: String?
 	var participationStatus: ParticipationStatus?
+	var isSelfOwned: Bool?
 
 	init(
 		id: UUID,
@@ -45,7 +46,8 @@ class FullFeedEventDTO: Identifiable, Codable {
 		invitedUsers: [BaseUserDTO]? = nil,
 		chatMessages: [FullEventChatMessageDTO]? = nil,
 		eventFriendTagColorHexCodeForRequestingUser: String? = nil,
-		participationStatus: ParticipationStatus? = nil
+		participationStatus: ParticipationStatus? = nil,
+		isSelfOwned: Bool? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -60,6 +62,7 @@ class FullFeedEventDTO: Identifiable, Codable {
 		self.eventFriendTagColorHexCodeForRequestingUser =
 		eventFriendTagColorHexCodeForRequestingUser
 		self.participationStatus = participationStatus
+		self.isSelfOwned = isSelfOwned
 	}
 }
 
