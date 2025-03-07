@@ -127,9 +127,13 @@ struct UserInfoInputView: View {
 					validateFields()
 					if isFirstNameValid && isUsernameValid && (!needsEmail || isEmailValid) {
 						Task {
+							// If no image is selected but we have a profile picture URL from Google/Apple,
+							// we'll pass nil for profilePicture and let the backend use the URL
+							print("Profile picture URL from provider: \(userAuth.profilePicUrl ?? "none")")
+							
 							await userAuth.spawnMakeUser(
 								username: username,
-								profilePicture: selectedImage, // Pass the selected image
+								profilePicture: selectedImage, // Pass the selected image or nil
 								firstName: userAuth.givenName ?? "",
 								lastName: userAuth.familyName ?? "",
 								email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""

@@ -338,7 +338,7 @@ class APIService: IAPIService {
 			throw APIError.URLError
 		}
 
-		// Convert UserCreateDTO to UserCreationDTO format
+		// Create the user creation DTO
 		var userCreationDTO: [String: Any] = [
 			"username": userDTO.username,
 			"firstName": userDTO.firstName,
@@ -348,11 +348,36 @@ class APIService: IAPIService {
 		]
 
 		// Add profile picture data if available
-		if let image = profilePicture,
-			let imageData = image.jpegData(compressionQuality: 0.8)
-		{
-			userCreationDTO["profilePictureData"] =
-				imageData.base64EncodedString()
+		if let image = profilePicture {
+			// Use higher compression quality and ensure we're getting a valid image
+			if let imageData = image.jpegData(compressionQuality: 0.9) {
+				let base64String = imageData.base64EncodedString()
+				userCreationDTO["profilePictureData"] = base64String
+				print("Including profile picture data of size: \(imageData.count) bytes")
+			} else if let pngData = image.pngData() {
+				// Try PNG as a fallback
+				let base64String = pngData.base64EncodedString()
+				userCreationDTO["profilePictureData"] = base64String
+				print("Including PNG profile picture data of size: \(pngData.count) bytes")
+			}
+		} else if let profilePicUrl = parameters?["profilePicUrl"], !profilePicUrl.isEmpty {
+			// If we have a URL from Google/Apple but no selected image, include it
+			// Try both field names that the backend might be expecting
+			userCreationDTO["profilePictureUrl"] = profilePicUrl
+			userCreationDTO["profilePicture"] = profilePicUrl // Try this field name as well
+			print("Including profile picture URL from provider: \(profilePicUrl)")
+			
+			// Try to download the image from the URL and convert to base64
+			if let url = URL(string: profilePicUrl) {
+				do {
+					let (data, _) = try await URLSession.shared.data(from: url)
+					let base64String = data.base64EncodedString()
+					userCreationDTO["profilePictureData"] = base64String
+					print("Successfully downloaded and included Google profile picture data: \(data.count) bytes")
+				} catch {
+					print("Failed to download Google profile picture: \(error.localizedDescription)")
+				}
+			}
 		}
 
 		// Create the request
@@ -361,15 +386,32 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
 		// Encode the body
-		let jsonData = try JSONSerialization.data(
-			withJSONObject: userCreationDTO)
-		request.httpBody = jsonData
+		do {
+			let jsonData = try JSONSerialization.data(
+				withJSONObject: userCreationDTO)
+			request.httpBody = jsonData
+			
+			// Debug: Print the request body for troubleshooting
+			if let jsonString = String(data: jsonData, encoding: .utf8) {
+				print("Request body: \(jsonString)")
+			}
+		} catch {
+			print("Error encoding request body: \(error)")
+			throw APIError.failedJSONParsing(url: finalURL)
+		}
 
 		// Send the request
 		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			throw APIError.failedHTTPRequest(description: "HTTP request failed")
+		}
+
+		// For debugging
+		if httpResponse.statusCode != 200 && httpResponse.statusCode != 201 {
+			if let errorStr = String(data: data, encoding: .utf8) {
+				print("Error response: \(errorStr)")
+			}
 		}
 
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201
@@ -380,7 +422,12 @@ class APIService: IAPIService {
 
 		// Decode the response
 		let decoder = APIService.makeDecoder()
-		return try decoder.decode(BaseUserDTO.self, from: data)
+		let user = try decoder.decode(BaseUserDTO.self, from: data)
+		
+		// Log the response for debugging
+		print("User created with profile picture: \(user.profilePicture ?? "none")")
+		
+		return user
 	}
 
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
