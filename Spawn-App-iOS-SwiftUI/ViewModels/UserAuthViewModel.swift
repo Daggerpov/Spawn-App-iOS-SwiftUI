@@ -61,8 +61,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		super.init()  // Call super.init() before using `self`
 
 		check()
-		Task {
-			await spawnFetchUserIfAlreadyExists()
+		Task { [weak self] in
+			guard let self = self else { return }
+			await self.spawnFetchUserIfAlreadyExists()
 		}
 	}
 
@@ -135,7 +136,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.externalUserId = userIdentifier
 
 				// Check user existence AFTER setting credentials
-				Task {
+				Task { [weak self] in
+					guard let self = self else { return }
 					await self.spawnFetchUserIfAlreadyExists()
 				}
 			}
@@ -144,7 +146,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				"Apple Sign-In failed: \(error.localizedDescription)"
 			print(self.errorMessage as Any)
 			// Check user existence AFTER setting credentials
-			Task {
+			Task { [weak self] in
+				guard let self = self else { return }
 				await self.spawnFetchUserIfAlreadyExists()
 			}
 		}
@@ -171,7 +174,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 			GIDSignIn.sharedInstance.signIn(
 				withPresenting: presentingViewController
-			) { signInResult, error in
+			) { [weak self] signInResult, error in
+				guard let self = self else { return }
 				if let error = error {
 					print(error.localizedDescription)
 					return
@@ -189,7 +193,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.externalUserId = user.userID
 				self.authProvider = .google
 
-				Task {
+				Task { [weak self] in
+					guard let self = self else { return }
 					await self.spawnFetchUserIfAlreadyExists()
 				}
 			}
