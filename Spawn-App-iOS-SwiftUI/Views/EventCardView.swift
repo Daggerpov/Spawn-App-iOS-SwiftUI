@@ -44,9 +44,12 @@ struct EventCardView: View {
 							}
 							Spacer()
 							HStack {
-								EventInfoView(
-									event: event, eventInfoType: .location)
-								Spacer()
+								// Only show location if it exists
+								if event.location?.name != nil && !(event.location?.name?.isEmpty ?? true) {
+									EventInfoView(
+										event: event, eventInfoType: .location)
+									Spacer()
+								}
 							}
 						}
 						.foregroundColor(.white)
@@ -93,7 +96,7 @@ struct EventCardView: View {
 								.frame(width: 15)
 						}
 						.frame(maxHeight: .infinity)
-						.padding(.trailing, 8)
+						.padding(.horizontal, 8)
 					}
 				}
 			}
