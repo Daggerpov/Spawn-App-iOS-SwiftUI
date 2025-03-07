@@ -81,7 +81,11 @@ extension EventCardView {
 		let invitedCount = event.invitedUsers?.count ?? 0
 		let totalCount = participantCount + invitedCount
 		
-		return Text("@\(event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")")
+		let displayText = (event.isSelfOwned == true) 
+			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+		
+		return Text(displayText)
 			.foregroundColor(.white)
 			.font(.caption)
 	}

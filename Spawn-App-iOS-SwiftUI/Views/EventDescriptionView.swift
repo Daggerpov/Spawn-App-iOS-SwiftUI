@@ -93,7 +93,11 @@ struct EventDescriptionView: View {
 		let invitedCount = viewModel.event.invitedUsers?.count ?? 0
 		let totalCount = participantCount + invitedCount
 		
-		return Text("@\(viewModel.event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")")
+		let displayText = (viewModel.event.isSelfOwned == true) 
+			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(viewModel.event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+		
+		return Text(displayText)
 			.foregroundColor(.white)
 			.font(.caption)
 	}
