@@ -139,8 +139,7 @@ class MockAPIService: IAPIService {
 			return FullFriendTagDTO.close as! U?
 		}
 
-		// this means I need to include the url call in this mock `sendData` method:
-		throw APIError.invalidData
+		return
 	}
 
 	func updateData<T: Encodable, U: Decodable>(

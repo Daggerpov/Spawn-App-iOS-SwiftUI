@@ -117,14 +117,15 @@ struct EventDescriptionView: View {
 						VStack {
 							Text("CREATED BY YOU")
 								.font(.caption2)
-								.fontWeight(.semibold)
+								.fontWeight(.medium)
 								.foregroundColor(.white)
-								.rotationEffect(.degrees(90))
+								.opacity(0.7)
+								.rotationEffect(.degrees(-90))
 								.fixedSize()
-								.frame(width: 20)
+								.frame(width: 15)
 						}
 						.frame(maxHeight: .infinity)
-						.padding(.trailing, 5)
+						.padding(.trailing, 8)
 					}
 				}
 			}
