@@ -9,7 +9,11 @@
 
 import Foundation
 
-class FullFeedEventDTO: Identifiable, Codable {
+class FullFeedEventDTO: Identifiable, Codable, Equatable {
+	static func == (lhs: FullFeedEventDTO, rhs: FullFeedEventDTO) -> Bool {
+		return lhs.id == rhs.id
+	}
+
 	var id: UUID
 	var title: String?
 

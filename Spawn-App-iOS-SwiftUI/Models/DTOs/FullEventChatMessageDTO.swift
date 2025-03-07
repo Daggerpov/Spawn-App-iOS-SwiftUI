@@ -7,7 +7,7 @@
 
 import Foundation
 
-class FullEventChatMessageDTO: Identifiable, Codable {
+class FullEventChatMessageDTO: Identifiable, Codable, Equatable {
 	var id: UUID
 	var content: String
 	var timestamp: Date
@@ -18,6 +18,10 @@ class FullEventChatMessageDTO: Identifiable, Codable {
 	var likedByUsers: [BaseUserDTO]?
 	// tech note: in user's view of event, check if that user is in
 	// the `ChatMessage`'s `likedBy` array (`[User]`)
+	
+	static func == (lhs: FullEventChatMessageDTO, rhs: FullEventChatMessageDTO) -> Bool {
+		return lhs.id == rhs.id
+	}
 
 	init(
 		id: UUID, content: String, timestamp: Date, senderUser: BaseUserDTO,
