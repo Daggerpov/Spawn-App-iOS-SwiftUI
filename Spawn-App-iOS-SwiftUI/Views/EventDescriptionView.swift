@@ -57,8 +57,12 @@ struct EventDescriptionView: View {
 						HStack(spacing: 10) {
 							EventInfoView(
 								event: viewModel.event, eventInfoType: .time)
-							EventInfoView(
-								event: viewModel.event, eventInfoType: .location)
+							
+							// Only show location if it exists
+							if viewModel.event.location?.name != nil && !(viewModel.event.location?.name?.isEmpty ?? true) {
+								EventInfoView(
+									event: viewModel.event, eventInfoType: .location)
+							}
 							
 							Spacer()
 							
@@ -107,27 +111,6 @@ struct EventDescriptionView: View {
 				.padding(20)
 				.background(color)
 				.cornerRadius(universalRectangleCornerRadius)
-				
-				// "CREATED BY YOU" vertical text on the right side (only if self-owned)
-				if viewModel.event.isSelfOwned == true {
-					HStack {
-						Spacer()
-						
-						// Vertical text container
-						VStack {
-							Text("CREATED BY YOU")
-								.font(.caption2)
-								.fontWeight(.medium)
-								.foregroundColor(.white)
-								.opacity(0.7)
-								.rotationEffect(.degrees(-90))
-								.fixedSize()
-								.frame(width: 15)
-						}
-						.frame(maxHeight: .infinity)
-						.padding(.trailing, 8)
-					}
-				}
 			}
 		}
 		.scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
