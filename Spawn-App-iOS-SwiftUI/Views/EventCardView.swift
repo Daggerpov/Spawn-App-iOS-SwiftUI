@@ -77,10 +77,13 @@ struct EventCardView: View {
 
 extension EventCardView {
 	var usernamesView: some View {
-		Text(
-			"@\(event.creatorUser.username) + \((event.participantUsers?.count ?? 0) + (event.invitedUsers?.count ?? 0)) more"
-		)
-					.foregroundColor(.white)
+		let participantCount = (event.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
+		let invitedCount = event.invitedUsers?.count ?? 0
+		let totalCount = participantCount + invitedCount
+		
+		return Text("@\(event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")")
+			.foregroundColor(.white)
+			.font(.caption)
 	}
 }
 

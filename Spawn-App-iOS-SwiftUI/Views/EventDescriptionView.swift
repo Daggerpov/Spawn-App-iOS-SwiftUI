@@ -31,6 +31,12 @@ struct EventDescriptionView: View {
 			VStack(alignment: .leading, spacing: 20) {
 				// Title and Time Information
 				EventCardTopRowView(event: viewModel.event)
+				
+				// Username display
+				HStack {
+					usernamesView
+					Spacer()
+				}
 
 				VStack {
 					HStack {
@@ -80,6 +86,16 @@ struct EventDescriptionView: View {
 			.cornerRadius(universalRectangleCornerRadius)
 		}
 		.scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
+	}
+	
+	var usernamesView: some View {
+		let participantCount = (viewModel.event.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
+		let invitedCount = viewModel.event.invitedUsers?.count ?? 0
+		let totalCount = participantCount + invitedCount
+		
+		return Text("@\(viewModel.event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")")
+			.foregroundColor(.white)
+			.font(.caption)
 	}
 }
 
