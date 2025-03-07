@@ -29,8 +29,10 @@ struct EventCardView: View {
 		NavigationStack {
 			VStack {
 				EventCardTopRowView(event: event)
-				Text("@\(event.creatorUser) + \(event.participantUsers.count + event.invitedUsers.count) more")
-					.foregroundColor(.white)
+				HStack{
+					usernamesView
+					Spacer()
+				}
 				Spacer()
 				HStack {
 					VStack {
@@ -73,11 +75,20 @@ struct EventCardView: View {
 	}
 }
 
+extension EventCardView {
+	var usernamesView: some View {
+		Text(
+			"@\(event.creatorUser.username) + \((event.participantUsers?.count ?? 0) + (event.invitedUsers?.count ?? 0)) more"
+		)
+					.foregroundColor(.white)
+	}
+}
+
 #Preview {
 	EventCardView(
 		userId: UUID(),
 		event: FullFeedEventDTO.mockDinnerEvent,
-		color: universalAccentColor,
+		color: universalSecondaryColor,
 		callback: {_, _ in}
 	)
 }
