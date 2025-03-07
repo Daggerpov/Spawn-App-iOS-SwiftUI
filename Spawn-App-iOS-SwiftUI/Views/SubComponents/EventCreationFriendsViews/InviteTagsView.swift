@@ -12,7 +12,7 @@ struct InviteTagsView: View {
 
 	@State private var creationStatus: CreationStatus = .notCreating
 
-	init(user: UserDTO) {
+	init(user: BaseUserDTO) {
 		self.viewModel = TagsViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(userId: user.id) : APIService(),
@@ -71,10 +71,10 @@ struct InviteTagRow: View {
 	@ObservedObject var eventCreationViewModel: EventCreationViewModel =
 		EventCreationViewModel.shared
 
-	var friendTag: FriendTag
+	var friendTag: FullFriendTagDTO
 	@State private var isClicked: Bool = false
 
-	init(friendTag: FriendTag) {
+	init(friendTag: FullFriendTagDTO) {
 		self.friendTag = friendTag
 		if eventCreationViewModel.selectedTags.contains(friendTag) {
 			self._isClicked = State(initialValue: true)
@@ -139,7 +139,7 @@ extension InviteTagRow {
 }
 
 struct InviteTagFriendsView: View {
-	var friends: [UserDTO]?
+	var friends: [BaseUserDTO]?
 	var body: some View {
 		ForEach(friends ?? []) { friend in
 			HStack(spacing: -10) {
@@ -165,5 +165,5 @@ struct InviteTagFriendsView: View {
 }
 
 #Preview {
-	InviteTagsView(user: UserDTO.danielAgapov)
+	InviteTagsView(user: .danielAgapov)
 }

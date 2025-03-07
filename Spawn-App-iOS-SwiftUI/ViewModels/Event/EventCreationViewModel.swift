@@ -15,7 +15,7 @@ class EventCreationViewModel: ObservableObject {
 	@Published var event: EventCreationDTO
 	@Published var creationMessage: String = ""
 
-	@Published var selectedTags: [FriendTag] = []
+	@Published var selectedTags: [FullFriendTagDTO] = []
 	@Published var selectedFriends: [FullFriendUserDTO] = []
 
 	private var apiService: IAPIService

@@ -9,7 +9,7 @@ import Foundation
 
 class ChooseTagPopUpViewModel: ObservableObject {
 	@Published var chooseTagErrorMessage: String = ""
-	@Published var tags: [FriendTag] = []
+	@Published var tags: [FullFriendTagDTO] = []
 	@Published var selectedTags: Set<UUID> = []
 
 	var userId: UUID
@@ -51,7 +51,7 @@ class ChooseTagPopUpViewModel: ObservableObject {
 			]
 
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService
+				let fetchedTags: [FullFriendTagDTO] = try await self.apiService
 					.fetchData(
 						from: url, parameters: parameters
 					)

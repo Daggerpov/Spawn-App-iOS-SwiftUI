@@ -11,7 +11,7 @@ class EventInfoViewModel: ObservableObject {
 	@Published var eventInfoDisplayString: String
 	@Published var imageSystemName: String
 
-	init(event: Event, eventInfoType: EventInfoType) {
+	init(event: FullFeedEventDTO, eventInfoType: EventInfoType) {
 		switch eventInfoType {
 		case .location:
 			imageSystemName = "map"

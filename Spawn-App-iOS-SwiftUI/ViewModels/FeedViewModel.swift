@@ -8,9 +8,9 @@
 import Foundation
 
 class FeedViewModel: ObservableObject {
-	@Published var events: [Event] = []
-	@Published var tags: [FriendTag] = []
-	@Published var activeTag: FriendTag?
+	@Published var events: [FullFeedEventDTO] = []
+	@Published var tags: [FullFriendTagDTO] = []
+	@Published var activeTag: FullFriendTagDTO?
 
 	var apiService: IAPIService
 	var userId: UUID
@@ -48,7 +48,7 @@ class FeedViewModel: ObservableObject {
 		}
 
 		do {
-			let fetchedEvents: [Event] = try await self.apiService.fetchData(
+			let fetchedEvents: [FullFeedEventDTO] = try await self.apiService.fetchData(
 				from: url, parameters: nil
 			)
 
@@ -69,7 +69,7 @@ class FeedViewModel: ObservableObject {
 			string: APIService.baseURL + "friendTags/owner/\(userId)"
 		) {
 			do {
-				let fetchedTags: [FriendTag] = try await self.apiService
+				let fetchedTags: [FullFriendTagDTO] = try await self.apiService
 					.fetchData(from: url, parameters: ["full": "true"])
 
 				// Ensure updating on the main thread

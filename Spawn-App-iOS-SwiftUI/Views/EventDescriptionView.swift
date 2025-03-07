@@ -12,7 +12,7 @@ struct EventDescriptionView: View {
 	@ObservedObject var viewModel: EventDescriptionViewModel
 	var color: Color
 
-	init(event: Event, users: [UserDTO]?, color: Color) {
+	init(event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color) {
 		self.viewModel = EventDescriptionViewModel(event: event, users: users)
 		self.color = color
 	}
@@ -92,7 +92,7 @@ extension EventDescriptionView {
 	}
 
 	struct ChatMessageRow: View {
-		let chatMessage: ChatMessage
+		let chatMessage: FullEventChatMessageDTO
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [
@@ -182,8 +182,8 @@ extension EventDescriptionView {
 
 #Preview {
 	EventDescriptionView(
-		event: Event.mockDinnerEvent,
-		users: UserDTO.mockUsers,
+		event: FullFeedEventDTO.mockDinnerEvent,
+		users: BaseUserDTO.mockUsers,
 		color: universalAccentColor
 	)
 }

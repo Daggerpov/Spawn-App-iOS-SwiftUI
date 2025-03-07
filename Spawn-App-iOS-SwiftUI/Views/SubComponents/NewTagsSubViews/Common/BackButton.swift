@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct BackButton: View {
-	var user: UserDTO
+	var user: BaseUserDTO
 	var source: BackButtonSourcePageType
 	var body: some View {
 		Image(systemName: "arrow.left")
@@ -36,5 +36,5 @@ struct BackButton: View {
 }
 
 #Preview {
-	BackButton(user: UserDTO.danielAgapov, source: BackButtonSourcePageType.feed)
+	BackButton(user: .danielAgapov, source: BackButtonSourcePageType.feed)
 }

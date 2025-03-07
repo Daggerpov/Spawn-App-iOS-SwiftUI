@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct HeaderView: View {
-	var user: UserDTO
+	var user: BaseUserDTO
 	var body: some View {
 		HStack {
 			Spacer()
@@ -23,7 +23,6 @@ struct HeaderView: View {
 					Image(systemName: "star.fill")
 					Text(user.username)
 						.bold()
-						.font(.largeTitle)
 					Spacer()
 				}
 				.font(.title)
@@ -60,6 +59,6 @@ struct HeaderView: View {
 }
 
 #Preview {
-	HeaderView(user: UserDTO.danielAgapov)
+	HeaderView(user: BaseUserDTO.danielAgapov)
 }
 

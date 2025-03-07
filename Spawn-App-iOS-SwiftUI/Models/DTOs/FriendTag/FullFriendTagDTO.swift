@@ -1,5 +1,5 @@
 //
-//  FriendTag.swift
+//  FullFriendTagDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/6/24.
@@ -14,20 +14,21 @@
 
 import Foundation
 
-struct FriendTag: Identifiable, Codable, Hashable {
-	static func == (lhs: FriendTag, rhs: FriendTag) -> Bool {
+/// Like back-end's `FullFriendTagDTO`:
+struct FullFriendTagDTO: Identifiable, Codable, Hashable {
+	static func == (lhs: FullFriendTagDTO, rhs: FullFriendTagDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
 
 	var id: UUID
 	var displayName: String
 	var colorHexCode: String
-	var friends: [UserDTO]?
+	var friends: [BaseUserDTO]?
 	var isEveryone: Bool
 
 	init(
 		id: UUID, displayName: String, colorHexCode: String,
-		friends: [UserDTO]? = nil, isEveryone: Bool = false
+		friends: [BaseUserDTO]? = nil, isEveryone: Bool = false
 	) {
 		self.id = id
 		self.displayName = displayName
@@ -37,21 +38,21 @@ struct FriendTag: Identifiable, Codable, Hashable {
 	}
 }
 
-extension FriendTag {
-	static let everyone: FriendTag = FriendTag(
+extension FullFriendTagDTO {
+	static let everyone: FullFriendTagDTO = FullFriendTagDTO(
 		id: UUID(),
 		displayName: "Everyone",
         colorHexCode: universalSecondaryColorHexCode,
-		friends: [UserDTO.haley, UserDTO.jennifer, UserDTO.shannon, UserDTO.michael]
+		friends: [BaseUserDTO.haley, BaseUserDTO.jennifer, BaseUserDTO.shannon, BaseUserDTO.michael]
 	)
-	static let close = FriendTag(
+	static let close = FullFriendTagDTO(
 		id: UUID(), displayName: "Close Friends",
-		colorHexCode: eventColorHexCodes[1], friends: [UserDTO.danielAgapov])
-	static let sports = FriendTag(
+		colorHexCode: eventColorHexCodes[1], friends: [BaseUserDTO.danielAgapov])
+	static let sports = FullFriendTagDTO(
 		id: UUID(), displayName: "Sports", colorHexCode: eventColorHexCodes[2],
-		friends: [UserDTO.danielLee])
-	static let hobbies = FriendTag(
+		friends: [BaseUserDTO.danielLee])
+	static let hobbies = FullFriendTagDTO(
 		id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[3],
-		friends: [UserDTO.danielLee])
+		friends: [BaseUserDTO.danielLee])
 	static let mockTags = [everyone, close, sports, hobbies]
 }

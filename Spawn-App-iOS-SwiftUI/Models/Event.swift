@@ -27,7 +27,7 @@ class Event: Identifiable, Codable {
 	// the event, which will populate this `invited` property with the `FriendTag`s'
 	// `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
 	var invitedUsers: [UserDTO]?
-	var chatMessages: [ChatMessage]?
+	var chatMessages: [FullEventChatMessageDTO]?
 	var eventFriendTagColorHexCodeForRequestingUser: String?
 	var participationStatus: ParticipationStatus?
 
@@ -41,7 +41,7 @@ class Event: Identifiable, Codable {
 		creatorUser: UserDTO? = UserDTO.danielAgapov,
 		participantUsers: [UserDTO]? = nil,
 		invitedUsers: [UserDTO]? = nil,
-		chatMessages: [ChatMessage]? = nil,
+		chatMessages: [FullEventChatMessageDTO]? = nil,
 		eventFriendTagColorHexCodeForRequestingUser: String? = nil,
 		participationStatus: ParticipationStatus? = nil
 	) {
@@ -115,18 +115,18 @@ extension Event {
 				UserDTO.danielLee,
 			],
 			chatMessages: [
-				ChatMessage(
+				FullEventChatMessageDTO(
 					id: UUID(),
 					content: "yo guys, wya?",
 					timestamp: Date().addingTimeInterval(-30),  // 30 seconds ago
-					senderUser: UserDTO.danielAgapov,
+					senderUser: BaseUserDTO.danielAgapov,
 					eventId: mockDinnerEvent.id
 				),
-				ChatMessage(
+				FullEventChatMessageDTO(
 					id: UUID(),
 					content: "I just saw you",
 					timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
-					senderUser: UserDTO.danielLee,
+					senderUser: BaseUserDTO.danielLee,
 					eventId: mockDinnerEvent.id
 				),
 			]

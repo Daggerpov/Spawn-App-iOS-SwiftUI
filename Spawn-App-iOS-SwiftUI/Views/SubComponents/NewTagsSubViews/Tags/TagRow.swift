@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TagRow: View {
 	@EnvironmentObject var viewModel: TagsViewModel
-	var friendTag: FriendTag
+	var friendTag: FullFriendTagDTO
 	@State private var titleText: String
 
 	@State private var isExpanded: Bool = false
@@ -23,7 +23,7 @@ struct TagRow: View {
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
 	init(
-		friendTag: FriendTag,
+		friendTag: FullFriendTagDTO,
 		addFriendToTagButtonPressedCallback: @escaping (UUID) -> Void
 	) {
 		self.friendTag = friendTag
@@ -135,7 +135,7 @@ extension TagRow {
 }
 
 struct TagFriendsView: View {
-	var friends: [UserDTO]?
+	var friends: [BaseUserDTO]?
 	@Binding var isExpanded: Bool
 
 	var body: some View {
@@ -180,5 +180,5 @@ struct TagFriendsView: View {
 }
 
 #Preview {
-	TagRow(friendTag: FriendTag.close, addFriendToTagButtonPressedCallback: {_ in})
+	TagRow(friendTag: FullFriendTagDTO.close, addFriendToTagButtonPressedCallback: {_ in})
 }

@@ -19,7 +19,7 @@ struct MapView: View {
 
 	// MARK - Event Description State Vars
 	@State private var showingEventDescriptionPopup: Bool = false
-	@State private var eventInPopup: Event?
+	@State private var eventInPopup: FullFeedEventDTO?
 	@State private var colorInPopup: Color?
 
 	@State private var showingEventCreationPopup: Bool = false
@@ -29,9 +29,9 @@ struct MapView: View {
 	@State private var creationOffset: CGFloat = 1000
 	// ------------
 
-	var user: UserDTO
+	var user: BaseUserDTO
 
-	init(user: UserDTO) {
+	init(user: BaseUserDTO) {
 		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
@@ -161,7 +161,7 @@ extension MapView {
 								.frame(width: 60, height: 60)
 								.foregroundColor(universalAccentColor)
 
-							if let pfpUrl = event.creatorUser?.profilePicture {
+							if let pfpUrl = event.creatorUser.profilePicture {
 								AsyncImage(url: URL(string: pfpUrl)) {
 									image in
 									image

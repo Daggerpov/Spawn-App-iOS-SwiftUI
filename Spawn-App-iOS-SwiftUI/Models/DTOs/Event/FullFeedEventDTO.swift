@@ -20,16 +20,16 @@ class FullFeedEventDTO: Identifiable, Codable {
 	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
 
 	// MARK: Relations
-	var creatorUser: UserDTO
+	var creatorUser: BaseUserDTO
 
 	// tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
-	var participantUsers: [UserDTO]?
+	var participantUsers: [BaseUserDTO]?
 
 	// tech note: this will be determined by the `User`'s specified `FriendTag`s on
 	// the event, which will populate this `invited` property with the `FriendTag`s'
 	// `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
-	var invitedUsers: [UserDTO]?
-	var chatMessages: [ChatMessage]?
+	var invitedUsers: [BaseUserDTO]?
+	var chatMessages: [FullEventChatMessageDTO]?
 	var eventFriendTagColorHexCodeForRequestingUser: String?
 	var participationStatus: ParticipationStatus?
 
@@ -40,10 +40,10 @@ class FullFeedEventDTO: Identifiable, Codable {
 		endTime: Date? = nil,
 		location: Location? = nil,
 		note: String? = nil,
-		creatorUser: UserDTO,
-		participantUsers: [UserDTO]? = nil,
-		invitedUsers: [UserDTO]? = nil,
-		chatMessages: [ChatMessage]? = nil,
+		creatorUser: BaseUserDTO,
+		participantUsers: [BaseUserDTO]? = nil,
+		invitedUsers: [BaseUserDTO]? = nil,
+		chatMessages: [FullEventChatMessageDTO]? = nil,
 		eventFriendTagColorHexCodeForRequestingUser: String? = nil,
 		participationStatus: ParticipationStatus? = nil
 	) {
@@ -83,4 +83,22 @@ extension FullFeedEventDTO {
 		}
 		return nil
 	}
+
+	static let mockDinnerEvent: FullFeedEventDTO = FullFeedEventDTO(
+		id: UUID(),
+		title: "Dinner time!!!!!!",
+		startTime: dateFromTimeString("10:00 PM"),
+		endTime: dateFromTimeString("11:30 PM"),
+		location: Location(
+			id: UUID(), name: "Gather - Place Vanier",
+			latitude: 49.26468617023799, longitude: -123.25859833051356),
+		note: "let's eat!",
+		creatorUser: BaseUserDTO.jennifer,
+		participantUsers: [
+			BaseUserDTO.danielLee,
+			BaseUserDTO.haley,
+			BaseUserDTO.jennifer,
+			BaseUserDTO.michael,
+		]
+	)
 }

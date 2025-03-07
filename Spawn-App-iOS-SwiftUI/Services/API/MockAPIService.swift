@@ -38,7 +38,7 @@ class MockAPIService: IAPIService {
 		// fetchTagsForUser():
 
 		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FriendTag.mockTags as! T
+			return FullFriendTagDTO.mockTags as! T
 		}
 
 		/// FriendsTabViewModel.swift:
@@ -79,7 +79,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "friendTags/owner/\(userIdForUrl)"
 			{
-				return FriendTag.mockTags as! T
+				return FullFriendTagDTO.mockTags as! T
 			}
 		}
 
@@ -88,7 +88,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "friendTags/addUserToTags/\(userIdForUrl)"
 			{
-				return FriendTag.mockTags as! T
+				return FullFriendTagDTO.mockTags as! T
 			}
 		}
 
@@ -97,7 +97,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "friendTags/addUserToTags/\(userIdForUrl)"
 			{
-				return FriendTag.mockTags as! T
+				return FullFriendTagDTO.mockTags as! T
 			}
 		}
 
@@ -118,7 +118,7 @@ class MockAPIService: IAPIService {
 		if url.absoluteString == APIService.baseURL + "users/friend-request" {
 			return FetchFriendRequestDTO(
 				id: UUID(),
-				senderUser: PotentialFriendUserDTO.danielAgapov
+				senderUser: BaseUserDTO.danielAgapov
 			) as! U?
 		}
 
@@ -136,7 +136,7 @@ class MockAPIService: IAPIService {
 		// upsertTag(upsertAction: .create):
 
 		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FriendTag.close as! U?
+			return FullFriendTagDTO.close as! U?
 		}
 
 		// this means I need to include the url call in this mock `sendData` method:
@@ -150,7 +150,7 @@ class MockAPIService: IAPIService {
 
 		// upsertTag(upsertAction: .update):
 		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FriendTag.close as! U
+			return FullFriendTagDTO.close as! U
 		}
 
 		// Example: Updating an event's participation status

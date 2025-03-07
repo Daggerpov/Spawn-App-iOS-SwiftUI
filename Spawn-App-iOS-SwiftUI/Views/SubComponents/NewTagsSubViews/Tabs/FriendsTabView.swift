@@ -9,11 +9,11 @@ import SwiftUI
 
 struct FriendsTabView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
-	let user: UserDTO
+	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
-	@State private var friendInPopUp: PotentialFriendUserDTO?
+	@State private var friendInPopUp: BaseUserDTO?
 	@State private var friendRequestIdInPopup: UUID?
 
 	// for pop-ups:
@@ -23,7 +23,7 @@ struct FriendsTabView: View {
 
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
 
-	init(user: UserDTO) {
+	init(user: BaseUserDTO) {
 		self.user = user
 		self.viewModel = FriendsTabViewModel(
 			userId: user.id,
@@ -251,7 +251,7 @@ if let pfp = friend.profilePicture {
 
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
-		var friend: UserDTO
+		var friend: BaseUserDTO
 		@State private var isAdded: Bool = false
 
 		var body: some View {

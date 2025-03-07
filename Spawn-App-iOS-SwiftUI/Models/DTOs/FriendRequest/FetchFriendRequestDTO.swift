@@ -14,9 +14,9 @@ struct FetchFriendRequestDTO: Identifiable, Codable, Hashable {
 	}
 
 	var id: UUID
-	var senderUser: PotentialFriendUserDTO
+	var senderUser: BaseUserDTO
 
-	init(id: UUID, senderUser: PotentialFriendUserDTO) {
+	init(id: UUID, senderUser: BaseUserDTO) {
 		self.id = id
 		self.senderUser = senderUser
 	}
@@ -25,10 +25,10 @@ struct FetchFriendRequestDTO: Identifiable, Codable, Hashable {
 extension FetchFriendRequestDTO {
 	static let mockFriendRequests: [FetchFriendRequestDTO] = [
 		FetchFriendRequestDTO(
-			id: UUID(), senderUser: PotentialFriendUserDTO.danielAgapov),
+			id: UUID(), senderUser: BaseUserDTO.danielAgapov),
 		FetchFriendRequestDTO(
 			id: UUID(),
-			senderUser: PotentialFriendUserDTO.danielLee
+			senderUser: BaseUserDTO.danielLee
 		)
 	]
 }
