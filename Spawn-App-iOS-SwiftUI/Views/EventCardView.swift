@@ -27,44 +27,75 @@ struct EventCardView: View {
 	}
 	var body: some View {
 		NavigationStack {
-			VStack {
-				EventCardTopRowView(event: event)
-				HStack{
-					usernamesView
-					Spacer()
-				}
-				Spacer()
-				HStack {
-					VStack {
-						HStack {
-							EventInfoView(event: event, eventInfoType: .time)
-							Spacer()
-						}
+			ZStack {
+				// Main card content
+				VStack {
+					EventCardTopRowView(event: event)
+					HStack{
+						usernamesView
 						Spacer()
-						HStack {
-							EventInfoView(
-								event: event, eventInfoType: .location)
-							Spacer()
-						}
 					}
-					.foregroundColor(.white)
 					Spacer()
-						.frame(width: 30)
-					Circle()
-						.CircularButton(
-							systemName: viewModel.isParticipating
-								? "checkmark" : "star.fill",
-							buttonActionCallback: {
-								Task {
-									await viewModel.toggleParticipation()
-								}
-							})
+					HStack {
+						VStack {
+							HStack {
+								EventInfoView(event: event, eventInfoType: .time)
+								Spacer()
+							}
+							Spacer()
+							HStack {
+								EventInfoView(
+									event: event, eventInfoType: .location)
+								Spacer()
+							}
+						}
+						.foregroundColor(.white)
+						Spacer()
+							.frame(width: 30)
+						Circle()
+							.CircularButton(
+								systemName: event.isSelfOwned == true 
+									? "pencil" // Edit icon for self-owned events
+									: (viewModel.isParticipating ? "checkmark" : "star.fill"),
+								buttonActionCallback: {
+									Task {
+										if event.isSelfOwned == true {
+											// Handle edit action
+											print("Edit event")
+											// TODO: Implement edit functionality
+										} else {
+											// Toggle participation for non-owned events
+											await viewModel.toggleParticipation()
+										}
+									}
+								})
+					}
+					.frame(alignment: .trailing)
 				}
-				.frame(alignment: .trailing)
+				.padding(20)
+				.background(color)
+				.cornerRadius(universalRectangleCornerRadius)
+				
+				// "CREATED BY YOU" vertical text on the right side (only if self-owned)
+				if event.isSelfOwned == true {
+					HStack {
+						Spacer()
+						
+						// Vertical text container
+						VStack {
+							Text("CREATED BY YOU")
+								.font(.caption2)
+								.fontWeight(.semibold)
+								.foregroundColor(.white)
+								.rotationEffect(.degrees(90))
+								.fixedSize()
+								.frame(width: 20)
+						}
+						.frame(maxHeight: .infinity)
+						.padding(.trailing, 5)
+					}
+				}
 			}
-			.padding(20)
-			.background(color)
-			.cornerRadius(universalRectangleCornerRadius)
 			.onAppear {
 				viewModel.fetchIsParticipating()
 			}
@@ -86,7 +117,7 @@ extension EventCardView {
 			: "@\(event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
 		
 		return Text(displayText)
-			.foregroundColor(.white)
+			.foregroundColor(Color(.systemGray4))
 			.font(.caption)
 	}
 }

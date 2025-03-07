@@ -28,62 +28,106 @@ struct EventDescriptionView: View {
 
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: 20) {
-				// Title and Time Information
-				EventCardTopRowView(event: viewModel.event)
-				
-				// Username display
-				HStack {
-					usernamesView
-					Spacer()
-				}
-
-				VStack {
+			ZStack {
+				// Main content
+				VStack(alignment: .leading, spacing: 20) {
+					// Title and Time Information
+					EventCardTopRowView(event: viewModel.event)
+					
+					// Username display
 					HStack {
-						// Note
-						if let note = viewModel.event.note {
-							Text("\(note)")
-								.font(.body)
-								.padding(.bottom, 15)
-								.foregroundColor(.white)
-								.font(.body)
-								.italic()
+						usernamesView
+						Spacer()
+					}
+
+					VStack {
+						HStack {
+							// Note
+							if let note = viewModel.event.note {
+								Text("\(note)")
+									.font(.body)
+									.padding(.bottom, 15)
+									.foregroundColor(.white)
+									.font(.body)
+									.italic()
+							}
 						}
-					}
-					.frame(maxWidth: .infinity, alignment: .leading)
+						.frame(maxWidth: .infinity, alignment: .leading)
 
-					HStack(spacing: 10) {
-						EventInfoView(
-							event: viewModel.event, eventInfoType: .time)
-						EventInfoView(
-							event: viewModel.event, eventInfoType: .location)
+						HStack(spacing: 10) {
+							EventInfoView(
+								event: viewModel.event, eventInfoType: .time)
+							EventInfoView(
+								event: viewModel.event, eventInfoType: .location)
+							
+							Spacer()
+							
+							// Add participation toggle or edit button
+							Circle()
+								.CircularButton(
+									systemName: viewModel.event.isSelfOwned == true 
+										? "pencil" // Edit icon for self-owned events
+										: (viewModel.isParticipating ? "checkmark" : "star.fill"),
+									buttonActionCallback: {
+										Task {
+											if viewModel.event.isSelfOwned == true {
+												// Handle edit action
+												print("Edit event")
+												// TODO: Implement edit functionality
+											} else {
+												// Toggle participation for non-owned events
+												await viewModel.toggleParticipation()
+											}
+										}
+									})
+						}
+						.foregroundColor(.white)
 					}
-					.foregroundColor(.white)
+					.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
+
+					if let chatMessages = viewModel.event.chatMessages {
+						Divider()
+							.frame(height: 0.5)
+							.background(Color.black)
+							.opacity(1)
+						HStack {
+							Spacer()
+							Text(
+								"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
+							)
+							.foregroundColor(.black)
+							.opacity(0.7)
+							.font(.caption)
+						}
+						.frame(maxWidth: .infinity)
+					}
+
+					chatMessagesView
 				}
-				.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
-
-				if let chatMessages = viewModel.event.chatMessages {
-					Divider()
-						.frame(height: 0.5)
-						.background(Color.black)
-						.opacity(1)
+				.padding(20)
+				.background(color)
+				.cornerRadius(universalRectangleCornerRadius)
+				
+				// "CREATED BY YOU" vertical text on the right side (only if self-owned)
+				if viewModel.event.isSelfOwned == true {
 					HStack {
 						Spacer()
-						Text(
-							"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
-						)
-						.foregroundColor(.black)
-						.opacity(0.7)
-						.font(.caption)
+						
+						// Vertical text container
+						VStack {
+							Text("CREATED BY YOU")
+								.font(.caption2)
+								.fontWeight(.semibold)
+								.foregroundColor(.white)
+								.rotationEffect(.degrees(90))
+								.fixedSize()
+								.frame(width: 20)
+						}
+						.frame(maxHeight: .infinity)
+						.padding(.trailing, 5)
 					}
-					.frame(maxWidth: .infinity)
 				}
-
-				chatMessagesView
 			}
-			.padding(20)
-			.background(color)
-			.cornerRadius(universalRectangleCornerRadius)
 		}
 		.scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
 	}
@@ -195,7 +239,7 @@ extension EventDescriptionView {
 				.background(Color.white)
 				.cornerRadius(10)
 				.font(.caption)
-				.foregroundColor(self.color)
+				.foregroundColor(universalAccentColor)
 
 			Button(action: {
 				Task {
@@ -210,6 +254,7 @@ extension EventDescriptionView {
 		}
 		.background(Color.white)
 		.cornerRadius(15)
+		.padding(.bottom, 32)
 	}
 }
 

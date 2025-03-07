@@ -13,12 +13,44 @@ class EventDescriptionViewModel: ObservableObject {
 	var senderUserId: UUID
 	var apiService: IAPIService
 	var creationMessage: String?
+	@Published var isParticipating: Bool = false
 
 	init(apiService: IAPIService, event: FullFeedEventDTO, users: [BaseUserDTO]? = [], senderUserId: UUID) {
 		self.apiService = apiService
 		self.event = event
 		self.users = users
 		self.senderUserId = senderUserId
+		
+		// Check if user is already participating
+		fetchIsParticipating()
+	}
+	
+	func fetchIsParticipating() {
+		// Check if the user is in the participants list
+		if let participants = event.participantUsers {
+			isParticipating = participants.contains { $0.id == senderUserId }
+		}
+	}
+	
+	func toggleParticipation() async {
+		// Toggle participation status
+		let newStatus = !isParticipating
+		
+		// Construct URL for participation API
+		if let url = URL(string: APIService.baseURL + "events/\(event.id)/participation") {
+			do {
+				let parameters = ["status": newStatus ? "PARTICIPATING" : "NOT_PARTICIPATING"]
+				_ = try await self.apiService.sendData(
+					EmptyRequestBody(), to: url, parameters: parameters)
+				
+				// Update local state on success
+				await MainActor.run {
+					self.isParticipating = newStatus
+				}
+			} catch {
+				print("Error toggling participation: \(error)")
+			}
+		}
 	}
 
 	func sendMessage(message: String) async {
