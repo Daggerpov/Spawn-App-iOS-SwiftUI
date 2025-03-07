@@ -139,7 +139,8 @@ class MockAPIService: IAPIService {
 			return FullFriendTagDTO.close as! U?
 		}
 
-		return
+		
+		throw APIError.invalidData
 	}
 
 	func updateData<T: Encodable, U: Decodable>(
