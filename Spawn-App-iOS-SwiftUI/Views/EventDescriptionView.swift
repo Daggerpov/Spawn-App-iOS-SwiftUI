@@ -59,7 +59,7 @@ struct EventDescriptionView: View {
 								event: viewModel.event, eventInfoType: .time)
 							
 							// Only show location if it exists
-							if viewModel.event.location?.name != nil && !(viewModel.event.location?.name?.isEmpty ?? true) {
+							if viewModel.event.location?.name != nil && !(viewModel.event.location?.name.isEmpty ?? true) {
 								EventInfoView(
 									event: viewModel.event, eventInfoType: .location)
 							}
@@ -144,6 +144,7 @@ extension EventDescriptionView {
 
 			chatBar
 				.padding(.horizontal, 25)
+				.padding(.vertical)
 		}
 		.padding(.top, 10)
 		.padding(.bottom, 10)
@@ -237,8 +238,7 @@ extension EventDescriptionView {
 			}
 		}
 		.background(Color.white)
-		.cornerRadius(15)
-		.padding(.bottom, 32)
+		.cornerRadius(universalRectangleCornerRadius)
 	}
 }
 
