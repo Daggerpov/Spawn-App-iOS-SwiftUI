@@ -12,8 +12,17 @@ struct EventDescriptionView: View {
 	@ObservedObject var viewModel: EventDescriptionViewModel
 	var color: Color
 
-	init(event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color) {
-		self.viewModel = EventDescriptionViewModel(event: event, users: users)
+	init(
+		event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color,
+		userId: UUID
+	) {
+		self.viewModel = EventDescriptionViewModel(
+			apiService: MockAPIService.isMocking
+				? MockAPIService(
+					userId: userId) : APIService(), event: event,
+			users: users,
+			senderUserId: userId
+		)
 		self.color = color
 	}
 
@@ -54,10 +63,12 @@ struct EventDescriptionView: View {
 						.opacity(1)
 					HStack {
 						Spacer()
-						Text("\(chatMessages.count) replies")
-							.foregroundColor(.black)
-							.opacity(0.7)
-							.font(.caption)
+						Text(
+							"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
+						)
+						.foregroundColor(.black)
+						.opacity(0.7)
+						.font(.caption)
 					}
 					.frame(maxWidth: .infinity)
 				}
@@ -81,14 +92,15 @@ extension EventDescriptionView {
 						ChatMessageRow(chatMessage: chatMessage)
 					}
 				}
-				chatBar
-					.padding(.horizontal, 25)
 			}
-			.padding(.top, 10)
-			.padding(.bottom, 10)
-			.background(Color.black.opacity(0.05))
-			.cornerRadius(20)
+
+			chatBar
+				.padding(.horizontal, 25)
 		}
+		.padding(.top, 10)
+		.padding(.bottom, 10)
+		.background(Color.black.opacity(0.05))
+		.cornerRadius(20)
 	}
 
 	struct ChatMessageRow: View {
@@ -166,8 +178,9 @@ extension EventDescriptionView {
 				.foregroundColor(self.color)
 
 			Button(action: {
-				// Handle send action
-				print("Message sent: \(messageText)")
+				Task {
+					await viewModel.sendMessage(message: messageText)
+				}
 				messageText = ""
 			}) {
 				Image(systemName: "paperplane.fill")
@@ -184,6 +197,7 @@ extension EventDescriptionView {
 	EventDescriptionView(
 		event: FullFeedEventDTO.mockDinnerEvent,
 		users: BaseUserDTO.mockUsers,
-		color: universalAccentColor
+		color: universalAccentColor,
+		userId: UUID()
 	)
 }

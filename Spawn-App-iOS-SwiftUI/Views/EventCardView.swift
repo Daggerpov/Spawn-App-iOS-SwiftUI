@@ -29,6 +29,8 @@ struct EventCardView: View {
 		NavigationStack {
 			VStack {
 				EventCardTopRowView(event: event)
+				Text("@\(event.creatorUser) + \(event.participantUsers.count + event.invitedUsers.count) more")
+					.foregroundColor(.white)
 				Spacer()
 				HStack {
 					VStack {

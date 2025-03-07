@@ -202,7 +202,8 @@ extension MapView {
 					EventDescriptionView(
 						event: event,
 						users: event.participantUsers,
-						color: color
+						color: color,
+						userId: user.id
 					)
 					.offset(x: 0, y: descriptionOffset)
 					.onAppear {
