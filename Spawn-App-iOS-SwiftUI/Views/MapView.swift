@@ -77,6 +77,9 @@ struct MapView: View {
 					await viewModel.fetchEventsForUser()
 				}
 			}
+			.onChange(of: viewModel.events) { _ in
+				adjustRegionForEvents()
+			}
 			if showingEventDescriptionPopup {
 				eventDescriptionPopupView
 			}
@@ -235,7 +238,7 @@ extension MapView {
 				}
 				.ignoresSafeArea()
 
-			EventCreationView(creatingUser: user, closeCallback: closeCreation)
+			EventCreationView(creatingUser: user, feedViewModel: viewModel, closeCallback: closeCreation)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
 					creationOffset = 0
