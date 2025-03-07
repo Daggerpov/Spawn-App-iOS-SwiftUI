@@ -143,12 +143,41 @@ More complicated case, to supply initial state and `init()` parameters:
         ![alt text](images/onboarding-images/image-9.png)
 - `var body: some View{}` is the main body of a SwiftUI view, and is where the UI is defined
     - This is similar to React's return statement in a functional component
+- `HStack`, `VStack`, and `ZStack` are ways to group components (like divs in HTML) across dimensions: horizontally, vertically, and in the Z-dimension
+    ![alt text](images/onboarding-images/stacks.png)
 - `Button{}` is a way to create a button in SwiftUI
     - the action parameter is where you define what happens when the button is clicked
     - the other closure is the label closure, as such, which display the button's UI
     ![alt text](images/onboarding-images/image-5.png)
 - `NavigationLink{}` is a way to navigate to another view in SwiftUI, as a button
 ![alt text](images/onboarding-images/image-6.png)
+- Unwrapping Optionals (4 ways):
+
+In this example, `app.users` is an optional value, a.k.a. it might be `nil` (`null` in other languages). Thus, we need to 'unwrap' it to get the actual value, and here are the 4 ways to do this in Swift:
+```
+let appUsers = appPortfolio.map {app in
+		// Force-Unwrap
+    return app.users! // leads to error if app.users is nil -> very dangerous
+    
+    // guard unwrap, for early-exits
+    guard let userCount = app.users else {
+        return 0
+    }
+    return userCount
+    
+    
+    // if unwrap, for quick usage, but without persistence of guard
+    if let userCount = app.users {
+        return userCount
+    } else {
+        return 0
+    }
+    
+    // nil coalescing to provide default value
+    // example of good default would be "Not Given" for a user's username
+    return app.users ?? 0
+}
+```
 
 </details>
 
