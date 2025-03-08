@@ -15,6 +15,7 @@ struct FriendsTabView: View {
 	@State var showingChooseTagsPopup: Bool = false
 	@State private var friendInPopUp: BaseUserDTO?
 	@State private var friendRequestIdInPopup: UUID?
+    @State private var mutualFriendCountInPopup: Int?
 
 	// for pop-ups:
 	@State private var friendRequestOffset: CGFloat = 1000
@@ -79,6 +80,7 @@ struct FriendsTabView: View {
 								// this executes like .onTapGesture() in JS
 								friendInPopUp = friendRequest.senderUser
 								friendRequestIdInPopup = friendRequest.id
+                                mutualFriendCountInPopup = friendRequest.mutualFriendCount
 								showingFriendRequestPopup = true
 							}) {
 								// this is the Button's display
@@ -424,7 +426,8 @@ extension FriendsTabView {
 	var friendRequestPopUpView: some View {
 		Group {
 			if let unwrappedFriendInPopUp = friendInPopUp,
-				let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup
+				let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup,
+                let unwrappedMutualFriendCountInPopup = mutualFriendCountInPopup
 			{  // ensuring it isn't null
 				ZStack {
 					Color(.black)
@@ -440,6 +443,7 @@ extension FriendsTabView {
 					FriendRequestView(
 						user: unwrappedFriendInPopUp,
 						friendRequestId: unwrappedFriendRequestIdInPopup,
+                        mutualFriendCount: unwrappedMutualFriendCountInPopup,
 						closeCallback: closeFriendPopUp,
 						showingChoosingTagView: $showingChooseTagsPopup
 					)

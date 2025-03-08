@@ -15,14 +15,16 @@ struct FriendRequestView: View {
 	@Binding var showingChoosingTagView: Bool
 
 	let user: BaseUserDTO
+    let mutualFriendCount: Int
 	let closeCallback: () -> ()?  // this is a function passed in from `FriendsTabView`, as a callback function to close the popup
 
 	init(
-		user: BaseUserDTO, friendRequestId: UUID, closeCallback: @escaping () -> Void,
+        user: BaseUserDTO, friendRequestId: UUID, mutualFriendCount: Int, closeCallback: @escaping () -> Void,
 		showingChoosingTagView: Binding<Bool>
 	) {
 		self.user = user
 		self.closeCallback = closeCallback
+        self.mutualFriendCount = mutualFriendCount
 		self.viewModel = FriendRequestViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService() : APIService(), userId: user.id,
@@ -69,6 +71,12 @@ struct FriendRequestView: View {
 						Image(systemName: "star.fill").font(.title2)
 						Text(FormatterService.shared.formatName(user: user))
                             .font(.title2).fontWeight(.bold).foregroundColor(universalAccentColor)
+                        if mutualFriendCount > 0 {
+                            Text("\(mutualFriendCount) mutual friend\(mutualFriendCount > 1 ? "s" : "")")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white.opacity(0.8))
+                                .padding(.top, 2)
+                        }
 					}
 					Text(user.username).font(.title2).foregroundColor(
 						.black.opacity(0.7))
@@ -163,6 +171,7 @@ extension FriendRequestView {
 	FriendRequestView(
 		user: .danielAgapov,
 		friendRequestId: UUID(),
+        mutualFriendCount: 2,
 		closeCallback: {
 		},
 		showingChoosingTagView: $showing)
