@@ -69,7 +69,7 @@ struct MapView: View {
 			}
 
 			.onAppear {
-				adjustRegionForEvents()
+				adjustRegionForEventsOrUserLocation()
 				Task {
 					await viewModel.fetchAllData()
 				}
@@ -90,6 +90,18 @@ struct MapView: View {
 			}
 		}
 	}
+    
+    private func adjustRegionForEventsOrUserLocation() {
+        if !viewModel.events.isEmpty {
+            adjustRegionForEvents()
+        } else if let userLocation = locationManager.userLocation {
+            region = MKCoordinateRegion(
+                center: userLocation,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+        }
+    }
+    
 	private func adjustRegionForEvents() {
 		guard !viewModel.events.isEmpty else { return }
 
