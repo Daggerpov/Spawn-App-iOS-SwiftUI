@@ -13,7 +13,6 @@ import UserNotifications // Add this import for notifications
 
 struct LaunchView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
-	let notificationCenter = UNUserNotificationCenter.current()
 
 	var body: some View {
 		NavigationStack {
@@ -40,20 +39,6 @@ struct LaunchView: View {
 					AuthProviderButtonView(authProviderType: .apple)
 				}
 
-				// Add a button for explicit notification permission
-				Button(action: {
-					requestNotificationPermission()
-				}) {
-					Text("Enable Notifications")
-						.foregroundColor(.white)
-						.padding()
-						.frame(maxWidth: .infinity)
-						.background(Color.blue)
-						.cornerRadius(10)
-				}
-				.padding(.horizontal, 32)
-				.padding(.top, 16)
-
 				Spacer()
 			}
 			.background(authPageBackgroundColor)
@@ -64,21 +49,6 @@ struct LaunchView: View {
 				getAuthNavDestinationView()
 					.navigationBarTitle("")
 					.navigationBarHidden(true)
-			}
-		}
-		.onAppear {
-			// Request notification permissions when the view appears
-			requestNotificationPermission()
-		}
-	}
-
-	private func requestNotificationPermission() {
-		Task {
-			do {
-				try await notificationCenter.requestAuthorization(options: [.alert, .badge, .sound])
-				print("Notification permission granted")
-			} catch {
-				print("Failed to request notification permission: \(error.localizedDescription)")
 			}
 		}
 	}

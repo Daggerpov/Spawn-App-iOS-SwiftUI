@@ -8,6 +8,7 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import UserNotifications
 
 struct UserInfoInputView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
@@ -138,6 +139,11 @@ struct UserInfoInputView: View {
 								lastName: userAuth.familyName ?? "",
 								email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
 							)
+							
+							// Show notification permission request after account creation
+							if userAuth.spawnUser != nil {
+								requestNotificationPermission()
+							}
 						}
 						userAuth.isFormValid = true
 					}
@@ -192,6 +198,18 @@ struct UserInfoInputView: View {
 			isEmailValid =
 				!email.trimmingCharacters(in: .whitespaces).isEmpty
 				&& email.contains("@")  // Simple email validation
+		}
+	}
+
+	private func requestNotificationPermission() {
+		let notificationCenter = UNUserNotificationCenter.current()
+		Task {
+			do {
+				try await notificationCenter.requestAuthorization(options: [.alert, .badge, .sound])
+				print("Notification permission granted")
+			} catch {
+				print("Failed to request notification permission: \(error.localizedDescription)")
+			}
 		}
 	}
 }
