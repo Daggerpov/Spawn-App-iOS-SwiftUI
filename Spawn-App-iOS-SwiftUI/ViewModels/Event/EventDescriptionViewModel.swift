@@ -54,11 +54,22 @@ class EventDescriptionViewModel: ObservableObject {
 	}
 
 	func sendMessage(message: String) async {
+		// Validate the message is not empty
+		guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+			print("Cannot send empty message")
+			await MainActor.run {
+				creationMessage = "Cannot send an empty message"
+			}
+			return
+		}
+		
+		let trimmedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines)
 		let chatMessage: CreateChatMessageDTO = CreateChatMessageDTO(
-			content: message,
+			content: trimmedMessage,
 			senderUserId: senderUserId,
 			eventId: event.id
 		)
+		
 		if let url = URL(string: APIService.baseURL + "chatMessages") {
 			do {
 				_ = try await self.apiService.sendData(
@@ -66,10 +77,15 @@ class EventDescriptionViewModel: ObservableObject {
 				
 				// After successfully sending the message, fetch the updated event data
 				await fetchUpdatedEventData()
-			} catch {
+				
+				// Clear any error message
 				await MainActor.run {
-					creationMessage =
-					"There was an error sending your chat message. Please try again"
+					creationMessage = nil
+				}
+			} catch {
+				print("Error sending message: \(error)")
+				await MainActor.run {
+					creationMessage = "There was an error sending your chat message. Please try again"
 				}
 			}
 		}

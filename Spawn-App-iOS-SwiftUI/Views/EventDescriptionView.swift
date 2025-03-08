@@ -230,15 +230,27 @@ extension EventDescriptionView {
 				.foregroundColor(universalAccentColor)
 
 			Button(action: {
-				Task {
-					await viewModel.sendMessage(message: messageText)
+				// Store the current message text in a local constant
+				let currentMessage = messageText
+				
+				// Only try to send if message is not empty
+				if !currentMessage.isEmpty {
+					Task {
+						// Use the stored message text
+						await viewModel.sendMessage(message: currentMessage)
+						
+						// Clear the text field on the main thread after sending
+						await MainActor.run {
+							messageText = ""
+						}
+					}
 				}
-				messageText = ""
 			}) {
 				Image(systemName: "paperplane.fill")
 					.foregroundColor(Color.black)
 					.padding(.trailing, 10)
 			}
+			.disabled(messageText.isEmpty) // Disable button when text is empty
 		}
 		.background(Color.white)
 		.cornerRadius(universalRectangleCornerRadius)

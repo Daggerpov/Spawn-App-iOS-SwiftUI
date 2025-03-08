@@ -129,6 +129,7 @@ extension FeedView {
 							- CGFloat(event.note != nil ? 50 : 0)
 						)
 					)
+                    .padding(.top, 100)
 
 				}
 				.ignoresSafeArea()
