@@ -104,8 +104,10 @@ struct EventCardView: View {
                     .padding(20)
                     .background(color)
                     .cornerRadius(universalRectangleCornerRadius)
-                    Spacer()
-                        .frame(width: 40)
+                    if event.isSelfOwned == true {
+                        Spacer()
+                            .frame(width: 40)
+                    }
                 }
 
                 
@@ -123,13 +125,11 @@ struct EventCardView: View {
 extension EventCardView {
     var usernamesView: some View {
         let participantCount = (event.participantUsers?.count ?? 0) - 1  // Subtract 1 to exclude creator
-        let invitedCount = event.invitedUsers?.count ?? 0
-        let totalCount = participantCount + invitedCount
 
         let displayText =
             (event.isSelfOwned == true)
-            ? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
-            : "@\(event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+            ? "\(participantCount > 0 ? "You + \(participantCount) more" : "Just you. Invite some friends!")"
+            : "@\(event.creatorUser.username)\(participantCount > 0 ? " + \(participantCount) more" : "")"
 
         return Text(displayText)
             .foregroundColor(Color(.systemGray4))

@@ -67,7 +67,7 @@ struct TagRow: View {
 										? "checkmark" : "pencil")
 							}
 
-							if isEditingTitle {
+                            if isEditingTitle, !friendTag.isEveryone{
 								Button(action: {
 									showDeleteAlert = true
 								}) {

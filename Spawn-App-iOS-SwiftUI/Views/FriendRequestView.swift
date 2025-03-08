@@ -68,7 +68,7 @@ struct FriendRequestView: View {
 					HStack {
 						Image(systemName: "star.fill").font(.title2)
 						Text(FormatterService.shared.formatName(user: user))
-							.font(.title2).fontWeight(.bold)
+                            .font(.title2).fontWeight(.bold).foregroundColor(universalAccentColor)
 					}
 					Text(user.username).font(.title2).foregroundColor(
 						.black.opacity(0.7))

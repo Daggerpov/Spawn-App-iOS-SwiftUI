@@ -34,7 +34,7 @@ class MockAPIService: IAPIService {
                 return [
                     FullFeedEventDTO.mockDinnerEvent,
                     FullFeedEventDTO
-                        .mockSelfOwnedEvent] as! T
+                        .mockSelfOwnedEvent, FullFeedEventDTO.mockSelfOwnedEvent2] as! T
 			}
 		}
 
@@ -60,7 +60,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/recommended-friends/\(userIdForUrl)"
 			{
-				let firstThreeUsers = Array(UserDTO.mockUsers.prefix(3))
+				let firstThreeUsers = Array(RecommendedFriendUserDTO.mockUsers.prefix(3))
 				return firstThreeUsers as! T
 			}
 
