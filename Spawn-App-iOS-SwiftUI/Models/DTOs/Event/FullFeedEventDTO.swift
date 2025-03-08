@@ -108,4 +108,22 @@ extension FullFeedEventDTO {
 			BaseUserDTO.michael,
 		]
 	)
+    static let mockSelfOwnedEvent: FullFeedEventDTO = FullFeedEventDTO(
+        id: UUID(),
+        title: "Dinner time!!!!!!",
+        startTime: dateFromTimeString("10:00 PM"),
+        endTime: dateFromTimeString("11:30 PM"),
+        location: Location(
+            id: UUID(), name: "Gather - Place Vanier",
+            latitude: 49.26468617023799, longitude: -123.25859833051356),
+        note: "let's eat!",
+        creatorUser: BaseUserDTO.jennifer,
+        participantUsers: [
+            BaseUserDTO.danielLee,
+            BaseUserDTO.haley,
+            BaseUserDTO.jennifer,
+            BaseUserDTO.michael,
+        ],
+        isSelfOwned: true
+    )
 }

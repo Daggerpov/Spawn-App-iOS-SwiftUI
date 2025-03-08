@@ -31,7 +31,10 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "events/feedEvents/\(userIdForUrl)"
 			{
-				return Event.mockEvents as! T
+                return [
+                    FullFeedEventDTO.mockDinnerEvent,
+                    FullFeedEventDTO
+                        .mockSelfOwnedEvent] as! T
 			}
 		}
 
