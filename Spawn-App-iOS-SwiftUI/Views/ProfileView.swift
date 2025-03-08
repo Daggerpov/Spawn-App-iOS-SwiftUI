@@ -23,40 +23,41 @@ struct ProfileView: View {
 	var body: some View {
 		NavigationStack {
 			VStack {
-				VStack(alignment: .center, spacing: 20) {
-					Spacer()
+				VStack(alignment: .center, spacing: 16) {
 					// Profile Picture
-
-					if let profilePictureString = user.profilePicture {
-						if MockAPIService.isMocking {
-							Image(profilePictureString)
-								.ProfileImageModifier(imageType: .profilePage)
-						} else {
-							AsyncImage(url: URL(string: profilePictureString)) {
-								image in
-								image
-									.ProfileImageModifier(
-										imageType: .profilePage)
-							} placeholder: {
-								Circle()
-									.fill(Color.gray)
+					ZStack(alignment: .bottomTrailing) {
+						if let profilePictureString = user.profilePicture {
+							if MockAPIService.isMocking {
+								Image(profilePictureString)
+									.ProfileImageModifier(imageType: .profilePage)
+							} else {
+								AsyncImage(url: URL(string: profilePictureString)) {
+									image in
+									image
+										.ProfileImageModifier(
+											imageType: .profilePage)
+								} placeholder: {
+									Circle()
+										.fill(Color.gray)
+								}
 							}
+						} else {
+							Image(systemName: "person.crop.circle.fill")
+								.ProfileImageModifier(imageType: .profilePage)
 						}
-					} else {
-						Image(systemName: "person.crop.circle.fill")
-							.ProfileImageModifier(imageType: .profilePage)
+
+						Circle()
+							.fill(profilePicPlusButtonColor)
+							.frame(width: 25, height: 25)
+							.overlay(
+								Image(systemName: "plus")
+									.foregroundColor(universalBackgroundColor)
+							)
+							.offset(x: 10, y: -10)
 					}
+					.padding(.top, 20)
 
-					Circle()
-						.fill(profilePicPlusButtonColor)
-						.frame(width: 25, height: 25)
-						.overlay(
-							Image(systemName: "plus")
-								.foregroundColor(universalBackgroundColor)
-						)
-						.offset(x: 45, y: -45)
-
-					VStack(alignment: .leading, spacing: 25) {
+					VStack(alignment: .leading, spacing: 20) {
 						ProfileField(
 							label: "Name",
 							value:
@@ -72,10 +73,10 @@ struct ProfileView: View {
 							))
 					}
 					.padding(.horizontal)
+					.padding(.vertical, 10)
 
-					Spacer()
 					Divider().background(universalAccentColor)
-					Spacer()
+						.padding(.vertical, 10)
 
 					Button(action: {
 						switch editingState {
@@ -97,51 +98,47 @@ struct ProfileView: View {
 								.stroke(universalAccentColor, lineWidth: 1)
 							)
 					}
-					.padding(.horizontal)
-
-					Spacer()
-					Spacer()
-					Spacer()
-					Spacer()
-
-					NavigationLink(destination: {
-						LaunchView()
-							.navigationBarTitle("")
-							.navigationBarHidden(true)
-					}) {
-						Text("Log Out")
-							.font(.headline)
-							.foregroundColor(.white)
-							.padding()
-							.frame(maxWidth: 170)
-							.background(profilePicPlusButtonColor)
-							.cornerRadius(20)
-					}
-					.simultaneousGesture(
-						TapGesture().onEnded {
-							if userAuth.isLoggedIn {
-								userAuth.signOut()
-							}
-						})
-
-					// Delete Account Button
-					Button(action: {
-						userAuth.activeAlert = .deleteConfirmation
-					}) {
-						Text("Delete Account")
-							.font(.headline)
-							.foregroundColor(.white)
-							.padding()
-							.frame(maxWidth: 170)
-							.background(Color.red)
-							.cornerRadius(20)
-					}
 					.padding(.bottom, 20)
 
 					Spacer()
+
+					VStack(spacing: 15) {
+						NavigationLink(destination: {
+							LaunchView()
+								.navigationBarTitle("")
+								.navigationBarHidden(true)
+						}) {
+							Text("Log Out")
+								.font(.headline)
+								.foregroundColor(.white)
+								.padding()
+								.frame(maxWidth: 170)
+								.background(profilePicPlusButtonColor)
+								.cornerRadius(20)
+						}
+						.simultaneousGesture(
+							TapGesture().onEnded {
+								if userAuth.isLoggedIn {
+									userAuth.signOut()
+								}
+							})
+
+						// Delete Account Button
+						Button(action: {
+							userAuth.activeAlert = .deleteConfirmation
+						}) {
+							Text("Delete Account")
+								.font(.headline)
+								.foregroundColor(.white)
+								.padding()
+								.frame(maxWidth: 170)
+								.background(Color.red)
+								.cornerRadius(20)
+						}
+					}
+					.padding(.bottom, 30)
 				}
 				.padding(.horizontal)
-				.padding(.bottom, 20)
 			}
 			.background(universalBackgroundColor)
 			.alert(item: $userAuth.activeAlert) { alertType in

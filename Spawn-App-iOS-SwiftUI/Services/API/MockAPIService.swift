@@ -31,7 +31,10 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "events/feedEvents/\(userIdForUrl)"
 			{
-				return Event.mockEvents as! T
+                return [
+                    FullFeedEventDTO.mockDinnerEvent,
+                    FullFeedEventDTO
+                        .mockSelfOwnedEvent, FullFeedEventDTO.mockSelfOwnedEvent2] as! T
 			}
 		}
 
@@ -57,7 +60,7 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/recommended-friends/\(userIdForUrl)"
 			{
-				let firstThreeUsers = Array(UserDTO.mockUsers.prefix(3))
+				let firstThreeUsers = Array(RecommendedFriendUserDTO.mockUsers.prefix(3))
 				return firstThreeUsers as! T
 			}
 

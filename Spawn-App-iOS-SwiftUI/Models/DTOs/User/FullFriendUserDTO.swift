@@ -84,7 +84,7 @@ extension FullFriendUserDTO {
 			associatedFriendTagsToOwner: [
 				FriendTagDTO(
 					id: UUID(),
-					displayName: "Biztech",
+					displayName: "Basketball",
 					ownerUserId: UUID(),
 					colorHexCode: eventColorHexCodes[0]
 				),

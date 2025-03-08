@@ -15,6 +15,7 @@ struct FriendsTabView: View {
 	@State var showingChooseTagsPopup: Bool = false
 	@State private var friendInPopUp: BaseUserDTO?
 	@State private var friendRequestIdInPopup: UUID?
+    @State private var mutualFriendCountInPopup: Int?
 
 	// for pop-ups:
 	@State private var friendRequestOffset: CGFloat = 1000
@@ -79,6 +80,7 @@ struct FriendsTabView: View {
 								// this executes like .onTapGesture() in JS
 								friendInPopUp = friendRequest.senderUser
 								friendRequestIdInPopup = friendRequest.id
+                                mutualFriendCountInPopup = friendRequest.mutualFriendCount
 								showingFriendRequestPopup = true
 							}) {
 								// this is the Button's display
@@ -251,7 +253,7 @@ if let pfp = friend.profilePicture {
 
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
-		var friend: BaseUserDTO
+		var friend: RecommendedFriendUserDTO
 		@State private var isAdded: Bool = false
 
 		var body: some View {
@@ -291,11 +293,20 @@ if let pfp = friend.profilePicture {
 					Text(friend.username)
 						.font(.system(size: 16, weight: .bold))
 
+					// User full name
 					Text(
 						FormatterService.shared.formatName(
 							user: friend)
 					)
 					.font(.system(size: 14, weight: .medium))
+					
+					// Add mutual friends count
+					if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
+						Text("\(mutualCount) mutual friend\(mutualCount > 1 ? "s" : "")")
+							.font(.system(size: 12))
+							.foregroundColor(.white.opacity(0.8))
+							.padding(.top, 2)
+					}
 				}
 				.foregroundColor(universalBackgroundColor)
 				.padding(.leading, 8)
@@ -415,7 +426,8 @@ extension FriendsTabView {
 	var friendRequestPopUpView: some View {
 		Group {
 			if let unwrappedFriendInPopUp = friendInPopUp,
-				let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup
+				let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup,
+                let unwrappedMutualFriendCountInPopup = mutualFriendCountInPopup
 			{  // ensuring it isn't null
 				ZStack {
 					Color(.black)
@@ -431,6 +443,7 @@ extension FriendsTabView {
 					FriendRequestView(
 						user: unwrappedFriendInPopUp,
 						friendRequestId: unwrappedFriendRequestIdInPopup,
+                        mutualFriendCount: unwrappedMutualFriendCountInPopup,
 						closeCallback: closeFriendPopUp,
 						showingChoosingTagView: $showingChooseTagsPopup
 					)
