@@ -87,23 +87,21 @@ struct EventCardView: View {
                 if event.isSelfOwned == true {
                     HStack {
                         Spacer()
-                        Spacer()
-
+                        
                         // Vertical text container
                         VStack {
                             Text("CREATED BY YOU")
-                                .font(.caption2)
-                                .fontWeight(.medium)
+                                .font(.caption)
+                                .fontWeight(.semibold)
                                 .foregroundColor(.white)
-                                .opacity(0.7)
-                                .rotationEffect(.degrees(-90))
+                                .rotationEffect(.degrees(90))
                                 .fixedSize()
-                                .frame(width: 15)
+                                .frame(height: 15)
                         }
+                        .padding(.trailing, -8)
                         .frame(maxHeight: .infinity)
-                        .padding(.horizontal, 8)
+                        .background(Color.clear)
                     }
-                    .background(.clear)
                 }
             }
             .onAppear {

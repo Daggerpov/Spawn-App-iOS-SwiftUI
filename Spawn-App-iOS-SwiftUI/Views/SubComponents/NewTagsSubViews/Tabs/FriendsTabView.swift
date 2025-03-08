@@ -291,11 +291,20 @@ if let pfp = friend.profilePicture {
 					Text(friend.username)
 						.font(.system(size: 16, weight: .bold))
 
+					// User full name
 					Text(
 						FormatterService.shared.formatName(
 							user: friend)
 					)
 					.font(.system(size: 14, weight: .medium))
+					
+					// Add mutual friends count
+					if let mutualCount = friend.mutualFriendsCount, mutualCount > 0 {
+						Text("\(mutualCount) mutual friend\(mutualCount > 1 ? "s" : "")")
+							.font(.system(size: 12))
+							.foregroundColor(.white.opacity(0.8))
+							.padding(.top, 2)
+					}
 				}
 				.foregroundColor(universalBackgroundColor)
 				.padding(.leading, 8)
