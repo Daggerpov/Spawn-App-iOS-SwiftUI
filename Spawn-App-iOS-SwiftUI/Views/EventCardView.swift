@@ -27,40 +27,80 @@ struct EventCardView: View {
 	}
 	var body: some View {
 		NavigationStack {
-			VStack {
-				EventCardTopRowView(event: event)
-				Spacer()
-				HStack {
-					VStack {
-						HStack {
-							EventInfoView(event: event, eventInfoType: .time)
-							Spacer()
-						}
+			ZStack {
+				// Main card content
+				VStack {
+					EventCardTopRowView(event: event)
+					HStack{
+						usernamesView
 						Spacer()
-						HStack {
-							EventInfoView(
-								event: event, eventInfoType: .location)
-							Spacer()
-						}
 					}
-					.foregroundColor(.white)
 					Spacer()
-						.frame(width: 30)
-					Circle()
-						.CircularButton(
-							systemName: viewModel.isParticipating
-								? "checkmark" : "star.fill",
-							buttonActionCallback: {
-								Task {
-									await viewModel.toggleParticipation()
+					HStack {
+						VStack {
+							HStack {
+								EventInfoView(event: event, eventInfoType: .time)
+								Spacer()
+							}
+							Spacer()
+							HStack {
+								// Only show location if it exists
+								if event.location?.name != nil && !(event.location?.name.isEmpty ?? true) {
+									EventInfoView(
+										event: event, eventInfoType: .location)
+									Spacer()
 								}
-							})
+							}
+						}
+						.foregroundColor(.white)
+						Spacer()
+							.frame(width: 30)
+						Circle()
+							.CircularButton(
+								systemName: event.isSelfOwned == true 
+									? "pencil" // Edit icon for self-owned events
+									: (viewModel.isParticipating ? "checkmark" : "star.fill"),
+								buttonActionCallback: {
+									Task {
+										if event.isSelfOwned == true {
+											// Handle edit action
+											print("Edit event")
+											// TODO: Implement edit functionality
+										} else {
+											// Toggle participation for non-owned events
+											await viewModel.toggleParticipation()
+										}
+									}
+								})
+					}
+					.frame(alignment: .trailing)
 				}
-				.frame(alignment: .trailing)
+				.padding(20)
+				.background(color)
+				.cornerRadius(universalRectangleCornerRadius)
+				
+				// "CREATED BY YOU" vertical text on the right side (only if self-owned)
+				if event.isSelfOwned == true {
+					HStack {
+						Spacer()
+						
+						// Vertical text container
+						VStack {
+							Text("CREATED BY YOU")
+								.font(.caption2)
+								.fontWeight(.medium)
+								.foregroundColor(.white)
+								.opacity(0.7)
+								.rotationEffect(.degrees(-90))
+								.fixedSize()
+								.frame(width: 15)
+						}
+						.frame(maxHeight: .infinity)
+						.padding(.horizontal, 8)
+					}
+					.background(.clear)
+				}
 			}
-			.padding(20)
-			.background(color)
-			.cornerRadius(universalRectangleCornerRadius)
 			.onAppear {
 				viewModel.fetchIsParticipating()
 			}
@@ -71,11 +111,27 @@ struct EventCardView: View {
 	}
 }
 
+extension EventCardView {
+	var usernamesView: some View {
+		let participantCount = (event.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
+		let invitedCount = event.invitedUsers?.count ?? 0
+		let totalCount = participantCount + invitedCount
+		
+		let displayText = (event.isSelfOwned == true) 
+			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+		
+		return Text(displayText)
+			.foregroundColor(Color(.systemGray4))
+			.font(.caption)
+	}
+}
+
 #Preview {
 	EventCardView(
 		userId: UUID(),
 		event: FullFeedEventDTO.mockDinnerEvent,
-		color: universalAccentColor,
+		color: universalSecondaryColor,
 		callback: {_, _ in}
 	)
 }

@@ -56,13 +56,24 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		{
 			self.externalUserId = externalUserId
 			self.isLoggedIn = true
+			print("Retrieved externalUserId from Keychain: \(externalUserId)")
 		}
 
 		super.init()  // Call super.init() before using `self`
 
-		check()
-		Task {
-			await spawnFetchUserIfAlreadyExists()
+		// Only attempt to restore Google sign-in state if we have an externalUserId
+		if self.externalUserId != nil {
+			check()
+		}
+		
+		// Try to fetch user data using stored externalUserId
+		Task { [weak self] in
+			guard let self = self else { return }
+			
+			if self.externalUserId != nil {
+				print("Attempting to fetch user with stored externalUserId")
+				await self.spawnFetchUserIfAlreadyExists()
+			}
 		}
 	}
 
@@ -135,7 +146,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.externalUserId = userIdentifier
 
 				// Check user existence AFTER setting credentials
-				Task {
+				Task { [weak self] in
+					guard let self = self else { return }
 					await self.spawnFetchUserIfAlreadyExists()
 				}
 			}
@@ -144,7 +156,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				"Apple Sign-In failed: \(error.localizedDescription)"
 			print(self.errorMessage as Any)
 			// Check user existence AFTER setting credentials
-			Task {
+			Task { [weak self] in
+				guard let self = self else { return }
 				await self.spawnFetchUserIfAlreadyExists()
 			}
 		}
@@ -171,16 +184,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 			GIDSignIn.sharedInstance.signIn(
 				withPresenting: presentingViewController
-			) { signInResult, error in
+			) { [weak self] signInResult, error in
+				guard let self = self else { return }
 				if let error = error {
 					print(error.localizedDescription)
 					return
 				}
 
 				guard let user = signInResult?.user else { return }
+				// Request a higher resolution image (400px instead of 100px)
 				self.profilePicUrl =
-					user.profile?.imageURL(withDimension: 100)?.absoluteString
+					user.profile?.imageURL(withDimension: 400)?.absoluteString
 					?? ""
+				print("Google profile picture URL: \(self.profilePicUrl ?? "none")")
 				self.fullName = user.profile?.name
 				self.givenName = user.profile?.givenName
 				self.familyName = user.profile?.familyName
@@ -189,7 +205,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.externalUserId = user.userID
 				self.authProvider = .google
 
-				Task {
+				Task { [weak self] in
+					guard let self = self else { return }
 					await self.spawnFetchUserIfAlreadyExists()
 				}
 			}
@@ -259,15 +276,21 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 			return
 		}
-
-		guard let unwrappedEmail = self.email else {
+		
+		// For Apple Sign In, if email is nil, we should direct to UserInfoInputView
+		if self.authProvider == .apple && self.email == nil {
 			await MainActor.run {
-				self.errorMessage = "Email is missing or invalid."
-				print(self.errorMessage as Any)
+				self.spawnUser = nil
 				self.shouldNavigateToUserInfoInputView = true
+				self.hasCheckedSpawnUserExistence = true
 			}
 			return
 		}
+
+		// Only proceed with API call if we have email or it's not Apple auth
+		let emailToUse = self.email ?? ""
+		
+		print("Fetching user with externalUserId: \(unwrappedExternalUserId), email: \(emailToUse)")
 
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 			do {
@@ -276,13 +299,16 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						from: url,
 						parameters: [
 							"externalUserId": unwrappedExternalUserId,
-							"email": unwrappedEmail,
+							"email": emailToUse,
 						]
 					)
 
 				await MainActor.run {
+					print("Successfully fetched user: \(fetchedSpawnUser.username)")
 					self.spawnUser = fetchedSpawnUser
 					self.shouldNavigateToUserInfoInputView = false  // User exists, no need to navigate to UserInfoInputView
+					self.isFormValid = true  // Auto-validate the form since we have a valid user
+					self.setShouldNavigateToFeedView() // Check if we should navigate to feed
 				}
 			} catch {
 				await MainActor.run {
@@ -323,6 +349,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if let authProvider = self.authProvider {
 			parameters["provider"] = authProvider.rawValue
 		}
+		
+		// If we have a profile picture URL from the provider (Google/Apple) and no selected image,
+		// include it in the parameters so it can be used
+		if profilePicture == nil, let profilePicUrl = self.profilePicUrl, !profilePicUrl.isEmpty {
+			parameters["profilePicUrl"] = profilePicUrl
+			print("Including provider profile picture URL in parameters: \(profilePicUrl)")
+		}
 
 		do {
 			// Use the new createUser method
@@ -346,10 +379,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					key: "externalUserId", data: data)
 				if !success {
 					print("Failed to save externalUserId to Keychain")
+				} else {
+					print("Successfully saved externalUserId to Keychain: \(externalUserId)")
 				}
 			}
 
-			print("User created successfully")
+			print("User created successfully: \(fetchedUser.username)")
+			if let profilePic = fetchedUser.profilePicture {
+				print("Profile picture set: \(profilePic)")
+			} else {
+				print("No profile picture set in created user")
+			}
 
 		} catch {
 			print("Error creating the user: \(error)")

@@ -49,7 +49,7 @@ struct ProfileView: View {
 
 					Circle()
 						.fill(profilePicPlusButtonColor)
-						.frame(width: 150, height: 150)
+						.frame(width: 25, height: 25)
 						.overlay(
 							Image(systemName: "plus")
 								.foregroundColor(universalBackgroundColor)
@@ -136,10 +136,12 @@ struct ProfileView: View {
 							.background(Color.red)
 							.cornerRadius(20)
 					}
+					.padding(.bottom, 20)
 
 					Spacer()
 				}
-				.padding()
+				.padding(.horizontal)
+				.padding(.bottom, 20)
 			}
 			.background(universalBackgroundColor)
 			.alert(item: $userAuth.activeAlert) { alertType in

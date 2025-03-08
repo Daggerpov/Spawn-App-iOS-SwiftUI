@@ -12,63 +12,122 @@ struct EventDescriptionView: View {
 	@ObservedObject var viewModel: EventDescriptionViewModel
 	var color: Color
 
-	init(event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color) {
-		self.viewModel = EventDescriptionViewModel(event: event, users: users)
+	init(
+		event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color,
+		userId: UUID
+	) {
+		self.viewModel = EventDescriptionViewModel(
+			apiService: MockAPIService.isMocking
+				? MockAPIService(
+					userId: userId) : APIService(), event: event,
+			users: users,
+			senderUserId: userId
+		)
 		self.color = color
 	}
 
 	var body: some View {
 		ScrollView {
-			VStack(alignment: .leading, spacing: 20) {
-				// Title and Time Information
-				EventCardTopRowView(event: viewModel.event)
-
-				VStack {
+			ZStack {
+				// Main content
+				VStack(alignment: .leading, spacing: 20) {
+					// Title and Time Information
+					EventCardTopRowView(event: viewModel.event)
+					
+					// Username display
 					HStack {
-						// Note
-						if let note = viewModel.event.note {
-							Text("\(note)")
-								.font(.body)
-								.padding(.bottom, 15)
-								.foregroundColor(.white)
-								.font(.body)
-								.italic()
-						}
-					}
-					.frame(maxWidth: .infinity, alignment: .leading)
-
-					HStack(spacing: 10) {
-						EventInfoView(
-							event: viewModel.event, eventInfoType: .time)
-						EventInfoView(
-							event: viewModel.event, eventInfoType: .location)
-					}
-					.foregroundColor(.white)
-				}
-				.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
-
-				if let chatMessages = viewModel.event.chatMessages {
-					Divider()
-						.frame(height: 0.5)
-						.background(Color.black)
-						.opacity(1)
-					HStack {
+						usernamesView
 						Spacer()
-						Text("\(chatMessages.count) replies")
+					}
+
+					VStack {
+						HStack {
+							// Note
+							if let note = viewModel.event.note {
+								Text("\(note)")
+									.font(.body)
+									.padding(.bottom, 15)
+									.foregroundColor(.white)
+									.font(.body)
+									.italic()
+							}
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+
+						HStack(spacing: 10) {
+							EventInfoView(
+								event: viewModel.event, eventInfoType: .time)
+							
+							// Only show location if it exists
+							if viewModel.event.location?.name != nil && !(viewModel.event.location?.name.isEmpty ?? true) {
+								EventInfoView(
+									event: viewModel.event, eventInfoType: .location)
+							}
+							
+							Spacer()
+							
+							// Add participation toggle or edit button
+							Circle()
+								.CircularButton(
+									systemName: viewModel.event.isSelfOwned == true 
+										? "pencil" // Edit icon for self-owned events
+										: (viewModel.isParticipating ? "checkmark" : "star.fill"),
+									buttonActionCallback: {
+										Task {
+											if viewModel.event.isSelfOwned == true {
+												// Handle edit action
+												print("Edit event")
+												// TODO: Implement edit functionality
+											} else {
+												// Toggle participation for non-owned events
+												await viewModel.toggleParticipation()
+											}
+										}
+									})
+						}
+						.foregroundColor(.white)
+					}
+					.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
+
+					if let chatMessages = viewModel.event.chatMessages {
+						Divider()
+							.frame(height: 0.5)
+							.background(Color.black)
+							.opacity(1)
+						HStack {
+							Spacer()
+							Text(
+								"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
+							)
 							.foregroundColor(.black)
 							.opacity(0.7)
 							.font(.caption)
+						}
+						.frame(maxWidth: .infinity)
 					}
-					.frame(maxWidth: .infinity)
-				}
 
-				chatMessagesView
+					chatMessagesView
+				}
+				.padding(20)
+				.background(color)
+				.cornerRadius(universalRectangleCornerRadius)
 			}
-			.padding(20)
-			.background(color)
-			.cornerRadius(universalRectangleCornerRadius)
 		}
 		.scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
+	}
+	
+	var usernamesView: some View {
+		let participantCount = (viewModel.event.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
+		let invitedCount = viewModel.event.invitedUsers?.count ?? 0
+		let totalCount = participantCount + invitedCount
+		
+		let displayText = (viewModel.event.isSelfOwned == true) 
+			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(viewModel.event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+		
+		return Text(displayText)
+			.foregroundColor(.white)
+			.font(.caption)
 	}
 }
 
@@ -81,14 +140,16 @@ extension EventDescriptionView {
 						ChatMessageRow(chatMessage: chatMessage)
 					}
 				}
-				chatBar
-					.padding(.horizontal, 25)
 			}
-			.padding(.top, 10)
-			.padding(.bottom, 10)
-			.background(Color.black.opacity(0.05))
-			.cornerRadius(20)
+
+			chatBar
+				.padding(.horizontal, 25)
+				.padding(.vertical)
 		}
+		.padding(.top, 10)
+		.padding(.bottom, 10)
+		.background(Color.black.opacity(0.05))
+		.cornerRadius(20)
 	}
 
 	struct ChatMessageRow: View {
@@ -163,11 +224,12 @@ extension EventDescriptionView {
 				.background(Color.white)
 				.cornerRadius(10)
 				.font(.caption)
-				.foregroundColor(self.color)
+				.foregroundColor(universalAccentColor)
 
 			Button(action: {
-				// Handle send action
-				print("Message sent: \(messageText)")
+				Task {
+					await viewModel.sendMessage(message: messageText)
+				}
 				messageText = ""
 			}) {
 				Image(systemName: "paperplane.fill")
@@ -176,7 +238,7 @@ extension EventDescriptionView {
 			}
 		}
 		.background(Color.white)
-		.cornerRadius(15)
+		.cornerRadius(universalRectangleCornerRadius)
 	}
 }
 
@@ -184,6 +246,7 @@ extension EventDescriptionView {
 	EventDescriptionView(
 		event: FullFeedEventDTO.mockDinnerEvent,
 		users: BaseUserDTO.mockUsers,
-		color: universalAccentColor
+		color: universalAccentColor,
+		userId: UUID()
 	)
 }

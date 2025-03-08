@@ -111,23 +111,25 @@ extension FeedView {
 					EventDescriptionView(
 						event: event,
 						users: event.participantUsers,
-						color: color
+						color: color,
+						userId: user.id
 					)
 					.offset(x: 0, y: descriptionOffset)
 					.onAppear {
 						descriptionOffset = 0
 					}
+					.cornerRadius(universalRectangleCornerRadius)
 					.padding(.horizontal)
-					// brute-force algorithm I wrote
 					.padding(
 						.vertical,
 						max(
-							330,
-							330
-								- CGFloat(
-									100 * (event.chatMessages?.count ?? 0))
-								- CGFloat(event.note != nil ? 200 : 0))
+							250,
+							250
+							- CGFloat((event.chatMessages?.count ?? 0) > 2 ? 100 : 0)
+							- CGFloat(event.note != nil ? 50 : 0)
+						)
 					)
+
 				}
 				.ignoresSafeArea()
 			}
@@ -142,7 +144,7 @@ extension FeedView {
 				}
 				.ignoresSafeArea()
 
-			EventCreationView(creatingUser: user, closeCallback: closeCreation)
+			EventCreationView(creatingUser: user, feedViewModel: viewModel, closeCallback: closeCreation)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
 					creationOffset = 0
