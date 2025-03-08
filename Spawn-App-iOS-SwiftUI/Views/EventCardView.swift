@@ -124,7 +124,7 @@ struct EventCardView: View {
 
 extension EventCardView {
     var usernamesView: some View {
-        let participantCount = (event.participantUsers?.count ?? 0) - 1  // Subtract 1 to exclude creator
+        let participantCount = (event.participantUsers?.count ?? 0) - 1
 
         let displayText =
             (event.isSelfOwned == true)

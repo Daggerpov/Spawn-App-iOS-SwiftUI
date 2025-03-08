@@ -71,15 +71,17 @@ struct FriendRequestView: View {
 						Image(systemName: "star.fill").font(.title2)
 						Text(FormatterService.shared.formatName(user: user))
                             .font(.title2).fontWeight(.bold).foregroundColor(universalAccentColor)
-                        if mutualFriendCount > 0 {
-                            Text("\(mutualFriendCount) mutual friend\(mutualFriendCount > 1 ? "s" : "")")
-                                .font(.system(size: 12))
-                                .foregroundColor(.white.opacity(0.8))
-                                .padding(.top, 2)
-                        }
 					}
-					Text(user.username).font(.title2).foregroundColor(
-						.black.opacity(0.7))
+                    
+                    Text(user.username).font(.title2).foregroundColor(
+                        .black.opacity(0.7))
+                    
+                    if mutualFriendCount > 0 {
+                        Text("\(mutualFriendCount) mutual friend\(mutualFriendCount > 1 ? "s" : "")")
+                            .font(.system(size: 18))
+                            .foregroundColor(universalAccentColor)
+                            .padding(.vertical, 4)
+                    }
 					friendRequestAcceptButton
 					friendRequestDeclineButton
 				}
