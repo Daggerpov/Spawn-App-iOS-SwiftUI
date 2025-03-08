@@ -251,7 +251,7 @@ if let pfp = friend.profilePicture {
 
 	struct RecommendedFriendView: View {
 		@ObservedObject var viewModel: FriendsTabViewModel
-		var friend: BaseUserDTO
+		var friend: RecommendedFriendUserDTO
 		@State private var isAdded: Bool = false
 
 		var body: some View {
@@ -299,7 +299,7 @@ if let pfp = friend.profilePicture {
 					.font(.system(size: 14, weight: .medium))
 					
 					// Add mutual friends count
-					if let mutualCount = friend.mutualFriendsCount, mutualCount > 0 {
+					if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
 						Text("\(mutualCount) mutual friend\(mutualCount > 1 ? "s" : "")")
 							.font(.system(size: 12))
 							.foregroundColor(.white.opacity(0.8))

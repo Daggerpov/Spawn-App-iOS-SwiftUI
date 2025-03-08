@@ -18,10 +18,15 @@ struct LaunchView: View {
 		NavigationStack {
 			VStack(spacing: 16) {
 				Spacer()
-				Image("spawn_launch_logo")
+				Image("spawn_new_logo")
 					.resizable()
 					.scaledToFit()
-					.frame(width: 300, height: 300)
+					.frame(width: 200, height: 100)
+                Image("spontaneity_made_easy")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 300, height: 100)
+                Spacer().frame(height: 32)
 
 				// Google Sign-In Button
 				Button(action: {
