@@ -60,7 +60,9 @@ class MockAPIService: IAPIService {
 			if url.absoluteString == APIService.baseURL
 				+ "users/recommended-friends/\(userIdForUrl)"
 			{
-				let firstThreeUsers = Array(RecommendedFriendUserDTO.mockUsers.prefix(3))
+                let firstThreeUsers = Array(
+                    RecommendedFriendUserDTO.mockUsers.prefix(3)
+                )
 				return firstThreeUsers as! T
 			}
 

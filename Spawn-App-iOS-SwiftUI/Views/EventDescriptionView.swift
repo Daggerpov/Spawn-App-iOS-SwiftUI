@@ -133,14 +133,17 @@ struct EventDescriptionView: View {
 
 extension EventDescriptionView {
 	var chatMessagesView: some View {
-		ScrollView(.vertical) {
-			LazyVStack(spacing: 15) {
-				if let chatMessages = viewModel.event.chatMessages {
-					ForEach(chatMessages) { chatMessage in
-						ChatMessageRow(chatMessage: chatMessage)
-					}
-				}
-			}
+        VStack{
+            ScrollView(.vertical){
+                LazyVStack(spacing: 15) {
+                    if let chatMessages = viewModel.event.chatMessages {
+                        ForEach(chatMessages) { chatMessage in
+                            ChatMessageRow(chatMessage: chatMessage)
+                        }
+                    }
+                }
+            }
+            .frame(maxHeight: 150)
 
 			chatBar
 				.padding(.horizontal, 25)
@@ -201,7 +204,7 @@ extension EventDescriptionView {
 							.font(.caption)
 					}
 					Text(chatMessage.content)
-						.foregroundColor(.white)
+						.foregroundColor(universalAccentColor)
 						.font(.caption)
 				}
 				Spacer()

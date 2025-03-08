@@ -122,7 +122,7 @@ extension FeedView {
 					.padding(.horizontal)
 					.padding(
 						.vertical,
-						max(
+						min(
 							250,
 							250
 							- CGFloat((event.chatMessages?.count ?? 0) > 2 ? 100 : 0)

@@ -81,7 +81,7 @@ class EventDescriptionViewModel: ObservableObject {
 		if let url = URL(string: APIService.baseURL + "events/\(event.id)") {
 			do {
 				let updatedEvent: FullFeedEventDTO = try await self.apiService.fetchData(
-					from: url, parameters: nil)
+                    from: url, parameters: ["requestingUserId": senderUserId.uuidString])
 				
 				// Update the event on the main thread
 				await MainActor.run {

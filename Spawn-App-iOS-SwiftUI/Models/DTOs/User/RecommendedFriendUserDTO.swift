@@ -1,5 +1,5 @@
 //
-//  RecommendedFriendUserDTO 2.swift
+//  RecommendedFriendUserDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 3/7/25.
