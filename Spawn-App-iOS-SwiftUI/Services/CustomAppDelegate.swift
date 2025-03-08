@@ -3,7 +3,7 @@ import UserNotifications
 
 class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     // This gives us access to the methods from our main app code inside the app delegate
-    var app: App?
+    var app: (any App)?
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         // Register this device to receive push notifications from Apple
