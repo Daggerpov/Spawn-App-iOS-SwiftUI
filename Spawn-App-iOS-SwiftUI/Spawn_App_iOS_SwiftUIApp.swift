@@ -10,6 +10,8 @@ import SwiftUI
 
 @main
 struct Spawn_App_iOS_SwiftUIApp: App {
+	// Add UIApplicationDelegateAdaptor for push notifications
+	@UIApplicationDelegateAdaptor private var appDelegate: CustomAppDelegate
 	@StateObject var userAuth = UserAuthViewModel.shared
 
 	var body: some Scene {
@@ -17,10 +19,18 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 			if userAuth.isLoggedIn, let unwrappedSpawnUser = userAuth.spawnUser
 			{
 				FeedView(user: unwrappedSpawnUser)
+					.onAppear {
+						// Connect the app delegate to the app
+						appDelegate.app = self
+					}
 			} else {
 				LaunchView()
 					.onOpenURL { url in
 						GIDSignIn.sharedInstance.handle(url)
+					}
+					.onAppear {
+						// Connect the app delegate to the app
+						appDelegate.app = self
 					}
 			}
 		}
