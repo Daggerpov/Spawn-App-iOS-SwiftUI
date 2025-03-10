@@ -91,14 +91,20 @@ struct MapView: View {
 		}
 	}
     
-    private func adjustRegionForEventsOrUserLocation() {
-        if !viewModel.events.isEmpty {
-            adjustRegionForEvents()
-        } else if let userLocation = locationManager.userLocation {
+    private func adjustRegionToUserLocation() {
+        if let userLocation = locationManager.userLocation {
             region = MKCoordinateRegion(
                 center: userLocation,
                 span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
             )
+        }
+    }
+    
+    private func adjustRegionForEventsOrUserLocation() {
+        if !viewModel.events.isEmpty {
+            adjustRegionForEvents()
+        } else {
+            adjustRegionToUserLocation()
         }
     }
     
