@@ -67,18 +67,15 @@ struct MapView: View {
 						|| showingEventCreationPopup
 				)
 			}
-
-			.onAppear {
-				adjustRegionForEventsOrUserLocation()
-				Task {
-					await viewModel.fetchAllData()
-				}
-			}
-			.onChange(of: viewModel.activeTag) { _ in
-				Task {
-					await viewModel.fetchEventsForUser()
-				}
-			}
+            .onAppear {
+                Task { await viewModel.fetchAllData() }
+                adjustRegionToUserLocation()
+            }
+            .onChange(of: viewModel.events) { _ in
+                adjustRegionForEventsOrUserLocation()
+                Task {await viewModel.fetchEventsForUser()}
+            }
+            
 			.onChange(of: viewModel.events) { _ in
 				adjustRegionForEvents()
 			}
