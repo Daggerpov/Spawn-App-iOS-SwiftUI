@@ -45,8 +45,8 @@ struct UserInfoInputView: View {
 								.progressViewStyle(CircularProgressViewStyle(tint: .white))
 						)
 				}
-			} else {
-				AsyncImage(url: URL(string: userAuth.defaultPfpUrlString)) { image in
+			} else if let defaultPfpUrl = userAuth.defaultPfpUrlString {
+				AsyncImage(url: URL(string: defaultPfpUrl)) { image in
 					image
 						.ProfileImageModifier(imageType: .profilePage)
 				} placeholder: {
@@ -61,6 +61,17 @@ struct UserInfoInputView: View {
 								.foregroundColor(.white.opacity(0.7))
 						)
 				}
+			} else {
+				Circle()
+					.fill(.gray)
+					.frame(width: 150, height: 150)
+					.overlay(
+						Image(systemName: "person.fill")
+							.resizable()
+							.scaledToFit()
+							.frame(width: 60, height: 60)
+							.foregroundColor(.white.opacity(0.7))
+					)
 			}
 		}
 	}
@@ -195,33 +206,29 @@ struct UserInfoInputView: View {
 								if isFormValid {
 									isSubmitting = true
 									Task {
-										do {
-											// If no image is selected but we have a profile picture URL from Google/Apple,
-											// we'll pass nil for profilePicture and let the backend use the URL
-											print("Profile picture URL from provider: \(userAuth.profilePicUrl ?? "none")")
+										// If no image is selected but we have a profile picture URL from Google/Apple,
+										// we'll pass nil for profilePicture and let the backend use the URL
+										print("Profile picture URL from provider: \(userAuth.profilePicUrl ?? "none")")
 
-											await userAuth.spawnMakeUser(
-												username: username,
-												profilePicture: selectedImage, // Pass the selected image or nil
-												firstName: userAuth.givenName ?? "",
-												lastName: userAuth.familyName ?? "",
-												email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
-											)
+										await userAuth.spawnMakeUser(
+											username: username,
+											profilePicture: selectedImage, // Pass the selected image or nil
+											firstName: userAuth.givenName ?? "",
+											lastName: userAuth.familyName ?? "",
+											email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
+										)
 
-											// Show notification permission request after account creation
-											if userAuth.spawnUser != nil {
-												requestNotificationPermission()
-												// Only set navigation flag here after successful account creation
-												userAuth.isFormValid = true
-												userAuth.setShouldNavigateToFeedView()
-											} else {
-												errorMessage = "Failed to create user. Please try again."
-												showErrorAlert = true
-											}
-										} catch {
-											errorMessage = "Error: \(error.localizedDescription)"
+										// Show notification permission request after account creation
+										if userAuth.spawnUser != nil {
+											requestNotificationPermission()
+											// Only set navigation flag here after successful account creation
+											userAuth.isFormValid = true
+											userAuth.setShouldNavigateToFeedView()
+										} else {
+											errorMessage = "Failed to create user. Please try again."
 											showErrorAlert = true
 										}
+
 										isSubmitting = false
 									}
 								}
