@@ -3,26 +3,6 @@ import PhotosUI
 import UIKit
 import UserNotifications
 
-// Define constants if they're missing from your codebase
-let authPageBackgroundColor = Color(red: 0.1, green: 0.1, blue: 0.15) // Dark blue-black color
-let universalRectangleCornerRadius: CGFloat = 10
-
-// Extension for profile image modifiers if missing
-extension Image {
-	func ProfileImageModifier(imageType: ProfileImageType) -> some View {
-		self.resizable()
-			.scaledToFill()
-			.frame(width: imageType == .profilePage ? 150 : 40,
-				   height: imageType == .profilePage ? 150 : 40)
-			.clipShape(Circle())
-	}
-}
-
-enum ProfileImageType {
-	case profilePage
-	case navigationBar
-}
-
 struct UserInfoInputView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
 
@@ -66,16 +46,21 @@ struct UserInfoInputView: View {
 						)
 				}
 			} else {
-				Circle()
-					.fill(.gray)
-					.frame(width: 150, height: 150)
-					.overlay(
-						Image(systemName: "person.fill")
-							.resizable()
-							.scaledToFit()
-							.frame(width: 60, height: 60)
-							.foregroundColor(.white.opacity(0.7))
-					)
+				AsyncImage(url: URL(string: userAuth.defaultPfpUrlString)) { image in
+					image
+						.ProfileImageModifier(imageType: .profilePage)
+				} placeholder: {
+					Circle()
+						.fill(.gray)
+						.frame(width: 150, height: 150)
+						.overlay(
+							Image(systemName: "person.fill")
+								.resizable()
+								.scaledToFit()
+								.frame(width: 60, height: 60)
+								.foregroundColor(.white.opacity(0.7))
+						)
+				}
 			}
 		}
 	}
