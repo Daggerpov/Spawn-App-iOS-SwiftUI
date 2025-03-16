@@ -55,115 +55,143 @@ struct UserInfoInputView: View {
 
 	var body: some View {
 		NavigationStack {
-			VStack(spacing: 16) {
-				Spacer()
-				Spacer()
-
-				Text("Help your friends recognize you")
-					.font(.system(size: 30, weight: .semibold))
-					.foregroundColor(.white)
-					.multilineTextAlignment(.center)
-
-				Spacer()
-
-				ZStack {
-					ProfilePic()
-
-					Circle()
-						.fill(.black)
-						.frame(width: 24, height: 24)
-						.overlay(
-							Image(systemName: "plus")
-								.foregroundColor(.white)
-								.font(.system(size: 12, weight: .bold))
-						)
-						.offset(x: 35, y: 35)
-				}
-				.onTapGesture {
-					showImagePicker = true
-				}
-				.sheet(isPresented: $showImagePicker) {
-					ImagePicker(selectedImage: $selectedImage)
-				}
-
-				Spacer()
-
-				VStack(spacing: 16) {
+			ZStack {
+				// Background color
+				authPageBackgroundColor
+					.ignoresSafeArea()
+					
+				VStack {
+					// Back button at the top, but respecting safe area
 					HStack {
-						InputFieldView(
-							label: "First Name",
-							text: Binding(
-								get: { userAuth.givenName ?? "" },
-								set: { userAuth.givenName = $0 }
-							),
-							isValid: $isFirstNameValid
-						)
-						InputFieldView(
-							label: "Last Name",
-							text: Binding(
-								get: { userAuth.familyName ?? "" },
-								set: { userAuth.familyName = $0 }
-							),
-							isValid: .constant(true)
-						)
-					}
-					if userAuth.authProvider == .apple
-						&& userAuth.email == nil
-					{
-						InputFieldView(
-							label: "Email",
-							text: $email,
-							isValid: $isEmailValid
-						)
-					}
-					InputFieldView(
-						label: "Username",
-						text: $username,
-						isValid: $isUsernameValid
-					)
-				}
-				.padding(.horizontal, 32)
-
-				Button(action: {
-					validateFields()
-					if isFirstNameValid && isUsernameValid && (!needsEmail || isEmailValid) {
-						Task {
-							// If no image is selected but we have a profile picture URL from Google/Apple,
-							// we'll pass nil for profilePicture and let the backend use the URL
-							print("Profile picture URL from provider: \(userAuth.profilePicUrl ?? "none")")
-							
-							await userAuth.spawnMakeUser(
-								username: username,
-								profilePicture: selectedImage, // Pass the selected image or nil
-								firstName: userAuth.givenName ?? "",
-								lastName: userAuth.familyName ?? "",
-								email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
-							)
-							
-							// Show notification permission request after account creation
-							if userAuth.spawnUser != nil {
-								requestNotificationPermission()
+						Button(action: {
+							// Reset auth state and navigate back to LaunchView
+							userAuth.resetState()
+						}) {
+							HStack {
+								Image(systemName: "arrow.left")
+									.font(.system(size: 20, weight: .bold))
+								Text("Back")
+									.font(.system(size: 16, weight: .semibold))
 							}
+							.foregroundColor(.white)
+							.padding(.leading, 16)
 						}
-						userAuth.isFormValid = true
+						Spacer()
 					}
-					userAuth.setShouldNavigateToFeedView()
-				}) {
-					HStack {
-						Text("Enter Spawn")
-							.font(.system(size: 20, weight: .semibold))
-
-						Image(systemName: "arrow.right")
-							.resizable()
-							.frame(width: 20, height: 20)
+					.padding(.top, 8)
+					
+					// Main content
+					VStack(spacing: 16) {
+						Spacer()
+						
+						Text("Help your friends recognize you")
+							.font(.system(size: 30, weight: .semibold))
+							.foregroundColor(.white)
+							.multilineTextAlignment(.center)
+							
+						Spacer()
+						
+						ZStack {
+							ProfilePic()
+							
+							Circle()
+								.fill(.black)
+								.frame(width: 24, height: 24)
+								.overlay(
+									Image(systemName: "plus")
+										.foregroundColor(.white)
+										.font(.system(size: 12, weight: .bold))
+								)
+								.offset(x: 35, y: 35)
+						}
+						.onTapGesture {
+							showImagePicker = true
+						}
+						.sheet(isPresented: $showImagePicker) {
+							ImagePicker(selectedImage: $selectedImage)
+						}
+							
+						Spacer()
+						
+						VStack(spacing: 16) {
+							HStack {
+								InputFieldView(
+									label: "First Name",
+									text: Binding(
+										get: { userAuth.givenName ?? "" },
+										set: { userAuth.givenName = $0 }
+									),
+									isValid: $isFirstNameValid
+								)
+								InputFieldView(
+									label: "Last Name",
+									text: Binding(
+										get: { userAuth.familyName ?? "" },
+										set: { userAuth.familyName = $0 }
+									),
+									isValid: .constant(true)
+								)
+							}
+							
+							// Always show email field for Apple sign-ins
+							if userAuth.authProvider == .apple {
+								InputFieldView(
+									label: "Email",
+									text: $email,
+									isValid: $isEmailValid
+								)
+							}
+							
+							InputFieldView(
+								label: "Username",
+								text: $username,
+								isValid: $isUsernameValid
+							)
+						}
+						.padding(.horizontal, 32)
+						
+						Button(action: {
+							validateFields()
+							if isFormValid {
+								Task {
+									// If no image is selected but we have a profile picture URL from Google/Apple,
+									// we'll pass nil for profilePicture and let the backend use the URL
+									print("Profile picture URL from provider: \(userAuth.profilePicUrl ?? "none")")
+									
+									await userAuth.spawnMakeUser(
+										username: username,
+										profilePicture: selectedImage, // Pass the selected image or nil
+										firstName: userAuth.givenName ?? "",
+										lastName: userAuth.familyName ?? "",
+										email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
+									)
+									
+									// Show notification permission request after account creation
+									if userAuth.spawnUser != nil {
+										requestNotificationPermission()
+										// Only set navigation flag here after successful account creation
+										userAuth.isFormValid = true
+										userAuth.setShouldNavigateToFeedView()
+									}
+								}
+							}
+						}) {
+							HStack {
+								Text("Enter Spawn")
+									.font(.system(size: 20, weight: .semibold))
+								
+								Image(systemName: "arrow.right")
+									.resizable()
+									.frame(width: 20, height: 20)
+							}
+							.foregroundColor(.white)
+						}
+						.padding(.horizontal, 32)
+						Spacer()
+						Spacer()
 					}
-					.foregroundColor(.white)
+					.padding()
 				}
-				.padding(.horizontal, 32)
-				Spacer()
-				Spacer()
-				Spacer()
-				Spacer()
 			}
 			.navigationDestination(isPresented: $userAuth.shouldNavigateToFeedView) {
 				if let unwrappedSpawnUser = userAuth.spawnUser {
@@ -177,28 +205,44 @@ struct UserInfoInputView: View {
 				Task {
 					await userAuth.spawnFetchUserIfAlreadyExists()
 				}
-				userAuth.setShouldNavigateToFeedView()
 			}
-			.padding()
-			.background(authPageBackgroundColor)
-			.ignoresSafeArea()
+			.alert(item: $userAuth.authAlert) { alertType in
+				Alert(
+					title: Text(alertType.title),
+					message: Text(alertType.message),
+					dismissButton: .default(Text("OK")) {
+						// If provider mismatch, go back to launch view
+						if case .providerMismatch = alertType {
+							userAuth.resetState()
+						}
+					}
+				)
+			}
 		}
 	}
 
 	private var needsEmail: Bool {
-		return userAuth.authProvider == .apple && userAuth.email == nil
+		return userAuth.authProvider == .apple
 	}
 
 	private func validateFields() {
+		// Check first name
 		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(
 			in: .whitespaces
 		).isEmpty
+		
+		// Check username
 		isUsernameValid = !username.trimmingCharacters(in: .whitespaces).isEmpty
+		
+		// Check email for Apple sign-ins
 		if needsEmail {
 			isEmailValid =
 				!email.trimmingCharacters(in: .whitespaces).isEmpty
 				&& email.contains("@")  // Simple email validation
 		}
+		
+		// Only set form as valid if all required fields are valid
+		isFormValid = isFirstNameValid && isUsernameValid && (!needsEmail || isEmailValid)
 	}
 
 	private func requestNotificationPermission() {

@@ -47,6 +47,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var activeAlert: DeleteAccountAlertType?
 
+	// Auth alerts for authentication-related errors
+	@Published var authAlert: AuthAlertType?
+
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
 
@@ -115,6 +118,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.shouldNavigateToFeedView = false
 		self.shouldNavigateToUserInfoInputView = false
 		self.activeAlert = nil
+		self.authAlert = nil
 	}
 
 	func check() {
@@ -332,6 +336,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		lastName: String,
 		email: String
 	) async {
+		// Reset any previous navigation flags to prevent automatic navigation
+		await MainActor.run {
+			self.shouldNavigateToFeedView = false
+			self.isFormValid = false
+		}
+		
 		// Create the DTO
 		let userDTO = UserCreateDTO(
 			username: username,
@@ -354,7 +364,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// include it in the parameters so it can be used
 		if profilePicture == nil, let profilePicUrl = self.profilePicUrl, !profilePicUrl.isEmpty {
 			parameters["profilePicUrl"] = profilePicUrl
-			print("Including provider profile picture URL in parameters: \(profilePicUrl)")
+			print("Including provider picture URL in parameters: \(profilePicUrl)")
 		}
 
 		do {
@@ -365,11 +375,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					profilePicture: profilePicture,
 					parameters: parameters
 				)
-
-			await MainActor.run {
-				self.spawnUser = fetchedUser
-				self.shouldNavigateToUserInfoInputView = false
-			}
 
 			// Save externalUserId to Keychain
 			if let externalUserId = self.externalUserId,
@@ -390,11 +395,29 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			} else {
 				print("No profile picture set in created user")
 			}
+			
+			// Only set user and navigate after successful account creation
+			await MainActor.run {
+				self.spawnUser = fetchedUser
+				self.shouldNavigateToUserInfoInputView = false
+				// Don't automatically set navigation flags - leave that to the view
+			}
 
+		} catch let error as APIError {
+			await MainActor.run {
+				if case .invalidStatusCode(let statusCode) = error, statusCode == 409 {
+					// Email is already in use with another account
+					print("Email is already in use: \(email)")
+					self.authAlert = .emailAlreadyInUse
+				} else {
+					print("Error creating the user: \(error)")
+					self.authAlert = .createError
+				}
+			}
 		} catch {
-			print("Error creating the user: \(error)")
-			if let apiError = error as? APIError {
-				print("API Error: \(apiError.localizedDescription)")
+			await MainActor.run {
+				print("Error creating the user: \(error)")
+				self.authAlert = .createError
 			}
 		}
 	}
