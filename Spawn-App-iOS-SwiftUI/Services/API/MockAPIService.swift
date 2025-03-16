@@ -171,4 +171,18 @@ class MockAPIService: IAPIService {
 	func deleteData(from url: URL) async throws {
 		// do nothing
 	}
+
+	func patchData<T: Encodable, U: Decodable>(
+		from url: URL,
+		with object: T
+	) async throws -> U {
+		// Handle user profile updates
+		if url.absoluteString.contains("users/") {
+			if U.self == BaseUserDTO.self {
+				return BaseUserDTO.danielAgapov as! U
+			}
+		}
+
+		throw APIError.invalidData
+	}
 }

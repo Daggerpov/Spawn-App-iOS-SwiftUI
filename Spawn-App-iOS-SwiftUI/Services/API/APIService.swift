@@ -463,6 +463,49 @@ class APIService: IAPIService {
 			}
 		}
 	}
+
+	internal func patchData<T: Encodable, U: Decodable>(
+		from url: URL,
+		with object: T
+	) async throws -> U {
+		resetState()
+
+		let encoder = APIService.makeEncoder()
+		let encodedData = try encoder.encode(object)
+
+		var request = URLRequest(url: url)
+		request.httpMethod = "PATCH"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = encodedData
+
+		let (data, response) = try await URLSession.shared.data(for: request)
+
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(
+				description: "The HTTP request has failed.")
+		}
+
+		guard httpResponse.statusCode == 200 else {
+			errorMessage =
+				"invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(
+				statusCode: httpResponse.statusCode)
+		}
+
+		do {
+			let decoder = APIService.makeDecoder()
+			let decodedData = try decoder.decode(U.self, from: data)
+			return decodedData
+		} catch {
+			errorMessage =
+				APIError.failedJSONParsing(url: url).localizedDescription
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedJSONParsing(url: url)
+		}
+	}
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end
