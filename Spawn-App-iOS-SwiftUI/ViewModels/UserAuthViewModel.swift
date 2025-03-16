@@ -481,7 +481,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func spawnEditProfile() async {
+	func spawnEditProfile(username: String, firstName: String, lastName: String, bio: String) async {
 		guard let userId = spawnUser?.id else {
 			print("Cannot edit profile: No user ID found")
 			return
@@ -490,10 +490,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
 				let updateDTO = UserUpdateDTO(
-					username: spawnUser?.username ?? "",
-					firstName: spawnUser?.firstName ?? "",
-					lastName: spawnUser?.lastName ?? "",
-					bio: spawnUser?.bio ?? ""
+					username: username,
+					firstName: firstName,
+					lastName: lastName,
+					bio: bio
 				)
 
 				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
@@ -506,6 +506,34 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 			} catch {
 				print("Error updating profile: \(error.localizedDescription)")
+			}
+		}
+	}
+
+	func updateProfilePicture(_ image: UIImage) async {
+		guard let userId = spawnUser?.id else {
+			print("Cannot update profile picture: No user ID found")
+			return
+		}
+
+		// Convert UIImage to Data
+		guard let imageData = image.jpegData(compressionQuality: 0.7) else {
+			print("Failed to convert image to data")
+			return
+		}
+
+		if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
+			do {
+				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
+					from: url,
+					with: imageData
+				)
+
+				await MainActor.run {
+					self.spawnUser = updatedUser
+				}
+			} catch {
+				print("Error updating profile picture: \(error.localizedDescription)")
 			}
 		}
 	}
