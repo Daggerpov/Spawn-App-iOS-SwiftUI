@@ -9,7 +9,6 @@ import SwiftUI
 import PhotosUI
 
 struct ProfileView: View {
-	// TODO DANIEL: make a real API call here, using a new view model -> for editing bio and maybe other user details
 	let user: BaseUserDTO
 	@State private var bio: String
 	@State private var username: String
