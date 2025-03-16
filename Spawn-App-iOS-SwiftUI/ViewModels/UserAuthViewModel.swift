@@ -50,6 +50,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Auth alerts for authentication-related errors
 	@Published var authAlert: AuthAlertType?
 
+	@Published var defaultPfpFetchError: Bool = false
+	@Published var defaultPfpUrlString: String? = nil
+
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
 
@@ -119,6 +122,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.shouldNavigateToUserInfoInputView = false
 		self.activeAlert = nil
 		self.authAlert = nil
+
+		self.defaultPfpFetchError = false
+		self.defaultPfpUrlString = nil
 	}
 
 	func check() {
@@ -325,6 +331,26 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 			await MainActor.run {
 				self.hasCheckedSpawnUserExistence = true
+			}
+		}
+	}
+
+	func spawnFetchDefaultProfilePic() async {
+		if let url = URL(string: APIService.baseURL + "users/default-pfp") {
+			do {
+				let fetchedDefaultPfpUrlString: String = try await self.apiService
+					.fetchData(
+						from: url,
+						parameters: nil
+					)
+
+				await MainActor.run {
+					self.defaultPfpUrlString = fetchedDefaultPfpUrlString
+				}
+			} catch {
+				await MainActor.run {
+					self.defaultPfpFetchError = true
+				}
 			}
 		}
 	}
