@@ -6,12 +6,18 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct ProfileView: View {
 	// TODO DANIEL: make a real API call here, using a new view model -> for editing bio and maybe other user details
 	let user: BaseUserDTO
 	@State private var bio: String
+	@State private var username: String
+	@State private var firstName: String
+	@State private var lastName: String
 	@State private var editingState: ProfileEditText = .edit
+	@State private var selectedImage: UIImage?
+	@State private var showImagePicker: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	
@@ -24,6 +30,9 @@ struct ProfileView: View {
 	init(user: BaseUserDTO) {
 		self.user = user
 		bio = user.bio ?? ""
+		username = user.username
+		firstName = user.firstName ?? ""
+		lastName = user.lastName ?? ""
 	}
 
 	var body: some View {
@@ -32,7 +41,10 @@ struct ProfileView: View {
 				VStack(alignment: .center, spacing: 16) {
 					// Profile Picture
 					ZStack(alignment: .bottomTrailing) {
-						if let profilePictureString = user.profilePicture {
+						if let selectedImage = selectedImage {
+							Image(uiImage: selectedImage)
+								.ProfileImageModifier(imageType: .profilePage)
+						} else if let profilePictureString = user.profilePicture {
 							if MockAPIService.isMocking {
 								Image(profilePictureString)
 									.ProfileImageModifier(imageType: .profilePage)
@@ -63,17 +75,62 @@ struct ProfileView: View {
 										.foregroundColor(universalBackgroundColor)
 								)
 								.offset(x: -10, y: -10)
+								.onTapGesture {
+									showImagePicker = true
+								}
 						}
 					}
 					.padding(.top, 20)
+					.sheet(isPresented: $showImagePicker) {
+						ImagePicker(selectedImage: $selectedImage)
+					}
 
 					VStack(alignment: .leading, spacing: 20) {
-						ProfileField(
-							label: "Name",
-							value:
-								"\(user.firstName ?? "") \(user.lastName ?? "")"
-						)
-						ProfileField(label: "Username", value: user.username)
+						// Name field
+						if isCurrentUserProfile && editingState == .save {
+							HStack {
+								Text("First Name")
+									.font(.headline)
+									.frame(width: 100, alignment: .leading)
+								Spacer()
+								TextField("First Name", text: $firstName)
+									.multilineTextAlignment(.trailing)
+									.font(.body)
+							}
+							.foregroundColor(universalAccentColor)
+							
+							HStack {
+								Text("Last Name")
+									.font(.headline)
+									.frame(width: 100, alignment: .leading)
+								Spacer()
+								TextField("Last Name", text: $lastName)
+									.multilineTextAlignment(.trailing)
+									.font(.body)
+							}
+							.foregroundColor(universalAccentColor)
+						} else {
+							ProfileField(
+								label: "Name",
+								value: "\(user.firstName ?? "") \(user.lastName ?? "")"
+							)
+						}
+						
+						// Username field - editable when in edit mode
+						if isCurrentUserProfile && editingState == .save {
+							HStack {
+								Text("Username")
+									.font(.headline)
+									.frame(width: 100, alignment: .leading)
+								Spacer()
+								TextField("Username", text: $username)
+									.multilineTextAlignment(.trailing)
+									.font(.body)
+							}
+							.foregroundColor(universalAccentColor)
+						} else {
+							ProfileField(label: "Username", value: user.username)
+						}
 						
 						// Only show email for current user's profile
 						if isCurrentUserProfile {
@@ -82,12 +139,13 @@ struct ProfileView: View {
 						
 						// Bio field is editable only for current user's profile
 						if isCurrentUserProfile {
-							BioField(
-								label: "Bio",
-								bio: Binding(
-									get: { bio },
-									set: { bio = $0 }
-								))
+							if editingState == .save {
+								BioField(
+									label: "Bio",
+									bio: $bio)
+							} else {
+								ProfileField(label: "Bio", value: bio)
+							}
 						} else {
 							ProfileField(label: "Bio", value: bio)
 						}
@@ -106,7 +164,19 @@ struct ProfileView: View {
 								editingState = .save
 							case .save:
 								Task {
-									await userAuth.spawnEditProfile()
+									// Update profile picture if selected
+									if let newImage = selectedImage {
+										await userAuth.updateProfilePicture(newImage)
+										selectedImage = nil
+									}
+									
+									// Update profile info
+									await userAuth.spawnEditProfile(
+										username: username,
+										firstName: firstName,
+										lastName: lastName,
+										bio: bio
+									)
 								}
 								editingState = .edit
 							}

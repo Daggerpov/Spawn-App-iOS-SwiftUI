@@ -481,13 +481,58 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
+	func updateProfilePicture(_ image: UIImage) async {
+		guard let userId = spawnUser?.id else {
+			print("Cannot update profile picture: No user ID found")
+			return
+		}
+		
+		// Convert image to data
+		guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+			print("Failed to convert image to JPEG data")
+			return
+		}
+		
+		// Use the correct endpoint for updating profile picture
+		if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
+			do {
+				// Create a URLRequest with PATCH method
+				var request = URLRequest(url: url)
+				request.httpMethod = "PATCH"
+				request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+				request.httpBody = imageData
+				
+				// Perform the request
+				let (data, response) = try await URLSession.shared.data(for: request)
+				
+				// Check the HTTP response
+				guard let httpResponse = response as? HTTPURLResponse, 
+					  (200...299).contains(httpResponse.statusCode) else {
+					print("Error updating profile picture: Invalid HTTP response")
+					return
+				}
+				
+				// Decode the response
+				let decoder = JSONDecoder()
+				if let updatedUser = try? decoder.decode(BaseUserDTO.self, from: data) {
+					await MainActor.run {
+						self.spawnUser = updatedUser
+					}
+					print("Profile picture updated successfully")
+				}
+			} catch {
+				print("Error updating profile picture: \(error.localizedDescription)")
+			}
+		}
+	}
+
 	func spawnEditProfile(username: String, firstName: String, lastName: String, bio: String) async {
 		guard let userId = spawnUser?.id else {
 			print("Cannot edit profile: No user ID found")
 			return
 		}
 
-		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
+		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {
 			do {
 				let updateDTO = UserUpdateDTO(
 					username: username,
@@ -506,34 +551,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 			} catch {
 				print("Error updating profile: \(error.localizedDescription)")
-			}
-		}
-	}
-
-	func updateProfilePicture(_ image: UIImage) async {
-		guard let userId = spawnUser?.id else {
-			print("Cannot update profile picture: No user ID found")
-			return
-		}
-
-		// Convert UIImage to Data
-		guard let imageData = image.jpegData(compressionQuality: 0.7) else {
-			print("Failed to convert image to data")
-			return
-		}
-
-		if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
-			do {
-				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
-					from: url,
-					with: imageData
-				)
-
-				await MainActor.run {
-					self.spawnUser = updatedUser
-				}
-			} catch {
-				print("Error updating profile picture: \(error.localizedDescription)")
 			}
 		}
 	}
