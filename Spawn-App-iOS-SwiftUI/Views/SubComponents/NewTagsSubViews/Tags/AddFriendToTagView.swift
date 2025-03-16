@@ -68,11 +68,11 @@ struct AddFriendToTagView: View {
 }
 
 struct FriendRowForAddingFriendsToTag: View {
-	var friend: UserDTO
+	var friend: BaseUserDTO
 	@State private var isClicked: Bool = false
 	@ObservedObject var viewModel: AddFriendToTagViewModel
 
-	init(friend: UserDTO, viewModel: AddFriendToTagViewModel) {
+	init(friend: BaseUserDTO, viewModel: AddFriendToTagViewModel) {
 		self.friend = friend
 		self.viewModel = viewModel
 	}
