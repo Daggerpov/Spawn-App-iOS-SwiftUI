@@ -14,6 +14,12 @@ struct ProfileView: View {
 	@State private var editingState: ProfileEditText = .edit
 
 	@StateObject var userAuth = UserAuthViewModel.shared
+	
+	// Check if this is the current user's profile
+	private var isCurrentUserProfile: Bool {
+		guard let currentUser = userAuth.spawnUser else { return false }
+		return currentUser.id == user.id
+	}
 
 	init(user: BaseUserDTO) {
 		self.user = user
@@ -46,14 +52,17 @@ struct ProfileView: View {
 								.ProfileImageModifier(imageType: .profilePage)
 						}
 
-						Circle()
-							.fill(profilePicPlusButtonColor)
-							.frame(width: 25, height: 25)
-							.overlay(
-								Image(systemName: "plus")
-									.foregroundColor(universalBackgroundColor)
-							)
-							.offset(x: 10, y: -10)
+						// Only show the plus button for current user's profile
+						if isCurrentUserProfile {
+							Circle()
+								.fill(profilePicPlusButtonColor)
+								.frame(width: 25, height: 25)
+								.overlay(
+									Image(systemName: "plus")
+										.foregroundColor(universalBackgroundColor)
+								)
+								.offset(x: 10, y: -10)
+						}
 					}
 					.padding(.top, 20)
 
@@ -64,13 +73,23 @@ struct ProfileView: View {
 								"\(user.firstName ?? "") \(user.lastName ?? "")"
 						)
 						ProfileField(label: "Username", value: user.username)
-						ProfileField(label: "Email", value: user.email)
-						BioField(
-							label: "Bio",
-							bio: Binding(
-								get: { bio },
-								set: { bio = $0 }
-							))
+						
+						// Only show email for current user's profile
+						if isCurrentUserProfile {
+							ProfileField(label: "Email", value: user.email)
+						}
+						
+						// Bio field is editable only for current user's profile
+						if isCurrentUserProfile {
+							BioField(
+								label: "Bio",
+								bio: Binding(
+									get: { bio },
+									set: { bio = $0 }
+								))
+						} else {
+							ProfileField(label: "Bio", value: bio)
+						}
 					}
 					.padding(.horizontal)
 					.padding(.vertical, 10)
@@ -78,65 +97,71 @@ struct ProfileView: View {
 					Divider().background(universalAccentColor)
 						.padding(.vertical, 10)
 
-					Button(action: {
-						switch editingState {
-						case .edit:
-							editingState = .save
-						case .save:
-							editingState = .edit
-						}
-					}) {
-						Text(editingState.displayText())
-							.font(.headline)
-							.foregroundColor(universalAccentColor)
-							.frame(maxWidth: 135)
-							.padding()
-							.background(
-								RoundedRectangle(
-									cornerRadius: universalRectangleCornerRadius
+					// Only show edit button for current user's profile
+					if isCurrentUserProfile {
+						Button(action: {
+							switch editingState {
+							case .edit:
+								editingState = .save
+							case .save:
+								editingState = .edit
+							}
+						}) {
+							Text(editingState.displayText())
+								.font(.headline)
+								.foregroundColor(universalAccentColor)
+								.frame(maxWidth: 135)
+								.padding()
+								.background(
+									RoundedRectangle(
+										cornerRadius: universalRectangleCornerRadius
+									)
+									.stroke(universalAccentColor, lineWidth: 1)
 								)
-								.stroke(universalAccentColor, lineWidth: 1)
-							)
+						}
+						.padding(.bottom, 20)
 					}
-					.padding(.bottom, 20)
 
 					Spacer()
 
-					VStack(spacing: 15) {
-						NavigationLink(destination: {
-							LaunchView()
-								.navigationBarTitle("")
-								.navigationBarHidden(true)
-						}) {
-							Text("Log Out")
-								.font(.headline)
-								.foregroundColor(.white)
-								.padding()
-								.frame(maxWidth: 170)
-								.background(profilePicPlusButtonColor)
-								.cornerRadius(20)
-						}
-						.simultaneousGesture(
-							TapGesture().onEnded {
-								if userAuth.isLoggedIn {
-									userAuth.signOut()
-								}
-							})
+					// Only show log out and delete account buttons for current user's profile
+					if isCurrentUserProfile {
+						VStack(spacing: 15) {
+							NavigationLink(destination: {
+								LaunchView()
+									.navigationBarTitle("")
+									.navigationBarHidden(true)
+							}) {
+								Text("Log Out")
+									.font(.headline)
+									.foregroundColor(.white)
+									.padding()
+									.frame(maxWidth: 170)
+									.background(profilePicPlusButtonColor)
+									.cornerRadius(20)
+							}
+							.simultaneousGesture(
+								TapGesture().onEnded {
+									if userAuth.isLoggedIn {
+										userAuth.signOut()
+									}
+								})
 
-						// Delete Account Button
-						Button(action: {
-							userAuth.activeAlert = .deleteConfirmation
-						}) {
-							Text("Delete Account")
-								.font(.headline)
-								.foregroundColor(.white)
-								.padding()
-								.frame(maxWidth: 170)
-								.background(Color.red)
-								.cornerRadius(20)
+							// Delete Account Button
+							Button(action: {
+								userAuth.activeAlert = .deleteConfirmation
+							}) {
+								Text("Delete Account")
+									.font(.headline)
+									.foregroundColor(.white)
+									.padding()
+									.frame(maxWidth: 170)
+									.background(Color.red)
+									.cornerRadius(20)
+							}
 						}
+						.padding(.bottom, 30)
 					}
-					.padding(.bottom, 30)
 				}
 				.padding(.horizontal)
 			}
