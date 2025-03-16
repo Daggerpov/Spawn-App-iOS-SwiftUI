@@ -335,26 +335,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func spawnFetchDefaultProfilePic() async {
-		if let url = URL(string: APIService.baseURL + "users/default-pfp") {
-			do {
-				let fetchedDefaultPfpUrlString: String = try await self.apiService
-					.fetchData(
-						from: url,
-						parameters: nil
-					)
-
-				await MainActor.run {
-					self.defaultPfpUrlString = fetchedDefaultPfpUrlString
-				}
-			} catch {
-				await MainActor.run {
-					self.defaultPfpFetchError = true
-				}
-			}
-		}
-	}
-
 	func spawnMakeUser(
 		username: String,
 		profilePicture: UIImage?,
@@ -477,6 +457,55 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				await MainActor.run {
 					activeAlert = .deleteError
 				}
+			}
+		}
+	}
+
+	func spawnFetchDefaultProfilePic() async {
+		if let url = URL(string: APIService.baseURL + "users/default-pfp") {
+			do {
+				let fetchedDefaultPfpUrlString: String = try await self.apiService
+					.fetchData(
+						from: url,
+						parameters: nil
+					)
+
+				await MainActor.run {
+					self.defaultPfpUrlString = fetchedDefaultPfpUrlString
+				}
+			} catch {
+				await MainActor.run {
+					self.defaultPfpFetchError = true
+				}
+			}
+		}
+	}
+
+	func spawnEditProfile() async {
+		guard let userId = spawnUser?.id else {
+			print("Cannot edit profile: No user ID found")
+			return
+		}
+
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
+			do {
+				let updateDTO = UserUpdateDTO(
+					username: spawnUser?.username ?? "",
+					firstName: spawnUser?.firstName ?? "",
+					lastName: spawnUser?.lastName ?? "",
+					bio: spawnUser?.bio ?? ""
+				)
+
+				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
+					from: url,
+					with: updateDTO
+				)
+
+				await MainActor.run {
+					self.spawnUser = updatedUser
+				}
+			} catch {
+				print("Error updating profile: \(error.localizedDescription)")
 			}
 		}
 	}

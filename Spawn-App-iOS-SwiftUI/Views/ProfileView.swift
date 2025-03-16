@@ -45,6 +45,7 @@ struct ProfileView: View {
 								} placeholder: {
 									Circle()
 										.fill(Color.gray)
+										.frame(width: 150, height: 150)
 								}
 							}
 						} else {
@@ -61,7 +62,7 @@ struct ProfileView: View {
 									Image(systemName: "plus")
 										.foregroundColor(universalBackgroundColor)
 								)
-								.offset(x: 10, y: -10)
+								.offset(x: -10, y: -10)
 						}
 					}
 					.padding(.top, 20)
@@ -104,6 +105,9 @@ struct ProfileView: View {
 							case .edit:
 								editingState = .save
 							case .save:
+								Task {
+									await userAuth.spawnEditProfile()
+								}
 								editingState = .edit
 							}
 						}) {
