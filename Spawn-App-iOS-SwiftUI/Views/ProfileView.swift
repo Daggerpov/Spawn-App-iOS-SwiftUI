@@ -43,6 +43,8 @@ struct ProfileView: View {
 						if let selectedImage = selectedImage {
 							Image(uiImage: selectedImage)
 								.ProfileImageModifier(imageType: .profilePage)
+								.transition(.opacity)
+								.id("selectedImage") // Force refresh when image changes
 						} else if let profilePictureString = user.profilePicture {
 							if MockAPIService.isMocking {
 								Image(profilePictureString)
@@ -80,8 +82,14 @@ struct ProfileView: View {
 						}
 					}
 					.padding(.top, 20)
-					.sheet(isPresented: $showImagePicker) {
+					.sheet(isPresented: $showImagePicker, onDismiss: {
+						// Print to debug if the image was selected
+						print("Image picker dismissed. Selected image exists: \(selectedImage != nil)")
+					}) {
 						ImagePicker(selectedImage: $selectedImage)
+					}
+					.onChange(of: selectedImage) { newImage in
+						print("Selected image changed: \(newImage != nil)")
 					}
 
 					VStack(alignment: .leading, spacing: 20) {
@@ -163,6 +171,9 @@ struct ProfileView: View {
 								editingState = .save
 							case .save:
 								Task {
+									// Create a local copy of the selected image before starting async task
+									let imageToUpload = selectedImage
+									
 									// Update profile info first
 									await userAuth.spawnEditProfile(
 										username: username,
@@ -172,9 +183,11 @@ struct ProfileView: View {
 									)
 									
 									// Update profile picture if selected
-									if let newImage = selectedImage {
+									if let newImage = imageToUpload {
+										print("Uploading new profile picture...")
 										await userAuth.updateProfilePicture(newImage)
-										// Don't clear selectedImage so it keeps showing in the UI
+										print("Profile picture uploaded")
+										// Keep the selectedImage set so it continues to display in the UI
 									}
 								}
 								editingState = .edit
