@@ -40,10 +40,24 @@ struct ImagePicker: UIViewControllerRepresentable {
 			guard let provider = results.first?.itemProvider else { return }
 
 			if provider.canLoadObject(ofClass: UIImage.self) {
-				provider.loadObject(ofClass: UIImage.self) { [weak self] image, _ in
+				provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
+					// Handle potential errors with iCloud photos
+					if let error = error {
+						print("Error loading image: \(error.localizedDescription)")
+						
+						DispatchQueue.main.async {
+							// Show fallback to camera/photo library with UIImagePickerController
+							self?.showFallbackImagePicker()
+						}
+						return
+					}
+					
 					DispatchQueue.main.async {
 						if let image = image as? UIImage {
 							self?.showImageCropper(with: image)
+						} else {
+							// If image couldn't be loaded as UIImage, show fallback
+							self?.showFallbackImagePicker()
 						}
 					}
 				}
@@ -66,6 +80,74 @@ struct ImagePicker: UIViewControllerRepresentable {
 				}
 				currentVC.present(cropViewController, animated: true)
 			}
+		}
+
+		// Add a fallback method using UIImagePickerController
+		func showFallbackImagePicker() {
+			let alertController = UIAlertController(
+				title: "Cloud Photo Error",
+				message: "There was an issue accessing your iCloud photo. Would you like to choose from your device or take a new photo?",
+				preferredStyle: .alert
+			)
+			
+			alertController.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
+				self?.showImagePickerController(sourceType: .photoLibrary)
+			})
+			
+			alertController.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
+				self?.showImagePickerController(sourceType: .camera)
+			})
+			
+			alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+			
+			// Find the current view controller to present from
+			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+			   let rootVC = windowScene.windows.first?.rootViewController {
+				var currentVC = rootVC
+				while let presentedVC = currentVC.presentedViewController {
+					currentVC = presentedVC
+				}
+				currentVC.present(alertController, animated: true)
+			}
+		}
+		
+		func showImagePickerController(sourceType: UIImagePickerController.SourceType) {
+			// Check if the source type is available
+			guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
+				print("Source type \(sourceType) is not available")
+				return
+			}
+			
+			let picker = UIImagePickerController()
+			picker.sourceType = sourceType
+			picker.delegate = self
+			picker.allowsEditing = true
+			
+			// Find the current view controller to present from
+			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+			   let rootVC = windowScene.windows.first?.rootViewController {
+				var currentVC = rootVC
+				while let presentedVC = currentVC.presentedViewController {
+					currentVC = presentedVC
+				}
+				currentVC.present(picker, animated: true)
+			}
+		}
+		
+		// UIImagePickerControllerDelegate methods
+		func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+			picker.dismiss(animated: true)
+			
+			// Use edited image if available, otherwise use original
+			if let editedImage = info[.editedImage] as? UIImage {
+				self.showImageCropper(with: editedImage)
+			} else if let originalImage = info[.originalImage] as? UIImage {
+				self.showImageCropper(with: originalImage)
+			}
+		}
+		
+		func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+			picker.dismiss(animated: true)
 		}
 	}
 }
