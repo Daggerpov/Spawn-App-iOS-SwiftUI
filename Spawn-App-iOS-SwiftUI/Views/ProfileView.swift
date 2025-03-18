@@ -64,8 +64,8 @@ struct ProfileView: View {
 								.ProfileImageModifier(imageType: .profilePage)
 						}
 
-						// Only show the plus button for current user's profile
-						if isCurrentUserProfile {
+						// Only show the plus button for current user's profile when in edit mode
+						if isCurrentUserProfile && editingState == .save {
 							Circle()
 								.fill(profilePicPlusButtonColor)
 								.frame(width: 25, height: 25)
@@ -163,19 +163,19 @@ struct ProfileView: View {
 								editingState = .save
 							case .save:
 								Task {
-									// Update profile picture if selected
-									if let newImage = selectedImage {
-										await userAuth.updateProfilePicture(newImage)
-										selectedImage = nil
-									}
-									
-									// Update profile info
+									// Update profile info first
 									await userAuth.spawnEditProfile(
 										username: username,
 										firstName: firstName,
 										lastName: lastName,
 										bio: bio
 									)
+									
+									// Update profile picture if selected
+									if let newImage = selectedImage {
+										await userAuth.updateProfilePicture(newImage)
+										// Don't clear selectedImage so it keeps showing in the UI
+									}
 								}
 								editingState = .edit
 							}
