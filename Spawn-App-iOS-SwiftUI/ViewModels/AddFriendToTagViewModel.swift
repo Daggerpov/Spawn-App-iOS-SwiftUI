@@ -8,9 +8,9 @@
 import Foundation
 
 class AddFriendToTagViewModel: ObservableObject {
-	@Published var friends: [UserDTO] =
-		MockAPIService.isMocking ? UserDTO.mockUsers : []
-	@Published var selectedFriends: [UserDTO] = []
+	@Published var friends: [BaseUserDTO] =
+	MockAPIService.isMocking ? [BaseUserDTO.danielLee, BaseUserDTO.danielAgapov] : []
+	@Published var selectedFriends: [BaseUserDTO] = []
 
 	var userId: UUID
 	var apiService: IAPIService
@@ -20,15 +20,17 @@ class AddFriendToTagViewModel: ObservableObject {
 		self.apiService = apiService
 	}
 
-	internal func fetchFriendsToAddToTag(friendTagId: UUID) async {
+	func fetchFriendsToAddToTag(friendTagId: UUID) async {
 		// full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
 		if let url = URL(
 			string: APIService.baseURL
 				+ "friendTags/friendsNotAddedToTag/\(friendTagId)")
 		{
 			do {
-				let fetchedFriends: [UserDTO] = try await self.apiService
+				let fetchedFriends: [BaseUserDTO] = try await self.apiService
 					.fetchData(from: url, parameters: nil)
+
+				print(fetchedFriends)
 
 				// Ensure updating on the main thread
 				await MainActor.run {
@@ -43,7 +45,7 @@ class AddFriendToTagViewModel: ObservableObject {
 	}
 
 	// Toggle friend selection
-	func toggleFriendSelection(_ friend: UserDTO) {
+	func toggleFriendSelection(_ friend: BaseUserDTO) {
 		if selectedFriends.contains(where: { $0.id == friend.id }) {
 			selectedFriends.removeAll { $0.id == friend.id }  // Deselect
 		} else {

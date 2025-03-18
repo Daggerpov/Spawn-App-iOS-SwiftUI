@@ -21,5 +21,10 @@ protocol IAPIService {
 	func updateData<T: Encodable, U: Decodable>(
 		_ object: T, to url: URL, parameters: [String: String]?
 	) async throws -> U
+	/// generic function for patching (PATCHing) data, given a model of type T, and returning the updated object
+	func patchData<T: Encodable, U: Decodable>(
+		from url: URL,
+		with object: T
+	) async throws -> U
 	func deleteData(from url: URL) async throws
 }

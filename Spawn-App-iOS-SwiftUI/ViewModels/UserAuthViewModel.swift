@@ -47,6 +47,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var activeAlert: DeleteAccountAlertType?
 
+	// Auth alerts for authentication-related errors
+	@Published var authAlert: AuthAlertType?
+
+	@Published var defaultPfpFetchError: Bool = false
+	@Published var defaultPfpUrlString: String? = nil
+
 	private init(apiService: IAPIService) {
 		self.apiService = apiService
 
@@ -115,6 +121,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.shouldNavigateToFeedView = false
 		self.shouldNavigateToUserInfoInputView = false
 		self.activeAlert = nil
+		self.authAlert = nil
+
+		self.defaultPfpFetchError = false
+		self.defaultPfpUrlString = nil
 	}
 
 	func check() {
@@ -332,6 +342,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		lastName: String,
 		email: String
 	) async {
+		// Reset any previous navigation flags to prevent automatic navigation
+		await MainActor.run {
+			self.shouldNavigateToFeedView = false
+			self.isFormValid = false
+		}
+		
 		// Create the DTO
 		let userDTO = UserCreateDTO(
 			username: username,
@@ -354,7 +370,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// include it in the parameters so it can be used
 		if profilePicture == nil, let profilePicUrl = self.profilePicUrl, !profilePicUrl.isEmpty {
 			parameters["profilePicUrl"] = profilePicUrl
-			print("Including provider profile picture URL in parameters: \(profilePicUrl)")
+			print("Including provider picture URL in parameters: \(profilePicUrl)")
 		}
 
 		do {
@@ -365,11 +381,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					profilePicture: profilePicture,
 					parameters: parameters
 				)
-
-			await MainActor.run {
-				self.spawnUser = fetchedUser
-				self.shouldNavigateToUserInfoInputView = false
-			}
 
 			// Save externalUserId to Keychain
 			if let externalUserId = self.externalUserId,
@@ -390,11 +401,29 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			} else {
 				print("No profile picture set in created user")
 			}
+			
+			// Only set user and navigate after successful account creation
+			await MainActor.run {
+				self.spawnUser = fetchedUser
+				self.shouldNavigateToUserInfoInputView = false
+				// Don't automatically set navigation flags - leave that to the view
+			}
 
+		} catch let error as APIError {
+			await MainActor.run {
+				if case .invalidStatusCode(let statusCode) = error, statusCode == 409 {
+					// Email is already in use with another account
+					print("Email is already in use: \(email)")
+					self.authAlert = .emailAlreadyInUse
+				} else {
+					print("Error creating the user: \(error)")
+					self.authAlert = .createError
+				}
+			}
 		} catch {
-			print("Error creating the user: \(error)")
-			if let apiError = error as? APIError {
-				print("API Error: \(apiError.localizedDescription)")
+			await MainActor.run {
+				print("Error creating the user: \(error)")
+				self.authAlert = .createError
 			}
 		}
 	}
@@ -431,6 +460,100 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		}
 	}
+
+	func spawnFetchDefaultProfilePic() async {
+		if let url = URL(string: APIService.baseURL + "users/default-pfp") {
+			do {
+				let fetchedDefaultPfpUrlString: String = try await self.apiService
+					.fetchData(
+						from: url,
+						parameters: nil
+					)
+
+				await MainActor.run {
+					self.defaultPfpUrlString = fetchedDefaultPfpUrlString
+				}
+			} catch {
+				await MainActor.run {
+					self.defaultPfpFetchError = true
+				}
+			}
+		}
+	}
+
+	func updateProfilePicture(_ image: UIImage) async {
+		guard let userId = spawnUser?.id else {
+			print("Cannot update profile picture: No user ID found")
+			return
+		}
+		
+		// Convert image to data
+		guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+			print("Failed to convert image to JPEG data")
+			return
+		}
+		
+		// Use the correct endpoint for updating profile picture
+		if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
+			do {
+				// Create a URLRequest with PATCH method
+				var request = URLRequest(url: url)
+				request.httpMethod = "PATCH"
+				request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+				request.httpBody = imageData
+				
+				// Perform the request
+				let (data, response) = try await URLSession.shared.data(for: request)
+				
+				// Check the HTTP response
+				guard let httpResponse = response as? HTTPURLResponse, 
+					  (200...299).contains(httpResponse.statusCode) else {
+					print("Error updating profile picture: Invalid HTTP response")
+					return
+				}
+				
+				// Decode the response
+				let decoder = JSONDecoder()
+				if let updatedUser = try? decoder.decode(BaseUserDTO.self, from: data) {
+					await MainActor.run {
+						self.spawnUser = updatedUser
+					}
+					print("Profile picture updated successfully")
+				}
+			} catch {
+				print("Error updating profile picture: \(error.localizedDescription)")
+			}
+		}
+	}
+
+	func spawnEditProfile(username: String, firstName: String, lastName: String, bio: String) async {
+		guard let userId = spawnUser?.id else {
+			print("Cannot edit profile: No user ID found")
+			return
+		}
+
+		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {
+			do {
+				let updateDTO = UserUpdateDTO(
+					username: username,
+					firstName: firstName,
+					lastName: lastName,
+					bio: bio
+				)
+
+				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
+					from: url,
+					with: updateDTO
+				)
+
+				await MainActor.run {
+					self.spawnUser = updatedUser
+				}
+			} catch {
+				print("Error updating profile: \(error.localizedDescription)")
+			}
+		}
+	}
 }
 
 // Conform to ASAuthorizationControllerDelegate
@@ -448,12 +571,4 @@ extension UserAuthViewModel: ASAuthorizationControllerDelegate {
 		handleAppleSignInResult(.failure(error))
 	}
 
-}
-
-struct UserCreateDTO: Codable {
-	let username: String
-	let firstName: String
-	let lastName: String
-	let bio: String
-	let email: String
 }

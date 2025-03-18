@@ -91,9 +91,9 @@ class EventDescriptionViewModel: ObservableObject {
 		}
 	}
 
-	// Add a new method to fetch updated event data
+	// this method gets called after a chat message is sent, to update the
+	// chat messages in the event popup view, to include this chat message
 	private func fetchUpdatedEventData() async {
-		// Construct URL for fetching the updated event
 		if let url = URL(string: APIService.baseURL + "events/\(event.id)") {
 			do {
 				let updatedEvent: FullFeedEventDTO = try await self.apiService.fetchData(

@@ -28,92 +28,88 @@ struct EventDescriptionView: View {
 
 	var body: some View {
 		ScrollView {
-			ZStack {
-				// Main content
-				VStack(alignment: .leading, spacing: 20) {
-					// Title and Time Information
-					EventCardTopRowView(event: viewModel.event)
-					
-					// Username display
-					HStack {
-						usernamesView
-						Spacer()
-					}
-
-					VStack {
-						HStack {
-							// Note
-							if let note = viewModel.event.note {
-								Text("\(note)")
-									.font(.body)
-									.padding(.bottom, 15)
-									.foregroundColor(.white)
-									.font(.body)
-									.italic()
-							}
-						}
-						.frame(maxWidth: .infinity, alignment: .leading)
-
-						HStack(spacing: 10) {
-							EventInfoView(
-								event: viewModel.event, eventInfoType: .time)
-							
-							// Only show location if it exists
-							if viewModel.event.location?.name != nil && !(viewModel.event.location?.name.isEmpty ?? true) {
-								EventInfoView(
-									event: viewModel.event, eventInfoType: .location)
-							}
-							
-							Spacer()
-							
-							// Add participation toggle or edit button
-							Circle()
-								.CircularButton(
-									systemName: viewModel.event.isSelfOwned == true 
-										? "pencil" // Edit icon for self-owned events
-										: (viewModel.isParticipating ? "checkmark" : "star.fill"),
-									buttonActionCallback: {
-										Task {
-											if viewModel.event.isSelfOwned == true {
-												// Handle edit action
-												print("Edit event")
-												// TODO: Implement edit functionality
-											} else {
-												// Toggle participation for non-owned events
-												await viewModel.toggleParticipation()
-											}
-										}
-									})
-						}
-						.foregroundColor(.white)
-					}
-					.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
-
-					if let chatMessages = viewModel.event.chatMessages {
-						Divider()
-							.frame(height: 0.5)
-							.background(Color.black)
-							.opacity(1)
-						HStack {
-							Spacer()
-							Text(
-								"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
-							)
-							.foregroundColor(.black)
-							.opacity(0.7)
-							.font(.caption)
-						}
-						.frame(maxWidth: .infinity)
-					}
-
-					chatMessagesView
+			VStack(alignment: .leading, spacing: 20) {
+				// Title and Time Information
+				EventCardTopRowView(event: viewModel.event)
+				
+				// Username display
+				HStack {
+					usernamesView
+					Spacer()
 				}
-				.padding(20)
-				.background(color)
-				.cornerRadius(universalRectangleCornerRadius)
+
+				VStack {
+					HStack {
+						// Note
+						if let note = viewModel.event.note {
+							Text("\(note)")
+								.font(.body)
+								.padding(.bottom, 15)
+								.foregroundColor(.white)
+								.font(.body)
+								.italic()
+						}
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+
+					HStack(spacing: 10) {
+						EventInfoView(
+							event: viewModel.event, eventInfoType: .time)
+						
+						// Only show location if it exists
+						if viewModel.event.location?.name != nil && !(viewModel.event.location?.name.isEmpty ?? true) {
+							EventInfoView(
+								event: viewModel.event, eventInfoType: .location)
+						}
+						
+						Spacer()
+						
+						// Add participation toggle or edit button
+						Circle()
+							.CircularButton(
+								systemName: viewModel.event.isSelfOwned == true 
+									? "pencil" // Edit icon for self-owned events
+									: (viewModel.isParticipating ? "checkmark" : "star.fill"),
+								buttonActionCallback: {
+									Task {
+										if viewModel.event.isSelfOwned == true {
+											// Handle edit action
+											print("Edit event")
+											// TODO: Implement edit functionality
+										} else {
+											// Toggle participation for non-owned events
+											await viewModel.toggleParticipation()
+										}
+									}
+								})
+					}
+					.foregroundColor(.white)
+				}
+				.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
+
+				if let chatMessages = viewModel.event.chatMessages {
+					Divider()
+						.frame(height: 0.5)
+						.background(Color.black)
+						.opacity(1)
+					HStack {
+						Spacer()
+						Text(
+							"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
+						)
+						.foregroundColor(.black)
+						.opacity(0.7)
+						.font(.caption)
+					}
+					.frame(maxWidth: .infinity)
+				}
+
+				chatMessagesView
 			}
+			.padding(20)
+			.background(color)
+			.cornerRadius(universalRectangleCornerRadius)
 		}
-		.scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling, since that's only need for the `chatMessagesView`
 	}
 	
 	var usernamesView: some View {
@@ -133,8 +129,8 @@ struct EventDescriptionView: View {
 
 extension EventDescriptionView {
 	var chatMessagesView: some View {
-        VStack{
-            ScrollView(.vertical){
+        VStack(spacing: 10) {
+            ScrollView(.vertical) {
                 LazyVStack(spacing: 15) {
                     if let chatMessages = viewModel.event.chatMessages {
                         ForEach(chatMessages) { chatMessage in
@@ -142,13 +138,12 @@ extension EventDescriptionView {
                         }
                     }
                 }
+                .padding(.horizontal, 5)
             }
             .frame(maxHeight: 150)
 
 			chatBar
-				.padding(.horizontal, 25)
-				.padding(.vertical)
-		}
+        }
 		.padding(.top, 10)
 		.padding(.bottom, 10)
 		.background(Color.black.opacity(0.05))
@@ -248,12 +243,14 @@ extension EventDescriptionView {
 			}) {
 				Image(systemName: "paperplane.fill")
 					.foregroundColor(Color.black)
-					.padding(.trailing, 10)
 			}
+			.padding(.horizontal, 10)
 			.disabled(messageText.isEmpty) // Disable button when text is empty
 		}
+		.padding(8)
 		.background(Color.white)
 		.cornerRadius(universalRectangleCornerRadius)
+		.padding(.horizontal, 15)
 	}
 }
 
