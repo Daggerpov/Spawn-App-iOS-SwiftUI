@@ -117,12 +117,12 @@ class NotificationService: ObservableObject {
     private func sendTokenToBackend(_ token: String) {
         // Only proceed if user is logged in and has an ID
         if let userId = UserAuthViewModel.shared.spawnUser?.id,
-           let url = URL(string: "\(APIService.baseURL)users/\(userId)/deviceToken") {
+           let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/register") {
             
             // Create device token DTO
             let deviceTokenDTO = DeviceTokenDTO(
-                deviceToken: token,
-                platform: "iOS",
+                token: token,
+                deviceType: "iOS",
                 userId: userId
             )
             
@@ -135,6 +135,13 @@ class NotificationService: ObservableObject {
                         parameters: nil
                     )
                     print("Successfully registered device token with backend")
+                } catch let error as APIError {
+                    // Check if it's a 404 error (endpoint doesn't exist yet)
+                    if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+                        print("Device token registration endpoint not available (404): Backend may not support push notifications yet")
+                    } else {
+                        print("Failed to register device token: \(error.localizedDescription)")
+                    }
                 } catch {
                     print("Failed to register device token: \(error.localizedDescription)")
                 }
@@ -385,7 +392,7 @@ class NotificationService: ObservableObject {
         isLoadingPreferences = true
         defer { isLoadingPreferences = false }
         
-        if let url = URL(string: "\(APIService.baseURL)users/\(userId)/notificationPreferences") {
+        if let url = URL(string: "\(APIService.baseURL)notifications/preferences/\(userId)") {
             do {
                 // Using fetchData the standard way as in view models
                 let preferences: NotificationPreferencesDTO = try await self.apiService.fetchData(
@@ -403,6 +410,14 @@ class NotificationService: ObservableObject {
                 savePreferencesToUserDefaults()
                 
                 print("Successfully fetched notification preferences")
+            } catch let error as APIError {
+                // Check if it's a 404 error (endpoint doesn't exist yet)
+                if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+                    print("Notification preferences endpoint not available (404): Using UserDefaults values")
+                    // Continue using the UserDefaults values that were loaded in init()
+                } else {
+                    print("Failed to fetch notification preferences: \(error.localizedDescription)")
+                }
             } catch {
                 print("Failed to fetch notification preferences: \(error.localizedDescription)")
             }
@@ -433,7 +448,7 @@ class NotificationService: ObservableObject {
             userId: userId
         )
         
-        if let url = URL(string: "\(APIService.baseURL)users/\(userId)/notificationPreferences") {
+        if let url = URL(string: "\(APIService.baseURL)notifications/preferences/\(userId)") {
             do {
                 // Using sendData the standard way as in view models
                 _ = try await self.apiService.sendData(
@@ -442,6 +457,14 @@ class NotificationService: ObservableObject {
                     parameters: nil
                 )
                 print("Successfully updated notification preferences")
+            } catch let error as APIError {
+                // Check if it's a 404 error (endpoint doesn't exist yet)
+                if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+                    print("Notification preferences endpoint not available (404): Values saved to UserDefaults only")
+                    // We've already saved to UserDefaults above, so just continue
+                } else {
+                    print("Failed to update notification preferences: \(error.localizedDescription)")
+                }
             } catch {
                 print("Failed to update notification preferences: \(error.localizedDescription)")
             }
