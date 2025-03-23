@@ -17,6 +17,7 @@ struct ProfileView: View {
 	@State private var editingState: ProfileEditText = .edit
 	@State private var selectedImage: UIImage?
 	@State private var showImagePicker: Bool = false
+	@State private var isImageLoading: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	
@@ -40,7 +41,10 @@ struct ProfileView: View {
 				VStack(alignment: .center, spacing: 16) {
 					// Profile Picture
 					ZStack(alignment: .bottomTrailing) {
-						if let selectedImage = selectedImage {
+						if isImageLoading {
+							ProgressView()
+								.frame(width: 150, height: 150)
+						} else if let selectedImage = selectedImage {
 							Image(uiImage: selectedImage)
 								.ProfileImageModifier(imageType: .profilePage)
 								.transition(.opacity)
@@ -83,10 +87,10 @@ struct ProfileView: View {
 					}
 					.padding(.top, 20)
 					.sheet(isPresented: $showImagePicker, onDismiss: {
-						// Print to debug if the image was selected
 						print("Image picker dismissed. Selected image exists: \(selectedImage != nil)")
 					}) {
 						ImagePicker(selectedImage: $selectedImage)
+							.ignoresSafeArea()
 					}
 					.onChange(of: selectedImage) { newImage in
 						print("Selected image changed: \(newImage != nil)")
@@ -170,6 +174,7 @@ struct ProfileView: View {
 							case .edit:
 								editingState = .save
 							case .save:
+								isImageLoading = selectedImage != nil
 								Task {
 									// Create a local copy of the selected image before starting async task
 									let imageToUpload = selectedImage
@@ -189,8 +194,10 @@ struct ProfileView: View {
 										print("Profile picture uploaded")
 										// Keep the selectedImage set so it continues to display in the UI
 									}
+									
+									isImageLoading = false
+									editingState = .edit
 								}
-								editingState = .edit
 							}
 						}) {
 							Text(editingState.displayText())
@@ -206,6 +213,7 @@ struct ProfileView: View {
 								)
 						}
 						.padding(.bottom, 20)
+						.disabled(isImageLoading)
 					}
 
 					Spacer()

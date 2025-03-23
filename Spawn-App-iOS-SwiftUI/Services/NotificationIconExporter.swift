@@ -29,7 +29,6 @@ struct NotificationIconExporter {
            let pngData = resizedImage.pngData() {
             do {
                 try pngData.write(to: fileURL)
-                print("Logo exported to: \(fileURL.path)")
             } catch {
                 print("Failed to write app icon: \(error.localizedDescription)")
             }

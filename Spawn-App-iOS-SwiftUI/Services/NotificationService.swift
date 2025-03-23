@@ -408,8 +408,6 @@ class NotificationService: ObservableObject {
                 
                 // Save to UserDefaults as fallback
                 savePreferencesToUserDefaults()
-                
-                print("Successfully fetched notification preferences")
             } catch let error as APIError {
                 // Check if it's a 404 error (endpoint doesn't exist yet)
                 if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
@@ -456,7 +454,6 @@ class NotificationService: ObservableObject {
                     to: url,
                     parameters: nil
                 )
-                print("Successfully updated notification preferences")
             } catch let error as APIError {
                 // Check if it's a 404 error (endpoint doesn't exist yet)
                 if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
