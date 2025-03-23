@@ -122,7 +122,7 @@ class NotificationService: ObservableObject {
             // Create device token DTO
             let deviceTokenDTO = DeviceTokenDTO(
                 token: token,
-                deviceType: "iOS",
+                deviceType: "IOS",
                 userId: userId
             )
             
