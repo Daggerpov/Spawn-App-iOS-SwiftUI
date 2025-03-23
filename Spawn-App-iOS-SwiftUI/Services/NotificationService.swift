@@ -2,7 +2,8 @@ import Foundation
 import UserNotifications
 import SwiftUI
 
-class NotificationService: ObservableObject {
+@available(iOS 16.0, *)
+class NotificationService: ObservableObject, @unchecked Sendable {
     static let shared = NotificationService()
     
     @Published var isNotificationsEnabled = false

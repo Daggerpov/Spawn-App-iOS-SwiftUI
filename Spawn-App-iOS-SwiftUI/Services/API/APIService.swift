@@ -520,6 +520,10 @@ class APIService: IAPIService {
 
 		let encoder = APIService.makeEncoder()
 		let encodedData = try encoder.encode(object)
+		
+		// Debug: Log the request details
+		print("🔍 PATCH REQUEST: \(url.absoluteString)")
+		print("🔍 REQUEST BODY: \(String(data: encodedData, encoding: .utf8) ?? "Unable to convert to string")")
 
 		var request = URLRequest(url: url)
 		request.httpMethod = "PATCH"
@@ -527,10 +531,14 @@ class APIService: IAPIService {
 		request.httpBody = encodedData
 
 		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		// Debug: Log the response details
+		print("🔍 RESPONSE: \(response)")
+		print("🔍 RESPONSE DATA: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
-			print(errorMessage ?? "no error message to log")
+			print("❌ ERROR: HTTP request failed for \(url)")
 			throw APIError.failedHTTPRequest(
 				description: "The HTTP request has failed.")
 		}
@@ -538,7 +546,13 @@ class APIService: IAPIService {
 		guard httpResponse.statusCode == 200 else {
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(url)"
-			print(errorMessage ?? "no error message to log")
+			print("❌ ERROR: Invalid status code \(httpResponse.statusCode) for \(url)")
+			
+			// Try to parse error message from response
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+				print("❌ ERROR DETAILS: \(errorJson)")
+			}
+			
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
@@ -546,11 +560,16 @@ class APIService: IAPIService {
 		do {
 			let decoder = APIService.makeDecoder()
 			let decodedData = try decoder.decode(U.self, from: data)
+			print("✅ SUCCESS: Data decoded successfully for \(url.absoluteString)")
 			return decodedData
 		} catch {
 			errorMessage =
 				APIError.failedJSONParsing(url: url).localizedDescription
-			print(errorMessage ?? "no error message to log")
+			print("❌ ERROR: JSON parsing failed for \(url): \(error)")
+			
+			// Log the data that couldn't be parsed
+			print("❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+			
 			throw APIError.failedJSONParsing(url: url)
 		}
 	}
@@ -578,6 +597,66 @@ class APIService: IAPIService {
 		
 		// For single objects, we can't create an empty result so return nil
 		return nil
+	}
+
+	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO {
+		guard let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") else {
+			print("❌ ERROR: Failed to create URL for profile picture update")
+			throw APIError.URLError
+		}
+		
+		print("🔍 UPDATING PROFILE PICTURE: Starting request to \(url.absoluteString)")
+		print("🔍 REQUEST DATA SIZE: \(imageData.count) bytes")
+		
+		// Create the request
+		var request = URLRequest(url: url)
+		request.httpMethod = "PATCH"
+		request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+		request.httpBody = imageData
+		
+		// Log request headers
+		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
+		
+		// Perform the request with detailed logging
+		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		print("🔍 RESPONSE RECEIVED: \(response)")
+		
+		// Check if we can read the response as JSON or text
+		if let responseString = String(data: data, encoding: .utf8) {
+			print("🔍 RESPONSE DATA: \(responseString)")
+		} else {
+			print("🔍 RESPONSE DATA: Unable to convert to string (binary data of \(data.count) bytes)")
+		}
+		
+		// Check the HTTP response
+		guard let httpResponse = response as? HTTPURLResponse else {
+			print("❌ ERROR: Failed HTTP request - unable to get HTTP response")
+			throw APIError.failedHTTPRequest(description: "HTTP request failed")
+		}
+		
+		guard (200...299).contains(httpResponse.statusCode) else {
+			print("❌ ERROR: Invalid status code \(httpResponse.statusCode)")
+			
+			// Try to parse error details
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+				print("❌ ERROR DETAILS: \(errorJson)")
+			}
+			
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		// Parse the response
+		do {
+			let decoder = JSONDecoder()
+			let updatedUser = try decoder.decode(BaseUserDTO.self, from: data)
+			print("✅ SUCCESS: Profile picture updated, new URL: \(updatedUser.profilePicture ?? "nil")")
+			return updatedUser
+		} catch {
+			print("❌ ERROR: Failed to decode user data after profile picture update: \(error)")
+			print("❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+			throw APIError.failedJSONParsing(url: url)
+		}
 	}
 }
 

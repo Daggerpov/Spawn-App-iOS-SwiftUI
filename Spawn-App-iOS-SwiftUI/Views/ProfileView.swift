@@ -172,14 +172,20 @@ struct ProfileView: View {
 						Button(action: {
 							switch editingState {
 							case .edit:
+								print("🔍 Starting profile edit mode")
 								editingState = .save
 							case .save:
+								print("🔍 Saving profile changes...")
+								print("🔍 Current values - username: \(username), firstName: \(firstName), lastName: \(lastName), bio: \(bio)")
+								print("🔍 Has new image: \(selectedImage != nil)")
+								
 								isImageLoading = selectedImage != nil
 								Task {
 									// Create a local copy of the selected image before starting async task
 									let imageToUpload = selectedImage
 									
 									// Update profile info first
+									print("🔍 Updating profile text information...")
 									await userAuth.spawnEditProfile(
 										username: username,
 										firstName: firstName,
@@ -189,14 +195,35 @@ struct ProfileView: View {
 									
 									// Update profile picture if selected
 									if let newImage = imageToUpload {
-										print("Uploading new profile picture...")
+										print("🔍 Uploading new profile picture...")
 										await userAuth.updateProfilePicture(newImage)
-										print("Profile picture uploaded")
-										// Keep the selectedImage set so it continues to display in the UI
+										print("🔍 Profile picture upload completed")
+									}
+									
+									// Update local state with the latest data from the user object
+									if let updatedUser = userAuth.spawnUser {
+										print("🔍 Retrieved updated user data:")
+										print("  - Username: \(updatedUser.username)")
+										print("  - Name: \(updatedUser.firstName ?? "nil") \(updatedUser.lastName ?? "nil")")
+										print("  - Bio: \(updatedUser.bio ?? "nil")")
+										print("  - Profile Picture: \(updatedUser.profilePicture ?? "nil")")
+										
+										username = updatedUser.username
+										firstName = updatedUser.firstName ?? ""
+										lastName = updatedUser.lastName ?? ""
+										bio = updatedUser.bio ?? ""
+										
+										// Force view update
+										Task { @MainActor in
+											print("🔍 Forcing UI refresh with updated data")
+										}
+									} else {
+										print("❌ ERROR: Updated user data is nil after profile update")
 									}
 									
 									isImageLoading = false
 									editingState = .edit
+									print("🔍 Profile edit complete")
 								}
 							}
 						}) {

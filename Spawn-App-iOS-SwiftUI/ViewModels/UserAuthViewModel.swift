@@ -305,7 +305,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		let emailToUse = self.email ?? ""
 		
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
-			do {
 				// First, try to decode as a single user object
 				do {
 					let fetchedSpawnUser: BaseUserDTO = try await self.apiService
@@ -373,17 +372,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						}
 					}
 				}
-			} catch let error as APIError {
-				await MainActor.run {
-					self.handleApiError(error)
-				}
-			} catch {
-				await MainActor.run {
-					self.spawnUser = nil
-					self.shouldNavigateToUserInfoInputView = true
-					print("Error fetching user data: \(error.localizedDescription)")
-				}
-			}
 			
 			await MainActor.run {
 				self.hasCheckedSpawnUserExistence = true
@@ -574,14 +562,31 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
-		// Use the correct endpoint for updating profile picture
-		if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
-			do {
+		print("Starting profile picture update for user \(userId)")
+		
+		// Use our new dedicated method for profile picture updates
+		do {
+			// Try to use the new method which has better error handling
+			if let apiService = apiService as? APIService {
+				let updatedUser = try await apiService.updateProfilePicture(imageData, userId: userId)
+				
+				await MainActor.run {
+					self.spawnUser = updatedUser
+					self.objectWillChange.send()
+					print("Profile successfully updated with new picture: \(updatedUser.profilePicture ?? "nil")")
+				}
+				return
+			}
+			
+			// Fallback to the old method if needed (only for mock implementation)
+			if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
 				// Create a URLRequest with PATCH method
 				var request = URLRequest(url: url)
 				request.httpMethod = "PATCH"
 				request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
 				request.httpBody = imageData
+				
+				print("Fallback: Sending profile picture update request to: \(url)")
 				
 				// Perform the request
 				let (data, response) = try await URLSession.shared.data(for: request)
@@ -589,7 +594,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Check the HTTP response
 				guard let httpResponse = response as? HTTPURLResponse, 
 					  (200...299).contains(httpResponse.statusCode) else {
-					print("Error updating profile picture: Invalid HTTP response")
+					let httpResponse = response as? HTTPURLResponse
+					print("Error updating profile picture: Invalid HTTP response code: \(httpResponse?.statusCode ?? 0)")
 					return
 				}
 				
@@ -598,12 +604,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				if let updatedUser = try? decoder.decode(BaseUserDTO.self, from: data) {
 					await MainActor.run {
 						self.spawnUser = updatedUser
+						self.objectWillChange.send()
+						print("Fallback: Profile picture updated successfully with URL: \(updatedUser.profilePicture ?? "nil")")
 					}
-					print("Profile picture updated successfully")
+				} else {
+					print("Failed to decode user data after profile picture update")
 				}
-			} catch {
-				print("Error updating profile picture: \(error.localizedDescription)")
 			}
+		} catch {
+			print("Error updating profile picture: \(error.localizedDescription)")
 		}
 	}
 
@@ -622,13 +631,21 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					bio: bio
 				)
 
+				print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName), bio=\(bio)")
+				
 				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
 					from: url,
 					with: updateDTO
 				)
 
 				await MainActor.run {
+					// Update the current user object
 					self.spawnUser = updatedUser
+					
+					// Ensure UI updates with the latest values
+					self.objectWillChange.send()
+					
+					print("Profile updated successfully: \(updatedUser.username)")
 				}
 			} catch {
 				print("Error updating profile: \(error.localizedDescription)")
