@@ -213,6 +213,21 @@ struct ProfileView: View {
 					// Only show log out and delete account buttons for current user's profile
 					if isCurrentUserProfile {
 						VStack(spacing: 15) {
+							// Notification Settings Button
+							NavigationLink(destination: NotificationSettingsView()) {
+								HStack {
+									Image(systemName: "bell.fill")
+										.foregroundColor(.white)
+									Text("Notification Settings")
+										.font(.headline)
+										.foregroundColor(.white)
+								}
+								.padding()
+								.frame(maxWidth: 170)
+								.background(universalAccentColor)
+								.cornerRadius(20)
+							}
+						
 							NavigationLink(destination: {
 								LaunchView()
 									.navigationBarTitle("")
