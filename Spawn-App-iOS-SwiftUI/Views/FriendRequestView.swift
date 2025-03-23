@@ -11,6 +11,7 @@ struct FriendRequestView: View {
 	@ObservedObject var viewModel: FriendRequestViewModel
 	@State private var hasClickedAccept = false
 	@State private var hasClickedDecline = false
+    @ObservedObject var friendsTabViewModel: FriendsTabViewModel
 
 	@Binding var showingChoosingTagView: Bool
 
@@ -20,7 +21,8 @@ struct FriendRequestView: View {
 
 	init(
         user: BaseUserDTO, friendRequestId: UUID, mutualFriendCount: Int, closeCallback: @escaping () -> Void,
-		showingChoosingTagView: Binding<Bool>
+		showingChoosingTagView: Binding<Bool>,
+        friendsTabViewModel: FriendsTabViewModel
 	) {
 		self.user = user
 		self.closeCallback = closeCallback
@@ -30,6 +32,7 @@ struct FriendRequestView: View {
 				? MockAPIService() : APIService(), userId: user.id,
 			friendRequestId: friendRequestId)
 		self._showingChoosingTagView = showingChoosingTagView
+        self.friendsTabViewModel = friendsTabViewModel
 	}
 
 	var body: some View {
@@ -106,6 +109,7 @@ extension FriendRequestView {
 			Task {
 				await viewModel
 					.friendRequestAction(action: FriendRequestAction.accept)
+                await friendsTabViewModel.fetchAllData()
 			}
 			closeCallback()
 			showingChoosingTagView = true
@@ -135,6 +139,7 @@ extension FriendRequestView {
 			Task {
 				await viewModel
 					.friendRequestAction(action: FriendRequestAction.decline)
+                await friendsTabViewModel.fetchAllData()
 			}
 			closeCallback()
 			hasClickedDecline.toggle()
@@ -176,5 +181,6 @@ extension FriendRequestView {
         mutualFriendCount: 2,
 		closeCallback: {
 		},
-		showingChoosingTagView: $showing)
+		showingChoosingTagView: $showing,
+        friendsTabViewModel: FriendsTabViewModel(userId: UUID(), apiService: MockAPIService()))
 }
