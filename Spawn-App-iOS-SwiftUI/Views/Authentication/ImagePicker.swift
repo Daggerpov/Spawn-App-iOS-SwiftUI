@@ -16,7 +16,7 @@ struct ImagePicker: UIViewControllerRepresentable {
 		let picker = UIImagePickerController()
 		picker.sourceType = .photoLibrary
 		picker.delegate = context.coordinator
-		picker.allowsEditing = true // Use the built-in editor for basic crop
+		picker.allowsEditing = false // Disable built-in editor to avoid the rectangular crop step
 		return picker
 	}
 
@@ -28,97 +28,31 @@ struct ImagePicker: UIViewControllerRepresentable {
 
 	class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 		let parent: ImagePicker
+		let profileImageSize: CGFloat = 150
 
 		init(_ parent: ImagePicker) {
 			self.parent = parent
 		}
 
 		func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-			// Get the edited image if available, otherwise use the original
-			if let editedImage = info[.editedImage] as? UIImage {
-				makeCircularImage(editedImage)
-			} else if let originalImage = info[.originalImage] as? UIImage {
-				makeCircularImage(originalImage)
+			// Get the original image directly, skip the edited image step
+			if let originalImage = info[.originalImage] as? UIImage {
+				// Show our custom crop view controller
+				presentCropViewController(for: originalImage, from: picker)
 			}
 			
-			// Dismiss the picker
-			picker.dismiss(animated: true)
+			// Don't dismiss yet - we'll do that after cropping
 		}
-
-		private func makeCircularImage(_ image: UIImage) {
-			let originalImage = image
-			
-			// Create a square cropping rectangle for the circular mask
-			let sideLength = min(originalImage.size.width, originalImage.size.height)
-			let xOffset = (originalImage.size.width - sideLength) / 2
-			let yOffset = (originalImage.size.height - sideLength) / 2
-			let cropRect = CGRect(x: xOffset, y: yOffset, width: sideLength, height: sideLength)
-			
-			// Crop the image to a square
-			guard let squareImage = cropImage(originalImage, toRect: cropRect) else { return }
-			
-			// Create a circular mask
-			let circularImage = maskToCircle(image: squareImage)
-			
-			// Update the binding
-			DispatchQueue.main.async {
-				self.parent.selectedImage = circularImage
-				self.parent.presentationMode.wrappedValue.dismiss()
-			}
-		}
-
-		private func cropImage(_ image: UIImage, toRect rect: CGRect) -> UIImage? {
-			// Scale crop rect to account for image scale
-			let scale = image.scale
-			let scaledRect = CGRect(
-				x: rect.origin.x * scale,
-				y: rect.origin.y * scale,
-				width: rect.width * scale,
-				height: rect.height * scale
-			)
-			
-			guard let cgImage = image.cgImage?.cropping(to: scaledRect) else {
-				return nil
+		
+		private func presentCropViewController(for image: UIImage, from presenter: UIViewController) {
+			let cropViewController = CropImageViewController(image: image, profileImageSize: profileImageSize) { [weak self] croppedImage in
+				DispatchQueue.main.async {
+					self?.parent.selectedImage = croppedImage
+					self?.parent.presentationMode.wrappedValue.dismiss()
+				}
 			}
 			
-			return UIImage(
-				cgImage: cgImage,
-				scale: image.scale,
-				orientation: image.imageOrientation
-			)
-		}
-
-		private func maskToCircle(image: UIImage) -> UIImage {
-			let imageSize = image.size
-			let dimension = min(imageSize.width, imageSize.height)
-			let circleRect = CGRect(
-				x: 0,
-				y: 0,
-				width: dimension,
-				height: dimension
-			)
-			
-			UIGraphicsBeginImageContextWithOptions(circleRect.size, false, image.scale)
-			defer { UIGraphicsEndImageContext() }
-			
-			let context = UIGraphicsGetCurrentContext()!
-			context.saveGState()
-			
-			// Create and add circle path to context
-			let circlePath = UIBezierPath(ovalIn: circleRect)
-			circlePath.addClip()
-			
-			// Draw the image
-			image.draw(in: circleRect)
-			
-			context.restoreGState()
-			
-			// Get the masked image
-			guard let maskedImage = UIGraphicsGetImageFromCurrentImageContext() else {
-				return image
-			}
-			
-			return maskedImage
+			presenter.present(cropViewController, animated: true)
 		}
 
 		func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
@@ -131,12 +65,14 @@ class CropImageViewController: UIViewController {
 	private let imageView = UIImageView()
 	private let originalImage: UIImage
 	private let completion: (UIImage) -> Void
+	private let profileImageSize: CGFloat
 
 	private let cropOverlayView = UIView()
 	private let cropFrameView = UIView()
 
-	init(image: UIImage, completion: @escaping (UIImage) -> Void) {
+	init(image: UIImage, profileImageSize: CGFloat, completion: @escaping (UIImage) -> Void) {
 		self.originalImage = image
+		self.profileImageSize = profileImageSize
 		self.completion = completion
 		super.init(nibName: nil, bundle: nil)
 	}
@@ -225,7 +161,9 @@ class CropImageViewController: UIViewController {
 	@objc private func doneTapped() {
 		let scaledCropFrame = convertCropFrameToImageCoordinates()
 		if let croppedImage = cropImage(with: scaledCropFrame) {
-			completion(croppedImage)
+			// Final step: resize to profile image size and ensure it's circular
+			let finalImage = createFinalCircularImage(from: croppedImage)
+			completion(finalImage)
 		}
 		dismiss(animated: true)
 	}
@@ -292,22 +230,28 @@ class CropImageViewController: UIViewController {
 			return nil
 		}
 
-		// Create a circular image
-		let ciImage = CIImage(cgImage: cgImage)
-		let filter = CIFilter(name: "CIRadialGradientMask")
-
-		let size = CGSize(width: cgImage.width, height: cgImage.height)
-		let smallerSide = min(size.width, size.height)
-		let radius = smallerSide / 2
-
-		filter?.setValue(ciImage, forKey: kCIInputImageKey)
-		filter?.setValue(CIVector(x: radius, y: radius), forKey: "inputCenter")
-		filter?.setValue(radius, forKey: "inputRadius0")
-		filter?.setValue(0, forKey: "inputRadius1")
-
-		// Create a circular image
-		let outputImage = UIImage(cgImage: cgImage, scale: scale, orientation: originalImage.imageOrientation)
-
-		return outputImage
+		return UIImage(cgImage: cgImage, scale: scale, orientation: originalImage.imageOrientation)
+	}
+	
+	private func createFinalCircularImage(from image: UIImage) -> UIImage {
+		// Create final image with exact profile size dimensions
+		let finalSize = CGSize(width: profileImageSize, height: profileImageSize)
+		UIGraphicsBeginImageContextWithOptions(finalSize, false, 0)
+		defer { UIGraphicsEndImageContext() }
+		
+		// Create circular clipping path
+		let context = UIGraphicsGetCurrentContext()!
+		context.addEllipse(in: CGRect(origin: .zero, size: finalSize))
+		context.clip()
+		
+		// Draw the image inside the circular clipping path
+		image.draw(in: CGRect(origin: .zero, size: finalSize))
+		
+		// Get the final circular image
+		if let circularImage = UIGraphicsGetImageFromCurrentImageContext() {
+			return circularImage
+		}
+		
+		return image
 	}
 }
