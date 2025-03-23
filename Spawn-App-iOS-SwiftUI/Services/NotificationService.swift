@@ -14,6 +14,9 @@ class NotificationService: ObservableObject {
     @Published var chatMessagesEnabled: Bool = true
     @Published var isLoadingPreferences: Bool = false
     
+    // Store the device token for later registration
+    private var storedDeviceToken: String?
+    
     // APIService instance to use for all API calls
     private let apiService: IAPIService
     
@@ -26,10 +29,18 @@ class NotificationService: ObservableObject {
         checkNotificationStatus()
         // Load saved preferences from UserDefaults
         loadPreferencesFromUserDefaults()
-        // Then try to fetch from backend
-        Task {
-            await fetchNotificationPreferences()
-        }
+        
+        // Add observer for user login notification
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(userDidLogin),
+            name: .userDidLogin,
+            object: nil
+        )
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // For testing: initialize with a mock API service
@@ -37,6 +48,19 @@ class NotificationService: ObservableObject {
         self.apiService = mockAPIService
         checkNotificationStatus()
         loadPreferencesFromUserDefaults()
+    }
+    
+    // Called when user logs in
+    @objc private func userDidLogin() {
+        // If we have a stored token, register it now
+        if let token = storedDeviceToken {
+            registerStoredTokenWithBackend()
+        }
+        
+        // Fetch notification preferences after login
+        Task {
+            await fetchNotificationPreferences()
+        }
     }
     
     // Check if notifications are enabled
@@ -64,13 +88,30 @@ class NotificationService: ObservableObject {
         }
     }
     
-    // Register device token with backend
+    // Store device token when received from Apple
     func registerDeviceToken(_ deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("Device token: \(tokenString)")
+        print("Device token received: \(tokenString)")
         
-        // Send token to backend
-        sendTokenToBackend(tokenString)
+        // Store the token for later use
+        storedDeviceToken = tokenString
+        
+        // Only try to register with backend if user is already logged in
+        if UserAuthViewModel.shared.isLoggedIn {
+            registerStoredTokenWithBackend()
+        } else {
+            print("Token stored. Will register with backend after user logs in.")
+        }
+    }
+    
+    // Register the stored token with the backend
+    func registerStoredTokenWithBackend() {
+        guard let token = storedDeviceToken else {
+            print("No device token available to register")
+            return
+        }
+        
+        sendTokenToBackend(token)
     }
     
     private func sendTokenToBackend(_ token: String) {

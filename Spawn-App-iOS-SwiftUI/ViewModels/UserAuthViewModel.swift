@@ -95,6 +95,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				user.profile?.imageURL(withDimension: 100)?.absoluteString
 			self.isLoggedIn = true
 			self.externalUserId = user.userID  // Google's externalUserId
+			
+			// If we have a spawnUser already, post the login notification
+			if self.spawnUser != nil {
+				NotificationCenter.default.post(name: .userDidLogin, object: nil)
+			}
 		} else {
 			resetState()
 		}
@@ -315,6 +320,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					self.shouldNavigateToUserInfoInputView = false  // User exists, no need to navigate to UserInfoInputView
 					self.isFormValid = true  // Auto-validate the form since we have a valid user
 					self.setShouldNavigateToFeedView() // Check if we should navigate to feed
+					
+					// Post notification that user did login successfully
+					NotificationCenter.default.post(name: .userDidLogin, object: nil)
 				}
 			} catch {
 				await MainActor.run {
@@ -403,6 +411,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.spawnUser = fetchedUser
 				self.shouldNavigateToUserInfoInputView = false
 				// Don't automatically set navigation flags - leave that to the view
+				
+				// Post notification that user did login
+				NotificationCenter.default.post(name: .userDidLogin, object: nil)
 			}
 
 		} catch let error as APIError {
