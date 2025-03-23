@@ -327,11 +327,21 @@ struct UserInfoInputView: View {
 	}
 
 	private func requestNotificationPermission() {
-		let notificationCenter = UNUserNotificationCenter.current()
 		Task {
 			do {
-				try await notificationCenter.requestAuthorization(options: [.alert, .badge, .sound])
-				print("Notification permission granted")
+				let granted = await NotificationService.shared.requestPermission()
+				if granted {
+					print("Notification permission granted")
+					
+					// Send a welcome notification using the NotificationDataBuilder
+					NotificationService.shared.scheduleLocalNotification(
+						title: "Welcome to Spawn!",
+						body: "Thanks for joining. We'll keep you updated on events and friends.",
+						userInfo: NotificationDataBuilder.welcome()
+					)
+				} else {
+					print("Notification permission denied")
+				}
 			} catch {
 				print("Failed to request notification permission: \(error.localizedDescription)")
 			}

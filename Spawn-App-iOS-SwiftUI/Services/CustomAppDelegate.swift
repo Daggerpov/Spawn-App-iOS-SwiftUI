@@ -12,20 +12,35 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         // Setting the notification delegate
         UNUserNotificationCenter.current().delegate = self
         
+        // Handle notification that launched the app
+        if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
+            handleReceivedNotification(notification)
+        }
+        
         return true
     }
     
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        // Once the device is registered for push notifications, Apple sends the token to our app
-        // This is where we would forward the token to our push server
-        let stringifiedToken = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("Device Token for Push Notifications:", stringifiedToken)
+        // Forward the token to our notification service
+        NotificationService.shared.registerDeviceToken(deviceToken)
     }
     
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         // Called when registration for remote notifications fails
         print("Failed to register for remote notifications: \(error.localizedDescription)")
+    }
+    
+    // Handle push notifications received when app is in background
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        handleReceivedNotification(userInfo)
+        completionHandler(.newData)
+    }
+    
+    // Handle notification data
+    private func handleReceivedNotification(_ userInfo: [AnyHashable: Any]) {
+        // Forward to our notification service
+        NotificationService.shared.handleNotification(userInfo: userInfo)
     }
 }
 
@@ -33,9 +48,12 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
 extension CustomAppDelegate: UNUserNotificationCenterDelegate {
     // This function lets us do something when the user interacts with a notification
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        // Get the notification data
+        let userInfo = response.notification.request.content.userInfo
         print("User interacted with notification: ", response.notification.request.content.title)
         
-        // You can handle different notification actions here and navigate to specific views
+        // Process the notification based on its type
+        handleReceivedNotification(userInfo)
     }
     
     // This function allows us to view notifications with the app in the foreground

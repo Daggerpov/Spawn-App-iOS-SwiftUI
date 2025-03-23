@@ -206,7 +206,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 400)?.absoluteString
 					?? ""
-				print("Google profile picture URL: \(self.profilePicUrl ?? "none")")
 				self.fullName = user.profile?.name
 				self.givenName = user.profile?.givenName
 				self.familyName = user.profile?.familyName
@@ -300,8 +299,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Only proceed with API call if we have email or it's not Apple auth
 		let emailToUse = self.email ?? ""
 		
-		print("Fetching user with externalUserId: \(unwrappedExternalUserId), email: \(emailToUse)")
-
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 			do {
 				let fetchedSpawnUser: BaseUserDTO = try await self.apiService
@@ -314,7 +311,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					)
 
 				await MainActor.run {
-					print("Successfully fetched user: \(fetchedSpawnUser.username)")
 					self.spawnUser = fetchedSpawnUser
 					self.shouldNavigateToUserInfoInputView = false  // User exists, no need to navigate to UserInfoInputView
 					self.isFormValid = true  // Auto-validate the form since we have a valid user
