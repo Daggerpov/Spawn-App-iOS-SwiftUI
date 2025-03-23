@@ -189,6 +189,11 @@ struct UserInfoInputView: View {
 											$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
 										}
 									}
+									
+									// Reset the username alert if username changes
+									if userAuth.authAlert == .usernameAlreadyInUse {
+										userAuth.authAlert = nil
+									}
 								}
 
 								if !isUsernameValid && !username.isEmpty {
@@ -254,7 +259,7 @@ struct UserInfoInputView: View {
 									}
 								}
 							}
-							.disabled(isSubmitting)
+							.disabled(isSubmitting || !isUsernameValid || username.isEmpty)
 							.padding(.horizontal, 32)
 							.padding(.top, 16)
 

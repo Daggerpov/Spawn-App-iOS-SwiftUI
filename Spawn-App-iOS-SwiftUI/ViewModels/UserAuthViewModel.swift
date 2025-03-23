@@ -486,9 +486,16 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		} catch let error as APIError {
 			await MainActor.run {
 				if case .invalidStatusCode(let statusCode) = error, statusCode == 409 {
-					// Email is already in use with another account
-					print("Email is already in use: \(email)")
-					self.authAlert = .emailAlreadyInUse
+					// Check if the error is due to email or username conflict
+					// MySQL error 1062 for duplicate key involves username
+					if let errorMessage = self.errorMessage, errorMessage.contains("username") || errorMessage.contains("Duplicate") {
+						print("Username is already taken: \(username)")
+						self.authAlert = .usernameAlreadyInUse
+					} else {
+						// Default to email conflict if we can't determine the exact cause
+						print("Email is already in use: \(email)")
+						self.authAlert = .emailAlreadyInUse
+					}
 				} else {
 					print("Error creating the user: \(error)")
 					self.authAlert = .createError

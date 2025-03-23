@@ -25,12 +25,14 @@ enum AuthAlertType: Identifiable {
 	case providerMismatch
 	case emailAlreadyInUse
 	case createError
+	case usernameAlreadyInUse
 	
 	var id: Int {
 		switch self {
 			case .providerMismatch: return 0
 			case .emailAlreadyInUse: return 1
 			case .createError: return 2
+			case .usernameAlreadyInUse: return 3
 		}
 	}
 	
@@ -42,6 +44,8 @@ enum AuthAlertType: Identifiable {
 				return "Email Already in Use"
 			case .createError: 
 				return "Account Creation Error"
+			case .usernameAlreadyInUse:
+				return "Username Already Taken"
 		}
 	}
 	
@@ -53,6 +57,8 @@ enum AuthAlertType: Identifiable {
 				return "This email is already associated with an existing account. Please use a different email or sign in with the account this email is attached to."
 			case .createError: 
 				return "There was an error creating your account. Please try again later."
+			case .usernameAlreadyInUse:
+				return "This username is already taken. Please choose a different username."
 		}
 	}
 }

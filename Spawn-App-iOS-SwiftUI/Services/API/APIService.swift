@@ -169,14 +169,12 @@ class APIService: IAPIService {
 		} catch let decodingError {
 			// If normal decoding fails and we're expecting a single object but got an array,
 			// try to extract the first item from the array
-			if let singleObjectType = T.self as? (any Decodable.Type),
-			   singleObjectType != [Any].self,
-			   singleObjectType != [[String: Any]].self,
-			   !String(describing: singleObjectType).contains("Array") {
-				
+			let isArrayType = String(describing: T.self).contains("Array")
+			
+			// Only attempt array handling if we're not already expecting an array type
+			if !isArrayType {
 				// Try to decode as an array of that type
-				let arrayTypeName = "[\(singleObjectType)]"
-				print("Attempting to decode as \(arrayTypeName) and extract the first item")
+				print("Attempting to decode as array and extract the first item")
 				
 				do {
 					// Use JSONSerialization first to check if it's an array
@@ -443,7 +441,15 @@ class APIService: IAPIService {
 
 		// Specifically check for 409 Conflict to handle email already exists case
 		if httpResponse.statusCode == 409 {
-			print("Conflict detected (409): Email likely already in use")
+			print("Conflict detected (409): Email or username likely already in use")
+			
+			// Try to parse error message from response
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+			   let message = errorJson["message"] as? String {
+				print("Error response: \(message)")
+				errorMessage = message
+			}
+			
 			throw APIError.invalidStatusCode(statusCode: 409)
 		}
 

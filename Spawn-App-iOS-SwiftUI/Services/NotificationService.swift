@@ -53,21 +53,21 @@ class NotificationService: ObservableObject {
     // Called when user logs in
     @objc private func userDidLogin() {
         // If we have a stored token, register it now
-        if let token = storedDeviceToken {
+        if storedDeviceToken != nil {
             registerStoredTokenWithBackend()
         }
         
         // Fetch notification preferences after login
-        Task {
-            await fetchNotificationPreferences()
+        Task { [weak self] in
+            await self?.fetchNotificationPreferences()
         }
     }
     
     // Check if notifications are enabled
     func checkNotificationStatus() {
-        UNUserNotificationCenter.current().getNotificationSettings { settings in
+        UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
             DispatchQueue.main.async {
-                self.isNotificationsEnabled = settings.authorizationStatus == .authorized
+                self?.isNotificationsEnabled = settings.authorizationStatus == .authorized
             }
         }
     }
@@ -78,8 +78,8 @@ class NotificationService: ObservableObject {
             let granted = try await UNUserNotificationCenter.current().requestAuthorization(
                 options: [.alert, .badge, .sound]
             )
-            DispatchQueue.main.async {
-                self.isNotificationsEnabled = granted
+            DispatchQueue.main.async { [weak self] in
+                self?.isNotificationsEnabled = granted
             }
             return granted
         } catch {
