@@ -306,36 +306,103 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 			do {
-				let fetchedSpawnUser: BaseUserDTO = try await self.apiService
-					.fetchData(
-						from: url,
-						parameters: [
-							"externalUserId": unwrappedExternalUserId,
-							"email": emailToUse,
-						]
-					)
-
-				await MainActor.run {
-					self.spawnUser = fetchedSpawnUser
-					self.shouldNavigateToUserInfoInputView = false  // User exists, no need to navigate to UserInfoInputView
-					self.isFormValid = true  // Auto-validate the form since we have a valid user
-					self.setShouldNavigateToFeedView() // Check if we should navigate to feed
+				// First, try to decode as a single user object
+				do {
+					let fetchedSpawnUser: BaseUserDTO = try await self.apiService
+						.fetchData(
+							from: url,
+							parameters: [
+								"externalUserId": unwrappedExternalUserId,
+								"email": emailToUse,
+							]
+						)
 					
-					// Post notification that user did login successfully
-					NotificationCenter.default.post(name: .userDidLogin, object: nil)
+					await MainActor.run {
+						self.spawnUser = fetchedSpawnUser
+						self.shouldNavigateToUserInfoInputView = false
+						self.isFormValid = true
+						self.setShouldNavigateToFeedView()
+						
+						// Post notification that user did login successfully
+						NotificationCenter.default.post(name: .userDidLogin, object: nil)
+					}
+				} catch {
+					// If decoding as a single user fails, try to decode as an array
+					print("Failed to decode response as a single user, trying as an array: \(error.localizedDescription)")
+					
+					do {
+						let fetchedUsers: [BaseUserDTO] = try await self.apiService
+							.fetchData(
+								from: url,
+								parameters: [
+									"externalUserId": unwrappedExternalUserId,
+									"email": emailToUse,
+								]
+							)
+						
+						// Use the first user if array is not empty
+						if let firstUser = fetchedUsers.first {
+							await MainActor.run {
+								self.spawnUser = firstUser
+								self.shouldNavigateToUserInfoInputView = false
+								self.isFormValid = true
+								self.setShouldNavigateToFeedView()
+								
+								// Post notification that user did login successfully
+								NotificationCenter.default.post(name: .userDidLogin, object: nil)
+							}
+						} else {
+							// Handle empty array - user doesn't exist
+							await MainActor.run {
+								self.spawnUser = nil
+								self.shouldNavigateToUserInfoInputView = true
+								print("No users found in array response")
+							}
+						}
+					} catch let arrayError as APIError {
+						// Handle API errors, like 404
+						await MainActor.run {
+							self.handleApiError(arrayError)
+						}
+					} catch {
+						// Handle other errors
+						await MainActor.run {
+							self.spawnUser = nil
+							self.shouldNavigateToUserInfoInputView = true
+							print("Error fetching user data: \(error.localizedDescription)")
+						}
+					}
+				}
+			} catch let error as APIError {
+				await MainActor.run {
+					self.handleApiError(error)
 				}
 			} catch {
 				await MainActor.run {
 					self.spawnUser = nil
-					self.shouldNavigateToUserInfoInputView = true  // User does not exist, navigate to UserInfoInputView
-					self.errorMessage =
-						"Failed to fetch user: \(error.localizedDescription)"
-					print(self.errorMessage as Any)
+					self.shouldNavigateToUserInfoInputView = true
+					print("Error fetching user data: \(error.localizedDescription)")
 				}
 			}
+			
 			await MainActor.run {
 				self.hasCheckedSpawnUserExistence = true
 			}
+		}
+	}
+	
+	// Helper method to handle API errors consistently
+	private func handleApiError(_ error: APIError) {
+		// For 404 errors (user doesn't exist), just direct to user info input without showing an error
+		if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+			self.spawnUser = nil
+			self.shouldNavigateToUserInfoInputView = true
+			print("User does not exist yet in Spawn database - directing to user info input")
+		} else {
+			self.spawnUser = nil
+			self.shouldNavigateToUserInfoInputView = true
+			self.errorMessage = "Failed to fetch user: \(error.localizedDescription)"
+			print(self.errorMessage as Any)
 		}
 	}
 

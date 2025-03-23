@@ -6,148 +6,123 @@
 //
 
 import SwiftUI
-import PhotosUI
 import UIKit
 
 struct ImagePicker: UIViewControllerRepresentable {
 	@Binding var selectedImage: UIImage?
 	@Environment(\.presentationMode) private var presentationMode
 
-	func makeUIViewController(context: Context) -> PHPickerViewController {
-		var config = PHPickerConfiguration()
-		config.filter = .images
-		let picker = PHPickerViewController(configuration: config)
+	func makeUIViewController(context: Context) -> UIImagePickerController {
+		let picker = UIImagePickerController()
+		picker.sourceType = .photoLibrary
 		picker.delegate = context.coordinator
+		picker.allowsEditing = true // Use the built-in editor for basic crop
 		return picker
 	}
 
-	func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+	func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 
 	func makeCoordinator() -> Coordinator {
 		Coordinator(self)
 	}
 
-	class Coordinator: NSObject, PHPickerViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+	class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 		let parent: ImagePicker
 
 		init(_ parent: ImagePicker) {
 			self.parent = parent
 		}
 
-		func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+		func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+			// Get the edited image if available, otherwise use the original
+			if let editedImage = info[.editedImage] as? UIImage {
+				makeCircularImage(editedImage)
+			} else if let originalImage = info[.originalImage] as? UIImage {
+				makeCircularImage(originalImage)
+			}
+			
+			// Dismiss the picker
 			picker.dismiss(animated: true)
+		}
 
-			guard let provider = results.first?.itemProvider else { return }
-
-			if provider.canLoadObject(ofClass: UIImage.self) {
-				provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
-					// Handle potential errors with iCloud photos
-					if let error = error {
-						print("Error loading image: \(error.localizedDescription)")
-						
-						DispatchQueue.main.async {
-							// Show fallback to camera/photo library with UIImagePickerController
-							self?.showFallbackImagePicker()
-						}
-						return
-					}
-					
-					DispatchQueue.main.async {
-						if let image = image as? UIImage {
-							self?.showImageCropper(with: image)
-						} else {
-							// If image couldn't be loaded as UIImage, show fallback
-							self?.showFallbackImagePicker()
-						}
-					}
-				}
+		private func makeCircularImage(_ image: UIImage) {
+			let originalImage = image
+			
+			// Create a square cropping rectangle for the circular mask
+			let sideLength = min(originalImage.size.width, originalImage.size.height)
+			let xOffset = (originalImage.size.width - sideLength) / 2
+			let yOffset = (originalImage.size.height - sideLength) / 2
+			let cropRect = CGRect(x: xOffset, y: yOffset, width: sideLength, height: sideLength)
+			
+			// Crop the image to a square
+			guard let squareImage = cropImage(originalImage, toRect: cropRect) else { return }
+			
+			// Create a circular mask
+			let circularImage = maskToCircle(image: squareImage)
+			
+			// Update the binding
+			DispatchQueue.main.async {
+				self.parent.selectedImage = circularImage
+				self.parent.presentationMode.wrappedValue.dismiss()
 			}
 		}
 
-		func showImageCropper(with image: UIImage) {
-			let cropViewController = CropImageViewController(image: image) { [weak self] croppedImage in
-				DispatchQueue.main.async {
-					self?.parent.selectedImage = croppedImage
-				}
-			}
-
-			// Find the current view controller to present from
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-			   let rootVC = windowScene.windows.first?.rootViewController {
-				var currentVC = rootVC
-				while let presentedVC = currentVC.presentedViewController {
-					currentVC = presentedVC
-				}
-				currentVC.present(cropViewController, animated: true)
-			}
-		}
-
-		// Add a fallback method using UIImagePickerController
-		func showFallbackImagePicker() {
-			let alertController = UIAlertController(
-				title: "Cloud Photo Error",
-				message: "There was an issue accessing your iCloud photo. Would you like to choose from your device or take a new photo?",
-				preferredStyle: .alert
+		private func cropImage(_ image: UIImage, toRect rect: CGRect) -> UIImage? {
+			// Scale crop rect to account for image scale
+			let scale = image.scale
+			let scaledRect = CGRect(
+				x: rect.origin.x * scale,
+				y: rect.origin.y * scale,
+				width: rect.width * scale,
+				height: rect.height * scale
 			)
 			
-			alertController.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
-				self?.showImagePickerController(sourceType: .photoLibrary)
-			})
-			
-			alertController.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
-				self?.showImagePickerController(sourceType: .camera)
-			})
-			
-			alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-			
-			// Find the current view controller to present from
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-			   let rootVC = windowScene.windows.first?.rootViewController {
-				var currentVC = rootVC
-				while let presentedVC = currentVC.presentedViewController {
-					currentVC = presentedVC
-				}
-				currentVC.present(alertController, animated: true)
+			guard let cgImage = image.cgImage?.cropping(to: scaledRect) else {
+				return nil
 			}
+			
+			return UIImage(
+				cgImage: cgImage,
+				scale: image.scale,
+				orientation: image.imageOrientation
+			)
 		}
-		
-		func showImagePickerController(sourceType: UIImagePickerController.SourceType) {
-			// Check if the source type is available
-			guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
-				print("Source type \(sourceType) is not available")
-				return
+
+		private func maskToCircle(image: UIImage) -> UIImage {
+			let imageSize = image.size
+			let dimension = min(imageSize.width, imageSize.height)
+			let circleRect = CGRect(
+				x: 0,
+				y: 0,
+				width: dimension,
+				height: dimension
+			)
+			
+			UIGraphicsBeginImageContextWithOptions(circleRect.size, false, image.scale)
+			defer { UIGraphicsEndImageContext() }
+			
+			let context = UIGraphicsGetCurrentContext()!
+			context.saveGState()
+			
+			// Create and add circle path to context
+			let circlePath = UIBezierPath(ovalIn: circleRect)
+			circlePath.addClip()
+			
+			// Draw the image
+			image.draw(in: circleRect)
+			
+			context.restoreGState()
+			
+			// Get the masked image
+			guard let maskedImage = UIGraphicsGetImageFromCurrentImageContext() else {
+				return image
 			}
 			
-			let picker = UIImagePickerController()
-			picker.sourceType = sourceType
-			picker.delegate = self
-			picker.allowsEditing = true
-			
-			// Find the current view controller to present from
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-			   let rootVC = windowScene.windows.first?.rootViewController {
-				var currentVC = rootVC
-				while let presentedVC = currentVC.presentedViewController {
-					currentVC = presentedVC
-				}
-				currentVC.present(picker, animated: true)
-			}
+			return maskedImage
 		}
-		
-		// UIImagePickerControllerDelegate methods
-		func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-			picker.dismiss(animated: true)
-			
-			// Use edited image if available, otherwise use original
-			if let editedImage = info[.editedImage] as? UIImage {
-				self.showImageCropper(with: editedImage)
-			} else if let originalImage = info[.originalImage] as? UIImage {
-				self.showImageCropper(with: originalImage)
-			}
-		}
-		
+
 		func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-			picker.dismiss(animated: true)
+			parent.presentationMode.wrappedValue.dismiss()
 		}
 	}
 }

@@ -8,6 +8,17 @@
 import Foundation
 import UIKit
 
+// Protocol to help handle Optional types in a generic way
+protocol OptionalProtocol {
+	static var nilValue: Self { get }
+}
+
+extension Optional: OptionalProtocol {
+	static var nilValue: Self {
+		return nil
+	}
+}
+
 class APIService: IAPIService {
 	static var baseURL: String =
 		"https://spawn-app-back-end-production.up.railway.app/api/v1/"
@@ -106,8 +117,22 @@ class APIService: IAPIService {
 		// Handle auth tokens if present
 		try handleAuthTokens(from: httpResponse, for: finalURL)
 
-		// TODO: once solved in back-end, remove this
-		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 404 else {
+		// Special handling for 404 in auth endpoints
+		if httpResponse.statusCode == 404 {
+			// If this is an auth endpoint and we get a 404, this likely means the user doesn't exist yet
+			if finalURL.absoluteString.contains("/auth/") {
+				errorStatusCode = 404
+				throw APIError.invalidStatusCode(statusCode: 404)
+			}
+			
+			// For non-auth endpoints, try to return an empty result
+			if let emptyArrayResult = emptyArrayResult(for: T.self) {
+				return emptyArrayResult
+			}
+		}
+
+		// Check status code
+		guard httpResponse.statusCode == 200 else {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
@@ -117,44 +142,61 @@ class APIService: IAPIService {
 				as? [String: Any]
 			{
 				print("Error Response: \(errorJson)")
+			} else if let errorString = String(data: data, encoding: .utf8) {
+				print("Error Response (non-JSON): \(errorString)")
 			}
 
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
-
-		do {
-			let decoder = APIService.makeDecoder()
-
-			// Try parsing with more detailed error handling
-			do {
-				let decodedData = try decoder.decode(T.self, from: data)
-				return decodedData
-			} catch DecodingError.keyNotFound(let key, let context) {
-				print(
-					"Missing key: \(key.stringValue) - \(context.debugDescription)"
-				)
-				throw APIError.failedJSONParsing(url: finalURL)
-			} catch DecodingError.typeMismatch(let type, let context) {
-				print(
-					"Type mismatch: expected \(type) - \(context.debugDescription)"
-				)
-				throw APIError.failedJSONParsing(url: finalURL)
-			} catch DecodingError.valueNotFound(let type, let context) {
-				print(
-					"Value not found: expected \(type) - \(context.debugDescription)"
-				)
-				throw APIError.failedJSONParsing(url: finalURL)
-			} catch DecodingError.dataCorrupted(let context) {
-				print("Data corrupted: \(context.debugDescription)")
-				throw APIError.failedJSONParsing(url: finalURL)
+		
+		// Handle empty responses
+		if data.isEmpty || data.count == 0 {
+			if let emptyResponse = emptyResult(for: T.self) {
+				return emptyResponse
 			}
-		} catch {
-			errorMessage =
-				APIError.failedJSONParsing(url: finalURL).localizedDescription
-			print("JSON Parsing Error: \(error)")
-			// Print received data for debugging
+			throw APIError.invalidData
+		}
+
+		// Create decoder outside the try/catch scope so it's accessible in all blocks
+		let decoder = APIService.makeDecoder()
+		
+		// Try to decode normally first
+		do {
+			let decodedData = try decoder.decode(T.self, from: data)
+			return decodedData
+		} catch let decodingError {
+			// If normal decoding fails and we're expecting a single object but got an array,
+			// try to extract the first item from the array
+			if let singleObjectType = T.self as? (any Decodable.Type),
+			   singleObjectType != [Any].self,
+			   singleObjectType != [[String: Any]].self,
+			   !String(describing: singleObjectType).contains("Array") {
+				
+				// Try to decode as an array of that type
+				let arrayTypeName = "[\(singleObjectType)]"
+				print("Attempting to decode as \(arrayTypeName) and extract the first item")
+				
+				do {
+					// Use JSONSerialization first to check if it's an array
+					if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [Any],
+					   !jsonObject.isEmpty {
+						
+						// It is an array, try to decode it as such and take the first element
+						if let firstItemData = try? JSONSerialization.data(withJSONObject: jsonObject[0]) {
+							let firstItem = try decoder.decode(T.self, from: firstItemData)
+							print("Successfully decoded first item from array response")
+							return firstItem
+						}
+					}
+				} catch {
+					print("Failed to extract first item from array: \(error)")
+				}
+			}
+			
+			// If we got here, throw the original decoding error
+			print("JSON Decoding Error: \(decodingError)")
 			if let jsonString = String(data: data, encoding: .utf8) {
 				print("Received JSON: \(jsonString)")
 			}
@@ -505,6 +547,31 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.failedJSONParsing(url: url)
 		}
+	}
+
+	// Helper to create empty results of the appropriate type
+	private func emptyResult<T>(for type: T.Type) -> T? {
+		// For array types
+		if type is [Any].Type || type is [[String: Any]].Type {
+			return [] as? T
+		}
+		
+		// For optional types
+		if let optionalType = type as? OptionalProtocol.Type {
+			return optionalType.nilValue as? T
+		}
+		
+		return nil
+	}
+	
+	// Helper specifically for empty arrays
+	private func emptyArrayResult<T>(for type: T.Type) -> T? {
+		if type is [Any].Type || type is [[String: Any]].Type {
+			return [] as? T
+		}
+		
+		// For single objects, we can't create an empty result so return nil
+		return nil
 	}
 }
 
