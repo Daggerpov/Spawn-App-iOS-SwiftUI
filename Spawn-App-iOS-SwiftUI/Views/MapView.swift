@@ -15,7 +15,7 @@ struct MapView: View {
 
 	@State private var region = MKCoordinateRegion(
 		center: CLLocationCoordinate2D(
-			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
+			latitude: 0, longitude: 0),
 		span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
 	)
 
