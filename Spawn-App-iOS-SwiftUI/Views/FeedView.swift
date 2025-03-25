@@ -60,6 +60,23 @@ struct FeedView: View {
 					isActive: showingEventDescriptionPopup
 						|| showingEventCreationPopup
 				)
+				.gesture(DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
+					.onEnded { value in
+						switch(value.translation.width, value.translation.height) {
+							case (...0, -30...30): // left swipe
+								if let currentIndex = viewModel.tags.firstIndex(where: { $0.id == viewModel.activeTag?.id }),
+								   currentIndex < viewModel.tags.count - 1 {
+									viewModel.activeTag = viewModel.tags[currentIndex + 1]
+								}
+							case (0..., -30...30): // right swipe
+								if let currentIndex = viewModel.tags.firstIndex(where: { $0.id == viewModel.activeTag?.id }),
+								   currentIndex > 0 {
+									viewModel.activeTag = viewModel.tags[currentIndex - 1]
+								}
+							default: break
+						}
+					}
+				)
 			}
 			.background(universalBackgroundColor)
 			.onAppear {
@@ -122,13 +139,14 @@ extension FeedView {
 					.padding(.horizontal)
 					.padding(
 						.vertical,
-						max(
+						min(
 							250,
 							250
 							- CGFloat((event.chatMessages?.count ?? 0) > 2 ? 100 : 0)
 							- CGFloat(event.note != nil ? 50 : 0)
 						)
 					)
+                    .padding(.top, 100)
 
 				}
 				.ignoresSafeArea()

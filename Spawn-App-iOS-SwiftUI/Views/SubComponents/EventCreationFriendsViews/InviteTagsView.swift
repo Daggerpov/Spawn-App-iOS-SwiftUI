@@ -140,9 +140,19 @@ extension InviteTagRow {
 
 struct InviteTagFriendsView: View {
 	var friends: [BaseUserDTO]?
+	
+	// Computed properties to use throughout the view
+	private var displayedFriends: [BaseUserDTO] {
+		return (friends ?? []).prefix(3).map { $0 }
+	}
+	
+	private var remainingCount: Int {
+		return (friends?.count ?? 0) - displayedFriends.count
+	}
+	
 	var body: some View {
-		ForEach(friends ?? []) { friend in
-			HStack(spacing: -10) {
+		HStack(spacing: -10) {
+			ForEach(displayedFriends) { friend in
 				if let pfpUrl = friend.profilePicture {
 					AsyncImage(url: URL(string: pfpUrl)) {
 						image in
@@ -158,7 +168,15 @@ struct InviteTagFriendsView: View {
 						.fill(Color.gray)
 						.frame(width: 25, height: 25)
 				}
-
+			}
+			
+			// Show "+X" indicator if there are more than 3 friends
+			if remainingCount > 0 {
+				Text("+\(remainingCount)")
+					.font(.system(size: 12, weight: .bold))
+					.foregroundColor(.white)
+					.frame(width: 25, height: 25)
+					.background(Circle().fill(universalAccentColor))
 			}
 		}
 	}

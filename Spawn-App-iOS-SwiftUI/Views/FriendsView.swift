@@ -54,6 +54,21 @@ struct FriendsView: View {
 				.navigationBarHidden(true)
 				.dimmedBackground(
 					isActive: showAddFriendToTagButtonPressedPopupView)
+				.gesture(DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
+					.onEnded { value in
+						switch(value.translation.width, value.translation.height) {
+							case (...0, -30...30): // left swipe
+								if selectedTab == .friends {
+									selectedTab = .tags
+								}
+							case (0..., -30...30): // right swipe
+								if selectedTab == .tags {
+									selectedTab = .friends
+								}
+							default: break
+						}
+					}
+				)
 			}
 			if showAddFriendToTagButtonPressedPopupView {
 				addFriendToTagButtonPopupView

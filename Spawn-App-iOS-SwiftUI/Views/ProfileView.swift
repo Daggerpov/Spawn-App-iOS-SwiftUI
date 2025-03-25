@@ -6,142 +6,250 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct ProfileView: View {
-	// TODO DANIEL: make a real API call here, using a new view model -> for editing bio and maybe other user details
 	let user: BaseUserDTO
 	@State private var bio: String
+	@State private var username: String
+	@State private var firstName: String
+	@State private var lastName: String
 	@State private var editingState: ProfileEditText = .edit
+	@State private var selectedImage: UIImage?
+	@State private var showImagePicker: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
+	
+	// Check if this is the current user's profile
+	private var isCurrentUserProfile: Bool {
+		guard let currentUser = userAuth.spawnUser else { return false }
+		return currentUser.id == user.id
+	}
 
 	init(user: BaseUserDTO) {
 		self.user = user
 		bio = user.bio ?? ""
+		username = user.username
+		firstName = user.firstName ?? ""
+		lastName = user.lastName ?? ""
 	}
 
 	var body: some View {
 		NavigationStack {
 			VStack {
-				VStack(alignment: .center, spacing: 20) {
-					Spacer()
+				VStack(alignment: .center, spacing: 16) {
 					// Profile Picture
-
-					if let profilePictureString = user.profilePicture {
-						if MockAPIService.isMocking {
-							Image(profilePictureString)
+					ZStack(alignment: .bottomTrailing) {
+						if let selectedImage = selectedImage {
+							Image(uiImage: selectedImage)
 								.ProfileImageModifier(imageType: .profilePage)
+								.transition(.opacity)
+								.id("selectedImage") // Force refresh when image changes
+						} else if let profilePictureString = user.profilePicture {
+							if MockAPIService.isMocking {
+								Image(profilePictureString)
+									.ProfileImageModifier(imageType: .profilePage)
+							} else {
+								AsyncImage(url: URL(string: profilePictureString)) {
+									image in
+									image
+										.ProfileImageModifier(
+											imageType: .profilePage)
+								} placeholder: {
+									Circle()
+										.fill(Color.gray)
+										.frame(width: 150, height: 150)
+								}
+							}
 						} else {
-							AsyncImage(url: URL(string: profilePictureString)) {
-								image in
-								image
-									.ProfileImageModifier(
-										imageType: .profilePage)
-							} placeholder: {
-								Circle()
-									.fill(Color.gray)
-							}
+							Image(systemName: "person.crop.circle.fill")
+								.ProfileImageModifier(imageType: .profilePage)
 						}
-					} else {
-						Image(systemName: "person.crop.circle.fill")
-							.ProfileImageModifier(imageType: .profilePage)
-					}
 
-					Circle()
-						.fill(profilePicPlusButtonColor)
-						.frame(width: 25, height: 25)
-						.overlay(
-							Image(systemName: "plus")
-								.foregroundColor(universalBackgroundColor)
-						)
-						.offset(x: 45, y: -45)
-
-					VStack(alignment: .leading, spacing: 25) {
-						ProfileField(
-							label: "Name",
-							value:
-								"\(user.firstName ?? "") \(user.lastName ?? "")"
-						)
-						ProfileField(label: "Username", value: user.username)
-						ProfileField(label: "Email", value: user.email)
-						BioField(
-							label: "Bio",
-							bio: Binding(
-								get: { bio },
-								set: { bio = $0 }
-							))
-					}
-					.padding(.horizontal)
-
-					Spacer()
-					Divider().background(universalAccentColor)
-					Spacer()
-
-					Button(action: {
-						switch editingState {
-						case .edit:
-							editingState = .save
-						case .save:
-							editingState = .edit
-						}
-					}) {
-						Text(editingState.displayText())
-							.font(.headline)
-							.foregroundColor(universalAccentColor)
-							.frame(maxWidth: 135)
-							.padding()
-							.background(
-								RoundedRectangle(
-									cornerRadius: universalRectangleCornerRadius
+						// Only show the plus button for current user's profile when in edit mode
+						if isCurrentUserProfile && editingState == .save {
+							Circle()
+								.fill(profilePicPlusButtonColor)
+								.frame(width: 25, height: 25)
+								.overlay(
+									Image(systemName: "plus")
+										.foregroundColor(universalBackgroundColor)
 								)
-								.stroke(universalAccentColor, lineWidth: 1)
+								.offset(x: -10, y: -10)
+								.onTapGesture {
+									showImagePicker = true
+								}
+						}
+					}
+					.padding(.top, 20)
+					.sheet(isPresented: $showImagePicker, onDismiss: {
+						// Print to debug if the image was selected
+						print("Image picker dismissed. Selected image exists: \(selectedImage != nil)")
+					}) {
+						ImagePicker(selectedImage: $selectedImage)
+					}
+					.onChange(of: selectedImage) { newImage in
+						print("Selected image changed: \(newImage != nil)")
+					}
+
+					VStack(alignment: .leading, spacing: 20) {
+						// Name field
+						if isCurrentUserProfile && editingState == .save {
+							HStack {
+								Text("First Name")
+									.font(.headline)
+									.frame(width: 100, alignment: .leading)
+								Spacer()
+								TextField("First Name", text: $firstName)
+									.multilineTextAlignment(.trailing)
+									.font(.body)
+							}
+							.foregroundColor(universalAccentColor)
+							
+							HStack {
+								Text("Last Name")
+									.font(.headline)
+									.frame(width: 100, alignment: .leading)
+								Spacer()
+								TextField("Last Name", text: $lastName)
+									.multilineTextAlignment(.trailing)
+									.font(.body)
+							}
+							.foregroundColor(universalAccentColor)
+						} else {
+							ProfileField(
+								label: "Name",
+								value: "\(user.firstName ?? "") \(user.lastName ?? "")"
 							)
+						}
+						
+						// Username field - editable when in edit mode
+						if isCurrentUserProfile && editingState == .save {
+							HStack {
+								Text("Username")
+									.font(.headline)
+									.frame(width: 100, alignment: .leading)
+								Spacer()
+								TextField("Username", text: $username)
+									.multilineTextAlignment(.trailing)
+									.font(.body)
+							}
+							.foregroundColor(universalAccentColor)
+						} else {
+							ProfileField(label: "Username", value: user.username)
+						}
+						
+						// Only show email for current user's profile
+						if isCurrentUserProfile {
+							ProfileField(label: "Email", value: user.email)
+						}
+						
+						// Bio field is editable only for current user's profile
+						if isCurrentUserProfile {
+							if editingState == .save {
+								BioField(
+									label: "Bio",
+									bio: $bio)
+							} else {
+								ProfileField(label: "Bio", value: bio)
+							}
+						} else {
+							ProfileField(label: "Bio", value: bio)
+						}
 					}
 					.padding(.horizontal)
+					.padding(.vertical, 10)
 
-					Spacer()
-					Spacer()
-					Spacer()
-					Spacer()
+					Divider().background(universalAccentColor)
+						.padding(.vertical, 10)
 
-					NavigationLink(destination: {
-						LaunchView()
-							.navigationBarTitle("")
-							.navigationBarHidden(true)
-					}) {
-						Text("Log Out")
-							.font(.headline)
-							.foregroundColor(.white)
-							.padding()
-							.frame(maxWidth: 170)
-							.background(profilePicPlusButtonColor)
-							.cornerRadius(20)
-					}
-					.simultaneousGesture(
-						TapGesture().onEnded {
-							if userAuth.isLoggedIn {
-								userAuth.signOut()
+					// Only show edit button for current user's profile
+					if isCurrentUserProfile {
+						Button(action: {
+							switch editingState {
+							case .edit:
+								editingState = .save
+							case .save:
+								Task {
+									// Create a local copy of the selected image before starting async task
+									let imageToUpload = selectedImage
+									
+									// Update profile info first
+									await userAuth.spawnEditProfile(
+										username: username,
+										firstName: firstName,
+										lastName: lastName,
+										bio: bio
+									)
+									
+									// Update profile picture if selected
+									if let newImage = imageToUpload {
+										print("Uploading new profile picture...")
+										await userAuth.updateProfilePicture(newImage)
+										print("Profile picture uploaded")
+										// Keep the selectedImage set so it continues to display in the UI
+									}
+								}
+								editingState = .edit
 							}
-						})
-
-					// Delete Account Button
-					Button(action: {
-						userAuth.activeAlert = .deleteConfirmation
-					}) {
-						Text("Delete Account")
-							.font(.headline)
-							.foregroundColor(.white)
-							.padding()
-							.frame(maxWidth: 170)
-							.background(Color.red)
-							.cornerRadius(20)
+						}) {
+							Text(editingState.displayText())
+								.font(.headline)
+								.foregroundColor(universalAccentColor)
+								.frame(maxWidth: 135)
+								.padding()
+								.background(
+									RoundedRectangle(
+										cornerRadius: universalRectangleCornerRadius
+									)
+									.stroke(universalAccentColor, lineWidth: 1)
+								)
+						}
+						.padding(.bottom, 20)
 					}
-					.padding(.bottom, 20)
 
 					Spacer()
+
+					// Only show log out and delete account buttons for current user's profile
+					if isCurrentUserProfile {
+						VStack(spacing: 15) {
+							NavigationLink(destination: {
+								LaunchView()
+									.navigationBarTitle("")
+									.navigationBarHidden(true)
+							}) {
+								Text("Log Out")
+									.font(.headline)
+									.foregroundColor(.white)
+									.padding()
+									.frame(maxWidth: 170)
+									.background(profilePicPlusButtonColor)
+									.cornerRadius(20)
+							}
+							.simultaneousGesture(
+								TapGesture().onEnded {
+									if userAuth.isLoggedIn {
+										userAuth.signOut()
+									}
+								})
+
+							// Delete Account Button
+							Button(action: {
+								userAuth.activeAlert = .deleteConfirmation
+							}) {
+								Text("Delete Account")
+									.font(.headline)
+									.foregroundColor(.white)
+									.padding()
+									.frame(maxWidth: 170)
+									.background(Color.red)
+									.cornerRadius(20)
+							}
+						}
+						.padding(.bottom, 30)
+					}
 				}
 				.padding(.horizontal)
-				.padding(.bottom, 20)
 			}
 			.background(universalBackgroundColor)
 			.alert(item: $userAuth.activeAlert) { alertType in

@@ -15,10 +15,12 @@ struct FetchFriendRequestDTO: Identifiable, Codable, Hashable {
 
 	var id: UUID
 	var senderUser: BaseUserDTO
+    var mutualFriendCount: Int?
 
-	init(id: UUID, senderUser: BaseUserDTO) {
+    init(id: UUID, senderUser: BaseUserDTO, mutualFriendCount: Int? = 0) {
 		self.id = id
 		self.senderUser = senderUser
+        self.mutualFriendCount = mutualFriendCount
 	}
 }
 
@@ -28,7 +30,8 @@ extension FetchFriendRequestDTO {
 			id: UUID(), senderUser: BaseUserDTO.danielAgapov),
 		FetchFriendRequestDTO(
 			id: UUID(),
-			senderUser: BaseUserDTO.danielLee
+			senderUser: BaseUserDTO.danielLee,
+            mutualFriendCount: 2
 		)
 	]
 }

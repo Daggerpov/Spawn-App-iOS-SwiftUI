@@ -380,49 +380,48 @@ class APIService: IAPIService {
 			}
 		}
 
+		// Convert the DTO to JSON data
+		guard let jsonData = try? JSONSerialization.data(withJSONObject: userCreationDTO) else {
+			throw APIError.invalidData
+		}
+
 		// Create the request
 		var request = URLRequest(url: finalURL)
 		request.httpMethod = "POST"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = jsonData
 
-		// Encode the body
-		do {
-			let jsonData = try JSONSerialization.data(
-				withJSONObject: userCreationDTO)
-			request.httpBody = jsonData
-		} catch {
-			print("Error encoding request body: \(error)")
-			throw APIError.failedJSONParsing(url: finalURL)
-		}
-
-		// Send the request
+		// Perform the request
 		let (data, response) = try await URLSession.shared.data(for: request)
 
+		// Check the HTTP response
 		guard let httpResponse = response as? HTTPURLResponse else {
 			throw APIError.failedHTTPRequest(description: "HTTP request failed")
 		}
 
-		// For debugging
-		if httpResponse.statusCode != 200 && httpResponse.statusCode != 201 {
-			if let errorStr = String(data: data, encoding: .utf8) {
-				print("Error response: \(errorStr)")
+		// Specifically check for 409 Conflict to handle email already exists case
+		if httpResponse.statusCode == 409 {
+			print("Conflict detected (409): Email likely already in use")
+			throw APIError.invalidStatusCode(statusCode: 409)
+		}
+
+		// Check for success - 200 OK or 201 Created
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage = "Invalid status code \(httpResponse.statusCode) for user creation"
+			
+			// Try to parse error message from response
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+			   let errorMessage = errorJson["message"] as? String {
+				print("Error response: \(errorMessage)")
 			}
+			
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
 
-		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201
-		else {
-			throw APIError.invalidStatusCode(
-				statusCode: httpResponse.statusCode)
-		}
-
-		// Decode the response
-		let decoder = APIService.makeDecoder()
-		let user = try decoder.decode(BaseUserDTO.self, from: data)
-		
-		// Log the response for debugging
-		print("User created with profile picture: \(user.profilePicture ?? "none")")
-		
-		return user
+		// Parse the response
+		let decoder = JSONDecoder()
+		return try decoder.decode(BaseUserDTO.self, from: data)
 	}
 
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
@@ -462,6 +461,49 @@ class APIService: IAPIService {
 			{
 				throw APIError.failedTokenSaving(tokenType: "refreshToken")
 			}
+		}
+	}
+
+	internal func patchData<T: Encodable, U: Decodable>(
+		from url: URL,
+		with object: T
+	) async throws -> U {
+		resetState()
+
+		let encoder = APIService.makeEncoder()
+		let encodedData = try encoder.encode(object)
+
+		var request = URLRequest(url: url)
+		request.httpMethod = "PATCH"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = encodedData
+
+		let (data, response) = try await URLSession.shared.data(for: request)
+
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(
+				description: "The HTTP request has failed.")
+		}
+
+		guard httpResponse.statusCode == 200 else {
+			errorMessage =
+				"invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(
+				statusCode: httpResponse.statusCode)
+		}
+
+		do {
+			let decoder = APIService.makeDecoder()
+			let decodedData = try decoder.decode(U.self, from: data)
+			return decodedData
+		} catch {
+			errorMessage =
+				APIError.failedJSONParsing(url: url).localizedDescription
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedJSONParsing(url: url)
 		}
 	}
 }

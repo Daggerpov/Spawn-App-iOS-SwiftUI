@@ -138,7 +138,7 @@ private func tagListView(for viewModel: ChooseTagPopUpViewModel) -> some View {
 			Text(
 				viewModel.tags.isEmpty
 					? "Create some friend tags to add to your new friends!"
-					: "Which tags would you like to add to this new friend?"
+					: "Add tags to this friend:"
 			)
 			.foregroundColor(universalAccentColor)
 			.frame(maxWidth: .infinity)
