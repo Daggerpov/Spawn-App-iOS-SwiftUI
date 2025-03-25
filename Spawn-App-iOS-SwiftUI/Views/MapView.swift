@@ -71,10 +71,6 @@ struct MapView: View {
                 Task { await viewModel.fetchAllData() }
                 adjustRegionToUserLocation()
             }
-            .onChange(of: viewModel.events) { _ in
-                adjustRegionForEventsOrUserLocation()
-                Task {await viewModel.fetchEventsForUser()}
-            }
             
 			.onChange(of: viewModel.events) { _ in
 				adjustRegionForEvents()
