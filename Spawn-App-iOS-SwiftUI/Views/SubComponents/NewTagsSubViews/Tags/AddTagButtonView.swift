@@ -10,7 +10,6 @@ import SwiftUI
 struct AddTagButtonView: View {
 	@Binding var creationStatus: CreationStatus
     
-	var addFriendsToTagButtonPressedCallback: ((UUID) -> Void)? = { thing in }
 	var closeCallback: (() -> Void)?
 	var friendTagId: UUID?
 
@@ -23,11 +22,6 @@ struct AddTagButtonView: View {
 					creationStatus = .notCreating
 				} else {
 					creationStatus = .creating
-				}
-				if let tagId = friendTagId,
-					let callback = addFriendsToTagButtonPressedCallback
-				{
-					callback(tagId)
 				}
 			}) {
 				RoundedRectangle(cornerRadius: 12)
