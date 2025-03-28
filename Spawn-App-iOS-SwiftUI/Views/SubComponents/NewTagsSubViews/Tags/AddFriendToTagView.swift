@@ -63,7 +63,7 @@ struct AddFriendToTagView: View {
 							Button("Retry") {
 								Task {
 									isLoading = true
-									await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
+									await viewModel.fetchAllData(friendTagId: friendTagId)
 									await MainActor.run {
 										loadedFriends = viewModel.friends
 										isLoading = false
@@ -109,7 +109,7 @@ struct AddFriendToTagView: View {
 	
 	func loadFriends() async {
 		isLoading = true
-		await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
+		await viewModel.fetchAllData(friendTagId: friendTagId)
 		await MainActor.run {
 			loadedFriends = viewModel.friends
 			print("DEBUG isLoading set to false, friends count: \(loadedFriends.count)")

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TagsTabView: View {
-	@ObservedObject var viewModel: TagsViewModel
+	@StateObject var viewModel: TagsViewModel
 	@State private var creationStatus: CreationStatus = .notCreating
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
@@ -19,14 +19,15 @@ struct TagsTabView: View {
 	) {
 		self.addFriendToTagButtonPressedCallback =
 			addFriendToTagButtonPressedCallback
-		self.viewModel = TagsViewModel(
+		let vm = TagsViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(userId: userId) : APIService(), userId: userId)
+		self._viewModel = StateObject(wrappedValue: vm)
 	}
 
 	// Function to refresh tags data
 	func refreshTags() async {
-		await viewModel.fetchTags()
+		await viewModel.fetchAllData()
 	}
 
 	var body: some View {
@@ -47,13 +48,31 @@ struct TagsTabView: View {
 		}
 		.onAppear {
 			Task {
-				await viewModel.fetchTags()
+				await viewModel.fetchAllData()
 			}
+            
+            // Add observer for friendsAddedToTag notification
+            NotificationCenter.default.addObserver(
+                forName: .friendsAddedToTag,
+                object: nil,
+                queue: .main
+            ) { notification in
+                Task {
+                    // If there's a specific tag ID that was updated, we could handle that here
+                    // For now, refresh all tags
+                    print("TagsTabView received friendsAddedToTag notification")
+                    await refreshTags()
+                }
+            }
 		}
+        .onDisappear {
+            // Remove the observer when view disappears
+            NotificationCenter.default.removeObserver(self, name: .friendsAddedToTag, object: nil)
+        }
 		.onChange(of: creationStatus) { newValue in
 			if newValue == .notCreating {
 				Task {
-					await viewModel.fetchTags()
+					await viewModel.fetchAllData()
 				}
 			}
 		}

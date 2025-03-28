@@ -253,7 +253,22 @@ struct ProfileView: View {
 								HStack {
 									Image(systemName: "bell.fill")
 										.foregroundColor(.white)
-									Text("Notification Settings")
+									Text("Notifications")
+										.font(.headline)
+										.foregroundColor(.white)
+								}
+								.padding()
+								.frame(maxWidth: 170)
+								.background(universalAccentColor)
+								.cornerRadius(20)
+							}
+							
+							// Feedback Button
+							NavigationLink(destination: FeedbackView(userId: user.id, email: user.email)) {
+								HStack {
+									Image(systemName: "message.fill")
+										.foregroundColor(.white)
+									Text("Feedback")
 										.font(.headline)
 										.foregroundColor(.white)
 								}
