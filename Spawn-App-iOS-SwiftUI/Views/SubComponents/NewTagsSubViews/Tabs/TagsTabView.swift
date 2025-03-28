@@ -24,6 +24,11 @@ struct TagsTabView: View {
 				? MockAPIService(userId: userId) : APIService(), userId: userId)
 	}
 
+	// Function to refresh tags data
+	func refreshTags() async {
+		await viewModel.fetchTags()
+	}
+
 	var body: some View {
 		VStack {
 			VStack(alignment: .leading, spacing: 15) {
@@ -43,6 +48,13 @@ struct TagsTabView: View {
 		.onAppear {
 			Task {
 				await viewModel.fetchTags()
+			}
+		}
+		.onChange(of: creationStatus) { newValue in
+			if newValue == .notCreating {
+				Task {
+					await viewModel.fetchTags()
+				}
 			}
 		}
 		.padding()

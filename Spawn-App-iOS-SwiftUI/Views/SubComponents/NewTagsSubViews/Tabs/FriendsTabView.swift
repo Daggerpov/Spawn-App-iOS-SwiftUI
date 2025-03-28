@@ -445,7 +445,8 @@ extension FriendsTabView {
 						friendRequestId: unwrappedFriendRequestIdInPopup,
                         mutualFriendCount: unwrappedMutualFriendCountInPopup,
 						closeCallback: closeFriendPopUp,
-						showingChoosingTagView: $showingChooseTagsPopup
+						showingChoosingTagView: $showingChooseTagsPopup,
+                        friendsTabViewModel: viewModel
 					)
 				}
 			} else {

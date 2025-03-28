@@ -189,6 +189,11 @@ struct UserInfoInputView: View {
 											$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
 										}
 									}
+									
+									// Reset the username alert if username changes
+									if userAuth.authAlert == .usernameAlreadyInUse {
+										userAuth.authAlert = nil
+									}
 								}
 
 								if !isUsernameValid && !username.isEmpty {
@@ -254,7 +259,7 @@ struct UserInfoInputView: View {
 									}
 								}
 							}
-							.disabled(isSubmitting)
+							.disabled(isSubmitting || !isUsernameValid || username.isEmpty)
 							.padding(.horizontal, 32)
 							.padding(.top, 16)
 
@@ -327,13 +332,19 @@ struct UserInfoInputView: View {
 	}
 
 	private func requestNotificationPermission() {
-		let notificationCenter = UNUserNotificationCenter.current()
 		Task {
-			do {
-				try await notificationCenter.requestAuthorization(options: [.alert, .badge, .sound])
+			let granted = await NotificationService.shared.requestPermission()
+			if granted {
 				print("Notification permission granted")
-			} catch {
-				print("Failed to request notification permission: \(error.localizedDescription)")
+				
+				// Send a welcome notification using the NotificationDataBuilder
+				NotificationService.shared.scheduleLocalNotification(
+					title: "Welcome to Spawn!",
+					body: "Thanks for joining. We'll keep you updated on events and friends.",
+					userInfo: NotificationDataBuilder.welcome()
+				)
+			} else {
+				print("Notification permission denied")
 			}
 		}
 	}

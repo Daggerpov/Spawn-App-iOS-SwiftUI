@@ -17,6 +17,7 @@ struct FriendsView: View {
 	@State private var showAddFriendToTagButtonPressedPopupView: Bool = false
 	@State private var popupOffset: CGFloat = 1000
 	@State private var selectedFriendTagId: UUID? = nil
+	@State private var tagsViewModel: TagsViewModel? = nil
 
 	init(user: BaseUserDTO, source: BackButtonSourcePageType) {
 		self.user = user
@@ -38,7 +39,7 @@ struct FriendsView: View {
 					if selectedTab == .friends {
 						FriendsTabView(user: user)
 					} else {
-						TagsTabView(
+						let tagsTabView = TagsTabView(
 							userId: user.id,
 							addFriendToTagButtonPressedCallback: {
 								friendTagId in
@@ -46,6 +47,10 @@ struct FriendsView: View {
 								selectedFriendTagId = friendTagId
 							}
 						)
+						tagsTabView
+							.onAppear {
+								self.tagsViewModel = tagsTabView.viewModel
+							}
 					}
 
 				}
@@ -78,6 +83,11 @@ struct FriendsView: View {
 	func closePopup() {
 		popupOffset = 1000
 		showAddFriendToTagButtonPressedPopupView = false
+		
+		// Re-fetch tags after closing the popup
+		Task {
+			await tagsViewModel?.fetchTags()
+		}
 	}
 
 	var addFriendToTagButtonPopupView: some View {

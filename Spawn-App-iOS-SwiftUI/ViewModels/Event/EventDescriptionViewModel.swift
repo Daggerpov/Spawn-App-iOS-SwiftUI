@@ -78,6 +78,11 @@ class EventDescriptionViewModel: ObservableObject {
 				// After successfully sending the message, fetch the updated event data
 				await fetchUpdatedEventData()
 				
+				// Generate a local notification for testing
+				if !MockAPIService.isMocking {
+					generateLocalChatNotification(message: trimmedMessage)
+				}
+				
 				// Clear any error message
 				await MainActor.run {
 					creationMessage = nil
@@ -88,6 +93,42 @@ class EventDescriptionViewModel: ObservableObject {
 					creationMessage = "There was an error sending your chat message. Please try again"
 				}
 			}
+		}
+	}
+
+	// Generate a local notification for a chat message (for testing purposes)
+	private func generateLocalChatNotification(message: String) {
+		// In a real app, this notification would come from the server
+		// This is just for local testing of the notification UI
+		
+		// Only proceed if chat notifications are enabled in user preferences
+		guard NotificationService.shared.chatMessagesEnabled else {
+			print("Chat notifications are disabled by user preference")
+			return
+		}
+		
+		// Only show notification for messages from other users (not the current user)
+		// In a real app, the server would handle this logic
+		Task { @MainActor in
+			// Add a slight delay to simulate server processing
+			try? await Task.sleep(nanoseconds: 1_000_000_000)
+			
+			// Create notification with event and sender info
+			let notificationTitle = "New message in \(event.title ?? "an event you created")"
+			let notificationBody = "@\(event.creatorUser.username): \(message)"
+			
+			// Use the NotificationDataBuilder for consistent notification structure
+			let userInfo = NotificationDataBuilder.chatMessage(
+				eventId: event.id,
+				senderId: event.creatorUser.id
+			)
+			
+			// Schedule the notification
+			NotificationService.shared.scheduleLocalNotification(
+				title: notificationTitle,
+				body: notificationBody,
+				userInfo: userInfo
+			)
 		}
 	}
 

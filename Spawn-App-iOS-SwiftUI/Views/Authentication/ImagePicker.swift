@@ -6,148 +6,57 @@
 //
 
 import SwiftUI
-import PhotosUI
 import UIKit
 
 struct ImagePicker: UIViewControllerRepresentable {
 	@Binding var selectedImage: UIImage?
 	@Environment(\.presentationMode) private var presentationMode
 
-	func makeUIViewController(context: Context) -> PHPickerViewController {
-		var config = PHPickerConfiguration()
-		config.filter = .images
-		let picker = PHPickerViewController(configuration: config)
+	func makeUIViewController(context: Context) -> UIImagePickerController {
+		let picker = UIImagePickerController()
+		picker.sourceType = .photoLibrary
 		picker.delegate = context.coordinator
+		picker.allowsEditing = false // Disable built-in editor to avoid the rectangular crop step
 		return picker
 	}
 
-	func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+	func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
 
 	func makeCoordinator() -> Coordinator {
 		Coordinator(self)
 	}
 
-	class Coordinator: NSObject, PHPickerViewControllerDelegate, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+	class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 		let parent: ImagePicker
+		let profileImageSize: CGFloat = 150
 
 		init(_ parent: ImagePicker) {
 			self.parent = parent
 		}
 
-		func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
-			picker.dismiss(animated: true)
-
-			guard let provider = results.first?.itemProvider else { return }
-
-			if provider.canLoadObject(ofClass: UIImage.self) {
-				provider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
-					// Handle potential errors with iCloud photos
-					if let error = error {
-						print("Error loading image: \(error.localizedDescription)")
-						
-						DispatchQueue.main.async {
-							// Show fallback to camera/photo library with UIImagePickerController
-							self?.showFallbackImagePicker()
-						}
-						return
-					}
-					
-					DispatchQueue.main.async {
-						if let image = image as? UIImage {
-							self?.showImageCropper(with: image)
-						} else {
-							// If image couldn't be loaded as UIImage, show fallback
-							self?.showFallbackImagePicker()
-						}
-					}
-				}
+		func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+			// Get the original image directly, skip the edited image step
+			if let originalImage = info[.originalImage] as? UIImage {
+				// Show our custom crop view controller
+				presentCropViewController(for: originalImage, from: picker)
 			}
+			
+			// Don't dismiss yet - we'll do that after cropping
 		}
-
-		func showImageCropper(with image: UIImage) {
-			let cropViewController = CropImageViewController(image: image) { [weak self] croppedImage in
+		
+		private func presentCropViewController(for image: UIImage, from presenter: UIViewController) {
+			let cropViewController = CropImageViewController(image: image, profileImageSize: profileImageSize) { [weak self] croppedImage in
 				DispatchQueue.main.async {
 					self?.parent.selectedImage = croppedImage
+					self?.parent.presentationMode.wrappedValue.dismiss()
 				}
 			}
-
-			// Find the current view controller to present from
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-			   let rootVC = windowScene.windows.first?.rootViewController {
-				var currentVC = rootVC
-				while let presentedVC = currentVC.presentedViewController {
-					currentVC = presentedVC
-				}
-				currentVC.present(cropViewController, animated: true)
-			}
+			
+			presenter.present(cropViewController, animated: true)
 		}
 
-		// Add a fallback method using UIImagePickerController
-		func showFallbackImagePicker() {
-			let alertController = UIAlertController(
-				title: "Cloud Photo Error",
-				message: "There was an issue accessing your iCloud photo. Would you like to choose from your device or take a new photo?",
-				preferredStyle: .alert
-			)
-			
-			alertController.addAction(UIAlertAction(title: "Photo Library", style: .default) { [weak self] _ in
-				self?.showImagePickerController(sourceType: .photoLibrary)
-			})
-			
-			alertController.addAction(UIAlertAction(title: "Camera", style: .default) { [weak self] _ in
-				self?.showImagePickerController(sourceType: .camera)
-			})
-			
-			alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-			
-			// Find the current view controller to present from
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-			   let rootVC = windowScene.windows.first?.rootViewController {
-				var currentVC = rootVC
-				while let presentedVC = currentVC.presentedViewController {
-					currentVC = presentedVC
-				}
-				currentVC.present(alertController, animated: true)
-			}
-		}
-		
-		func showImagePickerController(sourceType: UIImagePickerController.SourceType) {
-			// Check if the source type is available
-			guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
-				print("Source type \(sourceType) is not available")
-				return
-			}
-			
-			let picker = UIImagePickerController()
-			picker.sourceType = sourceType
-			picker.delegate = self
-			picker.allowsEditing = true
-			
-			// Find the current view controller to present from
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-			   let rootVC = windowScene.windows.first?.rootViewController {
-				var currentVC = rootVC
-				while let presentedVC = currentVC.presentedViewController {
-					currentVC = presentedVC
-				}
-				currentVC.present(picker, animated: true)
-			}
-		}
-		
-		// UIImagePickerControllerDelegate methods
-		func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-			picker.dismiss(animated: true)
-			
-			// Use edited image if available, otherwise use original
-			if let editedImage = info[.editedImage] as? UIImage {
-				self.showImageCropper(with: editedImage)
-			} else if let originalImage = info[.originalImage] as? UIImage {
-				self.showImageCropper(with: originalImage)
-			}
-		}
-		
 		func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-			picker.dismiss(animated: true)
+			parent.presentationMode.wrappedValue.dismiss()
 		}
 	}
 }
@@ -156,12 +65,14 @@ class CropImageViewController: UIViewController {
 	private let imageView = UIImageView()
 	private let originalImage: UIImage
 	private let completion: (UIImage) -> Void
+	private let profileImageSize: CGFloat
 
 	private let cropOverlayView = UIView()
 	private let cropFrameView = UIView()
 
-	init(image: UIImage, completion: @escaping (UIImage) -> Void) {
+	init(image: UIImage, profileImageSize: CGFloat, completion: @escaping (UIImage) -> Void) {
 		self.originalImage = image
+		self.profileImageSize = profileImageSize
 		self.completion = completion
 		super.init(nibName: nil, bundle: nil)
 	}
@@ -250,7 +161,9 @@ class CropImageViewController: UIViewController {
 	@objc private func doneTapped() {
 		let scaledCropFrame = convertCropFrameToImageCoordinates()
 		if let croppedImage = cropImage(with: scaledCropFrame) {
-			completion(croppedImage)
+			// Final step: resize to profile image size and ensure it's circular
+			let finalImage = createFinalCircularImage(from: croppedImage)
+			completion(finalImage)
 		}
 		dismiss(animated: true)
 	}
@@ -317,22 +230,28 @@ class CropImageViewController: UIViewController {
 			return nil
 		}
 
-		// Create a circular image
-		let ciImage = CIImage(cgImage: cgImage)
-		let filter = CIFilter(name: "CIRadialGradientMask")
-
-		let size = CGSize(width: cgImage.width, height: cgImage.height)
-		let smallerSide = min(size.width, size.height)
-		let radius = smallerSide / 2
-
-		filter?.setValue(ciImage, forKey: kCIInputImageKey)
-		filter?.setValue(CIVector(x: radius, y: radius), forKey: "inputCenter")
-		filter?.setValue(radius, forKey: "inputRadius0")
-		filter?.setValue(0, forKey: "inputRadius1")
-
-		// Create a circular image
-		let outputImage = UIImage(cgImage: cgImage, scale: scale, orientation: originalImage.imageOrientation)
-
-		return outputImage
+		return UIImage(cgImage: cgImage, scale: scale, orientation: originalImage.imageOrientation)
+	}
+	
+	private func createFinalCircularImage(from image: UIImage) -> UIImage {
+		// Create final image with exact profile size dimensions
+		let finalSize = CGSize(width: profileImageSize, height: profileImageSize)
+		UIGraphicsBeginImageContextWithOptions(finalSize, false, 0)
+		defer { UIGraphicsEndImageContext() }
+		
+		// Create circular clipping path
+		let context = UIGraphicsGetCurrentContext()!
+		context.addEllipse(in: CGRect(origin: .zero, size: finalSize))
+		context.clip()
+		
+		// Draw the image inside the circular clipping path
+		image.draw(in: CGRect(origin: .zero, size: finalSize))
+		
+		// Get the final circular image
+		if let circularImage = UIGraphicsGetImageFromCurrentImageContext() {
+			return circularImage
+		}
+		
+		return image
 	}
 }

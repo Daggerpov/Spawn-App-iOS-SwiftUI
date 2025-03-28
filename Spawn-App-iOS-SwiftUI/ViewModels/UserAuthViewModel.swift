@@ -95,6 +95,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				user.profile?.imageURL(withDimension: 100)?.absoluteString
 			self.isLoggedIn = true
 			self.externalUserId = user.userID  // Google's externalUserId
+			
+			// If we have a spawnUser already, post the login notification
+			if self.spawnUser != nil {
+				NotificationCenter.default.post(name: .userDidLogin, object: nil)
+			}
 		} else {
 			resetState()
 		}
@@ -206,7 +211,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 400)?.absoluteString
 					?? ""
-				print("Google profile picture URL: \(self.profilePicUrl ?? "none")")
 				self.fullName = user.profile?.name
 				self.givenName = user.profile?.givenName
 				self.familyName = user.profile?.familyName
@@ -300,38 +304,93 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Only proceed with API call if we have email or it's not Apple auth
 		let emailToUse = self.email ?? ""
 		
-		print("Fetching user with externalUserId: \(unwrappedExternalUserId), email: \(emailToUse)")
-
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
-			do {
-				let fetchedSpawnUser: BaseUserDTO = try await self.apiService
-					.fetchData(
-						from: url,
-						parameters: [
-							"externalUserId": unwrappedExternalUserId,
-							"email": emailToUse,
-						]
-					)
-
-				await MainActor.run {
-					print("Successfully fetched user: \(fetchedSpawnUser.username)")
-					self.spawnUser = fetchedSpawnUser
-					self.shouldNavigateToUserInfoInputView = false  // User exists, no need to navigate to UserInfoInputView
-					self.isFormValid = true  // Auto-validate the form since we have a valid user
-					self.setShouldNavigateToFeedView() // Check if we should navigate to feed
+				// First, try to decode as a single user object
+				do {
+					let fetchedSpawnUser: BaseUserDTO = try await self.apiService
+						.fetchData(
+							from: url,
+							parameters: [
+								"externalUserId": unwrappedExternalUserId,
+								"email": emailToUse,
+							]
+						)
+					
+					await MainActor.run {
+						self.spawnUser = fetchedSpawnUser
+						self.shouldNavigateToUserInfoInputView = false
+						self.isFormValid = true
+						self.setShouldNavigateToFeedView()
+						
+						// Post notification that user did login successfully
+						NotificationCenter.default.post(name: .userDidLogin, object: nil)
+					}
+				} catch {
+					// If decoding as a single user fails, try to decode as an array
+					print("Failed to decode response as a single user, trying as an array: \(error.localizedDescription)")
+					
+					do {
+						let fetchedUsers: [BaseUserDTO] = try await self.apiService
+							.fetchData(
+								from: url,
+								parameters: [
+									"externalUserId": unwrappedExternalUserId,
+									"email": emailToUse,
+								]
+							)
+						
+						// Use the first user if array is not empty
+						if let firstUser = fetchedUsers.first {
+							await MainActor.run {
+								self.spawnUser = firstUser
+								self.shouldNavigateToUserInfoInputView = false
+								self.isFormValid = true
+								self.setShouldNavigateToFeedView()
+								
+								// Post notification that user did login successfully
+								NotificationCenter.default.post(name: .userDidLogin, object: nil)
+							}
+						} else {
+							// Handle empty array - user doesn't exist
+							await MainActor.run {
+								self.spawnUser = nil
+								self.shouldNavigateToUserInfoInputView = true
+								print("No users found in array response")
+							}
+						}
+					} catch let arrayError as APIError {
+						// Handle API errors, like 404
+						await MainActor.run {
+							self.handleApiError(arrayError)
+						}
+					} catch {
+						// Handle other errors
+						await MainActor.run {
+							self.spawnUser = nil
+							self.shouldNavigateToUserInfoInputView = true
+							print("Error fetching user data: \(error.localizedDescription)")
+						}
+					}
 				}
-			} catch {
-				await MainActor.run {
-					self.spawnUser = nil
-					self.shouldNavigateToUserInfoInputView = true  // User does not exist, navigate to UserInfoInputView
-					self.errorMessage =
-						"Failed to fetch user: \(error.localizedDescription)"
-					print(self.errorMessage as Any)
-				}
-			}
+			
 			await MainActor.run {
 				self.hasCheckedSpawnUserExistence = true
 			}
+		}
+	}
+	
+	// Helper method to handle API errors consistently
+	private func handleApiError(_ error: APIError) {
+		// For 404 errors (user doesn't exist), just direct to user info input without showing an error
+		if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+			self.spawnUser = nil
+			self.shouldNavigateToUserInfoInputView = true
+			print("User does not exist yet in Spawn database - directing to user info input")
+		} else {
+			self.spawnUser = nil
+			self.shouldNavigateToUserInfoInputView = true
+			self.errorMessage = "Failed to fetch user: \(error.localizedDescription)"
+			print(self.errorMessage as Any)
 		}
 	}
 
@@ -407,14 +466,24 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.spawnUser = fetchedUser
 				self.shouldNavigateToUserInfoInputView = false
 				// Don't automatically set navigation flags - leave that to the view
+				
+				// Post notification that user did login
+				NotificationCenter.default.post(name: .userDidLogin, object: nil)
 			}
 
 		} catch let error as APIError {
 			await MainActor.run {
 				if case .invalidStatusCode(let statusCode) = error, statusCode == 409 {
-					// Email is already in use with another account
-					print("Email is already in use: \(email)")
-					self.authAlert = .emailAlreadyInUse
+					// Check if the error is due to email or username conflict
+					// MySQL error 1062 for duplicate key involves username
+					if let errorMessage = self.errorMessage, errorMessage.contains("username") || errorMessage.contains("Duplicate") {
+						print("Username is already taken: \(username)")
+						self.authAlert = .usernameAlreadyInUse
+					} else {
+						// Default to email conflict if we can't determine the exact cause
+						print("Email is already in use: \(email)")
+						self.authAlert = .emailAlreadyInUse
+					}
 				} else {
 					print("Error creating the user: \(error)")
 					self.authAlert = .createError
@@ -493,14 +562,31 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
-		// Use the correct endpoint for updating profile picture
-		if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
-			do {
+		print("Starting profile picture update for user \(userId)")
+		
+		// Use our new dedicated method for profile picture updates
+		do {
+			// Try to use the new method which has better error handling
+			if let apiService = apiService as? APIService {
+				let updatedUser = try await apiService.updateProfilePicture(imageData, userId: userId)
+				
+				await MainActor.run {
+					self.spawnUser = updatedUser
+					self.objectWillChange.send()
+					print("Profile successfully updated with new picture: \(updatedUser.profilePicture ?? "nil")")
+				}
+				return
+			}
+			
+			// Fallback to the old method if needed (only for mock implementation)
+			if let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") {
 				// Create a URLRequest with PATCH method
 				var request = URLRequest(url: url)
 				request.httpMethod = "PATCH"
 				request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
 				request.httpBody = imageData
+				
+				print("Fallback: Sending profile picture update request to: \(url)")
 				
 				// Perform the request
 				let (data, response) = try await URLSession.shared.data(for: request)
@@ -508,7 +594,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Check the HTTP response
 				guard let httpResponse = response as? HTTPURLResponse, 
 					  (200...299).contains(httpResponse.statusCode) else {
-					print("Error updating profile picture: Invalid HTTP response")
+					let httpResponse = response as? HTTPURLResponse
+					print("Error updating profile picture: Invalid HTTP response code: \(httpResponse?.statusCode ?? 0)")
 					return
 				}
 				
@@ -517,12 +604,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				if let updatedUser = try? decoder.decode(BaseUserDTO.self, from: data) {
 					await MainActor.run {
 						self.spawnUser = updatedUser
+						self.objectWillChange.send()
+						print("Fallback: Profile picture updated successfully with URL: \(updatedUser.profilePicture ?? "nil")")
 					}
-					print("Profile picture updated successfully")
+				} else {
+					print("Failed to decode user data after profile picture update")
 				}
-			} catch {
-				print("Error updating profile picture: \(error.localizedDescription)")
 			}
+		} catch {
+			print("Error updating profile picture: \(error.localizedDescription)")
 		}
 	}
 
@@ -541,13 +631,21 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					bio: bio
 				)
 
+				print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName), bio=\(bio)")
+				
 				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
 					from: url,
 					with: updateDTO
 				)
 
 				await MainActor.run {
+					// Update the current user object
 					self.spawnUser = updatedUser
+					
+					// Ensure UI updates with the latest values
+					self.objectWillChange.send()
+					
+					print("Profile updated successfully: \(updatedUser.username)")
 				}
 			} catch {
 				print("Error updating profile: \(error.localizedDescription)")
