@@ -35,13 +35,14 @@ struct FeedbackView: View {
                         ForEach(FeedbackType.allCases) { type in
                             VStack {
                                 Image(systemName: type.iconName)
+                                    .foregroundColor(universalAccentColor)
                                 Text(type.displayName)
+                                    .foregroundColor(universalAccentColor)
                             }
                             .tag(type)
-                            .foregroundColor(universalAccentColor)
                         }
                     }
-//                    .pickerStyle(())
+                    .accentColor(universalAccentColor)
                 }
                 .padding(.horizontal)
                 
@@ -52,18 +53,20 @@ struct FeedbackView: View {
                         .foregroundColor(universalAccentColor)
                     
                     TextEditor(text: $message)
+                        .foregroundColor(universalAccentColor)
                         .frame(minHeight: 100)
                         .padding(12)
+                        .background(universalBackgroundColor)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                .stroke(universalAccentColor, lineWidth: 1.5)
                         )
                         .overlay(
                             Group {
                                 if message.isEmpty {
                                     HStack(alignment: .top) {
                                         Text("Share your thoughts, report a bug, or suggest a feature...")
-                                            .foregroundColor(.gray.opacity(0.7))
+                                            .foregroundColor(universalPlaceHolderTextColor)
                                             .padding(.leading, 16)
                                             .padding(.top, 16)
                                         Spacer()
@@ -97,8 +100,8 @@ struct FeedbackView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(universalAccentColor)
-                    .cornerRadius(10)
+                    .background(message.isEmpty || feedbackService.isSubmitting ? universalPassiveColor : universalSecondaryColor)
+                    .cornerRadius(universalRectangleCornerRadius)
                 }
                 .disabled(message.isEmpty || feedbackService.isSubmitting)
                 .padding(.horizontal)
@@ -106,7 +109,7 @@ struct FeedbackView: View {
                 // Success/Error message
                 if let successMessage = feedbackService.successMessage {
                     Text(successMessage)
-                        .foregroundColor(.green)
+                        .foregroundColor(Color.green)
                         .padding()
                         .onAppear {
                             // Dismiss after showing success message
@@ -118,7 +121,7 @@ struct FeedbackView: View {
                 
                 if let errorMessage = feedbackService.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(.red)
+                        .foregroundColor(Color.red)
                         .padding()
                 }
                 
@@ -127,7 +130,10 @@ struct FeedbackView: View {
             .padding(.top, 20)
             .navigationBarTitle("Send Feedback", displayMode: .inline)
             .background(universalBackgroundColor.edgesIgnoringSafeArea(.all))
+            .foregroundColor(universalAccentColor)
         }
+        .accentColor(universalAccentColor)
+        .colorScheme(.light) // Force light mode appearance
     }
 }
 
