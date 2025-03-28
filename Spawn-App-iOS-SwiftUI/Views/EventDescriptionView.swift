@@ -152,6 +152,19 @@ extension EventDescriptionView {
 
 	struct ChatMessageRow: View {
 		let chatMessage: FullEventChatMessageDTO
+		@StateObject private var actionViewModel: ChatMessageActionViewModel
+		@State private var showActionMenu = false
+		@State private var isLongPressing = false
+		
+		init(chatMessage: FullEventChatMessageDTO) {
+			self.chatMessage = chatMessage
+			let isInitiallyLiked = chatMessage.likedByUsers?.contains { $0.id == UserService.shared.currentUser?.id } ?? false
+			_actionViewModel = StateObject(wrappedValue: ChatMessageActionViewModel(
+				apiService: MockAPIService.isMocking ? MockAPIService(userId: UserService.shared.currentUser?.id ?? UUID()) : APIService(),
+				currentUserId: UserService.shared.currentUser?.id ?? UUID(),
+				initialLikeState: isInitiallyLiked
+			))
+		}
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [
@@ -207,11 +220,41 @@ extension EventDescriptionView {
 					Text(abbreviatedTime(from: chatMessage.formattedTimestamp))
 						.foregroundColor(.white)
 						.font(.caption)
-					Image(systemName: "heart")  // Logic for liked/unliked can go here later
+					
+					Button(action: {
+						Task {
+							await actionViewModel.toggleLike(for: chatMessage)
+						}
+					}) {
+						Image(systemName: actionViewModel.isLiked ? "heart.fill" : "heart")
+							.foregroundColor(actionViewModel.isLiked ? .red : .black)
+					}
 				}
 			}
 			.padding(.vertical, 5)
 			.padding(.horizontal, 30)
+			.contentShape(Rectangle())
+			.onLongPressGesture(minimumDuration: 0.5, pressing: { pressing in
+				isLongPressing = pressing
+				if pressing {
+					// Add haptic feedback
+					let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+					impactFeedback.impactOccurred()
+				}
+			}, perform: {
+				showActionMenu = true
+			})
+			.popover(isPresented: $showActionMenu) {
+				ChatMessageActionMenuView(viewModel: actionViewModel, chatMessage: chatMessage)
+					.presentationCompactAdaptation(.popover)
+			}
+			.scaleEffect(isLongPressing ? 1.05 : 1.0)
+			.animation(.easeInOut(duration: 0.1), value: isLongPressing)
+			.onAppear {
+				Task {
+					await actionViewModel.checkLikeStatus(for: chatMessage)
+				}
+			}
 		}
 	}
 

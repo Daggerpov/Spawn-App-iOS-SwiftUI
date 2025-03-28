@@ -28,4 +28,12 @@ protocol IAPIService {
 	) async throws -> U
 	func deleteData(from url: URL) async throws
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO
+	
+	// Chat Message Likes
+	func likeChatMessage(chatMessageId: UUID, userId: UUID) async throws -> ChatMessageLikesDTO?
+	func unlikeChatMessage(chatMessageId: UUID, userId: UUID) async throws
+	func getChatMessageLikes(chatMessageId: UUID) async throws -> [BaseUserDTO]
+	
+	// Reporting Content
+	func reportContent(_ report: ReportedContentDTO) async throws -> ReportedContentDTO?
 }

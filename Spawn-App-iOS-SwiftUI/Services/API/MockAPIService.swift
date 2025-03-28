@@ -231,4 +231,30 @@ class MockAPIService: IAPIService {
             return mockUser
         }
     }
+
+    // MARK: - Chat Message Likes
+
+    override func likeChatMessage(chatMessageId: UUID, userId: UUID) async throws -> ChatMessageLikesDTO? {
+        // Simulate a successful like operation
+        return ChatMessageLikesDTO(chatMessageId: chatMessageId, userId: userId)
+    }
+
+    override func unlikeChatMessage(chatMessageId: UUID, userId: UUID) async throws {
+        // Simulate successful unlike operation (no return value needed)
+    }
+
+    override func getChatMessageLikes(chatMessageId: UUID) async throws -> [BaseUserDTO] {
+        // Return a mock list of users who liked the message
+        return [BaseUserDTO.danielAgapov]
+    }
+
+    // MARK: - Reporting Content
+
+    override func reportContent(_ report: ReportedContentDTO) async throws -> ReportedContentDTO? {
+        // Simulate a successful report submission
+        var mockReport = report
+        mockReport.id = UUID()
+        mockReport.timestamp = Date()
+        return mockReport
+    }
 }

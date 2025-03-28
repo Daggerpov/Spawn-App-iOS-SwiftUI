@@ -658,6 +658,41 @@ class APIService: IAPIService {
 			throw APIError.failedJSONParsing(url: url)
 		}
 	}
+
+	// MARK: - Chat Message Likes
+
+	func likeChatMessage(chatMessageId: UUID, userId: UUID) async throws -> ChatMessageLikesDTO? {
+		let url = URL(string: APIService.baseURL + "chatMessages/\(chatMessageId)/likes/\(userId)")!
+		return try await sendData(EmptyRequestBody(), to: url, parameters: nil)
+	}
+
+	func unlikeChatMessage(chatMessageId: UUID, userId: UUID) async throws {
+		let url = URL(string: APIService.baseURL + "chatMessages/\(chatMessageId)/likes/\(userId)")!
+		var request = URLRequest(url: url)
+		request.httpMethod = "DELETE"
+		
+		let (_, response) = try await URLSession.shared.data(for: request)
+		
+		guard let httpResponse = response as? HTTPURLResponse else {
+			throw APIError.failedHTTPRequest(description: "HTTP request failed")
+		}
+		
+		guard httpResponse.statusCode == 204 || httpResponse.statusCode == 200 else {
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+	}
+
+	func getChatMessageLikes(chatMessageId: UUID) async throws -> [BaseUserDTO] {
+		let url = URL(string: APIService.baseURL + "chatMessages/\(chatMessageId)/likes")!
+		return try await fetchData(from: url, parameters: nil)
+	}
+
+	// MARK: - Reporting Content
+
+	func reportContent(_ report: ReportedContentDTO) async throws -> ReportedContentDTO? {
+		let url = URL(string: APIService.baseURL + "reports")!
+		return try await sendData(report, to: url, parameters: nil)
+	}
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end
