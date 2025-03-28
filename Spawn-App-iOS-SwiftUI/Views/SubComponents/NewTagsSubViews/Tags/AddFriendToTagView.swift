@@ -14,40 +14,83 @@ struct AddFriendToTagView: View {
 
 	@StateObject var searchViewModel: SearchViewModel = SearchViewModel()
 	var closeCallback: (() -> Void)?
+	@State private var isLoading: Bool = true
+	@State private var loadedFriends: [BaseUserDTO] = []
 
 	init(userId: UUID, friendTagId: UUID, closeCallback: @escaping () -> Void) {
 		self.userId = userId
 		self.friendTagId = friendTagId
 		self.closeCallback = closeCallback
-		self.viewModel = AddFriendToTagViewModel(
-			userId: userId,
-			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: userId) : APIService())
+		
+		// Initialize view model
+        let vm = AddFriendToTagViewModel(userId: userId, apiService: MockAPIService.isMocking
+                                         ? MockAPIService(userId: userId)
+                                         : APIService())
+		self.viewModel = vm
 	}
+
 	var body: some View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 20) {
 				SearchView(
 					searchPlaceholderText: "Search or add friends",
 					viewModel: searchViewModel)
-				Group {
-					if viewModel.friends.count > 0 {
+				
+				ZStack {
+					if isLoading {
+						ProgressView()
+							.frame(maxWidth: .infinity, maxHeight: 160)
+							.padding()
+					} else if loadedFriends.count > 0 {
 						ScrollView {
-							ForEach(viewModel.friends) { friend in
-								FriendRowForAddingFriendsToTag(
-									friend: friend, viewModel: viewModel
-								)
-								.padding(.horizontal)
+							LazyVStack {
+								ForEach(loadedFriends) { friend in
+									FriendRowForAddingFriendsToTag(
+										friend: friend, viewModel: viewModel
+									)
+									.padding(.horizontal)
+								}
 							}
 						}
+						.frame(maxHeight: 160)
+					} else if let error = viewModel.errorMessage {
+						VStack {
+							Text(error)
+								.foregroundColor(.red)
+								.padding()
+								.multilineTextAlignment(.center)
+							
+							Button("Retry") {
+								Task {
+									isLoading = true
+									await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
+									await MainActor.run {
+										loadedFriends = viewModel.friends
+										isLoading = false
+									}
+								}
+							}
+							.foregroundColor(universalAccentColor)
+							.padding(.vertical, 8)
+							.padding(.horizontal, 20)
+							.background(
+								RoundedRectangle(cornerRadius: 12)
+									.stroke(universalAccentColor, lineWidth: 1)
+							)
+						}
+						.frame(maxWidth: .infinity, maxHeight: 160)
 					} else {
 						Text(
 							"You've added all your friends to this tag! It's time to add some more friends!"
 						)
 						.foregroundColor(universalAccentColor)
+						.padding()
+						.multilineTextAlignment(.center)
+						.frame(maxWidth: .infinity, maxHeight: 160)
 					}
-					doneButtonView
 				}
+				
+				doneButtonView
 			}
 			.frame(
 				minHeight: 300,
@@ -59,22 +102,32 @@ struct AddFriendToTagView: View {
 			.cornerRadius(universalRectangleCornerRadius)
 		}
 		.scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
-		.onAppear {
-			Task {
-				await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
-			}
+		.task {
+			await loadFriends()
+		}
+	}
+	
+	func loadFriends() async {
+		isLoading = true
+		await viewModel.fetchFriendsToAddToTag(friendTagId: friendTagId)
+		await MainActor.run {
+			loadedFriends = viewModel.friends
+			print("DEBUG isLoading set to false, friends count: \(loadedFriends.count)")
+			isLoading = false
 		}
 	}
 }
 
 struct FriendRowForAddingFriendsToTag: View {
 	var friend: BaseUserDTO
-	@State private var isClicked: Bool = false
+	@State private var isClicked: Bool
 	@ObservedObject var viewModel: AddFriendToTagViewModel
 
 	init(friend: BaseUserDTO, viewModel: AddFriendToTagViewModel) {
 		self.friend = friend
 		self.viewModel = viewModel
+		let isAlreadySelected = viewModel.selectedFriends.contains { $0.id == friend.id }
+		self._isClicked = State(initialValue: isAlreadySelected)
 	}
 
 	var body: some View {
@@ -131,8 +184,15 @@ extension AddFriendToTagView {
 			Task {
 				await viewModel.addSelectedFriendsToTag(
 					friendTagId: friendTagId)
+				
+				// Wait a brief moment to ensure the server has processed the request
+				try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+				
+				// Call the close callback after all operations are complete
+				await MainActor.run {
+					closeCallback?()
+				}
 			}
-			closeCallback?()
 		}) {
 			HStack {
 				Text("done")
