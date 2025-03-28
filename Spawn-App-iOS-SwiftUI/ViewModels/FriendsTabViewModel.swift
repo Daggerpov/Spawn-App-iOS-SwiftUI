@@ -17,6 +17,7 @@ class FriendsTabViewModel: ObservableObject {
     @Published var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
     @Published var isSearching: Bool = false
     @Published var searchQuery: String = ""
+    @Published var isLoading: Bool = false
 
 	@Published var friendRequestCreationMessage: String = ""
 	@Published var createdFriendRequest: FetchFriendRequestDTO?
@@ -56,6 +57,10 @@ class FriendsTabViewModel: ObservableObject {
             return
         }
         
+        await MainActor.run {
+            isLoading = true
+        }
+        
         // Use the backend's filtered endpoint
         if let url = URL(string: APIService.baseURL + "users/filtered/\(userId)?searchQuery=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")") {
             do {
@@ -65,11 +70,19 @@ class FriendsTabViewModel: ObservableObject {
                     self.filteredIncomingFriendRequests = searchedUserResult.incomingFriendRequests
                     self.filteredRecommendedFriends = searchedUserResult.recommendedFriends
                     self.filteredFriends = searchedUserResult.friends
+                    self.isLoading = false
                 }
             } catch {
                 print("Error fetching filtered results: \(error.localizedDescription)")
                 // Fallback to local filtering if the API call fails
                 await localFilterResults(query: query)
+                await MainActor.run {
+                    self.isLoading = false
+                }
+            }
+        } else {
+            await MainActor.run {
+                self.isLoading = false
             }
         }
     }
@@ -113,6 +126,10 @@ class FriendsTabViewModel: ObservableObject {
     }
 
 	func fetchAllData() async {
+        await MainActor.run {
+            isLoading = true
+        }
+        
         // Create a task group to run these in parallel
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.fetchIncomingFriendRequests() }
@@ -125,6 +142,7 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredFriends = self.friends
             self.filteredRecommendedFriends = self.recommendedFriends
             self.filteredIncomingFriendRequests = self.incomingFriendRequests
+            self.isLoading = false
         }
 	}
 
@@ -191,16 +209,24 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	func addFriend(friendUserId: UUID) async {
+        await MainActor.run {
+            isLoading = true
+        }
+        
 		let createdFriendRequest = CreateFriendRequestDTO(
 			id: UUID(),
 			senderUserId: userId,
 			receiverUserId: friendUserId
 		)
+        
+        var requestSucceeded = false
+        
 		// full path: /api/v1/friend-requests
 		if let url = URL(string: APIService.baseURL + "friend-requests") {
 			do {
 				_ = try await self.apiService.sendData(
 					createdFriendRequest, to: url, parameters: nil)
+                requestSucceeded = true
 			} catch {
 				await MainActor.run {
 					friendRequestCreationMessage =
@@ -208,6 +234,14 @@ class FriendsTabViewModel: ObservableObject {
 				}
 			}
 		}
-		await fetchAllData()
+        
+        if requestSucceeded {
+            // Fetch all data in parallel after successfully adding a friend
+            await fetchAllData()
+        } else {
+            await MainActor.run {
+                isLoading = false
+            }
+        }
 	}
 }

@@ -36,66 +36,62 @@ struct TagRow: View {
 
 	var body: some View {
 		VStack {
-			Button(action: {
-				isExpanded = true
-			}) {
+			HStack {
 				HStack {
-					HStack {
-						if isExpanded {
-							titleView
+					if isExpanded {
+						titleView
 
-							Button(action: {
-								if isEditingTitle {
-									// this means they're submitting the new title/color
-									Task {
-										// Attempt to update the tag
-										await viewModel.upsertTag(
-											id: friendTag.id,
-											displayName: editedTitleText,
-											colorHexCode: editedColorHexCode,
-											upsertAction: .update
-										)
+						Button(action: {
+							if isEditingTitle {
+								// this means they're submitting the new title/color
+								Task {
+									// Attempt to update the tag
+									await viewModel.upsertTag(
+										id: friendTag.id,
+										displayName: editedTitleText,
+										colorHexCode: editedColorHexCode,
+										upsertAction: .update
+									)
 
-										isEditingTitle = false
-									}
-								} else {
-									isEditingTitle = true
+									isEditingTitle = false
 								}
-							}) {
-								Image(
-									systemName: isEditingTitle
-										? "checkmark" : "pencil")
+							} else {
+								isEditingTitle = true
 							}
-
-                            if isEditingTitle, !friendTag.isEveryone{
-								Button(action: {
-									showDeleteAlert = true
-								}) {
-									Image(systemName: "trash")
-								}
-
-							}
-
-						} else {
-							Text(friendTag.displayName)
+						}) {
+							Image(
+								systemName: isEditingTitle
+									? "checkmark" : "pencil")
 						}
-					}
-					.foregroundColor(.white)
-					.font(.title)
-					.fontWeight(.semibold)
 
-					Spacer()
-					TagFriendsView(
-						friends: friendTag.friends, isExpanded: $isExpanded)
+						if isEditingTitle, !friendTag.isEveryone{
+							Button(action: {
+								showDeleteAlert = true
+							}) {
+								Image(systemName: "trash")
+							}
+
+						}
+
+					} else {
+						Text(friendTag.displayName)
+					}
 				}
-				.padding()
-				.background(
-					RoundedRectangle(
-						cornerRadius: universalRectangleCornerRadius
-					)
-					.fill(Color(hex: editedColorHexCode))
-				)
+				.foregroundColor(.white)
+				.font(.title)
+				.fontWeight(.semibold)
+
+				Spacer()
+				TagFriendsView(
+					friends: friendTag.friends, isExpanded: $isExpanded)
 			}
+			.padding()
+			.background(
+				RoundedRectangle(
+					cornerRadius: universalRectangleCornerRadius
+				)
+				.fill(Color(hex: editedColorHexCode))
+			)
 			if isExpanded {
 				ExpandedTagView(
 					currentSelectedColorHexCode: $editedColorHexCode,
