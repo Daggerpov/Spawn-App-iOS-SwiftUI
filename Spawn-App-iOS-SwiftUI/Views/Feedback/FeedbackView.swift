@@ -51,24 +51,23 @@ struct FeedbackView: View {
                         .foregroundColor(universalAccentColor)
                     
                     TextEditor(text: $message)
-                        .frame(minHeight: 150)
-                        .padding(8)
+                        .frame(minHeight: 200)
+                        .padding(12)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
                         .overlay(
-                            VStack {
+                            Group {
                                 if message.isEmpty {
-                                    HStack {
+                                    HStack(alignment: .top) {
                                         Text("Share your thoughts, report a bug, or suggest a feature...")
                                             .foregroundColor(.gray.opacity(0.7))
-                                            .padding(.leading, 12)
-                                            .padding(.top, 14)
+                                            .padding(.leading, 16)
+                                            .padding(.top, 16)
                                         Spacer()
                                     }
                                 }
-                                Spacer()
                             }
                         )
                 }

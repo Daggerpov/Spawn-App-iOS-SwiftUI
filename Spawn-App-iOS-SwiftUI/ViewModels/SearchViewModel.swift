@@ -6,9 +6,28 @@
 //
 
 import Foundation
+import SwiftUI
+import Combine
 
 class SearchViewModel: ObservableObject {
 	@Published var searchText: String = ""
-
-	// TODO: insert searching api call here later
+	@Published var isSearching: Bool = false
+	@Published var debouncedSearchText: String = ""
+	
+	private var cancellables = Set<AnyCancellable>()
+	
+	init() {
+		// Set up a debounce mechanism to avoid too many API calls while typing
+		$searchText
+			.debounce(for: .milliseconds(300), scheduler: RunLoop.main)
+			.sink { [weak self] value in
+				self?.debouncedSearchText = value
+				self?.isSearching = !value.isEmpty
+			}
+			.store(in: &cancellables)
+	}
+	
+	func clearSearch() {
+		searchText = ""
+	}
 }

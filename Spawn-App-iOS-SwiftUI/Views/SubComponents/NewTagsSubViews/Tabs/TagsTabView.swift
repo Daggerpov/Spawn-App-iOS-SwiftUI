@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TagsTabView: View {
-	@ObservedObject var viewModel: TagsViewModel
+	@StateObject var viewModel: TagsViewModel
 	@State private var creationStatus: CreationStatus = .notCreating
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
@@ -19,9 +19,10 @@ struct TagsTabView: View {
 	) {
 		self.addFriendToTagButtonPressedCallback =
 			addFriendToTagButtonPressedCallback
-		self.viewModel = TagsViewModel(
+		let vm = TagsViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(userId: userId) : APIService(), userId: userId)
+		self._viewModel = StateObject(wrappedValue: vm)
 	}
 
 	// Function to refresh tags data

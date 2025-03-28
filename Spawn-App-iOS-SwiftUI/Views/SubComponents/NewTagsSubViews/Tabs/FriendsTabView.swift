@@ -53,6 +53,7 @@ struct FriendsTabView: View {
 			.onAppear {
 				Task {
 					await viewModel.fetchAllData()
+                    viewModel.connectSearchViewModel(searchViewModel)
 				}
 			}
 
@@ -68,13 +69,13 @@ struct FriendsTabView: View {
 
 	var requestsSection: some View {
 		VStack(alignment: .leading, spacing: 10) {
-			if viewModel.incomingFriendRequests.count > 0 {
+			if viewModel.filteredIncomingFriendRequests.count > 0 {
 				Text("Friend Requests")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 				ScrollView(.horizontal, showsIndicators: false) {
 					HStack(spacing: 12) {
-						ForEach(viewModel.incomingFriendRequests) {
+						ForEach(viewModel.filteredIncomingFriendRequests) {
 							friendRequest in
 							Button(action: {
 								// this executes like .onTapGesture() in JS
@@ -142,14 +143,14 @@ struct FriendsTabView: View {
 	//TODO: refine this scetion to only show the greenbackground as the figma design
 	var recommendedFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			if viewModel.recommendedFriends.count > 0 {
+			if viewModel.filteredRecommendedFriends.count > 0 {
 				Text("Recommended Friends")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
-						ForEach(viewModel.recommendedFriends) { friend in
+						ForEach(viewModel.filteredRecommendedFriends) { friend in
 							RecommendedFriendView(
 								viewModel: viewModel, friend: friend)
 						}
@@ -164,14 +165,14 @@ struct FriendsTabView: View {
 		VStack(alignment: .leading, spacing: 16) {
 			Spacer()
 
-			if viewModel.friends.count > 0 {
+			if viewModel.filteredFriends.count > 0 {
 				Text("Friends")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
-						ForEach(viewModel.friends) { friend in
+						ForEach(viewModel.filteredFriends) { friend in
 							HStack {
 								if MockAPIService.isMocking {
 if let pfp = friend.profilePicture {
@@ -230,7 +231,10 @@ if let pfp = friend.profilePicture {
 						}
 					}
 				}
-			} else {
+			} else if viewModel.isSearching && viewModel.filteredFriends.isEmpty {
+                Text("No friends found matching your search")
+                    .foregroundColor(universalAccentColor)
+            } else if viewModel.friends.isEmpty {
 				Text("Add some friends!")
 					.foregroundColor(universalAccentColor)
 			}
