@@ -10,25 +10,17 @@ struct ChatMessageActionMenuView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Like button
-            Button(action: {
-                dismiss()
+            Button {
                 Task {
                     await viewModel.toggleLike(for: chatMessage)
+                    dismiss()
                 }
-            }) {
-                HStack {
-                    Text("Like")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.black)
-                    
-                    Spacer()
-                    
-                    Image(systemName: viewModel.isLiked ? "heart.fill" : "heart")
-                        .foregroundColor(viewModel.isLiked ? .black : .black)
-                }
-                .padding(.vertical, 16)
-                .padding(.horizontal, 24)
+            } label: {
+                Label(viewModel.isLiked ? "Unlike" : "Like", systemImage: viewModel.isLiked ? "heart.fill" : "heart")
+                    .foregroundColor(viewModel.isLiked ? .red : .black)
             }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 24)
             
             Divider()
             

@@ -140,7 +140,8 @@ extension EventDescriptionView {
                 }
                 .padding(.horizontal, 5)
             }
-            .frame(maxHeight: 150)
+            .frame(maxHeight: UIScreen.main.bounds.height * 0.3) // Adjust to be responsive to screen size
+            .fixedSize(horizontal: false, vertical: false) // Allow vertical expansion based on content
 
 			chatBar
         }
@@ -158,7 +159,7 @@ extension EventDescriptionView {
 		
 		init(chatMessage: FullEventChatMessageDTO) {
 			self.chatMessage = chatMessage
-			let isInitiallyLiked = chatMessage.likedByUsers?.contains { $0.id == UserService.shared.currentUser?.id } ?? false
+			let isInitiallyLiked = UserService.shared.hasLikedMessage(chatMessage)
 			_actionViewModel = StateObject(wrappedValue: ChatMessageActionViewModel(
 				apiService: MockAPIService.isMocking ? MockAPIService(userId: UserService.shared.currentUser?.id ?? UUID()) : APIService(),
 				currentUserId: UserService.shared.currentUser?.id ?? UUID(),
@@ -168,10 +169,15 @@ extension EventDescriptionView {
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [
-				"seconds": "sec",
-				"minutes": "mins",
-				"week": "wk",
-				"weeks": "wk",
+				"seconds": "s",
+				"minutes": "m",
+				"minute": "m",
+				"hours": "h",
+				"hour": "h",
+				"day": "d",
+				"days": "d",
+				"week": "w",
+				"weeks": "w",
 			]
 			var result = timestamp
 			for (full, abbreviation) in abbreviations {
@@ -210,16 +216,22 @@ extension EventDescriptionView {
 							.foregroundColor(universalAccentColor)
 							.bold()
 							.font(.caption)
+							.lineLimit(1)
 					}
 					Text(chatMessage.content)
 						.foregroundColor(universalAccentColor)
 						.font(.caption)
+						.lineLimit(2)
+						.fixedSize(horizontal: false, vertical: true)
 				}
-				Spacer()
+				.frame(maxWidth: .infinity, alignment: .leading)
+				
 				HStack {
 					Text(abbreviatedTime(from: chatMessage.formattedTimestamp))
-						.foregroundColor(.white)
+						.foregroundColor(.gray)
 						.font(.caption)
+						.lineLimit(1)
+						.frame(width: 40, alignment: .trailing)
 					
 					Button(action: {
 						Task {
@@ -227,12 +239,14 @@ extension EventDescriptionView {
 						}
 					}) {
 						Image(systemName: actionViewModel.isLiked ? "heart.fill" : "heart")
-							.foregroundColor(actionViewModel.isLiked ? .red : .black)
+							.foregroundColor(actionViewModel.isLiked ? .red : .gray)
+							.frame(width: 20, height: 20)
 					}
 				}
+				.frame(width: 70)
 			}
 			.padding(.vertical, 5)
-			.padding(.horizontal, 30)
+			.padding(.horizontal, 15)
 			.contentShape(Rectangle())
 			.onLongPressGesture(minimumDuration: 0.5, pressing: { pressing in
 				isLongPressing = pressing
@@ -246,7 +260,7 @@ extension EventDescriptionView {
 			})
 			.popover(isPresented: $showActionMenu) {
 				ChatMessageActionMenuView(viewModel: actionViewModel, chatMessage: chatMessage)
-					.presentationCompactAdaptation(.popover)
+					.modifier(PopoverAdaptationModifier())
 			}
 			.scaleEffect(isLongPressing ? 1.05 : 1.0)
 			.animation(.easeInOut(duration: 0.1), value: isLongPressing)
@@ -254,6 +268,10 @@ extension EventDescriptionView {
 				Task {
 					await actionViewModel.checkLikeStatus(for: chatMessage)
 				}
+			}
+			.onChange(of: chatMessage.likedByUsers) { _ in
+				let currentUserId = UserService.shared.currentUser?.id
+				actionViewModel.isLiked = (chatMessage.likedByUsers?.contains { $0.id == currentUserId } ?? false)
 			}
 		}
 	}
@@ -264,8 +282,9 @@ extension EventDescriptionView {
 				.padding(10)
 				.background(Color.white)
 				.cornerRadius(10)
-				.font(.caption)
+				.font(.subheadline)
 				.foregroundColor(universalAccentColor)
+				.lineLimit(1)
 
 			Button(action: {
 				// Store the current message text in a local constant
@@ -286,6 +305,7 @@ extension EventDescriptionView {
 			}) {
 				Image(systemName: "paperplane.fill")
 					.foregroundColor(Color.black)
+					.frame(width: 24, height: 24)
 			}
 			.padding(.horizontal, 10)
 			.disabled(messageText.isEmpty) // Disable button when text is empty
@@ -294,6 +314,7 @@ extension EventDescriptionView {
 		.background(Color.white)
 		.cornerRadius(universalRectangleCornerRadius)
 		.padding(.horizontal, 15)
+		.frame(height: 44)
 	}
 }
 
@@ -304,4 +325,17 @@ extension EventDescriptionView {
 		color: universalAccentColor,
 		userId: UUID()
 	)
+}
+
+// Custom modifier to handle iOS version differences with popover adaptation
+struct PopoverAdaptationModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *) {
+            // Use presentationCompactAdaptation on iOS 16.4+
+            content.presentationCompactAdaptation(.popover)
+        } else {
+            // On iOS 16.2-16.3, just return the content without the modifier
+            content
+        }
+    }
 }

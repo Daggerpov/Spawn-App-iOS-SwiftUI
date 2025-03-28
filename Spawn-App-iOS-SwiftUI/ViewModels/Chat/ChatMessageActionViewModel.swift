@@ -23,22 +23,41 @@ class ChatMessageActionViewModel: ObservableObject {
         await MainActor.run {
             isLoading = true
             errorMessage = nil
+            isLiked.toggle()
         }
         
         do {
-            if isLiked {
+            if !isLiked {
                 try await apiService.unlikeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
+                
+                // Update the likedByUsers array by removing the current user
+                await MainActor.run {
+                    if chatMessage.likedByUsers != nil {
+                        chatMessage.likedByUsers?.removeAll { $0.id == currentUserId }
+                    }
+                }
             } else {
                 _ = try await apiService.likeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
+                
+                // Update the likedByUsers array by adding the current user
+                await MainActor.run {
+                    if let currentUser = UserService.shared.currentUser {
+                        if chatMessage.likedByUsers == nil {
+                            chatMessage.likedByUsers = [currentUser]
+                        } else if !chatMessage.likedByUsers!.contains(where: { $0.id == currentUserId }) {
+                            chatMessage.likedByUsers?.append(currentUser)
+                        }
+                    }
+                }
             }
             
             await MainActor.run {
-                isLiked.toggle()
                 isLoading = false
             }
         } catch {
             await MainActor.run {
-                errorMessage = "Failed to \(isLiked ? "unlike" : "like") message: \(error.localizedDescription)"
+                isLiked.toggle()
+                errorMessage = "Failed to \(!isLiked ? "unlike" : "like") message: \(error.localizedDescription)"
                 isLoading = false
             }
             print("Error toggling like: \(error)")
@@ -93,6 +112,11 @@ class ChatMessageActionViewModel: ObservableObject {
             
             await MainActor.run {
                 isLiked = userLiked
+                
+                // Update the likedByUsers array to match the backend data
+                // This ensures consistency between what's shown in the UI and what's in the data model
+                chatMessage.likedByUsers = likes
+                
                 isLoading = false
             }
         } catch {

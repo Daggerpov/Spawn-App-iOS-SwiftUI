@@ -139,15 +139,18 @@ extension FeedView {
 					.padding(.horizontal)
 					.padding(
 						.vertical,
-						min(
-							250,
-							250
-							- CGFloat((event.chatMessages?.count ?? 0) > 2 ? 100 : 0)
-							- CGFloat(event.note != nil ? 50 : 0)
+						max(
+							50,  // Minimum vertical padding to ensure content is visible
+							min(
+								200, // Reduced from 250 to give more space for chat content
+								200
+								- CGFloat((event.chatMessages?.count ?? 0) > 2 ? 50 : 0) // Reduced from 100 to allow more content to show
+								- CGFloat(event.note != nil ? 25 : 0) // Reduced from 50
+							)
 						)
 					)
-                    .padding(.top, 100)
-
+                    .padding(.bottom, UIScreen.main.bounds.height * 0.1) // Add some bottom padding
+                    .frame(maxHeight: UIScreen.main.bounds.height * 0.9) // Limit max height to 90% of screen
 				}
 				.ignoresSafeArea()
 			}

@@ -28,15 +28,21 @@ extension UIApplication {
     
     // Method to begin a monitored background task
     func beginMonitoredBackgroundTask() -> UIBackgroundTaskIdentifier {
-        let taskID = self.beginBackgroundTask {
-            // End the task when time expires
-            self.endBackgroundTask(taskID)
-            UIApplication._backgroundTasks.remove(taskID)
+        // Create a placeholder for the task ID to avoid circular reference
+        var taskIdentifier: UIBackgroundTaskIdentifier = .invalid
+        
+        // Create the task with a completion handler
+        taskIdentifier = self.beginBackgroundTask { [weak self] in
+            guard let self = self else { return }
+            
+            // Use the locally captured identifier that's now fully defined
+            self.endBackgroundTask(taskIdentifier)
+            UIApplication._backgroundTasks.remove(taskIdentifier)
         }
         
         // Add to our set of tracked tasks
-        UIApplication._backgroundTasks.insert(taskID)
-        return taskID
+        UIApplication._backgroundTasks.insert(taskIdentifier)
+        return taskIdentifier
     }
     
     // Safer end background task method
@@ -64,7 +70,8 @@ extension NotificationCenter {
                 // Using performSelector to avoid compile-time checking
                 // which would prevent using this generically
                 let targetObject = observer as AnyObject
-                targetObject.perform(selector, with: notification)
+                // Use discardableResult to handle the Unmanaged return value
+                _ = targetObject.perform(selector, with: notification)
             }
         
         return token
