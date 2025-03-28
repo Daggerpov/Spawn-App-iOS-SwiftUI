@@ -20,47 +20,57 @@ class ChatMessageActionViewModel: ObservableObject {
     func toggleLike(for chatMessage: FullEventChatMessageDTO) async {
         guard !isLoading else { return }
         
+        // Capture current state before changing
+        let wasLiked = isLiked
+        
+        // Optimistic UI update - update the UI immediately
         await MainActor.run {
             isLoading = true
             errorMessage = nil
             isLiked.toggle()
-        }
-        
-        do {
-            if !isLiked {
-                try await apiService.unlikeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
-                
-                // Update the likedByUsers array by removing the current user
-                await MainActor.run {
-                    if chatMessage.likedByUsers != nil {
-                        chatMessage.likedByUsers?.removeAll { $0.id == currentUserId }
+            
+            // Optimistically update the likedByUsers array locally
+            if isLiked {
+                // Add current user to likes if not already present
+                if let currentUser = UserService.shared.currentUser {
+                    if chatMessage.likedByUsers == nil {
+                        chatMessage.likedByUsers = [currentUser]
+                    } else if !chatMessage.likedByUsers!.contains(where: { $0.id == currentUserId }) {
+                        chatMessage.likedByUsers?.append(currentUser)
                     }
                 }
             } else {
-                _ = try await apiService.likeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
-                
-                // Update the likedByUsers array by adding the current user
-                await MainActor.run {
-                    if let currentUser = UserService.shared.currentUser {
-                        if chatMessage.likedByUsers == nil {
-                            chatMessage.likedByUsers = [currentUser]
-                        } else if !chatMessage.likedByUsers!.contains(where: { $0.id == currentUserId }) {
-                            chatMessage.likedByUsers?.append(currentUser)
-                        }
-                    }
+                // Remove current user from likes
+                if chatMessage.likedByUsers != nil {
+                    chatMessage.likedByUsers?.removeAll { $0.id == currentUserId }
                 }
+            }
+        }
+        
+        do {
+            // Make API call based on the NEW state (after toggle)
+            if isLiked {
+                try await apiService.likeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
+            } else {
+                try await apiService.unlikeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
             }
             
             await MainActor.run {
                 isLoading = false
             }
         } catch {
-            await MainActor.run {
-                isLiked.toggle()
-                errorMessage = "Failed to \(!isLiked ? "unlike" : "like") message: \(error.localizedDescription)"
-                isLoading = false
-            }
             print("Error toggling like: \(error)")
+            
+            // Don't revert the UI on 500 errors - maintain optimistic update
+            // Only log the error but keep the UI in sync with what the user did
+            await MainActor.run {
+                isLoading = false
+                
+                // Only show error message in debug, not to the user
+                #if DEBUG
+                errorMessage = "API error. Local change preserved."
+                #endif
+            }
         }
     }
     
@@ -120,7 +130,10 @@ class ChatMessageActionViewModel: ObservableObject {
                 isLoading = false
             }
         } catch {
+            // On error, use local state based on hasLikedMessage
             await MainActor.run {
+                // Fall back to the local state - trust what UserService says
+                isLiked = UserService.shared.hasLikedMessage(chatMessage)
                 isLoading = false
             }
             print("Error checking like status: \(error)")

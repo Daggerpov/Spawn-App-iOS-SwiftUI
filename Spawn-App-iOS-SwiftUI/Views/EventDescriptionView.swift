@@ -228,7 +228,7 @@ extension EventDescriptionView {
 				
 				HStack {
 					Text(abbreviatedTime(from: chatMessage.formattedTimestamp))
-						.foregroundColor(.gray)
+						.foregroundColor(.black)
 						.font(.caption)
 						.lineLimit(1)
 						.frame(width: 40, alignment: .trailing)
@@ -239,7 +239,7 @@ extension EventDescriptionView {
 						}
 					}) {
 						Image(systemName: actionViewModel.isLiked ? "heart.fill" : "heart")
-							.foregroundColor(actionViewModel.isLiked ? .red : .gray)
+							.foregroundColor(actionViewModel.isLiked ? .red : .black)
 							.frame(width: 20, height: 20)
 					}
 				}

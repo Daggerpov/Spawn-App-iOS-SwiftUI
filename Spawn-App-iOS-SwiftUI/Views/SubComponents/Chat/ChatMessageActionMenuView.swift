@@ -12,12 +12,14 @@ struct ChatMessageActionMenuView: View {
             // Like button
             Button {
                 Task {
-                    await viewModel.toggleLike(for: chatMessage)
+                    // Update UI immediately for better feedback
+                    viewModel.isLiked.toggle()
                     dismiss()
+                    await viewModel.toggleLike(for: chatMessage)
                 }
             } label: {
                 Label(viewModel.isLiked ? "Unlike" : "Like", systemImage: viewModel.isLiked ? "heart.fill" : "heart")
-                    .foregroundColor(viewModel.isLiked ? .red : .black)
+                    .foregroundColor(viewModel.isLiked ? .red : .primary)
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 24)
