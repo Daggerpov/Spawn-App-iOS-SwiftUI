@@ -26,21 +26,22 @@ struct FeedbackView: View {
         NavigationView {
             VStack(spacing: 20) {
                 // Feedback type selector
-                VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 10) {
                     Text("Feedback Type")
                         .font(.headline)
                         .foregroundColor(universalAccentColor)
                     
-                    Picker("Feedback Type", selection: $selectedType) {
+                    Picker("", selection: $selectedType) {
                         ForEach(FeedbackType.allCases) { type in
-                            HStack {
+                            VStack {
                                 Image(systemName: type.iconName)
                                 Text(type.displayName)
                             }
                             .tag(type)
+                            .foregroundColor(universalAccentColor)
                         }
                     }
-                    .pickerStyle(SegmentedPickerStyle())
+//                    .pickerStyle(())
                 }
                 .padding(.horizontal)
                 
@@ -51,7 +52,7 @@ struct FeedbackView: View {
                         .foregroundColor(universalAccentColor)
                     
                     TextEditor(text: $message)
-                        .frame(minHeight: 200)
+                        .frame(minHeight: 100)
                         .padding(12)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
@@ -125,9 +126,6 @@ struct FeedbackView: View {
             }
             .padding(.top, 20)
             .navigationBarTitle("Send Feedback", displayMode: .inline)
-            .navigationBarItems(trailing: Button("Cancel") {
-                dismiss()
-            })
             .background(universalBackgroundColor.edgesIgnoringSafeArea(.all))
         }
     }

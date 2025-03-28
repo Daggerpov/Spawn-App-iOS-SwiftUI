@@ -253,7 +253,7 @@ struct ProfileView: View {
 								HStack {
 									Image(systemName: "bell.fill")
 										.foregroundColor(.white)
-									Text("Notification")
+									Text("Notifications")
 										.font(.headline)
 										.foregroundColor(.white)
 								}
