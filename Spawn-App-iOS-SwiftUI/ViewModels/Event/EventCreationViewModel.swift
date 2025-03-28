@@ -17,7 +17,12 @@ class EventCreationViewModel: ObservableObject {
 
 	@Published var selectedTags: [FullFriendTagDTO] = []
 	@Published var selectedFriends: [FullFriendUserDTO] = []
-
+	
+	// Validation properties
+	@Published var isTitleValid: Bool = true
+	@Published var isInvitesValid: Bool = true
+	@Published var isFormValid: Bool = false
+	
 	private var apiService: IAPIService
 	
 	// Reference to the FeedViewModel for refreshing events
@@ -52,8 +57,30 @@ class EventCreationViewModel: ObservableObject {
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}
+	
+	// Validates all form fields and returns if the form is valid
+	func validateEventForm() {
+		// Check title
+		let trimmedTitle = event.title?.trimmingCharacters(in: .whitespaces) ?? ""
+		isTitleValid = !trimmedTitle.isEmpty
+		
+		// Check if at least one friend or tag is invited
+		isInvitesValid = !selectedFriends.isEmpty || !selectedTags.isEmpty
+		
+		// Update overall form validity
+		isFormValid = isTitleValid && isInvitesValid
+	}
 
 	func createEvent() async {
+		// Validate form before proceeding
+		validateEventForm()
+		guard isFormValid else {
+			await MainActor.run {
+				creationMessage = "Please fix the errors before creating the event."
+			}
+			return
+		}
+		
 		// Ensure times are set if not already provided
 		if event.startTime == nil {
 			event.startTime = combineDateAndTime(selectedDate, time: Date())
