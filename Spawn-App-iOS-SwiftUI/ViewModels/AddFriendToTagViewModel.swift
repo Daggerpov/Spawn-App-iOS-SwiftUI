@@ -79,6 +79,11 @@ class AddFriendToTagViewModel: ObservableObject {
 					parameters: ["friendTagId": friendTagId.uuidString])
 				
 				print("Successfully added friends to tag")
+                
+                // Post a notification that friends were added to a tag
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .friendsAddedToTag, object: friendTagId)
+                }
 			} catch {
 				print("Error adding friends to tag: \(error.localizedDescription)")
 				await MainActor.run {

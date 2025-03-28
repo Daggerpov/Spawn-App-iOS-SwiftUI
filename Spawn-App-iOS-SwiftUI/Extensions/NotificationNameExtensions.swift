@@ -6,4 +6,7 @@ extension Notification.Name {
     
     // Notification sent when user logs out
     static let userDidLogout = Notification.Name("userDidLogout")
+    
+    // Notifications for tag management
+    static let friendsAddedToTag = Notification.Name("friendsAddedToTag")
 } 

@@ -50,7 +50,25 @@ struct TagsTabView: View {
 			Task {
 				await viewModel.fetchTags()
 			}
+            
+            // Add observer for friendsAddedToTag notification
+            NotificationCenter.default.addObserver(
+                forName: .friendsAddedToTag,
+                object: nil,
+                queue: .main
+            ) { notification in
+                Task {
+                    // If there's a specific tag ID that was updated, we could handle that here
+                    // For now, refresh all tags
+                    print("TagsTabView received friendsAddedToTag notification")
+                    await refreshTags()
+                }
+            }
 		}
+        .onDisappear {
+            // Remove the observer when view disappears
+            NotificationCenter.default.removeObserver(self, name: .friendsAddedToTag, object: nil)
+        }
 		.onChange(of: creationStatus) { newValue in
 			if newValue == .notCreating {
 				Task {
