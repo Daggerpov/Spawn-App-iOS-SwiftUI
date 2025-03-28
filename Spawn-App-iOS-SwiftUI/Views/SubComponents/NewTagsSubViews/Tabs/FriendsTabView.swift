@@ -217,6 +217,11 @@ if let pfp = friend.profilePicture {
 										.font(.system(size: 16, weight: .bold))
 										.foregroundColor(
 											universalBackgroundColor)
+                                        
+                                    // Display full name
+                                    Text(FormatterService.shared.formatName(user: friend))
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(universalBackgroundColor.opacity(0.9))
 
 									FriendTagsForFriendView(friend: friend)
 								}

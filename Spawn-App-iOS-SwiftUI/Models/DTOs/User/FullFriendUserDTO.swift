@@ -8,7 +8,7 @@
 import Foundation
 
 /// matches `FullFriendUserDTO` in the back-end
-struct FullFriendUserDTO: Identifiable, Codable, Hashable {
+struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	static func == (lhs: FullFriendUserDTO, rhs: FullFriendUserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
