@@ -27,7 +27,7 @@ struct TagsTabView: View {
 
 	// Function to refresh tags data
 	func refreshTags() async {
-		await viewModel.fetchTags()
+		await viewModel.fetchAllData()
 	}
 
 	var body: some View {
@@ -48,7 +48,7 @@ struct TagsTabView: View {
 		}
 		.onAppear {
 			Task {
-				await viewModel.fetchTags()
+				await viewModel.fetchAllData()
 			}
             
             // Add observer for friendsAddedToTag notification
@@ -72,7 +72,7 @@ struct TagsTabView: View {
 		.onChange(of: creationStatus) { newValue in
 			if newValue == .notCreating {
 				Task {
-					await viewModel.fetchTags()
+					await viewModel.fetchAllData()
 				}
 			}
 		}

@@ -11,6 +11,7 @@ class AddFriendToTagViewModel: ObservableObject {
 	@Published var friends: [BaseUserDTO] = []
 	@Published var selectedFriends: [BaseUserDTO] = []
 	@Published var errorMessage: String? = nil
+	@Published var isLoading: Bool = false
 
 	var userId: UUID
 	var apiService: IAPIService
@@ -18,6 +19,23 @@ class AddFriendToTagViewModel: ObservableObject {
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
 		self.apiService = apiService
+	}
+
+	// Fetch all data in parallel
+	func fetchAllData(friendTagId: UUID) async {
+		await MainActor.run {
+			isLoading = true
+		}
+		
+		// Create a task group to run operations in parallel
+		await withTaskGroup(of: Void.self) { group in
+			group.addTask { await self.fetchFriendsToAddToTag(friendTagId: friendTagId) }
+			// Add other fetches here if needed in the future
+		}
+		
+		await MainActor.run {
+			isLoading = false
+		}
 	}
 
 	func fetchFriendsToAddToTag(friendTagId: UUID) async {
@@ -69,6 +87,10 @@ class AddFriendToTagViewModel: ObservableObject {
 			return
 		}
 		
+		await MainActor.run {
+			isLoading = true
+		}
+		
 		if let url = URL(
 			string: APIService.baseURL + "friendTags/bulkAddFriendsToTag")
 		{
@@ -83,6 +105,7 @@ class AddFriendToTagViewModel: ObservableObject {
                 // Post a notification that friends were added to a tag
                 await MainActor.run {
                     NotificationCenter.default.post(name: .friendsAddedToTag, object: friendTagId)
+                    isLoading = false
                 }
 			} catch {
 				print("Error adding friends to tag: \(error.localizedDescription)")
@@ -90,9 +113,14 @@ class AddFriendToTagViewModel: ObservableObject {
 					print(
 						"Error adding friends to tag: \(apiService.errorMessage ?? "")"
 					)
+                    isLoading = false
 				}
 			}
-		}
+		} else {
+            await MainActor.run {
+                isLoading = false
+            }
+        }
 	}
 
 }
