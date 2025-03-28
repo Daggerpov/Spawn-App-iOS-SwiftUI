@@ -28,15 +28,51 @@ struct EventCreationView: View {
 		NavigationStack {
 			ScrollView {
 				VStack(alignment: .leading, spacing: 16) {
-					EventInputFieldLabel(text: "Event Name")
-					EventInputField(value: $viewModel.event.title)
-						.padding(.bottom, 8)
+					VStack(alignment: .leading, spacing: 10) {
+						HStack {
+							EventInputFieldLabel(text: "Event Name")
+							
+							if !viewModel.isTitleValid {
+								Image(systemName: "exclamationmark.circle.fill")
+									.foregroundColor(.red)
+									.font(.system(size: 12))
+							}
+						}
+						
+						EventInputField(value: $viewModel.event.title, isValid: viewModel.isTitleValid)
+						
+						if !viewModel.isTitleValid {
+							Text("Event name is required")
+								.font(.caption)
+								.foregroundColor(.red)
+								.padding(.horizontal, 5)
+								.transition(.opacity)
+						}
+					}
+					.padding(.bottom, 8)
 
 					VStack(alignment: .leading, spacing: 10) {
-						EventInputFieldLabel(text: "Invite Friends")
+						HStack {
+							EventInputFieldLabel(text: "Invite Friends")
+							
+							if !viewModel.isInvitesValid {
+								Image(systemName: "exclamationmark.circle.fill")
+									.foregroundColor(.red)
+									.font(.system(size: 12))
+							}
+						}
+						
 						invitationsRowView
-							.padding(.bottom, 8)
+						
+						if !viewModel.isInvitesValid {
+							Text("At least one friend or tag must be invited")
+								.font(.caption)
+								.foregroundColor(.red)
+								.padding(.horizontal, 5)
+								.transition(.opacity)
+						}
 					}
+					.padding(.bottom, 8)
 
 					HStack(spacing: 20) {
 						VStack(alignment: .leading, spacing: 10) {
@@ -75,19 +111,33 @@ struct EventCreationView: View {
 									}
 								}
 							}
-						)
+						),
+						isValid: true
 					)
 					.padding(.bottom, 8)
 
 					EventInputFieldLabel(text: "Note")
-					EventInputField(value: $viewModel.event.note)
+					EventInputField(value: $viewModel.event.note, isValid: true)
 						.padding(.bottom, 16)
 
+					// Error message display
+					if !viewModel.creationMessage.isEmpty {
+						Text(viewModel.creationMessage)
+							.font(.caption)
+							.foregroundColor(.red)
+							.padding(.bottom, 8)
+							.multilineTextAlignment(.center)
+							.frame(maxWidth: .infinity)
+					}
+
 					Button(action: {
-						Task {
-							await viewModel.createEvent()
+						viewModel.validateEventForm()
+						if viewModel.isFormValid {
+							Task {
+								await viewModel.createEvent()
+							}
+							closeCallback()
 						}
-						closeCallback()
 					}) {
 						HStack {
 							Image(systemName: "star.fill")
@@ -103,9 +153,19 @@ struct EventCreationView: View {
 						.padding()
 						.background(
 							RoundedRectangle(cornerRadius: 15).fill(
-								universalSecondaryColor)
+								viewModel.isFormValid ? universalSecondaryColor : Color.gray)
 						)
 						.foregroundColor(.white)
+					}
+					.disabled(!viewModel.isFormValid)
+					.onChange(of: viewModel.event.title) { _ in
+						viewModel.validateEventForm()
+					}
+					.onChange(of: viewModel.selectedFriends) { _ in
+						viewModel.validateEventForm()
+					}
+					.onChange(of: viewModel.selectedTags) { _ in
+						viewModel.validateEventForm()
 					}
 					.padding(.top, 24) // Increased padding
 				}
@@ -119,6 +179,9 @@ struct EventCreationView: View {
 			}
 			.scrollIndicators(.hidden) // Hide scroll indicators
 			.background(universalBackgroundColor)
+			.onAppear {
+				viewModel.validateEventForm()
+			}
 		}
 		.background(universalBackgroundColor)
 		.cornerRadius(universalRectangleCornerRadius)
@@ -141,6 +204,7 @@ struct EventInputFieldLabel: View {
 struct EventInputField: View {
 	var iconName: String?
 	@Binding var value: String?
+	var isValid: Bool = true
 
 	var body: some View {
 		HStack {
@@ -171,7 +235,7 @@ struct EventInputField: View {
 				.overlay(
 					RoundedRectangle(cornerRadius: 15)
 						.inset(by: 0.75)
-						.stroke(.black, lineWidth: 1.5)
+						.stroke(isValid ? .black : .red, lineWidth: 1.5)
 				)
 		)
 	}
