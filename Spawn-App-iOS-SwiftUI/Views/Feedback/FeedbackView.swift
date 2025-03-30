@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import PhotosUI
 
 struct FeedbackView: View {
     @StateObject private var feedbackService = FeedbackService()
@@ -13,6 +14,8 @@ struct FeedbackView: View {
     
     @State private var selectedType: FeedbackType = .GENERAL_FEEDBACK
     @State private var message: String = ""
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var selectedImage: UIImage?
     
     let userId: UUID?
     let email: String?
@@ -35,14 +38,13 @@ struct FeedbackView: View {
                         ForEach(FeedbackType.allCases) { type in
                             VStack {
                                 Image(systemName: type.iconName)
-                                    .foregroundColor(universalAccentColor)
                                 Text(type.displayName)
-                                    .foregroundColor(universalAccentColor)
                             }
                             .tag(type)
+                            .foregroundColor(universalAccentColor)
                         }
                     }
-                    .accentColor(universalAccentColor)
+//                    .pickerStyle(())
                 }
                 .padding(.horizontal)
                 
@@ -53,20 +55,18 @@ struct FeedbackView: View {
                         .foregroundColor(universalAccentColor)
                     
                     TextEditor(text: $message)
-                        .foregroundColor(universalAccentColor)
                         .frame(minHeight: 100)
                         .padding(12)
-                        .background(universalBackgroundColor)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(universalAccentColor, lineWidth: 1.5)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                         )
                         .overlay(
                             Group {
                                 if message.isEmpty {
                                     HStack(alignment: .top) {
                                         Text("Share your thoughts, report a bug, or suggest a feature...")
-                                            .foregroundColor(universalPlaceHolderTextColor)
+                                            .foregroundColor(.gray.opacity(0.7))
                                             .padding(.leading, 16)
                                             .padding(.top, 16)
                                         Spacer()
@@ -77,6 +77,57 @@ struct FeedbackView: View {
                 }
                 .padding(.horizontal)
                 
+                // Image picker
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Attach Image (Optional)")
+                        .font(.headline)
+                        .foregroundColor(universalAccentColor)
+                    
+                    HStack {
+                        Spacer()
+                        
+                        if let selectedImage = selectedImage {
+                            Image(uiImage: selectedImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(maxHeight: 150)
+                                .cornerRadius(8)
+                            
+                            Button(action: {
+                                self.selectedImage = nil
+                                self.selectedItem = nil
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 24))
+                                    .background(Circle().fill(Color.white))
+                            }
+                            .offset(x: -10, y: -60)
+                        } else {
+                            PhotosPicker(selection: $selectedItem, matching: .images) {
+                                VStack {
+                                    Image(systemName: "photo")
+                                        .font(.system(size: 40))
+                                    Text("Select Image")
+                                }
+                                .foregroundColor(universalAccentColor)
+                                .frame(maxWidth: 150, maxHeight: 100)
+                                .padding()
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                            }
+                        }
+                        
+                        Spacer()
+                    }
+                    .onChange(of: selectedItem) { newItem in
+                        loadTransferable(from: newItem)
+                    }
+                }
+                .padding(.horizontal)
+                
                 // Submit button
                 Button(action: {
                     Task {
@@ -84,7 +135,8 @@ struct FeedbackView: View {
                             type: selectedType,
                             message: message,
                             userId: userId,
-                            email: email
+                            email: email,
+                            image: selectedImage
                         )
                     }
                 }) {
@@ -100,8 +152,8 @@ struct FeedbackView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(message.isEmpty || feedbackService.isSubmitting ? universalPassiveColor : universalSecondaryColor)
-                    .cornerRadius(universalRectangleCornerRadius)
+                    .background(universalAccentColor)
+                    .cornerRadius(10)
                 }
                 .disabled(message.isEmpty || feedbackService.isSubmitting)
                 .padding(.horizontal)
@@ -109,7 +161,7 @@ struct FeedbackView: View {
                 // Success/Error message
                 if let successMessage = feedbackService.successMessage {
                     Text(successMessage)
-                        .foregroundColor(Color.green)
+                        .foregroundColor(.green)
                         .padding()
                         .onAppear {
                             // Dismiss after showing success message
@@ -121,7 +173,7 @@ struct FeedbackView: View {
                 
                 if let errorMessage = feedbackService.errorMessage {
                     Text(errorMessage)
-                        .foregroundColor(Color.red)
+                        .foregroundColor(.red)
                         .padding()
                 }
                 
@@ -130,10 +182,24 @@ struct FeedbackView: View {
             .padding(.top, 20)
             .navigationBarTitle("Send Feedback", displayMode: .inline)
             .background(universalBackgroundColor.edgesIgnoringSafeArea(.all))
-            .foregroundColor(universalAccentColor)
         }
-        .accentColor(universalAccentColor)
-        .colorScheme(.light) // Force light mode appearance
+    }
+    
+    private func loadTransferable(from item: PhotosPickerItem?) {
+        guard let item = item else { return }
+        
+        item.loadTransferable(type: Data.self) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let data):
+                    if let image = UIImage(data: data) {
+                        self.selectedImage = image
+                    }
+                case .failure(let error):
+                    print("Photo picker error: \(error)")
+                }
+            }
+        }
     }
 }
 
