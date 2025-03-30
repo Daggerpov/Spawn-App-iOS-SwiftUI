@@ -202,7 +202,7 @@ struct FeedbackView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 // Feedback type selector
                 FeedbackTypeSelector(selectedType: $selectedType)
@@ -241,7 +241,7 @@ struct FeedbackView: View {
                 Spacer()
             }
             .padding(.top, 20)
-            .navigationBarBackButtonHidden(true)
+            .navigationBarBackButtonHidden()
             .background(universalBackgroundColor.edgesIgnoringSafeArea(.all))
             .toolbarColorScheme(.light, for: .navigationBar)
             .toolbarBackground(universalBackgroundColor, for: .navigationBar)
