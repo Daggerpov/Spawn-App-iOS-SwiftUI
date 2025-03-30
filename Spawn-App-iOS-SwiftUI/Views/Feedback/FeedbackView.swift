@@ -37,6 +37,7 @@ struct FeedbackTypeSelector: View {
 // MARK: - Message Input Component
 struct MessageInputView: View {
     @Binding var message: String
+    @FocusState private var isInputFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -44,29 +45,40 @@ struct MessageInputView: View {
                 .font(.headline)
                 .foregroundColor(universalAccentColor)
             
-            TextEditor(text: $message)
-                .foregroundColor(universalAccentColor)
-                .scrollContentBackground(.hidden) // This hides the default background
-                .background(Color.white)
-                .frame(minHeight: 100)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
-                .overlay(
-                    Group {
-                        if message.isEmpty {
-                            HStack(alignment: .top) {
-                                Text("Share your thoughts, report a bug, or suggest a feature...")
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(.leading, 16)
-                                    .padding(.top, 16)
-                                Spacer()
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $message)
+                    .foregroundColor(universalAccentColor)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.white)
+                    .frame(minHeight: 100)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .focused($isInputFocused)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") {
+                                isInputFocused = false
                             }
                         }
                     }
-                )
+                
+                if message.isEmpty && !isInputFocused {
+                    Text("Share your thoughts, report a bug, or suggest a feature...")
+                        .foregroundColor(Color.gray)
+                        .padding(.leading, 16)
+                        .padding(.top, 16)
+                        .allowsHitTesting(false)
+                }
+            }
+            .onTapGesture {
+                if !isInputFocused {
+                    isInputFocused = true
+                }
+            }
         }
         .padding(.horizontal)
     }
