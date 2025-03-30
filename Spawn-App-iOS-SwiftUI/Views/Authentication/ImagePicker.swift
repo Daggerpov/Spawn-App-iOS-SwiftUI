@@ -46,20 +46,25 @@ struct ImagePicker: UIViewControllerRepresentable {
 				guard let self = self else { return }
 				
 				if let croppedImage = croppedImage {
-					// Make a strong reference to the image so it's not deallocated
-					let finalImage = croppedImage
+					// Ensure strong reference to the cropped image and resize if needed
+					let finalImage = self.resizeImageIfNeeded(croppedImage)
 					
 					// Ensure we're on the main thread
 					DispatchQueue.main.async {
-						// Set the image reference directly
-						self.parent.selectedImage = finalImage
+						print("🖼️ Setting cropped image in parent, size: \(finalImage.size)")
+						// Set to nil first to force a refresh, then set the new image
+						self.parent.selectedImage = nil
 						
-						// Print debug info
-						print("🖼️ Cropped image set, size: \(finalImage.size)")
-						
-						// Use a longer delay to ensure binding has time to propagate
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-							self.parent.presentationMode.wrappedValue.dismiss()
+						// Small delay to ensure nil change is processed
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+							// Set the image reference directly and force immediate UI update
+							self.parent.selectedImage = finalImage
+							print("🖼️ Cropped image set successfully, size: \(finalImage.size)")
+							
+							// Dismiss with slight delay to ensure binding has registered
+							DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+								self.parent.presentationMode.wrappedValue.dismiss()
+							}
 						}
 					}
 				} else {
@@ -77,6 +82,30 @@ struct ImagePicker: UIViewControllerRepresentable {
 		
 		func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
 			parent.presentationMode.wrappedValue.dismiss()
+		}
+		
+		// Helper method to resize large images
+		private func resizeImageIfNeeded(_ image: UIImage) -> UIImage {
+			let maxDimension: CGFloat = 1000.0 // Set a reasonable max size
+			
+			// Check if image needs resizing
+			if image.size.width > maxDimension || image.size.height > maxDimension {
+				print("🔍 Resizing image from \(image.size) to max dimension \(maxDimension)")
+				let scale = maxDimension / max(image.size.width, image.size.height)
+				let newWidth = image.size.width * scale
+				let newHeight = image.size.height * scale
+				let newSize = CGSize(width: newWidth, height: newHeight)
+				
+				UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
+				image.draw(in: CGRect(origin: .zero, size: newSize))
+				let resizedImage = UIGraphicsGetImageFromCurrentImageContext()!
+				UIGraphicsEndImageContext()
+				
+				print("🔍 Resized image to \(resizedImage.size)")
+				return resizedImage
+			}
+			
+			return image
 		}
 	}
 }
@@ -118,17 +147,16 @@ class SwiftyCropperViewController: UIViewController {
 			) { [weak self] croppedImage in
 				guard let self = self else { return }
 				
-				// Ensure we have a strong reference to the cropped image
+				// Ensure strong reference to the cropped image
 				if let croppedImage = croppedImage {
-					print("✂️ Image cropped, size: \(croppedImage.size)")
+					let finalImage = croppedImage
+					print("✂️ Image cropped successfully, size: \(finalImage.size)")
 					
-					// Use DispatchQueue to ensure completion happens after crop view is dismissed
+					// Ensure proper ordering of operations and strong references
 					DispatchQueue.main.async {
-						// Dismiss first, then call completion handler to avoid race conditions
 						self.dismiss(animated: true) {
-							// Ensure the completion is called after dismissal is complete
 							DispatchQueue.main.async {
-								self.completion(croppedImage)
+								self.completion(finalImage)
 							}
 						}
 					}

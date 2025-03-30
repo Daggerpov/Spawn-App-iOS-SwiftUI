@@ -195,22 +195,33 @@ struct ProfilePictureSection: View {
 				Image(uiImage: selectedImage)
 					.ProfileImageModifier(imageType: .profilePage)
 					.transition(.opacity)
-					.id("selectedImage-\(Date().timeIntervalSince1970)") // Force refresh with timestamp
+					.id("selectedImage-\(selectedImage.hashValue)-\(Date().timeIntervalSince1970)")
+					.onAppear {
+						print("🔶 Displaying selected image with hash: \(selectedImage.hashValue)")
+					}
 			} else if let profilePictureString = user.profilePicture {
 				if MockAPIService.isMocking {
 					Image(profilePictureString)
 						.ProfileImageModifier(imageType: .profilePage)
 				} else {
-					AsyncImage(url: URL(string: profilePictureString)) {
-						image in
-						image
-							.ProfileImageModifier(
-								imageType: .profilePage)
-					} placeholder: {
-						Circle()
-							.fill(Color.gray)
-							.frame(width: 150, height: 150)
+					AsyncImage(url: URL(string: profilePictureString)) { phase in
+						switch phase {
+						case .empty:
+							ProgressView()
+								.frame(width: 150, height: 150)
+						case .success(let image):
+							image
+								.ProfileImageModifier(imageType: .profilePage)
+								.transition(.opacity.animation(.easeInOut))
+						case .failure:
+							Image(systemName: "person.crop.circle.fill")
+								.ProfileImageModifier(imageType: .profilePage)
+						@unknown default:
+							Image(systemName: "person.crop.circle.fill")
+								.ProfileImageModifier(imageType: .profilePage)
+						}
 					}
+					.id("profilePicture-\(profilePictureString)")
 				}
 			} else {
 				Image(systemName: "person.crop.circle.fill")
@@ -228,16 +239,25 @@ struct ProfilePictureSection: View {
 					)
 					.offset(x: -10, y: -10)
 					.onTapGesture {
+						print("🔍 Opening image picker...")
 						showImagePicker = true
 					}
 			}
 		}
+		.animation(.easeInOut, value: selectedImage != nil)
+		.animation(.easeInOut, value: isImageLoading)
 		.sheet(isPresented: $showImagePicker, onDismiss: {
+			print("🔍 Image picker dismissed, selectedImage: \(selectedImage != nil ? "exists" : "nil")")
 			// Force UI refresh when the picker is dismissed
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				self.isImageLoading = true
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-					self.isImageLoading = false
+			if selectedImage != nil {
+				// Only show loading if we actually have a new image
+				DispatchQueue.main.async {
+					print("🔍 Setting isImageLoading to true after picker dismissal")
+					self.isImageLoading = true
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+						print("🔍 Setting isImageLoading to false after delay")
+						self.isImageLoading = false
+					}
 				}
 			}
 		}) {
@@ -245,16 +265,20 @@ struct ProfilePictureSection: View {
 				.ignoresSafeArea()
 		}
 		.onChange(of: selectedImage) { newImage in
+			print("🔍 selectedImage binding changed to: \(newImage != nil ? "new image" : "nil")")
 			if newImage != nil {
 				// Force UI update when image changes
 				DispatchQueue.main.async {
+					print("🔍 Profile image changed, updating UI...")
 					isImageLoading = true
 					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
 						isImageLoading = false
+						print("🔍 Profile image loading complete")
 					}
 				}
 			}
 		}
+		.id("profilePicture-\(selectedImage?.hashValue ?? 0)-\(user.profilePicture ?? "none")-\(isImageLoading ? "loading" : "ready")-\(Date().timeIntervalSince1970)")
 	}
 }
 
@@ -417,13 +441,16 @@ struct ProfileEditButtonsSection: View {
 	private func saveProfile() {
 		print("🔍 Saving profile changes...")
 		
+		// Set loading state immediately if there's an image
 		isImageLoading = selectedImage != nil
+		
 		Task {
 			// Create a local copy of the selected image before starting async task
 			let imageToUpload = selectedImage
 			
 			// Update profile info first
 			print("🔍 Updating profile text information...")
+			print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName), bio=\(bio)")
 			await userAuth.spawnEditProfile(
 				username: username,
 				firstName: firstName,
@@ -431,22 +458,32 @@ struct ProfileEditButtonsSection: View {
 				bio: bio
 			)
 			
+			// Small delay before processing image update to ensure the text updates are complete
+			try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+			
 			// Update profile picture if selected
 			if let newImage = imageToUpload {
 				print("🔍 Uploading new profile picture...")
 				await userAuth.updateProfilePicture(newImage)
+				
+				// Small delay after image upload to ensure the server has processed it
+				try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 			}
 			
 			// Update local state with the latest data from the user object
-			if let updatedUser = userAuth.spawnUser {
-				username = updatedUser.username
-				firstName = updatedUser.firstName ?? ""
-				lastName = updatedUser.lastName ?? ""
-				bio = updatedUser.bio ?? ""
+			await MainActor.run {
+				if let updatedUser = userAuth.spawnUser {
+					username = updatedUser.username
+					firstName = updatedUser.firstName ?? ""
+					lastName = updatedUser.lastName ?? ""
+					bio = updatedUser.bio ?? ""
+				}
+				
+				// Clear the selected image to force the view to refresh from the server
+				selectedImage = nil
+				isImageLoading = false
+				editingState = .edit
 			}
-			
-			isImageLoading = false
-			editingState = .edit
 		}
 	}
 }
