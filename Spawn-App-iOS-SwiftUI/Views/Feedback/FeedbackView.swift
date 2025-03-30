@@ -25,9 +25,10 @@ struct FeedbackTypeSelector: View {
                         Text(type.displayName)
                     }
                     .tag(type)
-                    .foregroundColor(universalAccentColor)
                 }
             }
+            .tint(universalAccentColor)
+            .accentColor(universalAccentColor)
         }
         .padding(.horizontal)
     }
@@ -240,7 +241,7 @@ struct FeedbackView: View {
                 Spacer()
             }
             .padding(.top, 20)
-            .navigationBarTitle("Send Feedback", displayMode: .inline)
+            .navigationBarBackButtonHidden(true)
             .background(universalBackgroundColor.edgesIgnoringSafeArea(.all))
             .toolbarColorScheme(.light, for: .navigationBar)
             .toolbarBackground(universalBackgroundColor, for: .navigationBar)
@@ -251,8 +252,20 @@ struct FeedbackView: View {
                         .font(.headline)
                         .foregroundColor(universalAccentColor)
                 }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .foregroundColor(universalAccentColor)
+                    }
+                }
             }
         }
+        .accentColor(universalAccentColor) // Set global accent color for the navigation view
     }
     
     private func loadTransferable(from item: PhotosPickerItem?) {
