@@ -44,6 +44,8 @@ struct MessageInputView: View {
                 .foregroundColor(universalAccentColor)
             
             TextEditor(text: $message)
+                .scrollContentBackground(.hidden) // This hides the default background
+                .background(Color.white)
                 .frame(minHeight: 100)
                 .padding(12)
                 .background(
@@ -55,7 +57,7 @@ struct MessageInputView: View {
                         if message.isEmpty {
                             HStack(alignment: .top) {
                                 Text("Share your thoughts, report a bug, or suggest a feature...")
-                                    .foregroundColor(.gray.opacity(0.7))
+                                    .foregroundColor(universalAccentColor)
                                     .padding(.leading, 16)
                                     .padding(.top, 16)
                                 Spacer()
