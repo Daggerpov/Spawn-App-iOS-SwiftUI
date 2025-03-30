@@ -556,13 +556,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
-		// Convert image to data
-		guard let imageData = image.jpegData(compressionQuality: 0.9) else {
+		// Convert image to data with higher quality
+		guard let imageData = image.jpegData(compressionQuality: 0.95) else {
 			print("Failed to convert image to JPEG data")
 			return
 		}
 		
-		print("Starting profile picture update for user \(userId)")
+		print("Starting profile picture update for user \(userId) with image data size: \(imageData.count) bytes")
 		
 		// Use our new dedicated method for profile picture updates
 		do {
@@ -572,6 +572,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				
 				await MainActor.run {
 					self.spawnUser = updatedUser
+					// Force a UI update
 					self.objectWillChange.send()
 					print("Profile successfully updated with new picture: \(updatedUser.profilePicture ?? "nil")")
 				}
@@ -583,7 +584,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Create a URLRequest with PATCH method
 				var request = URLRequest(url: url)
 				request.httpMethod = "PATCH"
-				request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+				request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
 				request.httpBody = imageData
 				
 				print("Fallback: Sending profile picture update request to: \(url)")

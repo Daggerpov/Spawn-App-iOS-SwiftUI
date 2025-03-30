@@ -24,9 +24,12 @@ struct SearchView: View {
 					.foregroundColor(universalAccentColor)
 				TextField(searchPlaceholderText, text: $viewModel.searchText)
 					.foregroundColor(universalAccentColor)
+					.colorScheme(.light)
 					.placeholderColor(
 						color: universalAccentColor, text: searchPlaceholderText
 					)
+					.accentColor(universalAccentColor)
+					.tint(universalAccentColor)
 			}
 			.padding(.vertical, 20)
 			.padding(.horizontal, 15)

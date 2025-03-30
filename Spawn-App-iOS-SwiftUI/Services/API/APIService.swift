@@ -611,7 +611,7 @@ class APIService: IAPIService {
 		// Create the request
 		var request = URLRequest(url: url)
 		request.httpMethod = "PATCH"
-		request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+		request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
 		request.httpBody = imageData
 		
 		// Log request headers

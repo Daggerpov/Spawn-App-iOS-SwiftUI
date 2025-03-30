@@ -18,6 +18,10 @@ struct ProfileView: View {
 	@State private var selectedImage: UIImage?
 	@State private var showImagePicker: Bool = false
 	@State private var isImageLoading: Bool = false
+	@Environment(\.presentationMode) private var presentationMode
+	@Environment(\.dismiss) private var dismiss
+	@State private var showNotification: Bool = false
+	@State private var notificationMessage: String = ""
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	
@@ -37,286 +41,89 @@ struct ProfileView: View {
 
 	var body: some View {
 		NavigationStack {
-			VStack {
-				VStack(alignment: .center, spacing: 16) {
+			ScrollView {
+				VStack(alignment: .center, spacing: 10) {
 					// Profile Picture
-					ZStack(alignment: .bottomTrailing) {
-						if isImageLoading {
-							ProgressView()
-								.frame(width: 150, height: 150)
-						} else if let selectedImage = selectedImage {
-							Image(uiImage: selectedImage)
-								.ProfileImageModifier(imageType: .profilePage)
-								.transition(.opacity)
-								.id("selectedImage") // Force refresh when image changes
-						} else if let profilePictureString = user.profilePicture {
-							if MockAPIService.isMocking {
-								Image(profilePictureString)
-									.ProfileImageModifier(imageType: .profilePage)
-							} else {
-								AsyncImage(url: URL(string: profilePictureString)) {
-									image in
-									image
-										.ProfileImageModifier(
-											imageType: .profilePage)
-								} placeholder: {
-									Circle()
-										.fill(Color.gray)
-										.frame(width: 150, height: 150)
-								}
-							}
-						} else {
-							Image(systemName: "person.crop.circle.fill")
-								.ProfileImageModifier(imageType: .profilePage)
-						}
+					ProfilePictureSection(
+						user: user,
+						selectedImage: $selectedImage,
+						showImagePicker: $showImagePicker,
+						isImageLoading: $isImageLoading,
+						isEditing: editingState == .save,
+						isCurrentUserProfile: isCurrentUserProfile
+					)
+					.padding(.top, 5)
 
-						// Only show the plus button for current user's profile when in edit mode
-						if isCurrentUserProfile && editingState == .save {
-							Circle()
-								.fill(profilePicPlusButtonColor)
-								.frame(width: 25, height: 25)
-								.overlay(
-									Image(systemName: "plus")
-										.foregroundColor(universalBackgroundColor)
-								)
-								.offset(x: -10, y: -10)
-								.onTapGesture {
-									showImagePicker = true
-								}
-						}
-					}
-					.padding(.top, 20)
-					.sheet(isPresented: $showImagePicker, onDismiss: {
-						print("Image picker dismissed. Selected image exists: \(selectedImage != nil)")
-					}) {
-						ImagePicker(selectedImage: $selectedImage)
-							.ignoresSafeArea()
-					}
-					.onChange(of: selectedImage) { newImage in
-						print("Selected image changed: \(newImage != nil)")
-					}
-
-					VStack(alignment: .leading, spacing: 20) {
-						// Name field
-						if isCurrentUserProfile && editingState == .save {
-							HStack {
-								Text("First Name")
-									.font(.headline)
-									.frame(width: 100, alignment: .leading)
-								Spacer()
-								TextField("First Name", text: $firstName)
-									.multilineTextAlignment(.trailing)
-									.font(.body)
-							}
-							.foregroundColor(universalAccentColor)
-							
-							HStack {
-								Text("Last Name")
-									.font(.headline)
-									.frame(width: 100, alignment: .leading)
-								Spacer()
-								TextField("Last Name", text: $lastName)
-									.multilineTextAlignment(.trailing)
-									.font(.body)
-							}
-							.foregroundColor(universalAccentColor)
-						} else {
-							ProfileField(
-								label: "Name",
-								value: "\(user.firstName ?? "") \(user.lastName ?? "")"
-							)
-						}
-						
-						// Username field - editable when in edit mode
-						if isCurrentUserProfile && editingState == .save {
-							HStack {
-								Text("Username")
-									.font(.headline)
-									.frame(width: 100, alignment: .leading)
-								Spacer()
-								TextField("Username", text: $username)
-									.multilineTextAlignment(.trailing)
-									.font(.body)
-							}
-							.foregroundColor(universalAccentColor)
-						} else {
-							ProfileField(label: "Username", value: user.username)
-						}
-						
-						// Only show email for current user's profile
-						if isCurrentUserProfile {
-							ProfileField(label: "Email", value: user.email)
-						}
-						
-						// Bio field is editable only for current user's profile
-						if isCurrentUserProfile {
-							if editingState == .save {
-								BioField(
-									label: "Bio",
-									bio: $bio)
-							} else {
-								ProfileField(label: "Bio", value: bio)
-							}
-						} else {
-							ProfileField(label: "Bio", value: bio)
-						}
-					}
+					// Profile information fields
+					ProfileInfoSection(
+						user: user,
+						bio: $bio,
+						username: $username,
+						firstName: $firstName,
+						lastName: $lastName,
+						isCurrentUserProfile: isCurrentUserProfile,
+						editingState: editingState
+					)
 					.padding(.horizontal)
-					.padding(.vertical, 10)
+					.padding(.vertical, 6)
 
 					Divider().background(universalAccentColor)
-						.padding(.vertical, 10)
+						.padding(.vertical, 6)
 
-					// Only show edit button for current user's profile
+					// Edit/Save/Cancel buttons
 					if isCurrentUserProfile {
-						Button(action: {
-							switch editingState {
-							case .edit:
-								print("🔍 Starting profile edit mode")
-								editingState = .save
-							case .save:
-								print("🔍 Saving profile changes...")
-								print("🔍 Current values - username: \(username), firstName: \(firstName), lastName: \(lastName), bio: \(bio)")
-								print("🔍 Has new image: \(selectedImage != nil)")
-								
-								isImageLoading = selectedImage != nil
-								Task {
-									// Create a local copy of the selected image before starting async task
-									let imageToUpload = selectedImage
-									
-									// Update profile info first
-									print("🔍 Updating profile text information...")
-									await userAuth.spawnEditProfile(
-										username: username,
-										firstName: firstName,
-										lastName: lastName,
-										bio: bio
-									)
-									
-									// Update profile picture if selected
-									if let newImage = imageToUpload {
-										print("🔍 Uploading new profile picture...")
-										await userAuth.updateProfilePicture(newImage)
-										print("🔍 Profile picture upload completed")
-									}
-									
-									// Update local state with the latest data from the user object
-									if let updatedUser = userAuth.spawnUser {
-										print("🔍 Retrieved updated user data:")
-										print("  - Username: \(updatedUser.username)")
-										print("  - Name: \(updatedUser.firstName ?? "nil") \(updatedUser.lastName ?? "nil")")
-										print("  - Bio: \(updatedUser.bio ?? "nil")")
-										print("  - Profile Picture: \(updatedUser.profilePicture ?? "nil")")
-										
-										username = updatedUser.username
-										firstName = updatedUser.firstName ?? ""
-										lastName = updatedUser.lastName ?? ""
-										bio = updatedUser.bio ?? ""
-										
-										// Force view update
-										Task { @MainActor in
-											print("🔍 Forcing UI refresh with updated data")
-										}
-									} else {
-										print("❌ ERROR: Updated user data is nil after profile update")
-									}
-									
-									isImageLoading = false
-									editingState = .edit
-									print("🔍 Profile edit complete")
-								}
-							}
-						}) {
-							Text(editingState.displayText())
-								.font(.headline)
-								.foregroundColor(universalAccentColor)
-								.frame(maxWidth: 135)
-								.padding()
-								.background(
-									RoundedRectangle(
-										cornerRadius: universalRectangleCornerRadius
-									)
-									.stroke(universalAccentColor, lineWidth: 1)
-								)
-						}
-						.padding(.bottom, 20)
-						.disabled(isImageLoading)
+						ProfileEditButtonsSection(
+							editingState: $editingState,
+							bio: $bio,
+							username: $username,
+							firstName: $firstName,
+							lastName: $lastName,
+							selectedImage: $selectedImage,
+							isImageLoading: $isImageLoading,
+							userAuth: userAuth,
+							showNotification: $showNotification,
+							notificationMessage: $notificationMessage
+						)
+						.padding(.bottom, 10)
 					}
 
 					Spacer()
 
-					// Only show log out and delete account buttons for current user's profile
-					if isCurrentUserProfile {
-						VStack(spacing: 15) {
-							// Notification Settings Button
-							NavigationLink(destination: NotificationSettingsView()) {
-								HStack {
-									Image(systemName: "bell.fill")
-										.foregroundColor(.white)
-									Text("Notifications")
-										.font(.headline)
-										.foregroundColor(.white)
-								}
-								.padding()
-								.frame(maxWidth: 170)
-								.background(universalAccentColor)
-								.cornerRadius(20)
-							}
-							
-							// Feedback Button
-							NavigationLink(destination: FeedbackView(userId: user.id, email: user.email)) {
-								HStack {
-									Image(systemName: "message.fill")
-										.foregroundColor(.white)
-									Text("Feedback")
-										.font(.headline)
-										.foregroundColor(.white)
-								}
-								.padding()
-								.frame(maxWidth: 170)
-								.background(universalAccentColor)
-								.cornerRadius(20)
-							}
-						
-							NavigationLink(destination: {
-								LaunchView()
-									.navigationBarTitle("")
-									.navigationBarHidden(true)
-							}) {
-								Text("Log Out")
-									.font(.headline)
-									.foregroundColor(.white)
-									.padding()
-									.frame(maxWidth: 170)
-									.background(profilePicPlusButtonColor)
-									.cornerRadius(20)
-							}
-							.simultaneousGesture(
-								TapGesture().onEnded {
-									if userAuth.isLoggedIn {
-										userAuth.signOut()
-									}
-								})
-
-							// Delete Account Button
-							Button(action: {
-								userAuth.activeAlert = .deleteConfirmation
-							}) {
-								Text("Delete Account")
-									.font(.headline)
-									.foregroundColor(.white)
-									.padding()
-									.frame(maxWidth: 170)
-									.background(Color.red)
-									.cornerRadius(20)
-							}
-						}
-						.padding(.bottom, 30)
+					// Bottom buttons
+					if isCurrentUserProfile && editingState == .edit {
+						ProfileActionButtonsSection(
+							user: user,
+							userAuth: userAuth
+						)
+						.padding(.bottom, 20)
 					}
 				}
 				.padding(.horizontal)
+				.padding(.top, 0)
 			}
-			.background(universalBackgroundColor)
+			.background(universalBackgroundColor.ignoresSafeArea())
+			.navigationBarBackButtonHidden()
+			.toolbarBackground(universalBackgroundColor, for: .navigationBar)
+			.toolbar {
+				ToolbarItem(placement: .principal) {
+					Text("Profile")
+						.font(.headline)
+						.foregroundColor(universalAccentColor)
+				}
+				ToolbarItem(placement: .navigationBarLeading) {
+					Button(action: {
+						dismiss()
+					}) {
+						HStack {
+							Image(systemName: "chevron.left")
+							Text("Back")
+						}
+						.foregroundColor(universalAccentColor)
+					}
+					// Only show back button when in a navigation hierarchy
+					.opacity(presentationMode.wrappedValue.isPresented ? 1 : 0)
+				}
+			}
 			.alert(item: $userAuth.activeAlert) { alertType in
 				switch alertType {
 				case .deleteConfirmation:
@@ -350,6 +157,410 @@ struct ProfileView: View {
 						dismissButton: .default(Text("OK"))
 					)
 				}
+			}
+			.onAppear {
+				// Update local state from userAuth.spawnUser when view appears
+				if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
+					bio = currentUser.bio ?? ""
+					username = currentUser.username
+					firstName = currentUser.firstName ?? ""
+					lastName = currentUser.lastName ?? ""
+				}
+			}
+			.onChange(of: userAuth.spawnUser) { newUser in
+				// Update local state whenever spawnUser changes
+				if isCurrentUserProfile, let currentUser = newUser {
+					bio = currentUser.bio ?? ""
+					username = currentUser.username
+					firstName = currentUser.firstName ?? ""
+					lastName = currentUser.lastName ?? ""
+				}
+			}
+		}
+		.accentColor(universalAccentColor)
+		.toast(isShowing: $showNotification, message: notificationMessage, duration: 3.0)
+	}
+}
+
+// MARK: - Profile Picture Section
+struct ProfilePictureSection: View {
+	let user: BaseUserDTO
+	@Binding var selectedImage: UIImage?
+	@Binding var showImagePicker: Bool
+	@Binding var isImageLoading: Bool
+	let isEditing: Bool
+	let isCurrentUserProfile: Bool
+	
+	var body: some View {
+		ZStack(alignment: .bottomTrailing) {
+			if isImageLoading {
+				ProgressView()
+					.frame(width: 150, height: 150)
+			} else if let selectedImage = selectedImage {
+				Image(uiImage: selectedImage)
+					.ProfileImageModifier(imageType: .profilePage)
+					.transition(.opacity)
+					.id("selectedImage-\(UUID().uuidString)")
+			} else if let profilePictureString = user.profilePicture {
+				if MockAPIService.isMocking {
+					Image(profilePictureString)
+						.ProfileImageModifier(imageType: .profilePage)
+				} else {
+					AsyncImage(url: URL(string: profilePictureString)) { phase in
+						switch phase {
+						case .empty:
+							ProgressView()
+								.frame(width: 150, height: 150)
+						case .success(let image):
+							image
+								.ProfileImageModifier(imageType: .profilePage)
+								.transition(.opacity.animation(.easeInOut))
+						case .failure:
+							Image(systemName: "person.crop.circle.fill")
+								.ProfileImageModifier(imageType: .profilePage)
+						@unknown default:
+							Image(systemName: "person.crop.circle.fill")
+								.ProfileImageModifier(imageType: .profilePage)
+						}
+					}
+					.id("profilePicture-\(profilePictureString)")
+				}
+			} else {
+				Image(systemName: "person.crop.circle.fill")
+					.ProfileImageModifier(imageType: .profilePage)
+			}
+
+			// Only show the plus button for current user's profile when in edit mode
+			if isCurrentUserProfile && isEditing {
+				Circle()
+					.fill(profilePicPlusButtonColor)
+					.frame(width: 25, height: 25)
+					.overlay(
+						Image(systemName: "plus")
+							.foregroundColor(universalBackgroundColor)
+					)
+					.offset(x: -10, y: -10)
+					.onTapGesture {
+						showImagePicker = true
+					}
+			}
+		}
+		.animation(.easeInOut, value: selectedImage != nil)
+		.animation(.easeInOut, value: isImageLoading)
+		.sheet(isPresented: $showImagePicker, onDismiss: {
+			// Only show loading if we actually have a new image
+			if selectedImage != nil {
+				DispatchQueue.main.async {
+					isImageLoading = true
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+						isImageLoading = false
+					}
+				}
+			}
+		}) {
+			SwiftUIImagePicker(selectedImage: $selectedImage)
+				.ignoresSafeArea()
+		}
+		.onChange(of: selectedImage) { newImage in
+			if newImage != nil {
+				// Force UI update when image changes
+				DispatchQueue.main.async {
+					isImageLoading = true
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+						isImageLoading = false
+					}
+				}
+			}
+		}
+		.id("profilePicture-\(selectedImage != nil ? "selected" : "none")-\(isImageLoading ? "loading" : "ready")")
+	}
+}
+
+// MARK: - Profile Information Section
+struct ProfileInfoSection: View {
+	let user: BaseUserDTO
+	@Binding var bio: String
+	@Binding var username: String
+	@Binding var firstName: String
+	@Binding var lastName: String
+	let isCurrentUserProfile: Bool
+	let editingState: ProfileEditText
+	
+	var body: some View {
+		VStack(alignment: .leading, spacing: 14) {
+			// Name field
+			if isCurrentUserProfile && editingState == .save {
+				HStack {
+					Text("First Name")
+						.font(.headline)
+						.frame(width: 100, alignment: .leading)
+					Spacer()
+					TextField("First Name", text: $firstName)
+						.multilineTextAlignment(.trailing)
+						.font(.body)
+				}
+				.foregroundColor(universalAccentColor)
+				
+				HStack {
+					Text("Last Name")
+						.font(.headline)
+						.frame(width: 100, alignment: .leading)
+					Spacer()
+					TextField("Last Name", text: $lastName)
+						.multilineTextAlignment(.trailing)
+						.font(.body)
+				}
+				.foregroundColor(universalAccentColor)
+			} else {
+				ProfileField(
+					label: "Name",
+					value: "\(user.firstName ?? "") \(user.lastName ?? "")"
+				)
+			}
+			
+			// Username field - editable when in edit mode
+			if isCurrentUserProfile && editingState == .save {
+				HStack {
+					Text("Username")
+						.font(.headline)
+						.frame(width: 100, alignment: .leading)
+					Spacer()
+					TextField("Username", text: $username)
+						.multilineTextAlignment(.trailing)
+						.font(.body)
+				}
+				.foregroundColor(universalAccentColor)
+			} else {
+				ProfileField(label: "Username", value: user.username)
+			}
+			
+			// Only show email for current user's profile
+			if isCurrentUserProfile {
+				ProfileField(label: "Email", value: user.email)
+			}
+			
+			// Bio field is editable only for current user's profile
+			if isCurrentUserProfile {
+				if editingState == .save {
+					BioField(
+						label: "Bio",
+						bio: $bio)
+				} else {
+					ProfileField(label: "Bio", value: bio)
+				}
+			} else {
+				ProfileField(label: "Bio", value: bio)
+			}
+		}
+	}
+}
+
+// MARK: - Profile Edit Buttons Section
+struct ProfileEditButtonsSection: View {
+	@Binding var editingState: ProfileEditText
+	@Binding var bio: String
+	@Binding var username: String
+	@Binding var firstName: String
+	@Binding var lastName: String
+	@Binding var selectedImage: UIImage?
+	@Binding var isImageLoading: Bool
+	let userAuth: UserAuthViewModel
+	@Binding var showNotification: Bool
+	@Binding var notificationMessage: String
+	
+	var body: some View {
+		ZStack {
+			if editingState == .save {
+				HStack(spacing: 20) {
+					// Cancel Button
+					Button(action: {
+						// Revert to original values from userAuth.spawnUser
+						if let currentUser = userAuth.spawnUser {
+							username = currentUser.username
+							firstName = currentUser.firstName ?? ""
+							lastName = currentUser.lastName ?? ""
+							bio = currentUser.bio ?? ""
+							selectedImage = nil
+						}
+						editingState = .edit
+					}) {
+						Text("Cancel")
+							.font(.headline)
+							.foregroundColor(universalAccentColor)
+							.frame(maxWidth: 135)
+							.padding()
+							.background(
+								RoundedRectangle(
+									cornerRadius: universalRectangleCornerRadius
+								)
+								.stroke(universalAccentColor, lineWidth: 1)
+							)
+					}
+					
+					// Save Button
+					Button(action: {
+						saveProfile()
+					}) {
+						Text("Save")
+							.font(.headline)
+							.foregroundColor(.white)
+							.frame(maxWidth: 135)
+							.padding()
+							.background(
+								RoundedRectangle(
+									cornerRadius: universalRectangleCornerRadius
+								)
+								.fill(profilePicPlusButtonColor)
+							)
+					}
+					.disabled(isImageLoading)
+				}
+			} else {
+				Button(action: {
+					editingState = .save
+				}) {
+					Text("Edit")
+						.font(.headline)
+						.foregroundColor(universalAccentColor)
+						.frame(maxWidth: 135)
+						.padding()
+						.background(
+							RoundedRectangle(
+								cornerRadius: universalRectangleCornerRadius
+							)
+							.stroke(universalAccentColor, lineWidth: 1)
+						)
+				}
+			}
+		}
+	}
+	
+	private func saveProfile() {
+		// Check if there's a new profile picture
+		let hasNewProfilePicture = selectedImage != nil
+		
+		// Set loading state immediately if there's an image
+		isImageLoading = hasNewProfilePicture
+		
+		Task {
+			// Create a local copy of the selected image before starting async task
+			let imageToUpload = selectedImage
+			
+			// Update profile info first
+			await userAuth.spawnEditProfile(
+				username: username,
+				firstName: firstName,
+				lastName: lastName,
+				bio: bio
+			)
+			
+			// Small delay before processing image update to ensure the text updates are complete
+			try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+			
+			// Show notification if there's a profile picture change
+			if hasNewProfilePicture {
+				await MainActor.run {
+					notificationMessage = "Sit tight -- your profile picture will be updated in a moment..."
+					withAnimation {
+						showNotification = true
+					}
+				}
+			}
+			
+			// Update profile picture if selected
+			if let newImage = imageToUpload {
+				await userAuth.updateProfilePicture(newImage)
+				
+				// Small delay after image upload to ensure the server has processed it
+				try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+			}
+			
+			// Update local state with the latest data from the user object
+			await MainActor.run {
+				if let updatedUser = userAuth.spawnUser {
+					username = updatedUser.username
+					firstName = updatedUser.firstName ?? ""
+					lastName = updatedUser.lastName ?? ""
+					bio = updatedUser.bio ?? ""
+				}
+				
+				// Clear the selected image to force the view to refresh from the server
+				selectedImage = nil
+				isImageLoading = false
+				editingState = .edit
+			}
+		}
+	}
+}
+
+// MARK: - Profile Action Buttons Section
+struct ProfileActionButtonsSection: View {
+	let user: BaseUserDTO
+	let userAuth: UserAuthViewModel
+	
+	var body: some View {
+		VStack(spacing: 15) {
+			// Notification Settings Button
+			NavigationLink(destination: NotificationSettingsView()) {
+				HStack {
+					Image(systemName: "bell.fill")
+						.foregroundColor(.white)
+					Text("Notifications")
+						.font(.headline)
+						.foregroundColor(.white)
+				}
+				.padding()
+				.frame(maxWidth: 170)
+				.background(universalAccentColor)
+				.cornerRadius(20)
+			}
+			
+			// Feedback Button
+			NavigationLink(destination: FeedbackView(userId: user.id, email: user.email)) {
+				HStack {
+					Image(systemName: "message.fill")
+						.foregroundColor(.white)
+					Text("Feedback")
+						.font(.headline)
+						.foregroundColor(.white)
+				}
+				.padding()
+				.frame(maxWidth: 170)
+				.background(universalAccentColor)
+				.cornerRadius(20)
+			}
+		
+			NavigationLink(destination: {
+				LaunchView()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}) {
+				Text("Log Out")
+					.font(.headline)
+					.foregroundColor(.white)
+					.padding()
+					.frame(maxWidth: 170)
+					.background(profilePicPlusButtonColor)
+					.cornerRadius(20)
+			}
+			.simultaneousGesture(
+				TapGesture().onEnded {
+					if userAuth.isLoggedIn {
+						userAuth.signOut()
+					}
+				})
+
+			// Delete Account Button
+			Button(action: {
+				userAuth.activeAlert = .deleteConfirmation
+			}) {
+				Text("Delete Account")
+					.font(.headline)
+					.foregroundColor(.white)
+					.padding()
+					.frame(maxWidth: 170)
+					.background(Color.red)
+					.cornerRadius(20)
 			}
 		}
 	}

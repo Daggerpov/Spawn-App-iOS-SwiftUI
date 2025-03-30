@@ -134,7 +134,7 @@ struct UserInfoInputView: View {
 								showImagePicker = true
 							}
 							.sheet(isPresented: $showImagePicker) {
-								ImagePicker(selectedImage: $selectedImage)
+								SwiftUIImagePicker(selectedImage: $selectedImage)
 							}
 
 							Spacer()

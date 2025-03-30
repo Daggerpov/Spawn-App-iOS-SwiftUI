@@ -25,9 +25,10 @@ struct FeedbackTypeSelector: View {
                         Text(type.displayName)
                     }
                     .tag(type)
-                    .foregroundColor(universalAccentColor)
                 }
             }
+            .tint(universalAccentColor)
+            .accentColor(universalAccentColor)
         }
         .padding(.horizontal)
     }
@@ -81,6 +82,8 @@ struct ImagePickerView: View {
             Text("Attach Image (Optional)")
                 .font(.headline)
                 .foregroundColor(universalAccentColor)
+           
+            Spacer()
             
             HStack {
                 Spacer()
@@ -121,6 +124,7 @@ struct ImagePickerView: View {
                 
                 Spacer()
             }
+            Spacer()
         }
         .padding(.horizontal)
     }
@@ -201,48 +205,75 @@ struct FeedbackView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                // Feedback type selector
-                FeedbackTypeSelector(selectedType: $selectedType)
-                
-                // Message input
-                MessageInputView(message: $message)
-                
-                // Image picker
-                ImagePickerView(selectedItem: $selectedItem, selectedImage: $selectedImage)
-                    .onChange(of: selectedItem) { newItem in
-                        loadTransferable(from: newItem)
-                    }
-                
-                // Submit button
-                SubmitButtonView(
-                    feedbackService: feedbackService,
-                    message: message,
-                    onSubmit: {
-                        Task {
-                            await feedbackService.submitFeedback(
-                                type: selectedType,
-                                message: message,
-                                userId: userId,
-                                image: selectedImage
-                            )
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Feedback type selector
+                    FeedbackTypeSelector(selectedType: $selectedType)
+                        .padding(.top, 10)
+                    
+                    // Message input
+                    MessageInputView(message: $message)
+                    
+                    // Image picker
+                    ImagePickerView(selectedItem: $selectedItem, selectedImage: $selectedImage)
+                        .onChange(of: selectedItem) { newItem in
+                            loadTransferable(from: newItem)
                         }
-                    }
-                )
-                
-                // Success/Error message
-                FeedbackStatusView(
-                    feedbackService: feedbackService,
-                    onSuccess: { dismiss() }
-                )
-                
-                Spacer()
+                    
+                    // Submit button
+                    SubmitButtonView(
+                        feedbackService: feedbackService,
+                        message: message,
+                        onSubmit: {
+                            Task {
+                                await feedbackService.submitFeedback(
+                                    type: selectedType,
+                                    message: message,
+                                    userId: userId,
+                                    image: selectedImage
+                                )
+                            }
+                        }
+                    )
+                    .padding(.vertical, 10)
+                    
+                    // Success/Error message
+                    FeedbackStatusView(
+                        feedbackService: feedbackService,
+                        onSuccess: { dismiss() }
+                    )
+                    
+                    Spacer(minLength: 30)
+                }
+                .padding(.horizontal)
+                .padding(.top, 10)
             }
-            .padding(.top, 20)
-            .navigationBarTitle("Send Feedback", displayMode: .inline)
-            .background(universalBackgroundColor.edgesIgnoringSafeArea(.all))
+            .navigationBarBackButtonHidden()
+            .background(universalBackgroundColor.ignoresSafeArea())
+            .toolbarColorScheme(.light, for: .navigationBar)
+            .toolbarBackground(universalBackgroundColor, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Send Feedback")
+                        .font(.headline)
+                        .foregroundColor(universalAccentColor)
+                }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .foregroundColor(universalAccentColor)
+                    }
+                }
+            }
         }
+        .accentColor(universalAccentColor) // Set global accent color for the navigation view
     }
     
     private func loadTransferable(from item: PhotosPickerItem?) {
