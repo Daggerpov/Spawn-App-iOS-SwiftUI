@@ -43,7 +43,7 @@ struct FriendsTabView: View {
 
 					// accept friend req buttons
 					SearchView(
-						searchPlaceholderText: "Search or add friends",
+						searchPlaceholderText: "Search by name or username",
 						viewModel: searchViewModel)
                     Spacer()
                     Spacer()
