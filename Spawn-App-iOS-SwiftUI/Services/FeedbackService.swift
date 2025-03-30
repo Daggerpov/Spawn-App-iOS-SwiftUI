@@ -32,24 +32,62 @@ class FeedbackService: ObservableObject {
         }
         
         do {
-            // Create the CreateFeedbackSubmissionDTO to exactly match the backend
-            let feedbackDTO = CreateFeedbackSubmissionDTO(
-                type: type,
-                fromUserId: userId,
-                message: message,
-                image: image != nil ? resizeImageIfNeeded(image!, maxDimension: 1024) : nil
-            )
-            
+            // Create URL
             guard let url = URL(string: APIService.baseURL + "feedback") else {
                 throw APIError.URLError
             }
             
-            // Use the apiService's sendData method which properly handles serialization
-            let _: CreateFeedbackSubmissionDTO? = try await apiService.sendData(
-                feedbackDTO,
-                to: url,
-                parameters: nil
-            )
+            // Create feedback data as dictionary with manual handling for image
+            var feedbackDict: [String: Any] = [
+                "type": type.rawValue,
+                "message": message,
+            ]
+            
+            // Add userId if available
+            if let userId = userId {
+                feedbackDict["fromUserId"] = userId.uuidString
+            }
+            
+            // Handle image the same way as in createUser
+            if let image = image {
+                let resizedImage = resizeImageIfNeeded(image, maxDimension: 1024)
+                if let imageData = resizedImage.jpegData(compressionQuality: 0.7) {
+                    let base64String = imageData.base64EncodedString()
+                    feedbackDict["imageData"] = base64String
+                    print("Including feedback image data of size: \(imageData.count) bytes")
+                }
+            }
+            
+            // Convert dictionary to JSON data
+            guard let jsonData = try? JSONSerialization.data(withJSONObject: feedbackDict) else {
+                throw APIError.invalidData
+            }
+            
+            // Create request manually
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = jsonData
+            
+            // Send the request
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check response
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.failedHTTPRequest(description: "HTTP request failed")
+            }
+            
+            guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                // Try to parse error message
+                if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let errorMessage = errorJson["message"] as? String {
+                    print("Error response: \(errorMessage)")
+                } else if let errorString = String(data: data, encoding: .utf8) {
+                    print("Error response: \(errorString)")
+                }
+                
+                throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+            }
             
             await MainActor.run {
                 isSubmitting = false
