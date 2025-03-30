@@ -382,14 +382,14 @@ struct ProfileEditButtonsSection: View {
 				}) {
 					Text("Save")
 						.font(.headline)
-						.foregroundColor(universalAccentColor)
+						.foregroundColor(.white)
 						.frame(maxWidth: 135)
 						.padding()
 						.background(
 							RoundedRectangle(
 								cornerRadius: universalRectangleCornerRadius
 							)
-							.stroke(universalAccentColor, lineWidth: 1)
+							.fill(profilePicPlusButtonColor)
 						)
 				}
 				.disabled(isImageLoading)
