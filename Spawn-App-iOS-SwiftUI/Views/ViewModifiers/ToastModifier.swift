@@ -11,8 +11,6 @@ struct ToastModifier: ViewModifier {
             
             if isShowing {
                 VStack {
-                    Spacer()
-                    
                     HStack {
                         Text(message)
                             .font(.subheadline)
@@ -24,8 +22,8 @@ struct ToastModifier: ViewModifier {
                                     .fill(Color.black.opacity(0.8))
                             )
                     }
-                    .padding(.bottom, 30)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.top, 30)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                     .onAppear {
                         DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                             withAnimation {
@@ -33,6 +31,8 @@ struct ToastModifier: ViewModifier {
                             }
                         }
                     }
+                    
+                    Spacer()
                 }
                 .zIndex(100)
             }
