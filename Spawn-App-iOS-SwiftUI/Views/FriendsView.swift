@@ -39,7 +39,7 @@ struct FriendsView: View {
 					if selectedTab == .friends {
 						FriendsTabView(user: user)
 					} else {
-						let tagsTabView = TagsTabView(
+						TagsTabView(
 							userId: user.id,
 							addFriendToTagButtonPressedCallback: {
 								friendTagId in
@@ -47,10 +47,6 @@ struct FriendsView: View {
 								selectedFriendTagId = friendTagId
 							}
 						)
-						tagsTabView
-							.onAppear {
-								self.tagsViewModel = tagsTabView.viewModel
-							}
 					}
 
 				}

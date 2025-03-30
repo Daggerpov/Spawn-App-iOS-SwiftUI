@@ -231,4 +231,26 @@ class MockAPIService: IAPIService {
             return mockUser
         }
     }
+    
+    /// Mock implementation of the multipart form data method
+    func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data {
+        // Log that we're using the mock implementation
+        print("🔍 MOCK: Sending multipart form data to \(url)")
+        
+        // Simulate network delay
+        try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1 second
+        
+        // Create a mock response
+        let mockResponse = ["status": "success", "message": "Form data received successfully"]
+        
+        // Convert mock response to Data
+        if let jsonData = try? JSONSerialization.data(withJSONObject: mockResponse) {
+            print("✅ MOCK: Multipart form data sent successfully")
+            return jsonData
+        } else {
+            // If we can't create the mock response, return empty data
+            print("⚠️ MOCK: Could not create mock response, returning empty data")
+            return Data()
+        }
+    }
 }

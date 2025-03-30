@@ -658,6 +658,58 @@ class APIService: IAPIService {
 			throw APIError.failedJSONParsing(url: url)
 		}
 	}
+
+	// Add sendMultipartFormData implementation
+	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data {
+		resetState()
+		
+		let boundary = "Boundary-\(UUID().uuidString)"
+		
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+		
+		// Create the body
+		var body = Data()
+		
+		for (key, value) in formData {
+			if let data = value as? Data {
+				// Handle image data
+				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
+				body.append("Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(using: .utf8)!)
+				body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+				body.append(data)
+			} else {
+				// Handle text fields
+				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
+				body.append("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8)!)
+				body.append("\(value)".data(using: .utf8)!)
+			}
+		}
+		
+		// Add final boundary
+		body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+		
+		request.httpBody = body
+		
+		// Perform the request
+		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+		
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage = "Invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		return data
+	}
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end
