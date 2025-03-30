@@ -159,11 +159,10 @@ extension EventDescriptionView {
 		
 		init(chatMessage: FullEventChatMessageDTO) {
 			self.chatMessage = chatMessage
-			let isInitiallyLiked = UserService.shared.hasLikedMessage(chatMessage)
 			_actionViewModel = StateObject(wrappedValue: ChatMessageActionViewModel(
 				apiService: MockAPIService.isMocking ? MockAPIService(userId: UserService.shared.currentUser?.id ?? UUID()) : APIService(),
 				currentUserId: UserService.shared.currentUser?.id ?? UUID(),
-				initialLikeState: isInitiallyLiked
+				chatMessage: chatMessage
 			))
 		}
 

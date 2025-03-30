@@ -15,19 +15,28 @@ class ChatMessageActionViewModel: ObservableObject {
         self.isLiked = initialLikeState
     }
     
+    convenience init(apiService: IAPIService, currentUserId: UUID, chatMessage: FullEventChatMessageDTO) {
+        // Check if the current user has already liked this chat message
+        let isLiked = chatMessage.likedByUsers?.contains(where: { $0.id == currentUserId }) ?? false
+        self.init(apiService: apiService, currentUserId: currentUserId, initialLikeState: isLiked)
+    }
+    
     // MARK: - Like Message
     
     func toggleLike(for chatMessage: FullEventChatMessageDTO) async {
         guard !isLoading else { return }
         
+        // Check if the user has already liked this message
+        let isCurrentlyLiked = chatMessage.likedByUsers?.contains(where: { $0.id == currentUserId }) ?? false
+        
         // Capture current state before changing
-        let wasLiked = isLiked
+        let wasLiked = isCurrentlyLiked
         
         // Optimistic UI update - update the UI immediately
         await MainActor.run {
             isLoading = true
             errorMessage = nil
-            isLiked.toggle()
+            isLiked = !wasLiked
             
             // Optimistically update the likedByUsers array locally
             if isLiked {
@@ -49,9 +58,11 @@ class ChatMessageActionViewModel: ObservableObject {
         
         do {
             // Make API call based on the NEW state (after toggle)
-            if isLiked {
+            if !wasLiked {
+                // Only like if not already liked
                 try await apiService.likeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
             } else {
+                // Only unlike if currently liked
                 try await apiService.unlikeChatMessage(chatMessageId: chatMessage.id, userId: currentUserId)
             }
             
@@ -130,10 +141,15 @@ class ChatMessageActionViewModel: ObservableObject {
                 isLoading = false
             }
         } catch {
-            // On error, use local state based on hasLikedMessage
+            // On error, use local user data/indicator
             await MainActor.run {
-                // Fall back to the local state - trust what UserService says
-                isLiked = UserService.shared.hasLikedMessage(chatMessage)
+                // First check if we have likedByUsers data in the chat message
+                if let likedByUsers = chatMessage.likedByUsers {
+                    isLiked = likedByUsers.contains { $0.id == currentUserId }
+                } else {
+                    // Fall back to what UserService says
+                    isLiked = UserService.shared.hasLikedMessage(chatMessage)
+                }
                 isLoading = false
             }
             print("Error checking like status: \(error)")
