@@ -37,7 +37,7 @@ struct FeedbackTypeSelector: View {
 // MARK: - Message Input Component
 struct MessageInputView: View {
     @Binding var message: String
-    @FocusState private var isInputFocused: Bool
+    @Binding var isInputFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -57,13 +57,8 @@ struct MessageInputView: View {
                             .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     )
                     .focused($isInputFocused)
-                    .toolbar {
-                        ToolbarItemGroup(placement: .keyboard) {
-                            Spacer()
-                            Button("Done") {
-                                isInputFocused = false
-                            }
-                        }
+                    .onSubmit {
+                        isInputFocused = false
                     }
                 
                 if message.isEmpty && !isInputFocused {
@@ -207,6 +202,7 @@ struct FeedbackView: View {
     @State private var message: String = ""
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
+    @FocusState private var isTextFieldFocused: Bool
     
     let userId: UUID?
     let email: String?
@@ -225,7 +221,7 @@ struct FeedbackView: View {
                         .padding(.top, 10)
                     
                     // Message input
-                    MessageInputView(message: $message)
+                    MessageInputView(message: $message, isInputFocused: $isTextFieldFocused)
                     
                     // Image picker
                     ImagePickerView(selectedItem: $selectedItem, selectedImage: $selectedImage)
@@ -260,6 +256,11 @@ struct FeedbackView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top, 10)
+                .onTapGesture {
+                    if isTextFieldFocused {
+                        isTextFieldFocused = false
+                    }
+                }
             }
             .navigationBarBackButtonHidden()
             .background(universalBackgroundColor.ignoresSafeArea())
