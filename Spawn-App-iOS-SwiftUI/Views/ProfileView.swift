@@ -195,7 +195,7 @@ struct ProfilePictureSection: View {
 				Image(uiImage: selectedImage)
 					.ProfileImageModifier(imageType: .profilePage)
 					.transition(.opacity)
-					.id("selectedImage-\(selectedImage.hashValue)-\(Date().timeIntervalSince1970)")
+					.id("selectedImage-\(UUID().uuidString)")
 					.onAppear {
 						print("🔶 Displaying selected image with hash: \(selectedImage.hashValue)")
 					}
@@ -248,20 +248,17 @@ struct ProfilePictureSection: View {
 		.animation(.easeInOut, value: isImageLoading)
 		.sheet(isPresented: $showImagePicker, onDismiss: {
 			print("🔍 Image picker dismissed, selectedImage: \(selectedImage != nil ? "exists" : "nil")")
-			// Force UI refresh when the picker is dismissed
+			// Only show loading if we actually have a new image
 			if selectedImage != nil {
-				// Only show loading if we actually have a new image
 				DispatchQueue.main.async {
-					print("🔍 Setting isImageLoading to true after picker dismissal")
-					self.isImageLoading = true
+					isImageLoading = true
 					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-						print("🔍 Setting isImageLoading to false after delay")
-						self.isImageLoading = false
+						isImageLoading = false
 					}
 				}
 			}
 		}) {
-			ImagePicker(selectedImage: $selectedImage)
+			SwiftUIImagePicker(selectedImage: $selectedImage)
 				.ignoresSafeArea()
 		}
 		.onChange(of: selectedImage) { newImage in
@@ -278,7 +275,7 @@ struct ProfilePictureSection: View {
 				}
 			}
 		}
-		.id("profilePicture-\(selectedImage?.hashValue ?? 0)-\(user.profilePicture ?? "none")-\(isImageLoading ? "loading" : "ready")-\(Date().timeIntervalSince1970)")
+		.id("profilePicture-\(selectedImage != nil ? "selected" : "none")-\(isImageLoading ? "loading" : "ready")")
 	}
 }
 
