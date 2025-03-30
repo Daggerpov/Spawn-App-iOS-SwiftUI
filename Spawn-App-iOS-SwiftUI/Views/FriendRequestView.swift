@@ -93,8 +93,7 @@ struct FriendRequestView: View {
 				.cornerRadius(universalRectangleCornerRadius)
 				.shadow(radius: 10)
 				.padding(.horizontal, 20)
-				.frame(minHeight: UIScreen.main.bounds.height)
-				.frame(maxWidth: .infinity)
+				.frame(width: 350, minHeight: 400)
 			}
 			.scrollDisabled(true)
 
