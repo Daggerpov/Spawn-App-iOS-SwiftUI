@@ -18,6 +18,8 @@ struct ProfileView: View {
 	@State private var selectedImage: UIImage?
 	@State private var showImagePicker: Bool = false
 	@State private var isImageLoading: Bool = false
+	@Environment(\.presentationMode) private var presentationMode
+	@Environment(\.dismiss) private var dismiss
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	
@@ -317,6 +319,30 @@ struct ProfileView: View {
 				.padding(.horizontal)
 			}
 			.background(universalBackgroundColor)
+			.navigationBarBackButtonHidden()
+			.toolbarColorScheme(.light, for: .navigationBar)
+			.toolbarBackground(universalBackgroundColor, for: .navigationBar)
+			.toolbarBackground(.visible, for: .navigationBar)
+			.toolbar {
+				ToolbarItem(placement: .principal) {
+					Text("Profile")
+						.font(.headline)
+						.foregroundColor(universalAccentColor)
+				}
+				ToolbarItem(placement: .navigationBarLeading) {
+					Button(action: {
+						dismiss()
+					}) {
+						HStack {
+							Image(systemName: "chevron.left")
+							Text("Back")
+						}
+						.foregroundColor(universalAccentColor)
+					}
+					// Only show back button when in a navigation hierarchy
+					.opacity(presentationMode.wrappedValue.isPresented ? 1 : 0)
+				}
+			}
 			.alert(item: $userAuth.activeAlert) { alertType in
 				switch alertType {
 				case .deleteConfirmation:
@@ -352,6 +378,7 @@ struct ProfileView: View {
 				}
 			}
 		}
+		.accentColor(universalAccentColor)
 	}
 }
 
