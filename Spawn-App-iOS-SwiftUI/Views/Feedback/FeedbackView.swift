@@ -242,6 +242,16 @@ struct FeedbackView: View {
             .padding(.top, 20)
             .navigationBarTitle("Send Feedback", displayMode: .inline)
             .background(universalBackgroundColor.edgesIgnoringSafeArea(.all))
+            .toolbarColorScheme(.light, for: .navigationBar)
+            .toolbarBackground(universalBackgroundColor, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Send Feedback")
+                        .font(.headline)
+                        .foregroundColor(universalAccentColor)
+                }
+            }
         }
     }
     
