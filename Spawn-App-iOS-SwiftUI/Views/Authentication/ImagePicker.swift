@@ -16,7 +16,7 @@ struct ImagePicker: UIViewControllerRepresentable {
 		let picker = UIImagePickerController()
 		picker.sourceType = .photoLibrary
 		picker.delegate = context.coordinator
-		picker.allowsEditing = false // Disable built-in editor to avoid the rectangular crop step
+		picker.allowsEditing = false // Disable built-in editor to use our custom circular cropper
 		return picker
 	}
 
@@ -74,6 +74,11 @@ class CropImageViewController: UIViewController {
     private var initialImageFrame: CGRect = .zero
     private var currentImageOffset: CGPoint = .zero
     private var lastPanPoint: CGPoint = .zero
+    
+    // Add variables for tracking image scaling
+    private var currentScale: CGFloat = 1.0
+    private var minScale: CGFloat = 1.0
+    private var maxScale: CGFloat = 3.0
 
 	init(image: UIImage, profileImageSize: CGFloat, completion: @escaping (UIImage) -> Void) {
 		self.originalImage = image
@@ -91,6 +96,13 @@ class CropImageViewController: UIViewController {
 		setupUI()
 	}
 
+	override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		
+		// Update frames after layout is complete
+		initialImageFrame = getImageFrameInImageView()
+	}
+
 	private func setupUI() {
 		view.backgroundColor = .black
 
@@ -98,15 +110,16 @@ class CropImageViewController: UIViewController {
 		imageView.contentMode = .scaleAspectFit
 		imageView.image = originalImage
 		imageView.frame = view.bounds
-		imageView.isUserInteractionEnabled = true // Enable user interaction
+		imageView.isUserInteractionEnabled = true // Enable user interaction for panning
 		view.addSubview(imageView)
-        
-        // Save initial image frame for panning calculations
-        initialImageFrame = getImageFrameInImageView()
         
         // Add pan gesture recognizer to allow image movement
         let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
         imageView.addGestureRecognizer(panGesture)
+
+		// Add pinch gesture recognizer for zoom
+		let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinchGesture(_:)))
+		imageView.addGestureRecognizer(pinchGesture)
 
 		// Setup crop overlay
 		cropOverlayView.frame = view.bounds
@@ -137,6 +150,22 @@ class CropImageViewController: UIViewController {
 		maskLayer.path = path.cgPath
 		maskLayer.fillRule = .evenOdd
 		cropOverlayView.layer.mask = maskLayer
+
+		// Add instruction label
+		let instructionLabel = UILabel()
+		instructionLabel.text = "Drag to position your photo"
+		instructionLabel.textColor = .white
+		instructionLabel.textAlignment = .center
+		instructionLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
+		instructionLabel.translatesAutoresizingMaskIntoConstraints = false
+		view.addSubview(instructionLabel)
+		
+		NSLayoutConstraint.activate([
+			instructionLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
+			instructionLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+			instructionLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 20),
+			instructionLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -20)
+		])
 
 		// Add buttons
 		let buttonStack = UIStackView()
@@ -210,7 +239,7 @@ class CropImageViewController: UIViewController {
     @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
         switch gesture.state {
         case .began:
-            // Store the initial offset when a drag begins
+            // Store the initial point when a drag begins
             lastPanPoint = gesture.location(in: view)
             
         case .changed:
@@ -250,15 +279,16 @@ class CropImageViewController: UIViewController {
         let imageFrame = getImageFrameInImageView()
         let cropFrame = cropFrameView.frame
         
-        // Calculate the center points
+        // Calculate the center points of image and crop
         let imageCenterX = imageFrame.midX + currentImageOffset.x
         let imageCenterY = imageFrame.midY + currentImageOffset.y
         let cropCenterX = cropFrame.midX
         let cropCenterY = cropFrame.midY
         
         // Calculate maximum allowed distance between centers
-        let maxDistanceX = (imageFrame.width / 2) - (cropFrame.width / 2)
-        let maxDistanceY = (imageFrame.height / 2) - (cropFrame.height / 2)
+        // This is half the difference between image size and crop size
+        let maxDistanceX = max(0, (imageFrame.width / 2) - (cropFrame.width / 2))
+        let maxDistanceY = max(0, (imageFrame.height / 2) - (cropFrame.height / 2))
         
         // If image is smaller than crop area in any dimension, don't allow movement in that dimension
         let allowHorizontalMovement = imageFrame.width > cropFrame.width
@@ -273,7 +303,7 @@ class CropImageViewController: UIViewController {
             if currentDistanceX > maxDistanceX {
                 // Need to adjust X
                 let direction = imageCenterX > cropCenterX ? 1 : -1
-                adjustX = (currentDistanceX - maxDistanceX) * -direction
+                adjustX = (currentDistanceX - maxDistanceX) * CGFloat(-direction)
             }
         } else {
             // Center the image horizontally if it's smaller than crop
@@ -285,7 +315,7 @@ class CropImageViewController: UIViewController {
             if currentDistanceY > maxDistanceY {
                 // Need to adjust Y
                 let direction = imageCenterY > cropCenterY ? 1 : -1
-                adjustY = (currentDistanceY - maxDistanceY) * -direction
+                adjustY = (currentDistanceY - maxDistanceY) * CGFloat(-direction)
             }
         } else {
             // Center the image vertically if it's smaller than crop
@@ -299,9 +329,45 @@ class CropImageViewController: UIViewController {
     
     // Update the image view's transform based on current offset
     private func updateImageViewTransform() {
-        // Apply the transform to move the image
-        imageView.transform = CGAffineTransform(translationX: currentImageOffset.x, y: currentImageOffset.y)
+        // Create a combined transform for both translation and scaling
+        let translationTransform = CGAffineTransform(translationX: currentImageOffset.x, y: currentImageOffset.y)
+        let scaleTransform = CGAffineTransform(scaleX: currentScale, y: currentScale)
+        let combinedTransform = translationTransform.concatenating(scaleTransform)
+        
+        // Using animation for smoother movement
+        UIView.animate(withDuration: 0.05) {
+            self.imageView.transform = combinedTransform
+        }
     }
+
+	@objc private func handlePinchGesture(_ gesture: UIPinchGestureRecognizer) {
+		switch gesture.state {
+		case .began:
+			// Store initial scale when the gesture begins
+			gesture.scale = currentScale
+			
+		case .changed:
+			// Calculate new scale
+			let newScale = gesture.scale
+			
+			// Ensure it's within bounds
+			let boundedScale = min(maxScale, max(minScale, newScale))
+			
+			// Update current scale
+			currentScale = boundedScale
+			
+			// Apply transform - combine scaling with current translation
+			updateImageViewTransform()
+			
+		case .ended, .cancelled:
+			// When the gesture ends, ensure constraints are maintained
+			applyImagePositionConstraints()
+			updateImageViewTransform()
+			
+		default:
+			break
+		}
+	}
 
 	private func convertCropFrameToImageCoordinates() -> CGRect {
 		// Convert the crop frame view's frame to the image view's coordinate space
@@ -318,8 +384,9 @@ class CropImageViewController: UIViewController {
 		let imageSize = originalImage.size
 		
 		// Calculate how the image is being scaled in the imageView
-		let scaleX = imageSize.width / imageDisplayRect.width
-		let scaleY = imageSize.height / imageDisplayRect.height
+		// We need to account for both the content mode scaling and our manual scaling
+		let scaleX = (imageSize.width / imageDisplayRect.width) / currentScale
+		let scaleY = (imageSize.height / imageDisplayRect.height) / currentScale
 		
 		// Convert the crop frame from view coordinates to image coordinates
 		// We need to account for both the position and scaling
