@@ -208,16 +208,14 @@ class CropImageViewController: UIViewController {
     
     // Handle pan gesture for image movement
     @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
-        guard let gestureView = gesture.view else { return }
-        
         switch gesture.state {
         case .began:
             // Store the initial offset when a drag begins
-            lastPanPoint = gesture.translation(in: view)
+            lastPanPoint = gesture.location(in: view)
             
         case .changed:
-            // Get the current translation
-            let currentPoint = gesture.translation(in: view)
+            // Get the current location
+            let currentPoint = gesture.location(in: view)
             
             // Calculate delta from last position
             let deltaX = currentPoint.x - lastPanPoint.x
@@ -236,9 +234,6 @@ class CropImageViewController: UIViewController {
             // Apply the transform - this visually moves the image
             updateImageViewTransform()
             
-            // Debug
-            print("Pan gesture: deltaX=\(deltaX), deltaY=\(deltaY), offset=\(currentImageOffset)")
-            
         case .ended, .cancelled:
             // When the gesture ends, make a final constraint check
             applyImagePositionConstraints()
@@ -255,35 +250,51 @@ class CropImageViewController: UIViewController {
         let imageFrame = getImageFrameInImageView()
         let cropFrame = cropFrameView.frame
         
-        // Calculate image dimensions displayed in the view
-        let imageWidth = imageFrame.width
-        let imageHeight = imageFrame.height
+        // Calculate the center points
+        let imageCenterX = imageFrame.midX + currentImageOffset.x
+        let imageCenterY = imageFrame.midY + currentImageOffset.y
+        let cropCenterX = cropFrame.midX
+        let cropCenterY = cropFrame.midY
         
-        // Calculate how much the image can move in each direction
-        // This ensures the crop area always has image content
-        let maxOffsetX: CGFloat
-        let maxOffsetY: CGFloat
+        // Calculate maximum allowed distance between centers
+        let maxDistanceX = (imageFrame.width / 2) - (cropFrame.width / 2)
+        let maxDistanceY = (imageFrame.height / 2) - (cropFrame.height / 2)
         
-        // For wider images
-        if imageWidth > cropFrame.width {
-            maxOffsetX = (imageWidth - cropFrame.width) / 2
+        // If image is smaller than crop area in any dimension, don't allow movement in that dimension
+        let allowHorizontalMovement = imageFrame.width > cropFrame.width
+        let allowVerticalMovement = imageFrame.height > cropFrame.height
+        
+        // Calculate needed adjustments
+        var adjustX: CGFloat = 0
+        var adjustY: CGFloat = 0
+        
+        if allowHorizontalMovement {
+            let currentDistanceX = abs(imageCenterX - cropCenterX)
+            if currentDistanceX > maxDistanceX {
+                // Need to adjust X
+                let direction = imageCenterX > cropCenterX ? 1 : -1
+                adjustX = (currentDistanceX - maxDistanceX) * -direction
+            }
         } else {
-            maxOffsetX = 0 // Don't allow horizontal movement if image is narrower than crop
+            // Center the image horizontally if it's smaller than crop
+            adjustX = cropCenterX - imageCenterX
         }
         
-        // For taller images
-        if imageHeight > cropFrame.height {
-            maxOffsetY = (imageHeight - cropFrame.height) / 2
+        if allowVerticalMovement {
+            let currentDistanceY = abs(imageCenterY - cropCenterY)
+            if currentDistanceY > maxDistanceY {
+                // Need to adjust Y
+                let direction = imageCenterY > cropCenterY ? 1 : -1
+                adjustY = (currentDistanceY - maxDistanceY) * -direction
+            }
         } else {
-            maxOffsetY = 0 // Don't allow vertical movement if image is shorter than crop
+            // Center the image vertically if it's smaller than crop
+            adjustY = cropCenterY - imageCenterY
         }
         
-        // Apply constraints
-        currentImageOffset.x = max(-maxOffsetX, min(maxOffsetX, currentImageOffset.x))
-        currentImageOffset.y = max(-maxOffsetY, min(maxOffsetY, currentImageOffset.y))
-        
-        // Debug
-        print("Constraints applied: maxX=\(maxOffsetX), maxY=\(maxOffsetY), current=\(currentImageOffset)")
+        // Apply the adjustments
+        currentImageOffset.x += adjustX
+        currentImageOffset.y += adjustY
     }
     
     // Update the image view's transform based on current offset
