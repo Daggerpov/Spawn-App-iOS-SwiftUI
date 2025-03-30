@@ -196,9 +196,6 @@ struct ProfilePictureSection: View {
 					.ProfileImageModifier(imageType: .profilePage)
 					.transition(.opacity)
 					.id("selectedImage-\(UUID().uuidString)")
-					.onAppear {
-						print("🔶 Displaying selected image with hash: \(selectedImage.hashValue)")
-					}
 			} else if let profilePictureString = user.profilePicture {
 				if MockAPIService.isMocking {
 					Image(profilePictureString)
@@ -239,7 +236,6 @@ struct ProfilePictureSection: View {
 					)
 					.offset(x: -10, y: -10)
 					.onTapGesture {
-						print("🔍 Opening image picker...")
 						showImagePicker = true
 					}
 			}
@@ -247,7 +243,6 @@ struct ProfilePictureSection: View {
 		.animation(.easeInOut, value: selectedImage != nil)
 		.animation(.easeInOut, value: isImageLoading)
 		.sheet(isPresented: $showImagePicker, onDismiss: {
-			print("🔍 Image picker dismissed, selectedImage: \(selectedImage != nil ? "exists" : "nil")")
 			// Only show loading if we actually have a new image
 			if selectedImage != nil {
 				DispatchQueue.main.async {
@@ -262,15 +257,12 @@ struct ProfilePictureSection: View {
 				.ignoresSafeArea()
 		}
 		.onChange(of: selectedImage) { newImage in
-			print("🔍 selectedImage binding changed to: \(newImage != nil ? "new image" : "nil")")
 			if newImage != nil {
 				// Force UI update when image changes
 				DispatchQueue.main.async {
-					print("🔍 Profile image changed, updating UI...")
 					isImageLoading = true
 					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
 						isImageLoading = false
-						print("🔍 Profile image loading complete")
 					}
 				}
 			}
@@ -420,7 +412,6 @@ struct ProfileEditButtonsSection: View {
 				}
 			} else {
 				Button(action: {
-					print("🔍 Starting profile edit mode")
 					editingState = .save
 				}) {
 					Text("Edit")
@@ -436,30 +427,11 @@ struct ProfileEditButtonsSection: View {
 						)
 				}
 			}
-			
-			// Notification overlay
-			if showNotification {
-				VStack {
-					Spacer()
-					Text(notificationMessage)
-						.font(.subheadline)
-						.foregroundColor(.white)
-						.padding()
-						.background(Color.black.opacity(0.7))
-						.cornerRadius(10)
-						.padding(.bottom, 80)
-						.transition(.opacity)
-				}
-				.zIndex(1)
-				.transition(.opacity)
-				.animation(.easeInOut, value: showNotification)
-			}
 		}
+		.toast(isShowing: $showNotification, message: notificationMessage, duration: 3.0)
 	}
 	
 	private func saveProfile() {
-		print("🔍 Saving profile changes...")
-		
 		// Check if there's a new profile picture
 		let hasNewProfilePicture = selectedImage != nil
 		
@@ -471,8 +443,6 @@ struct ProfileEditButtonsSection: View {
 			let imageToUpload = selectedImage
 			
 			// Update profile info first
-			print("🔍 Updating profile text information...")
-			print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName), bio=\(bio)")
 			await userAuth.spawnEditProfile(
 				username: username,
 				firstName: firstName,
@@ -487,20 +457,14 @@ struct ProfileEditButtonsSection: View {
 			if hasNewProfilePicture {
 				await MainActor.run {
 					notificationMessage = "Your profile picture will be updated in a moment..."
-					showNotification = true
-					
-					// Hide notification after a few seconds
-					DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-						withAnimation {
-							showNotification = false
-						}
+					withAnimation {
+						showNotification = true
 					}
 				}
 			}
 			
 			// Update profile picture if selected
 			if let newImage = imageToUpload {
-				print("🔍 Uploading new profile picture...")
 				await userAuth.updateProfilePicture(newImage)
 				
 				// Small delay after image upload to ensure the server has processed it
