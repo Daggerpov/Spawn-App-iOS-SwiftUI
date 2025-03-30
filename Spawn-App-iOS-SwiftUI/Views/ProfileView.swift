@@ -368,23 +368,62 @@ struct ProfileEditButtonsSection: View {
 	@Binding var selectedImage: UIImage?
 	@Binding var isImageLoading: Bool
 	let userAuth: UserAuthViewModel
+	@State private var showNotification: Bool = false
+	@State private var notificationMessage: String = ""
 	
 	var body: some View {
-		if editingState == .save {
-			HStack(spacing: 20) {
-				// Cancel Button
-				Button(action: {
-					// Revert to original values from userAuth.spawnUser
-					if let currentUser = userAuth.spawnUser {
-						username = currentUser.username
-						firstName = currentUser.firstName ?? ""
-						lastName = currentUser.lastName ?? ""
-						bio = currentUser.bio ?? ""
-						selectedImage = nil
+		ZStack {
+			if editingState == .save {
+				HStack(spacing: 20) {
+					// Cancel Button
+					Button(action: {
+						// Revert to original values from userAuth.spawnUser
+						if let currentUser = userAuth.spawnUser {
+							username = currentUser.username
+							firstName = currentUser.firstName ?? ""
+							lastName = currentUser.lastName ?? ""
+							bio = currentUser.bio ?? ""
+							selectedImage = nil
+						}
+						editingState = .edit
+					}) {
+						Text("Cancel")
+							.font(.headline)
+							.foregroundColor(universalAccentColor)
+							.frame(maxWidth: 135)
+							.padding()
+							.background(
+								RoundedRectangle(
+									cornerRadius: universalRectangleCornerRadius
+								)
+								.stroke(universalAccentColor, lineWidth: 1)
+							)
 					}
-					editingState = .edit
+					
+					// Save Button
+					Button(action: {
+						saveProfile()
+					}) {
+						Text("Save")
+							.font(.headline)
+							.foregroundColor(.white)
+							.frame(maxWidth: 135)
+							.padding()
+							.background(
+								RoundedRectangle(
+									cornerRadius: universalRectangleCornerRadius
+								)
+								.fill(profilePicPlusButtonColor)
+							)
+					}
+					.disabled(isImageLoading)
+				}
+			} else {
+				Button(action: {
+					print("🔍 Starting profile edit mode")
+					editingState = .save
 				}) {
-					Text("Cancel")
+					Text("Edit")
 						.font(.headline)
 						.foregroundColor(universalAccentColor)
 						.frame(maxWidth: 135)
@@ -396,41 +435,24 @@ struct ProfileEditButtonsSection: View {
 							.stroke(universalAccentColor, lineWidth: 1)
 						)
 				}
-				
-				// Save Button
-				Button(action: {
-					saveProfile()
-				}) {
-					Text("Save")
-						.font(.headline)
-						.foregroundColor(.white)
-						.frame(maxWidth: 135)
-						.padding()
-						.background(
-							RoundedRectangle(
-								cornerRadius: universalRectangleCornerRadius
-							)
-							.fill(profilePicPlusButtonColor)
-						)
-				}
-				.disabled(isImageLoading)
 			}
-		} else {
-			Button(action: {
-				print("🔍 Starting profile edit mode")
-				editingState = .save
-			}) {
-				Text("Edit")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
-					.frame(maxWidth: 135)
-					.padding()
-					.background(
-						RoundedRectangle(
-							cornerRadius: universalRectangleCornerRadius
-						)
-						.stroke(universalAccentColor, lineWidth: 1)
-					)
+			
+			// Notification overlay
+			if showNotification {
+				VStack {
+					Spacer()
+					Text(notificationMessage)
+						.font(.subheadline)
+						.foregroundColor(.white)
+						.padding()
+						.background(Color.black.opacity(0.7))
+						.cornerRadius(10)
+						.padding(.bottom, 80)
+						.transition(.opacity)
+				}
+				.zIndex(1)
+				.transition(.opacity)
+				.animation(.easeInOut, value: showNotification)
 			}
 		}
 	}
@@ -438,8 +460,11 @@ struct ProfileEditButtonsSection: View {
 	private func saveProfile() {
 		print("🔍 Saving profile changes...")
 		
+		// Check if there's a new profile picture
+		let hasNewProfilePicture = selectedImage != nil
+		
 		// Set loading state immediately if there's an image
-		isImageLoading = selectedImage != nil
+		isImageLoading = hasNewProfilePicture
 		
 		Task {
 			// Create a local copy of the selected image before starting async task
@@ -457,6 +482,21 @@ struct ProfileEditButtonsSection: View {
 			
 			// Small delay before processing image update to ensure the text updates are complete
 			try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+			
+			// Show notification if there's a profile picture change
+			if hasNewProfilePicture {
+				await MainActor.run {
+					notificationMessage = "Your profile picture will be updated in a moment..."
+					showNotification = true
+					
+					// Hide notification after a few seconds
+					DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+						withAnimation {
+							showNotification = false
+						}
+					}
+				}
+			}
 			
 			// Update profile picture if selected
 			if let newImage = imageToUpload {

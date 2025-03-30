@@ -13,7 +13,6 @@ struct SwiftUIImagePicker: View {
     @Environment(\.dismiss) private var dismiss
     @State private var photosPickerItem: PhotosPickerItem?
     @State private var originalImage: UIImage?
-    @State private var isCropping: Bool = false
     @State private var isPresentingPhotoPicker: Bool = true
     
     var body: some View {
@@ -25,59 +24,21 @@ struct SwiftUIImagePicker: View {
                     .onTapGesture {
                         dismiss()
                     }
-            }
-            
-            if let originalImage {
-                if isCropping {
-                    // Cropping interface
-                    ImageCropperView(
-                        image: originalImage,
-                        onCrop: { croppedImage in
-                            if let croppedImage = croppedImage {
-                                let finalImage = resizeImageIfNeeded(croppedImage)
-                                selectedImage = finalImage
-                            }
-                            dismiss()
-                        },
-                        onCancel: {
-                            dismiss()
+            } else {
+                // Show crop view directly
+                ImageCropperView(
+                    image: originalImage!,
+                    onCrop: { croppedImage in
+                        if let croppedImage = croppedImage {
+                            let finalImage = resizeImageIfNeeded(croppedImage)
+                            selectedImage = finalImage
                         }
-                    )
-                } else {
-                    // Preview of selected image before cropping
-                    VStack {
-                        Spacer()
-                        
-                        Image(uiImage: originalImage)
-                            .resizable()
-                            .scaledToFit()
-                            .padding()
-                        
-                        Spacer()
-                        
-                        HStack(spacing: 20) {
-                            Button("Cancel") {
-                                dismiss()
-                            }
-                            .padding()
-                            .frame(minWidth: 100)
-                            .background(Color.gray.opacity(0.2))
-                            .cornerRadius(10)
-                            
-                            Button("Crop") {
-                                isCropping = true
-                            }
-                            .padding()
-                            .frame(minWidth: 100)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                        }
-                        .padding(.bottom, 20)
+                        dismiss()
+                    },
+                    onCancel: {
+                        dismiss()
                     }
-                    .background(Color.black.opacity(0.8))
-                    .edgesIgnoringSafeArea(.all)
-                }
+                )
             }
         }
         .photosPicker(isPresented: $isPresentingPhotoPicker, selection: $photosPickerItem, matching: .images)
@@ -134,8 +95,9 @@ struct ImageCropperView: View {
     
     @State private var scale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
-    @State private var offset: CGSize = .zero
-    @State private var lastOffset: CGSize = .zero
+    @State private var position: CGPoint = .zero
+    @State private var lastPosition: CGPoint = .zero
+    @State private var imageSize: CGSize = .zero
     
     var body: some View {
         GeometryReader { geometry in
@@ -153,38 +115,49 @@ struct ImageCropperView: View {
                     
                     // Image cropper area
                     ZStack {
-                        // The image to crop
+                        // The image stays fixed
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()
-                            .scaleEffect(scale)
-                            .offset(offset)
-                            .gesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        offset = CGSize(
-                                            width: lastOffset.width + value.translation.width,
-                                            height: lastOffset.height + value.translation.height
-                                        )
-                                    }
-                                    .onEnded { _ in
-                                        lastOffset = offset
-                                    }
-                            )
-                            .gesture(
-                                MagnificationGesture()
-                                    .onChanged { value in
-                                        scale = lastScale * value
-                                    }
-                                    .onEnded { _ in
-                                        lastScale = scale
-                                    }
+                            .background(
+                                GeometryReader { imageGeometry in
+                                    Color.clear
+                                        .onAppear {
+                                            imageSize = imageGeometry.size
+                                            // Center the position initially
+                                            position = CGPoint(
+                                                x: imageGeometry.size.width / 2,
+                                                y: imageGeometry.size.height / 2
+                                            )
+                                            lastPosition = position
+                                        }
+                                }
                             )
                         
-                        // Circular mask overlay
-                        CircleMaskView(size: min(geometry.size.width, geometry.size.height) * 0.8)
+                        // Draggable crop area
+                        ZStack {
+                            // Dark overlay with circle cut out
+                            CropMaskView(geometry: geometry)
+                            
+                            // Circle outline
+                            let circleSize = min(geometry.size.width, geometry.size.height) * 0.6
+                            Circle()
+                                .stroke(Color.white, lineWidth: 2)
+                                .frame(width: circleSize)
+                        }
+                        .position(x: position.x, y: position.y)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    updatePosition(value: value, geometry: geometry)
+                                }
+                                .onEnded { _ in
+                                    lastPosition = position
+                                }
+                        )
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height * 0.7)
+                    .clipped()
                     
                     Spacer()
                     
@@ -199,23 +172,7 @@ struct ImageCropperView: View {
                         Spacer()
                         
                         Button("Choose") {
-                            let cropSize = min(geometry.size.width, geometry.size.height) * 0.8
-                            let renderer = ImageRenderer(content: 
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .scaleEffect(scale)
-                                    .offset(offset)
-                                    .frame(width: geometry.size.width, height: geometry.size.height * 0.7)
-                                    .clipShape(Circle())
-                                    .frame(width: cropSize, height: cropSize)
-                            )
-                            
-                            if let uiImage = renderer.uiImage {
-                                onCrop(uiImage)
-                            } else {
-                                onCrop(nil)
-                            }
+                            performCropping(geometry: geometry)
                         }
                         .foregroundColor(.white)
                         .padding()
@@ -223,6 +180,90 @@ struct ImageCropperView: View {
                     .padding(.horizontal)
                 }
             }
+        }
+    }
+    
+    // MARK: - Helper Views
+    private func CropMaskView(geometry: GeometryProxy) -> some View {
+        let circleSize = min(geometry.size.width, geometry.size.height) * 0.6
+        
+        return Rectangle()
+            .fill(Color.black.opacity(0.5))
+            .mask(
+                ZStack {
+                    Rectangle()
+                    Circle()
+                        .frame(width: circleSize)
+                        .blendMode(.destinationOut)
+                }
+            )
+    }
+    
+    // MARK: - Helper Methods
+    private func updatePosition(value: DragGesture.Value, geometry: GeometryProxy) {
+        let newX = lastPosition.x + value.translation.width
+        let newY = lastPosition.y + value.translation.height
+        
+        // Keep the circle within the image bounds
+        let circleRadius = min(geometry.size.width, geometry.size.height) * 0.3
+        let minX = circleRadius
+        let maxX = imageSize.width - circleRadius
+        let minY = circleRadius
+        let maxY = imageSize.height - circleRadius
+        
+        position = CGPoint(
+            x: min(max(newX, minX), maxX),
+            y: min(max(newY, minY), maxY)
+        )
+    }
+    
+    private func performCropping(geometry: GeometryProxy) {
+        // Calculate dimensions
+        let circleRadius = min(geometry.size.width, geometry.size.height) * 0.3
+        let cropSize = circleRadius * 2
+        
+        // Skip if we don't have a valid image
+        guard let cgImage = image.cgImage else {
+            onCrop(nil)
+            return
+        }
+        
+        // Calculate crop parameters
+        let cropX = (position.x - circleRadius) * CGFloat(cgImage.width) / imageSize.width
+        let cropY = (position.y - circleRadius) * CGFloat(cgImage.height) / imageSize.height
+        let cropWidth = cropSize * CGFloat(cgImage.width) / imageSize.width
+        let cropHeight = cropSize * CGFloat(cgImage.height) / imageSize.height
+        
+        // Create crop rectangle
+        let cropRect = CGRect(
+            x: cropX,
+            y: cropY,
+            width: cropWidth,
+            height: cropHeight
+        )
+        
+        // Attempt to crop the image
+        guard let croppedCGImage = cgImage.cropping(to: cropRect) else {
+            onCrop(nil)
+            return
+        }
+        
+        // Convert back to UIImage
+        let croppedImage = UIImage(cgImage: croppedCGImage)
+        
+        // Create circular mask
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: cropSize, height: cropSize))
+        let circularImage = createCircularImage(croppedImage: croppedImage, cropSize: cropSize, renderer: renderer)
+        
+        onCrop(circularImage)
+    }
+    
+    private func createCircularImage(croppedImage: UIImage, cropSize: CGFloat, renderer: UIGraphicsImageRenderer) -> UIImage {
+        return renderer.image { ctx in
+            let rect = CGRect(origin: .zero, size: CGSize(width: cropSize, height: cropSize))
+            ctx.cgContext.addEllipse(in: rect)
+            ctx.cgContext.clip()
+            croppedImage.draw(in: rect)
         }
     }
 }
