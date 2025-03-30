@@ -208,31 +208,42 @@ class CropImageViewController: UIViewController {
     
     // Handle pan gesture for image movement
     @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
-        let translation = gesture.translation(in: imageView)
+        guard let gestureView = gesture.view else { return }
         
         switch gesture.state {
         case .began:
-            lastPanPoint = .zero
+            // Store the initial offset when a drag begins
+            lastPanPoint = gesture.translation(in: view)
+            
         case .changed:
-            // Calculate the drag delta from the last point
-            let deltaX = translation.x - lastPanPoint.x
-            let deltaY = translation.y - lastPanPoint.y
+            // Get the current translation
+            let currentPoint = gesture.translation(in: view)
             
-            // Update last point
-            lastPanPoint = translation
+            // Calculate delta from last position
+            let deltaX = currentPoint.x - lastPanPoint.x
+            let deltaY = currentPoint.y - lastPanPoint.y
             
-            // Update current offset
+            // Update the current offset
             currentImageOffset.x += deltaX
             currentImageOffset.y += deltaY
             
-            // Apply constraints to make sure we don't move too far
+            // Store the last point for next calculation
+            lastPanPoint = currentPoint
+            
+            // Apply constraints to ensure image doesn't move too far
             applyImagePositionConstraints()
             
-            // Update the image position
+            // Apply the transform - this visually moves the image
             updateImageViewTransform()
+            
+            // Debug
+            print("Pan gesture: deltaX=\(deltaX), deltaY=\(deltaY), offset=\(currentImageOffset)")
+            
         case .ended, .cancelled:
-            // Final constraint check
+            // When the gesture ends, make a final constraint check
             applyImagePositionConstraints()
+            updateImageViewTransform()
+            
         default:
             break
         }
@@ -240,23 +251,44 @@ class CropImageViewController: UIViewController {
     
     // Apply constraints to prevent moving the image too far from the crop area
     private func applyImagePositionConstraints() {
+        // Get the current image frame in the image view
         let imageFrame = getImageFrameInImageView()
         let cropFrame = cropFrameView.frame
         
-        // Calculate the maximum offset based on image and crop sizes
-        // This ensures the image can't be moved so far that the crop area would be empty
-        let maxOffsetX = max(0, (imageFrame.width - cropFrame.width) / 2)
-        let maxOffsetY = max(0, (imageFrame.height - cropFrame.height) / 2)
+        // Calculate image dimensions displayed in the view
+        let imageWidth = imageFrame.width
+        let imageHeight = imageFrame.height
         
-        // Constrain horizontal movement
+        // Calculate how much the image can move in each direction
+        // This ensures the crop area always has image content
+        let maxOffsetX: CGFloat
+        let maxOffsetY: CGFloat
+        
+        // For wider images
+        if imageWidth > cropFrame.width {
+            maxOffsetX = (imageWidth - cropFrame.width) / 2
+        } else {
+            maxOffsetX = 0 // Don't allow horizontal movement if image is narrower than crop
+        }
+        
+        // For taller images
+        if imageHeight > cropFrame.height {
+            maxOffsetY = (imageHeight - cropFrame.height) / 2
+        } else {
+            maxOffsetY = 0 // Don't allow vertical movement if image is shorter than crop
+        }
+        
+        // Apply constraints
         currentImageOffset.x = max(-maxOffsetX, min(maxOffsetX, currentImageOffset.x))
-        
-        // Constrain vertical movement
         currentImageOffset.y = max(-maxOffsetY, min(maxOffsetY, currentImageOffset.y))
+        
+        // Debug
+        print("Constraints applied: maxX=\(maxOffsetX), maxY=\(maxOffsetY), current=\(currentImageOffset)")
     }
     
     // Update the image view's transform based on current offset
     private func updateImageViewTransform() {
+        // Apply the transform to move the image
         imageView.transform = CGAffineTransform(translationX: currentImageOffset.x, y: currentImageOffset.y)
     }
 
@@ -264,28 +296,30 @@ class CropImageViewController: UIViewController {
 		// Convert the crop frame view's frame to the image view's coordinate space
 		let cropFrameInImageView = view.convert(cropFrameView.frame, to: imageView)
 
-		// Get the image's displayed frame within the image view
-		let imageViewSize = imageView.frame.size
-		let imageSize = originalImage.size
-
-		let imageAspect = imageSize.width / imageSize.height
-		let viewAspect = imageViewSize.width / imageViewSize.height
-
+		// Get the current displayed image frame
 		var imageDisplayRect = getImageFrameInImageView()
-
-        // Adjust coordinates based on the current pan offset
-        imageDisplayRect.origin.x -= currentImageOffset.x
-        imageDisplayRect.origin.y -= currentImageOffset.y
-
-		// Convert crop frame from image view coordinates to image coordinates
+		
+		// Adjust for any panning that has been done
+		imageDisplayRect.origin.x -= currentImageOffset.x
+		imageDisplayRect.origin.y -= currentImageOffset.y
+		
+		// Get image dimensions
+		let imageSize = originalImage.size
+		
+		// Calculate how the image is being scaled in the imageView
 		let scaleX = imageSize.width / imageDisplayRect.width
 		let scaleY = imageSize.height / imageDisplayRect.height
-
+		
+		// Convert the crop frame from view coordinates to image coordinates
+		// We need to account for both the position and scaling
 		let imageX = (cropFrameInImageView.origin.x - imageDisplayRect.origin.x) * scaleX
 		let imageY = (cropFrameInImageView.origin.y - imageDisplayRect.origin.y) * scaleY
 		let imageWidth = cropFrameInImageView.width * scaleX
 		let imageHeight = cropFrameInImageView.height * scaleY
-
+		
+		// Log the crop coordinates for debugging
+		print("Crop coordinates in image: x=\(imageX), y=\(imageY), width=\(imageWidth), height=\(imageHeight)")
+		
 		return CGRect(x: imageX, y: imageY, width: imageWidth, height: imageHeight)
 	}
 
@@ -332,10 +366,11 @@ class CropImageViewController: UIViewController {
 		image.draw(in: CGRect(origin: .zero, size: finalSize))
 		
 		// Get the final circular image
-		if let circularImage = UIGraphicsGetImageFromCurrentImageContext() {
-			return circularImage
+		guard let circularImage = UIGraphicsGetImageFromCurrentImageContext() else {
+			return image
 		}
 		
-		return image
+		print("Created final circular image with size: \(circularImage.size)")
+		return circularImage
 	}
 }
