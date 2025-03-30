@@ -44,6 +44,7 @@ struct MessageInputView: View {
                 .foregroundColor(universalAccentColor)
             
             TextEditor(text: $message)
+                .foregroundColor(universalAccentColor)
                 .scrollContentBackground(.hidden) // This hides the default background
                 .background(Color.white)
                 .frame(minHeight: 100)
