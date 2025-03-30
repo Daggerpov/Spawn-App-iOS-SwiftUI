@@ -456,7 +456,7 @@ struct ProfileEditButtonsSection: View {
 			// Show notification if there's a profile picture change
 			if hasNewProfilePicture {
 				await MainActor.run {
-					notificationMessage = "Your profile picture will be updated in a moment..."
+					notificationMessage = "Sit tight -- your profile picture will be updated in a moment..."
 					withAnimation {
 						showNotification = true
 					}
