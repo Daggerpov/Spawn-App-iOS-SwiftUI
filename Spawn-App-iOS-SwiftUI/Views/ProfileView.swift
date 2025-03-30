@@ -20,6 +20,8 @@ struct ProfileView: View {
 	@State private var isImageLoading: Bool = false
 	@Environment(\.presentationMode) private var presentationMode
 	@Environment(\.dismiss) private var dismiss
+	@State private var showNotification: Bool = false
+	@State private var notificationMessage: String = ""
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	
@@ -78,7 +80,9 @@ struct ProfileView: View {
 							lastName: $lastName,
 							selectedImage: $selectedImage,
 							isImageLoading: $isImageLoading,
-							userAuth: userAuth
+							userAuth: userAuth,
+							showNotification: $showNotification,
+							notificationMessage: $notificationMessage
 						)
 						.padding(.bottom, 10)
 					}
@@ -174,6 +178,7 @@ struct ProfileView: View {
 			}
 		}
 		.accentColor(universalAccentColor)
+		.toast(isShowing: $showNotification, message: notificationMessage, duration: 3.0)
 	}
 }
 
@@ -360,8 +365,8 @@ struct ProfileEditButtonsSection: View {
 	@Binding var selectedImage: UIImage?
 	@Binding var isImageLoading: Bool
 	let userAuth: UserAuthViewModel
-	@State private var showNotification: Bool = false
-	@State private var notificationMessage: String = ""
+	@Binding var showNotification: Bool
+	@Binding var notificationMessage: String
 	
 	var body: some View {
 		ZStack {
@@ -428,7 +433,6 @@ struct ProfileEditButtonsSection: View {
 				}
 			}
 		}
-		.toast(isShowing: $showNotification, message: notificationMessage, duration: 3.0)
 	}
 	
 	private func saveProfile() {
