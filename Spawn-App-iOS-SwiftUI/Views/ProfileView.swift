@@ -39,8 +39,8 @@ struct ProfileView: View {
 
 	var body: some View {
 		NavigationStack {
-			VStack {
-				VStack(alignment: .center, spacing: 16) {
+			ScrollView {
+				VStack(alignment: .center, spacing: 10) {
 					// Profile Picture
 					ZStack(alignment: .bottomTrailing) {
 						if isImageLoading {
@@ -87,7 +87,7 @@ struct ProfileView: View {
 								}
 						}
 					}
-					.padding(.top, 20)
+					.padding(.top, 5)
 					.sheet(isPresented: $showImagePicker, onDismiss: {
 						print("Image picker dismissed. Selected image exists: \(selectedImage != nil)")
 					}) {
@@ -98,7 +98,7 @@ struct ProfileView: View {
 						print("Selected image changed: \(newImage != nil)")
 					}
 
-					VStack(alignment: .leading, spacing: 20) {
+					VStack(alignment: .leading, spacing: 14) {
 						// Name field
 						if isCurrentUserProfile && editingState == .save {
 							HStack {
@@ -164,10 +164,10 @@ struct ProfileView: View {
 						}
 					}
 					.padding(.horizontal)
-					.padding(.vertical, 10)
+					.padding(.vertical, 6)
 
 					Divider().background(universalAccentColor)
-						.padding(.vertical, 10)
+						.padding(.vertical, 6)
 
 					// Only show edit button for current user's profile
 					if isCurrentUserProfile {
@@ -241,7 +241,7 @@ struct ProfileView: View {
 									.stroke(universalAccentColor, lineWidth: 1)
 								)
 						}
-						.padding(.bottom, 20)
+						.padding(.bottom, 10)
 						.disabled(isImageLoading)
 					}
 
@@ -313,16 +313,15 @@ struct ProfileView: View {
 									.cornerRadius(20)
 							}
 						}
-						.padding(.bottom, 30)
+						.padding(.bottom, 20)
 					}
 				}
 				.padding(.horizontal)
+				.padding(.top, 0)
 			}
-			.background(universalBackgroundColor)
+			.background(universalBackgroundColor.ignoresSafeArea())
 			.navigationBarBackButtonHidden()
-			.toolbarColorScheme(.light, for: .navigationBar)
 			.toolbarBackground(universalBackgroundColor, for: .navigationBar)
-			.toolbarBackground(.visible, for: .navigationBar)
 			.toolbar {
 				ToolbarItem(placement: .principal) {
 					Text("Profile")
