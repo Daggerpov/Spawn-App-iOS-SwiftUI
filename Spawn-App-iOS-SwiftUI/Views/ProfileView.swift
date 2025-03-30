@@ -50,7 +50,10 @@ struct ProfileView: View {
 							Image(uiImage: selectedImage)
 								.ProfileImageModifier(imageType: .profilePage)
 								.transition(.opacity)
-								.id("selectedImage") // Force refresh when image changes
+								.id("selectedImage-\(Date().timeIntervalSince1970)") // Force refresh with timestamp
+								.onAppear {
+									print("🖼️ Displaying selected image in profile view")
+								}
 						} else if let profilePictureString = user.profilePicture {
 							if MockAPIService.isMocking {
 								Image(profilePictureString)
@@ -90,12 +93,34 @@ struct ProfileView: View {
 					.padding(.top, 5)
 					.sheet(isPresented: $showImagePicker, onDismiss: {
 						print("Image picker dismissed. Selected image exists: \(selectedImage != nil)")
+						
+						// Force UI refresh when the picker is dismissed with a more reliable approach
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+							// Print more detailed debug info
+							if let img = selectedImage {
+								print("🖼️ Selected image after dismissal - size: \(img.size)")
+							}
+							
+							self.isImageLoading = true
+							DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+								self.isImageLoading = false
+							}
+						}
 					}) {
 						ImagePicker(selectedImage: $selectedImage)
 							.ignoresSafeArea()
 					}
 					.onChange(of: selectedImage) { newImage in
-						print("Selected image changed: \(newImage != nil)")
+						print("🖼️ Selected image changed: \(newImage != nil)")
+						if newImage != nil {
+							// Force UI update when image changes with longer delay
+							DispatchQueue.main.async {
+								isImageLoading = true
+								DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+									isImageLoading = false
+								}
+							}
+						}
 					}
 
 					VStack(alignment: .leading, spacing: 14) {
@@ -374,6 +399,24 @@ struct ProfileView: View {
 						),
 						dismissButton: .default(Text("OK"))
 					)
+				}
+			}
+			.onAppear {
+				// Update local state from userAuth.spawnUser when view appears
+				if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
+					bio = currentUser.bio ?? ""
+					username = currentUser.username
+					firstName = currentUser.firstName ?? ""
+					lastName = currentUser.lastName ?? ""
+				}
+			}
+			.onChange(of: userAuth.spawnUser) { newUser in
+				// Update local state whenever spawnUser changes
+				if isCurrentUserProfile, let currentUser = newUser {
+					bio = currentUser.bio ?? ""
+					username = currentUser.username
+					firstName = currentUser.firstName ?? ""
+					lastName = currentUser.lastName ?? ""
 				}
 			}
 		}
