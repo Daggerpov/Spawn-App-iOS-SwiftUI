@@ -42,9 +42,9 @@ class FeedbackService: ObservableObject {
             
             // Send to appropriate endpoint
             if image != nil {
-                await submitWithImage(feedback: feedbackDTO)
+                try await submitWithImage(feedback: feedbackDTO)
             } else {
-                await submitWithoutImage(feedback: feedbackDTO)
+                try await submitWithoutImage(feedback: feedbackDTO)
             }
             
             await MainActor.run {
@@ -65,7 +65,7 @@ class FeedbackService: ObservableObject {
     }
     
     private func submitWithImage(feedback: CreateFeedbackSubmissionDTO) async throws {
-        guard let url = URL(string: APIService.baseURL + "feedback/with-image") else {
+        guard let url = URL(string: APIService.baseURL + "feedback") else {
             throw APIError.URLError
         }
         
