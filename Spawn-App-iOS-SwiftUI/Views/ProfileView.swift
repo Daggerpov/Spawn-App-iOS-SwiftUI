@@ -196,84 +196,125 @@ struct ProfileView: View {
 
 					// Only show edit button for current user's profile
 					if isCurrentUserProfile {
-						Button(action: {
-							switch editingState {
-							case .edit:
+						if editingState == .save {
+							HStack(spacing: 20) {
+								// Cancel Button
+								Button(action: {
+									// Revert to original values from userAuth.spawnUser
+									if let currentUser = userAuth.spawnUser {
+										username = currentUser.username
+										firstName = currentUser.firstName ?? ""
+										lastName = currentUser.lastName ?? ""
+										bio = currentUser.bio ?? ""
+										selectedImage = nil
+									}
+									editingState = .edit
+								}) {
+									Text("Cancel")
+										.font(.headline)
+										.foregroundColor(universalAccentColor)
+										.frame(maxWidth: 135)
+										.padding()
+										.background(
+											RoundedRectangle(
+												cornerRadius: universalRectangleCornerRadius
+											)
+											.stroke(universalAccentColor, lineWidth: 1)
+										)
+								}
+								
+								// Save Button
+								Button(action: {
+									print("🔍 Saving profile changes...")
+									print("🔍 Current values - username: \(username), firstName: \(firstName), lastName: \(lastName), bio: \(bio)")
+									print("🔍 Has new image: \(selectedImage != nil)")
+									
+									isImageLoading = selectedImage != nil
+									Task {
+										// Create a local copy of the selected image before starting async task
+										let imageToUpload = selectedImage
+										
+										// Update profile info first
+										print("🔍 Updating profile text information...")
+										await userAuth.spawnEditProfile(
+											username: username,
+											firstName: firstName,
+											lastName: lastName,
+											bio: bio
+										)
+										
+										// Update profile picture if selected
+										if let newImage = imageToUpload {
+											print("🔍 Uploading new profile picture...")
+											await userAuth.updateProfilePicture(newImage)
+											print("🔍 Profile picture upload completed")
+										}
+										
+										// Update local state with the latest data from the user object
+										if let updatedUser = userAuth.spawnUser {
+											print("🔍 Retrieved updated user data:")
+											print("  - Username: \(updatedUser.username)")
+											print("  - Name: \(updatedUser.firstName ?? "nil") \(updatedUser.lastName ?? "nil")")
+											print("  - Bio: \(updatedUser.bio ?? "nil")")
+											print("  - Profile Picture: \(updatedUser.profilePicture ?? "nil")")
+											
+											username = updatedUser.username
+											firstName = updatedUser.firstName ?? ""
+											lastName = updatedUser.lastName ?? ""
+											bio = updatedUser.bio ?? ""
+											
+											// Force view update
+											Task { @MainActor in
+												print("🔍 Forcing UI refresh with updated data")
+											}
+										} else {
+											print("❌ ERROR: Updated user data is nil after profile update")
+										}
+										
+										isImageLoading = false
+										editingState = .edit
+										print("🔍 Profile edit complete")
+									}
+								}) {
+									Text("Save")
+										.font(.headline)
+										.foregroundColor(universalAccentColor)
+										.frame(maxWidth: 135)
+										.padding()
+										.background(
+											RoundedRectangle(
+												cornerRadius: universalRectangleCornerRadius
+											)
+											.stroke(universalAccentColor, lineWidth: 1)
+										)
+								}
+								.disabled(isImageLoading)
+							}
+						} else {
+							Button(action: {
 								print("🔍 Starting profile edit mode")
 								editingState = .save
-							case .save:
-								print("🔍 Saving profile changes...")
-								print("🔍 Current values - username: \(username), firstName: \(firstName), lastName: \(lastName), bio: \(bio)")
-								print("🔍 Has new image: \(selectedImage != nil)")
-								
-								isImageLoading = selectedImage != nil
-								Task {
-									// Create a local copy of the selected image before starting async task
-									let imageToUpload = selectedImage
-									
-									// Update profile info first
-									print("🔍 Updating profile text information...")
-									await userAuth.spawnEditProfile(
-										username: username,
-										firstName: firstName,
-										lastName: lastName,
-										bio: bio
+							}) {
+								Text("Edit")
+									.font(.headline)
+									.foregroundColor(universalAccentColor)
+									.frame(maxWidth: 135)
+									.padding()
+									.background(
+										RoundedRectangle(
+											cornerRadius: universalRectangleCornerRadius
+										)
+										.stroke(universalAccentColor, lineWidth: 1)
 									)
-									
-									// Update profile picture if selected
-									if let newImage = imageToUpload {
-										print("🔍 Uploading new profile picture...")
-										await userAuth.updateProfilePicture(newImage)
-										print("🔍 Profile picture upload completed")
-									}
-									
-									// Update local state with the latest data from the user object
-									if let updatedUser = userAuth.spawnUser {
-										print("🔍 Retrieved updated user data:")
-										print("  - Username: \(updatedUser.username)")
-										print("  - Name: \(updatedUser.firstName ?? "nil") \(updatedUser.lastName ?? "nil")")
-										print("  - Bio: \(updatedUser.bio ?? "nil")")
-										print("  - Profile Picture: \(updatedUser.profilePicture ?? "nil")")
-										
-										username = updatedUser.username
-										firstName = updatedUser.firstName ?? ""
-										lastName = updatedUser.lastName ?? ""
-										bio = updatedUser.bio ?? ""
-										
-										// Force view update
-										Task { @MainActor in
-											print("🔍 Forcing UI refresh with updated data")
-										}
-									} else {
-										print("❌ ERROR: Updated user data is nil after profile update")
-									}
-									
-									isImageLoading = false
-									editingState = .edit
-									print("🔍 Profile edit complete")
-								}
 							}
-						}) {
-							Text(editingState.displayText())
-								.font(.headline)
-								.foregroundColor(universalAccentColor)
-								.frame(maxWidth: 135)
-								.padding()
-								.background(
-									RoundedRectangle(
-										cornerRadius: universalRectangleCornerRadius
-									)
-									.stroke(universalAccentColor, lineWidth: 1)
-								)
 						}
 						.padding(.bottom, 10)
-						.disabled(isImageLoading)
 					}
 
 					Spacer()
 
 					// Only show log out and delete account buttons for current user's profile
-					if isCurrentUserProfile {
+					if isCurrentUserProfile && editingState == .edit {
 						VStack(spacing: 15) {
 							// Notification Settings Button
 							NavigationLink(destination: NotificationSettingsView()) {
