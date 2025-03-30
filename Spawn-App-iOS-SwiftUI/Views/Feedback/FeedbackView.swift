@@ -37,7 +37,8 @@ struct FeedbackTypeSelector: View {
 // MARK: - Message Input Component
 struct MessageInputView: View {
     @Binding var message: String
-    @Binding var isInputFocused: Bool
+    @Binding var isFocused: Bool
+    @FocusState private var textFieldFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -56,12 +57,18 @@ struct MessageInputView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                     )
-                    .focused($isInputFocused)
+                    .focused($textFieldFocused)
+                    .onChange(of: textFieldFocused) { newValue in
+                        isFocused = newValue
+                    }
+                    .onChange(of: isFocused) { newValue in
+                        textFieldFocused = newValue
+                    }
                     .onSubmit {
-                        isInputFocused = false
+                        textFieldFocused = false
                     }
                 
-                if message.isEmpty && !isInputFocused {
+                if message.isEmpty && !textFieldFocused {
                     Text("Share your thoughts, report a bug, or suggest a feature...")
                         .foregroundColor(Color.gray)
                         .padding(.leading, 16)
@@ -70,8 +77,8 @@ struct MessageInputView: View {
                 }
             }
             .onTapGesture {
-                if !isInputFocused {
-                    isInputFocused = true
+                if !textFieldFocused {
+                    textFieldFocused = true
                 }
             }
         }
@@ -202,7 +209,7 @@ struct FeedbackView: View {
     @State private var message: String = ""
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
-    @FocusState private var isTextFieldFocused: Bool
+    @State private var isTextFieldFocused: Bool = false
     
     let userId: UUID?
     let email: String?
@@ -221,7 +228,7 @@ struct FeedbackView: View {
                         .padding(.top, 10)
                     
                     // Message input
-                    MessageInputView(message: $message, isInputFocused: $isTextFieldFocused)
+                    MessageInputView(message: $message, isFocused: $isTextFieldFocused)
                     
                     // Image picker
                     ImagePickerView(selectedItem: $selectedItem, selectedImage: $selectedImage)
