@@ -1,5 +1,5 @@
 //
-//  FriendsView.swift
+//  FriendsAndTagsView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/24/24.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct FriendsView: View {
+struct FriendsAndTagsView: View {
 	let user: BaseUserDTO
 	let source: BackButtonSourcePageType
 
@@ -115,5 +115,5 @@ struct FriendsView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	FriendsView(user: .danielAgapov, source: .feed)
+	FriendsAndTagsView(user: .danielAgapov, source: .feed)
 }
