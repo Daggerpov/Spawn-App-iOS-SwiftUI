@@ -31,9 +31,43 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         print("Failed to register for remote notifications: \(error.localizedDescription)")
     }
     
-    // Handle push notifications received when app is in background
-    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        handleReceivedNotification(userInfo)
+    // Handle push notifications that arrived while the app was in the background
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        
+        // Check if this notification is for cache invalidation
+        if let type = userInfo["type"] as? String {
+            switch type {
+            case "friend-updated", "friend-accepted":
+                // Someone accepted a friend request or updated their profile
+                Task {
+                    await AppCache.shared.refreshFriends()
+                    completionHandler(.newData)
+                }
+                return
+                
+            case "event-updated":
+                // An event was updated
+                Task {
+                    await AppCache.shared.refreshEvents()
+                    completionHandler(.newData)
+                }
+                return
+                
+            case "new-notification":
+                // New notification received
+                Task {
+                    await AppCache.shared.refreshNotifications()
+                    completionHandler(.newData)
+                }
+                return
+                
+            default:
+                break
+            }
+        }
+        
+        // Process standard notification if not a cache invalidation notification
+        NotificationService.shared.processNotification(userInfo: userInfo)
         completionHandler(.newData)
     }
     

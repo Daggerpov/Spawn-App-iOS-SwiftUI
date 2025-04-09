@@ -25,10 +25,24 @@ class FriendsTabViewModel: ObservableObject {
 	var userId: UUID
 	var apiService: IAPIService
     private var cancellables = Set<AnyCancellable>()
+    private var appCache: AppCache
 
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
 		self.apiService = apiService
+        self.appCache = AppCache.shared
+        
+        // Subscribe to AppCache friends updates
+        appCache.$friends
+            .sink { [weak self] cachedFriends in
+                if !cachedFriends.isEmpty {
+                    self?.friends = cachedFriends
+                    if !(self?.isSearching ?? false) {
+                        self?.filteredFriends = cachedFriends
+                    }
+                }
+            }
+            .store(in: &cancellables)
 	}
     
     // Call this method to connect the search view model to this view model
@@ -190,15 +204,27 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchFriends() async {
+		// First check the cache
+        if !appCache.friends.isEmpty {
+            await MainActor.run {
+                // Use cached data if available
+                self.friends = appCache.friends
+                return
+            }
+        }
+        
+        // If cache is empty or we need fresh data, fetch from API
 		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)")
 		{
 			do {
 				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService
 					.fetchData(from: url, parameters: nil)
 
-				// Ensure updating on the main thread
+				// Update cache and view model
 				await MainActor.run {
 					self.friends = fetchedFriends
+                    // Update the cache
+                    self.appCache.updateFriends(fetchedFriends)
 				}
 			} catch {
 				await MainActor.run {

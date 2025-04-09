@@ -10,6 +10,7 @@ import SwiftUI
 struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
 	let user: BaseUserDTO
+    @EnvironmentObject private var appCache: AppCache
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -58,6 +59,13 @@ struct FriendsTabView: View {
                     viewModel.connectSearchViewModel(searchViewModel)
 				}
 			}
+            .refreshable {
+                // Pull to refresh functionality
+                Task {
+                    await appCache.refreshFriends()
+                    await viewModel.fetchAllData()
+                }
+            }
 
 			if showingFriendRequestPopup {
 				friendRequestPopUpView

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FeedView: View {
 	@StateObject private var viewModel: FeedViewModel
+	@EnvironmentObject private var appCache: AppCache
 
 	@Namespace private var animation: Namespace.ID
 
@@ -81,6 +82,13 @@ struct FeedView: View {
 			.background(universalBackgroundColor)
 			.onAppear {
 				Task {
+					await appCache.validateCache()
+					await viewModel.fetchAllData()
+				}
+			}
+			.refreshable {
+				Task {
+					await appCache.refreshEvents()
 					await viewModel.fetchAllData()
 				}
 			}

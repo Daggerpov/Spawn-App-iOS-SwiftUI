@@ -11,6 +11,7 @@ Table of contents:
     - [MVVM Architecture](#mvvm-architecture)
 - [Current App Look](#current-app-look)
 - [Entity Relationship Diagram](#entity-relationship-diagram)
+- [Mobile Caching Implementation](#mobile-caching-implementation)
 
 # Onboarding
 
@@ -217,3 +218,27 @@ Note that this is usually behind our actual 'current' app; stay tuned on [getspa
 # Entity Relationship Diagram
 
 ![erd-nov-21](images/entity-relationship-diagram.png)
+
+## Mobile Caching Implementation
+
+The app now implements client-side caching to improve performance and reduce API calls. The caching system includes:
+
+1. **AppCache Singleton**: A centralized cache store that persists data to disk and provides reactive updates
+2. **Cache Validation API**: A backend API endpoint that validates cached data and informs the client when to refresh
+3. **Push Notification Support**: Real-time updates when data changes server-side
+
+### Key Features
+
+- **Improved Performance**: Data loads instantly from cache before network requests
+- **Reduced API Calls**: Only fetches data that has changed
+- **Stale-While-Revalidate**: Shows cached data first, then updates in the background
+- **Bandwidth Savings**: Minimizes network traffic by sending only what's changed
+
+### Technical Implementation
+
+- The caching system operates on key collections like `friends`, `events`, and `notifications`
+- Timestamps track when each collection was last updated
+- The backend validates these timestamps against the latest data changes
+- Push notifications trigger cache refreshes for real-time updates
+
+For more details, see [cache-implementation-guide.md](cache-implementation-guide.md) and [cache-validation-api-spec.md](cache-validation-api-spec.md).

@@ -710,6 +710,54 @@ class APIService: IAPIService {
 		
 		return data
 	}
+
+	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] {
+		resetState()
+		
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			throw APIError.invalidData
+		}
+		
+		// Create the URL for the cache validation endpoint
+		guard let url = URL(string: APIService.baseURL + "cache/validate/\(userId)") else {
+			throw APIError.URLError
+		}
+		
+		// Convert the dictionary of cache items and their timestamps to JSON
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		let jsonData = try encoder.encode(cachedItems)
+		
+		// Create and configure the request
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = jsonData
+		
+		// Send the request
+		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		// Validate the response
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+		
+		guard httpResponse.statusCode == 200 else {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		// Decode the response
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		let validationResponse = try decoder.decode([String: CacheValidationResponse].self, from: data)
+		
+		return validationResponse
+	}
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end
