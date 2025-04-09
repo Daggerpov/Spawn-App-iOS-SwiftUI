@@ -1,1 +1,13 @@
- 
+{
+    "aps": {
+        "alert": {
+            "title": "Sample Push Notification",
+            "body": "This is a sample push notification for testing purposes"
+        },
+        "badge": 1,
+        "sound": "default"
+    },
+    "type": "friendRequest",
+    "senderId": "00000000-0000-0000-0000-000000000001",
+    "requestId": "00000000-0000-0000-0000-000000000002"
+} 
