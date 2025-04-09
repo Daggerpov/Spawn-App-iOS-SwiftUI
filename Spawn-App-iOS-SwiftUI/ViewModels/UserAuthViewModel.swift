@@ -562,7 +562,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
-		print("Starting profile picture update for user \(userId) with image data size: \(imageData.count) bytes")
+		if let user = spawnUser {
+			print("Starting profile picture update for user \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")) with image data size: \(imageData.count) bytes")
+		} else {
+			print("Starting profile picture update for user \(userId) with image data size: \(imageData.count) bytes")
+		}
 		
 		// Use our new dedicated method for profile picture updates
 		do {
@@ -621,6 +625,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		guard let userId = spawnUser?.id else {
 			print("Cannot edit profile: No user ID found")
 			return
+		}
+		
+		// Log user details
+		if let user = spawnUser {
+			print("Editing profile for user \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
 		}
 
 		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {

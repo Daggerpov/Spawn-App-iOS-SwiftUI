@@ -275,7 +275,14 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         guard let senderId = userInfo["senderId"] as? String,
               let requestId = userInfo["requestId"] as? String else { return }
         
-        print("Friend request from user \(senderId), request ID: \(requestId)")
+        // Get user info if available
+        if let userId = UUID(uuidString: senderId), 
+           let user = UserAuthViewModel.shared.spawnUser, 
+           user.id == userId {
+            print("Friend request from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")), request ID: \(requestId)")
+        } else {
+            print("Friend request from user \(senderId), request ID: \(requestId)")
+        }
         // Navigate to friend requests view (implementation will depend on your navigation setup)
     }
     
@@ -302,7 +309,14 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         guard let eventId = userInfo["eventId"] as? String,
               let senderId = userInfo["senderId"] as? String else { return }
         
-        print("New chat message in event \(eventId) from user \(senderId)")
+        // Get user info if available
+        if let userId = UUID(uuidString: senderId), 
+           let user = UserAuthViewModel.shared.spawnUser, 
+           user.id == userId {
+            print("New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+        } else {
+            print("New chat message in event \(eventId) from user \(senderId)")
+        }
         // Navigate to chat (implementation will depend on your navigation setup)
     }
     
@@ -321,10 +335,16 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         case .friendRequest:
             title = "New Friend Request"
             body = "Someone wants to be your friend on Spawn!"
+            let senderId = UUID()
             userInfo = NotificationDataBuilder.friendRequest(
-                senderId: UUID(),
+                senderId: senderId,
                 requestId: UUID()
             )
+            
+            // Add more detailed logging
+            if let user = UserAuthViewModel.shared.spawnUser {
+                print("Test Friend Request - User ID: \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            }
             
         case .eventInvite:
             title = "New Event Invitation"
@@ -345,10 +365,16 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         case .chat:
             title = "New Message"
             body = "You have a new message in an event chat"
+            let senderId = UUID()
             userInfo = NotificationDataBuilder.chatMessage(
                 eventId: UUID(),
-                senderId: UUID()
+                senderId: senderId
             )
+            
+            // Add more detailed logging
+            if let user = UserAuthViewModel.shared.spawnUser {
+                print("Test Chat Message - User ID: \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            }
             
         case .welcome:
             title = "Welcome to Spawn!"
@@ -382,6 +408,11 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             print("Cannot fetch notification preferences: user not logged in")
             return
+        }
+        
+        // Log user details
+        if let user = UserAuthViewModel.shared.spawnUser {
+            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
         }
         
         // Don't fetch from backend if in mock mode
@@ -428,6 +459,11 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             print("Cannot update notification preferences: user not logged in")
             return
+        }
+        
+        // Log user details
+        if let user = UserAuthViewModel.shared.spawnUser {
+            print("Updating notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
         }
         
         // Save to UserDefaults immediately (optimistic update)
