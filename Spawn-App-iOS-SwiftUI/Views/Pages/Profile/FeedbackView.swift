@@ -37,6 +37,8 @@ struct FeedbackTypeSelector: View {
 // MARK: - Message Input Component
 struct MessageInputView: View {
     @Binding var message: String
+    @Binding var isFocused: Bool
+    @FocusState private var textFieldFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -44,29 +46,41 @@ struct MessageInputView: View {
                 .font(.headline)
                 .foregroundColor(universalAccentColor)
             
-            TextEditor(text: $message)
-                .foregroundColor(universalAccentColor)
-                .scrollContentBackground(.hidden) // This hides the default background
-                .background(Color.white)
-                .frame(minHeight: 100)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
-                .overlay(
-                    Group {
-                        if message.isEmpty {
-                            HStack(alignment: .top) {
-                                Text("Share your thoughts, report a bug, or suggest a feature...")
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(.leading, 16)
-                                    .padding(.top, 16)
-                                Spacer()
-                            }
-                        }
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $message)
+                    .foregroundColor(universalAccentColor)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.white)
+                    .frame(minHeight: 100)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+                    .focused($textFieldFocused)
+                    .onChange(of: textFieldFocused) { newValue in
+                        isFocused = newValue
                     }
-                )
+                    .onChange(of: isFocused) { newValue in
+                        textFieldFocused = newValue
+                    }
+                    .onSubmit {
+                        textFieldFocused = false
+                    }
+                
+                if message.isEmpty && !textFieldFocused {
+                    Text("Share your thoughts, report a bug, or suggest a feature...")
+                        .foregroundColor(Color.gray)
+                        .padding(.leading, 16)
+                        .padding(.top, 16)
+                        .allowsHitTesting(false)
+                }
+            }
+            .onTapGesture {
+                if !textFieldFocused {
+                    textFieldFocused = true
+                }
+            }
         }
         .padding(.horizontal)
     }
@@ -195,6 +209,7 @@ struct FeedbackView: View {
     @State private var message: String = ""
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
+    @State private var isTextFieldFocused: Bool = false
     
     let userId: UUID?
     let email: String?
@@ -213,7 +228,7 @@ struct FeedbackView: View {
                         .padding(.top, 10)
                     
                     // Message input
-                    MessageInputView(message: $message)
+                    MessageInputView(message: $message, isFocused: $isTextFieldFocused)
                     
                     // Image picker
                     ImagePickerView(selectedItem: $selectedItem, selectedImage: $selectedImage)
@@ -248,6 +263,11 @@ struct FeedbackView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top, 10)
+                .onTapGesture {
+                    if isTextFieldFocused {
+                        isTextFieldFocused = false
+                    }
+                }
             }
             .navigationBarBackButtonHidden()
             .background(universalBackgroundColor.ignoresSafeArea())

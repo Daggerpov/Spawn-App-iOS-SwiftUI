@@ -8,7 +8,7 @@
 import Foundation
 
 enum FeedbackType: String, Codable, CaseIterable, Identifiable {
-    case BUG_REPORT
+    case BUG
     case FEATURE_REQUEST 
     case GENERAL_FEEDBACK
     
@@ -16,7 +16,7 @@ enum FeedbackType: String, Codable, CaseIterable, Identifiable {
     
     var displayName: String {
         switch self {
-        case .BUG_REPORT:
+        case .BUG:
             return "Bug Report"
         case .FEATURE_REQUEST:
             return "Feature Request"
@@ -27,7 +27,7 @@ enum FeedbackType: String, Codable, CaseIterable, Identifiable {
     
     var iconName: String {
         switch self {
-        case .BUG_REPORT:
+        case .BUG:
             return "ant"
         case .FEATURE_REQUEST:
             return "lightbulb"

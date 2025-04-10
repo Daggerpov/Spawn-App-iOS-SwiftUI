@@ -32,19 +32,61 @@ class FeedbackService: ObservableObject {
         }
         
         do {
-            // Create feedback submission DTO with image data
-            let feedbackDTO = CreateFeedbackSubmissionDTO(
-                type: type,
-                fromUserId: userId,
-                message: message,
-                image: image
-            )
+            // Create URL
+            guard let url = URL(string: APIService.baseURL + "feedback") else {
+                throw APIError.URLError
+            }
             
-            // Send to appropriate endpoint
-            if image != nil {
-                try await submitWithImage(feedback: feedbackDTO)
-            } else {
-                try await submitWithoutImage(feedback: feedbackDTO)
+            // Create feedback data as dictionary with manual handling for image
+            var feedbackDict: [String: Any] = [
+                "type": type.rawValue,
+                "message": message,
+            ]
+            
+            // Add userId if available
+            if let userId = userId {
+                feedbackDict["fromUserId"] = userId.uuidString
+            }
+            
+            // Handle image the same way as in createUser
+            if let image = image {
+                let resizedImage = resizeImageIfNeeded(image, maxDimension: 1024)
+                if let imageData = resizedImage.jpegData(compressionQuality: 0.7) {
+                    let base64String = imageData.base64EncodedString()
+                    feedbackDict["imageData"] = base64String
+                    print("Including feedback image data of size: \(imageData.count) bytes")
+                }
+            }
+            
+            // Convert dictionary to JSON data
+            guard let jsonData = try? JSONSerialization.data(withJSONObject: feedbackDict) else {
+                throw APIError.invalidData
+            }
+            
+            // Create request manually
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = jsonData
+            
+            // Send the request
+            let (data, response) = try await URLSession.shared.data(for: request)
+            
+            // Check response
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw APIError.failedHTTPRequest(description: "HTTP request failed")
+            }
+            
+            guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                // Try to parse error message
+                if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                   let errorMessage = errorJson["message"] as? String {
+                    print("Error response: \(errorMessage)")
+                } else if let errorString = String(data: data, encoding: .utf8) {
+                    print("Error response: \(errorString)")
+                }
+                
+                throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
             }
             
             await MainActor.run {
@@ -56,21 +98,32 @@ class FeedbackService: ObservableObject {
         }
     }
     
-    private func submitWithoutImage(feedback: CreateFeedbackSubmissionDTO) async throws {
-        guard let url = URL(string: APIService.baseURL + "feedback") else {
-            throw APIError.URLError
+    // Helper method to resize images
+    private func resizeImageIfNeeded(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let originalSize = image.size
+        
+        // Check if resizing is needed
+        if originalSize.width <= maxDimension && originalSize.height <= maxDimension {
+            return image
         }
         
-        let _ = try await apiService.sendData(feedback, to: url, parameters: nil)
-    }
-    
-    private func submitWithImage(feedback: CreateFeedbackSubmissionDTO) async throws {
-        guard let url = URL(string: APIService.baseURL + "feedback") else {
-            throw APIError.URLError
+        // Calculate the new size while preserving aspect ratio
+        var newSize: CGSize
+        if originalSize.width > originalSize.height {
+            let ratio = maxDimension / originalSize.width
+            newSize = CGSize(width: maxDimension, height: originalSize.height * ratio)
+        } else {
+            let ratio = maxDimension / originalSize.height
+            newSize = CGSize(width: originalSize.width * ratio, height: maxDimension)
         }
         
-        // Use sendData instead of multipart form data
-        let _ = try await apiService.sendData(feedback, to: url, parameters: nil)
+        // Render the image at the new size
+        UIGraphicsBeginImageContextWithOptions(newSize, false, 1.0)
+        image.draw(in: CGRect(origin: .zero, size: newSize))
+        let resizedImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        
+        return resizedImage
     }
     
     @MainActor
