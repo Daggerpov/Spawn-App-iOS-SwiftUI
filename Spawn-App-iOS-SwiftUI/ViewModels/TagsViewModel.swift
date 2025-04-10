@@ -12,6 +12,7 @@ class TagsViewModel: ObservableObject {
 	@Published var creationMessage: String = ""
 	@Published var deletionMessage: String = ""
 	@Published var friendRemovalMessage: String = ""
+	@Published var isLoading: Bool = false
 
 	var apiService: IAPIService
 	var userId: UUID
@@ -27,6 +28,23 @@ class TagsViewModel: ObservableObject {
 			colorHexCode: "",
 			ownerUserId: userId
 		)
+	}
+
+	// Optimized method to fetch all required data in parallel
+	func fetchAllData() async {
+		await MainActor.run {
+			isLoading = true
+		}
+		
+		// Create a task group to run operations in parallel
+		await withTaskGroup(of: Void.self) { group in
+			group.addTask { await self.fetchTags() }
+			// Add other related fetches here if needed in the future
+		}
+		
+		await MainActor.run {
+			isLoading = false
+		}
 	}
 
 	func fetchTags() async {
@@ -57,7 +75,9 @@ class TagsViewModel: ObservableObject {
 		upsertAction: UpsertActionType
 	) async {
 		if displayName.isEmpty {
-			creationMessage = "Please enter a display name"
+			await MainActor.run {
+				creationMessage = "Please enter a display name"
+			}
 			return
 		}
 
@@ -68,6 +88,8 @@ class TagsViewModel: ObservableObject {
 			ownerUserId: userId
 		)
 
+		var tagCreatedSuccessfully = false
+		
 		do {
 			switch upsertAction {
 			case .create:
@@ -75,6 +97,7 @@ class TagsViewModel: ObservableObject {
 				else { return }
 				_ = try await self.apiService.sendData(
 					newTag, to: url, parameters: nil)
+				tagCreatedSuccessfully = true
 			case .update:
 				guard
 					let url = URL(
@@ -82,6 +105,7 @@ class TagsViewModel: ObservableObject {
 				else { return }
 					let _: FriendTagCreationDTO = try await self.apiService
 					.updateData(newTag, to: url, parameters: nil)
+				tagCreatedSuccessfully = true
 			}
 		} catch {
 			await MainActor.run {
@@ -90,18 +114,24 @@ class TagsViewModel: ObservableObject {
 			}
 		}
 
-		// re-fetching tags after creation, since it's now
-		// been created and should be added to this group
-		await fetchTags()
+		// Only fetch tags if the operation was successful
+		if tagCreatedSuccessfully {
+			// re-fetching tags after creation, since it's now
+			// been created and should be added to this group
+			await fetchAllData()
+		}
 	}
 
 	func deleteTag(id: UUID) async {
+		var tagDeletedSuccessfully = false
+		
 		if let url = URL(string: APIService.baseURL + "friendTags/\(id)") {
 			do {
 				try await self.apiService.deleteData(from: url)
 				await MainActor.run {
 					self.tags.removeAll { $0.id == id }  // Remove the tag from the local list
 				}
+				tagDeletedSuccessfully = true
 			} catch {
 				await MainActor.run {
 					deletionMessage =
@@ -109,11 +139,16 @@ class TagsViewModel: ObservableObject {
 				}
 			}
 		}
-		await fetchTags()
+		
+		// Only re-fetch if successfully deleted
+		if tagDeletedSuccessfully {
+			await fetchAllData()
+		}
 	}
 
-	func removeFriendFromFriendTag(friendUserId: UUID, friendTagId: UUID) async
-	{
+	func removeFriendFromFriendTag(friendUserId: UUID, friendTagId: UUID) async {
+		var removalSuccessful = false
+		
 		if let url = URL(
 			string: APIService.baseURL + "friendTags/\(friendTagId)")
 		{
@@ -125,6 +160,7 @@ class TagsViewModel: ObservableObject {
 						"friendTagAction": "removeFriend",
 						"userId": friendUserId.uuidString,
 					])
+				removalSuccessful = true
 			} catch {
 				await MainActor.run {
 					friendRemovalMessage =
@@ -132,6 +168,10 @@ class TagsViewModel: ObservableObject {
 				}
 			}
 		}
-		await fetchTags()
+		
+		// Only re-fetch if successfully removed
+		if removalSuccessful {
+			await fetchAllData()
+		}
 	}
 }

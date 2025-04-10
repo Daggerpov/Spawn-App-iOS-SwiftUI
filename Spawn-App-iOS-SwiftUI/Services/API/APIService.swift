@@ -8,6 +8,17 @@
 import Foundation
 import UIKit
 
+// Protocol to help handle Optional types in a generic way
+protocol OptionalProtocol {
+	static var nilValue: Self { get }
+}
+
+extension Optional: OptionalProtocol {
+	static var nilValue: Self {
+		return nil
+	}
+}
+
 class APIService: IAPIService {
 	static var baseURL: String =
 		"https://spawn-app-back-end-production.up.railway.app/api/v1/"
@@ -106,8 +117,22 @@ class APIService: IAPIService {
 		// Handle auth tokens if present
 		try handleAuthTokens(from: httpResponse, for: finalURL)
 
-		// TODO: once solved in back-end, remove this
-		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 404 else {
+		// Special handling for 404 in auth endpoints
+		if httpResponse.statusCode == 404 {
+			// If this is an auth endpoint and we get a 404, this likely means the user doesn't exist yet
+			if finalURL.absoluteString.contains("/auth/") {
+				errorStatusCode = 404
+				throw APIError.invalidStatusCode(statusCode: 404)
+			}
+			
+			// For non-auth endpoints, try to return an empty result
+			if let emptyArrayResult = emptyArrayResult(for: T.self) {
+				return emptyArrayResult
+			}
+		}
+
+		// Check status code
+		guard httpResponse.statusCode == 200 else {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
@@ -117,44 +142,59 @@ class APIService: IAPIService {
 				as? [String: Any]
 			{
 				print("Error Response: \(errorJson)")
+			} else if let errorString = String(data: data, encoding: .utf8) {
+				print("Error Response (non-JSON): \(errorString)")
 			}
 
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
-
-		do {
-			let decoder = APIService.makeDecoder()
-
-			// Try parsing with more detailed error handling
-			do {
-				let decodedData = try decoder.decode(T.self, from: data)
-				return decodedData
-			} catch DecodingError.keyNotFound(let key, let context) {
-				print(
-					"Missing key: \(key.stringValue) - \(context.debugDescription)"
-				)
-				throw APIError.failedJSONParsing(url: finalURL)
-			} catch DecodingError.typeMismatch(let type, let context) {
-				print(
-					"Type mismatch: expected \(type) - \(context.debugDescription)"
-				)
-				throw APIError.failedJSONParsing(url: finalURL)
-			} catch DecodingError.valueNotFound(let type, let context) {
-				print(
-					"Value not found: expected \(type) - \(context.debugDescription)"
-				)
-				throw APIError.failedJSONParsing(url: finalURL)
-			} catch DecodingError.dataCorrupted(let context) {
-				print("Data corrupted: \(context.debugDescription)")
-				throw APIError.failedJSONParsing(url: finalURL)
+		
+		// Handle empty responses
+		if data.isEmpty || data.count == 0 {
+			if let emptyResponse = emptyResult(for: T.self) {
+				return emptyResponse
 			}
-		} catch {
-			errorMessage =
-				APIError.failedJSONParsing(url: finalURL).localizedDescription
-			print("JSON Parsing Error: \(error)")
-			// Print received data for debugging
+			throw APIError.invalidData
+		}
+
+		// Create decoder outside the try/catch scope so it's accessible in all blocks
+		let decoder = APIService.makeDecoder()
+		
+		// Try to decode normally first
+		do {
+			let decodedData = try decoder.decode(T.self, from: data)
+			return decodedData
+		} catch let decodingError {
+			// If normal decoding fails and we're expecting a single object but got an array,
+			// try to extract the first item from the array
+			let isArrayType = String(describing: T.self).contains("Array")
+			
+			// Only attempt array handling if we're not already expecting an array type
+			if !isArrayType {
+				// Try to decode as an array of that type
+				print("Attempting to decode as array and extract the first item")
+				
+				do {
+					// Use JSONSerialization first to check if it's an array
+					if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [Any],
+					   !jsonObject.isEmpty {
+						
+						// It is an array, try to decode it as such and take the first element
+						if let firstItemData = try? JSONSerialization.data(withJSONObject: jsonObject[0]) {
+							let firstItem = try decoder.decode(T.self, from: firstItemData)
+							print("Successfully decoded first item from array response")
+							return firstItem
+						}
+					}
+				} catch {
+					print("Failed to extract first item from array: \(error)")
+				}
+			}
+			
+			// If we got here, throw the original decoding error
+			print("JSON Decoding Error: \(decodingError)")
 			if let jsonString = String(data: data, encoding: .utf8) {
 				print("Received JSON: \(jsonString)")
 			}
@@ -401,7 +441,15 @@ class APIService: IAPIService {
 
 		// Specifically check for 409 Conflict to handle email already exists case
 		if httpResponse.statusCode == 409 {
-			print("Conflict detected (409): Email likely already in use")
+			print("Conflict detected (409): Email or username likely already in use")
+			
+			// Try to parse error message from response
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+			   let message = errorJson["message"] as? String {
+				print("Error response: \(message)")
+				errorMessage = message
+			}
+			
 			throw APIError.invalidStatusCode(statusCode: 409)
 		}
 
@@ -472,6 +520,10 @@ class APIService: IAPIService {
 
 		let encoder = APIService.makeEncoder()
 		let encodedData = try encoder.encode(object)
+		
+		// Debug: Log the request details
+		print("🔍 PATCH REQUEST: \(url.absoluteString)")
+		print("🔍 REQUEST BODY: \(String(data: encodedData, encoding: .utf8) ?? "Unable to convert to string")")
 
 		var request = URLRequest(url: url)
 		request.httpMethod = "PATCH"
@@ -479,10 +531,14 @@ class APIService: IAPIService {
 		request.httpBody = encodedData
 
 		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		// Debug: Log the response details
+		print("🔍 RESPONSE: \(response)")
+		print("🔍 RESPONSE DATA: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
-			print(errorMessage ?? "no error message to log")
+			print("❌ ERROR: HTTP request failed for \(url)")
 			throw APIError.failedHTTPRequest(
 				description: "The HTTP request has failed.")
 		}
@@ -490,7 +546,13 @@ class APIService: IAPIService {
 		guard httpResponse.statusCode == 200 else {
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(url)"
-			print(errorMessage ?? "no error message to log")
+			print("❌ ERROR: Invalid status code \(httpResponse.statusCode) for \(url)")
+			
+			// Try to parse error message from response
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+				print("❌ ERROR DETAILS: \(errorJson)")
+			}
+			
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
@@ -498,13 +560,155 @@ class APIService: IAPIService {
 		do {
 			let decoder = APIService.makeDecoder()
 			let decodedData = try decoder.decode(U.self, from: data)
+			print("✅ SUCCESS: Data decoded successfully for \(url.absoluteString)")
 			return decodedData
 		} catch {
 			errorMessage =
 				APIError.failedJSONParsing(url: url).localizedDescription
-			print(errorMessage ?? "no error message to log")
+			print("❌ ERROR: JSON parsing failed for \(url): \(error)")
+			
+			// Log the data that couldn't be parsed
+			print("❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+			
 			throw APIError.failedJSONParsing(url: url)
 		}
+	}
+
+	// Helper to create empty results of the appropriate type
+	private func emptyResult<T>(for type: T.Type) -> T? {
+		// For array types
+		if type is [Any].Type || type is [[String: Any]].Type {
+			return [] as? T
+		}
+		
+		// For optional types
+		if let optionalType = type as? OptionalProtocol.Type {
+			return optionalType.nilValue as? T
+		}
+		
+		return nil
+	}
+	
+	// Helper specifically for empty arrays
+	private func emptyArrayResult<T>(for type: T.Type) -> T? {
+		if type is [Any].Type || type is [[String: Any]].Type {
+			return [] as? T
+		}
+		
+		// For single objects, we can't create an empty result so return nil
+		return nil
+	}
+
+	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO {
+		guard let url = URL(string: APIService.baseURL + "users/update-pfp/\(userId)") else {
+			print("❌ ERROR: Failed to create URL for profile picture update")
+			throw APIError.URLError
+		}
+		
+		print("🔍 UPDATING PROFILE PICTURE: Starting request to \(url.absoluteString)")
+		print("🔍 REQUEST DATA SIZE: \(imageData.count) bytes")
+		
+		// Create the request
+		var request = URLRequest(url: url)
+		request.httpMethod = "PATCH"
+		request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
+		request.httpBody = imageData
+		
+		// Log request headers
+		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
+		
+		// Perform the request with detailed logging
+		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		print("🔍 RESPONSE RECEIVED: \(response)")
+		
+		// Check if we can read the response as JSON or text
+		if let responseString = String(data: data, encoding: .utf8) {
+			print("🔍 RESPONSE DATA: \(responseString)")
+		} else {
+			print("🔍 RESPONSE DATA: Unable to convert to string (binary data of \(data.count) bytes)")
+		}
+		
+		// Check the HTTP response
+		guard let httpResponse = response as? HTTPURLResponse else {
+			print("❌ ERROR: Failed HTTP request - unable to get HTTP response")
+			throw APIError.failedHTTPRequest(description: "HTTP request failed")
+		}
+		
+		guard (200...299).contains(httpResponse.statusCode) else {
+			print("❌ ERROR: Invalid status code \(httpResponse.statusCode)")
+			
+			// Try to parse error details
+			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+				print("❌ ERROR DETAILS: \(errorJson)")
+			}
+			
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		// Parse the response
+		do {
+			let decoder = JSONDecoder()
+			let updatedUser = try decoder.decode(BaseUserDTO.self, from: data)
+			print("✅ SUCCESS: Profile picture updated, new URL: \(updatedUser.profilePicture ?? "nil")")
+			return updatedUser
+		} catch {
+			print("❌ ERROR: Failed to decode user data after profile picture update: \(error)")
+			print("❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+			throw APIError.failedJSONParsing(url: url)
+		}
+	}
+
+	// Add sendMultipartFormData implementation
+	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data {
+		resetState()
+		
+		let boundary = "Boundary-\(UUID().uuidString)"
+		
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+		
+		// Create the body
+		var body = Data()
+		
+		for (key, value) in formData {
+			if let data = value as? Data {
+				// Handle image data
+				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
+				body.append("Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(using: .utf8)!)
+				body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+				body.append(data)
+			} else {
+				// Handle text fields
+				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
+				body.append("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8)!)
+				body.append("\(value)".data(using: .utf8)!)
+			}
+		}
+		
+		// Add final boundary
+		body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+		
+		request.httpBody = body
+		
+		// Perform the request
+		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+		
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage = "Invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		return data
 	}
 }
 

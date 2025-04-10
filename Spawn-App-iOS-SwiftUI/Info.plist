@@ -15,5 +15,15 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Spawn needs access to your photo library so you can select profile pictures and share images with friends.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Spawn needs camera access to allow you to take profile pictures and share photos with friends.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Spawn would like to save photos to your photo library.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

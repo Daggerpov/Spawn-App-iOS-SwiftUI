@@ -27,4 +27,6 @@ protocol IAPIService {
 		with object: T
 	) async throws -> U
 	func deleteData(from url: URL) async throws
+	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO
+	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data
 }
