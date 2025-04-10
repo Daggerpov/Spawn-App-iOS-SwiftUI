@@ -191,8 +191,17 @@ class MockAPIService: IAPIService {
     func updateProfilePicture(_ imageData: Data, userId: UUID) async throws
         -> BaseUserDTO
     {
-        // Log that we're using the mock implementation
-        print("🔍 MOCK: Updating profile picture for user \(userId)")
+        // Make a mutable copy of the mock users
+        var mockUsers = BaseUserDTO.mockUsers
+        
+        // Try to find user details for logging
+        if let existingUser = mockUsers.first(where: { $0.id == userId }) {
+            // Log with user details
+            print("🔍 MOCK: Updating profile picture for user \(userId) (username: \(existingUser.username), name: \(existingUser.firstName ?? "") \(existingUser.lastName ?? ""))")
+        } else {
+            // Log just the ID if user not found
+            print("🔍 MOCK: Updating profile picture for user \(userId)")
+        }
 
         // Simulate network delay
         try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1 second
@@ -201,17 +210,15 @@ class MockAPIService: IAPIService {
         let mockProfilePicURL =
             "https://mock-s3.amazonaws.com/profile-pictures/\(UUID().uuidString).jpg"
 
-        // Make a mutable copy of the mock users
-        var mockUsers = BaseUserDTO.mockUsers
-
         // If we have a user with this ID in our mock data, update it
         if let existingUserIndex = mockUsers.firstIndex(where: {
             $0.id == userId
         }) {
             // Update the mock user with the new profile picture URL
             mockUsers[existingUserIndex].profilePicture = mockProfilePicURL
+            let updatedUser = mockUsers[existingUserIndex]
             print(
-                "✅ MOCK: Profile picture updated successfully with URL: \(mockProfilePicURL)"
+                "✅ MOCK: Profile picture updated successfully for user \(userId) (username: \(updatedUser.username), name: \(updatedUser.firstName ?? "") \(updatedUser.lastName ?? "")) with URL: \(mockProfilePicURL)"
             )
             return mockUsers[existingUserIndex]
         } else {
