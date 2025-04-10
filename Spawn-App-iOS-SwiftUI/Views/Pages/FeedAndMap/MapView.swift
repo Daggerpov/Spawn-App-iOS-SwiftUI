@@ -7,13 +7,15 @@
 
 import MapKit
 import SwiftUI
+import CoreLocation
 
 struct MapView: View {
 	@StateObject private var viewModel: FeedViewModel
+    @StateObject private var locationManager = LocationManager()
 
 	@State private var region = MKCoordinateRegion(
 		center: CLLocationCoordinate2D(
-			latitude: 49.26676252116466, longitude: -123.25000960684207),  // Default to UBC AMS Nest
+			latitude: 0, longitude: 0),
 		span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
 	)
 
@@ -65,18 +67,11 @@ struct MapView: View {
 						|| showingEventCreationPopup
 				)
 			}
-
-			.onAppear {
-				adjustRegionForEvents()
-				Task {
-					await viewModel.fetchAllData()
-				}
-			}
-			.onChange(of: viewModel.activeTag) { _ in
-				Task {
-					await viewModel.fetchEventsForUser()
-				}
-			}
+            .onAppear {
+                Task { await viewModel.fetchAllData() }
+                adjustRegionToUserLocation()
+            }
+            
 			.onChange(of: viewModel.events) { _ in
 				adjustRegionForEvents()
 			}
@@ -88,6 +83,24 @@ struct MapView: View {
 			}
 		}
 	}
+    
+    private func adjustRegionToUserLocation() {
+        if let userLocation = locationManager.userLocation {
+            region = MKCoordinateRegion(
+                center: userLocation,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+        }
+    }
+    
+    private func adjustRegionForEventsOrUserLocation() {
+        if !viewModel.events.isEmpty {
+            adjustRegionForEvents()
+        } else {
+            adjustRegionToUserLocation()
+        }
+    }
+    
 	private func adjustRegionForEvents() {
 		guard !viewModel.events.isEmpty else { return }
 
