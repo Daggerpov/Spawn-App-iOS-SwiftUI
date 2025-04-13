@@ -234,7 +234,7 @@ class APIService: IAPIService {
 		request.httpMethod = "POST"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
-
+		setAuthHeaders(request: &request, url: finalURL)
 		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
@@ -511,6 +511,33 @@ class APIService: IAPIService {
 			}
 		}
 	}
+
+	fileprivate func setAuthHeaders(request: inout URLRequest, url: URL) {
+		// Check if auth headers are needed
+		let whitelistedEndpoints = [
+			"auth/sign-in",
+			"auth/make-user"
+		]
+		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
+			// Don't set auth headers for these endpoints
+			return
+		}
+		// Get the access token from keychain
+		guard if 
+			let accessToken = KeychainService.load("accessToken") as? String, 
+			let refreshToken = KeychainService.load("refreshToken") as? String 
+		else {
+			print("❌ ERROR: Missing access or refresh token in Keychain")
+			return
+		}
+
+		// Set the auth headers
+		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+		request.addValue('Bearer \(refreshToken)', forHTTPHeaderField: "X-Refresh-Token")
+		print("🔑 Auth headers set")
+
+		return
+	} 
 
 	internal func patchData<T: Encodable, U: Decodable>(
 		from url: URL,
