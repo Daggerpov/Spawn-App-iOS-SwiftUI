@@ -1,17 +1,30 @@
 # Spawn-App-iOS-SwiftUI
 
 Table of contents:
+- [Spawn-App-iOS-SwiftUI](#spawn-app-ios-swiftui)
 - [Onboarding](#onboarding)
-    - [Links](#links)
-    - [Setup](#setup)
-- [Code Explanations](#code-explanations)
+  - [Links](#links)
+  - [Setup](#setup)
+  - [Code Explanations](#code-explanations)
     - [API Calls](#api-calls)
     - [Asynchrony in SwiftUI](#asynchrony-in-swiftui)
-    - [SwiftUI Syntax](#swiftui-syntax)
+- [SwiftUI Syntax](#swiftui-syntax)
     - [MVVM Architecture](#mvvm-architecture)
-- [Current App Look](#current-app-look)
-- [Entity Relationship Diagram](#entity-relationship-diagram)
 - [Mobile Caching Implementation](#mobile-caching-implementation)
+  - [Overview](#overview)
+  - [Components](#components)
+    - [AppCache Singleton](#appcache-singleton)
+    - [Cache Validation API](#cache-validation-api)
+    - [Push Notification Handling](#push-notification-handling)
+  - [How It Works](#how-it-works)
+  - [Implementation Details](#implementation-details)
+    - [Data Flow](#data-flow)
+    - [Benefits](#benefits)
+  - [Testing the Cache](#testing-the-cache)
+  - [Cache Limitations](#cache-limitations)
+- [Current App Look](#current-app-look)
+  - [Legacy Screenshots:](#legacy-screenshots)
+- [Entity Relationship Diagram](#entity-relationship-diagram)
 
 # Onboarding
 
@@ -191,33 +204,11 @@ let appUsers = appPortfolio.map {app in
 
 </details>
 
-# Current App Look
+<details>
 
-Note that this is usually behind our actual 'current' app; stay tuned on [getspawn.com](https://getspawn.com/) for our beta for the actual app
+<summary>Mobile Caching Implementation</summary>
 
-<img src="https://github.com/user-attachments/assets/1d9f156e-39d9-4d03-b9f4-5eff24b68b4e" width="200" height="400" />
-<img src="images/current-app-look-images/map-view.png" width="200" height="400" />
-<img src="images/current-app-look-images/tags-for-new-friend.png" width="200" height="400" />
-<img src="images/current-app-look-images/new-friends-tab.png" width="200" height="400" />
-<img src="images/current-app-look-images/tags-tab.png" width="200" height="400" />
-<img src="images/current-app-look-images/profile-page.png" width="200" height="400" />
-<img src="images/current-app-look-images/event-description-modal.png" width="200" height="400" />
-<img src="images/current-app-look-images/event-creation.png" width="200" height="400" />
-<img src="images/current-app-look-images/event-creation-invite-tags.png" width="200" />
-<img src="images/current-app-look-images/event-creation-invite-friends.png" width="200"/>
-<img src="images/current-app-look-images/tag-deletion.png" width="200"/>
-
-## Legacy Screenshots:
-
-<img src="images/current-app-look-images/friends-tab.png" width="200" height="400" />
-<img src="images/current-app-look-images/tags-view.png" width="200" height="400" />
-<img src="images/current-app-look-images/friends-list.png" width="200" height="400" />
-
-
-
-# Entity Relationship Diagram
-
-![erd-nov-21](images/entity-relationship-diagram.png)
+</br>
 
 # Mobile Caching Implementation
 
@@ -341,3 +332,36 @@ The current implementation has some limitations:
 These could be addressed in future updates.
 
 For complete implementation details, see the [cache-implementation-guide.md](cache-implementation-guide.md) file.
+
+</details>
+
+</br>
+
+# Current App Look
+
+Note that this is usually behind our actual 'current' app; stay tuned on [getspawn.com](https://getspawn.com/) for our beta for the actual app
+
+<img src="https://github.com/user-attachments/assets/1d9f156e-39d9-4d03-b9f4-5eff24b68b4e" width="200" height="400" />
+<img src="images/current-app-look-images/map-view.png" width="200" height="400" />
+<img src="images/current-app-look-images/tags-for-new-friend.png" width="200" height="400" />
+<img src="images/current-app-look-images/new-friends-tab.png" width="200" height="400" />
+<img src="images/current-app-look-images/tags-tab.png" width="200" height="400" />
+<img src="images/current-app-look-images/profile-page.png" width="200" height="400" />
+<img src="images/current-app-look-images/event-description-modal.png" width="200" height="400" />
+<img src="images/current-app-look-images/event-creation.png" width="200" height="400" />
+<img src="images/current-app-look-images/event-creation-invite-tags.png" width="200" />
+<img src="images/current-app-look-images/event-creation-invite-friends.png" width="200"/>
+<img src="images/current-app-look-images/tag-deletion.png" width="200"/>
+
+## Legacy Screenshots:
+
+<img src="images/current-app-look-images/friends-tab.png" width="200" height="400" />
+<img src="images/current-app-look-images/tags-view.png" width="200" height="400" />
+<img src="images/current-app-look-images/friends-list.png" width="200" height="400" />
+
+
+
+# Entity Relationship Diagram
+
+![erd-nov-21](images/entity-relationship-diagram.png)
+
