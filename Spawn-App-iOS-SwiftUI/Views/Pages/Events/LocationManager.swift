@@ -11,6 +11,7 @@ import CoreLocation
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var userLocation: CLLocationCoordinate2D?
+    @Published var locationUpdated = false
     private var locationManager = CLLocationManager()
 
     override init() {
@@ -24,6 +25,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         guard let location = locations.last else { return }
         DispatchQueue.main.async {
             self.userLocation = location.coordinate
+            self.locationUpdated = true
         }
     }
 }

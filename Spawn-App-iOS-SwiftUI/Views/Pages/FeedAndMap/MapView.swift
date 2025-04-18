@@ -69,11 +69,20 @@ struct MapView: View {
 			}
             .onAppear {
                 Task { await viewModel.fetchAllData() }
+                // Try to center on user immediately if location is available
                 adjustRegionToUserLocation()
             }
-            
+            .onChange(of: locationManager.locationUpdated) { _ in
+                // Update map when user location becomes available
+                if locationManager.locationUpdated {
+                    adjustRegionToUserLocation()
+                }
+            }
 			.onChange(of: viewModel.events) { _ in
-				adjustRegionForEvents()
+                // Only adjust for events if we already have user location
+                if locationManager.userLocation != nil {
+				    adjustRegionForEvents()
+                }
 			}
 			if showingEventDescriptionPopup {
 				eventDescriptionPopupView
