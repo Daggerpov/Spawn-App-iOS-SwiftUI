@@ -38,12 +38,37 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         print("[PUSH DEBUG] Error details: \(error)")
     }
     
-    // Handle push notifications received when app is in background
-    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+    // Handle push notifications that arrived while the app was in the background
+    func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
         print("[PUSH DEBUG] Remote notification received with app in background/inactive state")
         print("[PUSH DEBUG] Notification payload: \(userInfo)")
         
-        handleReceivedNotification(userInfo)
+        // Check if this notification is for cache invalidation
+        if let type = userInfo["type"] as? String {
+            switch type {
+            case "friend-updated", "friend-accepted":
+                // Someone accepted a friend request or updated their profile
+                Task {
+                    await AppCache.shared.refreshFriends()
+                    completionHandler(.newData)
+                }
+                return
+                
+            case "event-updated":
+                // An event was updated
+                Task {
+                    await AppCache.shared.refreshEvents()
+                    completionHandler(.newData)
+                }
+                return
+                
+            default:
+                break
+            }
+        }
+        
+        // Process standard notification if not a cache invalidation notification
+        NotificationService.shared.handleNotification(userInfo: userInfo)
         completionHandler(.newData)
     }
     

@@ -13,6 +13,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	// Add UIApplicationDelegateAdaptor for push notifications
 	@UIApplicationDelegateAdaptor private var appDelegate: CustomAppDelegate
 	@StateObject var userAuth = UserAuthViewModel.shared
+	@StateObject var appCache = AppCache.shared
 
 	var body: some Scene {
 		WindowGroup {
@@ -22,7 +23,13 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 					.onAppear {
 						// Connect the app delegate to the app
 						appDelegate.app = self
+						
+						// Initialize and validate the cache
+						Task {
+							await appCache.validateCache()
+						}
 					}
+					.environmentObject(appCache)
 			} else {
 				LaunchView()
 					.onOpenURL { url in
