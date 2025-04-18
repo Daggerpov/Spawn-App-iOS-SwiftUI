@@ -11,6 +11,17 @@ struct CreateFeedbackSubmissionDTO: Codable {
         self.type = type
         self.fromUserId = fromUserId
         self.message = message
-        self.imageData = image?.jpegData(compressionQuality: 0.7)
+        
+        // Use higher compression for better performance
+        if let image = image {
+            if let imageData = image.jpegData(compressionQuality: 0.5) {
+                self.imageData = imageData
+                print("Image data size for feedback: \(imageData.count) bytes")
+            } else {
+                self.imageData = nil
+            }
+        } else {
+            self.imageData = nil
+        }
     }
 } 
