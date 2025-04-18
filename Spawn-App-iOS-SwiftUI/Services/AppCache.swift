@@ -15,7 +15,7 @@ class AppCache: ObservableObject {
     
     // MARK: - Cached Data
     @Published var friends: [FullFriendUserDTO] = []
-    @Published var events: [Event] = []
+    @Published var events: [FullFeedEventDTO] = []
     
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
@@ -25,7 +25,6 @@ class AppCache: ObservableObject {
     private enum CacheKeys {
         static let friends = "friends"
         static let events = "events"
-        static let notifications = "notifications"
         static let lastChecked = "cache_last_checked"
     }
     
@@ -71,7 +70,7 @@ class AppCache: ObservableObject {
                 
                 if let eventsResponse = result[CacheKeys.events], eventsResponse.invalidate {
                     if let updatedItems = eventsResponse.updatedItems,
-                       let updatedEvents = try? JSONDecoder().decode([Event].self, from: updatedItems) {
+                       let updatedEvents = try? JSONDecoder().decode([FullFeedEventDTO].self, from: updatedItems) {
                         // Backend provided the updated data
                         updateEvents(updatedEvents)
                     } else {
@@ -116,7 +115,7 @@ class AppCache: ObservableObject {
     
     // MARK: - Events Methods
     
-    func updateEvents(_ newEvents: [Event]) {
+    func updateEvents(_ newEvents: [FullFeedEventDTO]) {
         events = newEvents
         lastChecked[CacheKeys.events] = Date()
         saveToDisk()
@@ -129,7 +128,7 @@ class AppCache: ObservableObject {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
             guard let url = URL(string: APIService.baseURL + "events/user/\(userId)") else { return }
             
-            let fetchedEvents: [Event] = try await apiService.fetchData(from: url, parameters: nil)
+            let fetchedEvents: [FullFeedEventDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
             await MainActor.run {
                 updateEvents(fetchedEvents)
@@ -155,7 +154,7 @@ class AppCache: ObservableObject {
         
         // Load events
         if let eventsData = UserDefaults.standard.data(forKey: CacheKeys.events),
-           let loadedEvents = try? JSONDecoder().decode([Event].self, from: eventsData) {
+           let loadedEvents = try? JSONDecoder().decode([FullFeedEventDTO].self, from: eventsData) {
             events = loadedEvents
         }
        
