@@ -53,21 +53,13 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
                 }
                 return
                 
-            case "new-notification":
-                // New notification received
-                Task {
-                    await AppCache.shared.refreshNotifications()
-                    completionHandler(.newData)
-                }
-                return
-                
             default:
                 break
             }
         }
         
         // Process standard notification if not a cache invalidation notification
-        NotificationService.shared.processNotification(userInfo: userInfo)
+        NotificationService.shared.handleNotification(userInfo: userInfo)
         completionHandler(.newData)
     }
     

@@ -286,11 +286,6 @@ class MockAPIService: IAPIService {
                     let mockEvents = createMockEvents()
                     updatedItems = try? JSONEncoder().encode(mockEvents)
                     
-                case "notifications":
-                    // Return mock notifications data
-                    let mockNotifications = createMockNotifications()
-                    updatedItems = try? JSONEncoder().encode(mockNotifications)
-                    
                 default:
                     updatedItems = nil
                 }
@@ -307,7 +302,7 @@ class MockAPIService: IAPIService {
     // Helper methods to create mock data
     private func createMockFriends() -> [FullFriendUserDTO] {
         // Return mock friends data
-        return User.mockUsers.compactMap { userDTO in
+        return UserDTO.mockUsers.compactMap { userDTO in
             return FullFriendUserDTO(
                 id: userDTO.id,
                 username: userDTO.username,
@@ -315,8 +310,7 @@ class MockAPIService: IAPIService {
                 firstName: userDTO.firstName,
                 lastName: userDTO.lastName,
                 bio: userDTO.bio,
-                email: userDTO.email,
-                friendTags: []
+                email: userDTO.email
             )
         }
     }
@@ -324,10 +318,5 @@ class MockAPIService: IAPIService {
     private func createMockEvents() -> [Event] {
         // Return mock events data
         return Event.mockEvents
-    }
-    
-    private func createMockNotifications() -> [NotificationDTO] {
-        // Return mock notifications data
-        return []
     }
 }

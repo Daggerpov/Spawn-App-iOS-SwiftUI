@@ -16,7 +16,6 @@ class AppCache: ObservableObject {
     // MARK: - Cached Data
     @Published var friends: [FullFriendUserDTO] = []
     @Published var events: [Event] = []
-    @Published var notifications: [NotificationDTO] = []
     
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
@@ -52,7 +51,7 @@ class AppCache: ObservableObject {
         }
         
         do {
-            let apiService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
             let result = try await apiService.validateCache(lastChecked)
             
             await MainActor.run {
@@ -82,19 +81,6 @@ class AppCache: ObservableObject {
                         }
                     }
                 }
-                
-                if let notificationsResponse = result[CacheKeys.notifications], notificationsResponse.invalidate {
-                    if let updatedItems = notificationsResponse.updatedItems,
-                       let updatedNotifications = try? JSONDecoder().decode([NotificationDTO].self, from: updatedItems) {
-                        // Backend provided the updated data
-                        updateNotifications(updatedNotifications)
-                    } else {
-                        // Need to fetch new data
-                        Task {
-                            await refreshNotifications()
-                        }
-                    }
-                }
             }
             
         } catch {
@@ -115,7 +101,7 @@ class AppCache: ObservableObject {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
         
         do {
-            let apiService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
             guard let url = URL(string: APIService.baseURL + "friends/\(userId)") else { return }
             
             let fetchedFriends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
@@ -140,7 +126,7 @@ class AppCache: ObservableObject {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
         
         do {
-            let apiService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
             guard let url = URL(string: APIService.baseURL + "events/user/\(userId)") else { return }
             
             let fetchedEvents: [Event] = try await apiService.fetchData(from: url, parameters: nil)
@@ -152,32 +138,6 @@ class AppCache: ObservableObject {
             print("Failed to refresh events: \(error.localizedDescription)")
         }
     }
-    
-    // MARK: - Notifications Methods
-    
-    func updateNotifications(_ newNotifications: [NotificationDTO]) {
-        notifications = newNotifications
-        lastChecked[CacheKeys.notifications] = Date()
-        saveToDisk()
-    }
-    
-    func refreshNotifications() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        
-        do {
-            let apiService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "notifications/\(userId)") else { return }
-            
-            let fetchedNotifications: [NotificationDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateNotifications(fetchedNotifications)
-            }
-        } catch {
-            print("Failed to refresh notifications: \(error.localizedDescription)")
-        }
-    }
-    
     // MARK: - Persistence
     
     private func loadFromDisk() {
@@ -198,12 +158,7 @@ class AppCache: ObservableObject {
            let loadedEvents = try? JSONDecoder().decode([Event].self, from: eventsData) {
             events = loadedEvents
         }
-        
-        // Load notifications
-        if let notificationsData = UserDefaults.standard.data(forKey: CacheKeys.notifications),
-           let loadedNotifications = try? JSONDecoder().decode([NotificationDTO].self, from: notificationsData) {
-            notifications = loadedNotifications
-        }
+       
     }
     
     private func saveToDisk() {
@@ -221,10 +176,6 @@ class AppCache: ObservableObject {
         if let eventsData = try? JSONEncoder().encode(events) {
             UserDefaults.standard.set(eventsData, forKey: CacheKeys.events)
         }
-        
-        // Save notifications
-        if let notificationsData = try? JSONEncoder().encode(notifications) {
-            UserDefaults.standard.set(notificationsData, forKey: CacheKeys.notifications)
-        }
+       
     }
 } 
