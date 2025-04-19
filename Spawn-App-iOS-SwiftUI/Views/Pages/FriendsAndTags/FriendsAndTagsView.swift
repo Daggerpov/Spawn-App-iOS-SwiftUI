@@ -103,7 +103,6 @@ struct FriendsAndTagsView: View {
 					.padding(.horizontal)
 					.padding(.vertical, 250)
 				}
-				.ignoresSafeArea()
 			}
 		}
 	}

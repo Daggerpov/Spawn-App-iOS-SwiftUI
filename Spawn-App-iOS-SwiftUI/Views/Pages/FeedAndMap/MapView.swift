@@ -61,7 +61,6 @@ struct MapView: View {
 					}
 					.padding(.top, 50)
 				}
-				.ignoresSafeArea()
 				.dimmedBackground(
 					isActive: showingEventDescriptionPopup
 						|| showingEventCreationPopup

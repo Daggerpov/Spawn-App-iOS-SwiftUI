@@ -50,13 +50,11 @@ struct FeedView: View {
 					Spacer()
 					VStack {
 						eventsListView
-						bottomButtonsView
 					}
 					.padding(.horizontal)
 				}
 				.padding()
 				.background(universalBackgroundColor)
-				.ignoresSafeArea(.container)
 				.dimmedBackground(
 					isActive: showingEventDescriptionPopup
 						|| showingEventCreationPopup
@@ -179,17 +177,6 @@ extension FeedView {
 				.padding(32)
 				.cornerRadius(universalRectangleCornerRadius)
 				.padding(.bottom, 50)
-		}
-	}
-	var bottomButtonsView: some View {
-		HStack(spacing: 35) {
-			BottomNavButtonView(user: user, buttonType: .map)
-			Spacer()
-			EventCreationButtonView(
-				showingEventCreationPopup:
-					$showingEventCreationPopup)
-			Spacer()
-			BottomNavButtonView(user: user, buttonType: .friends)
 		}
 	}
 	var eventsListView: some View {

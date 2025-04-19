@@ -284,7 +284,6 @@ extension FriendsTabView {
                             closeChoosingTagPopUp()
 							closeFriendPopUp()
                         }
-                        .ignoresSafeArea()
 
                     // call your new view here
                     ChoosingTagPopupView(
