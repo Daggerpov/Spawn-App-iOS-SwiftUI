@@ -158,7 +158,7 @@ class NotificationService: ObservableObject, @unchecked Sendable {
             print("[PUSH DEBUG] Cannot register device token: user not logged in or missing ID")
             if UserAuthViewModel.shared.spawnUser == nil {
                 print("[PUSH DEBUG] User not logged in (spawnUser is nil)")
-            } else if let user = UserAuthViewModel.shared.spawnUser, user.id == nil {
+            } else if let user = UserAuthViewModel.shared.spawnUser {
                 print("[PUSH DEBUG] User logged in but ID is nil. Username: \(user.username)")
             }
             print("[PUSH DEBUG] APIService baseURL: \(APIService.baseURL)")
