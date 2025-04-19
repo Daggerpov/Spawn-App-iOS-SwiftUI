@@ -104,8 +104,11 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.URLError
 		}
+		var request = URLRequest(url: finalURL)
+		request.httpMethod = "GET"
+		setAuthHeaders(request: &request)
 
-		let (data, response) = try await URLSession.shared.data(from: finalURL)
+		let (data, response) = try await URLSession.shared.data(from: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
@@ -234,7 +237,7 @@ class APIService: IAPIService {
 		request.httpMethod = "POST"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
-
+		setAuthHeaders(request: &request)
 		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
@@ -304,7 +307,7 @@ class APIService: IAPIService {
 		request.httpMethod = "PUT"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
-
+		setAuthHeaders(request: &request)
 		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
@@ -332,7 +335,7 @@ class APIService: IAPIService {
 
 		var request = URLRequest(url: url)
 		request.httpMethod = "DELETE"  // Set the HTTP method to DELETE
-
+		setAuthHeaders(request: &request)  // Set auth headers if needed
 		let (_, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
@@ -512,6 +515,38 @@ class APIService: IAPIService {
 		}
 	}
 
+	fileprivate func setAuthHeaders(request: inout URLRequest) {
+		guard if let url = request.url else {
+			print("❌ ERROR: URL is nil")
+			return
+		}
+
+		// Check if auth headers are needed
+		let whitelistedEndpoints = [
+			"auth/sign-in",
+			"auth/make-user"
+		]
+		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
+			// Don't set auth headers for these endpoints
+			return
+		}
+		// Get the access token from keychain
+		guard if 
+			let accessToken = KeychainService.load("accessToken") as? String, 
+			let refreshToken = KeychainService.load("refreshToken") as? String 
+		else {
+			print("❌ ERROR: Missing access or refresh token in Keychain")
+			return
+		}
+
+		// Set the auth headers
+		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+		request.addValue('Bearer \(refreshToken)', forHTTPHeaderField: "X-Refresh-Token")
+		print("🔑 Auth headers set")
+
+		return
+	} 
+
 	internal func patchData<T: Encodable, U: Decodable>(
 		from url: URL,
 		with object: T
@@ -529,7 +564,7 @@ class APIService: IAPIService {
 		request.httpMethod = "PATCH"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
-
+		setAuthHeaders(request: &request)
 		let (data, response) = try await URLSession.shared.data(for: request)
 		
 		// Debug: Log the response details
@@ -613,7 +648,7 @@ class APIService: IAPIService {
 		request.httpMethod = "PATCH"
 		request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
 		request.httpBody = imageData
-		
+		sendAuthHeaders(request: &request)  // Set auth headers if needed
 		// Log request headers
 		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
 		
@@ -668,7 +703,7 @@ class APIService: IAPIService {
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
 		request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-		
+		setAuthHeaders(request: &request)  // Set auth headers if needed
 		// Create the body
 		var body = Data()
 		
