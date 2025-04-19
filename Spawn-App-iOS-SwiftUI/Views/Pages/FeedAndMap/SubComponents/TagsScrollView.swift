@@ -36,6 +36,7 @@ struct TagsScrollView: View {
 
 @available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var tag: FullFriendTagDTO? = FullFriendTagDTO.close
 	TagsScrollView(tags: FullFriendTagDTO.mockTags, activeTag: $tag)
 }

@@ -119,6 +119,7 @@ struct FeedView: View {
 
 @available(iOS 17.0, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	FeedView(user: .danielAgapov)
 }
 

@@ -466,11 +466,13 @@ extension EventCreationView {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	EventCreationView(
 		creatingUser: .danielAgapov,
 		feedViewModel: FeedViewModel(apiService: MockAPIService(userId: UUID()), userId: UUID()),
 		closeCallback: {
-		})
+        })
 }
 

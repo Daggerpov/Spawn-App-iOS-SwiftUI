@@ -109,6 +109,8 @@ extension TagsTabView {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	TagsTabView(userId: UUID(), addFriendToTagButtonPressedCallback: {_ in })
 }

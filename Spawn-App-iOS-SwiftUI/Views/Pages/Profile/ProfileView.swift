@@ -606,6 +606,8 @@ struct BioField: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	ProfileView(user: BaseUserDTO.danielAgapov)
 }

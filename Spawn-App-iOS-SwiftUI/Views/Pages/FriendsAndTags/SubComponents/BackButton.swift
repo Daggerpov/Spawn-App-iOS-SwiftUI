@@ -35,6 +35,8 @@ struct BackButton: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	BackButton(user: .danielAgapov, source: BackButtonSourcePageType.feed)
 }

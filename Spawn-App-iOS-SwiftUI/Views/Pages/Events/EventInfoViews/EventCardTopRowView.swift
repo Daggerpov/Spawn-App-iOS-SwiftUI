@@ -39,6 +39,8 @@ struct EventCardTitleView: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	EventCardTopRowView(event: FullFeedEventDTO.mockDinnerEvent)
 }

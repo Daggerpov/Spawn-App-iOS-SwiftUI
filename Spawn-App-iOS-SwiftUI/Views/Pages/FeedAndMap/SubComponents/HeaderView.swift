@@ -58,7 +58,9 @@ struct HeaderView: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	HeaderView(user: BaseUserDTO.danielAgapov)
 }
 
