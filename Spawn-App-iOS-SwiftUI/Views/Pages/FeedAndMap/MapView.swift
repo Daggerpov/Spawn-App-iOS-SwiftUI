@@ -193,8 +193,6 @@ extension MapView {
 				}
 			}
 		}
-		.ignoresSafeArea()
-
 	}
 
 	var eventDescriptionPopupView: some View {
