@@ -55,9 +55,6 @@ struct MapView: View {
 						}
 						.padding(.horizontal)
 						.padding(.top, 20)
-						Spacer()
-						bottomButtonsView
-							.padding(32)
 					}
 					.padding(.top, 50)
 				}
@@ -148,19 +145,6 @@ struct MapView: View {
 }
 
 extension MapView {
-	var bottomButtonsView: some View {
-		HStack(spacing: 35) {
-			BottomNavButtonView(user: user, buttonType: .feed, source: .map)
-			Spacer()
-			EventCreationButtonView(
-				showingEventCreationPopup:
-					$showingEventCreationPopup
-			)
-			Spacer()
-			BottomNavButtonView(user: user, buttonType: .friends, source: .map)
-		}
-	}
-
 	var mapView: some View {
 		Map(
 			coordinateRegion: $region,
