@@ -25,14 +25,6 @@ class EventCreationViewModel: ObservableObject {
 	
 	private var apiService: IAPIService
 	
-	// Reference to the FeedViewModel for refreshing events
-	private var feedViewModel: FeedViewModel?
-	
-	// Set the FeedViewModel reference
-	func setFeedViewModel(_ viewModel: FeedViewModel) {
-		self.feedViewModel = viewModel
-	}
-
 	public static func reInitialize() {
 		shared = EventCreationViewModel()
 	}
@@ -98,12 +90,7 @@ class EventCreationViewModel: ObservableObject {
 			do {
 				_ = try await self.apiService.sendData(
 					event, to: url, parameters: nil)
-				
-				// Refresh events in the FeedViewModel if available
-				if let feedViewModel = self.feedViewModel {
-					await feedViewModel.fetchEventsForUser()
-					print("Event created successfully, refreshing events")
-				}
+                // TODO DANIEL A: Trigger re-loading of events in feed view
 			} catch {
 				await MainActor.run {
 					creationMessage =

@@ -171,7 +171,7 @@ extension FeedView {
 				}
 				.ignoresSafeArea()
 
-			EventCreationView(creatingUser: user, feedViewModel: viewModel, closeCallback: closeCreation)
+			EventCreationView(creatingUser: user, closeCallback: closeCreation)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
 					creationOffset = 0

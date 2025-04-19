@@ -83,7 +83,7 @@ struct BottomNavButtonView: View {
 				)
 				.overlay(
 					NavigationLink(destination: {
-						FriendsAndTagsView(user: user, source: source)
+						FriendsAndTagsView(user: user)
 							.navigationBarTitle("")
 							.navigationBarHidden(true)
 					}) {

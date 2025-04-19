@@ -9,8 +9,6 @@ import SwiftUI
 
 struct FriendsAndTagsView: View {
 	let user: BaseUserDTO
-	let source: BackButtonSourcePageType
-
 	@State private var selectedTab: FriendTagToggle = .friends
 
 	// for add friend to tag popup:
@@ -19,9 +17,8 @@ struct FriendsAndTagsView: View {
 	@State private var selectedFriendTagId: UUID? = nil
 	@State private var tagsViewModel: TagsViewModel? = nil
 
-	init(user: BaseUserDTO, source: BackButtonSourcePageType) {
+	init(user: BaseUserDTO) {
 		self.user = user
-		self.source = source
 	}
 
 	var body: some View {
@@ -29,7 +26,6 @@ struct FriendsAndTagsView: View {
 			NavigationStack {
 				VStack(spacing: 20) {
 					HStack {
-						BackButton(user: user, source: source)
 						Spacer()
 						FriendTagToggleView(selectedTab: $selectedTab)
 						Spacer()
@@ -116,5 +112,5 @@ struct FriendsAndTagsView: View {
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	FriendsAndTagsView(user: .danielAgapov, source: .feed).environmentObject(appCache)
+	FriendsAndTagsView(user: .danielAgapov).environmentObject(appCache)
 }
