@@ -262,5 +262,5 @@ extension EventDescriptionView {
 		users: BaseUserDTO.mockUsers,
 		color: universalAccentColor,
 		userId: UUID()
-	)
+	).environmentObject(appCache)
 }

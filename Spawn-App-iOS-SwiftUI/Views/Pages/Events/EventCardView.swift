@@ -145,5 +145,5 @@ extension EventCardView {
         event: FullFeedEventDTO.mockDinnerEvent,
         color: universalSecondaryColor,
         callback: { _, _ in }
-    )
+    ).environmentObject(appCache)
 }

@@ -69,5 +69,5 @@ struct CreatingTagRowView: View {
 	)
 	@Previewable @State var creationStatus: CreationStatus = .creating
 	CreatingTagRowView(creationStatus: $creationStatus)
-	.environmentObject(viewModel)
+	.environmentObject(viewModel).environmentObject(appCache)
 }

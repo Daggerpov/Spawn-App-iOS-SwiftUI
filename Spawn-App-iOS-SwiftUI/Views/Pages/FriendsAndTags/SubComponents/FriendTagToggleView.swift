@@ -61,5 +61,5 @@ struct FriendTagToggleView: View {
     @State @Previewable var selectedTab: FriendTagToggle = .friends
     
     FriendTagToggleView(selectedTab: $selectedTab)
-        .padding()
+        .padding().environmentObject(appCache)
 }

@@ -182,5 +182,5 @@ extension FriendRequestView {
 		closeCallback: {
 		},
 		showingChoosingTagView: $showing,
-        friendsTabViewModel: FriendsTabViewModel(userId: UUID(), apiService: MockAPIService()))
+        friendsTabViewModel: FriendsTabViewModel(userId: UUID(), apiService: MockAPIService())).environmentObject(appCache)
 }

@@ -41,5 +41,5 @@ struct EventCreationButtonView: View {
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var state: Bool = false
-	EventCreationButtonView(showingEventCreationPopup: $state)
+	EventCreationButtonView(showingEventCreationPopup: $state).environmentObject(appCache)
 }

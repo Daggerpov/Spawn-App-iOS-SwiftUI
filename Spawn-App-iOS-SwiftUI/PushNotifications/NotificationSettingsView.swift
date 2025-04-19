@@ -143,5 +143,5 @@ struct NotificationSettingsView: View {
     @Previewable @StateObject var appCache = AppCache.shared
     NavigationView {
         NotificationSettingsView()
-    }
+    }.environmentObject(appCache)
 } 

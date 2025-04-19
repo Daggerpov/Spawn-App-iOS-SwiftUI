@@ -43,5 +43,5 @@ struct ExpandedTagView: View {
 		friendTag: FullFriendTagDTO.close,
 		isEditingTag: $isEditing,
 		addFriendToTagButtonPressedCallback: {_ in}
-	)
+	).environmentObject(appCache)
 }

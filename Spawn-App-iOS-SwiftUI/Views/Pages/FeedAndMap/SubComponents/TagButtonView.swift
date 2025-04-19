@@ -41,5 +41,5 @@ struct TagButtonView: View {
     @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @Namespace var animation: Namespace.ID
 	@Previewable @State var tag: FullFriendTagDTO? = FullFriendTagDTO.close
-	TagButtonView(tag: FullFriendTagDTO.close, activeTag: $tag, animation: animation)
+	TagButtonView(tag: FullFriendTagDTO.close, activeTag: $tag, animation: animation).environmentObject(appCache)
 }

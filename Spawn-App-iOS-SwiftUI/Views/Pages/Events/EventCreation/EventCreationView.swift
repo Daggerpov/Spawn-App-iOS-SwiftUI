@@ -473,6 +473,6 @@ extension EventCreationView {
 		creatingUser: .danielAgapov,
 		feedViewModel: FeedViewModel(apiService: MockAPIService(userId: UUID()), userId: UUID()),
 		closeCallback: {
-        })
+        }).environmentObject(appCache)
 }
 
