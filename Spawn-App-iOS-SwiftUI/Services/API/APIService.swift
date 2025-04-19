@@ -108,7 +108,7 @@ class APIService: IAPIService {
 		request.httpMethod = "GET"
 		setAuthHeaders(request: &request)
 
-		let (data, response) = try await URLSession.shared.data(from: request)
+		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
@@ -516,7 +516,7 @@ class APIService: IAPIService {
 	}
 
 	fileprivate func setAuthHeaders(request: inout URLRequest) {
-		guard if let url = request.url else {
+		guard let url = request.url else {
 			print("❌ ERROR: URL is nil")
 			return
 		}
@@ -531,9 +531,9 @@ class APIService: IAPIService {
 			return
 		}
 		// Get the access token from keychain
-		guard if 
-			let accessToken = KeychainService.load("accessToken") as? String, 
-			let refreshToken = KeychainService.load("refreshToken") as? String 
+        guard
+            let accessToken = KeychainService.shared.load(key: "accessToken"),
+            let refreshToken = KeychainService.shared.load(key: "refreshToken")
 		else {
 			print("❌ ERROR: Missing access or refresh token in Keychain")
 			return
@@ -541,7 +541,7 @@ class APIService: IAPIService {
 
 		// Set the auth headers
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-		request.addValue('Bearer \(refreshToken)', forHTTPHeaderField: "X-Refresh-Token")
+		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "X-Refresh-Token")
 		print("🔑 Auth headers set")
 
 		return
@@ -648,7 +648,7 @@ class APIService: IAPIService {
 		request.httpMethod = "PATCH"
 		request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
 		request.httpBody = imageData
-		sendAuthHeaders(request: &request)  // Set auth headers if needed
+        setAuthHeaders(request: &request)  // Set auth headers if needed
 		// Log request headers
 		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
 		
