@@ -23,5 +23,5 @@ struct EventParticipateButtonView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	EventParticipateButtonView(toggleParticipationCallback: {}, isParticipating: true)
+	EventParticipateButtonView(toggleParticipationCallback: {}, isParticipating: true).environmentObject(appCache)
 }

@@ -35,5 +35,5 @@ struct EventSubmitButtonView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    EventSubmitButtonView(backgroundColor: universalSecondaryColor)
+    EventSubmitButtonView(backgroundColor: universalSecondaryColor).environmentObject(appCache)
 }

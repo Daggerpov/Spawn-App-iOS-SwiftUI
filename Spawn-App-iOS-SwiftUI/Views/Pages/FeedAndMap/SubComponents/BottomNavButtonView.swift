@@ -116,5 +116,5 @@ extension BottomNavButtonView {
 		user: BaseUserDTO.danielAgapov,
 		buttonType: BottomNavButtonType.map,
 		source: BackButtonSourcePageType.feed
-	)
+	).environmentObject(appCache)
 }

@@ -48,5 +48,5 @@ struct FriendContainer: View {
 	FriendContainer(
 		friendTag: FullFriendTagDTO.close,
 		addFriendsToTagButtonPressedCallback: {_ in }
-	)
+	).environmentObject(appCache)
 }

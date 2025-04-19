@@ -68,5 +68,5 @@ struct FriendRow: View {
 		userId: UUID()
 		)
 
-	FriendRow(friend: .danielAgapov, friendTag: FullFriendTagDTO.close).environmentObject(viewModel)
+	FriendRow(friend: .danielAgapov, friendTag: FullFriendTagDTO.close).environmentObject(viewModel).environmentObject(appCache)
 }

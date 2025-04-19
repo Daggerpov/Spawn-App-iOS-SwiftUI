@@ -197,5 +197,5 @@ private func doneButton(
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	ChoosingTagPopupView(friend: .danielAgapov, userId: UUID(), closeCallback: {})
+	ChoosingTagPopupView(friend: .danielAgapov, userId: UUID(), closeCallback: {}).environmentObject(appCache)
 }

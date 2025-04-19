@@ -112,5 +112,5 @@ struct SwiftUIImagePicker: View {
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
     @Previewable @State var image: UIImage? = nil
-    return SwiftUIImagePicker(selectedImage: $image)
+    return SwiftUIImagePicker(selectedImage: $image).environmentObject(appCache)
 } 

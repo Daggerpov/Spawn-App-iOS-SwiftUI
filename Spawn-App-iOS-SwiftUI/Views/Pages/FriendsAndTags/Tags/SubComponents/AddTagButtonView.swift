@@ -62,5 +62,5 @@ struct AddTagButtonView: View {
 	AddTagButtonView(
 		creationStatus: $creationStatus,
 		color: Color(universalAccentColor)
-	)
+	).environmentObject(appCache)
 }

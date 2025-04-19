@@ -38,5 +38,5 @@ struct TagsScrollView: View {
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var tag: FullFriendTagDTO? = FullFriendTagDTO.close
-	TagsScrollView(tags: FullFriendTagDTO.mockTags, activeTag: $tag)
+	TagsScrollView(tags: FullFriendTagDTO.mockTags, activeTag: $tag).environmentObject(appCache)
 }

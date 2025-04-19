@@ -320,5 +320,5 @@ struct FeedbackView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    FeedbackView(userId: UUID(), email: "user@example.com")
+    FeedbackView(userId: UUID(), email: "user@example.com").environmentObject(appCache)
 } 

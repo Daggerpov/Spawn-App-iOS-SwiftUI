@@ -116,5 +116,5 @@ struct FriendsAndTagsView: View {
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	FriendsAndTagsView(user: .danielAgapov, source: .feed)
+	FriendsAndTagsView(user: .danielAgapov, source: .feed).environmentObject(appCache)
 }

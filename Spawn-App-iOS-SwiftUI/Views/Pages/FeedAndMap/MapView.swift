@@ -276,7 +276,7 @@ extension MapView {
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	MapView(user: .danielAgapov)
+	MapView(user: .danielAgapov).environmentObject(appCache)
 }
 
 struct Triangle: Shape {
