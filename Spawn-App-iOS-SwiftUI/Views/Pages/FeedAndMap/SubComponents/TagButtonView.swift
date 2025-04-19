@@ -38,6 +38,7 @@ struct TagButtonView: View {
 
 @available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @Namespace var animation: Namespace.ID
 	@Previewable @State var tag: FullFriendTagDTO? = FullFriendTagDTO.close
 	TagButtonView(tag: FullFriendTagDTO.close, activeTag: $tag, animation: animation)

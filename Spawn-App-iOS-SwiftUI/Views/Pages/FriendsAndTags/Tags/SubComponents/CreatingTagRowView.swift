@@ -62,6 +62,7 @@ struct CreatingTagRowView: View {
 
 @available(iOS 17.0, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @StateObject var viewModel: TagsViewModel = TagsViewModel(
 		apiService: MockAPIService(userId: UUID()),
 		userId: UUID()

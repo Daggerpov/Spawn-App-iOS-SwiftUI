@@ -173,6 +173,7 @@ extension FriendRequestView {
 
 @available(iOS 17.0, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var showing: Bool = false
 	FriendRequestView(
 		user: .danielAgapov,

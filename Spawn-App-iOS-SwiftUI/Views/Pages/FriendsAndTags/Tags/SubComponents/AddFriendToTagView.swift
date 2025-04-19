@@ -212,6 +212,8 @@ extension AddFriendToTagView {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	AddFriendToTagView(userId: UUID(), friendTagId: UUID(), closeCallback: {})
 }

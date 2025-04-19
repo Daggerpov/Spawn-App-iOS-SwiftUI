@@ -72,6 +72,8 @@ struct LaunchView: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	LaunchView()
 }

@@ -57,6 +57,7 @@ struct FriendTagToggleView: View {
 
 @available(iOS 17.0, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
     @State @Previewable var selectedTab: FriendTagToggle = .friends
     
     FriendTagToggleView(selectedTab: $selectedTab)
