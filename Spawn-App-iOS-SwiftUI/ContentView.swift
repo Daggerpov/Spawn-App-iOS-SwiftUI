@@ -32,6 +32,14 @@ struct ContentView: View {
                     Image(uiImage: resizeImage(UIImage(systemName: "person.circle")!, targetSize: CGSize(width: 30, height: 27))!)
                 }
         }
+        .onAppear {
+            // TODO DANIEL A: when implementing dark/light theme, look at Quote Droplet's
+            // code for how to do that here
+            UITabBar
+                .appearance().backgroundColor = UIColor.white
+                .withAlphaComponent(0.9)
+            UITabBar.appearance().unselectedItemTintColor = UIColor.black
+        }
     }
 }
 
