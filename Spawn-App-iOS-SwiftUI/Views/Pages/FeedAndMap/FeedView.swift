@@ -174,28 +174,6 @@ extension FeedView {
             }
         }
     }
-    var eventCreationPopupView: some View {
-        ZStack {
-            Color(.black)
-                .opacity(0.5)
-                .onTapGesture {
-                    closeCreation()
-                }
-                .ignoresSafeArea()
-
-            EventCreationView(
-                creatingUser: user,
-                closeCallback: closeCreation
-            )
-            .offset(x: 0, y: creationOffset)
-            .onAppear {
-                creationOffset = 0
-            }
-            .padding(32)
-            .cornerRadius(universalRectangleCornerRadius)
-            .padding(.bottom, 50)
-        }
-    }
     var eventsListView: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: 15) {

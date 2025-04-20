@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     var user: BaseUserDTO
+    @State private var showEventCreationDrawer: Bool = false
     var body: some View {
         TabView{
             FeedView(user: user)
@@ -20,9 +21,17 @@ struct ContentView: View {
                     Image(uiImage: resizeImage(UIImage(systemName: "map.circle")!, targetSize: CGSize(width: 30, height: 27))!)
                 }
             EventCreationView(creatingUser: user, closeCallback: {})
+            EmptyView()
                 .tabItem {
                     Image(uiImage: resizeImage(UIImage(systemName: "plus.app")!, targetSize: CGSize(width: 30, height: 27))!)
                 }
+            .sheet(isPresented: $showEventCreationDrawer) {
+                EventCreationView(
+                    creatingUser: user,
+                    closeCallback: {}
+                )
+                .presentationDragIndicator(.visible)
+            }
             FriendsAndTagsView(user: user)
                 .tabItem {
                     Image(uiImage: resizeImage(UIImage(systemName: "person.2.circle")!, targetSize: CGSize(width: 30, height: 27))!)
