@@ -44,6 +44,8 @@ struct EventInfoView: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
-	EventInfoView(event: FullFeedEventDTO.mockDinnerEvent, eventInfoType: EventInfoType.location)
+    @Previewable @StateObject var appCache = AppCache.shared
+	EventInfoView(event: FullFeedEventDTO.mockDinnerEvent, eventInfoType: EventInfoType.location).environmentObject(appCache)
 }

@@ -58,6 +58,7 @@ struct ColorOptions: View {
 
 @available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var hexCodeState: String = universalAccentColorHexCode
-	ColorOptions(currentSelectedColorHexCode: $hexCodeState, currentSelectedColorIndex: 2)
+	ColorOptions(currentSelectedColorHexCode: $hexCodeState, currentSelectedColorIndex: 2).environmentObject(appCache)
 }

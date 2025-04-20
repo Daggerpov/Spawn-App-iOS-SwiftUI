@@ -62,7 +62,11 @@ struct EventCreationView: View {
 							}
 						}
 						
-						invitationsRowView
+                        HStack {
+                            selectedFriendsView
+                            Spacer()
+                            selectedTagsView
+                        }
 						
 						if !viewModel.isInvitesValid {
 							Text("At least one friend or tag must be invited")
@@ -139,23 +143,7 @@ struct EventCreationView: View {
 							closeCallback()
 						}
 					}) {
-						HStack {
-							Image(systemName: "star.fill")
-								.foregroundColor(.white)
-							Text("Spawn")
-								.font(
-									Font.custom("Poppins", size: 16).weight(.bold)
-								)
-						}
-						.frame(maxWidth: .infinity)
-						.kerning(1)
-						.multilineTextAlignment(.center)
-						.padding()
-						.background(
-							RoundedRectangle(cornerRadius: 15).fill(
-								viewModel.isFormValid ? universalSecondaryColor : Color.gray)
-						)
-						.foregroundColor(.white)
+                        EventSubmitButtonView(backgroundColor: viewModel.isFormValid ? universalSecondaryColor : Color.gray)
 					}
 					.disabled(!viewModel.isFormValid)
 					.onChange(of: viewModel.event.title) { _ in
@@ -296,14 +284,6 @@ struct TimePicker: View {
 }
 
 extension EventCreationView {
-	var invitationsRowView: some View {
-		HStack {
-			selectedFriendsView
-			Spacer()
-			selectedTagsView
-		}
-	}
-
 	var selectedFriendsView: some View {
 		HStack {
 			ForEach(viewModel.selectedFriends) { friend in
@@ -327,23 +307,21 @@ extension EventCreationView {
 				InviteView(user: creatingUser)
 					.environmentObject(viewModel)
 			}) {
-				Circle()
-					.fill(Color.gray.opacity(0.2))
-					.frame(width: 30, height: 30)
-					.overlay(
-						Circle()
-							.stroke(
-								.secondary,
-								style: StrokeStyle(
-									lineWidth: 2,
-									dash: [5, 3]  // Length of dash and gap
-								)
-							)
-					)
-					.overlay(
-						Image(systemName: "plus")
-							.foregroundColor(.secondary)
-					)
+                ZStack{
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                    Circle()
+                        .stroke(
+                            .secondary,
+                            style: StrokeStyle(
+                                lineWidth: 2,
+                                dash: [5, 3]  // Length of dash and gap
+                            )
+                        )
+                    Image(systemName: "plus")
+                        .foregroundColor(.secondary)
+                }
+                .frame(width: 30, height: 30)
 			}
 			.padding(.leading, 12)
 		}
@@ -488,11 +466,13 @@ extension EventCreationView {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	EventCreationView(
 		creatingUser: .danielAgapov,
 		feedViewModel: FeedViewModel(apiService: MockAPIService(userId: UUID()), userId: UUID()),
 		closeCallback: {
-		})
+        }).environmentObject(appCache)
 }
 

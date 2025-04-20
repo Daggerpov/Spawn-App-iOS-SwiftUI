@@ -108,7 +108,7 @@ class APIService: IAPIService {
 		request.httpMethod = "GET"
 		setAuthHeaders(request: &request)
 
-		let (data, response) = try await URLSession.shared.data(from: request)
+		let (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
@@ -541,6 +541,37 @@ class APIService: IAPIService {
 		}
 	}
 
+	fileprivate func setAuthHeaders(request: inout URLRequest) {
+		guard let url = request.url else {
+			print("❌ ERROR: URL is nil")
+			return
+		}
+
+		// Check if auth headers are needed
+		let whitelistedEndpoints = [
+			"auth/sign-in",
+			"auth/make-user"
+		]
+		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
+			// Don't set auth headers for these endpoints
+			return
+		}
+		// Get the access token from keychain
+        guard
+            let accessToken = KeychainService.shared.load(key: "accessToken"),
+            let refreshToken = KeychainService.shared.load(key: "refreshToken")
+		else {
+			print("❌ ERROR: Missing access or refresh token in Keychain")
+			return
+		}
+
+		// Set the auth headers
+		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "X-Refresh-Token")
+		print("🔑 Auth headers set")
+
+		return
+	} 
 	 
 
 	internal func patchData<T: Encodable, U: Decodable>(
@@ -652,7 +683,7 @@ class APIService: IAPIService {
 		request.httpMethod = "PATCH"
 		request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
 		request.httpBody = imageData
-		sendAuthHeaders(request: &request)  // Set auth headers if needed
+        setAuthHeaders(request: &request)  // Set auth headers if needed
 		// Log request headers
 		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
 		
@@ -849,6 +880,54 @@ class APIService: IAPIService {
 			throw APIError.invalidStatusCode(statusCode: newHttpResponse.statusCode)
 		}
 		return newData
+	}
+
+	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] {
+		resetState()
+		
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			throw APIError.invalidData
+		}
+		
+		// Create the URL for the cache validation endpoint
+		guard let url = URL(string: APIService.baseURL + "cache/validate/\(userId)") else {
+			throw APIError.URLError
+		}
+		
+		// Convert the dictionary of cache items and their timestamps to JSON
+		let encoder = JSONEncoder()
+		encoder.dateEncodingStrategy = .iso8601
+		let jsonData = try encoder.encode(cachedItems)
+		
+		// Create and configure the request
+		var request = URLRequest(url: url)
+		request.httpMethod = "POST"
+		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		request.httpBody = jsonData
+		
+		// Send the request
+		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		// Validate the response
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+		
+		guard httpResponse.statusCode == 200 else {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		// Decode the response
+		let decoder = JSONDecoder()
+		decoder.dateDecodingStrategy = .iso8601
+		let validationResponse = try decoder.decode([String: CacheValidationResponse].self, from: data)
+		
+		return validationResponse
 	}
 }
 

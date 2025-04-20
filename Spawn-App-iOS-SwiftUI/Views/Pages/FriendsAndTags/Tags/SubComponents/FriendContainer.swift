@@ -42,9 +42,11 @@ struct FriendContainer: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	FriendContainer(
 		friendTag: FullFriendTagDTO.close,
 		addFriendsToTagButtonPressedCallback: {_ in }
-	)
+	).environmentObject(appCache)
 }

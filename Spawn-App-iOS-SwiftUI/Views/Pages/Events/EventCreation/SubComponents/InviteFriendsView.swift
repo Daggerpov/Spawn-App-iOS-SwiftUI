@@ -164,5 +164,6 @@ struct IndividualFriendView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	InviteFriendsView(user: .danielAgapov)
+    @Previewable @StateObject var appCache = AppCache.shared
+	InviteFriendsView(user: .danielAgapov).environmentObject(appCache)
 }

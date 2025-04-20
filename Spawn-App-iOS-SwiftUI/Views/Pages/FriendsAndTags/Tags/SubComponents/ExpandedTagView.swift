@@ -35,6 +35,7 @@ struct ExpandedTagView: View {
 
 @available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var currentHex: String = universalAccentColorHexCode
 	@Previewable @State var isEditing: Bool = true
 	ExpandedTagView(
@@ -42,5 +43,5 @@ struct ExpandedTagView: View {
 		friendTag: FullFriendTagDTO.close,
 		isEditingTag: $isEditing,
 		addFriendToTagButtonPressedCallback: {_ in}
-	)
+	).environmentObject(appCache)
 }

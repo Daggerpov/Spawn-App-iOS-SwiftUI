@@ -182,6 +182,8 @@ struct InviteTagFriendsView: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
-	InviteTagsView(user: .danielAgapov)
+    @Previewable @StateObject var appCache = AppCache.shared
+	InviteTagsView(user: .danielAgapov).environmentObject(appCache)
 }

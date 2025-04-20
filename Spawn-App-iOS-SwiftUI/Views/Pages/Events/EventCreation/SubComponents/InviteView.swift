@@ -50,5 +50,6 @@ struct InviteView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	InviteView(user: .danielAgapov)
+    @Previewable @StateObject var appCache = AppCache.shared
+	InviteView(user: .danielAgapov).environmentObject(appCache)
 }

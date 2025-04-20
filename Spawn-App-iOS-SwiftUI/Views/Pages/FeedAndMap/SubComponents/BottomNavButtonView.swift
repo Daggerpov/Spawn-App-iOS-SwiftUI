@@ -109,10 +109,12 @@ extension BottomNavButtonView {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	BottomNavButtonView(
 		user: BaseUserDTO.danielAgapov,
 		buttonType: BottomNavButtonType.map,
 		source: BackButtonSourcePageType.feed
-	)
+	).environmentObject(appCache)
 }

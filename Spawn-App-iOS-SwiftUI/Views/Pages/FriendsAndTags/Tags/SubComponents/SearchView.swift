@@ -49,6 +49,7 @@ struct SearchView: View {
 
 @available(iOS 17.0, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @StateObject var viewModel: SearchViewModel = SearchViewModel()
-	SearchView(searchPlaceholderText: "asdf", viewModel: viewModel)
+	SearchView(searchPlaceholderText: "asdf", viewModel: viewModel).environmentObject(appCache)
 }

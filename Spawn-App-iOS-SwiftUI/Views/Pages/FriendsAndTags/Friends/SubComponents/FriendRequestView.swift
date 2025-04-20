@@ -173,6 +173,7 @@ extension FriendRequestView {
 
 @available(iOS 17.0, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var showing: Bool = false
 	FriendRequestView(
 		user: .danielAgapov,
@@ -181,5 +182,5 @@ extension FriendRequestView {
 		closeCallback: {
 		},
 		showingChoosingTagView: $showing,
-        friendsTabViewModel: FriendsTabViewModel(userId: UUID(), apiService: MockAPIService()))
+        friendsTabViewModel: FriendsTabViewModel(userId: UUID(), apiService: MockAPIService())).environmentObject(appCache)
 }

@@ -92,16 +92,17 @@ class NotificationService: ObservableObject, @unchecked Sendable {
     // Store device token when received from Apple
     func registerDeviceToken(_ deviceToken: Data) {
         let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("Device token received: \(tokenString)")
+        print("[PUSH DEBUG] Device token received: \(tokenString)")
         
         // Store the token for later use
         storedDeviceToken = tokenString
         
         // Only try to register with backend if user is already logged in
         if UserAuthViewModel.shared.isLoggedIn {
+            print("[PUSH DEBUG] User is logged in, registering token with backend immediately")
             registerStoredTokenWithBackend()
         } else {
-            print("Token stored. Will register with backend after user logs in.")
+            print("[PUSH DEBUG] User not logged in yet. Token stored for later registration")
         }
     }
     
@@ -120,12 +121,16 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         if let userId = UserAuthViewModel.shared.spawnUser?.id,
            let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/register") {
             
+            print("[PUSH DEBUG] Preparing to send device token to backend URL: \(url)")
+            
             // Create device token DTO
             let deviceTokenDTO = DeviceTokenDTO(
                 token: token,
                 deviceType: "IOS",
                 userId: userId
             )
+            
+            print("[PUSH DEBUG] Device token payload: token=\(token.prefix(8))...(truncated), deviceType=IOS, userId=\(userId)")
             
             Task {
                 do {
@@ -135,20 +140,28 @@ class NotificationService: ObservableObject, @unchecked Sendable {
                         to: url,
                         parameters: nil
                     )
-                    print("Successfully registered device token with backend")
+                    print("[PUSH DEBUG] Successfully registered device token with backend")
                 } catch let error as APIError {
                     // Check if it's a 404 error (endpoint doesn't exist yet)
                     if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
-                        print("Device token registration endpoint not available (404): Backend may not support push notifications yet")
+                        print("[PUSH DEBUG] Device token registration endpoint not available (404): Backend may not support push notifications yet")
                     } else {
-                        print("Failed to register device token: \(error.localizedDescription)")
+                        print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
+                        print("[PUSH DEBUG] API Error details: \(error)")
                     }
                 } catch {
-                    print("Failed to register device token: \(error.localizedDescription)")
+                    print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
+                    print("[PUSH DEBUG] Error details: \(error)")
                 }
             }
         } else {
-            print("Cannot register device token: user not logged in or missing ID")
+            print("[PUSH DEBUG] Cannot register device token: user not logged in or missing ID")
+            if UserAuthViewModel.shared.spawnUser == nil {
+                print("[PUSH DEBUG] User not logged in (spawnUser is nil)")
+            } else if let user = UserAuthViewModel.shared.spawnUser {
+                print("[PUSH DEBUG] User logged in but ID is nil. Username: \(user.username)")
+            }
+            print("[PUSH DEBUG] APIService baseURL: \(APIService.baseURL)")
         }
     }
     
@@ -248,11 +261,16 @@ class NotificationService: ObservableObject, @unchecked Sendable {
     
     // Handle different notification types
     func handleNotification(userInfo: [AnyHashable: Any]) {
+        print("[PUSH DEBUG] Handling notification with payload: \(userInfo)")
+        
         guard let typeString = userInfo["type"] as? String,
               let notificationType = NotificationType(rawValue: typeString) else {
-            print("Notification missing or invalid type info")
+            print("[PUSH DEBUG] Error: Notification missing or invalid type info")
+            print("[PUSH DEBUG] Available keys in payload: \(userInfo.keys)")
             return
         }
+        
+        print("[PUSH DEBUG] Processing notification of type: \(notificationType.rawValue)")
         
         // Handle different notification types
         switch notificationType {
@@ -265,57 +283,81 @@ class NotificationService: ObservableObject, @unchecked Sendable {
         case .chat:
             handleChatNotification(userInfo)
         case .welcome:
-            print("Received welcome notification")
+            print("[PUSH DEBUG] Received welcome notification")
             // No special handling needed
         }
     }
     
     // Handle friend request notifications
     private func handleFriendRequestNotification(_ userInfo: [AnyHashable: Any]) {
+        print("[PUSH DEBUG] Processing friend request notification with data: \(userInfo)")
+        
         guard let senderId = userInfo["senderId"] as? String,
-              let requestId = userInfo["requestId"] as? String else { return }
+              let requestId = userInfo["requestId"] as? String else { 
+            print("[PUSH DEBUG] Error: Missing required fields in friend request notification")
+            print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+            return 
+        }
         
         // Get user info if available
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("Friend request from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")), request ID: \(requestId)")
+            print("[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")), request ID: \(requestId)")
         } else {
-            print("Friend request from user \(senderId), request ID: \(requestId)")
+            print("[PUSH DEBUG] Friend request from user \(senderId), request ID: \(requestId)")
         }
         // Navigate to friend requests view (implementation will depend on your navigation setup)
     }
     
     // Handle event invite notifications
     private func handleEventInviteNotification(_ userInfo: [AnyHashable: Any]) {
-        guard let eventId = userInfo["eventId"] as? String,
-              let eventName = userInfo["eventName"] as? String else { return }
+        print("[PUSH DEBUG] Processing event invite notification with data: \(userInfo)")
         
-        print("Invited to event \(eventName), ID: \(eventId)")
+        guard let eventId = userInfo["eventId"] as? String,
+              let eventName = userInfo["eventName"] as? String else { 
+            print("[PUSH DEBUG] Error: Missing required fields in event invite notification")
+            print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+            return 
+        }
+        
+        print("[PUSH DEBUG] Invited to event \(eventName), ID: \(eventId)")
         // Navigate to event details (implementation will depend on your navigation setup)
     }
     
     // Handle event update notifications
     private func handleEventUpdateNotification(_ userInfo: [AnyHashable: Any]) {
-        guard let eventId = userInfo["eventId"] as? String,
-              let updateType = userInfo["updateType"] as? String else { return }
+        print("[PUSH DEBUG] Processing event update notification with data: \(userInfo)")
         
-        print("Event update (\(updateType)) for event ID: \(eventId)")
+        guard let eventId = userInfo["eventId"] as? String,
+              let updateType = userInfo["updateType"] as? String else { 
+            print("[PUSH DEBUG] Error: Missing required fields in event update notification")
+            print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+            return 
+        }
+        
+        print("[PUSH DEBUG] Event update (\(updateType)) for event ID: \(eventId)")
         // Navigate to updated event (implementation will depend on your navigation setup)
     }
     
     // Handle chat message notifications
     private func handleChatNotification(_ userInfo: [AnyHashable: Any]) {
+        print("[PUSH DEBUG] Processing chat notification with data: \(userInfo)")
+        
         guard let eventId = userInfo["eventId"] as? String,
-              let senderId = userInfo["senderId"] as? String else { return }
+              let senderId = userInfo["senderId"] as? String else { 
+            print("[PUSH DEBUG] Error: Missing required fields in chat notification")
+            print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
+            return 
+        }
         
         // Get user info if available
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
         } else {
-            print("New chat message in event \(eventId) from user \(senderId)")
+            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId)")
         }
         // Navigate to chat (implementation will depend on your navigation setup)
     }

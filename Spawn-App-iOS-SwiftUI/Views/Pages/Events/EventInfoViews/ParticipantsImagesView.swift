@@ -59,6 +59,8 @@ struct ParticipantsImagesView: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
-	ParticipantsImagesView(event: FullFeedEventDTO.mockDinnerEvent)
+    @Previewable @StateObject var appCache = AppCache.shared
+	ParticipantsImagesView(event: FullFeedEventDTO.mockDinnerEvent).environmentObject(appCache)
 }

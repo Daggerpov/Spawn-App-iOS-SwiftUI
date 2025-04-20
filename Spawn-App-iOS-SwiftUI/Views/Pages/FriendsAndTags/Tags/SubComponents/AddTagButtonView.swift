@@ -57,9 +57,10 @@ struct AddTagButtonView: View {
 
 @available(iOS 17.0, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var creationStatus: CreationStatus = .creating
 	AddTagButtonView(
 		creationStatus: $creationStatus,
 		color: Color(universalAccentColor)
-	)
+	).environmentObject(appCache)
 }

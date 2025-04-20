@@ -200,6 +200,8 @@ struct TagFriendsView: View {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
-	TagRow(friendTag: FullFriendTagDTO.close, addFriendToTagButtonPressedCallback: {_ in})
+    @Previewable @StateObject var appCache = AppCache.shared
+	TagRow(friendTag: FullFriendTagDTO.close, addFriendToTagButtonPressedCallback: {_ in}).environmentObject(appCache)
 }

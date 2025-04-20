@@ -394,5 +394,6 @@ struct InputFieldView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	UserInfoInputView()
+    @Previewable @StateObject var appCache = AppCache.shared
+	UserInfoInputView().environmentObject(appCache)
 }

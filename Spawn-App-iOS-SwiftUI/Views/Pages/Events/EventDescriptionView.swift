@@ -254,11 +254,13 @@ extension EventDescriptionView {
 	}
 }
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
 	EventDescriptionView(
 		event: FullFeedEventDTO.mockDinnerEvent,
 		users: BaseUserDTO.mockUsers,
 		color: universalAccentColor,
 		userId: UUID()
-	)
+	).environmentObject(appCache)
 }

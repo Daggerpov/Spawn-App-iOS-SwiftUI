@@ -29,4 +29,5 @@ protocol IAPIService {
 	func deleteData(from url: URL) async throws
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO
 	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data
+	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse]
 }

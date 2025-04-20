@@ -41,6 +41,8 @@ struct AuthProviderButtonView: View {
 
 }
 
+@available(iOS 17, *)
 #Preview {
-	AuthProviderButtonView(authProviderType: AuthProviderType.google)
+    @Previewable @StateObject var appCache = AppCache.shared
+	AuthProviderButtonView(authProviderType: AuthProviderType.google).environmentObject(appCache)
 }

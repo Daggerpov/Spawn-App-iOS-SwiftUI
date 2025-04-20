@@ -260,4 +260,63 @@ class MockAPIService: IAPIService {
             return Data()
         }
     }
+
+    func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] {
+        // In the mock implementation, we'll pretend everything is fresh except for items
+        // that are older than 30 minutes
+        var result: [String: CacheValidationResponse] = [:]
+        
+        for (key, timestamp) in cachedItems {
+            let timeElapsed = Date().timeIntervalSince(timestamp)
+            let needsInvalidation = timeElapsed > 1800 // 30 minutes
+            
+            // For demo purposes, we'll simulate invalidation based on time elapsed
+            if needsInvalidation {
+                // Create mock data based on the cache key
+                var updatedItems: Data?
+                
+                switch key {
+                case "friends":
+                    // Return mock friends data
+                    let mockFriends = createMockFriends()
+                    updatedItems = try? JSONEncoder().encode(mockFriends)
+                
+                case "events":
+                    // Return mock events data
+                    let mockEvents = createMockEvents()
+                    updatedItems = try? JSONEncoder().encode(mockEvents)
+                    
+                default:
+                    updatedItems = nil
+                }
+                
+                result[key] = CacheValidationResponse(invalidate: true, updatedItems: updatedItems)
+            } else {
+                result[key] = CacheValidationResponse(invalidate: false)
+            }
+        }
+        
+        return result
+    }
+    
+    // Helper methods to create mock data
+    private func createMockFriends() -> [FullFriendUserDTO] {
+        // Return mock friends data
+        return UserDTO.mockUsers.compactMap { userDTO in
+            return FullFriendUserDTO(
+                id: userDTO.id,
+                username: userDTO.username,
+                profilePicture: userDTO.profilePicture,
+                firstName: userDTO.firstName,
+                lastName: userDTO.lastName,
+                bio: userDTO.bio,
+                email: userDTO.email
+            )
+        }
+    }
+    
+    private func createMockEvents() -> [Event] {
+        // Return mock events data
+        return Event.mockEvents
+    }
 }
