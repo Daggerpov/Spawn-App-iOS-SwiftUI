@@ -491,71 +491,79 @@ struct ProfileActionButtonsSection: View {
 
     var body: some View {
         VStack(spacing: 15) {
-            // Notification Settings Button
-            NavigationLink(destination: NotificationSettingsView()) {
-                HStack {
-                    Image(systemName: "bell.fill")
-                        .foregroundColor(.white)
-                    Text("Notifications")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                }
-                .padding()
-                .frame(maxWidth: 170)
-                .background(universalAccentColor)
-                .cornerRadius(20)
-            }
-
-            // Feedback Button
-            NavigationLink(
-                destination: FeedbackView(userId: user.id, email: user.email)
-            ) {
-                HStack {
-                    Image(systemName: "message.fill")
-                        .foregroundColor(.white)
-                    Text("Feedback")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                }
-                .padding()
-                .frame(maxWidth: 170)
-                .background(universalAccentColor)
-                .cornerRadius(20)
-            }
-
-            NavigationLink(destination: {
-                LaunchView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            }) {
-                Text("Log Out")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: 170)
-                    .background(profilePicPlusButtonColor)
-                    .cornerRadius(20)
-            }
-            .simultaneousGesture(
-                TapGesture().onEnded {
-                    if userAuth.isLoggedIn {
-                        userAuth.signOut()
+            Spacer()
+            HStack{
+                VStack{
+                    NavigationLink(destination: {
+                        LaunchView()
+                            .navigationBarTitle("")
+                            .navigationBarHidden(true)
+                    }) {
+                        Text("Log Out")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: 170)
+                            .background(profilePicPlusButtonColor)
+                            .cornerRadius(20)
+                    }
+                    .simultaneousGesture(
+                        TapGesture().onEnded {
+                            if userAuth.isLoggedIn {
+                                userAuth.signOut()
+                            }
+                        }
+                    )
+                    
+                    // Delete Account Button
+                    Button(action: {
+                        userAuth.activeAlert = .deleteConfirmation
+                    }) {
+                        Text("Delete Account")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding()
+                            .frame(maxWidth: 170)
+                            .background(Color.red)
+                            .cornerRadius(20)
                     }
                 }
-            )
-
-            // Delete Account Button
-            Button(action: {
-                userAuth.activeAlert = .deleteConfirmation
-            }) {
-                Text("Delete Account")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: 170)
-                    .background(Color.red)
-                    .cornerRadius(20)
+                VStack{
+                    // Notification Settings Button
+                    NavigationLink(destination: NotificationSettingsView()) {
+                        HStack {
+                            Image(systemName: "bell.fill")
+                                .foregroundColor(.white)
+                            Text("Notifications")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        .padding()
+                        .frame(maxWidth: 170)
+                        .background(universalAccentColor)
+                        .cornerRadius(20)
+                    }
+                    
+                    // Feedback Button
+                    NavigationLink(
+                        destination: FeedbackView(userId: user.id, email: user.email)
+                    ) {
+                        HStack {
+                            Image(systemName: "message.fill")
+                                .foregroundColor(.white)
+                            Text("Feedback")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        .padding()
+                        .frame(maxWidth: 170)
+                        .background(universalAccentColor)
+                        .cornerRadius(20)
+                    }
+                }
             }
+            Spacer()
+            Spacer()
         }
     }
 }

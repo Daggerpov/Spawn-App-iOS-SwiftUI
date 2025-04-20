@@ -52,6 +52,7 @@ struct MapView: View {
 							TagsScrollView(
 								tags: viewModel.tags,
 								activeTag: $viewModel.activeTag)
+                            .padding(.top)
 						}
 						.padding(.horizontal)
                         Spacer()
