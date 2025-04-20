@@ -39,6 +39,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						// Connect the app delegate to the app
 						appDelegate.app = self
 					}
+                    .environmentObject(appCache)
 			}
 		}
 	}
