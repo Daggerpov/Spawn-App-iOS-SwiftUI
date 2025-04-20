@@ -96,7 +96,6 @@ struct FriendRequestView: View {
                 .padding(.vertical, 250)
 			}
 			.scrollDisabled(true)
-
 		}
 	}
 }

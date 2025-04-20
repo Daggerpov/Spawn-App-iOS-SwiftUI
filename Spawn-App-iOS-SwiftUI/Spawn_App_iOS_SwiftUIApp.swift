@@ -19,7 +19,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 		WindowGroup {
 			if userAuth.isLoggedIn, let unwrappedSpawnUser = userAuth.spawnUser
 			{
-				FeedView(user: unwrappedSpawnUser)
+                ContentView(user: unwrappedSpawnUser)
 					.onAppear {
 						// Connect the app delegate to the app
 						appDelegate.app = self

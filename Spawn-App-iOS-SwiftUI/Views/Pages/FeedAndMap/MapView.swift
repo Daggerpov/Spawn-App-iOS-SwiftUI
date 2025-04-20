@@ -52,16 +52,12 @@ struct MapView: View {
 							TagsScrollView(
 								tags: viewModel.tags,
 								activeTag: $viewModel.activeTag)
+                            .padding(.top)
 						}
 						.padding(.horizontal)
-						.padding(.top, 20)
-						Spacer()
-						bottomButtonsView
-							.padding(32)
+                        Spacer()
 					}
-					.padding(.top, 50)
 				}
-				.ignoresSafeArea()
 				.dimmedBackground(
 					isActive: showingEventDescriptionPopup
 						|| showingEventCreationPopup
@@ -149,19 +145,6 @@ struct MapView: View {
 }
 
 extension MapView {
-	var bottomButtonsView: some View {
-		HStack(spacing: 35) {
-			BottomNavButtonView(user: user, buttonType: .feed, source: .map)
-			Spacer()
-			EventCreationButtonView(
-				showingEventCreationPopup:
-					$showingEventCreationPopup
-			)
-			Spacer()
-			BottomNavButtonView(user: user, buttonType: .friends, source: .map)
-		}
-	}
-
 	var mapView: some View {
 		Map(
 			coordinateRegion: $region,
@@ -210,8 +193,7 @@ extension MapView {
 				}
 			}
 		}
-		.ignoresSafeArea()
-
+        .ignoresSafeArea(edges: .top)
 	}
 
 	var eventDescriptionPopupView: some View {
@@ -260,7 +242,7 @@ extension MapView {
 				}
 				.ignoresSafeArea()
 
-			EventCreationView(creatingUser: user, feedViewModel: viewModel, closeCallback: closeCreation)
+			EventCreationView(creatingUser: user, closeCallback: closeCreation)
 				.offset(x: 0, y: creationOffset)
 				.onAppear {
 					creationOffset = 0
