@@ -108,7 +108,7 @@ class APIService: IAPIService {
 		request.httpMethod = "GET"
 		setAuthHeaders(request: &request)
 
-		let (data, response) = try await URLSession.shared.data(for: request)
+		var (data, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
@@ -137,7 +137,7 @@ class APIService: IAPIService {
 		// Check status code
 		if httpResponse.statusCode == 401 {
 			// Handle token refresh logic here
-			let newAccessToken: String = try handleRefreshToken()
+			let newAccessToken: String = try await handleRefreshToken()
 			// Retry the request with the new access token
 			data = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 		} else if httpResponse.statusCode != 200 {
@@ -257,9 +257,9 @@ class APIService: IAPIService {
 		else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
-				let newAccessToken: String = try handleRefreshToken()
+				let newAccessToken: String = try await handleRefreshToken()
 				// Retry the request with the new access token
-				var newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
+				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try APIService.makeDecoder().decode(U.self, from: newData)
 			}
 			errorMessage =
@@ -331,9 +331,9 @@ class APIService: IAPIService {
 		guard httpResponse.statusCode == 200 else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
-				let newAccessToken: String = try handleRefreshToken()
+				let newAccessToken: String = try await handleRefreshToken()
 				// Retry the request with the new access token
-				var newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
+				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try APIService.makeDecoder().decode(R.self, from: newData)
 			}
 			errorStatusCode = httpResponse.statusCode
@@ -369,9 +369,9 @@ class APIService: IAPIService {
 		else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
-				let newAccessToken: String = try handleRefreshToken()
+				let newAccessToken: String = try await handleRefreshToken()
 				// Retry the request with the new access token
-				try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
+				_ = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return
 			}
 			errorStatusCode = httpResponse.statusCode
@@ -558,8 +558,10 @@ class APIService: IAPIService {
 		}
 		// Get the access token from keychain
         guard
-            let accessToken = KeychainService.shared.load(key: "accessToken"),
-            let refreshToken = KeychainService.shared.load(key: "refreshToken")
+            let accessTokenData = KeychainService.shared.load(key: "accessToken"),
+            let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
+            let accessToken = String(data: accessTokenData, encoding: .utf8),
+            let refreshToken = String(data: refreshTokenData, encoding: .utf8)
 		else {
 			print("❌ ERROR: Missing access or refresh token in Keychain")
 			return
@@ -569,8 +571,6 @@ class APIService: IAPIService {
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "X-Refresh-Token")
 		print("🔑 Auth headers set")
-
-		return
 	} 
 	 
 
@@ -608,9 +608,9 @@ class APIService: IAPIService {
 		guard httpResponse.statusCode == 200 else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
-				let newAccessToken: String = try handleRefreshToken()
+				let newAccessToken: String = try await handleRefreshToken()
 				// Retry the request with the new access token
-				var newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
+				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try APIService.makeDecoder().decode(U.self, from: newData)
 			}
 
@@ -709,9 +709,9 @@ class APIService: IAPIService {
 		guard (200...299).contains(httpResponse.statusCode) else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
-				let newAccessToken: String = try handleRefreshToken()
+				let newAccessToken: String = try await handleRefreshToken()
 				// Retry the request with the new access token
-				var newData = try await retryRequest(request: &request, bearerAccessToken: String)
+				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try JSONDecoder().decode(BaseUserDTO.self, from: newData)
 			}
 			print("❌ ERROR: Invalid status code \(httpResponse.statusCode)")
@@ -785,9 +785,9 @@ class APIService: IAPIService {
 
 			if errorStatusCode == 401 {
 				// Handle token refresh logic here
-				let newAccessToken: String = try handleRefreshToken()
+				let newAccessToken: String = try await handleRefreshToken()
 				// Retry the request with the new access token
-				var newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
+				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return newData
 			}
 
@@ -799,69 +799,49 @@ class APIService: IAPIService {
 		return data
 	}
 
-	fileprivate func setAuthHeaders(request: inout URLRequest) {
-		guard let url = request.url else {
-			print("❌ ERROR: URL is nil")
-			return
-		}
-
-		// Check if auth headers are needed
-		let whitelistedEndpoints = [
-			"auth/sign-in",
-			"auth/make-user"
-		]
-		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
-			// Don't set auth headers for these endpoints
-			return
-		}
-		// Get the access token from keychain
-		guard
-			let accessToken = KeychainService.load("accessToken") as? String, 
-			let refreshToken = KeychainService.load("refreshToken") as? String 
-			else {
-			print("❌ ERROR: Missing access or refresh token in Keychain")
-			return
-		}
-
-		// Set the auth headers
-		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "X-Refresh-Token")
-		print("🔑 Auth headers set")
-	}
-
-	fileprivate func handleRefreshToken() throws -> String {
+	fileprivate func handleRefreshToken() async throws -> String {
 		print("Refreshing access token...")
-		let url = URL(string: APIService.baseURL + "auth/refresh-token")
-		guard let refreshToken = KeychainService.load("refreshToken") as? String else {
+		guard let url = URL(string: APIService.baseURL + "auth/refresh-token") else {
+		    throw APIError.URLError
+		}
+		
+		guard 
+		    let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
+		    let refreshToken = String(data: refreshTokenData, encoding: .utf8) 
+		else {
 			print("❌ ERROR: Missing refresh token in Keychain")
-			return
+			throw APIError.failedTokenSaving(tokenType: "refreshToken")
 		}
 
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
 		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "Authorization")
-		let (data, response) = try await URLSession.shared.data(for: request)
+		
+        let (_, response) = try await URLSession.shared.data(for: request)
 		
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
+		
 		if httpResponse.statusCode == 200 {
 			// Successfully refreshed token, save it to Keychain
 			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String {
 				let cleanAccessToken = newAccessToken.replacingOccurrences(of: "Bearer ", with: "")
 
-				guard !KeychainService.shared.save(key: "accessToken", data: cleanAccessToken.data(using: .utf8)) else {
-					throw APIError.failedTokenSaving(tokenType: "refreshToken")
+				if let accessTokenData = cleanAccessToken.data(using: .utf8) {
+				    if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
+				        throw APIError.failedTokenSaving(tokenType: "accessToken")
+				    }
+				    return "Bearer \(cleanAccessToken)"
+				} else {
+				    throw APIError.failedTokenSaving(tokenType: "accessToken")
 				}
-
-				return newAccessToken
-
 			}
-		} else {
-			throw APIError.failedHTTPRequest(description: "Failed to refresh token")
 		}
+		
+		throw APIError.failedHTTPRequest(description: "Failed to refresh token")
 	}
 	
 	fileprivate func retryRequest(request: inout URLRequest, bearerAccessToken: String) async throws -> Data {
