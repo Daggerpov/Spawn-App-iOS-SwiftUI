@@ -183,9 +183,10 @@ extension FeedView {
             .sheet(isPresented: $showEventCreationDrawer) {
                 EventCreationView(
                     creatingUser: user, feedViewModel: viewModel,
-                    closeCallback: closeCreation)
+                    closeCallback: closeCreation
+                )
+                .presentationDragIndicator(.visible)
             }
-            .presentationDragIndicator(.visible)
             Spacer()
             BottomNavButtonView(user: user, buttonType: .friends)
         }
