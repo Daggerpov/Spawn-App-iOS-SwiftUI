@@ -55,6 +55,7 @@ struct FeedView: View {
 				}
 				.padding()
 				.background(universalBackgroundColor)
+                .ignoresSafeArea(edges: .top)
 				.dimmedBackground(
 					isActive: showingEventDescriptionPopup
 						|| showingEventCreationPopup
