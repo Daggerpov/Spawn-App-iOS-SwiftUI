@@ -171,9 +171,6 @@ struct EventCreationView: View {
             viewModel.validateEventForm()
         }
     }
-    //		.background(universalBackgroundColor)
-    //		.cornerRadius(universalRectangleCornerRadius)
-    //		.environmentObject(viewModel)
 }
 
 struct EventInputFieldLabel: View {

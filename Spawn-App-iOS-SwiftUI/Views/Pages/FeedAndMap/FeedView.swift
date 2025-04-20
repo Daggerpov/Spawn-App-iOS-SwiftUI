@@ -52,7 +52,6 @@ struct FeedView: View {
                     Spacer()
                     VStack {
                         eventsListView
-                        bottomButtonsView
                     }
                     .padding(.horizontal)
                 }
@@ -60,8 +59,7 @@ struct FeedView: View {
                 .background(universalBackgroundColor)
                 .ignoresSafeArea(.container)
                 .dimmedBackground(
-                    isActive: showingEventDescriptionPopup
-                        || showingEventCreationPopup
+                    isActive: showEventCreationDrawer || showingEventDescriptionPopup
                 )
                 .gesture(
                     DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
@@ -113,9 +111,6 @@ struct FeedView: View {
             }
             if showingEventDescriptionPopup {
                 eventDescriptionPopupView
-            }
-            if showingEventCreationPopup {
-                eventCreationPopupView
             }
         }
     }
@@ -190,7 +185,6 @@ extension FeedView {
 
             EventCreationView(
                 creatingUser: user,
-                feedViewModel: viewModel,
                 closeCallback: closeCreation
             )
             .offset(x: 0, y: creationOffset)
@@ -200,18 +194,6 @@ extension FeedView {
             .padding(32)
             .cornerRadius(universalRectangleCornerRadius)
             .padding(.bottom, 50)
-        }
-    }
-    var bottomButtonsView: some View {
-        HStack(spacing: 35) {
-            BottomNavButtonView(user: user, buttonType: .map)
-            Spacer()
-            EventCreationButtonView(
-                showingEventCreationPopup:
-                    $showingEventCreationPopup
-            )
-            Spacer()
-            BottomNavButtonView(user: user, buttonType: .friends)
         }
     }
     var eventsListView: some View {
