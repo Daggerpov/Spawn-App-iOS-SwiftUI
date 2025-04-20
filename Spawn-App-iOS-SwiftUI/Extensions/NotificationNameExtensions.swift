@@ -9,4 +9,7 @@ extension Notification.Name {
     
     // Notifications for tag management
     static let friendsAddedToTag = Notification.Name("friendsAddedToTag")
-} 
+    
+    // Notification for event creation
+    static let eventCreated = Notification.Name("eventCreated")
+}

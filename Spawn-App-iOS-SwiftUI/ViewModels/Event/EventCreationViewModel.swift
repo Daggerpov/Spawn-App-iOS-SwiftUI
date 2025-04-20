@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import Combine
+
 
 class EventCreationViewModel: ObservableObject {
 	// semi-singleton, that can only be reset upon calling `reInitialize()`
@@ -90,7 +92,11 @@ class EventCreationViewModel: ObservableObject {
 			do {
 				_ = try await self.apiService.sendData(
 					event, to: url, parameters: nil)
-                // TODO DANIEL A: Trigger re-loading of events in feed view
+                
+                // Post notification to trigger reload of events in FeedViewModel
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .eventCreated, object: nil)
+                }
 			} catch {
 				await MainActor.run {
 					creationMessage =
