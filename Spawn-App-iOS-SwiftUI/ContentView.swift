@@ -58,7 +58,9 @@ func resizeImage(_ image: UIImage, targetSize: CGSize) -> UIImage? {
     let ratio = min(widthRatio, heightRatio)
     
     let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-    let yOffset = (targetSize.height - newSize.height) // Leave the top blank and align the bottom
+    // Add padding by using a percentage of the available space (e.g., 40% from top, 60% from bottom)
+    let paddingFactor = 0.9
+    let yOffset = (targetSize.height - newSize.height) * paddingFactor
     
     //Create a new image context
     let renderer = UIGraphicsImageRenderer(size: targetSize)
