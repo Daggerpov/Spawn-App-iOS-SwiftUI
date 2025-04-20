@@ -48,6 +48,15 @@ class FeedViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+            
+        // Register for event creation notifications
+        NotificationCenter.default.publisher(for: .eventCreated)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.fetchEventsForUser()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func fetchAllData() async {

@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import Combine
+
 
 class EventCreationViewModel: ObservableObject {
 	// semi-singleton, that can only be reset upon calling `reInitialize()`
@@ -25,14 +27,6 @@ class EventCreationViewModel: ObservableObject {
 	
 	private var apiService: IAPIService
 	
-	// Reference to the FeedViewModel for refreshing events
-	private var feedViewModel: FeedViewModel?
-	
-	// Set the FeedViewModel reference
-	func setFeedViewModel(_ viewModel: FeedViewModel) {
-		self.feedViewModel = viewModel
-	}
-
 	public static func reInitialize() {
 		shared = EventCreationViewModel()
 	}
@@ -59,21 +53,23 @@ class EventCreationViewModel: ObservableObject {
 	}
 	
 	// Validates all form fields and returns if the form is valid
-	func validateEventForm() {
-		// Check title
-		let trimmedTitle = event.title?.trimmingCharacters(in: .whitespaces) ?? ""
-		isTitleValid = !trimmedTitle.isEmpty
+	func validateEventForm() async {
+        // Check title
+        let trimmedTitle = event.title?.trimmingCharacters(in: .whitespaces) ?? ""
+        await MainActor.run {
+            isTitleValid = !trimmedTitle.isEmpty
+            // Check if at least one friend or tag is invited
+            isInvitesValid = !selectedFriends.isEmpty || !selectedTags.isEmpty
+            
+            // Update overall form validity
+            isFormValid = isTitleValid && isInvitesValid
+        }
 		
-		// Check if at least one friend or tag is invited
-		isInvitesValid = !selectedFriends.isEmpty || !selectedTags.isEmpty
-		
-		// Update overall form validity
-		isFormValid = isTitleValid && isInvitesValid
 	}
 
 	func createEvent() async {
 		// Validate form before proceeding
-		validateEventForm()
+		await validateEventForm()
 		guard isFormValid else {
 			await MainActor.run {
 				creationMessage = "Please fix the errors before creating the event."
@@ -98,12 +94,11 @@ class EventCreationViewModel: ObservableObject {
 			do {
 				_ = try await self.apiService.sendData(
 					event, to: url, parameters: nil)
-				
-				// Refresh events in the FeedViewModel if available
-				if let feedViewModel = self.feedViewModel {
-					await feedViewModel.fetchEventsForUser()
-					print("Event created successfully, refreshing events")
-				}
+                
+                // Post notification to trigger reload of events in FeedViewModel
+                await MainActor.run {
+                    NotificationCenter.default.post(name: .eventCreated, object: nil)
+                }
 			} catch {
 				await MainActor.run {
 					creationMessage =
