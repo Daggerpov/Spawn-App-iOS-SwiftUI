@@ -24,9 +24,10 @@ struct EventCreationView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Create a Spawn")
+                Text("Make an event")
                     .fontWeight(.bold)
                     .font(.title)
+                    .foregroundColor(universalAccentColor)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         EventInputFieldLabel(text: "Event Name")
@@ -170,6 +171,7 @@ struct EventCreationView: View {
         .onAppear {
             viewModel.validateEventForm()
         }
+        .ignoresSafeArea(edges: .bottom)
     }
 }
 
