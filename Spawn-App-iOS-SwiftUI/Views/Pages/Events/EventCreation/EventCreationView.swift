@@ -16,16 +16,10 @@ struct EventCreationView: View {
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
 
-    init(
-        creatingUser: BaseUserDTO, feedViewModel: FeedViewModel,
-        closeCallback: @escaping () -> Void
-    ) {
-        self.creatingUser = creatingUser
-        self.closeCallback = closeCallback
-
-        // Set the FeedViewModel reference
-        viewModel.setFeedViewModel(feedViewModel)
-    }
+	init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void) {
+		self.creatingUser = creatingUser
+		self.closeCallback = closeCallback
+	}
 
     var body: some View {
         NavigationStack {
@@ -474,11 +468,8 @@ extension EventCreationView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    EventCreationView(
-        creatingUser: .danielAgapov,
-        feedViewModel: FeedViewModel(
-            apiService: MockAPIService(userId: UUID()), userId: UUID()),
-        closeCallback: {
-        }
-    ).environmentObject(appCache)
+	EventCreationView(
+		creatingUser: .danielAgapov,
+		closeCallback: {
+        }).environmentObject(appCache)
 }

@@ -32,7 +32,9 @@ struct FeedView: View {
             wrappedValue: FeedViewModel(
                 apiService: MockAPIService.isMocking
                     ? MockAPIService(userId: user.id) : APIService(),
-                userId: user.id))
+                userId: user.id
+            )
+        )
     }
 
     var body: some View {
@@ -59,7 +61,7 @@ struct FeedView: View {
                 .ignoresSafeArea(.container)
                 .dimmedBackground(
                     isActive: showingEventDescriptionPopup
-                        || showEventCreationDrawer
+                        || showingEventCreationPopup
                 )
                 .gesture(
                     DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
@@ -112,6 +114,9 @@ struct FeedView: View {
             if showingEventDescriptionPopup {
                 eventDescriptionPopupView
             }
+            if showingEventCreationPopup {
+                eventCreationPopupView
+            }
         }
     }
     func closeDescription() {
@@ -162,7 +167,8 @@ extension FeedView {
                             250
                                 - CGFloat(
                                     (event.chatMessages?.count ?? 0) > 2
-                                        ? 100 : 0)
+                                        ? 100 : 0
+                                )
                                 - CGFloat(event.note != nil ? 50 : 0)
                         )
                     )
@@ -173,20 +179,37 @@ extension FeedView {
             }
         }
     }
+    var eventCreationPopupView: some View {
+        ZStack {
+            Color(.black)
+                .opacity(0.5)
+                .onTapGesture {
+                    closeCreation()
+                }
+                .ignoresSafeArea()
+
+            EventCreationView(
+                creatingUser: user,
+                feedViewModel: viewModel,
+                closeCallback: closeCreation
+            )
+            .offset(x: 0, y: creationOffset)
+            .onAppear {
+                creationOffset = 0
+            }
+            .padding(32)
+            .cornerRadius(universalRectangleCornerRadius)
+            .padding(.bottom, 50)
+        }
+    }
     var bottomButtonsView: some View {
         HStack(spacing: 35) {
             BottomNavButtonView(user: user, buttonType: .map)
             Spacer()
             EventCreationButtonView(
-                showEventCreationDrawer: $showEventCreationDrawer
+                showingEventCreationPopup:
+                    $showingEventCreationPopup
             )
-            .sheet(isPresented: $showEventCreationDrawer) {
-                EventCreationView(
-                    creatingUser: user, feedViewModel: viewModel,
-                    closeCallback: closeCreation
-                )
-                .presentationDragIndicator(.visible)
-            }
             Spacer()
             BottomNavButtonView(user: user, buttonType: .friends)
         }
@@ -205,7 +228,8 @@ extension FeedView {
                             color: Color(
                                 hex: event
                                     .eventFriendTagColorHexCodeForRequestingUser
-                                    ?? eventColorHexCodes[0])
+                                    ?? eventColorHexCodes[0]
+                            )
                         ) { event, color in
                             eventInPopup = event
                             colorInPopup = color

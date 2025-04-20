@@ -15,7 +15,9 @@ struct MapView: View {
 
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(
-            latitude: 0, longitude: 0),
+            latitude: 0,
+            longitude: 0
+        ),
         span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
     )
 
@@ -39,7 +41,9 @@ struct MapView: View {
             wrappedValue: FeedViewModel(
                 apiService: MockAPIService.isMocking
                     ? MockAPIService(userId: user.id) : APIService(),
-                userId: user.id))
+                userId: user.id
+            )
+        )
     }
 
     var body: some View {
@@ -51,7 +55,8 @@ struct MapView: View {
                         VStack {
                             TagsScrollView(
                                 tags: viewModel.tags,
-                                activeTag: $viewModel.activeTag)
+                                activeTag: $viewModel.activeTag
+                            )
                         }
                         .padding(.horizontal)
                         .padding(.top, 20)
@@ -64,7 +69,7 @@ struct MapView: View {
                 .ignoresSafeArea()
                 .dimmedBackground(
                     isActive: showingEventDescriptionPopup
-                        || showEventCreationDrawer
+                        || showingEventCreationPopup
                 )
             }
             .onAppear {
@@ -98,7 +103,9 @@ struct MapView: View {
             region = MKCoordinateRegion(
                 center: userLocation,
                 span: MKCoordinateSpan(
-                    latitudeDelta: 0.01, longitudeDelta: 0.01)
+                    latitudeDelta: 0.01,
+                    longitudeDelta: 0.01
+                )
             )
         }
     }
@@ -130,10 +137,13 @@ struct MapView: View {
 
         region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(
-                latitude: centerLatitude, longitude: centerLongitude),
+                latitude: centerLatitude,
+                longitude: centerLongitude
+            ),
             span: MKCoordinateSpan(
                 latitudeDelta: max(latitudeDelta, 0.01),
-                longitudeDelta: max(longitudeDelta, 0.01))
+                longitudeDelta: max(longitudeDelta, 0.01)
+            )
         )
     }
 
@@ -155,8 +165,8 @@ extension MapView {
             BottomNavButtonView(user: user, buttonType: .feed, source: .map)
             Spacer()
             EventCreationButtonView(
-                showEventCreationDrawer:
-                    $showEventCreationDrawer
+                showingEventCreationPopup:
+                    $showingEventCreationPopup
             )
             Spacer()
             BottomNavButtonView(user: user, buttonType: .friends, source: .map)
@@ -172,7 +182,8 @@ extension MapView {
                 coordinate: CLLocationCoordinate2D(
                     latitude: event.location?.latitude ?? 0,
                     longitude: event.location?.longitude ?? 0
-                ), anchorPoint: CGPoint(x: 0.5, y: 1.0)
+                ),
+                anchorPoint: CGPoint(x: 0.5, y: 1.0)
             ) {
                 Button(action: {
                     eventInPopup = event
@@ -192,7 +203,8 @@ extension MapView {
                                     image in
                                     image
                                         .ProfileImageModifier(
-                                            imageType: .mapView)
+                                            imageType: .mapView
+                                        )
                                 } placeholder: {
                                     Circle()
                                         .fill(Color.gray)
@@ -243,8 +255,10 @@ extension MapView {
                             330,
                             330
                                 - CGFloat(
-                                    100 * (event.chatMessages?.count ?? 0))
-                                - CGFloat(event.note != nil ? 200 : 0))
+                                    100 * (event.chatMessages?.count ?? 0)
+                                )
+                                - CGFloat(event.note != nil ? 200 : 0)
+                        )
                     )
                 }
                 .ignoresSafeArea()
@@ -262,7 +276,8 @@ extension MapView {
                 .ignoresSafeArea()
 
             EventCreationView(
-                creatingUser: user, feedViewModel: viewModel,
+                creatingUser: user,
+                feedViewModel: viewModel,
                 closeCallback: closeCreation
             )
             .offset(x: 0, y: creationOffset)

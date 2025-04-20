@@ -111,6 +111,13 @@ class MockAPIService: IAPIService {
         if T.self == UserDTO.self {
             return UserDTO.danielAgapov as! T
         }
+        
+        /// UserAuthViewModel.swift:
+        if let userIdForUrl = userId {
+            if url.absoluteString == APIService.baseURL + "auth/sign-in/\(userIdForUrl)" {
+                return UserDTO.danielAgapov as! T
+            }
+        }
 
         throw APIError.invalidData
     }
