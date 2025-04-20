@@ -53,21 +53,23 @@ class EventCreationViewModel: ObservableObject {
 	}
 	
 	// Validates all form fields and returns if the form is valid
-	func validateEventForm() {
-		// Check title
-		let trimmedTitle = event.title?.trimmingCharacters(in: .whitespaces) ?? ""
-		isTitleValid = !trimmedTitle.isEmpty
+	func validateEventForm() async {
+        // Check title
+        let trimmedTitle = event.title?.trimmingCharacters(in: .whitespaces) ?? ""
+        await MainActor.run {
+            isTitleValid = !trimmedTitle.isEmpty
+            // Check if at least one friend or tag is invited
+            isInvitesValid = !selectedFriends.isEmpty || !selectedTags.isEmpty
+            
+            // Update overall form validity
+            isFormValid = isTitleValid && isInvitesValid
+        }
 		
-		// Check if at least one friend or tag is invited
-		isInvitesValid = !selectedFriends.isEmpty || !selectedTags.isEmpty
-		
-		// Update overall form validity
-		isFormValid = isTitleValid && isInvitesValid
 	}
 
 	func createEvent() async {
 		// Validate form before proceeding
-		validateEventForm()
+		await validateEventForm()
 		guard isFormValid else {
 			await MainActor.run {
 				creationMessage = "Please fix the errors before creating the event."

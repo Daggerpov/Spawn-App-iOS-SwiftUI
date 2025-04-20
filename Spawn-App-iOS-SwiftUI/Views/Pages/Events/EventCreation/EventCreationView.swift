@@ -63,6 +63,7 @@ struct EventCreationView: View {
                                 Image(systemName: "exclamationmark.circle.fill")
                                     .foregroundColor(.red)
                                     .font(.system(size: 12))
+                                Text("At least one friend or tag is required")
                                     .font(.caption)
                                     .foregroundColor(.red)
                                     .padding(.horizontal, 5)
@@ -156,9 +157,10 @@ struct EventCreationView: View {
                 }
 
                 Button(action: {
-                    viewModel.validateEventForm()
+                    
                     if viewModel.isFormValid {
                         Task {
+                            await viewModel.validateEventForm()
                             await viewModel.createEvent()
                         }
                         closeCallback()
@@ -171,13 +173,19 @@ struct EventCreationView: View {
                 }
                 .disabled(!viewModel.isFormValid)
                 .onChange(of: viewModel.event.title) { _ in
-                    viewModel.validateEventForm()
+                    Task{
+                        await viewModel.validateEventForm()
+                    }
                 }
                 .onChange(of: viewModel.selectedFriends) { _ in
-                    viewModel.validateEventForm()
+                    Task{
+                        await viewModel.validateEventForm()
+                    }
                 }
                 .onChange(of: viewModel.selectedTags) { _ in
-                    viewModel.validateEventForm()
+                    Task{
+                        await viewModel.validateEventForm()
+                    }
                 }
                 .padding(.top, 24)  // Increased padding
             }
@@ -189,7 +197,9 @@ struct EventCreationView: View {
         .scrollIndicators(.hidden)  // Hide scroll indicators
         .background(universalBackgroundColor)
         .onAppear {
-            viewModel.validateEventForm()
+            Task{
+                await viewModel.validateEventForm()
+            }
         }
         .ignoresSafeArea(edges: .bottom)
     }
