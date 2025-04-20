@@ -80,23 +80,109 @@ struct EventCreationView: View {
                 }
                 .padding(.bottom, 8)
 
-                HStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        EventInputFieldLabel(text: "Date")
-                        datePickerView
-                            .padding(.bottom, 8)
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack(spacing: 20) {
+                        // Date field
+                        VStack(alignment: .leading, spacing: 10) {
+                            HStack {
+                                Text("Date")
+                                    .font(Font.custom("Poppins", size: 16))
+                                    .kerning(1)
+                                    .foregroundColor(universalAccentColor)
+                                    .bold()
+                                Text("*")
+                                    .foregroundColor(universalAccentColor)
+                                    .bold()
+                            }
+                            
+                            Button(action: { showFullDatePicker = true }) {
+                                HStack {
+                                    Text(Calendar.current.isDateInToday(viewModel.selectedDate) ? "Today" : viewModel.formatDate(viewModel.selectedDate))
+                                        .foregroundColor(universalAccentColor)
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "calendar")
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding()
+                                .frame(height: 46)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .stroke(Color.black, lineWidth: 1.5)
+                                        .background(Color.clear)
+                                )
+                            }
+                            .sheet(isPresented: $showFullDatePicker) {
+                                fullDatePickerView
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
                     }
+                    
+                    // Time field
                     VStack(alignment: .leading, spacing: 10) {
-                        EventInputFieldLabel(text: "Start Time")
-                        startTimeView
+                        HStack {
+                            Text("Time")
+                                .font(Font.custom("Poppins", size: 16))
+                                .kerning(1)
+                                .foregroundColor(universalAccentColor)
+                                .bold()
+                            Text("*")
+                                .foregroundColor(universalAccentColor)
+                                .bold()
+                        }
+                        
+                        HStack(spacing: 10) {
+                            // Start time
+                            DatePicker(
+                                "",
+                                selection: Binding(
+                                    get: {
+                                        viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
+                                    },
+                                    set: { time in
+                                        viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                                    }
+                                ),
+                                displayedComponents: .hourAndMinute
+                            )
+                            .labelsHidden()
+                            .frame(height: 46)
+                            .padding(.horizontal)
+                            .background(
+                                RoundedRectangle(cornerRadius: 15)
+                                    .stroke(Color.black, lineWidth: 1.5)
+                                    .background(Color.clear)
+                            )
+                            
+                            Text("-")
+                                .font(.title2)
+                                .foregroundColor(universalAccentColor)
+                            
+                            // End time
+                            DatePicker(
+                                "",
+                                selection: Binding(
+                                    get: {
+                                        viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
+                                    },
+                                    set: { time in
+                                        viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                                    }
+                                ),
+                                displayedComponents: .hourAndMinute
+                            )
+                            .labelsHidden()
+                            .frame(height: 46)
+                            .padding(.horizontal)
+                            .background(
+                                RoundedRectangle(cornerRadius: 15)
+                                    .stroke(Color.black, lineWidth: 1.5)
+                                    .background(Color.clear)
+                            )
+                        }
                     }
-                    .frame(minWidth: 0, maxWidth: .infinity)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        EventInputFieldLabel(text: "End Time")
-                        endTimeView
-                    }
-                    .frame(minWidth: 0, maxWidth: .infinity)
                 }
                 .padding(.bottom, 12)
 
@@ -361,45 +447,6 @@ extension EventCreationView {
         }
     }
 
-    var startTimeView: some View {
-        TimePicker(
-            iconName: "clock.fill",
-            date: Binding(
-                get: {
-                    viewModel.event.startTime
-                        ?? viewModel.combineDateAndTime(
-                            viewModel.selectedDate, time: Date())
-                },
-                set: { time in
-                    viewModel.event.startTime =
-                        viewModel.combineDateAndTime(
-                            viewModel.selectedDate, time: time)
-                }
-            )
-        )
-    }
-
-    var endTimeView: some View {
-        TimePicker(
-            iconName: "clock.badge.checkmark.fill",
-            wideImage: true,
-            date: Binding(
-                get: {
-                    viewModel.event.endTime
-                        ?? viewModel.combineDateAndTime(
-                            viewModel.selectedDate,
-                            time: Date()
-                                .addingTimeInterval(2 * 60 * 60)  // adds 2 hours
-                        )
-                },
-                set: { time in
-                    viewModel.event.endTime = viewModel.combineDateAndTime(
-                        viewModel.selectedDate, time: time)
-                }
-            )
-        )
-    }
-
     var fullDatePickerView: some View {
         VStack {
             Text("Select a Date")
@@ -424,43 +471,6 @@ extension EventCreationView {
             .padding()
         }
         .presentationDetents([.medium])
-    }
-
-    var datePickerView: some View {
-        HStack {
-            Image(systemName: "calendar")
-                .resizable()
-                .frame(width: 24, height: 24)
-                .foregroundColor(.secondary)
-                .padding(.leading)
-            Button(action: { showFullDatePicker = true }) {
-                Text(viewModel.formatDate(viewModel.selectedDate))
-                    .padding()
-                    .foregroundColor(.primary)
-                    .background(
-                        Rectangle()
-                            .foregroundColor(
-                                Color(hex: "#D9D9D2")
-                            )
-                            .background(
-                                Color(
-                                    .init(
-                                        gray: 0,
-                                        alpha: 0.055)
-                                )
-                            )
-                            .frame(
-                                maxWidth: .infinity,
-                                minHeight: 46,
-                                maxHeight: 46
-                            )
-                            .cornerRadius(15)
-                    )
-            }
-        }
-        .sheet(isPresented: $showFullDatePicker) {
-            fullDatePickerView
-        }
     }
 }
 
