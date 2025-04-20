@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct EventCreationButtonView: View {
-	@Binding var showingEventCreationPopup: Bool
+	@Binding var showEventCreationDrawer: Bool
 	var body: some View {
 		RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
 			.frame(width: 100, height: 45)
@@ -19,7 +19,7 @@ struct EventCreationButtonView: View {
 			)
 			.overlay(
 				Button(action: {
-					showingEventCreationPopup = true
+                    showEventCreationDrawer = true
 				}) {
 					HStack {
 						Spacer()
@@ -41,5 +41,5 @@ struct EventCreationButtonView: View {
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @State var state: Bool = false
-	EventCreationButtonView(showingEventCreationPopup: $state).environmentObject(appCache)
+	EventCreationButtonView(showEventCreationDrawer: $state).environmentObject(appCache)
 }

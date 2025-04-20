@@ -8,174 +8,172 @@
 import SwiftUI
 
 struct EventCreationView: View {
-	@ObservedObject var viewModel: EventCreationViewModel =
-		EventCreationViewModel.shared
-
-	@State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
-
-	var creatingUser: BaseUserDTO
-	var closeCallback: () -> Void
-
-	init(creatingUser: BaseUserDTO, feedViewModel: FeedViewModel, closeCallback: @escaping () -> Void) {
-		self.creatingUser = creatingUser
-		self.closeCallback = closeCallback
-		
-		// Set the FeedViewModel reference
-		viewModel.setFeedViewModel(feedViewModel)
-	}
-
-	var body: some View {
-		NavigationStack {
-			ScrollView {
-				VStack(alignment: .leading, spacing: 16) {
-					VStack(alignment: .leading, spacing: 10) {
-						HStack {
-							EventInputFieldLabel(text: "Event Name")
-							
-							if !viewModel.isTitleValid {
-								Image(systemName: "exclamationmark.circle.fill")
-									.foregroundColor(.red)
-									.font(.system(size: 12))
-							}
-						}
-						
-						EventInputField(value: $viewModel.event.title, isValid: viewModel.isTitleValid)
-						
-						if !viewModel.isTitleValid {
-							Text("Event name is required")
-								.font(.caption)
-								.foregroundColor(.red)
-								.padding(.horizontal, 5)
-								.transition(.opacity)
-						}
-					}
-					.padding(.bottom, 8)
-
-					VStack(alignment: .leading, spacing: 10) {
-						HStack {
-							EventInputFieldLabel(text: "Invite Friends")
-							
-							if !viewModel.isInvitesValid {
-								Image(systemName: "exclamationmark.circle.fill")
-									.foregroundColor(.red)
-									.font(.system(size: 12))
-							}
-						}
-						
+    @ObservedObject var viewModel: EventCreationViewModel =
+    EventCreationViewModel.shared
+    
+    @State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
+    
+    var creatingUser: BaseUserDTO
+    var closeCallback: () -> Void
+    
+    init(creatingUser: BaseUserDTO, feedViewModel: FeedViewModel, closeCallback: @escaping () -> Void) {
+        self.creatingUser = creatingUser
+        self.closeCallback = closeCallback
+        
+        // Set the FeedViewModel reference
+        viewModel.setFeedViewModel(feedViewModel)
+    }
+    
+    var body: some View {
+        NavigationStack {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Create a Spawn")
+                        .fontWeight(.bold)
+                        .font(.title)
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            EventInputFieldLabel(text: "Event Name")
+                            
+                            if !viewModel.isTitleValid {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                            }
+                        }
+                        
+                        EventInputField(value: $viewModel.event.title, isValid: viewModel.isTitleValid)
+                        
+                        if !viewModel.isTitleValid {
+                            Text("Event name is required")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 5)
+                                .transition(.opacity)
+                        }
+                    }
+                    .padding(.bottom, 8)
+                    
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            EventInputFieldLabel(text: "Invite Friends")
+                            
+                            if !viewModel.isInvitesValid {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                            }
+                        }
+                        
                         HStack {
                             selectedFriendsView
                             Spacer()
                             selectedTagsView
                         }
-						
-						if !viewModel.isInvitesValid {
-							Text("At least one friend or tag must be invited")
-								.font(.caption)
-								.foregroundColor(.red)
-								.padding(.horizontal, 5)
-								.transition(.opacity)
-						}
-					}
-					.padding(.bottom, 8)
-
-					HStack(spacing: 20) {
-						VStack(alignment: .leading, spacing: 10) {
-							EventInputFieldLabel(text: "Start Time")
-							startTimeView
-						}
-						.frame(minWidth: 0, maxWidth: .infinity)
-
-						VStack(alignment: .leading, spacing: 10) {
-							EventInputFieldLabel(text: "End Time")
-							endTimeView
-						}
-						.frame(minWidth: 0, maxWidth: .infinity)
-					}
-					.padding(.bottom, 12)
-
-					VStack(alignment: .leading, spacing: 10) {
-						EventInputFieldLabel(text: "Date")
-						datePickerView
-							.padding(.bottom, 8)
-					}
-
-					EventInputFieldLabel(text: "Location")
-					EventInputField(
-						iconName: "mappin.and.ellipse",
-						value: Binding(
-							get: { viewModel.event.location?.name ?? "" },
-							set: { newValue in
-								if let unwrappedNewValue = newValue {
-									if viewModel.event.location == nil {
-										viewModel.event.location = Location(
-											id: UUID(), name: unwrappedNewValue,
-											latitude: 0, longitude: 0)
-									} else {
-										viewModel.event.location?.name = unwrappedNewValue
-									}
-								}
-							}
-						),
-						isValid: true
-					)
-					.padding(.bottom, 8)
-
-					EventInputFieldLabel(text: "Note")
-					EventInputField(value: $viewModel.event.note, isValid: true)
-						.padding(.bottom, 16)
-
-					// Error message display
-					if !viewModel.creationMessage.isEmpty {
-						Text(viewModel.creationMessage)
-							.font(.caption)
-							.foregroundColor(.red)
-							.padding(.bottom, 8)
-							.multilineTextAlignment(.center)
-							.frame(maxWidth: .infinity)
-					}
-
-					Button(action: {
-						viewModel.validateEventForm()
-						if viewModel.isFormValid {
-							Task {
-								await viewModel.createEvent()
-							}
-							closeCallback()
-						}
-					}) {
+                        
+                        if !viewModel.isInvitesValid {
+                            Text("At least one friend or tag must be invited")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 5)
+                                .transition(.opacity)
+                        }
+                    }
+                    .padding(.bottom, 8)
+                    
+                    HStack(spacing: 20) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            EventInputFieldLabel(text: "Date")
+                            datePickerView
+                                .padding(.bottom, 8)
+                        }
+                        VStack(alignment: .leading, spacing: 10) {
+                            EventInputFieldLabel(text: "Start Time")
+                            startTimeView
+                        }
+                        .frame(minWidth: 0, maxWidth: .infinity)
+                        
+                        VStack(alignment: .leading, spacing: 10) {
+                            EventInputFieldLabel(text: "End Time")
+                            endTimeView
+                        }
+                        .frame(minWidth: 0, maxWidth: .infinity)
+                    }
+                    .padding(.bottom, 12)
+                    
+                    EventInputFieldLabel(text: "Location")
+                    EventInputField(
+                        iconName: "mappin.and.ellipse",
+                        value: Binding(
+                            get: { viewModel.event.location?.name ?? "" },
+                            set: { newValue in
+                                if let unwrappedNewValue = newValue {
+                                    if viewModel.event.location == nil {
+                                        viewModel.event.location = Location(
+                                            id: UUID(), name: unwrappedNewValue,
+                                            latitude: 0, longitude: 0)
+                                    } else {
+                                        viewModel.event.location?.name = unwrappedNewValue
+                                    }
+                                }
+                            }
+                        ),
+                        isValid: true
+                    )
+                    .padding(.bottom, 8)
+                    
+                    EventInputFieldLabel(text: "Caption")
+                    EventInputField(value: $viewModel.event.note, isValid: true)
+                        .padding(.bottom, 16)
+                    
+                    // Error message display
+                    if !viewModel.creationMessage.isEmpty {
+                        Text(viewModel.creationMessage)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .padding(.bottom, 8)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                    }
+                    
+                    Button(action: {
+                        viewModel.validateEventForm()
+                        if viewModel.isFormValid {
+                            Task {
+                                await viewModel.createEvent()
+                            }
+                            closeCallback()
+                        }
+                    }) {
                         EventSubmitButtonView(backgroundColor: viewModel.isFormValid ? universalSecondaryColor : Color.gray)
-					}
-					.disabled(!viewModel.isFormValid)
-					.onChange(of: viewModel.event.title) { _ in
-						viewModel.validateEventForm()
-					}
-					.onChange(of: viewModel.selectedFriends) { _ in
-						viewModel.validateEventForm()
-					}
-					.onChange(of: viewModel.selectedTags) { _ in
-						viewModel.validateEventForm()
-					}
-					.padding(.top, 24) // Increased padding
-				}
-				.padding(.horizontal, 16) // Reduced horizontal padding from 32
-				.padding(.vertical, 24) // Added vertical padding
-				.background(universalBackgroundColor)
-				.cornerRadius(universalRectangleCornerRadius)
-				.shadow(radius: 10)
-				.padding(.horizontal, 8) // Reduced from 20
-				.frame(maxWidth: .infinity, maxHeight: .infinity)
-			}
-			.scrollIndicators(.hidden) // Hide scroll indicators
-			.background(universalBackgroundColor)
-			.onAppear {
-				viewModel.validateEventForm()
-			}
-		}
-		.background(universalBackgroundColor)
-		.cornerRadius(universalRectangleCornerRadius)
-		.environmentObject(viewModel)
-	}
-}
+                    }
+                    .disabled(!viewModel.isFormValid)
+                    .onChange(of: viewModel.event.title) { _ in
+                        viewModel.validateEventForm()
+                    }
+                    .onChange(of: viewModel.selectedFriends) { _ in
+                        viewModel.validateEventForm()
+                    }
+                    .onChange(of: viewModel.selectedTags) { _ in
+                        viewModel.validateEventForm()
+                    }
+                    .padding(.top, 24) // Increased padding
+                }
+                .padding(.horizontal, 16) // Reduced horizontal padding from 32
+                .padding(.vertical, 24) // Added vertical padding
+                .background(universalBackgroundColor)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+            .scrollIndicators(.hidden) // Hide scroll indicators
+            .background(universalBackgroundColor)
+            .onAppear {
+                viewModel.validateEventForm()
+            }
+        }
+        //		.background(universalBackgroundColor)
+        //		.cornerRadius(universalRectangleCornerRadius)
+        //		.environmentObject(viewModel)
+    }
+
 
 struct EventInputFieldLabel: View {
 	var text: String

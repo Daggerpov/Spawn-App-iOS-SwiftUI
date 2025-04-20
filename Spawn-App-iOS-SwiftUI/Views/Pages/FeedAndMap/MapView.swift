@@ -24,7 +24,7 @@ struct MapView: View {
 	@State private var eventInPopup: FullFeedEventDTO?
 	@State private var colorInPopup: Color?
 
-	@State private var showingEventCreationPopup: Bool = false
+	@State private var showEventCreationDrawer: Bool = false
 
 	// for pop-ups:
 	@State private var descriptionOffset: CGFloat = 1500
@@ -64,7 +64,7 @@ struct MapView: View {
 				.ignoresSafeArea()
 				.dimmedBackground(
 					isActive: showingEventDescriptionPopup
-						|| showingEventCreationPopup
+						|| showEventCreationDrawer
 				)
 			}
             .onAppear {
@@ -87,7 +87,7 @@ struct MapView: View {
 			if showingEventDescriptionPopup {
 				eventDescriptionPopupView
 			}
-			if showingEventCreationPopup {
+			if showEventCreationDrawer {
 				eventCreationPopupView
 			}
 		}
@@ -144,7 +144,7 @@ struct MapView: View {
 	func closeCreation() {
 		EventCreationViewModel.reInitialize()
 		creationOffset = 1000
-		showingEventCreationPopup = false
+		showEventCreationDrawer = false
 	}
 }
 
@@ -154,8 +154,8 @@ extension MapView {
 			BottomNavButtonView(user: user, buttonType: .feed, source: .map)
 			Spacer()
 			EventCreationButtonView(
-				showingEventCreationPopup:
-					$showingEventCreationPopup
+                showEventCreationDrawer:
+					$showEventCreationDrawer
 			)
 			Spacer()
 			BottomNavButtonView(user: user, buttonType: .friends, source: .map)

@@ -17,7 +17,7 @@ struct FeedView: View {
 	@State private var eventInPopup: FullFeedEventDTO?
 	@State private var colorInPopup: Color?
 
-	@State private var showingEventCreationPopup: Bool = false
+	@State private var showEventCreationDrawer: Bool = false
 
 	// for popups:
 	@State private var descriptionOffset: CGFloat = 1000
@@ -59,7 +59,7 @@ struct FeedView: View {
 				.ignoresSafeArea(.container)
 				.dimmedBackground(
 					isActive: showingEventDescriptionPopup
-						|| showingEventCreationPopup
+						|| showEventCreationDrawer
 				)
 				.gesture(DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
 					.onEnded { value in
@@ -100,9 +100,6 @@ struct FeedView: View {
 			if showingEventDescriptionPopup {
 				eventDescriptionPopupView
 			}
-			if showingEventCreationPopup {
-				eventCreationPopupView
-			}
 		}
 	}
 	func closeDescription() {
@@ -113,7 +110,7 @@ struct FeedView: View {
 	func closeCreation() {
 		EventCreationViewModel.reInitialize()
 		creationOffset = 1000
-		showingEventCreationPopup = false
+		showEventCreationDrawer = false
 	}
 }
 
@@ -162,32 +159,17 @@ extension FeedView {
 			}
 		}
 	}
-	var eventCreationPopupView: some View {
-		ZStack {
-			Color(.black)
-				.opacity(0.5)
-				.onTapGesture {
-					closeCreation()
-				}
-				.ignoresSafeArea()
-
-			EventCreationView(creatingUser: user, feedViewModel: viewModel, closeCallback: closeCreation)
-				.offset(x: 0, y: creationOffset)
-				.onAppear {
-					creationOffset = 0
-				}
-				.padding(32)
-				.cornerRadius(universalRectangleCornerRadius)
-				.padding(.bottom, 50)
-		}
-	}
 	var bottomButtonsView: some View {
 		HStack(spacing: 35) {
 			BottomNavButtonView(user: user, buttonType: .map)
 			Spacer()
 			EventCreationButtonView(
-				showingEventCreationPopup:
-					$showingEventCreationPopup)
+                showEventCreationDrawer: $showEventCreationDrawer
+            )
+            .sheet(isPresented: $showEventCreationDrawer) {
+                EventCreationView(creatingUser: user, feedViewModel: viewModel, closeCallback: closeCreation)
+            }
+            .presentationDragIndicator(.visible)
 			Spacer()
 			BottomNavButtonView(user: user, buttonType: .friends)
 		}
