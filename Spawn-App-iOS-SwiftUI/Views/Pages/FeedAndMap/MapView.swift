@@ -54,9 +54,8 @@ struct MapView: View {
 								activeTag: $viewModel.activeTag)
 						}
 						.padding(.horizontal)
-						.padding(.top, 20)
+                        Spacer()
 					}
-					.padding(.top, 50)
 				}
 				.dimmedBackground(
 					isActive: showingEventDescriptionPopup
