@@ -16,10 +16,10 @@ struct EventCreationView: View {
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
 
-	init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void) {
-		self.creatingUser = creatingUser
-		self.closeCallback = closeCallback
-	}
+    init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void) {
+        self.creatingUser = creatingUser
+        self.closeCallback = closeCallback
+    }
 
     var body: some View {
         NavigationStack {
@@ -30,26 +30,27 @@ struct EventCreationView: View {
                     .foregroundColor(universalAccentColor)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        EventInputFieldLabel(text: "Event Name")
+                        EventInputFieldLabel(text: "Name")
 
                         if !viewModel.isTitleValid {
-                            Image(systemName: "exclamationmark.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.system(size: 12))
+                            HStack {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                                Text("Event name is required")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 5)
+                                    .transition(.opacity)
+                            }
                         }
                     }
 
                     EventInputField(
                         value: $viewModel.event.title,
-                        isValid: viewModel.isTitleValid)
+                        isValid: viewModel.isTitleValid
+                    )
 
-                    if !viewModel.isTitleValid {
-                        Text("Event name is required")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                            .padding(.horizontal, 5)
-                            .transition(.opacity)
-                    }
                 }
                 .padding(.bottom, 8)
 
@@ -58,9 +59,15 @@ struct EventCreationView: View {
                         EventInputFieldLabel(text: "Invite Friends")
 
                         if !viewModel.isInvitesValid {
-                            Image(systemName: "exclamationmark.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.system(size: 12))
+                            HStack {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 5)
+                                    .transition(.opacity)
+                            }
                         }
                     }
 
@@ -69,57 +76,15 @@ struct EventCreationView: View {
                         Spacer()
                         selectedTagsView
                     }
-
-                    if !viewModel.isInvitesValid {
-                        Text("At least one friend or tag must be invited")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                            .padding(.horizontal, 5)
-                            .transition(.opacity)
-                    }
                 }
                 .padding(.bottom, 8)
 
-                VStack(alignment: .leading, spacing: 16) {
-                    HStack(spacing: 20) {
-                        // Date field
-                        VStack(alignment: .leading, spacing: 10) {
-                            HStack {
-                                Text("Date")
-                                    .font(Font.custom("Poppins", size: 16))
-                                    .kerning(1)
-                                    .foregroundColor(universalAccentColor)
-                                    .bold()
-                                Text("*")
-                                    .foregroundColor(universalAccentColor)
-                                    .bold()
-                            }
-                            
-                            Button(action: { showFullDatePicker = true }) {
-                                HStack {
-                                    Text(Calendar.current.isDateInToday(viewModel.selectedDate) ? "Today" : viewModel.formatDate(viewModel.selectedDate))
-                                        .foregroundColor(universalAccentColor)
-                                    
-                                    Spacer()
-                                    
-                                    Image(systemName: "calendar")
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding()
-                                .frame(height: 46)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .stroke(Color.black, lineWidth: 1.5)
-                                        .background(Color.clear)
-                                )
-                            }
-                            .sheet(isPresented: $showFullDatePicker) {
-                                fullDatePickerView
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    
+                HStack(spacing: 16) {
+//                    Spacer()
+                    // Date field
+                    datePickerView
+                    Spacer()
+
                     // Time field
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
@@ -128,59 +93,24 @@ struct EventCreationView: View {
                                 .kerning(1)
                                 .foregroundColor(universalAccentColor)
                                 .bold()
-                            Text("*")
+                        }
+
+                        ZStack{
+                            HStack(spacing: 10) {
+                                startTimeView
+                                    .font(Font.custom("Poppins", size: 16))
+                                    .kerning(1)
+                                    .foregroundColor(universalAccentColor)
+                                    .bold()
+                                Spacer()
+                                endTimeView
+                            }
+                            Text("—")
+                                .font(Font.custom("Poppins", size: 16))
+                                .kerning(1)
                                 .foregroundColor(universalAccentColor)
                                 .bold()
-                        }
-                        
-                        HStack(spacing: 10) {
-                            // Start time
-                            DatePicker(
-                                "",
-                                selection: Binding(
-                                    get: {
-                                        viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
-                                    },
-                                    set: { time in
-                                        viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
-                                    }
-                                ),
-                                displayedComponents: .hourAndMinute
-                            )
-                            .labelsHidden()
-                            .frame(height: 46)
-                            .padding(.horizontal)
-                            .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.black, lineWidth: 1.5)
-                                    .background(Color.clear)
-                            )
-                            
-                            Text("-")
-                                .font(.title2)
-                                .foregroundColor(universalAccentColor)
-                            
-                            // End time
-                            DatePicker(
-                                "",
-                                selection: Binding(
-                                    get: {
-                                        viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
-                                    },
-                                    set: { time in
-                                        viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
-                                    }
-                                ),
-                                displayedComponents: .hourAndMinute
-                            )
-                            .labelsHidden()
-                            .frame(height: 46)
-                            .padding(.horizontal)
-                            .background(
-                                RoundedRectangle(cornerRadius: 15)
-                                    .stroke(Color.black, lineWidth: 1.5)
-                                    .background(Color.clear)
-                            )
+                                .padding(.trailing, 8)
                         }
                     }
                 }
@@ -195,8 +125,11 @@ struct EventCreationView: View {
                             if let unwrappedNewValue = newValue {
                                 if viewModel.event.location == nil {
                                     viewModel.event.location = Location(
-                                        id: UUID(), name: unwrappedNewValue,
-                                        latitude: 0, longitude: 0)
+                                        id: UUID(),
+                                        name: unwrappedNewValue,
+                                        latitude: 0,
+                                        longitude: 0
+                                    )
                                 } else {
                                     viewModel.event.location?.name =
                                         unwrappedNewValue
@@ -233,7 +166,8 @@ struct EventCreationView: View {
                 }) {
                     EventSubmitButtonView(
                         backgroundColor: viewModel.isFormValid
-                            ? universalSecondaryColor : Color.gray)
+                            ? universalSecondaryColor : Color.gray
+                    )
                 }
                 .disabled(!viewModel.isFormValid)
                 .onChange(of: viewModel.event.title) { _ in
@@ -247,7 +181,7 @@ struct EventCreationView: View {
                 }
                 .padding(.top, 24)  // Increased padding
             }
-            .padding(.horizontal, 16)  // Reduced horizontal padding from 32
+            .padding(.horizontal, 22)
             .padding(.vertical, 24)  // Added vertical padding
             .background(universalBackgroundColor)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -313,61 +247,105 @@ struct EventInputField: View {
     }
 }
 
-struct TimePicker: View {
-    var iconName: String
-    var wideImage: Bool?
-    @Binding var date: Date
-
-    var body: some View {
-        HStack {
-            if wideImage != nil {
-                Image(systemName: iconName)
-                    .resizable()
-                    .frame(width: 32, height: 26)
-                    .foregroundColor(.secondary)
-            } else {
-                Image(systemName: iconName)
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .foregroundColor(.secondary)
+extension EventCreationView {
+    var startTimeView: some View {
+        // Start time
+        DatePicker(
+            "",
+            selection: Binding(
+                get: {
+                    viewModel.event.startTime
+                    ?? viewModel.combineDateAndTime(
+                        viewModel.selectedDate,
+                        time: Date()
+                    )
+                },
+                set: { time in
+                    viewModel.event.startTime =
+                    viewModel.combineDateAndTime(
+                        viewModel.selectedDate,
+                        time: time
+                    )
+                }
+            ),
+            displayedComponents: .hourAndMinute
+        )
+        .frame(height: 42)
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(Color.black, lineWidth: 1.5)
+            )
+        .labelsHidden()
+    }
+    
+    var endTimeView: some View {
+        // End time
+        DatePicker(
+            "",
+            selection: Binding(
+                get: {
+                    viewModel.event.endTime
+                        ?? viewModel.combineDateAndTime(
+                            viewModel.selectedDate,
+                            time: Date().addingTimeInterval(
+                                2 * 60 * 60
+                            )
+                        )
+                },
+                set: { time in
+                    viewModel.event.endTime =
+                        viewModel.combineDateAndTime(
+                            viewModel.selectedDate,
+                            time: time
+                        )
+                }
+            ),
+            displayedComponents: .hourAndMinute
+        )
+        .frame(height: 42)
+        .background(
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(Color.black, lineWidth: 1.5)
+        )
+        .labelsHidden()
+    }
+    var datePickerView: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Date")
+                    .font(Font.custom("Poppins", size: 16))
+                    .kerning(1)
+                    .foregroundColor(universalAccentColor)
+                    .bold()
             }
 
-            DatePicker(
-                "",
-                selection: $date,
-                displayedComponents: .hourAndMinute
-            )
-            .labelsHidden()
+            Button(action: { showFullDatePicker = true }) {
+                HStack {
+                    Text(
+                        Calendar.current.isDateInToday(
+                            viewModel.selectedDate
+                        )
+                            ? "Today"
+                            : viewModel.formatDate(
+                                viewModel.selectedDate
+                            )
+                    )
+                    .foregroundColor(universalAccentColor)
+                    Image(systemName: "calendar")
+                        .foregroundColor(universalAccentColor)
+                }
+                .padding()
+                .frame(height: 42)
+                .background(
+                    RoundedRectangle(cornerRadius: 15)
+                        .stroke(Color.black, lineWidth: 1.5)
+                )
+            }
+            .sheet(isPresented: $showFullDatePicker) {
+                fullDatePickerView
+            }
         }
-        .padding()
-        .background(
-            Rectangle()
-                .foregroundColor(.clear)
-                .frame(maxWidth: .infinity)
-                .cornerRadius(15)
-        )
     }
-
-    // Helper function to check if the date is the current time
-    private func isNow(_ date: Date) -> Bool {
-        let calendar = Calendar.current
-        let now = Date()
-        return calendar.isDate(date, inSameDayAs: now)
-            && calendar.component(.hour, from: date)
-                == calendar.component(.hour, from: now)
-            && calendar.component(.minute, from: date)
-                == calendar.component(.minute, from: now)
-    }
-
-    // Helper function to format the time
-    private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"  // Customize the format as needed
-        return formatter.string(from: date)
-    }
-}
-
-extension EventCreationView {
     var selectedFriendsView: some View {
         HStack {
             ForEach(viewModel.selectedFriends) { friend in
@@ -477,8 +455,9 @@ extension EventCreationView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	EventCreationView(
-		creatingUser: .danielAgapov,
-		closeCallback: {
-        }).environmentObject(appCache)
+    EventCreationView(
+        creatingUser: .danielAgapov,
+        closeCallback: {
+        }
+    ).environmentObject(appCache)
 }
