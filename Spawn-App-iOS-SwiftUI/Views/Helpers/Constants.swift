@@ -12,7 +12,7 @@ let eventColorHexCodes: [String] = ["#00A676", "#FF7620", "#06AED5", "#FE5E6E"]
 let eventColors = eventColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
 }
-let universalBackgroundColor: Color = Color(hex: "#F8F8F8")
+let universalBackgroundColor: Color = Color(hex: "#FFFFFF")
 let universalSecondaryColorHexCode: String = "#8693FF"
 let universalSecondaryColor: Color = Color(
     hex: universalSecondaryColorHexCode
