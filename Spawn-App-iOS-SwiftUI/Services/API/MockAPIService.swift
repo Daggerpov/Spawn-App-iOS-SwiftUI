@@ -293,6 +293,44 @@ class MockAPIService: IAPIService {
                     let mockEvents = createMockEvents()
                     updatedItems = try? JSONEncoder().encode(mockEvents)
                     
+                case "profilePicture":
+                    // Return mock profile picture data
+                    if let userId = userId ?? UserAuthViewModel.shared.spawnUser?.id {
+                        let mockProfile = BaseUserDTO(
+                            id: userId,
+                            username: "mockuser",
+                            profilePicture: "https://mock-s3.amazonaws.com/profile-pictures/\(UUID().uuidString).jpg",
+                            firstName: "Mock",
+                            lastName: "User",
+                            bio: "This is a mock user",
+                            email: "mock@example.com"
+                        )
+                        updatedItems = try? JSONEncoder().encode(mockProfile)
+                    }
+                    
+                case "recommendedFriends":
+                    // Return mock recommended friends data
+                    let mockRecommendedFriends = Array(RecommendedFriendUserDTO.mockUsers.prefix(3))
+                    updatedItems = try? JSONEncoder().encode(mockRecommendedFriends)
+                    
+                case "friendRequests":
+                    // Return mock friend requests data
+                    let mockFriendRequests = FetchFriendRequestDTO.mockFriendRequests
+                    updatedItems = try? JSONEncoder().encode(mockFriendRequests)
+                    
+                case "userTags":
+                    // Return mock user tags data
+                    let mockTags = FullFriendTagDTO.mockTags
+                    updatedItems = try? JSONEncoder().encode(mockTags)
+                    
+                case "otherProfiles":
+                    // For other profiles, we don't include data to force a separate fetch
+                    updatedItems = nil
+                    
+                case "tagFriends":
+                    // For tag friends, we don't include data to force a separate fetch
+                    updatedItems = nil
+                    
                 default:
                     updatedItems = nil
                 }
