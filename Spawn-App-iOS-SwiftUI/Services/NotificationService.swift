@@ -3,7 +3,7 @@ import UserNotifications
 import SwiftUI
 
 @available(iOS 16.0, *)
-class NotificationService: ObservableObject, @unchecked Sendable, UNUserNotificationCenterDelegate {
+class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUserNotificationCenterDelegate {
     static let shared = NotificationService()
     
     @Published var isNotificationsEnabled = false
@@ -25,12 +25,14 @@ class NotificationService: ObservableObject, @unchecked Sendable, UNUserNotifica
         return AppCache.shared
     }
     
-    private init() {
+    override private init() {
         // Use MockAPIService if in mocking mode, otherwise use regular APIService
         self.apiService = MockAPIService.isMocking
             ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
             : APIService()
             
+        super.init()
+        
         checkNotificationStatus()
         // Load saved preferences from UserDefaults
         loadPreferencesFromUserDefaults()
@@ -71,6 +73,7 @@ class NotificationService: ObservableObject, @unchecked Sendable, UNUserNotifica
     // For testing: initialize with a mock API service
     init(mockAPIService: IAPIService) {
         self.apiService = mockAPIService
+        super.init()
         checkNotificationStatus()
         loadPreferencesFromUserDefaults()
     }
