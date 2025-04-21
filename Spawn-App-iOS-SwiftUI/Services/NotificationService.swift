@@ -47,6 +47,23 @@ class NotificationService: ObservableObject, @unchecked Sendable, UNUserNotifica
         UNUserNotificationCenter.current().delegate = self
     }
     
+    // Register for push notifications
+    func registerForPushNotifications() {
+        // Request permission first
+        Task {
+            let granted = await requestPermission()
+            if granted {
+                // Register for remote notifications on main thread
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                    print("[PUSH DEBUG] Registered for remote notifications")
+                }
+            } else {
+                print("[PUSH DEBUG] Permission not granted for notifications")
+            }
+        }
+    }
+    
     deinit {
         NotificationCenter.default.removeObserver(self)
     }

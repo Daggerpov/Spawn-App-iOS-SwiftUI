@@ -10,7 +10,7 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         AppCache.shared.initialize()
         
         // Register for remote notifications
-        registerForRemoteNotifications()
+        NotificationService.shared.registerForPushNotifications()
         
         // Setting the notification delegate
         UNUserNotificationCenter.current().delegate = self
@@ -22,11 +22,6 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         }
         
         return true
-    }
-    
-    func registerForRemoteNotifications() {
-        // Register for notifications
-        NotificationService.shared.registerForPushNotifications()
     }
     
     // Handle device token registration
