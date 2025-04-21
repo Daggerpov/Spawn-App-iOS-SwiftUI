@@ -274,10 +274,18 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		// Clear externalUserId from Keychain
-		let success = KeychainService.shared.delete(key: "externalUserId")
+		var success = KeychainService.shared.delete(key: "externalUserId")
 		if !success {
 			print("Failed to delete externalUserId from Keychain")
 		}
+        success = KeychainService.shared.delete(key: "accessToken")
+        if !success {
+            print("Failed to delete accessToken from Keychain")
+        }
+        success = KeychainService.shared.delete(key: "refreshToken")
+        if !success {
+            print("Failed to delete refreshToken from Keychain")
+        }
 
 		resetState()
 	}
@@ -315,13 +323,20 @@ class UserAuthViewModel: NSObject, ObservableObject {
 								"email": emailToUse,
 							]
 						)
-					
+                    if let data = unwrappedExternalUserId.data(using: .utf8) {
+                        print("Saving externalUserId to Keychain")
+                        let success = KeychainService.shared.save(key: "externalUserId", data: data)
+                        if !success {
+                            print("Error saving externalUserId to Keychain")
+                        }
+                    }
+                    
 					await MainActor.run {
 						self.spawnUser = fetchedSpawnUser
 						self.shouldNavigateToUserInfoInputView = false
 						self.isFormValid = true
 						self.setShouldNavigateToFeedView()
-						
+                        
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
 					}
@@ -512,11 +527,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
 				try await self.apiService.deleteData(from: url)
-				let success = KeychainService.shared.delete(
+				var success = KeychainService.shared.delete(
 					key: "externalUserId")
 				if !success {
 					print("Failed to delete externalUserId from Keychain")
 				}
+                success = KeychainService.shared.delete(key: "accessToken")
+                if !success {
+                    print("Failed to delete accessToken from Keychain")
+                }
+                success = KeychainService.shared.delete(key: "refreshToken")
+                if !success {
+                    print("Failed to delete refreshToken from Keychain")
+                }
 
 				await MainActor.run {
 					activeAlert = .deleteSuccess
