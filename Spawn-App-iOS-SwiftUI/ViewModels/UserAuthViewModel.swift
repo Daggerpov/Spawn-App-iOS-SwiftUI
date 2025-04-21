@@ -69,7 +69,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		// Only attempt to restore Google sign-in state if we have an externalUserId
 		if self.externalUserId != nil {
-			check()
+			checkStatus()
 		}
 		
 		// Try to fetch user data using stored externalUserId
@@ -84,25 +84,32 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func checkStatus() {
-		if GIDSignIn.sharedInstance.currentUser != nil {
-			let user = GIDSignIn.sharedInstance.currentUser
-			guard let user = user else { return }
-			self.fullName = user.profile?.name
-			self.givenName = user.profile?.givenName
-			self.familyName = user.profile?.familyName
-			self.email = user.profile?.email
-			self.profilePicUrl =
-				user.profile?.imageURL(withDimension: 100)?.absoluteString
-			self.isLoggedIn = true
-			self.externalUserId = user.userID  // Google's externalUserId
-			
-			// If we have a spawnUser already, post the login notification
-			if self.spawnUser != nil {
-				NotificationCenter.default.post(name: .userDidLogin, object: nil)
-			}
-		} else {
-			resetState()
-		}
+        GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+            if let error = error {
+                self.errorMessage = "error: \(error.localizedDescription)"
+                print(self.errorMessage as Any)
+                
+            }
+            if GIDSignIn.sharedInstance.currentUser != nil {
+                let user = GIDSignIn.sharedInstance.currentUser
+                guard let user = user else { return }
+                self.fullName = user.profile?.name
+                self.givenName = user.profile?.givenName
+                self.familyName = user.profile?.familyName
+                self.email = user.profile?.email
+                self.profilePicUrl =
+                user.profile?.imageURL(withDimension: 100)?.absoluteString
+                self.isLoggedIn = true
+                self.externalUserId = user.userID  // Google's externalUserId
+                
+                // If we have a spawnUser already, post the login notification
+                if self.spawnUser != nil {
+                    NotificationCenter.default.post(name: .userDidLogin, object: nil)
+                }
+            } else {
+                self.resetState()
+            }
+        }
 	}
 
 	func resetState() {
@@ -130,17 +137,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		self.defaultPfpFetchError = false
 		self.defaultPfpUrlString = nil
-	}
-
-	func check() {
-		GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
-			if let error = error {
-				self.errorMessage = "error: \(error.localizedDescription)"
-				print(self.errorMessage as Any)
-
-			}
-			self.checkStatus()
-		}
 	}
 
 	func handleAppleSignInResult(_ result: Result<ASAuthorization, Error>) {
