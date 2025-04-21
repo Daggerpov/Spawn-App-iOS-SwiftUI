@@ -880,13 +880,14 @@ class APIService: IAPIService {
 		let jsonData = try encoder.encode(cachedItems)
 		
 		// Create and configure the request
-		var request = URLRequest(url: url)
-		request.httpMethod = "POST"
-		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-		request.httpBody = jsonData
+		var urlRequest = URLRequest(url: url)
+		urlRequest.httpMethod = "POST"
+		urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		urlRequest.httpBody = jsonData
+		setAuthHeaders(request: &urlRequest)
 		
 		// Send the request
-		let (data, response) = try await URLSession.shared.data(for: request)
+		let (data, response) = try await URLSession.shared.data(for: urlRequest)
 		
 		// Validate the response
 		guard let httpResponse = response as? HTTPURLResponse else {
