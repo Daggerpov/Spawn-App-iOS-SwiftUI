@@ -117,29 +117,62 @@ struct EventCreationView: View {
                 }
                 .padding(.bottom, 12)
 
-                EventInputFieldLabel(text: "Location")
-                EventInputField(
-                    iconName: "mappin.and.ellipse",
-                    value: Binding(
-                        get: { viewModel.event.location?.name ?? "" },
-                        set: { newValue in
-                            if let unwrappedNewValue = newValue {
-                                if viewModel.event.location == nil {
-                                    viewModel.event.location = Location(
-                                        id: UUID(),
-                                        name: unwrappedNewValue,
-                                        latitude: 0,
-                                        longitude: 0
-                                    )
-                                } else {
-                                    viewModel.event.location?.name =
-                                        unwrappedNewValue
-                                }
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        EventInputFieldLabel(text: "Location")
+                        
+                        if !viewModel.isLocationValid {
+                            HStack {
+                                Image(systemName: "exclamationmark.circle.fill")
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                                Text("Location is required")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 5)
+                                    .transition(.opacity)
                             }
                         }
-                    ),
-                    isValid: true
-                )
+                    }
+                    
+                    HStack {
+                        EventInputField(
+                            iconName: "mappin.and.ellipse",
+                            value: Binding(
+                                get: { viewModel.event.location?.name ?? "" },
+                                set: { newValue in
+                                    if let unwrappedNewValue = newValue {
+                                        if viewModel.event.location == nil {
+                                            viewModel.event.location = Location(
+                                                id: UUID(),
+                                                name: unwrappedNewValue,
+                                                latitude: 0,
+                                                longitude: 0
+                                            )
+                                        } else {
+                                            viewModel.event.location?.name =
+                                                unwrappedNewValue
+                                        }
+                                    }
+                                }
+                            ),
+                            isValid: viewModel.isLocationValid
+                        )
+                        
+                        NavigationLink(destination: {
+                            LocationSelectionView()
+                                .environmentObject(viewModel)
+                        }) {
+                            Image(systemName: "map")
+                                .foregroundColor(universalSecondaryColor)
+                                .padding(12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 15)
+                                        .stroke(Color.black, lineWidth: 1.5)
+                                )
+                        }
+                    }
+                }
                 .padding(.bottom, 8)
 
                 EventInputFieldLabel(text: "Caption")
@@ -183,6 +216,11 @@ struct EventCreationView: View {
                     }
                 }
                 .onChange(of: viewModel.selectedTags) { _ in
+                    Task{
+                        await viewModel.validateEventForm()
+                    }
+                }
+                .onChange(of: viewModel.event.location) { _ in
                     Task{
                         await viewModel.validateEventForm()
                     }

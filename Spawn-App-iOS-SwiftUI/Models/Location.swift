@@ -7,7 +7,11 @@
 
 import Foundation
 
-class Location: Identifiable, Codable {
+class Location: Identifiable, Codable, Equatable {
+    static func == (lhs: Location, rhs: Location) -> Bool {
+        lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude && lhs.name == rhs.name
+    }
+
 	var id: UUID
 	var name: String
 	var latitude: Double
