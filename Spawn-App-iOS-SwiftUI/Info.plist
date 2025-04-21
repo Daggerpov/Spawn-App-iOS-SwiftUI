@@ -21,6 +21,8 @@
 	<string>Spawn needs camera access to allow you to take profile pictures and share photos with friends.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Spawn would like to save photos to your photo library.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Spawn needs access to your location to show you your current location on the map.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
