@@ -3,7 +3,7 @@ import UserNotifications
 import SwiftUI
 
 @available(iOS 16.0, *)
-class NotificationService: ObservableObject, @unchecked Sendable {
+class NotificationService: ObservableObject, @unchecked Sendable, UNUserNotificationCenterDelegate {
     static let shared = NotificationService()
     
     @Published var isNotificationsEnabled = false
@@ -20,6 +20,10 @@ class NotificationService: ObservableObject, @unchecked Sendable {
     
     // APIService instance to use for all API calls
     private let apiService: IAPIService
+    
+    private var appCache: AppCache {
+        return AppCache.shared
+    }
     
     private init() {
         // Use MockAPIService if in mocking mode, otherwise use regular APIService
@@ -38,6 +42,9 @@ class NotificationService: ObservableObject, @unchecked Sendable {
             name: .userDidLogin,
             object: nil
         )
+        
+        // Set this class as the delegate for notification center
+        UNUserNotificationCenter.current().delegate = self
     }
     
     deinit {
@@ -543,6 +550,116 @@ class NotificationService: ObservableObject, @unchecked Sendable {
                 }
             } catch {
                 print("Failed to update notification preferences: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    // Handle notifications when app is in foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        let userInfo = notification.request.content.userInfo
+        
+        // Process notification
+        handleNotificationData(userInfo)
+        
+        // Show the notification to the user
+        completionHandler([.banner, .badge, .sound])
+    }
+    
+    // Handle notifications when app is opened from a notification
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        
+        // Process notification
+        handleNotificationData(userInfo)
+        
+        completionHandler()
+    }
+    
+    // Handle notification data and update cache accordingly
+    private func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
+        guard let type = userInfo["type"] as? String else {
+            print("Notification missing type")
+            return
+        }
+        
+        Task {
+            switch type {
+            case "friend-accepted":
+                // When a friend request is accepted, refresh friends
+                await appCache.refreshFriends()
+                
+            case "event-updated":
+                // When an event is updated, refresh events
+                await appCache.refreshEvents()
+                
+            case "friend-request":
+                // When a new friend request is received, refresh friend requests
+                await appCache.refreshFriendRequests()
+            
+            case "profile-updated":
+                // When a friend's profile is updated, refresh other profiles
+                if let userId = userInfo["userId"] as? String, 
+                   let uuid = UUID(uuidString: userId) {
+                    // Check if this is a profile we already have cached
+                    if appCache.otherProfiles[uuid] != nil {
+                        await appCache.refreshOtherProfiles()
+                    }
+                }
+                
+            case "tag-updated":
+                // When a tag is updated, refresh tags
+                await appCache.refreshUserTags()
+                await appCache.refreshTagFriends()
+                
+            default:
+                print("Unknown notification type: \(type)")
+                // For unknown notification types, validate the entire cache
+                await appCache.validateCache()
+            }
+        }
+    }
+}
+
+// Extension for handling device token registration
+extension NotificationService {
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
+        let token = tokenParts.joined()
+        print("Device Token: \(token)")
+        
+        // Here you would send the token to your server
+        sendDeviceTokenToServer(token)
+    }
+    
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("Failed to register for notifications: \(error.localizedDescription)")
+    }
+    
+    private func sendDeviceTokenToServer(_ token: String) {
+        // Implement to send token to your server
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        Task {
+            do {
+                guard let url = URL(string: APIService.baseURL + "users/\(userId)/device-token") else { return }
+                
+                let apiService: IAPIService = MockAPIService.isMocking ? 
+                    MockAPIService(userId: userId) : APIService()
+                
+                let tokenData = ["deviceToken": token]
+                _ = try await apiService.patchData(from: url, with: tokenData) as EmptyResponse
+                
+                print("Device token successfully sent to server")
+            } catch {
+                print("Failed to send device token: \(error)")
             }
         }
     }
