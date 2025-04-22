@@ -11,9 +11,8 @@ struct FriendsAndTagsView: View {
 	let user: BaseUserDTO
 	@State private var selectedTab: FriendTagToggle = .friends
 
-	// for add friend to tag popup:
-	@State private var showAddFriendToTagButtonPressedPopupView: Bool = false
-	@State private var popupOffset: CGFloat = 1000
+	// for add friend to tag drawer:
+	@State private var showAddFriendToTagButtonPressedView: Bool = false
 	@State private var selectedFriendTagId: UUID? = nil
 	@State private var tagsViewModel: TagsViewModel? = nil
 
@@ -39,8 +38,8 @@ struct FriendsAndTagsView: View {
 							userId: user.id,
 							addFriendToTagButtonPressedCallback: {
 								friendTagId in
-								showAddFriendToTagButtonPressedPopupView = true
 								selectedFriendTagId = friendTagId
+								showAddFriendToTagButtonPressedView = true
 							}
 						)
 					}
@@ -49,8 +48,6 @@ struct FriendsAndTagsView: View {
 				.padding()
 				.background(universalBackgroundColor)
 				.navigationBarHidden(true)
-				.dimmedBackground(
-					isActive: showAddFriendToTagButtonPressedPopupView)
 				.gesture(DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
 					.onEnded { value in
 						switch(value.translation.width, value.translation.height) {
@@ -67,44 +64,26 @@ struct FriendsAndTagsView: View {
 					}
 				)
 			}
-			if showAddFriendToTagButtonPressedPopupView {
-				addFriendToTagButtonPopupView
+		}
+		.sheet(isPresented: $showAddFriendToTagButtonPressedView) {
+			if let friendTagIdForSheet = selectedFriendTagId {
+				AddFriendToTagView(
+					userId: user.id,
+					friendTagId: friendTagIdForSheet,
+					closeCallback: closeSheet
+				)
+				.presentationDragIndicator(.visible)
+				.presentationDetents([.height(400)])
 			}
 		}
 	}
-	func closePopup() {
-		popupOffset = 1000
-		showAddFriendToTagButtonPressedPopupView = false
+	
+	func closeSheet() {
+		showAddFriendToTagButtonPressedView = false
 		
-		// Re-fetch tags after closing the popup
+		// Re-fetch tags after closing the sheet
 		Task {
 			await tagsViewModel?.fetchTags()
-		}
-	}
-
-	var addFriendToTagButtonPopupView: some View {
-		Group {
-			if let friendTagIdForPopup = selectedFriendTagId {
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closePopup()
-						}
-
-					AddFriendToTagView(
-						userId: user.id, friendTagId: friendTagIdForPopup,
-						closeCallback: closePopup
-					)
-					.offset(x: 0, y: popupOffset)
-					.onAppear {
-						popupOffset = 0
-					}
-					.padding(.horizontal)
-					.padding(.vertical, 250)
-				}
-                .ignoresSafeArea(edges: .top)
-			}
 		}
 	}
 }
