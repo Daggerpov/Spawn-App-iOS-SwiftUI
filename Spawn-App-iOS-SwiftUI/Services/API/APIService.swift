@@ -821,7 +821,12 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
-		
+        if httpResponse.statusCode == 401 {
+            // Refresh token didn't work so logout
+            UserAuthViewModel.shared.signOut()
+            
+        }
+        
 		if httpResponse.statusCode == 200 {
 			// Successfully refreshed token, save it to Keychain
 			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String {
