@@ -30,7 +30,7 @@ struct ContentView: View {
                     .tabItem {
                         Image(
                             uiImage: resizeImage(
-                                UIImage(systemName: "map.circle")!,
+                                UIImage(systemName: "location.circle")!,
                                 targetSize: CGSize(width: 30, height: 27)
                             )!
                         )
@@ -50,7 +50,7 @@ struct ContentView: View {
                     .tabItem {
                         Image(
                             uiImage: resizeImage(
-                                UIImage(systemName: "person.2.circle")!,
+                                UIImage(systemName: "list.bullet")!,
                                 targetSize: CGSize(width: 30, height: 27)
                             )!
                         )

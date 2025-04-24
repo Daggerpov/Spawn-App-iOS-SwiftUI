@@ -72,11 +72,16 @@ struct MapView: View {
             .onAppear {
                 Task { await viewModel.fetchAllData() }
                 // Try to center on user immediately if location is available
-                adjustRegionToUserLocation()
+                if let userLocation = locationManager.userLocation {
+                    region = MKCoordinateRegion(
+                        center: userLocation,
+                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                    )
+                }
             }
             .onChange(of: locationManager.locationUpdated) { _ in
                 // Update map when user location becomes available
-                if locationManager.locationUpdated {
+                if locationManager.locationUpdated && locationManager.userLocation != nil {
                     adjustRegionToUserLocation()
                 }
             }
@@ -105,10 +110,14 @@ struct MapView: View {
     }
 
     private func adjustRegionForEventsOrUserLocation() {
-        if !viewModel.events.isEmpty {
+        if let userLocation = locationManager.userLocation {
+            // Prioritize user location
+            region = MKCoordinateRegion(
+                center: userLocation,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+        } else if !viewModel.events.isEmpty {
             adjustRegionForEvents()
-        } else {
-            adjustRegionToUserLocation()
         }
     }
 
@@ -157,6 +166,8 @@ extension MapView {
     var mapView: some View {
         Map(
             coordinateRegion: $region,
+            showsUserLocation: true,
+            userTrackingMode: .constant(.follow),
             annotationItems: viewModel.events
         ) { event in
             MapAnnotation(

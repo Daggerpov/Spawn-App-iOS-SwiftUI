@@ -882,14 +882,14 @@ class APIService: IAPIService {
 		let jsonData = try encoder.encode(cachedItems)
 		
 		// Create and configure the request
-		var request = URLRequest(url: url)
-		request.httpMethod = "POST"
-		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-		request.httpBody = jsonData
-        setAuthHeader(request: &request)
+		var urlRequest = URLRequest(url: url)
+		urlRequest.httpMethod = "POST"
+		urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		urlRequest.httpBody = jsonData
+		setAuthHeader(request: &urlRequest)
 		
 		// Send the request
-		var (data, response) = try await URLSession.shared.data(for: request)
+		var (data, response) = try await URLSession.shared.data(for: urlRequest)
 		
 		// Validate the response
 		guard let httpResponse = response as? HTTPURLResponse else {
@@ -900,7 +900,7 @@ class APIService: IAPIService {
 		
         if httpResponse.statusCode == 401 {
             let bearerAccessToken: String = try await handleRefreshToken()
-            data = try await retryRequest(request: &request, bearerAccessToken: bearerAccessToken)
+            data = try await retryRequest(request: &urlRequest, bearerAccessToken: bearerAccessToken)
         } else if httpResponse.statusCode != 200 {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"

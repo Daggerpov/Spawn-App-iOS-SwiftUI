@@ -1,27 +1,15 @@
 # Spawn-App-iOS-SwiftUI
 
-Table of contents:
-- [Spawn-App-iOS-SwiftUI](#spawn-app-ios-swiftui)
+## Table of contents:
 - [Onboarding](#onboarding)
   - [Links](#links)
   - [Setup](#setup)
-  - [Code Explanations](#code-explanations)
+- [Code Explanations](#code-explanations)
     - [API Calls](#api-calls)
     - [Asynchrony in SwiftUI](#asynchrony-in-swiftui)
-- [SwiftUI Syntax](#swiftui-syntax)
+    - [SwiftUI Syntax](#swiftui-syntax)
     - [MVVM Architecture](#mvvm-architecture)
-- [Mobile Caching Implementation](#mobile-caching-implementation)
-  - [Overview](#overview)
-  - [Components](#components)
-    - [AppCache Singleton](#appcache-singleton)
-    - [Cache Validation API](#cache-validation-api)
-    - [Push Notification Handling](#push-notification-handling)
-  - [How It Works](#how-it-works)
-  - [Implementation Details](#implementation-details)
-    - [Data Flow](#data-flow)
-    - [Benefits](#benefits)
-  - [Testing the Cache](#testing-the-cache)
-  - [Cache Limitations](#cache-limitations)
+    - [Mobile Caching Implementation](#mobile-caching-implementation)
 - [Current App Look](#current-app-look)
   - [Legacy Screenshots:](#legacy-screenshots)
 - [Entity Relationship Diagram](#entity-relationship-diagram)
@@ -74,7 +62,9 @@ More complicated case, to supply initial state and `init()` parameters:
 
 </details>
 
-## Code Explanations
+</br>
+
+# Code Explanations
 
 <details>
 
