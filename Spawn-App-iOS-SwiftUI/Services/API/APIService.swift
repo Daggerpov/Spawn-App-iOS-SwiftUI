@@ -796,6 +796,7 @@ class APIService: IAPIService {
 		return data
 	}
 
+    /// Refresh Token
 	fileprivate func handleRefreshToken() async throws -> String {
 		print("Refreshing access token...")
 		guard let url = URL(string: APIService.baseURL + "auth/refresh-token") else {
