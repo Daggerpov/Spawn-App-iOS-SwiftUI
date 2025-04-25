@@ -570,7 +570,6 @@ class APIService: IAPIService {
 		// Set the auth headers
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
 		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "X-Refresh-Token")
-		print("🔑 Auth headers set")
 	} 
 	 
 

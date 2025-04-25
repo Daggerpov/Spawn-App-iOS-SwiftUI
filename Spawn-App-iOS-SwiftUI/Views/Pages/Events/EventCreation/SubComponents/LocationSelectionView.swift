@@ -18,6 +18,13 @@ struct LocationSelectionView: View {
     @State private var locationName: String = ""
     @StateObject private var locationManager = LocationManager()
     
+    // Add these for tracking map changes
+    @State private var lastMapMoveTime = Date()
+    @State private var isDraggingMap = false
+    @State private var mapMovementTimer: Timer?
+    @State private var lastCenterLatitude: Double = 0
+    @State private var lastCenterLongitude: Double = 0
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -38,9 +45,51 @@ struct LocationSelectionView: View {
                     
                     Spacer()
                     
+                    // Center on user location button
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                if let userLocation = locationManager.userLocation {
+                                    region = MKCoordinateRegion(
+                                        center: userLocation,
+                                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                    )
+                                    updatePinLocation()
+                                }
+                            }) {
+                                Image(systemName: "location.fill")
+                                    .padding(12)
+                                    .background(Circle().fill(Color.white))
+                                    .shadow(radius: 2)
+                            }
+                            .padding(.trailing, 16)
+                            .padding(.bottom, 16)
+                        }
+                    }
+                    
                     if pinLocation != nil {
-                        locationNameInputView
-                            .padding()
+                        VStack {
+                            locationNameInputView
+                                .padding(.horizontal)
+                            
+                            Button(action: {
+                                saveLocation()
+                                dismiss()
+                            }) {
+                                Text("Confirm Location")
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(locationName.isEmpty ? Color.gray : universalSecondaryColor)
+                                    .cornerRadius(15)
+                                    .padding(.horizontal)
+                                    .padding(.bottom)
+                            }
+                            .disabled(locationName.isEmpty)
+                        }
+                        .background(Color(.systemBackground).opacity(0.95))
                     }
                 }
             }
@@ -51,14 +100,6 @@ struct LocationSelectionView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        saveLocation()
-                        dismiss()
-                    }
-                    .disabled(pinLocation == nil || locationName.isEmpty)
                 }
             }
             .onAppear {
@@ -85,6 +126,21 @@ struct LocationSelectionView: View {
                         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                     )
                 }
+                
+                // Start a timer to check for map movements
+                mapMovementTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+                    let now = Date()
+                    if isDraggingMap && now.timeIntervalSince(lastMapMoveTime) > 0.3 {
+                        // It's been more than 0.3 seconds since the last movement, assume dragging stopped
+                        isDraggingMap = false
+                        self.updatePinLocation()
+                    }
+                }
+            }
+            .onDisappear {
+                // Clean up timer when view disappears
+                mapMovementTimer?.invalidate()
+                mapMovementTimer = nil
             }
             .onChange(of: locationManager.locationUpdated) { _ in
                 if locationManager.locationUpdated && locationManager.userLocation != nil && pinLocation == nil {
@@ -124,18 +180,34 @@ struct LocationSelectionView: View {
         }
     }
     
+    func updatePinLocation() {
+        // Use DispatchQueue to avoid modifying state during view update
+        DispatchQueue.main.async {
+            let mapCenter = region.center
+            pinLocation = mapCenter
+            
+            // If we don't have a location name from search, get it from reverse geocoding
+            if selectedMapItem == nil {
+                reverseGeocode(coordinate: mapCenter)
+            }
+        }
+    }
+    
     private func selectSearchResult(_ mapItem: MKMapItem) {
-        selectedMapItem = mapItem
-        locationName = mapItem.name ?? ""
-        pinLocation = mapItem.placemark.coordinate
-        
-        region = MKCoordinateRegion(
-            center: mapItem.placemark.coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-        )
-        
-        isSearching = false
-        searchText = locationName
+        DispatchQueue.main.async {
+            selectedMapItem = mapItem
+            locationName = mapItem.name ?? ""
+            pinLocation = mapItem.placemark.coordinate
+            
+            region = MKCoordinateRegion(
+                center: mapItem.placemark.coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+            
+            searchText = locationName
+            isSearching = false
+            searchResults = []
+        }
     }
     
     private func saveLocation() {
@@ -148,46 +220,70 @@ struct LocationSelectionView: View {
             longitude: pinLocation.longitude
         )
         
-        viewModel.event.location = location
+        DispatchQueue.main.async {
+            viewModel.event.location = location
+            Task {
+                await viewModel.validateEventForm()
+            }
+        }
     }
 }
 
 // MARK: - View Components
 extension LocationSelectionView {
     var mapView: some View {
-        Map(
-            coordinateRegion: $region,
-            showsUserLocation: true,
-            userTrackingMode: .constant(.follow),
-            annotationItems: pinLocation != nil ? [PinAnnotation(coordinate: pinLocation!)] : []
-        ) { annotation in
-            MapAnnotation(coordinate: annotation.coordinate) {
-                VStack(spacing: -8) {
-                    ZStack {
-                        Image(systemName: "mappin.circle.fill")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 60, height: 60)
-                            .foregroundColor(universalAccentColor)
+        ZStack {
+            Map(
+                coordinateRegion: $region,
+                showsUserLocation: true,
+                userTrackingMode: .constant(.follow),
+                annotationItems: pinLocation != nil ? [PinAnnotation(coordinate: pinLocation!)] : []
+            ) { annotation in
+                MapAnnotation(coordinate: annotation.coordinate) {
+                    VStack(spacing: -8) {
+                        ZStack {
+                            Image(systemName: "mappin.circle.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 60, height: 60)
+                                .foregroundColor(universalAccentColor)
+                        }
+                        Triangle()
+                            .fill(universalAccentColor)
+                            .frame(width: 40, height: 20)
                     }
-                    Triangle()
-                        .fill(universalAccentColor)
-                        .frame(width: 40, height: 20)
                 }
             }
-        }
-        .gesture(
-            DragGesture()
-                .onEnded { value in
-                    let mapCenter = region.center
-                    pinLocation = mapCenter
-                    
-                    // If we don't have a location name from search, get it from reverse geocoding
-                    if selectedMapItem == nil {
-                        reverseGeocode(coordinate: mapCenter)
-                    }
+            .onChange(of: region.center.latitude) { _ in
+                // Track that the map is being moved
+                lastMapMoveTime = Date()
+                isDraggingMap = true
+            }
+            .onChange(of: region.center.longitude) { _ in
+                // Track that the map is being moved
+                lastMapMoveTime = Date()
+                isDraggingMap = true
+            }
+            
+            // Center indicator
+            if pinLocation == nil {
+                Image(systemName: "plus")
+                    .foregroundColor(universalAccentColor)
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: 24, height: 24)
+                    )
+            }
+            
+            // Invisible overlay to capture tap gestures
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture { _ in
+                    // Update pin location on tap
+                    updatePinLocation()
                 }
-        )
+        }
     }
     
     var searchBarView: some View {
@@ -255,9 +351,6 @@ extension LocationSelectionView {
                 .padding(.top, 4)
         }
         .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(10)
-        .shadow(radius: 2)
     }
     
     private func reverseGeocode(coordinate: CLLocationCoordinate2D) {
