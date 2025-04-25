@@ -30,78 +30,69 @@ struct AddFriendToTagView: View {
 	}
 
 	var body: some View {
-		ScrollView {
-			VStack(alignment: .leading, spacing: 20) {
-				SearchView(
-					searchPlaceholderText: "Search or add friends",
-					viewModel: searchViewModel)
-				
-				ZStack {
-					if isLoading {
-						ProgressView()
-							.frame(maxWidth: .infinity, maxHeight: 160)
-							.padding()
-					} else if loadedFriends.count > 0 {
-						ScrollView {
-							LazyVStack {
-								ForEach(loadedFriends) { friend in
-									FriendRowForAddingFriendsToTag(
-										friend: friend, viewModel: viewModel
-									)
-									.padding(.horizontal)
-								}
-							}
-						}
-						.frame(maxHeight: 160)
-					} else if let error = viewModel.errorMessage {
-						VStack {
-							Text(error)
-								.foregroundColor(.red)
-								.padding()
-								.multilineTextAlignment(.center)
-							
-							Button("Retry") {
-								Task {
-									isLoading = true
-									await viewModel.fetchAllData(friendTagId: friendTagId)
-									await MainActor.run {
-										loadedFriends = viewModel.friends
-										isLoading = false
-									}
-								}
-							}
-							.foregroundColor(universalAccentColor)
-							.padding(.vertical, 8)
-							.padding(.horizontal, 20)
-							.background(
-								RoundedRectangle(cornerRadius: 12)
-									.stroke(universalAccentColor, lineWidth: 1)
-							)
-						}
+		VStack(alignment: .leading, spacing: 20) {
+			SearchView(
+				searchPlaceholderText: "Search or add friends",
+				viewModel: searchViewModel)
+			
+			ZStack {
+				if isLoading {
+					ProgressView()
 						.frame(maxWidth: .infinity, maxHeight: 160)
-					} else {
-						Text(
-							"You've added all your friends to this tag! It's time to add some more friends!"
-						)
-						.foregroundColor(universalAccentColor)
 						.padding()
-						.multilineTextAlignment(.center)
-						.frame(maxWidth: .infinity, maxHeight: 160)
+				} else if loadedFriends.count > 0 {
+					ScrollView {
+						LazyVStack {
+							ForEach(loadedFriends) { friend in
+								FriendRowForAddingFriendsToTag(
+									friend: friend, viewModel: viewModel
+								)
+								.padding(.horizontal)
+							}
+						}
 					}
+					.frame(maxHeight: 160)
+				} else if let error = viewModel.errorMessage {
+					VStack {
+						Text(error)
+							.foregroundColor(.red)
+							.padding()
+							.multilineTextAlignment(.center)
+						
+						Button("Retry") {
+							Task {
+								isLoading = true
+								await viewModel.fetchAllData(friendTagId: friendTagId)
+								await MainActor.run {
+									loadedFriends = viewModel.friends
+									isLoading = false
+								}
+							}
+						}
+						.foregroundColor(universalAccentColor)
+						.padding(.vertical, 8)
+						.padding(.horizontal, 20)
+						.background(
+							RoundedRectangle(cornerRadius: 12)
+								.stroke(universalAccentColor, lineWidth: 1)
+						)
+					}
+					.frame(maxWidth: .infinity, maxHeight: 160)
+				} else {
+					Text(
+						"You've added all your friends to this tag! It's time to add some more friends!"
+					)
+					.foregroundColor(universalAccentColor)
+					.padding()
+					.multilineTextAlignment(.center)
+					.frame(maxWidth: .infinity, maxHeight: 160)
 				}
-				
-				doneButtonView
 			}
-			.frame(
-				minHeight: 300,
-				idealHeight: 340,
-				maxHeight: 380
-			)
-			.padding(20)
-			.background(universalBackgroundColor)
-			.cornerRadius(universalRectangleCornerRadius)
+			
+			doneButtonView
 		}
-		.scrollDisabled(true)  // to get fitting from `ScrollView`, without the actual scrolling
+		.padding(20)
+		.background(universalBackgroundColor)
 		.task {
 			await loadFriends()
 		}

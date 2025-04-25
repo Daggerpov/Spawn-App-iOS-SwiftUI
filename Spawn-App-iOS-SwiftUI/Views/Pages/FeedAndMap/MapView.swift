@@ -29,7 +29,6 @@ struct MapView: View {
     @State private var showEventCreationDrawer: Bool = false
 
     // for pop-ups:
-    @State private var descriptionOffset: CGFloat = 1500
     @State private var creationOffset: CGFloat = 1000
     // ------------
 
@@ -66,7 +65,7 @@ struct MapView: View {
                 }
                 .ignoresSafeArea()
                 .dimmedBackground(
-                    isActive: showEventCreationDrawer || showingEventDescriptionPopup
+                    isActive: showEventCreationDrawer
                 )
             }
             .onAppear {
@@ -91,8 +90,16 @@ struct MapView: View {
                     adjustRegionForEvents()
                 }
             }
-            if showingEventDescriptionPopup {
-                eventDescriptionPopupView
+            .sheet(isPresented: $showingEventDescriptionPopup) {
+                if let event = eventInPopup, let color = colorInPopup {
+                    EventDescriptionView(
+                        event: event,
+                        users: event.participantUsers,
+                        color: color,
+                        userId: user.id
+                    )
+                    .presentationDragIndicator(.visible)
+                }
             }
         }
     }
@@ -148,11 +155,6 @@ struct MapView: View {
                 longitudeDelta: max(longitudeDelta, 0.01)
             )
         )
-    }
-
-    func closeDescription() {
-        descriptionOffset = 500
-        showingEventDescriptionPopup = false
     }
 
     func closeCreation() {
@@ -216,46 +218,6 @@ extension MapView {
             }
         }
         .ignoresSafeArea()
-
-    }
-
-    var eventDescriptionPopupView: some View {
-        Group {
-            if let event = eventInPopup, let color = colorInPopup {
-                ZStack {
-                    Color(.black)
-                        .opacity(0.5)
-                        .onTapGesture {
-                            closeDescription()
-                        }
-
-                    EventDescriptionView(
-                        event: event,
-                        users: event.participantUsers,
-                        color: color,
-                        userId: user.id
-                    )
-                    .offset(x: 0, y: descriptionOffset)
-                    .onAppear {
-                        descriptionOffset = 0
-                    }
-                    .padding(.horizontal)
-                    // brute-force algorithm I wrote
-                    .padding(
-                        .vertical,
-                        max(
-                            330,
-                            330
-                                - CGFloat(
-                                    100 * (event.chatMessages?.count ?? 0)
-                                )
-                                - CGFloat(event.note != nil ? 200 : 0)
-                        )
-                    )
-                }
-                .ignoresSafeArea()
-            }
-        }
     }
 }
 
