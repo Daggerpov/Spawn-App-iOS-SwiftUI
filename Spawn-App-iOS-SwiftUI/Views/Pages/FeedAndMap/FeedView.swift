@@ -20,7 +20,6 @@ struct FeedView: View {
     @State private var showEventCreationDrawer: Bool = false
 
     // for popups:
-    @State private var descriptionOffset: CGFloat = 1000
     @State private var creationOffset: CGFloat = 1000
     // --------
 
@@ -59,7 +58,7 @@ struct FeedView: View {
                 .background(universalBackgroundColor)
                 .ignoresSafeArea(.container)
                 .dimmedBackground(
-                    isActive: showEventCreationDrawer || showingEventDescriptionPopup
+                    isActive: showEventCreationDrawer
                 )
                 .gesture(
                     DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
@@ -94,7 +93,9 @@ struct FeedView: View {
             .background(universalBackgroundColor)
             .onAppear {
                 Task {
-                    await appCache.validateCache()
+                    if !MockAPIService.isMocking {
+                        await appCache.validateCache()
+                    }
                     await viewModel.fetchAllData()
                 }
             }
@@ -109,14 +110,18 @@ struct FeedView: View {
                     await viewModel.fetchEventsForUser()
                 }
             }
-            if showingEventDescriptionPopup {
-                eventDescriptionPopupView
+            .sheet(isPresented: $showingEventDescriptionPopup) {
+                if let event = eventInPopup, let color = colorInPopup {
+                    EventDescriptionView(
+                        event: event,
+                        users: event.participantUsers,
+                        color: color,
+                        userId: user.id
+                    )
+                    .presentationDragIndicator(.visible)
+                }
             }
         }
-    }
-    func closeDescription() {
-        descriptionOffset = 1000
-        showingEventDescriptionPopup = false
     }
 
     func closeCreation() {
@@ -133,47 +138,6 @@ struct FeedView: View {
 }
 
 extension FeedView {
-    var eventDescriptionPopupView: some View {
-        Group {
-            if let event = eventInPopup, let color = colorInPopup {
-                ZStack {
-                    Color(.black)
-                        .opacity(0.5)
-                        .onTapGesture {
-                            closeDescription()
-                        }
-
-                    EventDescriptionView(
-                        event: event,
-                        users: event.participantUsers,
-                        color: color,
-                        userId: user.id
-                    )
-                    .offset(x: 0, y: descriptionOffset)
-                    .onAppear {
-                        descriptionOffset = 0
-                    }
-                    .cornerRadius(universalRectangleCornerRadius)
-                    .padding(.horizontal)
-                    .padding(
-                        .vertical,
-                        min(
-                            250,
-                            250
-                                - CGFloat(
-                                    (event.chatMessages?.count ?? 0) > 2
-                                        ? 100 : 0
-                                )
-                                - CGFloat(event.note != nil ? 50 : 0)
-                        )
-                    )
-                    .padding(.top, 100)
-
-                }
-                .ignoresSafeArea()
-            }
-        }
-    }
     var eventsListView: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: 15) {
