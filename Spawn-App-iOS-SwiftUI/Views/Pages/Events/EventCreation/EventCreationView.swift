@@ -32,12 +32,15 @@ struct EventCreationView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             EventInputFieldLabel(text: "Name")
-                            
+
                             if !viewModel.isTitleValid {
                                 HStack {
-                                    Image(systemName: "exclamationmark.circle.fill")
-                                        .foregroundColor(.red)
-                                        .font(.system(size: 12))
+                                    Image(
+                                        systemName:
+                                            "exclamationmark.circle.fill"
+                                    )
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
                                     Text("Event name is required")
                                         .font(.caption)
                                         .foregroundColor(.red)
@@ -46,33 +49,38 @@ struct EventCreationView: View {
                                 }
                             }
                         }
-                        
+
                         EventInputField(
                             value: $viewModel.event.title,
                             isValid: viewModel.isTitleValid
                         )
-                        
+
                     }
                     .padding(.bottom, 8)
-                    
+
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             EventInputFieldLabel(text: "Invite Friends")
-                            
+
                             if !viewModel.isInvitesValid {
                                 HStack {
-                                    Image(systemName: "exclamationmark.circle.fill")
-                                        .foregroundColor(.red)
-                                        .font(.system(size: 12))
-                                    Text("At least one friend or tag is required")
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                        .padding(.horizontal, 5)
-                                        .transition(.opacity)
+                                    Image(
+                                        systemName:
+                                            "exclamationmark.circle.fill"
+                                    )
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                                    Text(
+                                        "At least one friend or tag is required"
+                                    )
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                                    .padding(.horizontal, 5)
+                                    .transition(.opacity)
                                 }
                             }
                         }
-                        
+
                         HStack {
                             selectedFriendsView
                             Spacer()
@@ -80,13 +88,13 @@ struct EventCreationView: View {
                         }
                     }
                     .padding(.bottom, 8)
-                    
+
                     HStack(spacing: 16) {
                         //                    Spacer()
                         // Date field
                         datePickerView
                         Spacer()
-                        
+
                         // Time field
                         VStack(alignment: .leading, spacing: 10) {
                             HStack {
@@ -96,8 +104,8 @@ struct EventCreationView: View {
                                     .foregroundColor(universalAccentColor)
                                     .bold()
                             }
-                            
-                            ZStack{
+
+                            ZStack {
                                 HStack(spacing: 10) {
                                     startTimeView
                                         .font(Font.custom("Poppins", size: 16))
@@ -117,36 +125,75 @@ struct EventCreationView: View {
                         }
                     }
                     .padding(.bottom, 12)
-                    
-                    EventInputFieldLabel(text: "Location")
-                    EventInputField(
-                        iconName: "mappin.and.ellipse",
-                        value: Binding(
-                            get: { viewModel.event.location?.name ?? "" },
-                            set: { newValue in
-                                if let unwrappedNewValue = newValue {
-                                    if viewModel.event.location == nil {
-                                        viewModel.event.location = Location(
-                                            id: UUID(),
-                                            name: unwrappedNewValue,
-                                            latitude: 0,
-                                            longitude: 0
-                                        )
-                                    } else {
-                                        viewModel.event.location?.name =
-                                        unwrappedNewValue
-                                    }
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            EventInputFieldLabel(text: "Location")
+
+                            if !viewModel.isLocationValid {
+                                HStack {
+                                    Image(
+                                        systemName:
+                                            "exclamationmark.circle.fill"
+                                    )
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                                    Text("Location is required")
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                        .padding(.horizontal, 5)
+                                        .transition(.opacity)
                                 }
                             }
-                        ),
-                        isValid: true
-                    )
+                        }
+
+                        HStack {
+                            EventInputField(
+                                iconName: "mappin.and.ellipse",
+                                value: Binding(
+                                    get: {
+                                        viewModel.event.location?.name ?? ""
+                                    },
+                                    set: { newValue in
+                                        if let unwrappedNewValue = newValue {
+                                            if viewModel.event.location == nil {
+                                                viewModel.event.location =
+                                                    Location(
+                                                        id: UUID(),
+                                                        name: unwrappedNewValue,
+                                                        latitude: 0,
+                                                        longitude: 0
+                                                    )
+                                            } else {
+                                                viewModel.event.location?.name =
+                                                    unwrappedNewValue
+                                            }
+                                        }
+                                    }
+                                ),
+                                isValid: viewModel.isLocationValid
+                            )
+
+                            NavigationLink(destination: {
+                                LocationSelectionView()
+                                    .environmentObject(viewModel)
+                            }) {
+                                Image(systemName: "map")
+                                    .foregroundColor(universalSecondaryColor)
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 15)
+                                            .stroke(Color.black, lineWidth: 1.5)
+                                    )
+                            }
+                        }
+                    }
                     .padding(.bottom, 8)
-                    
+
                     EventInputFieldLabel(text: "Caption")
                     EventInputField(value: $viewModel.event.note, isValid: true)
                         .padding(.bottom, 16)
-                    
+
                     // Error message display
                     if !viewModel.creationMessage.isEmpty {
                         Text(viewModel.creationMessage)
@@ -156,9 +203,9 @@ struct EventCreationView: View {
                             .multilineTextAlignment(.center)
                             .frame(maxWidth: .infinity)
                     }
-                    
+
                     Button(action: {
-                        
+
                         if viewModel.isFormValid {
                             Task {
                                 await viewModel.validateEventForm()
@@ -169,30 +216,30 @@ struct EventCreationView: View {
                     }) {
                         EventSubmitButtonView(
                             backgroundColor: viewModel.isFormValid
-                            ? universalSecondaryColor : Color.gray
+                                ? universalSecondaryColor : Color.gray
                         )
                     }
                     .disabled(!viewModel.isFormValid)
                     .onChange(of: viewModel.event.title) { _ in
-                        Task{
+                        Task {
                             await viewModel.validateEventForm()
                         }
                     }
                     .onChange(of: viewModel.selectedFriends) { _ in
-                        Task{
+                        Task {
                             await viewModel.validateEventForm()
                         }
                     }
                     .onChange(of: viewModel.selectedTags) { _ in
-                        Task{
+                        Task {
                             await viewModel.validateEventForm()
                         }
                     }
-                .onChange(of: viewModel.event.location) { _ in
-                    Task{
-                        await viewModel.validateEventForm()
+                    .onChange(of: viewModel.event.location) { _ in
+                        Task {
+                            await viewModel.validateEventForm()
+                        }
                     }
-                }
                     .padding(.top, 24)  // Increased padding
                 }
                 .padding(.horizontal, 22)
@@ -203,7 +250,7 @@ struct EventCreationView: View {
             .scrollIndicators(.hidden)  // Hide scroll indicators
             .background(universalBackgroundColor)
             .onAppear {
-                Task{
+                Task {
                     await viewModel.validateEventForm()
                 }
             }
@@ -272,17 +319,17 @@ extension EventCreationView {
             selection: Binding(
                 get: {
                     viewModel.event.startTime
-                    ?? viewModel.combineDateAndTime(
-                        viewModel.selectedDate,
-                        time: Date()
-                    )
+                        ?? viewModel.combineDateAndTime(
+                            viewModel.selectedDate,
+                            time: Date()
+                        )
                 },
                 set: { time in
                     viewModel.event.startTime =
-                    viewModel.combineDateAndTime(
-                        viewModel.selectedDate,
-                        time: time
-                    )
+                        viewModel.combineDateAndTime(
+                            viewModel.selectedDate,
+                            time: time
+                        )
                 }
             ),
             displayedComponents: .hourAndMinute
@@ -291,10 +338,10 @@ extension EventCreationView {
         .background(
             RoundedRectangle(cornerRadius: 15)
                 .stroke(Color.black, lineWidth: 1.5)
-            )
+        )
         .labelsHidden()
     }
-    
+
     var endTimeView: some View {
         // End time
         DatePicker(
