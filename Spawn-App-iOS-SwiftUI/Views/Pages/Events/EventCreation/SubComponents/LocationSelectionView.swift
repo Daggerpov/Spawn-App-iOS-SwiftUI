@@ -1,15 +1,12 @@
 import SwiftUI
 import MapKit
 import CoreLocation
+import MapLibre
 
 struct LocationSelectionView: View {
     @EnvironmentObject var viewModel: EventCreationViewModel
     @Environment(\.dismiss) private var dismiss
     
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-    )
     @State private var searchText = ""
     @State private var searchResults: [MKMapItem] = []
     @State private var selectedMapItem: MKMapItem?
@@ -18,17 +15,20 @@ struct LocationSelectionView: View {
     @State private var locationName: String = ""
     @StateObject private var locationManager = LocationManager()
     
-    // Add these for tracking map changes
-    @State private var lastMapMoveTime = Date()
-    @State private var isDraggingMap = false
-    @State private var mapMovementTimer: Timer?
-    @State private var lastCenterLatitude: Double = 0
-    @State private var lastCenterLongitude: Double = 0
+    // For tracking map interaction
+    @State private var isMapMoving = false
+    @State private var mapInteractionTask: Task<Void, Never>?
+    
+    // MapLibre camera state
+    @State private var camera = CameraState(
+        center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+        zoom: 14
+    )
     
     var body: some View {
         NavigationStack {
             ZStack {
-                mapView
+                mapLibreMapView
                     .ignoresSafeArea()
                 
                 VStack {
@@ -52,10 +52,8 @@ struct LocationSelectionView: View {
                             Spacer()
                             Button(action: {
                                 if let userLocation = locationManager.userLocation {
-                                    region = MKCoordinateRegion(
-                                        center: userLocation,
-                                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                                    )
+                                    camera.center = userLocation
+                                    camera.zoom = 14
                                     updatePinLocation()
                                 }
                             }) {
@@ -104,10 +102,8 @@ struct LocationSelectionView: View {
             }
             .onAppear {
                 if let userLocation = locationManager.userLocation {
-                    region = MKCoordinateRegion(
-                        center: userLocation,
-                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                    )
+                    camera.center = userLocation
+                    updatePinLocation()
                 }
                 
                 // If there's an existing location, show it
@@ -121,41 +117,25 @@ struct LocationSelectionView: View {
                     )
                     locationName = existingLocation.name
                     
-                    region = MKCoordinateRegion(
-                        center: pinLocation!,
-                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                    )
-                }
-                
-                // Start a timer to check for map movements
-                mapMovementTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-                    let now = Date()
-                    if isDraggingMap && now.timeIntervalSince(lastMapMoveTime) > 0.3 {
-                        // It's been more than 0.3 seconds since the last movement, assume dragging stopped
-                        isDraggingMap = false
-                        self.updatePinLocation()
-                    }
+                    camera.center = pinLocation!
                 }
             }
             .onDisappear {
-                // Clean up timer when view disappears
-                mapMovementTimer?.invalidate()
-                mapMovementTimer = nil
+                // Cancel any ongoing tasks
+                mapInteractionTask?.cancel()
             }
             .onChange(of: locationManager.locationUpdated) { _ in
                 if locationManager.locationUpdated && locationManager.userLocation != nil && pinLocation == nil {
-                    updateRegionWithUserLocation()
+                    updateCameraWithUserLocation()
                 }
             }
         }
     }
     
-    private func updateRegionWithUserLocation() {
+    private func updateCameraWithUserLocation() {
         if let userLocation = locationManager.userLocation {
-            region = MKCoordinateRegion(
-                center: userLocation,
-                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-            )
+            camera.center = userLocation
+            updatePinLocation()
         }
     }
     
@@ -167,7 +147,10 @@ struct LocationSelectionView: View {
         
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = searchText
-        request.region = region
+        request.region = MKCoordinateRegion(
+            center: camera.center,
+            span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+        )
         
         let search = MKLocalSearch(request: request)
         search.start { response, error in
@@ -181,28 +164,31 @@ struct LocationSelectionView: View {
     }
     
     func updatePinLocation() {
-        // Use DispatchQueue to avoid modifying state during view update
-        DispatchQueue.main.async {
-            let mapCenter = region.center
-            pinLocation = mapCenter
-            
-            // If we don't have a location name from search, get it from reverse geocoding
-            if selectedMapItem == nil {
-                reverseGeocode(coordinate: mapCenter)
+        // Cancel any ongoing task
+        mapInteractionTask?.cancel()
+        
+        // Create a new task for this update
+        mapInteractionTask = Task {
+            // Use DispatchQueue to avoid modifying state during view update
+            await MainActor.run {
+                pinLocation = camera.center
+                
+                // If we don't have a location name from search, get it from reverse geocoding
+                if selectedMapItem == nil {
+                    reverseGeocode(coordinate: camera.center)
+                }
             }
         }
     }
     
     private func selectSearchResult(_ mapItem: MKMapItem) {
-        DispatchQueue.main.async {
+        // Use Task to ensure state updates happen outside the view update cycle
+        Task { @MainActor in
             selectedMapItem = mapItem
             locationName = mapItem.name ?? ""
             pinLocation = mapItem.placemark.coordinate
             
-            region = MKCoordinateRegion(
-                center: mapItem.placemark.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-            )
+            camera.center = mapItem.placemark.coordinate
             
             searchText = locationName
             isSearching = false
@@ -220,70 +206,24 @@ struct LocationSelectionView: View {
             longitude: pinLocation.longitude
         )
         
-        DispatchQueue.main.async {
+        // Use Task to ensure state updates happen outside the view update cycle
+        Task { @MainActor in
             viewModel.event.location = location
-            Task {
-                await viewModel.validateEventForm()
-            }
+            await viewModel.validateEventForm()
         }
     }
 }
 
 // MARK: - View Components
 extension LocationSelectionView {
-    var mapView: some View {
-        ZStack {
-            Map(
-                coordinateRegion: $region,
-                showsUserLocation: true,
-                userTrackingMode: .constant(.follow),
-                annotationItems: pinLocation != nil ? [PinAnnotation(coordinate: pinLocation!)] : []
-            ) { annotation in
-                MapAnnotation(coordinate: annotation.coordinate) {
-                    VStack(spacing: -8) {
-                        ZStack {
-                            Image(systemName: "mappin.circle.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 60, height: 60)
-                                .foregroundColor(universalAccentColor)
-                        }
-                        Triangle()
-                            .fill(universalAccentColor)
-                            .frame(width: 40, height: 20)
-                    }
-                }
+    var mapLibreMapView: some View {
+        MapLibreView(
+            camera: $camera,
+            pinLocation: pinLocation,
+            onCameraChanged: {
+                updatePinLocation()
             }
-            .onChange(of: region.center.latitude) { _ in
-                // Track that the map is being moved
-                lastMapMoveTime = Date()
-                isDraggingMap = true
-            }
-            .onChange(of: region.center.longitude) { _ in
-                // Track that the map is being moved
-                lastMapMoveTime = Date()
-                isDraggingMap = true
-            }
-            
-            // Center indicator
-            if pinLocation == nil {
-                Image(systemName: "plus")
-                    .foregroundColor(universalAccentColor)
-                    .background(
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 24, height: 24)
-                    )
-            }
-            
-            // Invisible overlay to capture tap gestures
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture { _ in
-                    // Update pin location on tap
-                    updatePinLocation()
-                }
-        }
+        )
     }
     
     var searchBarView: some View {
@@ -383,6 +323,151 @@ extension LocationSelectionView {
     }
 }
 
+// MapLibre Maps View Component using UIViewRepresentable
+struct MapLibreView: UIViewRepresentable {
+    @Binding var camera: CameraState
+    var pinLocation: CLLocationCoordinate2D?
+    var onCameraChanged: () -> Void
+    
+    func makeUIView(context: Context) -> MLNMapView {
+        // Set up the style URL - using OSM style
+        let styleURL = URL(string: "https://demotiles.maplibre.org/style.json")
+        
+        // Create the map view
+        let mapView = MLNMapView(frame: .zero, styleURL: styleURL)
+        
+        // Enable user location
+        mapView.showsUserLocation = true
+        mapView.userTrackingMode = .follow
+        
+        // Set initial camera position
+        mapView.setCenter(camera.center, zoomLevel: camera.zoom, animated: false)
+        
+        // Set up delegate
+        mapView.delegate = context.coordinator
+        
+        return mapView
+    }
+    
+    func updateUIView(_ mapView: MLNMapView, context: Context) {
+        // Update the camera if changed externally
+        if let lastCamera = context.coordinator.lastCameraCenter,
+           lastCamera.latitude != camera.center.latitude || 
+           lastCamera.longitude != camera.center.longitude {
+            mapView.setCenter(camera.center, zoomLevel: camera.zoom, animated: true)
+        }
+        
+        // Update pin annotation
+        context.coordinator.updatePin(at: pinLocation, on: mapView)
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MLNMapViewDelegate {
+        var parent: MapLibreView
+        var lastCameraCenter: CLLocationCoordinate2D?
+        var pinAnnotation: MLNPointAnnotation?
+        
+        init(_ parent: MapLibreView) {
+            self.parent = parent
+        }
+        
+        // MapLibre delegate method for when the map finishes rendering a frame
+        func mapView(_ mapView: MLNMapView, regionDidChangeAnimated animated: Bool) {
+            let center = mapView.centerCoordinate
+            let zoom = mapView.zoomLevel
+            
+            // Only update if the camera has meaningfully changed
+            if lastCameraCenter == nil || 
+               abs(lastCameraCenter!.latitude - center.latitude) > 0.00001 ||
+               abs(lastCameraCenter!.longitude - center.longitude) > 0.00001 {
+                
+                lastCameraCenter = center
+                
+                // Update the parent's camera binding
+                DispatchQueue.main.async {
+                    self.parent.camera.center = center
+                    self.parent.camera.zoom = zoom
+                    self.parent.onCameraChanged()
+                }
+            }
+        }
+        
+        func updatePin(at coordinate: CLLocationCoordinate2D?, on mapView: MLNMapView) {
+            // Remove existing pin if any
+            if let pin = pinAnnotation {
+                mapView.removeAnnotation(pin)
+                pinAnnotation = nil
+            }
+            
+            // Add new pin if coordinate exists
+            if let coordinate = coordinate {
+                let pin = MLNPointAnnotation()
+                pin.coordinate = coordinate
+                pin.title = "Selected Location"
+                mapView.addAnnotation(pin)
+                pinAnnotation = pin
+            }
+        }
+        
+        // Custom annotation view
+        func mapView(_ mapView: MLNMapView, viewFor annotation: MLNAnnotation) -> MLNAnnotationView? {
+            if annotation is MLNUserLocation {
+                return nil  // Use default for user location
+            }
+            
+            let reuseId = "pinAnnotation"
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseId)
+            
+            if annotationView == nil {
+                annotationView = MLNAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
+                annotationView?.centerOffset = CGVector(dx: 0, dy: -20)  // Offset to position correctly
+                
+                // Create a custom pin view
+                let pinImageView = UIImageView(image: UIImage(systemName: "mappin.circle.fill"))
+                pinImageView.tintColor = UIColor(universalAccentColor)
+                pinImageView.frame = CGRect(x: 0, y: 0, width: 40, height: 40)
+                
+                // Create a triangle view for the pointer
+                let triangleView = TriangleView(frame: CGRect(x: 0, y: 40, width: 40, height: 20))
+                triangleView.backgroundColor = .clear
+                triangleView.tintColor = UIColor(universalAccentColor)
+                
+                // Create a container view
+                let containerView = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 60))
+                containerView.addSubview(pinImageView)
+                containerView.addSubview(triangleView)
+                
+                annotationView?.addSubview(containerView)
+            } else {
+                annotationView?.annotation = annotation
+            }
+            
+            return annotationView
+        }
+    }
+}
+
+// Camera state structure to track map camera position
+struct CameraState {
+    var center: CLLocationCoordinate2D
+    var zoom: Double
+}
+
+// Triangle shape for SwiftUI
+struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
+}
+
 // MKPlacemark extension to get formatted address
 extension MKPlacemark {
     func formattedAddress() -> String? {
@@ -400,12 +485,6 @@ extension MKPlacemark {
     }
 }
 
-// Simple annotation for the map pin
-struct PinAnnotation: Identifiable {
-    let id = UUID()
-    var coordinate: CLLocationCoordinate2D
-}
-
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
@@ -413,3 +492,4 @@ struct PinAnnotation: Identifiable {
         .environmentObject(EventCreationViewModel.shared)
         .environmentObject(appCache)
 } 
+

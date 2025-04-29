@@ -13,6 +13,7 @@
 - [Current App Look](#current-app-look)
   - [Legacy Screenshots:](#legacy-screenshots)
 - [Entity Relationship Diagram](#entity-relationship-diagram)
+- [Mapbox Maps Integration](#mapbox-maps-integration)
 
 # Onboarding
 
@@ -354,4 +355,29 @@ Note that this is usually behind our actual 'current' app; stay tuned on [getspa
 # Entity Relationship Diagram
 
 ![erd-nov-21](images/entity-relationship-diagram.png)
+
+# Mapbox Maps Integration
+
+The app now uses MapLibre GL Native SDK for improved map interactions and drag handling. MapLibre is a free, open-source fork of Mapbox GL that doesn't require API keys with usage costs.
+
+### Benefits of MapLibre:
+- Completely free and open-source
+- No API key or account required
+- Improved map drag handling
+- Smoother interactions
+- Better event markers and tapping
+- More customizable map styling
+- Consistent cross-device performance
+
+### Integration:
+The integration is handled via Swift Package Manager in the Package.swift file. The package automatically downloads the MapLibre GL Native SDK from:
+```
+https://github.com/maplibre/maplibre-gl-native-distribution.git
+```
+
+### Implementation Details:
+1. MapLibre provides custom map views in `LocationSelectionView.swift` and `MapView.swift`
+2. The map uses free OpenStreetMap tiles with the style URL: `https://demotiles.maplibre.org/style.json`
+3. Custom annotations show event locations with profile pictures
+4. Camera control is smooth with proper state management for dragging
 
