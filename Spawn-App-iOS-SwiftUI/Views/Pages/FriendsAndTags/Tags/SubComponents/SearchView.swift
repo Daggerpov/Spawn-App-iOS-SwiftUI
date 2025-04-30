@@ -24,7 +24,7 @@ struct SearchView: View {
 			
 			TextField(searchPlaceholderText, text: $viewModel.searchText)
 				.font(.onestRegular(size: 16))
-				.foregroundColor(.gray)
+                .foregroundColor(.black)
 		}
 		.padding(.vertical, 12)
 		.padding(.horizontal, 16)
@@ -41,7 +41,7 @@ struct SearchView: View {
                         .stroke(.gray)
                 )
         )
-        .foregroundColor(.gray)
+        .foregroundColor(.black)
 	}
 }
 

@@ -33,7 +33,7 @@ struct FriendsAndTagsView: View {
                     FriendsTabView(user: user)
 
 				}
-				.padding()
+                .padding()
 				.background(universalBackgroundColor)
 				.navigationBarHidden(true)
 			}
@@ -70,16 +70,25 @@ struct BaseFriendNavButtonView: View {
             HStack{
                 VStack{
                     Text(topText)
+                        .onestSubheadline()
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                         .padding(.bottom, 6)
                     Text(bottomText)
+                        .onestSmallText()
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .lineLimit(1)
                 }
                 .font(.caption)
                 .foregroundColor(.white)
-                .padding()
+                .padding(.leading)
+                .padding(.vertical)
                 // TODO DANIEL A: insert logic here to get from view model the num of friend requests, like in Figma
                 Image(iconImageName)
                     .resizable()
-                    .frame(width: 65, height: 65)
+                    .frame(width: 55, height: 55)
             }
             .background(universalSecondaryColor)
             .cornerRadius(universalRectangleCornerRadius)
