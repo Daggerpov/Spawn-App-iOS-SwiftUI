@@ -186,15 +186,17 @@ struct LocationSelectionView: View {
         // Cancel any ongoing task
         mapInteractionTask?.cancel()
         
-        // Create a new task for this update
-        mapInteractionTask = Task {
-            // Use DispatchQueue to avoid modifying state during view update
-            await MainActor.run {
-                pinLocation = region.center
-                
-                // If we don't have a location name from search, get it from reverse geocoding
-                if selectedMapItem == nil {
-                    reverseGeocode(coordinate: region.center)
+        // Create a new task for this update - use DispatchQueue to further ensure we're outside view update cycle
+        DispatchQueue.main.async {
+            self.mapInteractionTask = Task {
+                // Use MainActor to update UI
+                await MainActor.run {
+                    self.pinLocation = self.region.center
+                    
+                    // If we don't have a location name from search, get it from reverse geocoding
+                    if self.selectedMapItem == nil {
+                        self.reverseGeocode(coordinate: self.region.center)
+                    }
                 }
             }
         }
@@ -264,8 +266,11 @@ struct MapViewRepresentable: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            parent.region = mapView.region
-            parent.onRegionChange()
+            // Use async to prevent modifying state during view update
+            DispatchQueue.main.async {
+                self.parent.region = mapView.region
+                self.parent.onRegionChange()
+            }
         }
     }
 }
