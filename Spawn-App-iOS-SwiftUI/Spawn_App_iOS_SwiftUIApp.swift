@@ -20,7 +20,11 @@ struct Spawn_App_iOS_SwiftUIApp: App {
         Font.registerFonts()
         
         // Set Onest as the default font for the app
-        let fontDescriptor = UIFontDescriptor(name: "Onest-Regular", size: 0)
+        let regularFontDescriptor = UIFontDescriptor(name: "Onest-Regular", size: 0)
+        let mediumFontDescriptor = UIFontDescriptor(name: "Onest-Medium", size: 0)
+        let semiboldFontDescriptor = UIFontDescriptor(name: "Onest-SemiBold", size: 0)
+        let boldFontDescriptor = UIFontDescriptor(name: "Onest-Bold", size: 0)
+        
         UIFont.familyNames.forEach { familyName in
             print("Family: \(familyName)")
             UIFont.fontNames(forFamilyName: familyName).forEach { fontName in
@@ -29,10 +33,15 @@ struct Spawn_App_iOS_SwiftUIApp: App {
         }
         
         // Set Onest font as default for various UI elements
-        UILabel.appearance().font = UIFont(descriptor: fontDescriptor, size: 16)
-        UITextField.appearance().font = UIFont(descriptor: fontDescriptor, size: 16)
-        UITextView.appearance().font = UIFont(descriptor: fontDescriptor, size: 16)
-        UIButton.appearance().titleLabel?.font = UIFont(descriptor: fontDescriptor, size: 16)
+        UILabel.appearance().font = UIFont(descriptor: regularFontDescriptor, size: 16)
+        UITextField.appearance().font = UIFont(descriptor: regularFontDescriptor, size: 16)
+        UITextView.appearance().font = UIFont(descriptor: regularFontDescriptor, size: 16)
+        UIButton.appearance().titleLabel?.font = UIFont(descriptor: semiboldFontDescriptor, size: 16)
+        
+        // Set preferred fonts for different text styles
+        UIFont.preferredFontDescriptor(withTextStyle: .headline).withFamily("Onest-SemiBold")
+        UIFont.preferredFontDescriptor(withTextStyle: .subheadline).withFamily("Onest-Medium")
+        UIFont.preferredFontDescriptor(withTextStyle: .body).withFamily("Onest-Regular")
     }
 
 	var body: some Scene {

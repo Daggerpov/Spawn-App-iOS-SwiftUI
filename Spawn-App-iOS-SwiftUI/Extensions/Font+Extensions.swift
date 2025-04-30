@@ -6,6 +6,7 @@ extension Font {
         registerFont(bundle: .main, fontName: "Onest-Regular", fontExtension: "ttf")
         registerFont(bundle: .main, fontName: "Onest-Medium", fontExtension: "ttf")
         registerFont(bundle: .main, fontName: "Onest-Bold", fontExtension: "ttf")
+        registerFont(bundle: .main, fontName: "Onest-SemiBold", fontExtension: "ttf")
     }
     
     private static func registerFont(bundle: Bundle, fontName: String, fontExtension: String) {
@@ -29,6 +30,10 @@ extension Font {
     
     static func onestMedium(size: CGFloat) -> Font {
         return .custom("Onest-Medium", size: size)
+    }
+    
+    static func onestSemiBold(size: CGFloat) -> Font {
+        return .custom("Onest-SemiBold", size: size)
     }
     
     static func onestBold(size: CGFloat) -> Font {

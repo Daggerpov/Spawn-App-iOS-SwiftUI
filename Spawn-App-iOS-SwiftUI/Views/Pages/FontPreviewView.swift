@@ -43,6 +43,23 @@ struct FontPreviewView: View {
                 }
                 
                 Group {
+                    sectionTitle("Semi Bold")
+                    
+                    Text("Semi Bold 10pt")
+                        .font(.onestSemiBold(size: 10))
+                    Text("Semi Bold 12pt")
+                        .font(.onestSemiBold(size: 12))
+                    Text("Semi Bold 14pt")
+                        .font(.onestSemiBold(size: 14))
+                    Text("Semi Bold 16pt")
+                        .font(.onestSemiBold(size: 16))
+                    Text("Semi Bold 18pt")
+                        .font(.onestSemiBold(size: 18))
+                    Text("Semi Bold 20pt")
+                        .font(.onestSemiBold(size: 20))
+                }
+                
+                Group {
                     sectionTitle("Bold")
                     
                     Text("Bold 10pt")
@@ -66,12 +83,40 @@ struct FontPreviewView: View {
                         .onestHeadline()
                     Text("onestSubheadline()")
                         .onestSubheadline()
+                    Text("onestSemibold()")
+                        .onestSemibold()
                     Text("onestBody()")
                         .onestBody()
                     Text("onestCaption()")
                         .onestCaption()
                     Text("onestSmallText()")
                         .onestSmallText()
+                }
+                
+                Group {
+                    sectionTitle("Weight Comparison")
+                    
+                    HStack(spacing: 16) {
+                        Text("Regular")
+                            .font(.onestRegular(size: 16))
+                        Text("Medium")
+                            .font(.onestMedium(size: 16))
+                        Text("SemiBold")
+                            .font(.onestSemiBold(size: 16))
+                        Text("Bold")
+                            .font(.onestBold(size: 16))
+                    }
+                    
+                    HStack(spacing: 16) {
+                        Text("Regular")
+                            .onestFont(size: 16, weight: .regular)
+                        Text("Medium")
+                            .onestFont(size: 16, weight: .medium)
+                        Text("SemiBold")
+                            .onestFont(size: 16, weight: .semibold)
+                        Text("Bold")
+                            .onestFont(size: 16, weight: .bold)
+                    }
                 }
             }
             .padding()

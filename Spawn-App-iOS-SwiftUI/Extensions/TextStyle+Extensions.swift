@@ -20,6 +20,8 @@ extension View {
         switch weight {
         case .bold:
             return self.font(.onestBold(size: size))
+        case .semibold:
+            return self.font(.onestSemiBold(size: size))
         case .medium:
             return self.font(.onestMedium(size: size))
         default:

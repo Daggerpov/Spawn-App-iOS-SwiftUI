@@ -15,6 +15,19 @@ struct SubheadlineModifier: ViewModifier {
     }
 }
 
+struct SemiboldTextModifier: ViewModifier {
+    var size: CGFloat
+    
+    init(size: CGFloat = 16) {
+        self.size = size
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .font(.onestSemiBold(size: size))
+    }
+}
+
 struct BodyModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -44,6 +57,10 @@ extension View {
     
     func onestSubheadline() -> some View {
         self.modifier(SubheadlineModifier())
+    }
+    
+    func onestSemibold(size: CGFloat = 16) -> some View {
+        self.modifier(SemiboldTextModifier(size: size))
     }
     
     func onestBody() -> some View {

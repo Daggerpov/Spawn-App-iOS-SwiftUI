@@ -9,13 +9,16 @@ struct OnestFontDemoView: View {
             Text("Onest Medium")
                 .font(.onestMedium(size: 16))
             
+            Text("Onest Semi Bold")
+                .font(.onestSemiBold(size: 16))
+            
             Text("Onest Bold")
                 .font(.onestBold(size: 16))
             
             HStack(spacing: 12) {
                 Button(action: {}) {
                     Text("Button")
-                        .font(.onestMedium(size: 14))
+                        .font(.onestSemiBold(size: 14))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .background(figmaBlue)
@@ -26,6 +29,10 @@ struct OnestFontDemoView: View {
                 Text("Caption")
                     .onestCaption()
                     .foregroundColor(.gray)
+                
+                Text("Semi")
+                    .onestSemibold(size: 14)
+                    .foregroundColor(.black)
             }
         }
         .padding()

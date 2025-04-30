@@ -185,7 +185,6 @@ struct FriendsTabView: View {
                             }
                             .padding(.vertical, 16)
                             .padding(.horizontal, 16)
-                            .background(Color.black)
                             .cornerRadius(20)
 						}
 					}
@@ -379,12 +378,11 @@ struct RecommendedFriendView: View {
                             )
                     )
                     .foregroundColor(.gray)
-//                }
             }
             .buttonStyle(PlainButtonStyle())
         }
         .padding(.vertical, 12)
-        .padding(.horizontal, 16)
+//        .padding(.horizontal, 16)
         .cornerRadius(16)
         .foregroundColor(universalAccentColor)
     }
