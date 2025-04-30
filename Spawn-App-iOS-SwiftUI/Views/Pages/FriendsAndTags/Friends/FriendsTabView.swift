@@ -76,12 +76,27 @@ struct FriendsTabView: View {
 		}
 	}
     
+    var showAllButtonView: some View {
+        Button(action: {
+            // TODO DANIEL: fill this in to actually show all
+        }) {
+            Text("Show All")
+                .foregroundColor(universalSecondaryColor)
+                .font(.body)
+                .bold()
+        }
+    }
+    
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.filteredRecommendedFriends.count > 0 {
-				Text("Recommended Friends")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
+                HStack{
+                    Text("Recently Spawned With")
+                        .font(.headline)
+                        .foregroundColor(universalAccentColor)
+                    Spacer()
+                    showAllButtonView
+                }
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
@@ -101,9 +116,13 @@ struct FriendsTabView: View {
 			Spacer()
 
 			if viewModel.filteredFriends.count > 0 {
-				Text("Your Friends (\(viewModel.filteredFriends.count))")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
+                HStack{
+                    Text("Your Friends (\(viewModel.filteredFriends.count))")
+                        .font(.headline)
+                        .foregroundColor(universalAccentColor)
+                    Spacer()
+                    showAllButtonView
+                }
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
