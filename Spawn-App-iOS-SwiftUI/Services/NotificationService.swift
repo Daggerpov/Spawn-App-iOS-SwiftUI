@@ -1,6 +1,7 @@
 import Foundation
 import UserNotifications
 import SwiftUI
+import FirebaseMessaging
 
 @available(iOS 16.0, *)
 class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUserNotificationCenterDelegate {
@@ -81,9 +82,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
     // Called when user logs in
     @objc private func userDidLogin() {
         // If we have a stored token, register it now
-        if storedDeviceToken != nil {
-            registerStoredTokenWithBackend()
-        }
+        registerForPushNotifications()
         
         // Fetch notification preferences after login
         Task { [weak self] in
@@ -117,12 +116,11 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
     }
     
     // Store device token when received from Apple
-    func registerDeviceToken(_ deviceToken: Data) {
-        let tokenString = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("[PUSH DEBUG] Device token received: \(tokenString)")
+    func registerDeviceToken(_ deviceToken: String) {
+        print("[PUSH DEBUG] Device token received: \(deviceToken)")
         
         // Store the token for later use
-        storedDeviceToken = tokenString
+        storedDeviceToken = deviceToken
         
         // Only try to register with backend if user is already logged in
         if UserAuthViewModel.shared.isLoggedIn {
@@ -139,7 +137,6 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             print("No device token available to register")
             return
         }
-        
         sendTokenToBackend(token)
     }
     
@@ -170,12 +167,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                     print("[PUSH DEBUG] Successfully registered device token with backend")
                 } catch let error as APIError {
                     // Check if it's a 404 error (endpoint doesn't exist yet)
-                    if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
-                        print("[PUSH DEBUG] Device token registration endpoint not available (404): Backend may not support push notifications yet")
-                    } else {
-                        print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
-                        print("[PUSH DEBUG] API Error details: \(error)")
-                    }
+                    print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
+                    print("[PUSH DEBUG] API Error details: \(error)")
                 } catch {
                     print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
                     print("[PUSH DEBUG] Error details: \(error)")
