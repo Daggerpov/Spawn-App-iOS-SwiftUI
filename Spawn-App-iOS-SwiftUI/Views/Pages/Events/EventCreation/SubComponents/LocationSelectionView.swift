@@ -28,8 +28,19 @@ struct LocationSelectionView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                // Map view
                 mapLibreMapView
                     .ignoresSafeArea()
+                
+                // Centered pin that shows where location will be saved
+                VStack {
+                    Spacer()
+                    Image(systemName: "mappin")
+                        .font(.system(size: 30))
+                        .foregroundColor(universalAccentColor)
+                        .offset(y: -15) // Offset so bottom of pin is at center
+                    Spacer()
+                }
                 
                 VStack {
                     searchBarView
@@ -67,28 +78,26 @@ struct LocationSelectionView: View {
                         }
                     }
                     
-                    if pinLocation != nil {
-                        VStack {
-                            locationNameInputView
+                    VStack {
+                        locationNameInputView
+                            .padding(.horizontal)
+                        
+                        Button(action: {
+                            saveLocation()
+                            dismiss()
+                        }) {
+                            Text("Confirm Location")
+                                .foregroundColor(.white)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(locationName.isEmpty ? Color.gray : universalSecondaryColor)
+                                .cornerRadius(15)
                                 .padding(.horizontal)
-                            
-                            Button(action: {
-                                saveLocation()
-                                dismiss()
-                            }) {
-                                Text("Confirm Location")
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(locationName.isEmpty ? Color.gray : universalSecondaryColor)
-                                    .cornerRadius(15)
-                                    .padding(.horizontal)
-                                    .padding(.bottom)
-                            }
-                            .disabled(locationName.isEmpty)
+                                .padding(.bottom)
                         }
-                        .background(Color(.systemBackground).opacity(0.95))
+                        .disabled(locationName.isEmpty)
                     }
+                    .background(Color(.systemBackground).opacity(0.95))
                 }
             }
             .navigationTitle("Select Location")
@@ -219,7 +228,6 @@ extension LocationSelectionView {
     var mapLibreMapView: some View {
         MapLibreView(
             camera: $camera,
-            pinLocation: pinLocation,
             onCameraChanged: {
                 updatePinLocation()
             }
@@ -326,7 +334,6 @@ extension LocationSelectionView {
 // MapLibre Maps View Component using UIViewRepresentable
 struct MapLibreView: UIViewRepresentable {
     @Binding var camera: CameraState
-    var pinLocation: CLLocationCoordinate2D?
     var onCameraChanged: () -> Void
     
     func makeUIView(context: Context) -> MLNMapView {
@@ -356,9 +363,6 @@ struct MapLibreView: UIViewRepresentable {
            lastCamera.longitude != camera.center.longitude {
             mapView.setCenter(camera.center, zoomLevel: camera.zoom, animated: true)
         }
-        
-        // Update pin annotation
-        context.coordinator.updatePin(at: pinLocation, on: mapView)
     }
     
     func makeCoordinator() -> Coordinator {
@@ -368,7 +372,6 @@ struct MapLibreView: UIViewRepresentable {
     class Coordinator: NSObject, MLNMapViewDelegate {
         var parent: MapLibreView
         var lastCameraCenter: CLLocationCoordinate2D?
-        var pinAnnotation: MLNPointAnnotation?
         
         init(_ parent: MapLibreView) {
             self.parent = parent
@@ -394,59 +397,6 @@ struct MapLibreView: UIViewRepresentable {
                 }
             }
         }
-        
-        func updatePin(at coordinate: CLLocationCoordinate2D?, on mapView: MLNMapView) {
-            // Remove existing pin if any
-            if let pin = pinAnnotation {
-                mapView.removeAnnotation(pin)
-                pinAnnotation = nil
-            }
-            
-            // Add new pin if coordinate exists
-            if let coordinate = coordinate {
-                let pin = MLNPointAnnotation()
-                pin.coordinate = coordinate
-                pin.title = "Selected Location"
-                mapView.addAnnotation(pin)
-                pinAnnotation = pin
-            }
-        }
-        
-        // Custom annotation view
-        func mapView(_ mapView: MLNMapView, viewFor annotation: MLNAnnotation) -> MLNAnnotationView? {
-            if annotation is MLNUserLocation {
-                return nil  // Use default for user location
-            }
-            
-            let reuseId = "pinAnnotation"
-            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: reuseId)
-            
-            if annotationView == nil {
-                annotationView = MLNAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
-                annotationView?.centerOffset = CGVector(dx: 0, dy: -20)  // Offset to position correctly
-                
-                // Create a custom pin view
-                let pinImageView = UIImageView(image: UIImage(systemName: "mappin.circle.fill"))
-                pinImageView.tintColor = UIColor(universalAccentColor)
-                pinImageView.frame = CGRect(x: 0, y: 0, width: 40, height: 40)
-                
-                // Create a triangle view for the pointer
-                let triangleView = TriangleView(frame: CGRect(x: 0, y: 40, width: 40, height: 20))
-                triangleView.backgroundColor = .clear
-                triangleView.tintColor = UIColor(universalAccentColor)
-                
-                // Create a container view
-                let containerView = UIView(frame: CGRect(x: 0, y: 0, width: 40, height: 60))
-                containerView.addSubview(pinImageView)
-                containerView.addSubview(triangleView)
-                
-                annotationView?.addSubview(containerView)
-            } else {
-                annotationView?.annotation = annotation
-            }
-            
-            return annotationView
-        }
     }
 }
 
@@ -454,18 +404,6 @@ struct MapLibreView: UIViewRepresentable {
 struct CameraState {
     var center: CLLocationCoordinate2D
     var zoom: Double
-}
-
-// Triangle shape for SwiftUI
-struct Triangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.closeSubpath()
-        return path
-    }
 }
 
 // MKPlacemark extension to get formatted address
