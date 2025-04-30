@@ -161,11 +161,10 @@ struct FriendsTabView: View {
                                         // Display full name
                                         Text(FormatterService.shared.formatName(user: friend))
                                             .font(.onestRegular(size: 14))
-                                            .foregroundColor(.white.opacity(0.9))
                                         Text("@\(friend.username)")
                                             .font(.onestBold(size: 16))
-                                            .foregroundColor(.white)
                                     }
+                                    .foregroundColor(universalAccentColor)
                                     .padding(.leading, 8)
 
                                     Spacer()
@@ -175,17 +174,13 @@ struct FriendsTabView: View {
                                         // Handle more options
                                     }) {
                                         Image(systemName: "ellipsis")
-                                            .foregroundColor(.white)
+                                            .foregroundColor(
+                                                universalAccentColor
+                                            )
                                             .padding(8)
                                     }
                                 }
-                                
-                                // Friend tags section
-                                FriendTagsForFriendView(friend: friend)
                             }
-                            .padding(.vertical, 16)
-                            .padding(.horizontal, 16)
-                            .cornerRadius(20)
 						}
 					}
 				}
@@ -382,7 +377,6 @@ struct RecommendedFriendView: View {
             .buttonStyle(PlainButtonStyle())
         }
         .padding(.vertical, 12)
-//        .padding(.horizontal, 16)
         .cornerRadius(16)
         .foregroundColor(universalAccentColor)
     }

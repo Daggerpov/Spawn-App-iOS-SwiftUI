@@ -19,12 +19,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
         // Register custom fonts
         Font.registerFonts()
         
-        // Set Onest as the default font for the app
-        let regularFontDescriptor = UIFontDescriptor(name: "Onest-Regular", size: 0)
-        let mediumFontDescriptor = UIFontDescriptor(name: "Onest-Medium", size: 0)
-        let semiboldFontDescriptor = UIFontDescriptor(name: "Onest-SemiBold", size: 0)
-        let boldFontDescriptor = UIFontDescriptor(name: "Onest-Bold", size: 0)
-        
+        // Print available fonts for debugging
         UIFont.familyNames.forEach { familyName in
             print("Family: \(familyName)")
             UIFont.fontNames(forFamilyName: familyName).forEach { fontName in
@@ -32,16 +27,31 @@ struct Spawn_App_iOS_SwiftUIApp: App {
             }
         }
         
-        // Set Onest font as default for various UI elements
-        UILabel.appearance().font = UIFont(descriptor: regularFontDescriptor, size: 16)
-        UITextField.appearance().font = UIFont(descriptor: regularFontDescriptor, size: 16)
-        UITextView.appearance().font = UIFont(descriptor: regularFontDescriptor, size: 16)
-        UIButton.appearance().titleLabel?.font = UIFont(descriptor: semiboldFontDescriptor, size: 16)
+        // Create font instances for our custom fonts
+        let regularFont = UIFont(name: "Onest-Regular", size: 16)!
+        let mediumFont = UIFont(name: "Onest-Medium", size: 16)!
+        let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16)!
+        let boldFont = UIFont(name: "Onest-Bold", size: 16)!
         
-        // Set preferred fonts for different text styles
-        UIFont.preferredFontDescriptor(withTextStyle: .headline).withFamily("Onest-SemiBold")
-        UIFont.preferredFontDescriptor(withTextStyle: .subheadline).withFamily("Onest-Medium")
-        UIFont.preferredFontDescriptor(withTextStyle: .body).withFamily("Onest-Regular")
+        // Set default appearance for common UI controls
+        UILabel.appearance().font = regularFont
+        UITextField.appearance().font = regularFont
+        UITextView.appearance().font = regularFont
+        UIButton.appearance().titleLabel?.font = semiboldFont
+        
+        // Set specific fonts for navigation bars, etc.
+        UINavigationBar.appearance().titleTextAttributes = [
+            .font: boldFont.withSize(18)
+        ]
+        
+        UINavigationBar.appearance().largeTitleTextAttributes = [
+            .font: boldFont.withSize(34)
+        ]
+        
+        // Customize tab bar appearance
+        UITabBarItem.appearance().setTitleTextAttributes([
+            .font: mediumFont.withSize(12)
+        ], for: .normal)
     }
 
 	var body: some Scene {
