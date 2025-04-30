@@ -158,14 +158,13 @@ struct FriendsTabView: View {
                                     }
 
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(friend.username)
-                                            .font(.onestBold(size: 16))
-                                            .foregroundColor(.white)
-                                            
                                         // Display full name
                                         Text(FormatterService.shared.formatName(user: friend))
                                             .font(.onestRegular(size: 14))
                                             .foregroundColor(.white.opacity(0.9))
+                                        Text("@\(friend.username)")
+                                            .font(.onestBold(size: 16))
+                                            .foregroundColor(.white)
                                     }
                                     .padding(.leading, 8)
 
@@ -349,14 +348,10 @@ struct RecommendedFriendView: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(friend.username)
-                    .font(.onestBold(size: 16))
-                    .foregroundColor(.white)
-
-                // User full name
                 Text(FormatterService.shared.formatName(user: friend))
-                    .font(.onestRegular(size: 14))
-                    .foregroundColor(.white.opacity(0.9))
+                    .font(.onestBold(size: 14))
+                Text("@\(friend.username)")
+                    .font(.onestRegular(size: 12))
             }
             .padding(.leading, 8)
 
@@ -368,22 +363,30 @@ struct RecommendedFriendView: View {
                     await viewModel.addFriend(friendUserId: friend.id)
                 }
             }) {
-                ZStack {
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 40, height: 40)
 
-                    Text("Add +")
-                        .font(.onestMedium(size: 14))
-                        .foregroundColor(Color.black)
-                }
+                Text("Add +")
+                    .font(.onestMedium(size: 14))
+                    .padding(12)
+                    .background(
+                        Rectangle()
+                            .foregroundColor(.clear)
+                            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+                            .cornerRadius(15)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .inset(by: 0.75)
+                                    .stroke(.gray)
+                            )
+                    )
+                    .foregroundColor(.gray)
+//                }
             }
             .buttonStyle(PlainButtonStyle())
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(Color.black)
         .cornerRadius(16)
+        .foregroundColor(universalAccentColor)
     }
 }
 

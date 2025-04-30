@@ -15,7 +15,7 @@ struct SearchView: View {
 		self.searchPlaceholderText = searchPlaceholderText
 		self.viewModel = viewModel
 	}
-
+    
 	var body: some View {
 		HStack {
 			Image(systemName: "magnifyingglass")
@@ -24,15 +24,24 @@ struct SearchView: View {
 			
 			TextField(searchPlaceholderText, text: $viewModel.searchText)
 				.font(.onestRegular(size: 16))
-				.foregroundColor(.black)
-				.accentColor(.black)
+				.foregroundColor(.gray)
 		}
 		.padding(.vertical, 12)
 		.padding(.horizontal, 16)
-		.background(
-			RoundedRectangle(cornerRadius: 24)
-				.fill(Color(UIColor.systemGray5))
-		)
+        .background(
+            Rectangle()
+                .foregroundColor(.clear)
+                .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+                .cornerRadius(15)
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: universalRectangleCornerRadius
+                    )
+                        .inset(by: 0.75)
+                        .stroke(.gray)
+                )
+        )
+        .foregroundColor(.gray)
 	}
 }
 

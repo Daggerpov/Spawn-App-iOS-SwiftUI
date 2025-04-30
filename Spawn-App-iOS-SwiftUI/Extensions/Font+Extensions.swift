@@ -34,4 +34,4 @@ extension Font {
     static func onestBold(size: CGFloat) -> Font {
         return .custom("Onest-Bold", size: size)
     }
-} 
+}
