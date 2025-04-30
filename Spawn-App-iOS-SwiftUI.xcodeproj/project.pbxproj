@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		654DED2B2DC095400059C268 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = 654DED2A2DC095400059C268 /* MapLibre */; };
 		658297FA2CE07822003CFFD5 /* PopupView in Frameworks */ = {isa = PBXBuildFile; productRef = 658297F92CE07822003CFFD5 /* PopupView */; };
 		658B2F332D9949F7004DE038 /* SwiftyCrop in Frameworks */ = {isa = PBXBuildFile; productRef = 658B2F322D9949F7004DE038 /* SwiftyCrop */; };
 		DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DC0171582D43507E003BF3DB /* GoogleSignIn */; };
@@ -73,6 +74,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				658B2F332D9949F7004DE038 /* SwiftyCrop in Frameworks */,
+				654DED2B2DC095400059C268 /* MapLibre in Frameworks */,
 				DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */,
 				658297FA2CE07822003CFFD5 /* PopupView in Frameworks */,
 				DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */,
@@ -140,6 +142,7 @@
 				DC0171582D43507E003BF3DB /* GoogleSignIn */,
 				DC01715A2D43507E003BF3DB /* GoogleSignInSwift */,
 				658B2F322D9949F7004DE038 /* SwiftyCrop */,
+				654DED2A2DC095400059C268 /* MapLibre */,
 			);
 			productName = "Spawn-App-iOS-SwiftUI";
 			productReference = 65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */;
@@ -227,6 +230,7 @@
 				658297F82CE07822003CFFD5 /* XCRemoteSwiftPackageReference "PopupView" */,
 				DC0171572D43507E003BF3DB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				658B2F312D9949F7004DE038 /* XCRemoteSwiftPackageReference "SwiftyCrop" */,
+				654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65D5035A2CD86EB300923A01 /* Products */;
@@ -601,6 +605,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/maplibre/maplibre-gl-native-distribution.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.12.3;
+			};
+		};
 		658297F82CE07822003CFFD5 /* XCRemoteSwiftPackageReference "PopupView" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/exyte/PopupView.git";
@@ -628,6 +640,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		654DED2A2DC095400059C268 /* MapLibre */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
+			productName = MapLibre;
+		};
 		658297F92CE07822003CFFD5 /* PopupView */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 658297F82CE07822003CFFD5 /* XCRemoteSwiftPackageReference "PopupView" */;
