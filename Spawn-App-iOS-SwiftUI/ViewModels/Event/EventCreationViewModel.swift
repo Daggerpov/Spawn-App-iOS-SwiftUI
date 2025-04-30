@@ -23,6 +23,7 @@ class EventCreationViewModel: ObservableObject {
 	// Validation properties
 	@Published var isTitleValid: Bool = true
 	@Published var isInvitesValid: Bool = true
+	@Published var isLocationValid: Bool = true
 	@Published var isFormValid: Bool = false
 	
 	private var apiService: IAPIService
@@ -60,9 +61,13 @@ class EventCreationViewModel: ObservableObject {
             isTitleValid = !trimmedTitle.isEmpty
             // Check if at least one friend or tag is invited
             isInvitesValid = !selectedFriends.isEmpty || !selectedTags.isEmpty
+            // Check if location is valid
+            isLocationValid = event.location != nil && 
+                             !event.location!.name.trimmingCharacters(in: .whitespaces).isEmpty && 
+                             (event.location!.latitude != 0 || event.location!.longitude != 0)
             
             // Update overall form validity
-            isFormValid = isTitleValid && isInvitesValid
+            isFormValid = isTitleValid && isInvitesValid && isLocationValid
         }
 		
 	}

@@ -13,6 +13,7 @@
 - [Current App Look](#current-app-look)
   - [Legacy Screenshots:](#legacy-screenshots)
 - [Entity Relationship Diagram](#entity-relationship-diagram)
+- [Map Integration](#map-integration)
 
 # Onboarding
 
@@ -354,4 +355,23 @@ Note that this is usually behind our actual 'current' app; stay tuned on [getspa
 # Entity Relationship Diagram
 
 ![erd-nov-21](images/entity-relationship-diagram.png)
+
+# Map Integration
+
+The app uses standard Apple MapKit for maps with a clean, basic styling:
+
+### Benefits of using MapKit:
+- Native Apple mapping solution
+- Clean, familiar interface for iOS users
+- No API keys or external dependencies required 
+- Built-in user location tracking
+- Efficient map annotations
+- Consistent appearance with iOS system apps
+
+### Implementation Details:
+1. For event viewing: `MapView.swift` displays events as standard pins
+2. For location selection: `LocationSelectionView.swift` implements a draggable map with centered pin
+3. Both implementations use a fixed pin approach where the map moves under the pin
+
+The map implementation is designed to be simple and intuitive, with a clean aesthetic that matches iOS system apps.
 

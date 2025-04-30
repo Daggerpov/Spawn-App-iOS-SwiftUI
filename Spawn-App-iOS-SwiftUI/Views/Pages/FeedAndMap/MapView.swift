@@ -13,12 +13,10 @@ struct MapView: View {
     @StateObject private var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
 
+    // Region for Map - using closer zoom level
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(
-            latitude: 0,
-            longitude: 0
-        ),
-        span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
+        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default to San Francisco
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
 
     // MARK - Event Description State Vars
@@ -49,7 +47,30 @@ struct MapView: View {
         ZStack {
             VStack {
                 ZStack {
-                    mapView
+                    Map(
+                        coordinateRegion: $region,
+                        showsUserLocation: true,
+                        userTrackingMode: .constant(.follow),
+                        annotationItems: viewModel.events
+                    ) { event in
+                        MapAnnotation(
+                            coordinate: CLLocationCoordinate2D(
+                                latitude: event.location?.latitude ?? 0,
+                                longitude: event.location?.longitude ?? 0
+                            )
+                        ) {
+                            Button(action: {
+                                eventInPopup = event
+                                colorInPopup = eventColors.randomElement()
+                                showingEventDescriptionPopup = true
+                            }) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(.system(size: 30))
+                                    .foregroundColor(universalAccentColor)
+                            }
+                        }
+                    }
+                    
                     VStack {
                         VStack {
                             TagsScrollView(
@@ -68,14 +89,22 @@ struct MapView: View {
                     isActive: showEventCreationDrawer
                 )
             }
-            .onAppear {
-                Task { await viewModel.fetchAllData() }
-                // Try to center on user immediately if location is available
-                if let userLocation = locationManager.userLocation {
-                    region = MKCoordinateRegion(
-                        center: userLocation,
-                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                    )
+            .task {
+                // Fetch data
+                await viewModel.fetchAllData()
+                
+                // Focus on user location after data is loaded
+                await MainActor.run {
+                    if let userLocation = locationManager.userLocation {
+                        withAnimation {
+                            region = MKCoordinateRegion(
+                                center: userLocation,
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            )
+                        }
+                    } else if !viewModel.events.isEmpty {
+                        adjustRegionForEvents()
+                    }
                 }
             }
             .onChange(of: locationManager.locationUpdated) { _ in
@@ -106,23 +135,24 @@ struct MapView: View {
 
     private func adjustRegionToUserLocation() {
         if let userLocation = locationManager.userLocation {
-            region = MKCoordinateRegion(
-                center: userLocation,
-                span: MKCoordinateSpan(
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01
+            withAnimation {
+                region = MKCoordinateRegion(
+                    center: userLocation,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                 )
-            )
+            }
         }
     }
 
     private func adjustRegionForEventsOrUserLocation() {
         if let userLocation = locationManager.userLocation {
             // Prioritize user location
-            region = MKCoordinateRegion(
-                center: userLocation,
-                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-            )
+            withAnimation {
+                region = MKCoordinateRegion(
+                    center: userLocation,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )
+            }
         } else if !viewModel.events.isEmpty {
             adjustRegionForEvents()
         }
@@ -145,16 +175,18 @@ struct MapView: View {
         let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
         let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
 
-        region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(
-                latitude: centerLatitude,
-                longitude: centerLongitude
-            ),
-            span: MKCoordinateSpan(
-                latitudeDelta: max(latitudeDelta, 0.01),
-                longitudeDelta: max(longitudeDelta, 0.01)
+        withAnimation {
+            region = MKCoordinateRegion(
+                center: CLLocationCoordinate2D(
+                    latitude: centerLatitude,
+                    longitude: centerLongitude
+                ),
+                span: MKCoordinateSpan(
+                    latitudeDelta: max(latitudeDelta, 0.01),
+                    longitudeDelta: max(longitudeDelta, 0.01)
+                )
             )
-        )
+        }
     }
 
     func closeCreation() {
@@ -164,76 +196,8 @@ struct MapView: View {
     }
 }
 
-extension MapView {
-    var mapView: some View {
-        Map(
-            coordinateRegion: $region,
-            showsUserLocation: true,
-            userTrackingMode: .constant(.follow),
-            annotationItems: viewModel.events
-        ) { event in
-            MapAnnotation(
-                coordinate: CLLocationCoordinate2D(
-                    latitude: event.location?.latitude ?? 0,
-                    longitude: event.location?.longitude ?? 0
-                ),
-                anchorPoint: CGPoint(x: 0.5, y: 1.0)
-            ) {
-                Button(action: {
-                    eventInPopup = event
-                    colorInPopup = eventColors.randomElement()
-                    showingEventDescriptionPopup = true
-                }) {
-                    VStack(spacing: -8) {
-                        ZStack {
-                            Image(systemName: "mappin.circle.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 60, height: 60)
-                                .foregroundColor(universalAccentColor)
-
-                            if let pfpUrl = event.creatorUser.profilePicture {
-                                AsyncImage(url: URL(string: pfpUrl)) {
-                                    image in
-                                    image
-                                        .ProfileImageModifier(
-                                            imageType: .mapView
-                                        )
-                                } placeholder: {
-                                    Circle()
-                                        .fill(Color.gray)
-                                        .frame(width: 40, height: 40)
-                                }
-                            } else {
-                                Circle()
-                                    .fill(Color.gray)
-                                    .frame(width: 40, height: 40)
-                            }
-                        }
-                        Triangle()
-                            .fill(universalAccentColor)
-                            .frame(width: 40, height: 20)
-                    }
-                }
-            }
-        }
-        .ignoresSafeArea()
-    }
-}
-
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
     MapView(user: .danielAgapov).environmentObject(appCache)
-}
-
-struct Triangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
-        path.closeSubpath()
-        return path
-    }
 }
