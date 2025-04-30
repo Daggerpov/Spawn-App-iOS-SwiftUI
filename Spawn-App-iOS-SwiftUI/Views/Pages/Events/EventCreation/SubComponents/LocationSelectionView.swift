@@ -64,11 +64,18 @@ struct LocationSelectionView: View {
                             Spacer()
                             Button(action: {
                                 if let userLocation = locationManager.userLocation {
-                                    region = MKCoordinateRegion(
+                                    // Set a tighter zoom level and ensure complete centering
+                                    let newRegion = MKCoordinateRegion(
                                         center: userLocation,
                                         span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
                                     )
-                                    updatePinLocation()
+                                    
+                                    // Update region directly and force complete animation
+                                    region = newRegion
+                                    
+                                    // Update pin location after region is set
+                                    pinLocation = userLocation
+                                    reverseGeocode(coordinate: userLocation)
                                 }
                             }) {
                                 Image(systemName: "location.fill")
@@ -251,7 +258,14 @@ struct MapViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        // Use animated camera update for smoother transition
         mapView.setRegion(region, animated: true)
+        
+        // Ensure map doesn't modify our region during animation
+        if mapView.region.center.latitude != region.center.latitude || 
+           mapView.region.center.longitude != region.center.longitude {
+            mapView.setCenter(region.center, animated: true)
+        }
     }
     
     func makeCoordinator() -> Coordinator {
