@@ -8,16 +8,15 @@
 import CoreLocation
 import MapKit
 import SwiftUI
-import MapLibre
 
 struct MapView: View {
     @StateObject private var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
 
-    // Camera state for MapLibre
-    @State private var camera = CameraState(
-        center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-        zoom: 10
+    // Region for Map - using closer zoom level
+    @State private var region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default to San Francisco
+        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
 
     // MARK - Event Description State Vars
@@ -48,7 +47,30 @@ struct MapView: View {
         ZStack {
             VStack {
                 ZStack {
-                    mapLibreMapView
+                    Map(
+                        coordinateRegion: $region,
+                        showsUserLocation: true,
+                        userTrackingMode: .constant(.follow),
+                        annotationItems: viewModel.events
+                    ) { event in
+                        MapAnnotation(
+                            coordinate: CLLocationCoordinate2D(
+                                latitude: event.location?.latitude ?? 0,
+                                longitude: event.location?.longitude ?? 0
+                            )
+                        ) {
+                            Button(action: {
+                                eventInPopup = event
+                                colorInPopup = eventColors.randomElement()
+                                showingEventDescriptionPopup = true
+                            }) {
+                                Image(systemName: "mappin.circle.fill")
+                                    .font(.system(size: 30))
+                                    .foregroundColor(universalAccentColor)
+                            }
+                        }
+                    }
+                    
                     VStack {
                         VStack {
                             TagsScrollView(
@@ -67,24 +89,34 @@ struct MapView: View {
                     isActive: showEventCreationDrawer
                 )
             }
-            .onAppear {
-                Task { await viewModel.fetchAllData() }
-                // Try to center on user immediately if location is available
-                if let userLocation = locationManager.userLocation {
-                    camera.center = userLocation
-                    camera.zoom = 14
+            .task {
+                // Fetch data
+                await viewModel.fetchAllData()
+                
+                // Focus on user location after data is loaded
+                await MainActor.run {
+                    if let userLocation = locationManager.userLocation {
+                        withAnimation {
+                            region = MKCoordinateRegion(
+                                center: userLocation,
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            )
+                        }
+                    } else if !viewModel.events.isEmpty {
+                        adjustRegionForEvents()
+                    }
                 }
             }
             .onChange(of: locationManager.locationUpdated) { _ in
                 // Update map when user location becomes available
                 if locationManager.locationUpdated && locationManager.userLocation != nil {
-                    adjustCameraToUserLocation()
+                    adjustRegionToUserLocation()
                 }
             }
             .onChange(of: viewModel.events) { _ in
                 // Only adjust for events if we already have user location
                 if locationManager.userLocation != nil {
-                    adjustCameraForEvents()
+                    adjustRegionForEvents()
                 }
             }
             .sheet(isPresented: $showingEventDescriptionPopup) {
@@ -101,24 +133,32 @@ struct MapView: View {
         }
     }
 
-    private func adjustCameraToUserLocation() {
+    private func adjustRegionToUserLocation() {
         if let userLocation = locationManager.userLocation {
-            camera.center = userLocation
-            camera.zoom = 14
+            withAnimation {
+                region = MKCoordinateRegion(
+                    center: userLocation,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )
+            }
         }
     }
 
-    private func adjustCameraForEventsOrUserLocation() {
+    private func adjustRegionForEventsOrUserLocation() {
         if let userLocation = locationManager.userLocation {
             // Prioritize user location
-            camera.center = userLocation
-            camera.zoom = 14
+            withAnimation {
+                region = MKCoordinateRegion(
+                    center: userLocation,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )
+            }
         } else if !viewModel.events.isEmpty {
-            adjustCameraForEvents()
+            adjustRegionForEvents()
         }
     }
 
-    private func adjustCameraForEvents() {
+    private func adjustRegionForEvents() {
         guard !viewModel.events.isEmpty else { return }
 
         let latitudes = viewModel.events.compactMap { $0.location?.latitude }
@@ -132,192 +172,27 @@ struct MapView: View {
 
         let centerLatitude = (minLatitude + maxLatitude) / 2
         let centerLongitude = (minLongitude + maxLongitude) / 2
-        
-        // Calculate zoom level based on the bounding box
-        let latitudeDelta = maxLatitude - minLatitude
-        let longitudeDelta = maxLongitude - minLongitude
-        
-        // Use the larger delta to determine zoom (smaller zoom value = more zoomed out)
-        let maxDelta = max(latitudeDelta, longitudeDelta) * 1.5
-        let zoom = calculateZoomLevel(for: maxDelta)
+        let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
+        let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
 
-        camera.center = CLLocationCoordinate2D(
-            latitude: centerLatitude,
-            longitude: centerLongitude
-        )
-        camera.zoom = zoom
-    }
-    
-    // Calculate an appropriate zoom level based on coordinate delta
-    private func calculateZoomLevel(for delta: Double) -> Double {
-        // Roughly calculate zoom level: log2(360 / delta) + 1
-        // This is an approximation for MapLibre zoom levels
-        let zoom = log2(360 / delta) + 1
-        return min(max(zoom, 2), 18) // Constrain between zoom levels 2-18
+        withAnimation {
+            region = MKCoordinateRegion(
+                center: CLLocationCoordinate2D(
+                    latitude: centerLatitude,
+                    longitude: centerLongitude
+                ),
+                span: MKCoordinateSpan(
+                    latitudeDelta: max(latitudeDelta, 0.01),
+                    longitudeDelta: max(longitudeDelta, 0.01)
+                )
+            )
+        }
     }
 
     func closeCreation() {
         EventCreationViewModel.reInitialize()
         creationOffset = 1000
         showEventCreationDrawer = false
-    }
-}
-
-extension MapView {
-    var mapLibreMapView: some View {
-        MapLibreEventsView(
-            camera: $camera,
-            events: viewModel.events,
-            onEventTapped: { event in
-                eventInPopup = event
-                colorInPopup = eventColors.randomElement()
-                showingEventDescriptionPopup = true
-            }
-        )
-    }
-}
-
-// MapLibre View Component with event annotations
-struct MapLibreEventsView: UIViewRepresentable {
-    @Binding var camera: CameraState
-    let events: [FullFeedEventDTO]
-    let onEventTapped: (FullFeedEventDTO) -> Void
-    
-    func makeUIView(context: Context) -> MLNMapView {
-        // Set up the style URL - using OSM style
-        let styleURL = URL(string: "https://demotiles.maplibre.org/style.json")
-        
-        // Create the map view
-        let mapView = MLNMapView(frame: .zero, styleURL: styleURL)
-        
-        // Enable user location
-        mapView.showsUserLocation = true
-        mapView.userTrackingMode = .follow
-        
-        // Set initial camera position
-        mapView.setCenter(camera.center, zoomLevel: camera.zoom, animated: false)
-        
-        // Set up delegate
-        mapView.delegate = context.coordinator
-        
-        return mapView
-    }
-    
-    func updateUIView(_ mapView: MLNMapView, context: Context) {
-        // Update the camera if changed externally
-        if let lastCamera = context.coordinator.lastCameraCenter,
-           lastCamera.latitude != camera.center.latitude || 
-           lastCamera.longitude != camera.center.longitude ||
-           context.coordinator.lastZoom != camera.zoom {
-            mapView.setCenter(camera.center, zoomLevel: camera.zoom, animated: true)
-        }
-        
-        // Update event annotations
-        context.coordinator.updateEventAnnotations(events, on: mapView)
-        context.coordinator.events = events
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, MLNMapViewDelegate {
-        var parent: MapLibreEventsView
-        var events: [FullFeedEventDTO] = []
-        var onEventTapped: (FullFeedEventDTO) -> Void
-        var lastCameraCenter: CLLocationCoordinate2D?
-        var lastZoom: Double?
-        var eventAnnotations: [String: MLNPointAnnotation] = [:]
-        
-        init(_ parent: MapLibreEventsView) {
-            self.parent = parent
-            self.onEventTapped = parent.onEventTapped
-            super.init()
-        }
-        
-        func mapView(_ mapView: MLNMapView, regionDidChangeAnimated animated: Bool) {
-            let center = mapView.centerCoordinate
-            let zoom = mapView.zoomLevel
-            
-            // Only update if the camera has meaningfully changed
-            if lastCameraCenter == nil || lastZoom == nil ||
-               abs(lastCameraCenter!.latitude - center.latitude) > 0.00001 ||
-               abs(lastCameraCenter!.longitude - center.longitude) > 0.00001 ||
-               abs(lastZoom! - zoom) > 0.01 {
-                
-                lastCameraCenter = center
-                lastZoom = zoom
-                
-                // Update the parent's camera binding
-                DispatchQueue.main.async {
-                    self.parent.camera.center = center
-                    self.parent.camera.zoom = zoom
-                }
-            }
-        }
-        
-        // Handle tapping on an annotation
-        func mapView(_ mapView: MLNMapView, didSelect annotation: MLNAnnotation) {
-            // Skip if it's the user location annotation
-            if annotation is MLNUserLocation {
-                return
-            }
-            
-            // Find the event that corresponds to this annotation
-            if let pointAnnotation = annotation as? MLNPointAnnotation,
-               let identifier = pointAnnotation.title,
-               let eventId = UUID(uuidString: identifier),
-               let event = events.first(where: { $0.id == eventId }) {
-                onEventTapped(event)
-            }
-            
-            // Deselect the annotation to allow selecting it again later
-            mapView.deselectAnnotation(annotation, animated: true)
-        }
-        
-        func updateEventAnnotations(_ events: [FullFeedEventDTO], on mapView: MLNMapView) {
-            // Track which annotations to keep
-            var annotationsToKeep = Set<String>()
-            
-            // Add/update annotations for each event
-            for event in events {
-                guard let location = event.location else { continue }
-                
-                let eventId = event.id.uuidString
-                annotationsToKeep.insert(eventId)
-                
-                let coordinate = CLLocationCoordinate2D(
-                    latitude: location.latitude,
-                    longitude: location.longitude
-                )
-                
-                // Check if we already have an annotation for this event
-                if let existingAnnotation = eventAnnotations[eventId] {
-                    // Update its position if needed
-                    if existingAnnotation.coordinate.latitude != coordinate.latitude ||
-                       existingAnnotation.coordinate.longitude != coordinate.longitude {
-                        existingAnnotation.coordinate = coordinate
-                    }
-                } else {
-                    // Create a new annotation
-                    let annotation = MLNPointAnnotation()
-                    annotation.coordinate = coordinate
-                    annotation.title = eventId // Store the event ID for later reference
-                    
-                    mapView.addAnnotation(annotation)
-                    eventAnnotations[eventId] = annotation
-                }
-            }
-            
-            // Remove annotations for events that no longer exist
-            let annotationsToRemove = Set(eventAnnotations.keys).subtracting(annotationsToKeep)
-            for eventId in annotationsToRemove {
-                if let annotation = eventAnnotations[eventId] {
-                    mapView.removeAnnotation(annotation)
-                    eventAnnotations.removeValue(forKey: eventId)
-                }
-            }
-        }
     }
 }
 

@@ -1,7 +1,6 @@
 import SwiftUI
 import MapKit
 import CoreLocation
-import MapLibre
 
 struct LocationSelectionView: View {
     @EnvironmentObject var viewModel: EventCreationViewModel
@@ -19,18 +18,20 @@ struct LocationSelectionView: View {
     @State private var isMapMoving = false
     @State private var mapInteractionTask: Task<Void, Never>?
     
-    // MapLibre camera state
-    @State private var camera = CameraState(
-        center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
-        zoom: 14
+    // Region for Map - setting a closer zoom level with span 0.005
+    @State private var region = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default to San Francisco
+        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
     )
     
     var body: some View {
         NavigationStack {
             ZStack {
                 // Map view
-                mapLibreMapView
-                    .ignoresSafeArea()
+                MapViewRepresentable(region: $region, onRegionChange: {
+                    updatePinLocation()
+                })
+                .ignoresSafeArea()
                 
                 // Centered pin that shows where location will be saved
                 VStack {
@@ -63,8 +64,10 @@ struct LocationSelectionView: View {
                             Spacer()
                             Button(action: {
                                 if let userLocation = locationManager.userLocation {
-                                    camera.center = userLocation
-                                    camera.zoom = 14
+                                    region = MKCoordinateRegion(
+                                        center: userLocation,
+                                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                                    )
                                     updatePinLocation()
                                 }
                             }) {
@@ -110,8 +113,12 @@ struct LocationSelectionView: View {
                 }
             }
             .onAppear {
+                // Focus on user location immediately when view appears
                 if let userLocation = locationManager.userLocation {
-                    camera.center = userLocation
+                    region = MKCoordinateRegion(
+                        center: userLocation,
+                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                    )
                     updatePinLocation()
                 }
                 
@@ -126,7 +133,10 @@ struct LocationSelectionView: View {
                     )
                     locationName = existingLocation.name
                     
-                    camera.center = pinLocation!
+                    region = MKCoordinateRegion(
+                        center: pinLocation!,
+                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                    )
                 }
             }
             .onDisappear {
@@ -135,15 +145,18 @@ struct LocationSelectionView: View {
             }
             .onChange(of: locationManager.locationUpdated) { _ in
                 if locationManager.locationUpdated && locationManager.userLocation != nil && pinLocation == nil {
-                    updateCameraWithUserLocation()
+                    updateRegionWithUserLocation()
                 }
             }
         }
     }
     
-    private func updateCameraWithUserLocation() {
+    private func updateRegionWithUserLocation() {
         if let userLocation = locationManager.userLocation {
-            camera.center = userLocation
+            region = MKCoordinateRegion(
+                center: userLocation,
+                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+            )
             updatePinLocation()
         }
     }
@@ -156,10 +169,7 @@ struct LocationSelectionView: View {
         
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = searchText
-        request.region = MKCoordinateRegion(
-            center: camera.center,
-            span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-        )
+        request.region = region
         
         let search = MKLocalSearch(request: request)
         search.start { response, error in
@@ -180,11 +190,11 @@ struct LocationSelectionView: View {
         mapInteractionTask = Task {
             // Use DispatchQueue to avoid modifying state during view update
             await MainActor.run {
-                pinLocation = camera.center
+                pinLocation = region.center
                 
                 // If we don't have a location name from search, get it from reverse geocoding
                 if selectedMapItem == nil {
-                    reverseGeocode(coordinate: camera.center)
+                    reverseGeocode(coordinate: region.center)
                 }
             }
         }
@@ -197,7 +207,10 @@ struct LocationSelectionView: View {
             locationName = mapItem.name ?? ""
             pinLocation = mapItem.placemark.coordinate
             
-            camera.center = mapItem.placemark.coordinate
+            region = MKCoordinateRegion(
+                center: mapItem.placemark.coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+            )
             
             searchText = locationName
             isSearching = false
@@ -223,17 +236,42 @@ struct LocationSelectionView: View {
     }
 }
 
-// MARK: - View Components
-extension LocationSelectionView {
-    var mapLibreMapView: some View {
-        MapLibreView(
-            camera: $camera,
-            onCameraChanged: {
-                updatePinLocation()
-            }
-        )
+// Custom UIViewRepresentable for MapKit that handles region changes
+struct MapViewRepresentable: UIViewRepresentable {
+    @Binding var region: MKCoordinateRegion
+    var onRegionChange: () -> Void
+    
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.showsUserLocation = true
+        mapView.delegate = context.coordinator
+        return mapView
     }
     
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        mapView.setRegion(region, animated: true)
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: MapViewRepresentable
+        
+        init(_ parent: MapViewRepresentable) {
+            self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            parent.region = mapView.region
+            parent.onRegionChange()
+        }
+    }
+}
+
+// MARK: - View Components
+extension LocationSelectionView {
     var searchBarView: some View {
         HStack {
             Image(systemName: "magnifyingglass")
@@ -329,81 +367,6 @@ extension LocationSelectionView {
             }
         }
     }
-}
-
-// MapLibre Maps View Component using UIViewRepresentable
-struct MapLibreView: UIViewRepresentable {
-    @Binding var camera: CameraState
-    var onCameraChanged: () -> Void
-    
-    func makeUIView(context: Context) -> MLNMapView {
-        // Set up the style URL - using OSM style
-        let styleURL = URL(string: "https://demotiles.maplibre.org/style.json")
-        
-        // Create the map view
-        let mapView = MLNMapView(frame: .zero, styleURL: styleURL)
-        
-        // Enable user location
-        mapView.showsUserLocation = true
-        mapView.userTrackingMode = .follow
-        
-        // Set initial camera position
-        mapView.setCenter(camera.center, zoomLevel: camera.zoom, animated: false)
-        
-        // Set up delegate
-        mapView.delegate = context.coordinator
-        
-        return mapView
-    }
-    
-    func updateUIView(_ mapView: MLNMapView, context: Context) {
-        // Update the camera if changed externally
-        if let lastCamera = context.coordinator.lastCameraCenter,
-           lastCamera.latitude != camera.center.latitude || 
-           lastCamera.longitude != camera.center.longitude {
-            mapView.setCenter(camera.center, zoomLevel: camera.zoom, animated: true)
-        }
-    }
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    class Coordinator: NSObject, MLNMapViewDelegate {
-        var parent: MapLibreView
-        var lastCameraCenter: CLLocationCoordinate2D?
-        
-        init(_ parent: MapLibreView) {
-            self.parent = parent
-        }
-        
-        // MapLibre delegate method for when the map finishes rendering a frame
-        func mapView(_ mapView: MLNMapView, regionDidChangeAnimated animated: Bool) {
-            let center = mapView.centerCoordinate
-            let zoom = mapView.zoomLevel
-            
-            // Only update if the camera has meaningfully changed
-            if lastCameraCenter == nil || 
-               abs(lastCameraCenter!.latitude - center.latitude) > 0.00001 ||
-               abs(lastCameraCenter!.longitude - center.longitude) > 0.00001 {
-                
-                lastCameraCenter = center
-                
-                // Update the parent's camera binding
-                DispatchQueue.main.async {
-                    self.parent.camera.center = center
-                    self.parent.camera.zoom = zoom
-                    self.parent.onCameraChanged()
-                }
-            }
-        }
-    }
-}
-
-// Camera state structure to track map camera position
-struct CameraState {
-    var center: CLLocationCoordinate2D
-    var zoom: Double
 }
 
 // MKPlacemark extension to get formatted address

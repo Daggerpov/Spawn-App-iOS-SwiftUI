@@ -12,14 +12,12 @@ let package = Package(
             targets: ["Spawn-App-iOS-SwiftUI"])
     ],
     dependencies: [
-        .package(url: "https://github.com/maplibre/maplibre-gl-native-distribution.git", .upToNextMajor(from: "5.13.0"))
+        // No external dependencies needed - using standard MapKit
     ],
     targets: [
         .target(
             name: "Spawn-App-iOS-SwiftUI",
-            dependencies: [
-                .product(name: "MapLibre", package: "maplibre-gl-native-distribution")
-            ]),
+            dependencies: []),
         .testTarget(
             name: "Spawn-App-iOS-SwiftUITests",
             dependencies: ["Spawn-App-iOS-SwiftUI"])

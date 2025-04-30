@@ -13,7 +13,7 @@
 - [Current App Look](#current-app-look)
   - [Legacy Screenshots:](#legacy-screenshots)
 - [Entity Relationship Diagram](#entity-relationship-diagram)
-- [Mapbox Maps Integration](#mapbox-maps-integration)
+- [Map Integration](#map-integration)
 
 # Onboarding
 
@@ -356,28 +356,22 @@ Note that this is usually behind our actual 'current' app; stay tuned on [getspa
 
 ![erd-nov-21](images/entity-relationship-diagram.png)
 
-# Mapbox Maps Integration
+# Map Integration
 
-The app now uses MapLibre GL Native SDK for improved map interactions and drag handling. MapLibre is a free, open-source fork of Mapbox GL that doesn't require API keys with usage costs.
+The app uses standard Apple MapKit for maps with a clean, basic styling:
 
-### Benefits of MapLibre:
-- Completely free and open-source
-- No API key or account required
-- Improved map drag handling
-- Smoother interactions
-- Better event markers and tapping
-- More customizable map styling
-- Consistent cross-device performance
-
-### Integration:
-The integration is handled via Swift Package Manager in the Package.swift file. The package automatically downloads the MapLibre GL Native SDK from:
-```
-https://github.com/maplibre/maplibre-gl-native-distribution.git
-```
+### Benefits of using MapKit:
+- Native Apple mapping solution
+- Clean, familiar interface for iOS users
+- No API keys or external dependencies required 
+- Built-in user location tracking
+- Efficient map annotations
+- Consistent appearance with iOS system apps
 
 ### Implementation Details:
-1. MapLibre provides custom map views in `LocationSelectionView.swift` and `MapView.swift`
-2. The map uses free OpenStreetMap tiles with the style URL: `https://demotiles.maplibre.org/style.json`
-3. Custom annotations show event locations with profile pictures
-4. Camera control is smooth with proper state management for dragging
+1. For event viewing: `MapView.swift` displays events as standard pins
+2. For location selection: `LocationSelectionView.swift` implements a draggable map with centered pin
+3. Both implementations use a fixed pin approach where the map moves under the pin
+
+The map implementation is designed to be simple and intuitive, with a clean aesthetic that matches iOS system apps.
 
