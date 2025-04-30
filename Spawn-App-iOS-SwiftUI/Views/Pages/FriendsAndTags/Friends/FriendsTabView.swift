@@ -44,14 +44,13 @@ struct FriendsTabView: View {
 
 					// accept friend req buttons
 					SearchView(
-						searchPlaceholderText: "Search by name or username",
+						searchPlaceholderText: "Search for friends",
 						viewModel: searchViewModel)
                     Spacer()
                     Spacer()
 				}
-				requestsSection
-				recommendedFriendsSection
 				friendsSection
+                recentlySpawnedWithFriendsSection
 			}
 			.onAppear {
 				Task {
@@ -76,82 +75,8 @@ struct FriendsTabView: View {
 			}
 		}
 	}
-
-	var requestsSection: some View {
-		VStack(alignment: .leading, spacing: 10) {
-			if viewModel.filteredIncomingFriendRequests.count > 0 {
-				Text("Friend Requests")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
-				ScrollView(.horizontal, showsIndicators: false) {
-					HStack(spacing: 12) {
-						ForEach(viewModel.filteredIncomingFriendRequests) {
-							friendRequest in
-							Button(action: {
-								// this executes like .onTapGesture() in JS
-								friendInPopUp = friendRequest.senderUser
-								friendRequestIdInPopup = friendRequest.id
-                                mutualFriendCountInPopup = friendRequest.mutualFriendCount
-								showingFriendRequestPopup = true
-							}) {
-								// this is the Button's display
-								if MockAPIService.isMocking {
-									if let senderPfp = friendRequest.senderUser
-										.profilePicture
-									{
-										Image(senderPfp)
-											.resizable()
-											.scaledToFill()
-											.frame(width: 50, height: 50)
-											.clipShape(Circle())
-											.overlay(
-												Circle().stroke(
-													universalAccentColor,
-													lineWidth: 2)
-											)
-											.padding(.horizontal, 1)
-									}
-								} else {
-									if let pfpUrl = friendRequest.senderUser
-										.profilePicture
-									{
-										AsyncImage(url: URL(string: pfpUrl)) {
-											image in
-											image
-												.resizable()
-												.scaledToFill()
-												.frame(width: 50, height: 50)
-												.clipShape(Circle())
-												.overlay(
-													Circle().stroke(
-														universalAccentColor,
-														lineWidth: 2)
-												)
-												.padding(.horizontal, 1)
-										} placeholder: {
-											Circle()
-												.fill(Color.gray)
-												.frame(width: 50, height: 50)
-										}
-									} else {
-										Circle()
-											.fill(.white)
-											.frame(width: 50, height: 50)
-									}
-								}
-							}
-
-						}
-					}
-					.padding(.vertical, 2)  // Adjust padding for alignment
-				}
-			}
-		}
-		.padding(.horizontal, 16)
-	}
-
-	//TODO: refine this scetion to only show the greenbackground as the figma design
-	var recommendedFriendsSection: some View {
+    
+	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.filteredRecommendedFriends.count > 0 {
 				Text("Recommended Friends")
@@ -176,7 +101,7 @@ struct FriendsTabView: View {
 			Spacer()
 
 			if viewModel.filteredFriends.count > 0 {
-				Text("Friends")
+				Text("Your Friends (\(viewModel.filteredFriends.count))")
 					.font(.headline)
 					.foregroundColor(universalAccentColor)
 

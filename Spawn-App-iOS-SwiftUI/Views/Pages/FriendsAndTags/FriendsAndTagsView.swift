@@ -9,7 +9,6 @@ import SwiftUI
 
 struct FriendsAndTagsView: View {
 	let user: BaseUserDTO
-	@State private var selectedTab: FriendTagToggle = .friends
 
 	// for add friend to tag drawer:
 	@State private var showAddFriendToTagButtonPressedView: Bool = false
@@ -26,44 +25,17 @@ struct FriendsAndTagsView: View {
 				VStack(spacing: 20) {
 					HStack {
 						Spacer()
-                        FriendRequestNavButtonView()
-                        FriendTagNavButtonView()
+                        FriendRequestNavButtonView
+                        FriendTagNavButtonView
 						Spacer()
 					}
-					.padding(.horizontal)
 
-					if selectedTab == .friends {
-						FriendsTabView(user: user)
-					} else {
-						TagsTabView(
-							userId: user.id,
-							addFriendToTagButtonPressedCallback: {
-								friendTagId in
-								selectedFriendTagId = friendTagId
-								showAddFriendToTagButtonPressedView = true
-							}
-						)
-					}
+                    FriendsTabView(user: user)
 
 				}
 				.padding()
 				.background(universalBackgroundColor)
 				.navigationBarHidden(true)
-				.gesture(DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
-					.onEnded { value in
-						switch(value.translation.width, value.translation.height) {
-							case (...0, -30...30): // left swipe
-								if selectedTab == .friends {
-									selectedTab = .tags
-								}
-							case (0..., -30...30): // right swipe
-								if selectedTab == .tags {
-									selectedTab = .friends
-								}
-							default: break
-						}
-					}
-				)
 			}
 		}
 		.sheet(isPresented: $showAddFriendToTagButtonPressedView) {
@@ -90,33 +62,49 @@ struct FriendsAndTagsView: View {
 }
 
 struct BaseFriendNavButtonView: View {
-    var iconImageName: String
-    var topText: String
-    var bottomText: String
-    
-    var body: some View {
-        HStack{
-            VStack{
-                Text(topText)
-                Text(bottomText)
+        var iconImageName: String
+        var topText: String
+        var bottomText: String
+        
+        var body: some View {
+            HStack{
+                VStack{
+                    Text(topText)
+                        .padding(.bottom, 6)
+                    Text(bottomText)
+                }
+                .font(.caption)
+                .foregroundColor(.white)
+                .padding()
+                // TODO DANIEL A: insert logic here to get from view model the num of friend requests, like in Figma
+                Image(iconImageName)
+                    .resizable()
+                    .frame(width: 65, height: 65)
             }
-            Image(iconImageName)
+            .background(universalSecondaryColor)
+            .cornerRadius(universalRectangleCornerRadius)
         }
-        
-        .cornerRadius(universalRectangleCornerRadius)
-        
     }
-}
 
-struct FriendRequestNavButtonView: View {
-    var body: some View {
-        BaseFriendNavButtonView(iconImageName: "friend_request_icon", topText: "Friend Requests", bottomText: "Accept or Deny")
+extension FriendsAndTagsView {
+    var FriendRequestNavButtonView: some View {
+            BaseFriendNavButtonView(iconImageName: "friend_request_icon", topText: "Friend Requests", bottomText: "Accept or Deny")
     }
-}
-
-struct FriendTagNavButtonView: View {
-    var body: some View {
-        BaseFriendNavButtonView(iconImageName: "friend_tag_icon", topText: "Friend Tags", bottomText: "Create or Edit")
+    
+    var FriendTagNavButtonView: some View {
+            NavigationLink(destination: {
+                TagsTabView(
+                    userId: user.id,
+                    addFriendToTagButtonPressedCallback: {
+                        friendTagId in
+                        selectedFriendTagId = friendTagId
+                        showAddFriendToTagButtonPressedView = true
+                    }
+                )
+            })
+            {
+                BaseFriendNavButtonView(iconImageName: "friend_tag_icon", topText: "Friend Tags", bottomText: "Create or Edit")
+            }
     }
 }
 
