@@ -26,7 +26,8 @@ struct FriendsAndTagsView: View {
 				VStack(spacing: 20) {
 					HStack {
 						Spacer()
-						FriendTagToggleView(selectedTab: $selectedTab)
+                        FriendRequestNavButtonView()
+                        FriendTagNavButtonView()
 						Spacer()
 					}
 					.padding(.horizontal)
@@ -86,6 +87,37 @@ struct FriendsAndTagsView: View {
 			await tagsViewModel?.fetchTags()
 		}
 	}
+}
+
+struct BaseFriendNavButtonView: View {
+    var iconImageName: String
+    var topText: String
+    var bottomText: String
+    
+    var body: some View {
+        HStack{
+            VStack{
+                Text(topText)
+                Text(bottomText)
+            }
+            Image(iconImageName)
+        }
+        
+        .cornerRadius(universalRectangleCornerRadius)
+        
+    }
+}
+
+struct FriendRequestNavButtonView: View {
+    var body: some View {
+        BaseFriendNavButtonView(iconImageName: "friend_request_icon", topText: "Friend Requests", bottomText: "Accept or Deny")
+    }
+}
+
+struct FriendTagNavButtonView: View {
+    var body: some View {
+        BaseFriendNavButtonView(iconImageName: "friend_tag_icon", topText: "Friend Tags", bottomText: "Create or Edit")
+    }
 }
 
 @available(iOS 17.0, *)
