@@ -67,11 +67,13 @@ struct LocationSelectionView: View {
                                     // Update pin location first
                                     pinLocation = userLocation
                                     
-                                    // Create a new region centered on user's location
-                                    region = MKCoordinateRegion(
-                                        center: userLocation,
-                                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                                    )
+                                    // Create a new region centered on user's location with a smoother animation
+                                    withAnimation(.easeInOut(duration: 0.75)) {
+                                        region = MKCoordinateRegion(
+                                            center: userLocation,
+                                            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                                        )
+                                    }
                                     
                                     // Reverse geocode to get location name
                                     reverseGeocode(coordinate: userLocation)
@@ -257,17 +259,20 @@ struct MapViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        // Determine if this is a user-triggered location update
-        let isUserLocationUpdate = mapView.region.center.latitude != region.center.latitude || 
-                                   mapView.region.center.longitude != region.center.longitude
+        // Check if this is a significant location change
+        let isLocationChange = mapView.region.center.latitude != region.center.latitude || 
+                               mapView.region.center.longitude != region.center.longitude
         
-        // Set region with appropriate animation setting
-        mapView.setRegion(region, animated: true)
-        
-        // For significant position changes (like when pressing the location button),
-        // force an immediate update to the center point
-        if isUserLocationUpdate {
-            mapView.setCenter(region.center, animated: false)
+        if isLocationChange {
+            // Use UIView animation for a smoother visual effect
+            UIView.animate(withDuration: 0.75, delay: 0, 
+                          options: [.curveEaseInOut], 
+                          animations: {
+                mapView.setRegion(region, animated: false)
+            }, completion: nil)
+        } else {
+            // For minor adjustments, use standard animation
+            mapView.setRegion(region, animated: true)
         }
     }
     
