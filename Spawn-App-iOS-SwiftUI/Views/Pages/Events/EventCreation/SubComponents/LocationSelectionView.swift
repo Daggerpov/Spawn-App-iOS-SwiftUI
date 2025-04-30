@@ -64,17 +64,16 @@ struct LocationSelectionView: View {
                             Spacer()
                             Button(action: {
                                 if let userLocation = locationManager.userLocation {
-                                    // Set a tighter zoom level and ensure complete centering
-                                    let newRegion = MKCoordinateRegion(
+                                    // Update pin location first
+                                    pinLocation = userLocation
+                                    
+                                    // Create a new region centered on user's location
+                                    region = MKCoordinateRegion(
                                         center: userLocation,
                                         span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
                                     )
                                     
-                                    // Update region directly and force complete animation
-                                    region = newRegion
-                                    
-                                    // Update pin location after region is set
-                                    pinLocation = userLocation
+                                    // Reverse geocode to get location name
                                     reverseGeocode(coordinate: userLocation)
                                 }
                             }) {
@@ -258,13 +257,17 @@ struct MapViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        // Use animated camera update for smoother transition
+        // Determine if this is a user-triggered location update
+        let isUserLocationUpdate = mapView.region.center.latitude != region.center.latitude || 
+                                   mapView.region.center.longitude != region.center.longitude
+        
+        // Set region with appropriate animation setting
         mapView.setRegion(region, animated: true)
         
-        // Ensure map doesn't modify our region during animation
-        if mapView.region.center.latitude != region.center.latitude || 
-           mapView.region.center.longitude != region.center.longitude {
-            mapView.setCenter(region.center, animated: true)
+        // For significant position changes (like when pressing the location button),
+        // force an immediate update to the center point
+        if isUserLocationUpdate {
+            mapView.setCenter(region.center, animated: false)
         }
     }
     
