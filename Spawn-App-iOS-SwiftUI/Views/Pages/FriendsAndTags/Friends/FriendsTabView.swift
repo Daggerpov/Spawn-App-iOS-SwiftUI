@@ -38,19 +38,20 @@ struct FriendsTabView: View {
 	var body: some View {
 		ZStack {
 			ScrollView {
-				Spacer()
-				VStack {
-					// add friends buttons
-
-					// accept friend req buttons
+				VStack(spacing: 16) {
+					// Search bar
 					SearchView(
 						searchPlaceholderText: "Search for friends",
 						viewModel: searchViewModel)
-                    Spacer()
-                    Spacer()
+                        .padding(.horizontal, 16)
+                    
+                    // Friends section
+					friendsSection
+                    
+                    // Recently spawned with section
+                    recentlySpawnedWithFriendsSection
 				}
-				friendsSection
-                recentlySpawnedWithFriendsSection
+                .padding(.top, 16)
 			}
 			.onAppear {
 				Task {
@@ -81,9 +82,8 @@ struct FriendsTabView: View {
             // TODO DANIEL: fill this in to actually show all
         }) {
             Text("Show All")
+                .font(.onestRegular(size: 14))
                 .foregroundColor(universalSecondaryColor)
-                .font(.body)
-                .bold()
         }
     }
     
@@ -92,7 +92,7 @@ struct FriendsTabView: View {
 			if viewModel.filteredRecommendedFriends.count > 0 {
                 HStack{
                     Text("Recently Spawned With")
-                        .font(.headline)
+                        .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
                     showAllButtonView
@@ -113,12 +113,10 @@ struct FriendsTabView: View {
 
 	var friendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			Spacer()
-
 			if viewModel.filteredFriends.count > 0 {
                 HStack{
                     Text("Your Friends (\(viewModel.filteredFriends.count))")
-                        .font(.headline)
+                        .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
                     showAllButtonView
@@ -127,78 +125,83 @@ struct FriendsTabView: View {
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
 						ForEach(viewModel.filteredFriends) { friend in
-							HStack {
-								if MockAPIService.isMocking {
-if let pfp = friend.profilePicture {
-										Image(pfp)
-											.resizable()
-											.scaledToFill()
-											.frame(width: 60, height: 60)
-											.clipShape(Circle())
-											.overlay(
-												Circle().stroke(
-													Color.white, lineWidth: 2)
-											)
-									}
-								} else {
-									if let pfpUrl = friend.profilePicture {
-										AsyncImage(url: URL(string: pfpUrl)) {
-											image in
-											image
-												.resizable()
-												.scaledToFill()
-												.frame(width: 60, height: 60)
-												.clipShape(Circle())
-												.overlay(
-													Circle().stroke(
-														Color.white,
-														lineWidth: 2)
-												)
-										} placeholder: {
-											Circle()
-												.fill(Color.gray)
-												.frame(width: 60, height: 60)
-										}
-									} else {
-										Circle()
-											.fill(.white)
-											.frame(width: 60, height: 60)
-									}
-								}
+                            // Updated Friend Card
+                            VStack {
+                                HStack {
+                                    // Profile picture
+                                    if MockAPIService.isMocking {
+                                        if let pfp = friend.profilePicture {
+                                            Image(pfp)
+                                                .resizable()
+                                                .scaledToFill()
+                                                .frame(width: 50, height: 50)
+                                                .clipShape(Circle())
+                                        }
+                                    } else {
+                                        if let pfpUrl = friend.profilePicture {
+                                            AsyncImage(url: URL(string: pfpUrl)) { image in
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 50, height: 50)
+                                                    .clipShape(Circle())
+                                            } placeholder: {
+                                                Circle()
+                                                    .fill(Color.gray)
+                                                    .frame(width: 50, height: 50)
+                                            }
+                                        } else {
+                                            Circle()
+                                                .fill(.white)
+                                                .frame(width: 50, height: 50)
+                                        }
+                                    }
 
-								VStack(alignment: .leading, spacing: 8) {
-									Text(friend.username)
-										.font(.system(size: 16, weight: .bold))
-										.foregroundColor(
-											universalBackgroundColor)
-                                        
-                                    // Display full name
-                                    Text(FormatterService.shared.formatName(user: friend))
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(universalBackgroundColor.opacity(0.9))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(friend.username)
+                                            .font(.onestBold(size: 16))
+                                            .foregroundColor(.white)
+                                            
+                                        // Display full name
+                                        Text(FormatterService.shared.formatName(user: friend))
+                                            .font(.onestRegular(size: 14))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                    .padding(.leading, 8)
 
-									FriendTagsForFriendView(friend: friend)
-								}
-								.padding(.leading, 8)
-
-								Spacer()
-							}
-							.padding(.vertical, 16)
-							.padding(.horizontal, 20)
-							.background(universalAccentColor)
-							.cornerRadius(24)
+                                    Spacer()
+                                    
+                                    // More options button
+                                    Button(action: {
+                                        // Handle more options
+                                    }) {
+                                        Image(systemName: "ellipsis")
+                                            .foregroundColor(.white)
+                                            .padding(8)
+                                    }
+                                }
+                                
+                                // Friend tags section
+                                FriendTagsForFriendView(friend: friend)
+                            }
+                            .padding(.vertical, 16)
+                            .padding(.horizontal, 16)
+                            .background(Color.black)
+                            .cornerRadius(20)
 						}
 					}
 				}
 			} else if viewModel.isSearching && viewModel.filteredFriends.isEmpty {
                 Text("No friends found matching your search")
+                    .font(.onestRegular(size: 14))
                     .foregroundColor(universalAccentColor)
             } else if viewModel.friends.isEmpty {
 				Text("Add some friends!")
+                    .font(.onestRegular(size: 14))
 					.foregroundColor(universalAccentColor)
 			}
 		}
-		.padding(.horizontal, 20)
+		.padding(.horizontal, 16)
 	}
 
 	func closeFriendPopUp() {
@@ -213,7 +216,6 @@ if let pfp = friend.profilePicture {
 			await viewModel.fetchAllData()
 		}
 	}
-
 }
 
 extension FriendsTabView {
@@ -255,6 +257,7 @@ extension FriendsTabView {
                     Text(
                         "Sorry, this friend request cannot be viewed at the moment. There is an error."
                     )
+                    .font(.onestRegular(size: 14))
                 }
             }
         }
@@ -301,6 +304,7 @@ extension FriendsTabView {
 					Text(
 						"Sorry, this friend request cannot be viewed at the moment. There is an error."
 					)
+                    .font(.onestRegular(size: 14))
 				}
 			}
 		}
@@ -323,18 +327,15 @@ struct RecommendedFriendView: View {
                         .scaledToFill()
                         .frame(width: 50, height: 50)
                         .clipShape(Circle())
-                        .overlay(
-                            Circle().stroke(
-                                universalAccentColor, lineWidth: 2)
-                        )
-
                 }
             } else {
                 if let pfpUrl = friend.profilePicture {
                     AsyncImage(url: URL(string: pfpUrl)) { image in
                         image
-                            .ProfileImageModifier(
-                                imageType: .friendsListView)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 50, height: 50)
+                            .clipShape(Circle())
                     } placeholder: {
                         Circle()
                             .fill(Color.gray)
@@ -349,57 +350,39 @@ struct RecommendedFriendView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(friend.username)
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.onestBold(size: 16))
+                    .foregroundColor(.white)
 
                 // User full name
-                Text(
-                    FormatterService.shared.formatName(
-                        user: friend)
-                )
-                .font(.system(size: 14, weight: .medium))
-                
-                // Add mutual friends count
-                if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
-                    Text("\(mutualCount) mutual friend\(mutualCount > 1 ? "s" : "")")
-                        .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.8))
-                        .padding(.top, 2)
-                }
+                Text(FormatterService.shared.formatName(user: friend))
+                    .font(.onestRegular(size: 14))
+                    .foregroundColor(.white.opacity(0.9))
             }
-            .foregroundColor(universalBackgroundColor)
             .padding(.leading, 8)
 
             Spacer()
 
-            Button(
-                action: {
-                    isAdded = true
-                    Task {
-                        await viewModel.addFriend(friendUserId: friend.id)
-                    }
-                }) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 50, height: 50)
-
-                        Image(
-                            systemName: isAdded
-                                ? "checkmark" : "person.badge.plus"
-                        )
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(
-                            universalAccentColor)
-                    }
+            Button(action: {
+                isAdded = true
+                Task {
+                    await viewModel.addFriend(friendUserId: friend.id)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .shadow(radius: 4)
+            }) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 40, height: 40)
+
+                    Text("Add +")
+                        .font(.onestMedium(size: 14))
+                        .foregroundColor(Color.black)
+                }
+            }
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
-        .background(universalAccentColor)
+        .background(Color.black)
         .cornerRadius(16)
     }
 }
@@ -409,29 +392,20 @@ struct FriendTagsForFriendView: View {
     var friend: FullFriendUserDTO
     var body: some View {
         HStack(spacing: 8) {
-            // Tags in groups of 2
-            let columns = [
-                GridItem(.flexible(), spacing: 8),
-                GridItem(.flexible(), spacing: 8),
-            ]
-
-            LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-                ForEach(friend.associatedFriendTagsToOwner ?? []) {
-                    friendTag in
-                    if !friendTag.isEveryone {
-                        Text(friendTag.displayName)
-                            .font(.system(size: 10, weight: .medium))
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color(hex: friendTag.colorHexCode))
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
-                            .lineLimit(1)  // Ensure text doesn't wrap
-                            .truncationMode(.tail)  // Truncate with "..." if text is too long
-                    }
+            ForEach(friend.associatedFriendTagsToOwner?.prefix(3) ?? []) { friendTag in
+                if !friendTag.isEveryone {
+                    Text(friendTag.displayName)
+                        .font(.onestMedium(size: 12))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(hex: friendTag.colorHexCode))
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                        .lineLimit(1)
                 }
             }
         }
+        .padding(.top, 8)
     }
 }
 

@@ -26,3 +26,7 @@ let universalPassiveColor: Color = Color(hex: universalPassiveColorHex)
 let profilePicPlusButtonColor: Color = Color(hex: "#8693FF")
 let universalPlaceHolderTextColor: Color = Color(hex: "#B0AFAF")
 let authPageBackgroundColor: Color = Color(hex: "#8693FF")
+
+// Colors from the Figma design
+let figmaBlueHex: String = "#5667FF"
+let figmaBlue: Color = Color(hex: figmaBlueHex)

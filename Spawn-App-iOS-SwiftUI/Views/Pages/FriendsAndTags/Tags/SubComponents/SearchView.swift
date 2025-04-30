@@ -17,33 +17,22 @@ struct SearchView: View {
 	}
 
 	var body: some View {
-		VStack {
-			HStack {
-				Image(systemName: "magnifyingglass")
-					.font(.title3)
-					.foregroundColor(universalAccentColor)
-				TextField(searchPlaceholderText, text: $viewModel.searchText)
-					.foregroundColor(universalAccentColor)
-					.colorScheme(.light)
-					.placeholderColor(
-						color: universalAccentColor, text: searchPlaceholderText
-					)
-					.accentColor(universalAccentColor)
-					.tint(universalAccentColor)
-			}
-			.padding(.vertical, 20)
-			.padding(.horizontal, 15)
-			.frame(height: 45)
-			.overlay(
-				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-					.stroke(universalAccentColor, lineWidth: 2)
-			)
-			.background(
-				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-					.fill(universalBackgroundColor)
-			)
+		HStack {
+			Image(systemName: "magnifyingglass")
+				.font(.onestRegular(size: 18))
+				.foregroundColor(.gray)
+			
+			TextField(searchPlaceholderText, text: $viewModel.searchText)
+				.font(.onestRegular(size: 16))
+				.foregroundColor(.black)
+				.accentColor(.black)
 		}
-		.padding(.horizontal)
+		.padding(.vertical, 12)
+		.padding(.horizontal, 16)
+		.background(
+			RoundedRectangle(cornerRadius: 24)
+				.fill(Color(UIColor.systemGray5))
+		)
 	}
 }
 
@@ -51,5 +40,5 @@ struct SearchView: View {
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
 	@Previewable @StateObject var viewModel: SearchViewModel = SearchViewModel()
-	SearchView(searchPlaceholderText: "asdf", viewModel: viewModel).environmentObject(appCache)
+	SearchView(searchPlaceholderText: "Search for friends", viewModel: viewModel).environmentObject(appCache)
 }
