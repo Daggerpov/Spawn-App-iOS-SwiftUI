@@ -20,13 +20,6 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
 
-//        let authOptions: UNAuthorizationOptions = [.alert, .badge, .sound]
-//        UNUserNotificationCenter.current().requestAuthorization(
-//          options: authOptions,
-//          completionHandler: { _, _ in }
-//        )
-//
-//        application.registerForRemoteNotifications()
         // Handle notification that launched the app
         if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
             print("[PUSH DEBUG] App launched from notification: \(notification)")

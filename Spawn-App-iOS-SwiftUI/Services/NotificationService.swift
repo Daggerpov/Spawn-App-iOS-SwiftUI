@@ -167,8 +167,12 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                     print("[PUSH DEBUG] Successfully registered device token with backend")
                 } catch let error as APIError {
                     // Check if it's a 404 error (endpoint doesn't exist yet)
-                    print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
-                    print("[PUSH DEBUG] API Error details: \(error)")
+                    if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+                        print("[PUSH DEBUG] Device token registration endpoint not available (404): Backend may not support push notifications yet")
+                    } else {
+                        print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
+                        print("[PUSH DEBUG] API Error details: \(error)")
+                    }
                 } catch {
                     print("[PUSH DEBUG] Failed to register device token: \(error.localizedDescription)")
                     print("[PUSH DEBUG] Error details: \(error)")
