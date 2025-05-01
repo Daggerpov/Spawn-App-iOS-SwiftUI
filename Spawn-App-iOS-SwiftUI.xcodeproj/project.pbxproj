@@ -149,9 +149,9 @@
 				DC01715A2D43507E003BF3DB /* GoogleSignInSwift */,
 				658B2F322D9949F7004DE038 /* SwiftyCrop */,
 				654DED2A2DC095400059C268 /* MapLibre */,
-                AAEC10132DC08AB30089C05A /* FirebaseInAppMessaging-Beta */,
-                AAEC10152DC08AB30089C05A /* FirebaseMessaging */,
-                AAEC10172DC08D4C0089C05A /* FirebaseCore */
+				AAEC10132DC08AB30089C05A /* FirebaseInAppMessaging-Beta */,
+				AAEC10152DC08AB30089C05A /* FirebaseMessaging */,
+				AAEC10172DC08D4C0089C05A /* FirebaseCore */,
 			);
 			productName = "Spawn-App-iOS-SwiftUI";
 			productReference = 65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */;
@@ -240,7 +240,7 @@
 				DC0171572D43507E003BF3DB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				658B2F312D9949F7004DE038 /* XCRemoteSwiftPackageReference "SwiftyCrop" */,
 				654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
-                AAEC10122DC08AB30089C05A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				AAEC10122DC08AB30089C05A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65D5035A2CD86EB300923A01 /* Products */;
