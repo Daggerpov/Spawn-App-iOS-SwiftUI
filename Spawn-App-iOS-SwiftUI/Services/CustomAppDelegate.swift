@@ -1,7 +1,9 @@
 import SwiftUI
 import UserNotifications
+import FirebaseCore
+import FirebaseMessaging
 
-class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
+class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, MessagingDelegate {
     // This gives us access to the methods from our main app code inside the app delegate
     var app: (any App)?
     
@@ -12,9 +14,12 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         // Register for remote notifications
         NotificationService.shared.registerForPushNotifications()
         
+        FirebaseApp.configure()
+        
         // Setting the notification delegate
         UNUserNotificationCenter.current().delegate = self
-        
+        Messaging.messaging().delegate = self
+
         // Handle notification that launched the app
         if let notification = launchOptions?[.remoteNotification] as? [AnyHashable: Any] {
             print("[PUSH DEBUG] App launched from notification: \(notification)")
@@ -26,6 +31,8 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     
     // Handle device token registration
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Messaging.messaging().apnsToken = deviceToken
+        print("Device token: \(deviceToken)")
         NotificationService.shared.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
     }
     
@@ -40,6 +47,16 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         Task {
             await AppCache.shared.validateCache()
             completionHandler(.newData)
+        }
+    }
+    
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        if let deviceToken = fcmToken {
+            print("✅ FCM registration token: \(deviceToken)")
+            print("Sending registration token to server")
+            NotificationService.shared.registerDeviceToken(deviceToken)
+        } else {
+            print("[PUSH ERROR] Failed to receive registration token")
         }
     }
     
