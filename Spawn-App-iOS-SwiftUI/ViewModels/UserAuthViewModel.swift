@@ -424,7 +424,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			username: username,
 			firstName: firstName,
 			lastName: lastName,
-			bio: "",
 			email: email
 		)
 
@@ -641,7 +640,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func spawnEditProfile(username: String, firstName: String, lastName: String, bio: String) async {
+	func spawnEditProfile(username: String, firstName: String, lastName: String) async {
 		guard let userId = spawnUser?.id else {
 			print("Cannot edit profile: No user ID found")
 			return
@@ -657,11 +656,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				let updateDTO = UserUpdateDTO(
 					username: username,
 					firstName: firstName,
-					lastName: lastName,
-					bio: bio
+					lastName: lastName
 				)
 
-				print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName), bio=\(bio)")
+				print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName)")
 				
 				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
 					from: url,
