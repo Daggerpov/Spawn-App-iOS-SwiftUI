@@ -10,7 +10,6 @@ import SwiftUI
 
 struct ProfileView: View {
     let user: BaseUserDTO
-    @State private var bio: String
     @State private var username: String
     @State private var firstName: String
     @State private var lastName: String
@@ -18,12 +17,15 @@ struct ProfileView: View {
     @State private var selectedImage: UIImage?
     @State private var showImagePicker: Bool = false
     @State private var isImageLoading: Bool = false
-    @Environment(\.presentationMode) private var presentationMode
-    @Environment(\.dismiss) private var dismiss
     @State private var showNotification: Bool = false
     @State private var notificationMessage: String = ""
+    @State private var newInterest: String = ""
+    @State private var whatsappLink: String = ""
+    @State private var instagramLink: String = ""
+    @State private var showDrawer: Bool = false
 
     @StateObject var userAuth = UserAuthViewModel.shared
+    @StateObject var profileViewModel = ProfileViewModel()
 
     // Check if this is the current user's profile
     private var isCurrentUserProfile: Bool {
@@ -36,7 +38,6 @@ struct ProfileView: View {
 
     init(user: BaseUserDTO) {
         self.user = user
-        bio = user.bio ?? ""
         username = user.username
         firstName = user.firstName ?? ""
         lastName = user.lastName ?? ""
@@ -44,64 +45,101 @@ struct ProfileView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .center, spacing: 10) {
-                // Profile Picture
-                ProfilePictureSection(
-                    user: user,
-                    selectedImage: $selectedImage,
-                    showImagePicker: $showImagePicker,
-                    isImageLoading: $isImageLoading,
-                    isEditing: editingState == .save,
-                    isCurrentUserProfile: isCurrentUserProfile
-                )
-                .padding(.top, 5)
+            ZStack {
+                ScrollView {
+                    VStack(alignment: .center, spacing: 10) {
+                        // Profile Picture
+                        ProfilePictureSection(
+                            user: user,
+                            selectedImage: $selectedImage,
+                            showImagePicker: $showImagePicker,
+                            isImageLoading: $isImageLoading,
+                            isEditing: editingState == .save,
+                            isCurrentUserProfile: isCurrentUserProfile
+                        )
+                        .padding(.top, 5)
 
-                // Profile information fields
-                ProfileInfoSection(
-                    user: user,
-                    bio: $bio,
-                    username: $username,
-                    firstName: $firstName,
-                    lastName: $lastName,
-                    isCurrentUserProfile: isCurrentUserProfile,
-                    editingState: editingState
-                )
-                .padding(.horizontal)
-                .padding(.vertical, 6)
+                        Divider().background(universalAccentColor)
+                            .padding(.vertical, 6)
+                        
+                        // Edit/Save/Cancel buttons
+                        if isCurrentUserProfile {
+                            ProfileEditButtonsSection(
+                                editingState: $editingState,
+                                username: $username,
+                                firstName: $firstName,
+                                lastName: $lastName,
+                                selectedImage: $selectedImage,
+                                isImageLoading: $isImageLoading,
+                                userAuth: userAuth,
+                                showNotification: $showNotification,
+                                notificationMessage: $notificationMessage,
+                                profileViewModel: profileViewModel,
+                                whatsappLink: $whatsappLink,
+                                instagramLink: $instagramLink
+                            )
+                            .padding(.bottom, 10)
+                        }
 
-                Divider().background(universalAccentColor)
-                    .padding(.vertical, 6)
+                        Divider().background(universalAccentColor)
+                            .padding(.vertical, 6)
 
-                // Edit/Save/Cancel buttons
-                if isCurrentUserProfile {
-                    ProfileEditButtonsSection(
-                        editingState: $editingState,
-                        bio: $bio,
-                        username: $username,
-                        firstName: $firstName,
-                        lastName: $lastName,
-                        selectedImage: $selectedImage,
-                        isImageLoading: $isImageLoading,
-                        userAuth: userAuth,
-                        showNotification: $showNotification,
-                        notificationMessage: $notificationMessage
-                    )
-                    .padding(.bottom, 10)
+                        // Interests Section
+                        InterestsSection(
+                            isCurrentUserProfile: isCurrentUserProfile,
+                            editingState: editingState,
+                            profileViewModel: profileViewModel,
+                            newInterest: $newInterest,
+                            userId: user.id
+                        )
+                        .padding(.horizontal)
+
+                        Divider().background(universalAccentColor)
+                            .padding(.vertical, 6)
+
+                        // Social Media Section
+                        SocialMediaSection(
+                            isCurrentUserProfile: isCurrentUserProfile,
+                            editingState: editingState,
+                            profileViewModel: profileViewModel,
+                            whatsappLink: $whatsappLink,
+                            instagramLink: $instagramLink,
+                            userId: user.id
+                        )
+                        .padding(.horizontal)
+
+                        
+
+                        // User Stats
+                        UserStatsSection(profileViewModel: profileViewModel)
+                            .padding(.horizontal)
+                            .padding(.bottom, 20)
+                    }
+                    .padding(.horizontal)
                 }
+                .background(universalBackgroundColor)
+                .navigationBarItems(
+                    trailing: Button(action: {
+                        withAnimation {
+                            showDrawer.toggle()
+                        }
+                    }) {
+                        Image(systemName: "line.3.horizontal")
+                            .foregroundColor(universalAccentColor)
+                            .font(.title2)
+                    }
+                )
 
-                Spacer()
-
-                // Bottom buttons
-                if isCurrentUserProfile && editingState == .edit {
-                    ProfileActionButtonsSection(
+                // Drawer Menu
+                if showDrawer {
+                    DrawerMenu(
+                        isShowing: $showDrawer,
                         user: user,
                         userAuth: userAuth
                     )
-                    .padding(.bottom, 20)
+                    .transition(.move(edge: .trailing))
                 }
             }
-            .padding(.horizontal)
-            .background(universalBackgroundColor)
         }
         .alert(item: $userAuth.activeAlert) { alertType in
             switch alertType {
@@ -141,16 +179,27 @@ struct ProfileView: View {
         .onAppear {
             // Update local state from userAuth.spawnUser when view appears
             if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
-                bio = currentUser.bio ?? ""
                 username = currentUser.username
                 firstName = currentUser.firstName ?? ""
                 lastName = currentUser.lastName ?? ""
+            }
+
+            // Load profile data
+            Task {
+                await profileViewModel.loadAllProfileData(userId: user.id)
+
+                // Initialize social media links
+                if let socialMedia = profileViewModel.userSocialMedia {
+                    await MainActor.run {
+                        whatsappLink = socialMedia.whatsappLink ?? ""
+                        instagramLink = socialMedia.instagramLink ?? ""
+                    }
+                }
             }
         }
         .onChange(of: userAuth.spawnUser) { newUser in
             // Update local state whenever spawnUser changes
             if isCurrentUserProfile, let currentUser = newUser {
-                bio = currentUser.bio ?? ""
                 username = currentUser.username
                 firstName = currentUser.firstName ?? ""
                 lastName = currentUser.lastName ?? ""
@@ -162,6 +211,501 @@ struct ProfileView: View {
             message: notificationMessage,
             duration: 3.0
         )
+    }
+}
+
+// MARK: - User Stats Section
+struct UserStatsSection: View {
+    @ObservedObject var profileViewModel: ProfileViewModel
+
+    var body: some View {
+        VStack(spacing: 15) {
+            HStack(spacing: 25) {
+                StatItem(
+                    value: profileViewModel.userStats?.peopleMet ?? 0,
+                    label: "People\nmet",
+                    icon: "person.2.fill"
+                )
+
+                StatItem(
+                    value: profileViewModel.userStats?.spawnsMade ?? 0,
+                    label: "Spawns\nmade",
+                    icon: "star.fill"
+                )
+
+                StatItem(
+                    value: profileViewModel.userStats?.spawnsJoined ?? 0,
+                    label: "Spawns\njoined",
+                    icon: "calendar.badge.plus"
+                )
+            }
+            .padding(.vertical, 10)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct StatItem: View {
+    let value: Int
+    let label: String
+    let icon: String
+
+    var body: some View {
+        VStack(spacing: 5) {
+            Text("\(value)")
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(universalAccentColor)
+
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(universalAccentColor)
+
+                Text(label)
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(universalAccentColor)
+            }
+        }
+    }
+}
+
+// MARK: - Interests Section
+struct InterestsSection: View {
+    let isCurrentUserProfile: Bool
+    let editingState: ProfileEditText
+    @ObservedObject var profileViewModel: ProfileViewModel
+    @Binding var newInterest: String
+    let userId: UUID
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Interests + Hobbies")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+
+            if profileViewModel.isLoadingInterests {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else if profileViewModel.userInterests.isEmpty {
+                Text("No interests added yet.")
+                    .foregroundColor(.gray)
+                    .italic()
+            } else {
+                // Display interests as a wrapped flow
+                FlowLayout(
+                    mode: .scrollable,
+                    items: profileViewModel.userInterests
+                ) { interest in
+                    InterestChip(
+                        interest: interest,
+                        isEditing: isCurrentUserProfile && editingState == .save
+                    )
+                }
+            }
+
+            // Add new interest input field
+            if isCurrentUserProfile && editingState == .save {
+                HStack {
+                    TextField("Add interest...", text: $newInterest)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .autocapitalization(.words)
+
+                    Button(action: {
+                        addInterest()
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(universalAccentColor)
+                            .font(.title2)
+                    }
+                    .disabled(newInterest.isEmpty)
+                }
+                .padding(.top, 5)
+            }
+        }
+    }
+
+    private func addInterest() {
+        guard !newInterest.isEmpty else { return }
+
+        Task {
+            await profileViewModel.addUserInterest(
+                userId: userId,
+                interest: newInterest
+            )
+            await MainActor.run {
+                newInterest = ""
+            }
+        }
+    }
+}
+
+struct InterestChip: View {
+    let interest: String
+    let isEditing: Bool
+
+    var body: some View {
+        HStack {
+            Text(interest)
+                .font(.subheadline)
+                .padding(.vertical, 5)
+                .padding(.horizontal, 10)
+                .background(Color.gray.opacity(0.2))
+                .foregroundColor(universalAccentColor)
+                .clipShape(Capsule())
+
+            if isEditing {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.red)
+                    .font(.caption)
+                    .offset(x: -5, y: 0)
+            }
+        }
+    }
+}
+
+// Flow layout for displaying interests
+struct FlowLayout<T: Hashable, V: View>: View {
+    enum Mode {
+        case stack
+        case scrollable
+    }
+
+    let mode: Mode
+    let items: [T]
+    let viewBuilder: (T) -> V
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            GeometryReader { geometry in
+                generateContent(in: geometry)
+            }
+        }
+    }
+
+    private func generateContent(in geometry: GeometryProxy) -> some View {
+        var width = CGFloat.zero
+        var height = CGFloat.zero
+
+        return ZStack(alignment: .topLeading) {
+            ForEach(items, id: \.self) { item in
+                viewBuilder(item)
+                    .padding([.horizontal, .vertical], 4)
+                    .alignmentGuide(.leading) { dimension in
+                        if abs(width - dimension.width) > geometry.size.width {
+                            width = 0
+                            height -= dimension.height
+                        }
+                        let result = width
+                        if item == items.last {
+                            width = 0
+                        } else {
+                            width -= dimension.width
+                        }
+                        return result
+                    }
+                    .alignmentGuide(.top) { _ in
+                        let result = height
+                        if item == items.last {
+                            height = 0
+                        }
+                        return result
+                    }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Social Media Section
+struct SocialMediaSection: View {
+    let isCurrentUserProfile: Bool
+    let editingState: ProfileEditText
+    @ObservedObject var profileViewModel: ProfileViewModel
+    @Binding var whatsappLink: String
+    @Binding var instagramLink: String
+    let userId: UUID
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Third party apps")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+
+            if profileViewModel.isLoadingSocialMedia {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                VStack(spacing: 12) {
+                    // Instagram
+                    SocialMediaItem(
+                        platform: "Instagram",
+                        icon: "instagram",
+                        link: isCurrentUserProfile && editingState == .save
+                            ? $instagramLink
+                            : .constant(
+                                profileViewModel.userSocialMedia?.instagramLink
+                                    ?? ""
+                            ),
+                        isEditing: isCurrentUserProfile
+                            && editingState == .save,
+                        placeholder: "@username"
+                    )
+
+                    // WhatsApp
+                    SocialMediaItem(
+                        platform: "WhatsApp",
+                        icon: "whatsapp",
+                        link: isCurrentUserProfile && editingState == .save
+                            ? $whatsappLink
+                            : .constant(
+                                profileViewModel.userSocialMedia?.whatsappLink
+                                    ?? ""
+                            ),
+                        isEditing: isCurrentUserProfile
+                            && editingState == .save,
+                        placeholder: "+1 604 123 1234"
+                    )
+
+                    if isCurrentUserProfile && editingState == .save {
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                // Add functionality to add another social platform
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus")
+                                        .foregroundColor(universalAccentColor)
+                                    Text("Add another")
+                                        .foregroundColor(universalAccentColor)
+                                }
+                                .padding(.vertical, 10)
+                                .padding(.horizontal, 20)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(
+                                            Color.gray.opacity(0.5),
+                                            lineWidth: 1
+                                        )
+                                        .frame(maxWidth: .infinity)
+                                )
+                            }
+                            Spacer()
+                        }
+                        .padding(.top, 10)
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct SocialMediaItem: View {
+    let platform: String
+    let icon: String
+    @Binding var link: String
+    let isEditing: Bool
+    let placeholder: String
+
+    var body: some View {
+        HStack {
+            // Platform icon (use system icon or custom asset)
+            Image(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24, height: 24)
+                .foregroundColor(Color.gray)
+                .padding(.trailing, 10)
+
+            if isEditing {
+                TextField(placeholder, text: $link)
+                    .foregroundColor(universalAccentColor)
+            } else {
+                Text(link.isEmpty ? placeholder : link)
+                    .foregroundColor(
+                        link.isEmpty ? Color.gray : universalAccentColor
+                    )
+            }
+
+            Spacer()
+
+            if !isEditing {
+                Button(action: {
+                    // Open the social media app or profile
+                    openSocialMediaLink(platform: platform, link: link)
+                }) {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(universalAccentColor)
+                }
+            }
+        }
+        .padding(10)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
+    }
+
+    private func openSocialMediaLink(platform: String, link: String) {
+        // Handle different platforms
+        var urlString: String?
+
+        switch platform {
+        case "Instagram":
+            if link.hasPrefix("@") {
+                let username = link.dropFirst()  // Remove the @ symbol
+                urlString = "https://instagram.com/\(username)"
+            } else {
+                urlString = link.hasPrefix("http") ? link : "https://\(link)"
+            }
+        case "WhatsApp":
+            // Format phone number for WhatsApp
+            let cleanNumber = link.replacingOccurrences(
+                of: "[^0-9]",
+                with: "",
+                options: .regularExpression
+            )
+            urlString = "https://wa.me/\(cleanNumber)"
+        default:
+            urlString = link
+        }
+
+        // Open URL if valid
+        if let urlString = urlString, let url = URL(string: urlString) {
+            UIApplication.shared.open(url)
+        }
+    }
+}
+
+// MARK: - Drawer Menu
+struct DrawerMenu: View {
+    @Binding var isShowing: Bool
+    let user: BaseUserDTO
+    let userAuth: UserAuthViewModel
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            // Dim background
+            Color.black.opacity(0.3)
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation {
+                        isShowing = false
+                    }
+                }
+
+            // Menu content
+            VStack(spacing: 15) {
+                Button(action: {
+                    withAnimation {
+                        isShowing = false
+                    }
+                }) {
+                    HStack {
+                        Spacer()
+                        Image(systemName: "xmark")
+                            .foregroundColor(.white)
+                            .padding()
+                    }
+                }
+
+                NavigationLink(destination: NotificationSettingsView()) {
+                    DrawerMenuItem(
+                        icon: "bell.fill",
+                        title: "Notifications",
+                        color: universalAccentColor
+                    )
+                }
+
+                NavigationLink(
+                    destination: FeedbackView(
+                        userId: user.id,
+                        email: user.email
+                    )
+                ) {
+                    DrawerMenuItem(
+                        icon: "message.fill",
+                        title: "Feedback",
+                        color: universalAccentColor
+                    )
+                }
+
+                Button(action: {
+                    if userAuth.isLoggedIn {
+                        userAuth.signOut()
+                    }
+                    withAnimation {
+                        isShowing = false
+                    }
+                }) {
+                    DrawerMenuItem(
+                        icon: "rectangle.portrait.and.arrow.right",
+                        title: "Log Out",
+                        color: profilePicPlusButtonColor
+                    )
+                }
+
+                Button(action: {
+                    userAuth.activeAlert = .deleteConfirmation
+                    withAnimation {
+                        isShowing = false
+                    }
+                }) {
+                    DrawerMenuItem(
+                        icon: "trash.fill",
+                        title: "Delete Account",
+                        color: .red
+                    )
+                }
+
+                Spacer()
+            }
+            .frame(width: 250)
+            .background(Color(UIColor.systemGray6))
+            .cornerRadius(10, corners: [.topLeft, .bottomLeft])
+        }
+    }
+}
+
+struct DrawerMenuItem: View {
+    let icon: String
+    let title: String
+    let color: Color
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(.white)
+                .frame(width: 24, height: 24)
+
+            Text(title)
+                .font(.headline)
+                .foregroundColor(.white)
+
+            Spacer()
+        }
+        .padding()
+        .background(color)
+        .cornerRadius(10)
+        .padding(.horizontal)
+    }
+}
+
+// Extension for custom corner rounding
+extension View {
+    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(RoundedCorner(radius: radius, corners: corners))
+    }
+}
+
+struct RoundedCorner: Shape {
+    var radius: CGFloat = .infinity
+    var corners: UIRectCorner = .allCorners
+
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: radius, height: radius)
+        )
+        return Path(path.cgPath)
     }
 }
 
@@ -265,90 +809,9 @@ struct ProfilePictureSection: View {
     }
 }
 
-// MARK: - Profile Information Section
-struct ProfileInfoSection: View {
-    let user: BaseUserDTO
-    @Binding var bio: String
-    @Binding var username: String
-    @Binding var firstName: String
-    @Binding var lastName: String
-    let isCurrentUserProfile: Bool
-    let editingState: ProfileEditText
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // Name field
-            if isCurrentUserProfile && editingState == .save {
-                HStack {
-                    Text("First Name")
-                        .font(.headline)
-                        .frame(width: 100, alignment: .leading)
-                    Spacer()
-                    TextField("First Name", text: $firstName)
-                        .multilineTextAlignment(.trailing)
-                        .font(.body)
-                }
-                .foregroundColor(universalAccentColor)
-
-                HStack {
-                    Text("Last Name")
-                        .font(.headline)
-                        .frame(width: 100, alignment: .leading)
-                    Spacer()
-                    TextField("Last Name", text: $lastName)
-                        .multilineTextAlignment(.trailing)
-                        .font(.body)
-                }
-                .foregroundColor(universalAccentColor)
-            } else {
-                ProfileField(
-                    label: "Name",
-                    value: "\(user.firstName ?? "") \(user.lastName ?? "")"
-                )
-            }
-
-            // Username field - editable when in edit mode
-            if isCurrentUserProfile && editingState == .save {
-                HStack {
-                    Text("Username")
-                        .font(.headline)
-                        .frame(width: 100, alignment: .leading)
-                    Spacer()
-                    TextField("Username", text: $username)
-                        .multilineTextAlignment(.trailing)
-                        .font(.body)
-                }
-                .foregroundColor(universalAccentColor)
-            } else {
-                ProfileField(label: "Username", value: user.username)
-            }
-
-            // Only show email for current user's profile
-            if isCurrentUserProfile {
-                ProfileField(label: "Email", value: user.email)
-            }
-
-            // Bio field is editable only for current user's profile
-            if isCurrentUserProfile {
-                if editingState == .save {
-                    BioField(
-                        label: "Bio",
-                        bio: $bio
-                    )
-                } else {
-                    ProfileField(label: "Bio", value: bio)
-                }
-            } else {
-                ProfileField(label: "Bio", value: bio)
-            }
-        }
-    }
-}
-
 // MARK: - Profile Edit Buttons Section
 struct ProfileEditButtonsSection: View {
     @Binding var editingState: ProfileEditText
-    @Binding var bio: String
     @Binding var username: String
     @Binding var firstName: String
     @Binding var lastName: String
@@ -357,6 +820,9 @@ struct ProfileEditButtonsSection: View {
     let userAuth: UserAuthViewModel
     @Binding var showNotification: Bool
     @Binding var notificationMessage: String
+    @ObservedObject var profileViewModel: ProfileViewModel
+    @Binding var whatsappLink: String
+    @Binding var instagramLink: String
 
     var body: some View {
         ZStack {
@@ -369,8 +835,15 @@ struct ProfileEditButtonsSection: View {
                             username = currentUser.username
                             firstName = currentUser.firstName ?? ""
                             lastName = currentUser.lastName ?? ""
-                            bio = currentUser.bio ?? ""
                             selectedImage = nil
+
+                            // Revert social media links
+                            if let socialMedia = profileViewModel
+                                .userSocialMedia
+                            {
+                                whatsappLink = socialMedia.whatsappLink ?? ""
+                                instagramLink = socialMedia.instagramLink ?? ""
+                            }
                         }
                         editingState = .edit
                     }) {
@@ -389,7 +862,9 @@ struct ProfileEditButtonsSection: View {
 
                     // Save Button
                     Button(action: {
-                        saveProfile()
+                        Task {
+                            await saveProfile()
+                        }
                     }) {
                         Text("Save")
                             .font(.headline)
@@ -425,192 +900,74 @@ struct ProfileEditButtonsSection: View {
         }
     }
 
-    private func saveProfile() {
+    private func saveProfile() async {
         // Check if there's a new profile picture
         let hasNewProfilePicture = selectedImage != nil
 
         // Set loading state immediately if there's an image
         isImageLoading = hasNewProfilePicture
 
-        Task {
-            // Create a local copy of the selected image before starting async task
-            let imageToUpload = selectedImage
+        guard let userId = userAuth.spawnUser?.id else { return }
 
-            // Update profile info first
-            await userAuth.spawnEditProfile(
-                username: username,
-                firstName: firstName,
-                lastName: lastName,
-                bio: bio
-            )
+        // Create a local copy of the selected image before starting async task
+        let imageToUpload = selectedImage
 
-            // Small delay before processing image update to ensure the text updates are complete
-            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+        // Update profile info first
+        await userAuth.spawnEditProfile(
+            username: username,
+            firstName: firstName,
+            lastName: lastName
+        )
 
-            // Show notification if there's a profile picture change
-            if hasNewProfilePicture {
-                await MainActor.run {
-                    notificationMessage =
-                        "Sit tight –– your profile pic will update in just a minute..."
-                    withAnimation {
-                        showNotification = true
-                    }
-                }
-            }
+        // Update social media links
+        await profileViewModel.updateSocialMedia(
+            userId: userId,
+            whatsappLink: whatsappLink.isEmpty ? nil : whatsappLink,
+            instagramLink: instagramLink.isEmpty ? nil : instagramLink
+        )
 
-            // Update profile picture if selected
-            if let newImage = imageToUpload {
-                await userAuth.updateProfilePicture(newImage)
+        // Small delay before processing image update to ensure the text updates are complete
+        try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
 
-                // Small delay after image upload to ensure the server has processed it
-                try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
-            }
-
-            // Update local state with the latest data from the user object
+        // Show notification if there's a profile picture change
+        if hasNewProfilePicture {
             await MainActor.run {
-                if let updatedUser = userAuth.spawnUser {
-                    username = updatedUser.username
-                    firstName = updatedUser.firstName ?? ""
-                    lastName = updatedUser.lastName ?? ""
-                    bio = updatedUser.bio ?? ""
-                }
-
-                // Clear the selected image to force the view to refresh from the server
-                selectedImage = nil
-                isImageLoading = false
-                editingState = .edit
-            }
-        }
-    }
-}
-
-// MARK: - Profile Action Buttons Section
-struct ProfileActionButtonsSection: View {
-    let user: BaseUserDTO
-    let userAuth: UserAuthViewModel
-
-    var body: some View {
-        VStack(spacing: 15) {
-            Spacer()
-            HStack{
-                VStack{
-                    NavigationLink(destination: {
-                        LaunchView()
-                            .navigationBarTitle("")
-                            .navigationBarHidden(true)
-                    }) {
-                        Text("Log Out")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: 170)
-                            .background(profilePicPlusButtonColor)
-                            .cornerRadius(20)
-                    }
-                    .simultaneousGesture(
-                        TapGesture().onEnded {
-                            if userAuth.isLoggedIn {
-                                userAuth.signOut()
-                            }
-                        }
-                    )
-                    
-                    // Delete Account Button
-                    Button(action: {
-                        userAuth.activeAlert = .deleteConfirmation
-                    }) {
-                        Text("Delete Account")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .frame(maxWidth: 170)
-                            .background(Color.red)
-                            .cornerRadius(20)
-                    }
-                }
-                VStack{
-                    // Notification Settings Button
-                    NavigationLink(destination: NotificationSettingsView()) {
-                        HStack {
-                            Image(systemName: "bell.fill")
-                                .foregroundColor(.white)
-                            Text("Notifications")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                        }
-                        .padding()
-                        .frame(maxWidth: 170)
-                        .background(universalAccentColor)
-                        .cornerRadius(20)
-                    }
-                    
-                    // Feedback Button
-                    NavigationLink(
-                        destination: FeedbackView(userId: user.id, email: user.email)
-                    ) {
-                        HStack {
-                            Image(systemName: "message.fill")
-                                .foregroundColor(.white)
-                            Text("Feedback")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                        }
-                        .padding()
-                        .frame(maxWidth: 170)
-                        .background(universalAccentColor)
-                        .cornerRadius(20)
-                    }
+                notificationMessage =
+                    "Sit tight –– your profile pic will update in just a minute..."
+                withAnimation {
+                    showNotification = true
                 }
             }
-            Spacer()
-            Spacer()
+        }
+
+        // Update profile picture if selected
+        if let newImage = imageToUpload {
+            await userAuth.updateProfilePicture(newImage)
+
+            // Small delay after image upload to ensure the server has processed it
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
+        }
+
+        if let updatedUser = userAuth.spawnUser {
+            username = updatedUser.username
+            firstName = updatedUser.firstName ?? ""
+            lastName = updatedUser.lastName ?? ""
+        }
+
+        // Refresh profile data
+        await profileViewModel.loadAllProfileData(userId: userId)
+
+        // Update local state with the latest data from the user object
+        await MainActor.run {
+            // Clear the selected image to force the view to refresh from the server
+            selectedImage = nil
+            isImageLoading = false
+            editingState = .edit
         }
     }
 }
 
-struct ProfileField: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.headline)
-                .frame(width: 100, alignment: .leading)
-            Spacer()
-            Text(value)
-                .font(.body)
-                .multilineTextAlignment(.trailing)
-        }
-        .foregroundColor(universalAccentColor)
-    }
-}
-
-struct BioField: View {
-    let label: String
-    @Binding var bio: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .font(.headline)
-                .frame(width: 80, alignment: .leading)
-            Spacer()
-            TextField(
-                "",
-                text: $bio,
-                prompt: Text("Bio")
-            )
-            .multilineTextAlignment(.trailing)
-            .font(.body)
-        }
-        .foregroundColor(universalAccentColor)
-    }
-}
-
-@available(iOS 17, *)
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-    ProfileView(user: BaseUserDTO.danielAgapov).environmentObject(appCache)
+    ProfileView(user: BaseUserDTO.danielAgapov)
 }
