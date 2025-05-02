@@ -54,6 +54,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var defaultPfpUrlString: String? = nil
 
 	private init(apiService: IAPIService) {
+        self.spawnUser = BaseUserDTO.danielAgapov
 		self.apiService = apiService
 
 		// Retrieve externalUserId from Keychain
