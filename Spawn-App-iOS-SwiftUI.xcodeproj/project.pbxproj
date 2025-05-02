@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		654DED2B2DC095400059C268 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = 654DED2A2DC095400059C268 /* MapLibre */; };
-		658297FA2CE07822003CFFD5 /* PopupView in Frameworks */ = {isa = PBXBuildFile; productRef = 658297F92CE07822003CFFD5 /* PopupView */; };
 		658B2F332D9949F7004DE038 /* SwiftyCrop in Frameworks */ = {isa = PBXBuildFile; productRef = 658B2F322D9949F7004DE038 /* SwiftyCrop */; };
 		AAEC10142DC08AB30089C05A /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10132DC08AB30089C05A /* FirebaseInAppMessaging-Beta */; };
 		AAEC10162DC08AB30089C05A /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10152DC08AB30089C05A /* FirebaseMessaging */; };
@@ -80,7 +79,6 @@
 				658B2F332D9949F7004DE038 /* SwiftyCrop in Frameworks */,
 				654DED2B2DC095400059C268 /* MapLibre in Frameworks */,
 				DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */,
-				658297FA2CE07822003CFFD5 /* PopupView in Frameworks */,
 				AAEC10182DC08D4C0089C05A /* FirebaseCore in Frameworks */,
 				DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */,
 				AAEC10142DC08AB30089C05A /* FirebaseInAppMessaging-Beta in Frameworks */,
@@ -144,7 +142,6 @@
 			);
 			name = "Spawn-App-iOS-SwiftUI";
 			packageProductDependencies = (
-				658297F92CE07822003CFFD5 /* PopupView */,
 				DC0171582D43507E003BF3DB /* GoogleSignIn */,
 				DC01715A2D43507E003BF3DB /* GoogleSignInSwift */,
 				658B2F322D9949F7004DE038 /* SwiftyCrop */,
@@ -623,14 +620,6 @@
 				minimumVersion = 6.12.3;
 			};
 		};
-		658297F82CE07822003CFFD5 /* XCRemoteSwiftPackageReference "PopupView" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/exyte/PopupView.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.1.4;
-			};
-		};
 		658B2F312D9949F7004DE038 /* XCRemoteSwiftPackageReference "SwiftyCrop" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/benedom/SwiftyCrop";
@@ -662,11 +651,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
 			productName = MapLibre;
-		};
-		658297F92CE07822003CFFD5 /* PopupView */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 658297F82CE07822003CFFD5 /* XCRemoteSwiftPackageReference "PopupView" */;
-			productName = PopupView;
 		};
 		658B2F322D9949F7004DE038 /* SwiftyCrop */ = {
 			isa = XCSwiftPackageProductDependency;
