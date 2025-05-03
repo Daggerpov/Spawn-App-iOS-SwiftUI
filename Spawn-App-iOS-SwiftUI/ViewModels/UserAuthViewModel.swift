@@ -295,15 +295,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
-		// For Apple Sign In, if email is nil, we should direct to UserInfoInputView
-		if self.authProvider == .apple && self.email == nil {
-			await MainActor.run {
-				self.spawnUser = nil
-				self.shouldNavigateToUserInfoInputView = true
-				self.hasCheckedSpawnUserExistence = true
-			}
-			return
-		}
 
 		// Only proceed with API call if we have email or it's not Apple auth
 		let emailToUse = self.email ?? ""
