@@ -30,3 +30,6 @@ let authPageBackgroundColor: Color = Color(hex: "#8693FF")
 // Colors from the Figma design
 let figmaBlueHex: String = "#5667FF"
 let figmaBlue: Color = Color(hex: figmaBlueHex)
+
+let figmaSoftBlueHex: String = "#6B81FB"
+let figmaSoftBlue: Color = Color(hex: figmaSoftBlueHex)

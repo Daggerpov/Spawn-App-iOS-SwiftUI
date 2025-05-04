@@ -22,6 +22,8 @@ struct FeedView: View {
     // for popups:
     @State private var creationOffset: CGFloat = 1000
     // --------
+    
+    @State private var activeTag: FilterTag? = nil
 
     var user: BaseUserDTO
 
@@ -41,12 +43,10 @@ struct FeedView: View {
             NavigationStack {
                 VStack {
                     Spacer()
-                    HeaderView(user: user).padding(.top, 50)
+                    HeaderView(user: user, numEvents: viewModel.events.count).padding(.top, 50)
+                
                     Spacer()
-                    TagsScrollView(
-                        tags: viewModel.tags,
-                        activeTag: $viewModel.activeTag
-                    )
+                    TagsScrollView(activeTag: $activeTag)
                     Spacer()
                     Spacer()
                     VStack {
@@ -60,38 +60,41 @@ struct FeedView: View {
                 .dimmedBackground(
                     isActive: showEventCreationDrawer
                 )
-                .gesture(
-                    DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
-                        .onEnded { value in
-                            switch (
-                                value.translation.width,
-                                value.translation.height
-                            ) {
-                            case (...0, -30...30):  // left swipe
-                                if let currentIndex = viewModel.tags.firstIndex(
-                                    where: { $0.id == viewModel.activeTag?.id }
-                                ),
-                                    currentIndex < viewModel.tags.count - 1
-                                {
-                                    viewModel.activeTag =
-                                        viewModel.tags[currentIndex + 1]
-                                }
-                            case (0..., -30...30):  // right swipe
-                                if let currentIndex = viewModel.tags.firstIndex(
-                                    where: { $0.id == viewModel.activeTag?.id }
-                                ),
-                                    currentIndex > 0
-                                {
-                                    viewModel.activeTag =
-                                        viewModel.tags[currentIndex - 1]
-                                }
-                            default: break
-                            }
-                        }
-                )
+//                .gesture(
+//                    DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
+//                        .onEnded { value in
+//                            switch (
+//                                value.translation.width,
+//                                value.translation.height
+//                            ) {
+//                            case (...0, -30...30):  // left swipe
+//                                if let currentIndex = viewModel.tags.firstIndex(
+//                                    where: { $0.displayName == viewModel.activeTag?.id }
+//                                ),
+//                                    currentIndex < viewModel.tags.count - 1
+//                                {
+//                                    viewModel.activeTag =
+//                                        viewModel.tags[currentIndex + 1]
+//                                }
+//                            case (0..., -30...30):  // right swipe
+//                                if let currentIndex = viewModel.tags.firstIndex(
+//                                    where: { $0.id == viewModel.activeTag?.id }
+//                                ),
+//                                    currentIndex > 0
+//                                {
+//                                    viewModel.activeTag =
+//                                        viewModel.tags[currentIndex - 1]
+//                                }
+//                            default: break
+//                            }
+//                        }
+//                )
             }
             .background(universalBackgroundColor)
             .onAppear {
+                guard ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1" else {
+                        return
+                    }
                 Task {
                     if !MockAPIService.isMocking {
                         await appCache.validateCache()
@@ -101,11 +104,11 @@ struct FeedView: View {
             }
             .refreshable {
                 Task {
-                    await appCache.refreshEvents()
+                    //await appCache.refreshEvents()
                     await viewModel.fetchAllData()
                 }
             }
-            .onChange(of: viewModel.activeTag) { _ in
+            .onChange(of: self.activeTag) { _ in
                 Task {
                     await viewModel.fetchEventsForUser()
                 }
@@ -163,6 +166,7 @@ extension FeedView {
                 }
             }
         }
+        .scrollIndicators(.hidden)
     }
 }
 
