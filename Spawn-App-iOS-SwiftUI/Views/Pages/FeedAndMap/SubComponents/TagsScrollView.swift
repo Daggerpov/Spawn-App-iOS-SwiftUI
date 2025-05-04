@@ -8,24 +8,28 @@
 import SwiftUI
 
 struct TagsScrollView: View {
-	var tags: [FullFriendTagDTO]
-	@Binding private var activeTag: FullFriendTagDTO?
+    let tags: [FilterTag]
+    @Binding private var activeTag: FilterTag?
 	@Namespace private var animation: Namespace.ID
-
-	init(tags: [FullFriendTagDTO], activeTag: Binding<FullFriendTagDTO?>) {
-		self.tags = tags
-		self._activeTag = activeTag
+    
+    init(activeTag: Binding<FilterTag?>) {
+        tags = [
+            FilterTag(displayName: "Location", options: ["<1km", "<5km", ">5km"]),
+            FilterTag(displayName: "Time", options: ["Ongoing", "In 6 hours", "Later Today"]),
+            FilterTag(displayName: "Category", options: ["Sports", "Food & Drink", "Learning", "Social"])
+        ]
+        self._activeTag = activeTag
 	}
 
 	var body: some View {
 		ScrollView(.horizontal, showsIndicators: false) {
 			HStack(spacing: 12) {
 				ForEach(tags, id: \.self) { tag in
-					TagButtonView(
-						tag: tag, activeTag: $activeTag, animation: animation
-					)
-					.onAppear {
-					}
+                    TagButtonView(
+                        tag: tag, activeTag: $activeTag, animation: animation
+                    )
+                    .onAppear {
+                    }
 				}
 			}
 			.padding(.top, 10)
@@ -37,6 +41,6 @@ struct TagsScrollView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	@Previewable @State var tag: FullFriendTagDTO? = FullFriendTagDTO.close
-	TagsScrollView(tags: FullFriendTagDTO.mockTags, activeTag: $tag).environmentObject(appCache)
+    @Previewable @State var activeTag: FilterTag? = nil
+    TagsScrollView(activeTag: $activeTag).environmentObject(appCache)
 }

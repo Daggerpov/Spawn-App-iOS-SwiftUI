@@ -27,5 +27,12 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Onest-Bold.ttf</string>
+		<string>Onest-Regular.ttf</string>
+		<string>Onest-Medium.ttf</string>
+		<string>Onest-SemiBold.ttf</string>
+	</array>
 </dict>
 </plist>

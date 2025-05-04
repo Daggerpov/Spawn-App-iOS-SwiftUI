@@ -9,48 +9,29 @@ import SwiftUI
 
 struct HeaderView: View {
 	var user: BaseUserDTO
+    var numEvents: Int
 	var body: some View {
 		HStack {
 			Spacer()
 			VStack {
+                Image("SpawnLogo")
+                Spacer().frame(height: 61)
 				HStack {
-					Text("Hello,")
-						.font(.title)
+                    Text("Hey \(user.firstName ?? user.username)! 👋")
 					Spacer()
 				}
-
-				HStack {
-					Image(systemName: "star.fill")
-					Text(user.username)
-						.bold()
-					Spacer()
-				}
-				.font(.title)
+                .font(.onestBold(size: 32))
+                Spacer().frame(height: 5)
+                HStack {
+                    Text("There are ").font(.onestRegular(size: 16))
+                    + Text("\(numEvents) events ").foregroundColor(figmaSoftBlue).font(.onestBold(size: 16))
+                    + Text("in your area.").font(.onestRegular(size: 16))
+                    Spacer()
+                }
 			}
 			.foregroundColor(universalAccentColor)
 			.frame(alignment: .leading)
 			Spacer()
-
-			if let profilePictureString = user.profilePicture {
-				NavigationLink {
-					ProfileView(user: user)
-				} label: {
-					if MockAPIService.isMocking {
-						Image(profilePictureString)
-							.ProfileImageModifier(imageType: .feedPage)
-					} else {
-						AsyncImage(url: URL(string: profilePictureString)) {
-							image in
-							image
-								.ProfileImageModifier(imageType: .feedPage)
-						} placeholder: {
-							Circle()
-								.fill(Color.gray)
-								.frame(width: 55, height: 55)  // 55 matches .feedPage image type for `ProfileImageModifier`
-						}
-					}
-				}
-			}
 			Spacer()
 		}
 		.padding(.horizontal)
@@ -61,6 +42,6 @@ struct HeaderView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	HeaderView(user: BaseUserDTO.danielAgapov).environmentObject(appCache)
+	HeaderView(user: BaseUserDTO.danielAgapov, numEvents: 2).environmentObject(appCache)
 }
 
