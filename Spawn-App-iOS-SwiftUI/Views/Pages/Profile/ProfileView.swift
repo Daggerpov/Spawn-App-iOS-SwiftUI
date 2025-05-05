@@ -58,9 +58,16 @@ struct ProfileView: View {
                             isCurrentUserProfile: isCurrentUserProfile
                         )
                         .padding(.top, 5)
-
-                        Divider().background(universalAccentColor)
-                            .padding(.vertical, 6)
+                        
+                        Text(FormatterService.shared.formatName(user: user))
+                            .font(.title2)
+                            .bold()
+                            .foregroundColor(universalAccentColor)
+                        
+                        Text("@\(user.username)")
+                            .font(.body)
+                            .foregroundColor(universalAccentColor)
+                        
                         
                         // Edit/Save/Cancel buttons
                         if isCurrentUserProfile {
@@ -81,8 +88,6 @@ struct ProfileView: View {
                             .padding(.bottom, 10)
                         }
 
-                        Divider().background(universalAccentColor)
-                            .padding(.vertical, 6)
 
                         // Interests Section
                         InterestsSection(
@@ -94,8 +99,6 @@ struct ProfileView: View {
                         )
                         .padding(.horizontal)
 
-                        Divider().background(universalAccentColor)
-                            .padding(.vertical, 6)
 
                         // Social Media Section
                         SocialMediaSection(
@@ -107,8 +110,6 @@ struct ProfileView: View {
                             userId: user.id
                         )
                         .padding(.horizontal)
-
-                        
 
                         // User Stats
                         UserStatsSection(profileViewModel: profileViewModel)
