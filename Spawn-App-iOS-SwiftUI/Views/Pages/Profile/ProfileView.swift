@@ -23,6 +23,8 @@ struct ProfileView: View {
     @State private var whatsappLink: String = ""
     @State private var instagramLink: String = ""
     @State private var showDrawer: Bool = false
+    @State private var currentMonth = Calendar.current.component(.month, from: Date())
+    @State private var currentYear = Calendar.current.component(.year, from: Date())
 
     @StateObject var userAuth = UserAuthViewModel.shared
     @StateObject var profileViewModel = ProfileViewModel()
@@ -49,14 +51,7 @@ struct ProfileView: View {
                 ScrollView {
                     VStack(alignment: .center, spacing: 15) {
                         // Profile Picture
-                        ProfilePictureSection(
-                            user: user,
-                            selectedImage: $selectedImage,
-                            showImagePicker: $showImagePicker,
-                            isImageLoading: $isImageLoading,
-                            isEditing: editingState == .save,
-                            isCurrentUserProfile: isCurrentUserProfile
-                        )
+                        profilePictureSection
                         .padding(.top, 20)
                         
                         // Name and Username
@@ -67,277 +62,43 @@ struct ProfileView: View {
                         
                         Text("@\(user.username)")
                             .font(.body)
-                            .foregroundColor(universalAccentColor)
+                            .foregroundColor(Color.gray)
                             .padding(.bottom, 10)
                         
                         // Profile Action Buttons
-                        HStack(spacing: 15) {
-                            if isCurrentUserProfile {
-                                Button(action: {
-                                    editingState = .save
-                                }) {
-                                    HStack {
-                                        Image(systemName: "pencil")
-                                        Text("Edit Profile")
-                                    }
-                                    .font(.subheadline)
-                                    .foregroundColor(universalAccentColor)
-                                    .frame(height: 40)
-                                    .frame(maxWidth: .infinity)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .stroke(universalAccentColor, lineWidth: 1)
-                                    )
-                                }
-                            }
-                            
-                            Button(action: {
-                                // Share profile functionality
-                            }) {
-                                HStack {
-                                    Image(systemName: "square.and.arrow.up")
-                                    Text("Share Profile")
-                                }
-                                .font(.subheadline)
-                                .foregroundColor(universalAccentColor)
-                                .frame(height: 40)
-                                .frame(maxWidth: .infinity)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(universalAccentColor, lineWidth: 1)
-                                )
-                            }
-                        }
+                        profileActionButtons
                         .padding(.horizontal, 30)
                         .padding(.bottom, 20)
                         
                         // Edit Save Cancel buttons (only when editing)
                         if isCurrentUserProfile && editingState == .save {
-                            ProfileEditButtonsSection(
-                                editingState: $editingState,
-                                username: $username,
-                                firstName: $firstName,
-                                lastName: $lastName,
-                                selectedImage: $selectedImage,
-                                isImageLoading: $isImageLoading,
-                                userAuth: userAuth,
-                                showNotification: $showNotification,
-                                notificationMessage: $notificationMessage,
-                                profileViewModel: profileViewModel,
-                                whatsappLink: $whatsappLink,
-                                instagramLink: $instagramLink
-                            )
+                            profileEditButtons
                             .padding(.bottom, 10)
                         }
                         
                         // Interests Section with Social Media Icons
-                        VStack(alignment: .leading, spacing: 0) {
-                            HStack {
-                                Text("Interests + Hobbies")
-                                    .font(.headline)
-                                    .foregroundColor(universalAccentColor)
-                                
-                                Spacer()
-                                
-                                // Social media icons
-                                if !profileViewModel.isLoadingSocialMedia {
-                                    HStack(spacing: 10) {
-                                        if !whatsappLink.isEmpty || 
-                                           (profileViewModel.userSocialMedia?.whatsappLink ?? "").isEmpty == false {
-                                            Image("whatsapp")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 24, height: 24)
-                                                .onTapGesture {
-                                                    openSocialMediaLink(platform: "WhatsApp", 
-                                                                       link: whatsappLink.isEmpty ? 
-                                                                       (profileViewModel.userSocialMedia?.whatsappLink ?? "") : 
-                                                                       whatsappLink)
-                                                }
-                                        }
-                                        
-                                        if !instagramLink.isEmpty || 
-                                           (profileViewModel.userSocialMedia?.instagramLink ?? "").isEmpty == false {
-                                            Image("instagram")
-                                                .resizable()
-                                                .scaledToFit()
-                                                .frame(width: 24, height: 24)
-                                                .onTapGesture {
-                                                    openSocialMediaLink(platform: "Instagram", 
-                                                                       link: instagramLink.isEmpty ? 
-                                                                       (profileViewModel.userSocialMedia?.instagramLink ?? "") : 
-                                                                       instagramLink)
-                                                }
-                                        }
-                                    }
-                                }
-                            }
-                            .padding(.horizontal)
-                            
-                            // Interests content
-                            if profileViewModel.isLoadingInterests {
-                                ProgressView()
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .padding()
-                            } else {
-                                ZStack(alignment: .topLeading) {
-                                    // Background for interests section
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .stroke(Color.red.opacity(0.7), lineWidth: 1)
-                                        .background(Color.white.opacity(0.5).cornerRadius(15))
-                                    
-                                    if profileViewModel.userInterests.isEmpty {
-                                        Text("No interests added yet.")
-                                            .foregroundColor(.gray)
-                                            .italic()
-                                            .padding()
-                                    } else {
-                                        // Interests as chips with proper layout
-                                        VStack(alignment: .leading) {
-                                            InterestsFlowView(interests: profileViewModel.userInterests, 
-                                                             isEditing: isCurrentUserProfile && editingState == .save)
-                                        }
-                                        .padding()
-                                    }
-                                    
-                                    // Add interest field when editing
-                                    if isCurrentUserProfile && editingState == .save {
-                                        VStack {
-                                            Spacer()
-                                            HStack {
-                                                TextField("Add interest...", text: $newInterest)
-                                                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                                                    .autocapitalization(.words)
-                                                
-                                                Button(action: {
-                                                    addInterest()
-                                                }) {
-                                                    Image(systemName: "plus.circle.fill")
-                                                        .foregroundColor(universalAccentColor)
-                                                        .font(.title2)
-                                                }
-                                                .disabled(newInterest.isEmpty)
-                                            }
-                                            .padding([.horizontal, .bottom])
-                                        }
-                                    }
-                                }
-                                .frame(height: max(100, CGFloat(profileViewModel.userInterests.count / 2) * 40 + 40))
-                                .padding(.horizontal)
-                                .padding(.top, 5)
-                            }
-                        }
+                        interestsSection
                         .padding(.bottom, 20)
                         
                         // User Stats
-                        HStack(spacing: 40) {
-                            VStack(spacing: 5) {
-                                Image(systemName: "link")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.gray)
-                                
-                                Text("\(profileViewModel.userStats?.peopleMet ?? 0)")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(universalAccentColor)
-                                
-                                Text("People\nmet")
-                                    .font(.caption)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            VStack(spacing: 5) {
-                                Image(systemName: "star.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.gray)
-                                
-                                Text("\(profileViewModel.userStats?.spawnsMade ?? 0)")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(universalAccentColor)
-                                
-                                Text("Spawns\nmade")
-                                    .font(.caption)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.gray)
-                            }
-                            
-                            VStack(spacing: 5) {
-                                Image(systemName: "calendar.badge.plus")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.gray)
-                                
-                                Text("\(profileViewModel.userStats?.spawnsJoined ?? 0)")
-                                    .font(.system(size: 24, weight: .bold))
-                                    .foregroundColor(universalAccentColor)
-                                
-                                Text("Spawns\njoined")
-                                    .font(.caption)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.gray)
-                            }
-                        }
+                        userStatsSection
                         .padding(.bottom, 20)
                         
                         // Weekly Calendar View
-                        WeeklyCalendarView()
-                            .padding(.horizontal)
-                            .padding(.bottom, 20)
+                        weeklyCalendarView
+                        .padding(.horizontal)
+                        .padding(.bottom, 20)
                     }
                     .padding(.horizontal)
                 }
                 .background(universalBackgroundColor)
                 .navigationBarItems(
-                    trailing: Button(action: {
-                        withAnimation {
-                            showDrawer.toggle()
-                        }
-                    }) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "line.3.horizontal")
-                                .foregroundColor(universalAccentColor)
-                                .font(.title3)
-                                
-                            // User avatar in menu button
-                            if let profilePictureString = userAuth.spawnUser?.profilePicture, 
-                               !profilePictureString.isEmpty {
-                                AsyncImage(url: URL(string: profilePictureString)) { phase in
-                                    switch phase {
-                                    case .success(let image):
-                                        image
-                                            .resizable()
-                                            .scaledToFill()
-                                            .frame(width: 30, height: 30)
-                                            .clipShape(Circle())
-                                    default:
-                                        Circle()
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 30, height: 30)
-                                            .overlay(
-                                                Text(String(userAuth.spawnUser?.username.prefix(1) ?? "U"))
-                                                    .foregroundColor(.gray)
-                                            )
-                                    }
-                                }
-                            } else {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 30, height: 30)
-                                    .overlay(
-                                        Text(String(userAuth.spawnUser?.username.prefix(1) ?? "U"))
-                                            .foregroundColor(.gray)
-                                    )
-                            }
-                        }
-                    }
+                    trailing: menuButton
                 )
 
                 // Drawer Menu
                 if showDrawer {
-                    DrawerMenu(
-                        isShowing: $showDrawer,
-                        user: user,
-                        userAuth: userAuth
-                    )
+                    drawerMenu
                     .transition(.move(edge: .trailing))
                 }
             }
@@ -457,174 +218,100 @@ struct ProfileView: View {
             UIApplication.shared.open(url)
         }
     }
-}
-
-// MARK: - Interest Flow View
-struct InterestsFlowView: View {
-    let interests: [String]
-    let isEditing: Bool
     
-    private let columns = [
-        GridItem(.adaptive(minimum: 80), spacing: 8)
-    ]
-    
-    var body: some View {
-        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
-            ForEach(interests, id: \.self) { interest in
-                InterestChip(interest: interest, isEditing: isEditing)
-            }
-        }
-    }
-}
-
-// MARK: - Weekly Calendar View
-struct WeeklyCalendarView: View {
-    private let weekDays = ["S", "M", "T", "W", "T", "F", "S"]
-    @State private var mockActivities: [[Color?]] = Array(
-        repeating: Array(repeating: nil, count: 7),
-        count: 5
-    )
-    
-    init() {
-        // Mock some activities for the calendar
-        _mockActivities = State(initialValue: generateMockActivities())
-    }
-    
-    var body: some View {
-        VStack(spacing: 10) {
-            // Days of week header
-            HStack(spacing: 0) {
-                ForEach(weekDays, id: \.self) { day in
-                    Text(day)
-                        .font(.caption)
-                        .frame(maxWidth: .infinity)
-                        .foregroundColor(.gray)
-                }
-            }
-            
-            // Calendar grid
-            VStack(spacing: 8) {
-                ForEach(0..<5, id: \.self) { row in
-                    HStack(spacing: 8) {
-                        ForEach(0..<7, id: \.self) { col in
-                            if let color = mockActivities[row][col] {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(color)
-                                    .frame(height: 40)
-                                    .overlay(
-                                        getActivityIcon(for: color)
-                                            .foregroundColor(.white)
-                                    )
-                            } else {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.gray.opacity(0.2))
-                                    .frame(height: 40)
-                            }
-                        }
-                    }
-                }
-            }
+    private func shareProfile() {
+        // Create a URL to share (could be a deep link to the user's profile)
+        let profileURL = "https://spawnapp.com/profile/\(user.id)"
+        let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn!"
+        
+        let activityItems: [Any] = [shareText, profileURL]
+        let activityController = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        
+        // Present the activity controller
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(activityController, animated: true, completion: nil)
         }
     }
     
-    private func generateMockActivities() -> [[Color?]] {
-        var activities = Array(
-            repeating: Array(repeating: nil as Color?, count: 7),
-            count: 5
-        )
-        
-        // Sample activity colors
-        let activityColors: [Color] = [
-            .pink, .blue, .green, .orange, .purple, .red
-        ]
-        
-        // Randomly assign activities
-        for row in 0..<5 {
-            for col in 0..<7 {
-                if Bool.random() && row > 0 && col > 1 {
-                    if Bool.random() {
-                        activities[row][col] = activityColors.randomElement()
-                    }
-                }
-            }
+    private func removeInterest(_ interest: String) {
+        Task {
+            await profileViewModel.removeUserInterest(
+                userId: user.id,
+                interest: interest
+            )
         }
-        
-        // Add some specific activities for visual appeal
-        activities[2][3] = .green
-        activities[3][4] = .purple
-        activities[2][6] = .orange
-        activities[3][2] = .blue
-        activities[1][5] = .pink
-        
-        return activities
-    }
-    
-    private func getActivityIcon(for color: Color) -> some View {
-        let icons = [
-            "music.note", "gamecontroller", "car", "airplane", "figure.walk", "bicycle"
-        ]
-        
-        return Image(systemName: icons.randomElement() ?? "star.fill")
     }
 }
 
 // MARK: - Profile Picture Section
-struct ProfilePictureSection: View {
-    let user: BaseUserDTO
-    @Binding var selectedImage: UIImage?
-    @Binding var showImagePicker: Bool
-    @Binding var isImageLoading: Bool
-    let isEditing: Bool
-    let isCurrentUserProfile: Bool
-
-    var body: some View {
+extension ProfileView {
+    private var profilePictureSection: some View {
         ZStack(alignment: .bottomTrailing) {
             if isImageLoading {
                 ProgressView()
                     .frame(width: 150, height: 150)
             } else if let selectedImage = selectedImage {
                 Image(uiImage: selectedImage)
-                    .ProfileImageModifier(imageType: .profilePage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 150, height: 150)
+                    .clipShape(Circle())
                     .transition(.opacity)
                     .id("selectedImage-\(UUID().uuidString)")
             } else if let profilePictureString = user.profilePicture {
                 if MockAPIService.isMocking {
                     Image(profilePictureString)
-                        .ProfileImageModifier(imageType: .profilePage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 150, height: 150)
+                        .clipShape(Circle())
                 } else {
-                    AsyncImage(url: URL(string: profilePictureString)) {
-                        phase in
+                    AsyncImage(url: URL(string: profilePictureString)) { phase in
                         switch phase {
                         case .empty:
                             ProgressView()
                                 .frame(width: 150, height: 150)
                         case .success(let image):
                             image
-                                .ProfileImageModifier(imageType: .profilePage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 150, height: 150)
+                                .clipShape(Circle())
                                 .transition(.opacity.animation(.easeInOut))
                         case .failure:
-                            Image(systemName: "person.crop.circle.fill")
-                                .ProfileImageModifier(imageType: .profilePage)
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 150, height: 150)
+                                .foregroundColor(Color.gray.opacity(0.5))
                         @unknown default:
-                            Image(systemName: "person.crop.circle.fill")
-                                .ProfileImageModifier(imageType: .profilePage)
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 150, height: 150)
+                                .foregroundColor(Color.gray.opacity(0.5))
                         }
                     }
                     .id("profilePicture-\(profilePictureString)")
                 }
             } else {
-                Image(systemName: "person.crop.circle.fill")
-                    .ProfileImageModifier(imageType: .profilePage)
+                Image(systemName: "person.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 150, height: 150)
+                    .foregroundColor(Color.gray.opacity(0.5))
             }
 
             // Only show the plus button for current user's profile when in edit mode
-            if isCurrentUserProfile && isEditing {
+            if isCurrentUserProfile && editingState == .save {
                 Circle()
                     .fill(profilePicPlusButtonColor)
-                    .frame(width: 25, height: 25)
+                    .frame(width: 30, height: 30)
                     .overlay(
                         Image(systemName: "plus")
-                            .foregroundColor(universalBackgroundColor)
+                            .foregroundColor(.white)
+                            .font(.system(size: 16, weight: .bold))
                     )
                     .offset(x: -10, y: -10)
                     .onTapGesture {
@@ -662,85 +349,108 @@ struct ProfilePictureSection: View {
                 }
             }
         }
-        .id(
-            "profilePicture-\(selectedImage != nil ? "selected" : "none")-\(isImageLoading ? "loading" : "ready")"
-        )
     }
 }
 
-// MARK: - Profile Edit Buttons Section
-struct ProfileEditButtonsSection: View {
-    @Binding var editingState: ProfileEditText
-    @Binding var username: String
-    @Binding var firstName: String
-    @Binding var lastName: String
-    @Binding var selectedImage: UIImage?
-    @Binding var isImageLoading: Bool
-    let userAuth: UserAuthViewModel
-    @Binding var showNotification: Bool
-    @Binding var notificationMessage: String
-    @ObservedObject var profileViewModel: ProfileViewModel
-    @Binding var whatsappLink: String
-    @Binding var instagramLink: String
-
-    var body: some View {
-        ZStack {
-            HStack(spacing: 20) {
-                // Cancel Button
-                Button(action: {
-                    // Revert to original values from userAuth.spawnUser
-                    if let currentUser = userAuth.spawnUser {
-                        username = currentUser.username
-                        firstName = currentUser.firstName ?? ""
-                        lastName = currentUser.lastName ?? ""
-                        selectedImage = nil
-
-                        // Revert social media links
-                        if let socialMedia = profileViewModel
-                            .userSocialMedia
-                        {
-                            whatsappLink = socialMedia.whatsappLink ?? ""
-                            instagramLink = socialMedia.instagramLink ?? ""
-                        }
+// MARK: - Profile Action Buttons
+extension ProfileView {
+    private var profileActionButtons: some View {
+        HStack(spacing: 15) {
+            if isCurrentUserProfile {
+                NavigationLink(destination: EditProfileView(userId: user.id, profileViewModel: profileViewModel)) {
+                    HStack {
+                        Image(systemName: "pencil")
+                        Text("Edit Profile")
                     }
-                    editingState = .edit
-                }) {
-                    Text("Cancel")
-                        .font(.headline)
-                        .foregroundColor(universalAccentColor)
-                        .frame(maxWidth: 135)
-                        .padding()
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: universalRectangleCornerRadius
-                            )
-                            .stroke(universalAccentColor, lineWidth: 1)
-                        )
+                    .font(.subheadline)
+                    .foregroundColor(universalAccentColor)
+                    .frame(height: 40)
+                    .frame(maxWidth: .infinity)
                 }
-
-                // Save Button
-                Button(action: {
-                    Task {
-                        await saveProfile()
-                    }
-                }) {
-                    Text("Save")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: 135)
-                        .padding()
-                        .background(
-                            RoundedRectangle(
-                                cornerRadius: universalRectangleCornerRadius
-                            )
-                            .fill(profilePicPlusButtonColor)
-                        )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(universalAccentColor, lineWidth: 1)
+                )
+            }
+            
+            Button(action: {
+                shareProfile()
+            }) {
+                HStack {
+                    Image(systemName: "square.and.arrow.up")
+                    Text("Share Profile")
                 }
-                .disabled(isImageLoading)
+                .font(.subheadline)
+                .foregroundColor(universalAccentColor)
+                .frame(height: 40)
+                .frame(maxWidth: .infinity)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(universalAccentColor, lineWidth: 1)
+                )
             }
         }
     }
+}
 
+// MARK: - Profile Edit Buttons
+extension ProfileView {
+    private var profileEditButtons: some View {
+        HStack(spacing: 20) {
+            // Cancel Button
+            Button(action: {
+                // Revert to original values from userAuth.spawnUser
+                if let currentUser = userAuth.spawnUser {
+                    username = currentUser.username
+                    firstName = currentUser.firstName ?? ""
+                    lastName = currentUser.lastName ?? ""
+                    selectedImage = nil
+
+                    // Revert social media links
+                    if let socialMedia = profileViewModel
+                        .userSocialMedia
+                    {
+                        whatsappLink = socialMedia.whatsappLink ?? ""
+                        instagramLink = socialMedia.instagramLink ?? ""
+                    }
+                }
+                editingState = .edit
+            }) {
+                Text("Cancel")
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                    .frame(maxWidth: 135)
+                    .padding()
+                    .background(
+                        RoundedRectangle(
+                            cornerRadius: universalRectangleCornerRadius
+                        )
+                        .stroke(universalAccentColor, lineWidth: 1)
+                    )
+            }
+
+            // Save Button
+            Button(action: {
+                Task {
+                    await saveProfile()
+                }
+            }) {
+                Text("Save")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: 135)
+                    .padding()
+                    .background(
+                        RoundedRectangle(
+                            cornerRadius: universalRectangleCornerRadius
+                        )
+                        .fill(profilePicPlusButtonColor)
+                    )
+            }
+            .disabled(isImageLoading)
+        }
+    }
+    
     private func saveProfile() async {
         // Check if there's a new profile picture
         let hasNewProfilePicture = selectedImage != nil
@@ -808,12 +518,113 @@ struct ProfileEditButtonsSection: View {
     }
 }
 
-// MARK: - Interest Chip View
-struct InterestChip: View {
-    let interest: String
-    let isEditing: Bool
-
-    var body: some View {
+// MARK: - Interests Section
+extension ProfileView {
+    private var interestsSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            interestsSectionHeader
+            
+            // Interests content
+            if profileViewModel.isLoadingInterests {
+                interestsLoadingView
+            } else {
+                interestsContentView
+            }
+        }
+    }
+    
+    private var interestsSectionHeader: some View {
+        HStack {
+            Text("Interests + Hobbies")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+            
+            Spacer()
+            
+            // Social media icons
+            if !profileViewModel.isLoadingSocialMedia {
+                socialMediaIcons
+            }
+        }
+        .padding(.horizontal)
+    }
+    
+    private var socialMediaIcons: some View {
+        HStack(spacing: 10) {
+            if !whatsappLink.isEmpty || 
+               (profileViewModel.userSocialMedia?.whatsappLink ?? "").isEmpty == false {
+                Image("whatsapp")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .onTapGesture {
+                        openSocialMediaLink(platform: "WhatsApp", 
+                                           link: whatsappLink.isEmpty ? 
+                                           (profileViewModel.userSocialMedia?.whatsappLink ?? "") : 
+                                           whatsappLink)
+                    }
+            }
+            
+            if !instagramLink.isEmpty || 
+               (profileViewModel.userSocialMedia?.instagramLink ?? "").isEmpty == false {
+                Image("instagram")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 24, height: 24)
+                    .onTapGesture {
+                        openSocialMediaLink(platform: "Instagram", 
+                                           link: instagramLink.isEmpty ? 
+                                           (profileViewModel.userSocialMedia?.instagramLink ?? "") : 
+                                           instagramLink)
+                    }
+            }
+        }
+    }
+    
+    private var interestsLoadingView: some View {
+        ProgressView()
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding()
+    }
+    
+    private var interestsContentView: some View {
+        ZStack(alignment: .topLeading) {
+            // Background for interests section
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(Color.red.opacity(0.7), lineWidth: 1)
+                .background(Color.white.opacity(0.5).cornerRadius(15))
+            
+            if profileViewModel.userInterests.isEmpty {
+                emptyInterestsView
+            } else {
+                // Interests as chips with proper layout
+                VStack(alignment: .leading) {
+                    interestsFlowView
+                }
+                .padding()
+            }
+        }
+        .frame(height: profileViewModel.userInterests.isEmpty ? 100 : CGFloat(min(4, (profileViewModel.userInterests.count + 1) / 2) * 40 + 20))
+        .padding(.horizontal)
+        .padding(.top, 5)
+    }
+    
+    private var emptyInterestsView: some View {
+        Text("No interests added yet.")
+            .foregroundColor(.gray)
+            .italic()
+            .padding()
+    }
+    
+    private var interestsFlowView: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 80), spacing: 8)], alignment: .leading, spacing: 8) {
+            ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                interestChip(interest: interest)
+            }
+        }
+    }
+    
+    private func interestChip(interest: String) -> some View {
         HStack {
             Text(interest)
                 .font(.subheadline)
@@ -823,30 +634,278 @@ struct InterestChip: View {
                 .foregroundColor(universalAccentColor)
                 .clipShape(Capsule())
 
-            if isEditing {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .offset(x: -5, y: 0)
+            if isCurrentUserProfile && editingState == .save {
+                Button(action: {
+                    removeInterest(interest)
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .offset(x: -5, y: 0)
+                }
             }
         }
     }
 }
 
-// MARK: - Drawer Menu
-struct DrawerMenu: View {
-    @Binding var isShowing: Bool
-    let user: BaseUserDTO
-    let userAuth: UserAuthViewModel
+// MARK: - User Stats Section
+extension ProfileView {
+    private var userStatsSection: some View {
+        HStack(spacing: 40) {
+            VStack(spacing: 5) {
+                Image(systemName: "link")
+                    .font(.system(size: 18))
+                    .foregroundColor(.gray)
+                
+                Text("\(profileViewModel.userStats?.peopleMet ?? 0)")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(universalAccentColor)
+                
+                Text("People\nmet")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.gray)
+            }
+            
+            VStack(spacing: 5) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(.gray)
+                
+                Text("\(profileViewModel.userStats?.spawnsMade ?? 0)")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(universalAccentColor)
+                
+                Text("Spawns\nmade")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.gray)
+            }
+            
+            VStack(spacing: 5) {
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 18))
+                    .foregroundColor(.gray)
+                
+                Text("\(profileViewModel.userStats?.spawnsJoined ?? 0)")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundColor(universalAccentColor)
+                
+                Text("Spawns\njoined")
+                    .font(.caption)
+                    .multilineTextAlignment(.center)
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+}
 
-    var body: some View {
+// MARK: - Weekly Calendar
+extension ProfileView {
+    private var weeklyCalendarView: some View {
+        VStack(spacing: 10) {
+            // Month navigation and title
+            HStack {
+                Button(action: {
+                    navigateToPreviousMonth()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(universalAccentColor)
+                        .font(.title3)
+                }
+                
+                Spacer()
+                
+                Text(monthYearString())
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                
+                Spacer()
+                
+                Button(action: {
+                    navigateToNextMonth()
+                }) {
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(universalAccentColor)
+                        .font(.title3)
+                }
+            }
+            .padding(.horizontal, 20)
+            
+            // Days of week header
+            HStack(spacing: 0) {
+                ForEach(weekDays, id: \.self) { day in
+                    Text(day)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity)
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            if profileViewModel.isLoadingCalendar {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 200)
+            } else {
+                // Calendar grid
+                VStack(spacing: 8) {
+                    ForEach(0..<5, id: \.self) { row in
+                        HStack(spacing: 8) {
+                            ForEach(0..<7, id: \.self) { col in
+                                if let activity = profileViewModel.calendarActivities[row][col] {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(activityColor(for: activity.activityType))
+                                        .frame(height: 40)
+                                        .overlay(
+                                            activityIcon(for: activity.activityType)
+                                                .foregroundColor(.white)
+                                        )
+                                        .onTapGesture {
+                                            // Handle activity tap
+                                        }
+                                } else {
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.gray.opacity(0.2))
+                                        .frame(height: 40)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear {
+            fetchCalendarData()
+        }
+    }
+    
+    private var weekDays: [String] {
+        ["S", "M", "T", "W", "T", "F", "S"]
+    }
+    
+    private func navigateToPreviousMonth() {
+        if currentMonth == 1 {
+            currentMonth = 12
+            currentYear -= 1
+        } else {
+            currentMonth -= 1
+        }
+        fetchCalendarData()
+    }
+    
+    private func navigateToNextMonth() {
+        if currentMonth == 12 {
+            currentMonth = 1
+            currentYear += 1
+        } else {
+            currentMonth += 1
+        }
+        fetchCalendarData()
+    }
+    
+    private func fetchCalendarData() {
+        Task {
+            await profileViewModel.fetchCalendarActivities(
+                month: currentMonth,
+                year: currentYear
+            )
+        }
+    }
+    
+    private func monthYearString() -> String {
+        let dateComponents = DateComponents(
+            year: currentYear,
+            month: currentMonth
+        )
+        if let date = Calendar.current.date(from: dateComponents) {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: date)
+        }
+        return "\(currentMonth)/\(currentYear)"
+    }
+    
+    private func activityColor(for activityType: String) -> Color {
+        switch activityType {
+        case "music": return .pink
+        case "sports": return .blue
+        case "food": return .green
+        case "travel": return .orange
+        case "gaming": return .purple
+        case "outdoors": return .red
+        default: return .gray
+        }
+    }
+    
+    private func activityIcon(for activityType: String) -> some View {
+        let iconName: String
+        switch activityType {
+        case "music": iconName = "music.note"
+        case "sports": iconName = "figure.walk"
+        case "food": iconName = "fork.knife"
+        case "travel": iconName = "airplane"
+        case "gaming": iconName = "gamecontroller"
+        case "outdoors": iconName = "bicycle"
+        default: iconName = "star.fill"
+        }
+        return Image(systemName: iconName)
+    }
+}
+
+// MARK: - Menu Button and Drawer
+extension ProfileView {
+    private var menuButton: some View {
+        Button(action: {
+            withAnimation {
+                showDrawer.toggle()
+            }
+        }) {
+            HStack(spacing: 5) {
+                Image(systemName: "line.3.horizontal")
+                    .foregroundColor(universalAccentColor)
+                    .font(.title3)
+                    
+                // User avatar in menu button
+                if let profilePictureString = userAuth.spawnUser?.profilePicture, 
+                   !profilePictureString.isEmpty {
+                    AsyncImage(url: URL(string: profilePictureString)) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 30, height: 30)
+                                .clipShape(Circle())
+                        default:
+                            Circle()
+                                .fill(Color.gray.opacity(0.3))
+                                .frame(width: 30, height: 30)
+                                .overlay(
+                                    Text(String(userAuth.spawnUser?.username.prefix(1) ?? "U"))
+                                        .foregroundColor(.gray)
+                                )
+                        }
+                    }
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 30, height: 30)
+                        .overlay(
+                            Text(String(userAuth.spawnUser?.username.prefix(1) ?? "U"))
+                                .foregroundColor(.gray)
+                        )
+                }
+            }
+        }
+    }
+    
+    private var drawerMenu: some View {
         ZStack(alignment: .trailing) {
             // Dim background
             Color.black.opacity(0.3)
                 .ignoresSafeArea()
                 .onTapGesture {
                     withAnimation {
-                        isShowing = false
+                        showDrawer = false
                     }
                 }
 
@@ -854,7 +913,7 @@ struct DrawerMenu: View {
             VStack(spacing: 15) {
                 Button(action: {
                     withAnimation {
-                        isShowing = false
+                        showDrawer = false
                     }
                 }) {
                     HStack {
@@ -866,11 +925,7 @@ struct DrawerMenu: View {
                 }
 
                 NavigationLink(destination: NotificationSettingsView()) {
-                    DrawerMenuItem(
-                        icon: "bell.fill",
-                        title: "Notifications",
-                        color: universalAccentColor
-                    )
+                    drawerMenuItem(icon: "bell.fill", title: "Notifications", color: universalAccentColor)
                 }
 
                 NavigationLink(
@@ -879,11 +934,7 @@ struct DrawerMenu: View {
                         email: user.email
                     )
                 ) {
-                    DrawerMenuItem(
-                        icon: "message.fill",
-                        title: "Feedback",
-                        color: universalAccentColor
-                    )
+                    drawerMenuItem(icon: "message.fill", title: "Feedback", color: universalAccentColor)
                 }
 
                 Button(action: {
@@ -891,10 +942,10 @@ struct DrawerMenu: View {
                         userAuth.signOut()
                     }
                     withAnimation {
-                        isShowing = false
+                        showDrawer = false
                     }
                 }) {
-                    DrawerMenuItem(
+                    drawerMenuItem(
                         icon: "rectangle.portrait.and.arrow.right",
                         title: "Log Out",
                         color: profilePicPlusButtonColor
@@ -904,10 +955,10 @@ struct DrawerMenu: View {
                 Button(action: {
                     userAuth.activeAlert = .deleteConfirmation
                     withAnimation {
-                        isShowing = false
+                        showDrawer = false
                     }
                 }) {
-                    DrawerMenuItem(
+                    drawerMenuItem(
                         icon: "trash.fill",
                         title: "Delete Account",
                         color: .red
@@ -921,14 +972,8 @@ struct DrawerMenu: View {
             .cornerRadius(10, corners: [.topLeft, .bottomLeft])
         }
     }
-}
-
-struct DrawerMenuItem: View {
-    let icon: String
-    let title: String
-    let color: Color
-
-    var body: some View {
+    
+    private func drawerMenuItem(icon: String, title: String, color: Color) -> some View {
         HStack {
             Image(systemName: icon)
                 .foregroundColor(.white)
