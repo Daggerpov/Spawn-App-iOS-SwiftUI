@@ -114,7 +114,7 @@ struct EditProfileView: View {
         
         Task {
             // Check if there's a new profile picture
-            let hasNewProfilePicture = selectedImage != nil
+            _ = selectedImage != nil
             
             // Update profile info first
             let firstName = name.split(separator: " ").first.map(String.init) ?? name

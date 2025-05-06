@@ -9,486 +9,310 @@ import SwiftUI
 
 struct EventCreationView: View {
     @ObservedObject var viewModel: EventCreationViewModel =
-        EventCreationViewModel.shared
-
+    EventCreationViewModel.shared
+    
     @State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
-
+    @State private var selectedCategory: EventCategory = .general
+    
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
-
+    
     init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void) {
         self.creatingUser = creatingUser
         self.closeCallback = closeCallback
     }
-
+    
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 20) {
+            // Header with close button
+            Spacer()
+            HStack {
+                Text("Create a Spawn")
+                    .font(.headline)
+                    .foregroundColor(.gray)
+                Spacer()
+                Button(action: {
+                    closeCallback()
+                }) {
+                    Image(systemName: "xmark")
+                        .foregroundColor(.black)
+                        .padding(8)
+                }
+            }
+            .padding(.horizontal)
+            
+            // Content
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Make an event")
-                        .fontWeight(.bold)
-                        .font(.title)
-                        .foregroundColor(universalAccentColor)
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            EventInputFieldLabel(text: "Name")
-
-                            if !viewModel.isTitleValid {
-                                HStack {
-                                    Image(
-                                        systemName:
-                                            "exclamationmark.circle.fill"
-                                    )
-                                    .foregroundColor(.red)
-                                    .font(.system(size: 12))
-                                    Text("Event name is required")
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                        .padding(.horizontal, 5)
-                                        .transition(.opacity)
-                                }
-                            }
+                VStack(alignment: .leading, spacing: 24) {
+                    // Icon & Event Title
+                    HStack () {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Icon*")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            Circle()
+                                .fill(Color.yellow.opacity(0.2))
+                                .frame(width: 45, height: 45)
+                                .overlay(
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                )
                         }
-
-                        EventInputField(
-                            value: $viewModel.event.title,
-                            isValid: viewModel.isTitleValid
-                        )
-
-                    }
-                    .padding(.bottom, 8)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            EventInputFieldLabel(text: "Invite Friends")
-
-                            if !viewModel.isInvitesValid {
-                                HStack {
-                                    Image(
-                                        systemName:
-                                            "exclamationmark.circle.fill"
-                                    )
-                                    .foregroundColor(.red)
-                                    .font(.system(size: 12))
-                                    Text(
-                                        "At least one friend or tag is required"
-                                    )
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                                    .padding(.horizontal, 5)
-                                    .transition(.opacity)
-                                }
-                            }
-                        }
-
-                        HStack {
-                            selectedFriendsView
-                            Spacer()
-                            selectedTagsView
+                        
+                        // Title Field
+                        VStack(alignment: .leading) {
+                            Text("Event Title*")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            TextField("Title", text: Binding(
+                                get: { viewModel.event.title ?? "" },
+                                set: { viewModel.event.title = $0 }
+                            ))
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            )
                         }
                     }
-                    .padding(.bottom, 8)
-
-                    HStack(spacing: 16) {
-                        //                    Spacer()
-                        // Date field
-                        datePickerView
-                        Spacer()
-
-                        // Time field
-                        VStack(alignment: .leading, spacing: 10) {
+                    
+                    
+                    
+                    // Date & Time
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Date*")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        Button(action: { showFullDatePicker = true }) {
                             HStack {
-                                Text("Time")
-                                    .font(Font.custom("Poppins", size: 16))
-                                    .kerning(1)
-                                    .foregroundColor(universalAccentColor)
-                                    .bold()
+                                Text(Calendar.current.isDateInToday(viewModel.selectedDate) ? "Today" : viewModel.formatDate(viewModel.selectedDate))
+                                    .foregroundColor(.black)
+                                Spacer()
+                                Image(systemName: "calendar")
+                                    .foregroundColor(.black)
                             }
-
-                            ZStack {
-                                HStack(spacing: 10) {
-                                    startTimeView
-                                        .font(Font.custom("Poppins", size: 16))
-                                        .kerning(1)
-                                        .foregroundColor(universalAccentColor)
-                                        .bold()
-                                    Spacer()
-                                    endTimeView
-                                }
-                                Text("—")
-                                    .font(Font.custom("Poppins", size: 16))
-                                    .kerning(1)
-                                    .foregroundColor(universalAccentColor)
-                                    .bold()
-                                    .padding(.trailing, 8)
-                            }
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            )
                         }
                     }
-                    .padding(.bottom, 12)
-
-                    VStack(alignment: .leading, spacing: 10) {
+                    
+                    // Time
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Time*")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
                         HStack {
-                            EventInputFieldLabel(text: "Location")
-
-                            if !viewModel.isLocationValid {
-                                HStack {
-                                    Image(
-                                        systemName:
-                                            "exclamationmark.circle.fill"
-                                    )
-                                    .foregroundColor(.red)
-                                    .font(.system(size: 12))
-                                    Text("Location is required")
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                        .padding(.horizontal, 5)
-                                        .transition(.opacity)
-                                }
-                            }
-                        }
-
-                        HStack {
-                            EventInputField(
-                                iconName: "mappin.and.ellipse",
-                                value: Binding(
+                            // Start time
+                            DatePicker(
+                                "",
+                                selection: Binding(
                                     get: {
-                                        viewModel.event.location?.name ?? ""
+                                        viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
                                     },
-                                    set: { newValue in
-                                        if let unwrappedNewValue = newValue {
-                                            if viewModel.event.location == nil {
-                                                viewModel.event.location =
-                                                    Location(
-                                                        id: UUID(),
-                                                        name: unwrappedNewValue,
-                                                        latitude: 0,
-                                                        longitude: 0
-                                                    )
-                                            } else {
-                                                viewModel.event.location?.name =
-                                                    unwrappedNewValue
-                                            }
-                                        }
+                                    set: { time in
+                                        viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
                                     }
                                 ),
-                                isValid: viewModel.isLocationValid
+                                displayedComponents: .hourAndMinute
                             )
-
-                            NavigationLink(destination: {
-                                LocationSelectionView()
-                                    .environmentObject(viewModel)
-                            }) {
-                                Image(systemName: "map")
-                                    .foregroundColor(universalSecondaryColor)
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 15)
-                                            .stroke(Color.black, lineWidth: 1.5)
-                                    )
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity)
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            )
+                            
+                            Text("-")
+                                .font(.headline)
+                                .padding(.horizontal, 4)
+                            
+                            // End time
+                            DatePicker(
+                                "",
+                                selection: Binding(
+                                    get: {
+                                        viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
+                                    },
+                                    set: { time in
+                                        viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                                    }
+                                ),
+                                displayedComponents: .hourAndMinute
+                            )
+                            .labelsHidden()
+                            .frame(maxWidth: .infinity)
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            )
+                        }
+                    }
+                    
+                    // Category
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Category*")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        HStack(spacing: 8) {
+                            ForEach(EventCategory.allCases, id: \.self) { category in
+                                Button(action: {
+                                    selectedCategory = category
+                                }) {
+                                    Text(category.rawValue)
+                                        .font(.subheadline)
+                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 12)
+                                        .foregroundColor(selectedCategory == category ? .white : .black)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 20)
+                                                .fill(selectedCategory == category ?
+                                                      category.color : Color.gray.opacity(0.15))
+                                        )
+                                }
                             }
                         }
                     }
-                    .padding(.bottom, 8)
-
-                    EventInputFieldLabel(text: "Caption")
-                    EventInputField(value: $viewModel.event.note, isValid: true)
-                        .padding(.bottom, 16)
-
-                    // Error message display
-                    if !viewModel.creationMessage.isEmpty {
-                        Text(viewModel.creationMessage)
-                            .font(.caption)
-                            .foregroundColor(.red)
-                            .padding(.bottom, 8)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                    }
-
-                    Button(action: {
-
-                        if viewModel.isFormValid {
-                            Task {
-                                await viewModel.validateEventForm()
-                                await viewModel.createEvent()
+                    
+                    // Who's Invited
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Who's Invited?*")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        HStack {
+                            HStack {
+                                Image(systemName: "person.2.fill")
+                                    .foregroundColor(.white)
+                                Text("20")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
                             }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color.black)
+                            .clipShape(Capsule())
+                            
+                            Button(action: {
+                                // Show invite view
+                            }) {
+                                HStack {
+                                    Text("Close Friends")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                    Image(systemName: "xmark")
+                                        .font(.caption)
+                                        .foregroundColor(.white)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.green)
+                                .clipShape(Capsule())
+                            }
+                            
+                            Button(action: {
+                                // Navigate to invite view
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus")
+                                        .font(.caption)
+                                    Text("Add more!")
+                                        .font(.subheadline)
+                                }
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Location
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Location*")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("AMS Student Nest")
+                                    .font(.subheadline)
+                                Text("6133 University Blvd, Vancouver, BC V6T 1Z1")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                            Text("12km")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                    
+                    // Caption
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Caption")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                        
+                        TextField("Come join us for this fun event!", text: Binding(
+                            get: { viewModel.event.note ?? "" },
+                            set: { viewModel.event.note = $0 }
+                        ))
+                        .padding()
+                        .frame(height: 60)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                        )
+                    }
+                    
+                    // Create Button
+                    Button(action: {
+                        Task {
+                            await viewModel.validateEventForm()
+                            await viewModel.createEvent()
                             closeCallback()
                         }
                     }) {
-                        EventSubmitButtonView(
-                            backgroundColor: viewModel.isFormValid
-                                ? universalSecondaryColor : Color.gray
-                        )
-                    }
-                    .disabled(!viewModel.isFormValid)
-                    .onChange(of: viewModel.event.title) { _ in
-                        Task {
-                            await viewModel.validateEventForm()
+                        HStack {
+                            Spacer()
+                            Image(systemName: "plus.circle")
+                                .foregroundColor(.white)
+                            Text("Create!")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            Spacer()
                         }
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(30)
                     }
-                    .onChange(of: viewModel.selectedFriends) { _ in
-                        Task {
-                            await viewModel.validateEventForm()
-                        }
-                    }
-                    .onChange(of: viewModel.selectedTags) { _ in
-                        Task {
-                            await viewModel.validateEventForm()
-                        }
-                    }
-                    .onChange(of: viewModel.event.location) { _ in
-                        Task {
-                            await viewModel.validateEventForm()
-                        }
-                    }
-                    .padding(.top, 24)  // Increased padding
+                    .padding(.top, 10)
                 }
-                .padding(.horizontal, 22)
-                .padding(.vertical, 24)  // Added vertical padding
-                .background(universalBackgroundColor)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-            .scrollIndicators(.hidden)  // Hide scroll indicators
-            .background(universalBackgroundColor)
-            .onAppear {
-                Task {
-                    await viewModel.validateEventForm()
-                }
-            }
-            .ignoresSafeArea(edges: .bottom)
-        }
-    }
-}
-
-struct EventInputFieldLabel: View {
-    var text: String
-
-    var body: some View {
-        Text(text)
-            .font(Font.custom("Poppins", size: 16))
-            .kerning(1)
-            .foregroundColor(universalAccentColor)
-            .bold()
-    }
-}
-
-struct EventInputField: View {
-    var iconName: String?
-    @Binding var value: String?
-    var isValid: Bool = true
-
-    var body: some View {
-        HStack {
-            if let icon = iconName {
-                Image(systemName: icon)
-                    .foregroundColor(.secondary)
-            }
-            TextField(
-                "",
-                text: Binding(
-                    get: { value ?? "" },
-                    set: { newValue in
-                        // Safely update the value outside of the view update
-                        DispatchQueue.main.async {
-                            value = newValue.isEmpty ? nil : newValue
-                        }
-                    }
-                )
-            )
-        }
-        .foregroundColor(universalAccentColor)
-        .padding()
-        .background(
-            Rectangle()
-                .foregroundColor(.clear)
-                .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
-                .cornerRadius(15)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 15)
-                        .inset(by: 0.75)
-                        .stroke(isValid ? .black : .red, lineWidth: 1.5)
-                )
-        )
-    }
-}
-
-extension EventCreationView {
-    var startTimeView: some View {
-        // Start time
-        DatePicker(
-            "",
-            selection: Binding(
-                get: {
-                    viewModel.event.startTime
-                        ?? viewModel.combineDateAndTime(
-                            viewModel.selectedDate,
-                            time: Date()
-                        )
-                },
-                set: { time in
-                    viewModel.event.startTime =
-                        viewModel.combineDateAndTime(
-                            viewModel.selectedDate,
-                            time: time
-                        )
-                }
-            ),
-            displayedComponents: .hourAndMinute
-        )
-        .frame(height: 42)
-        .background(
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(Color.black, lineWidth: 1.5)
-        )
-        .labelsHidden()
-    }
-
-    var endTimeView: some View {
-        // End time
-        DatePicker(
-            "",
-            selection: Binding(
-                get: {
-                    viewModel.event.endTime
-                        ?? viewModel.combineDateAndTime(
-                            viewModel.selectedDate,
-                            time: Date().addingTimeInterval(
-                                2 * 60 * 60
-                            )
-                        )
-                },
-                set: { time in
-                    viewModel.event.endTime =
-                        viewModel.combineDateAndTime(
-                            viewModel.selectedDate,
-                            time: time
-                        )
-                }
-            ),
-            displayedComponents: .hourAndMinute
-        )
-        .frame(height: 42)
-        .background(
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(Color.black, lineWidth: 1.5)
-        )
-        .labelsHidden()
-    }
-    var datePickerView: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("Date")
-                    .font(Font.custom("Poppins", size: 16))
-                    .kerning(1)
-                    .foregroundColor(universalAccentColor)
-                    .bold()
-            }
-
-            Button(action: { showFullDatePicker = true }) {
-                HStack {
-                    Text(
-                        Calendar.current.isDateInToday(
-                            viewModel.selectedDate
-                        )
-                            ? "Today"
-                            : viewModel.formatDate(
-                                viewModel.selectedDate
-                            )
-                    )
-                    .foregroundColor(universalAccentColor)
-                    Image(systemName: "calendar")
-                        .foregroundColor(universalAccentColor)
-                }
-                .padding()
-                .frame(height: 42)
-                .background(
-                    RoundedRectangle(cornerRadius: 15)
-                        .stroke(Color.black, lineWidth: 1.5)
-                )
-            }
-            .sheet(isPresented: $showFullDatePicker) {
-                fullDatePickerView
+                .padding(.horizontal)
             }
         }
-    }
-    var selectedFriendsView: some View {
-        HStack {
-            ForEach(viewModel.selectedFriends) { friend in
-                if let pfpUrl = friend.profilePicture {
-                    AsyncImage(url: URL(string: pfpUrl)) {
-                        image in
-                        image
-                            .ProfileImageModifier(imageType: .eventParticipants)
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: 25, height: 25)
-                    }
-                } else {
-                    Circle()
-                        .fill(Color.gray)
-                        .frame(width: 25, height: 25)
-                }
-            }
-            NavigationLink(destination: {
-                InviteView(user: creatingUser)
-                    .environmentObject(viewModel)
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(Color.gray.opacity(0.2))
-                    Circle()
-                        .stroke(
-                            .secondary,
-                            style: StrokeStyle(
-                                lineWidth: 2,
-                                dash: [5, 3]  // Length of dash and gap
-                            )
-                        )
-                    Image(systemName: "plus")
-                        .foregroundColor(.secondary)
-                }
-                .frame(width: 30, height: 30)
-            }
-            .padding(.leading, 12)
+        .sheet(isPresented: $showFullDatePicker) {
+            fullDatePickerView
         }
     }
-
-    var selectedTagsView: some View {
-        HStack {
-            let displayedTags = viewModel.selectedTags
-                .prefix(2)
-            let remainingCount =
-                viewModel.selectedTags.count
-                - displayedTags.count
-
-            ForEach(displayedTags) { tag in
-                Text(tag.displayName)
-                    .font(
-                        .system(size: 14, weight: .medium)
-                    )
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Color(hex: tag.colorHexCode)
-                    )
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
-            }
-
-            if remainingCount > 0 {
-                Text("+\(remainingCount) more")
-                    .font(
-                        .system(size: 14, weight: .medium)
-                    )
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(universalAccentColor)
-                    .foregroundColor(.white)
-                    .clipShape(Capsule())
-            }
-        }
-    }
-
+    
     var fullDatePickerView: some View {
         VStack {
             Text("Select a Date")
@@ -502,17 +326,38 @@ extension EventCreationView {
             .datePickerStyle(GraphicalDatePickerStyle())
             .labelsHidden()
             .padding()
-
+            
             Button("Done") {
                 showFullDatePicker = false
             }
             .padding()
             .frame(maxWidth: .infinity)
-            .foregroundColor(Color(.systemGray6))
+            .foregroundColor(.white)
+            .background(Color.blue)
             .cornerRadius(10)
             .padding()
         }
         .presentationDetents([.medium])
+    }
+}
+
+enum EventCategory: String, CaseIterable {
+    case general = "General"
+    case foodAndDrink = "Food & Drink"
+    case active = "Active"
+    case study = "Study"
+    
+    var color: Color {
+        switch self {
+        case .general:
+            return Color.red
+        case .foodAndDrink:
+            return Color.gray
+        case .active:
+            return Color.gray
+        case .study:
+            return Color.gray
+        }
     }
 }
 
