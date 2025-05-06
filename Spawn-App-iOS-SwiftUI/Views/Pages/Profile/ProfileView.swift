@@ -165,6 +165,14 @@ struct ProfileView: View {
                 lastName = currentUser.lastName ?? ""
             }
         }
+        .onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
+            // Update local state when social media changes
+            if let socialMedia = newSocialMedia {
+                whatsappLink = socialMedia.whatsappLink ?? ""
+                instagramLink = socialMedia.instagramLink ?? ""
+                print("Updated social media links in ProfileView: WhatsApp=\(whatsappLink), Instagram=\(instagramLink)")
+            }
+        }
         .accentColor(universalAccentColor)
         .toast(
             isShowing: $showNotification,
@@ -570,33 +578,25 @@ extension ProfileView {
     
     private var socialMediaIcons: some View {
         HStack(spacing: 10) {
-            if !whatsappLink.isEmpty || 
-               (profileViewModel.userSocialMedia?.whatsappLink ?? "").isEmpty == false {
+            if let whatsappLink = profileViewModel.userSocialMedia?.whatsappLink, !whatsappLink.isEmpty {
                 Image("whatsapp")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 48, height: 48)
                     .rotationEffect(.degrees(-8))
                     .onTapGesture {
-                        openSocialMediaLink(platform: "WhatsApp",
-                                            link: whatsappLink.isEmpty ?
-                                            (profileViewModel.userSocialMedia?.whatsappLink ?? "") :
-                                                whatsappLink)
+                        openSocialMediaLink(platform: "WhatsApp", link: whatsappLink)
                     }
             }
             
-            if !instagramLink.isEmpty || 
-               (profileViewModel.userSocialMedia?.instagramLink ?? "").isEmpty == false {
+            if let instagramLink = profileViewModel.userSocialMedia?.instagramLink, !instagramLink.isEmpty {
                 Image("instagram")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 40, height: 40)
                     .rotationEffect(.degrees(8))
                     .onTapGesture {
-                        openSocialMediaLink(platform: "Instagram",
-                                            link: instagramLink.isEmpty ?
-                                            (profileViewModel.userSocialMedia?.instagramLink ?? "") :
-                                                instagramLink)
+                        openSocialMediaLink(platform: "Instagram", link: instagramLink)
                     }
             }
         }
