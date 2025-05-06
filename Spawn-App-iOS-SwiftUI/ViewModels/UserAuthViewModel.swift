@@ -680,6 +680,38 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		}
 	}
+
+	func changePassword(currentPassword: String, newPassword: String) async throws {
+		guard let userId = spawnUser?.id else {
+			throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "User ID not found"])
+		}
+		
+		if let url = URL(string: APIService.baseURL + "auth/change-password") {
+			let changePasswordDTO = ChangePasswordDTO(
+				userId: userId.uuidString,
+				currentPassword: currentPassword,
+				newPassword: newPassword
+			)
+			
+			do {
+                let result: Bool = ((try await self.apiService.sendData(changePasswordDTO,
+                                                                        to: url,
+                                                                        parameters: nil
+                                                                       )) != nil)
+				
+				if !result {
+					throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Password change failed"])
+				}
+				
+				print("Password changed successfully for user \(userId)")
+			} catch {
+				print("Error changing password: \(error.localizedDescription)")
+				throw error
+			}
+		} else {
+			throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+		}
+	}
 }
 
 // Conform to ASAuthorizationControllerDelegate
@@ -697,4 +729,11 @@ extension UserAuthViewModel: ASAuthorizationControllerDelegate {
 		handleAppleSignInResult(.failure(error))
 	}
 
+}
+
+// Add ChangePasswordDTO struct
+struct ChangePasswordDTO: Codable {
+	let userId: String
+	let currentPassword: String
+	let newPassword: String
 }

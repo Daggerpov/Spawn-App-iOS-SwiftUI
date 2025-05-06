@@ -22,7 +22,6 @@ struct ProfileView: View {
     @State private var newInterest: String = ""
     @State private var whatsappLink: String = ""
     @State private var instagramLink: String = ""
-    @State private var showDrawer: Bool = false
     @State private var currentMonth = Calendar.current.component(.month, from: Date())
     @State private var currentYear = Calendar.current.component(.year, from: Date())
 
@@ -92,15 +91,15 @@ struct ProfileView: View {
                     .padding(.horizontal)
                 }
                 .background(universalBackgroundColor)
+                .navigationTitle("Your Profile - Settings")
+                .navigationBarTitleDisplayMode(.inline)
                 .navigationBarItems(
-                    trailing: menuButton
+                    trailing: NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape")
+                            .foregroundColor(universalAccentColor)
+                            .font(.title3)
+                    }
                 )
-
-                // Drawer Menu
-                if showDrawer {
-                    drawerMenu
-                    .transition(.move(edge: .trailing))
-                }
             }
         }
         .alert(item: $userAuth.activeAlert) { alertType in
@@ -849,116 +848,6 @@ extension ProfileView {
         default: iconName = "star.fill"
         }
         return Image(systemName: iconName)
-    }
-}
-
-// MARK: - Menu Button and Drawer
-extension ProfileView {
-    private var menuButton: some View {
-        Button(action: {
-            withAnimation {
-                showDrawer.toggle()
-            }
-        }) {
-            HStack(spacing: 5) {
-                Image(systemName: "line.3.horizontal")
-                    .foregroundColor(universalAccentColor)
-                    .font(.title3)
-            }
-        }
-    }
-    
-    private var drawerMenu: some View {
-        ZStack(alignment: .trailing) {
-            // Dim background
-            Color.black.opacity(0.3)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }
-
-            // Menu content
-            VStack(spacing: 15) {
-                Button(action: {
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }) {
-                    HStack {
-                        Spacer()
-                        Image(systemName: "xmark")
-                            .foregroundColor(.white)
-                            .padding()
-                    }
-                }
-
-                NavigationLink(destination: NotificationSettingsView()) {
-                    drawerMenuItem(icon: "bell.fill", title: "Notifications", color: universalAccentColor)
-                }
-
-                NavigationLink(
-                    destination: FeedbackView(
-                        userId: user.id,
-                        email: user.email
-                    )
-                ) {
-                    drawerMenuItem(icon: "message.fill", title: "Feedback", color: universalAccentColor)
-                }
-
-                Button(action: {
-                    if userAuth.isLoggedIn {
-                        userAuth.signOut()
-                    }
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }) {
-                    drawerMenuItem(
-                        icon: "rectangle.portrait.and.arrow.right",
-                        title: "Log Out",
-                        color: profilePicPlusButtonColor
-                    )
-                }
-
-                Button(action: {
-                    userAuth.activeAlert = .deleteConfirmation
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }) {
-                    drawerMenuItem(
-                        icon: "trash.fill",
-                        title: "Delete Account",
-                        color: .red
-                    )
-                }
-
-                Spacer()
-            }
-            .frame(width: 250)
-            .background(Color(UIColor.systemGray6))
-            .cornerRadius(10, corners: [.topLeft, .bottomLeft])
-        }
-    }
-    
-    private func drawerMenuItem(icon: String, title: String, color: Color) -> some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(.white)
-                .frame(width: 24, height: 24)
-
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.white)
-
-            Spacer()
-        }
-        .padding()
-        .background(color)
-        .cornerRadius(10)
-        .padding(.horizontal)
     }
 }
 
