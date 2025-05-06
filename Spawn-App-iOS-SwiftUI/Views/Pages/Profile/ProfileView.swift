@@ -22,7 +22,6 @@ struct ProfileView: View {
     @State private var newInterest: String = ""
     @State private var whatsappLink: String = ""
     @State private var instagramLink: String = ""
-    @State private var showDrawer: Bool = false
     @State private var currentMonth = Calendar.current.component(.month, from: Date())
     @State private var currentYear = Calendar.current.component(.year, from: Date())
 
@@ -92,15 +91,14 @@ struct ProfileView: View {
                     .padding(.horizontal)
                 }
                 .background(universalBackgroundColor)
+                .navigationBarBackButtonHidden()
                 .navigationBarItems(
-                    trailing: menuButton
+                    trailing: NavigationLink(destination: SettingsView()) {
+                        Image(systemName: "gearshape")
+                            .foregroundColor(universalAccentColor)
+                            .font(.title3)
+                    }
                 )
-
-                // Drawer Menu
-                if showDrawer {
-                    drawerMenu
-                    .transition(.move(edge: .trailing))
-                }
             }
         }
         .alert(item: $userAuth.activeAlert) { alertType in
@@ -165,6 +163,14 @@ struct ProfileView: View {
                 username = currentUser.username
                 firstName = currentUser.firstName ?? ""
                 lastName = currentUser.lastName ?? ""
+            }
+        }
+        .onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
+            // Update local state when social media changes
+            if let socialMedia = newSocialMedia {
+                whatsappLink = socialMedia.whatsappLink ?? ""
+                instagramLink = socialMedia.instagramLink ?? ""
+                print("Updated social media links in ProfileView: WhatsApp=\(whatsappLink), Instagram=\(instagramLink)")
             }
         }
         .accentColor(universalAccentColor)
@@ -361,16 +367,19 @@ extension ProfileView {
                     HStack {
                         Image(systemName: "pencil")
                         Text("Edit Profile")
+                            .bold()
                     }
                     .font(.caption)
-                    .foregroundColor(universalAccentColor)
-                    .frame(height: 36)
+                    .foregroundColor(universalSecondaryColor)
+                    .padding(.vertical, 24)
+                    .padding(.horizontal, 8)
+                    .frame(height: 32)
                     .frame(maxWidth: .infinity)
                 }
                 .navigationBarBackButtonHidden(true)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(universalAccentColor, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(universalSecondaryColor, lineWidth: 1)
                 )
             }
             
@@ -380,14 +389,17 @@ extension ProfileView {
                 HStack {
                     Image(systemName: "square.and.arrow.up")
                     Text("Share Profile")
+                        .bold()
                 }
                 .font(.caption)
-                .foregroundColor(universalAccentColor)
-                .frame(height: 36)
+                .foregroundColor(universalSecondaryColor)
+                .padding(.vertical, 24)
+                .padding(.horizontal, 8)
+                .frame(height: 32)
                 .frame(maxWidth: .infinity)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(universalAccentColor, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(universalSecondaryColor, lineWidth: 1)
                 )
             }
         }
@@ -522,15 +534,21 @@ extension ProfileView {
 // MARK: - Interests Section
 extension ProfileView {
     private var interestsSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            interestsSectionHeader
-            
+        ZStack(alignment: .top) {
             // Interests content
-            if profileViewModel.isLoadingInterests {
-                interestsLoadingView
-            } else {
-                interestsContentView
+            Group {
+                if profileViewModel.isLoadingInterests {
+                    interestsLoadingView
+                } else {
+                    interestsContentView
+                }
             }
+            .padding(.top, 24) // Add padding to push content below the header
+            
+            // Position the header to be centered on the top border
+            interestsSectionHeader
+                .padding(.leading, 6)
+//                .offset() // Align with the top border
         }
     }
     
@@ -538,8 +556,16 @@ extension ProfileView {
         HStack {
             Text("Interests + Hobbies")
                 .font(.headline)
-                .foregroundColor(universalAccentColor)
-            
+                .foregroundColor(.white)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(universalTertiaryColor, lineWidth: 1)
+                )
+                .background(universalTertiaryColor)
+                .clipShape(Capsule())
+
             Spacer()
             
             // Social media icons
@@ -552,31 +578,25 @@ extension ProfileView {
     
     private var socialMediaIcons: some View {
         HStack(spacing: 10) {
-            if !whatsappLink.isEmpty || 
-               (profileViewModel.userSocialMedia?.whatsappLink ?? "").isEmpty == false {
+            if let whatsappLink = profileViewModel.userSocialMedia?.whatsappLink, !whatsappLink.isEmpty {
                 Image("whatsapp")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 48, height: 48)
+                    .rotationEffect(.degrees(-8))
                     .onTapGesture {
-                        openSocialMediaLink(platform: "WhatsApp", 
-                                           link: whatsappLink.isEmpty ? 
-                                           (profileViewModel.userSocialMedia?.whatsappLink ?? "") : 
-                                           whatsappLink)
+                        openSocialMediaLink(platform: "WhatsApp", link: whatsappLink)
                     }
             }
             
-            if !instagramLink.isEmpty || 
-               (profileViewModel.userSocialMedia?.instagramLink ?? "").isEmpty == false {
+            if let instagramLink = profileViewModel.userSocialMedia?.instagramLink, !instagramLink.isEmpty {
                 Image("instagram")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 40, height: 40)
+                    .rotationEffect(.degrees(8))
                     .onTapGesture {
-                        openSocialMediaLink(platform: "Instagram", 
-                                           link: instagramLink.isEmpty ? 
-                                           (profileViewModel.userSocialMedia?.instagramLink ?? "") : 
-                                           instagramLink)
+                        openSocialMediaLink(platform: "Instagram", link: instagramLink)
                     }
             }
         }
@@ -599,13 +619,26 @@ extension ProfileView {
                 emptyInterestsView
             } else {
                 // Interests as chips with proper layout
-                VStack(alignment: .leading) {
-                    interestsFlowView
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 12) {
+                        // Use a simple LazyVGrid for consistent layout
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.adaptive(minimum: 80, maximum: 150), spacing: 8)
+                            ],
+                            alignment: .leading,
+                            spacing: 8
+                        ) {
+                            ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                                interestChip(interest: interest)
+                            }
+                        }
+                    }
+                    .padding()
                 }
-                .padding()
             }
         }
-        .frame(height: profileViewModel.userInterests.isEmpty ? 100 : CGFloat(min(4, (profileViewModel.userInterests.count + 1) / 2) * 40 + 20))
+        .frame(height: profileViewModel.userInterests.isEmpty ? 100 : 140)
         .padding(.horizontal)
         .padding(.top, 5)
     }
@@ -615,37 +648,32 @@ extension ProfileView {
             .foregroundColor(.gray)
             .italic()
             .padding()
-    }
-    
-    private var interestsFlowView: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 80), spacing: 8)], alignment: .leading, spacing: 8) {
-            ForEach(profileViewModel.userInterests, id: \.self) { interest in
-                interestChip(interest: interest)
-            }
-        }
+            .padding(.top, 12)
     }
     
     private func interestChip(interest: String) -> some View {
-        HStack {
-            Text(interest)
-                .font(.subheadline)
-                .padding(.vertical, 5)
-                .padding(.horizontal, 10)
-                .background(Color.gray.opacity(0.2))
-                .foregroundColor(universalAccentColor)
-                .clipShape(Capsule())
-
-            if isCurrentUserProfile && editingState == .save {
-                Button(action: {
-                    removeInterest(interest)
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.red)
-                        .font(.caption)
-                        .offset(x: -5, y: 0)
-                }
-            }
-        }
+        Text(interest)
+            .font(.subheadline)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 14)
+            .foregroundColor(universalAccentColor)
+            .background(Color.white)
+            .clipShape(Capsule())
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+            .overlay(
+                isCurrentUserProfile && editingState == .save ?
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        removeInterest(interest)
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                    .offset(x: 5, y: -8)
+                } : nil
+            )
     }
 }
 
@@ -849,116 +877,6 @@ extension ProfileView {
         default: iconName = "star.fill"
         }
         return Image(systemName: iconName)
-    }
-}
-
-// MARK: - Menu Button and Drawer
-extension ProfileView {
-    private var menuButton: some View {
-        Button(action: {
-            withAnimation {
-                showDrawer.toggle()
-            }
-        }) {
-            HStack(spacing: 5) {
-                Image(systemName: "line.3.horizontal")
-                    .foregroundColor(universalAccentColor)
-                    .font(.title3)
-            }
-        }
-    }
-    
-    private var drawerMenu: some View {
-        ZStack(alignment: .trailing) {
-            // Dim background
-            Color.black.opacity(0.3)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }
-
-            // Menu content
-            VStack(spacing: 15) {
-                Button(action: {
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }) {
-                    HStack {
-                        Spacer()
-                        Image(systemName: "xmark")
-                            .foregroundColor(.white)
-                            .padding()
-                    }
-                }
-
-                NavigationLink(destination: NotificationSettingsView()) {
-                    drawerMenuItem(icon: "bell.fill", title: "Notifications", color: universalAccentColor)
-                }
-
-                NavigationLink(
-                    destination: FeedbackView(
-                        userId: user.id,
-                        email: user.email
-                    )
-                ) {
-                    drawerMenuItem(icon: "message.fill", title: "Feedback", color: universalAccentColor)
-                }
-
-                Button(action: {
-                    if userAuth.isLoggedIn {
-                        userAuth.signOut()
-                    }
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }) {
-                    drawerMenuItem(
-                        icon: "rectangle.portrait.and.arrow.right",
-                        title: "Log Out",
-                        color: profilePicPlusButtonColor
-                    )
-                }
-
-                Button(action: {
-                    userAuth.activeAlert = .deleteConfirmation
-                    withAnimation {
-                        showDrawer = false
-                    }
-                }) {
-                    drawerMenuItem(
-                        icon: "trash.fill",
-                        title: "Delete Account",
-                        color: .red
-                    )
-                }
-
-                Spacer()
-            }
-            .frame(width: 250)
-            .background(Color(UIColor.systemGray6))
-            .cornerRadius(10, corners: [.topLeft, .bottomLeft])
-        }
-    }
-    
-    private func drawerMenuItem(icon: String, title: String, color: Color) -> some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(.white)
-                .frame(width: 24, height: 24)
-
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.white)
-
-            Spacer()
-        }
-        .padding()
-        .background(color)
-        .cornerRadius(10)
-        .padding(.horizontal)
     }
 }
 

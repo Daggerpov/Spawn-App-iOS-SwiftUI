@@ -114,8 +114,11 @@ struct NotificationSettingsView: View {
                 secondaryButton: .cancel()
             )
         }
+        .background(Color.clear)
+        .scrollContentBackground(.hidden)
+        .background(universalBackgroundColor)
     }
-    
+
     private func requestPermission() {
         Task {
             let granted = await notificationService.requestPermission()

@@ -35,8 +35,10 @@ struct EditProfileView: View {
             initialName = FormatterService.shared.formatName(user: spawnUser)
         }
         let initialUsername = UserAuthViewModel.shared.spawnUser?.username ?? ""
-        let initialWhatsapp = profileViewModel.userSocialMedia?.whatsappLink ?? ""
-        let initialInstagram = profileViewModel.userSocialMedia?.instagramLink ?? ""
+        
+        // Initialize with raw values instead of links
+        let initialWhatsapp = profileViewModel.userSocialMedia?.whatsappNumber ?? ""
+        let initialInstagram = profileViewModel.userSocialMedia?.instagramUsername ?? ""
         
         _name = State(initialValue: initialName)
         _username = State(initialValue: initialUsername)
@@ -132,19 +134,31 @@ struct EditProfileView: View {
                 lastName: lastName
             )
             
+            // Format social media links properly before saving
+            let formattedWhatsapp = FormatterService.shared.formatWhatsAppLink(whatsappLink)
+            let formattedInstagram = FormatterService.shared.formatInstagramLink(instagramLink)
+            
+            print("Saving whatsapp: \(formattedWhatsapp), instagram: \(formattedInstagram)")
+            
             // Update social media links
             await profileViewModel.updateSocialMedia(
                 userId: userId,
-                whatsappLink: whatsappLink.isEmpty ? nil : whatsappLink,
-                instagramLink: instagramLink.isEmpty ? nil : instagramLink
+                whatsappLink: formattedWhatsapp.isEmpty ? nil : formattedWhatsapp,
+                instagramLink: formattedInstagram.isEmpty ? nil : formattedInstagram
             )
+            
+            // Add an explicit delay and refresh to ensure data is properly updated
+            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds delay
+            
+            // Specifically fetch social media again to ensure it's updated
+            await profileViewModel.fetchUserSocialMedia(userId: userId)
             
             // Update profile picture if selected
             if let newImage = selectedImage {
                 await userAuth.updateProfilePicture(newImage)
             }
             
-            // Refresh profile data
+            // Refresh all profile data
             await profileViewModel.loadAllProfileData(userId: userId)
             
             await MainActor.run {
@@ -242,6 +256,12 @@ struct PersonalInfoSection: View {
                         )
                             .stroke(universalAccentColor, lineWidth: 1)
                     )
+                    .placeholder(when: name.isEmpty) {
+                        Text("Full Name")
+                            .foregroundColor(universalAccentColor.opacity(0.7))
+                            .font(.subheadline)
+                            .padding(.leading)
+                    }
             }
             
             // Username field
@@ -257,6 +277,11 @@ struct PersonalInfoSection: View {
                     TextField("username", text: $username)
                         .foregroundColor(universalAccentColor)
                         .font(.subheadline)
+                        .placeholder(when: username.isEmpty) {
+                            Text("username")
+                                .foregroundColor(universalAccentColor.opacity(0.7))
+                                .font(.subheadline)
+                        }
                 }
                 .padding()
                 .cornerRadius(10)
@@ -301,6 +326,12 @@ struct InterestsSection: View {
                     )
                         .stroke(universalAccentColor, lineWidth: 1)
                 )
+                .placeholder(when: newInterest.isEmpty) {
+                    Text("Type and press enter to add...")
+                        .foregroundColor(universalAccentColor.opacity(0.7))
+                        .font(.subheadline)
+                        .padding(.leading)
+                }
             
             
             // Existing interests as chips
@@ -357,6 +388,7 @@ struct InterestChipView: View {
             Text(interest)
                 .font(.caption)
                 .padding(.leading, 8)
+                .foregroundColor(universalAccentColor)
             
             Spacer()
             
@@ -379,22 +411,23 @@ struct SocialMediaSection: View {
     @Binding var instagramLink: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("Third party apps")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Social Media")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+                .padding(.bottom, 4)
             
             // Instagram
             SocialMediaField(
                 icon: "instagram",
-                placeholder: "@instagram",
+                placeholder: "username (without @)",
                 text: $instagramLink
             )
             
             // WhatsApp
             SocialMediaField(
                 icon: "whatsapp",
-                placeholder: "+1 604 123 1234",
+                placeholder: "+1 234 567 8901",
                 text: $whatsappLink,
                 keyboardType: .phonePad
             )
@@ -411,28 +444,66 @@ struct SocialMediaField: View {
     var keyboardType: UIKeyboardType = .default
     
     var body: some View {
-        HStack {
-            Image(icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 30, height: 30)
-                .padding(.trailing, 8)
-            
-            TextField(placeholder, text: $text)
+        VStack(alignment: .leading, spacing: 6) {
+            // Add descriptive label based on platform
+            Text(icon == "instagram" ? "Instagram Username" : "WhatsApp Number")
                 .font(.subheadline)
-                .foregroundColor(universalAccentColor)
-                .keyboardType(keyboardType)
-            
-            Spacer()
-        }
-        .padding()
-        .cornerRadius(10)
-        .overlay(
-            RoundedRectangle(
-                cornerRadius: universalNewRectangleCornerRadius
+                .foregroundColor(.gray)
+                
+            HStack {
+                Image(icon)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 30, height: 30)
+                    .padding(.trailing, 8)
+                
+                // Add @ prefix for Instagram
+                if icon == "instagram" && !text.hasPrefix("@") && !text.isEmpty {
+                    Text("@")
+                        .foregroundColor(.gray)
+                }
+                
+                TextField(placeholder, text: $text)
+                    .font(.subheadline)
+                    .foregroundColor(universalAccentColor)
+                    .keyboardType(keyboardType)
+                    .placeholder(when: text.isEmpty) {
+                        Text(placeholder)
+                            .foregroundColor(universalAccentColor.opacity(0.7))
+                            .font(.subheadline)
+                    }
+                
+                Spacer()
+            }
+            .padding()
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(
+                    cornerRadius: universalNewRectangleCornerRadius
+                )
+                    // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
+                    .stroke(icon == "instagram" ? Color(red: 1, green: 0.83, blue: 0.33) : Color(red: 0.37, green: 0.98, blue: 0.47), lineWidth: 1)
             )
-                // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
-                .stroke(icon == "instagram" ? Color(red: 1, green: 0.83, blue: 0.33) : Color(red: 0.37, green: 0.98, blue: 0.47), lineWidth: 1)
-        )
+            
+            // Add helpful hint text
+            Text(icon == "instagram" ? "Enter your Instagram handle (with or without @)" : "Enter your phone number with country code")
+                .font(.caption)
+                .foregroundColor(.gray)
+                .padding(.leading, 2)
+        }
+    }
+}
+
+// Extension to support placeholders with custom styling
+extension View {
+    func placeholder<Content: View>(
+        when shouldShow: Bool,
+        alignment: Alignment = .leading,
+        @ViewBuilder placeholder: () -> Content) -> some View {
+        
+        ZStack(alignment: alignment) {
+            placeholder().opacity(shouldShow ? 1 : 0)
+            self
+        }
     }
 } 

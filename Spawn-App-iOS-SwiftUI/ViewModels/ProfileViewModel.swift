@@ -106,10 +106,14 @@ class ProfileViewModel: ObservableObject {
         if let url = URL(string: APIService.baseURL + "users/\(userId)/social-media") {
             do {
                 let updateDTO = UpdateUserSocialMediaDTO(
-                    whatsappLink: whatsappLink,
-                    instagramLink: instagramLink
+                    whatsappNumber: whatsappLink,
+                    instagramUsername: instagramLink
                 )
                 
+                print("updateDTO: \(updateDTO)")
+                
+                // Use the existing updateData method correctly
+                // Make sure to provide the correct type parameters
                 let updatedSocialMedia: UserSocialMediaDTO = try await self.apiService.updateData(
                     updateDTO,
                     to: url,
@@ -118,10 +122,12 @@ class ProfileViewModel: ObservableObject {
                 
                 await MainActor.run {
                     self.userSocialMedia = updatedSocialMedia
+                    print("Social media updated successfully: \(updatedSocialMedia)")
                 }
             } catch {
                 await MainActor.run {
                     self.errorMessage = "Failed to update social media: \(error.localizedDescription)"
+                    print("Social media update error: \(error)")
                 }
             }
         }
