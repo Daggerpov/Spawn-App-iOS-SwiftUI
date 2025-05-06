@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "whatsapp.png",
+      "filename" : "whatsapp_logo.png",
       "idiom" : "universal"
     }
   ],
@@ -9,4 +9,4 @@
     "author" : "xcode",
     "version" : 1
   }
-} 
+}
