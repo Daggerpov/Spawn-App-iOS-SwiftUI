@@ -91,8 +91,7 @@ struct ProfileView: View {
                     .padding(.horizontal)
                 }
                 .background(universalBackgroundColor)
-                .navigationTitle("Your Profile - Settings")
-                .navigationBarTitleDisplayMode(.inline)
+                .navigationBarBackButtonHidden()
                 .navigationBarItems(
                     trailing: NavigationLink(destination: SettingsView()) {
                         Image(systemName: "gearshape")
@@ -362,14 +361,14 @@ extension ProfileView {
                         Text("Edit Profile")
                     }
                     .font(.caption)
-                    .foregroundColor(universalAccentColor)
-                    .frame(height: 36)
+                    .foregroundColor(universalSecondaryColor)
+                    .frame(height: 24)
                     .frame(maxWidth: .infinity)
                 }
                 .navigationBarBackButtonHidden(true)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(universalAccentColor, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(universalSecondaryColor, lineWidth: 1)
                 )
             }
             
@@ -381,12 +380,12 @@ extension ProfileView {
                     Text("Share Profile")
                 }
                 .font(.caption)
-                .foregroundColor(universalAccentColor)
-                .frame(height: 36)
+                .foregroundColor(universalSecondaryColor)
+                .frame(height: 24)
                 .frame(maxWidth: .infinity)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(universalAccentColor, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(universalSecondaryColor, lineWidth: 1)
                 )
             }
         }
@@ -521,15 +520,16 @@ extension ProfileView {
 // MARK: - Interests Section
 extension ProfileView {
     private var interestsSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            interestsSectionHeader
-            
+        ZStack() {
             // Interests content
             if profileViewModel.isLoadingInterests {
                 interestsLoadingView
             } else {
                 interestsContentView
             }
+            interestsSectionHeader
+                .padding(.bottom, 100)
+                .padding(.leading, 6)
         }
     }
     
@@ -537,8 +537,16 @@ extension ProfileView {
         HStack {
             Text("Interests + Hobbies")
                 .font(.headline)
-                .foregroundColor(universalAccentColor)
-            
+                .foregroundColor(.white)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(universalTertiaryColor, lineWidth: 1)
+                )
+                .background(universalTertiaryColor)
+                .clipShape(Capsule())
+
             Spacer()
             
             // Social media icons
@@ -614,6 +622,7 @@ extension ProfileView {
             .foregroundColor(.gray)
             .italic()
             .padding()
+            .padding(.top, 12)
     }
     
     private var interestsFlowView: some View {

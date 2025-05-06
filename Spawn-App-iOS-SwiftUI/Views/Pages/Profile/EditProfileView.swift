@@ -242,6 +242,12 @@ struct PersonalInfoSection: View {
                         )
                             .stroke(universalAccentColor, lineWidth: 1)
                     )
+                    .placeholder(when: name.isEmpty) {
+                        Text("Full Name")
+                            .foregroundColor(universalAccentColor.opacity(0.7))
+                            .font(.subheadline)
+                            .padding(.leading)
+                    }
             }
             
             // Username field
@@ -257,6 +263,11 @@ struct PersonalInfoSection: View {
                     TextField("username", text: $username)
                         .foregroundColor(universalAccentColor)
                         .font(.subheadline)
+                        .placeholder(when: username.isEmpty) {
+                            Text("username")
+                                .foregroundColor(universalAccentColor.opacity(0.7))
+                                .font(.subheadline)
+                        }
                 }
                 .padding()
                 .cornerRadius(10)
@@ -301,6 +312,12 @@ struct InterestsSection: View {
                     )
                         .stroke(universalAccentColor, lineWidth: 1)
                 )
+                .placeholder(when: newInterest.isEmpty) {
+                    Text("Type and press enter to add...")
+                        .foregroundColor(universalAccentColor.opacity(0.7))
+                        .font(.subheadline)
+                        .padding(.leading)
+                }
             
             
             // Existing interests as chips
@@ -357,6 +374,7 @@ struct InterestChipView: View {
             Text(interest)
                 .font(.caption)
                 .padding(.leading, 8)
+                .foregroundColor(universalAccentColor)
             
             Spacer()
             
@@ -422,6 +440,11 @@ struct SocialMediaField: View {
                 .font(.subheadline)
                 .foregroundColor(universalAccentColor)
                 .keyboardType(keyboardType)
+                .placeholder(when: text.isEmpty) {
+                    Text(placeholder)
+                        .foregroundColor(universalAccentColor.opacity(0.7))
+                        .font(.subheadline)
+                }
             
             Spacer()
         }
@@ -434,5 +457,19 @@ struct SocialMediaField: View {
                 // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
                 .stroke(icon == "instagram" ? Color(red: 1, green: 0.83, blue: 0.33) : Color(red: 0.37, green: 0.98, blue: 0.47), lineWidth: 1)
         )
+    }
+}
+
+// Extension to support placeholders with custom styling
+extension View {
+    func placeholder<Content: View>(
+        when shouldShow: Bool,
+        alignment: Alignment = .leading,
+        @ViewBuilder placeholder: () -> Content) -> some View {
+        
+        ZStack(alignment: alignment) {
+            placeholder().opacity(shouldShow ? 1 : 0)
+            self
+        }
     }
 } 

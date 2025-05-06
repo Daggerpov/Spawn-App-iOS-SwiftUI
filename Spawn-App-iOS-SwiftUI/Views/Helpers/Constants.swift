@@ -18,6 +18,7 @@ let universalSecondaryColorHexCode: String = "#8693FF"
 let universalSecondaryColor: Color = Color(
     hex: universalSecondaryColorHexCode
 )
+let universalTertiaryColor: Color = Color(red: 1, green: 0.45, blue: 0.44)
 let universalAccentColorHexCode: String = "#000000"
 let universalAccentColor: Color = Color(
 	hex: universalAccentColorHexCode
