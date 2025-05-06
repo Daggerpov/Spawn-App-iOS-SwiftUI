@@ -214,6 +214,7 @@ struct ProfileImageSection: View {
             Spacer()
         }
         .padding(.top, 10)
+        .padding(.horizontal)
     }
 }
 
@@ -237,7 +238,7 @@ struct PersonalInfoSection: View {
                     .cornerRadius(10)
                     .overlay(
                         RoundedRectangle(
-                            cornerRadius: universalRectangleCornerRadius
+                            cornerRadius: universalNewRectangleCornerRadius
                         )
                             .stroke(universalAccentColor, lineWidth: 1)
                     )
@@ -256,15 +257,15 @@ struct PersonalInfoSection: View {
                     TextField("username", text: $username)
                         .foregroundColor(universalAccentColor)
                         .font(.subheadline)
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: universalRectangleCornerRadius
-                        )
-                            .stroke(universalAccentColor, lineWidth: 1)
-                    )
                 }
                 .padding()
                 .cornerRadius(10)
+                .overlay(
+                        RoundedRectangle(
+                            cornerRadius: universalNewRectangleCornerRadius
+                        )
+                            .stroke(universalAccentColor, lineWidth: 1)
+                    )
             }
         }
         .padding(.horizontal)
@@ -296,7 +297,7 @@ struct InterestsSection: View {
                 }
                 .overlay(
                     RoundedRectangle(
-                        cornerRadius: universalRectangleCornerRadius
+                        cornerRadius: universalNewRectangleCornerRadius
                     )
                         .stroke(universalAccentColor, lineWidth: 1)
                 )
@@ -435,7 +436,12 @@ struct SocialMediaField: View {
         }
         .padding()
         .cornerRadius(10)
-        // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
-        .background(Color.gray.opacity(0.1))
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: universalNewRectangleCornerRadius
+            )
+                // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
+                .stroke(universalAccentColor, lineWidth: 1)
+        )
     }
 } 
