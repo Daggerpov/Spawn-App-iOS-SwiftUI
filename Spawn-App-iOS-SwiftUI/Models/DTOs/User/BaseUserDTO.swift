@@ -41,7 +41,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 
 extension BaseUserDTO {
 	static var danielAgapov: BaseUserDTO = {
-		let id: UUID = UUID()
+		let id: UUID = UUID(uuidString: "7CF00DD1-D246-4339-8B85-0EC589161DBF") ?? UUID()
 		return BaseUserDTO(
 			id: id,
 			username: "daggerpov",
