@@ -37,25 +37,28 @@ struct AccountSettingsView: View {
                 VStack(spacing: 24) {
                     // Authentication section
                     SettingsSection(title: "Authentication") {
-                        NavigationLink(destination: ChangePasswordView()) {
-                            HStack {
-                                Image(systemName: "lock.circle")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.black)
-                                    .frame(width: 24, height: 24)
-                                
-                                Text("Change Password")
-                                    .font(.body)
-                                    .foregroundColor(.black)
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
+                        // Only show change password option for email-based accounts
+                        if userAuth.authProvider == .email {
+                            NavigationLink(destination: ChangePasswordView()) {
+                                HStack {
+                                    Image(systemName: "lock.circle")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.black)
+                                        .frame(width: 24, height: 24)
+                                    
+                                    Text("Change Password")
+                                        .font(.body)
+                                        .foregroundColor(.black)
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(.horizontal)
+                                .frame(height: 44)
                             }
-                            .padding(.horizontal)
-                            .frame(height: 44)
                         }
                     }
                     
@@ -98,6 +101,7 @@ struct AccountSettingsView: View {
         }
     }
 }
+
 
 @available(iOS 17, *)
 #Preview {
