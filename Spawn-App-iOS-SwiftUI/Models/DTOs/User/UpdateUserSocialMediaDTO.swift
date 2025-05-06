@@ -7,6 +7,11 @@
 
 
 struct UpdateUserSocialMediaDTO: Codable {
-    var whatsappLink: String?
-    var instagramLink: String?
+    var whatsappNumber: String?
+    var instagramUsername: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case whatsappNumber
+        case instagramUsername
+    }
 } 

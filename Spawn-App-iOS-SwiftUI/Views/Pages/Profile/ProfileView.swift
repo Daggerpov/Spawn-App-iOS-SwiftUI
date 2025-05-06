@@ -526,19 +526,21 @@ extension ProfileView {
 // MARK: - Interests Section
 extension ProfileView {
     private var interestsSection: some View {
-        ZStack() {
+        ZStack(alignment: .top) {
             // Interests content
-            Group{
+            Group {
                 if profileViewModel.isLoadingInterests {
                     interestsLoadingView
                 } else {
                     interestsContentView
                 }
             }
+            .padding(.top, 24) // Add padding to push content below the header
             
+            // Position the header to be centered on the top border
             interestsSectionHeader
                 .padding(.leading, 6)
-                .padding(.bottom, 100)
+//                .offset() // Align with the top border
         }
     }
     
@@ -573,12 +575,13 @@ extension ProfileView {
                 Image("whatsapp")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 48, height: 48)
+                    .rotationEffect(.degrees(-8))
                     .onTapGesture {
-                        openSocialMediaLink(platform: "WhatsApp", 
-                                           link: whatsappLink.isEmpty ? 
-                                           (profileViewModel.userSocialMedia?.whatsappLink ?? "") : 
-                                           whatsappLink)
+                        openSocialMediaLink(platform: "WhatsApp",
+                                            link: whatsappLink.isEmpty ?
+                                            (profileViewModel.userSocialMedia?.whatsappLink ?? "") :
+                                                whatsappLink)
                     }
             }
             
@@ -587,12 +590,13 @@ extension ProfileView {
                 Image("instagram")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 24, height: 24)
+                    .frame(width: 40, height: 40)
+                    .rotationEffect(.degrees(8))
                     .onTapGesture {
-                        openSocialMediaLink(platform: "Instagram", 
-                                           link: instagramLink.isEmpty ? 
-                                           (profileViewModel.userSocialMedia?.instagramLink ?? "") : 
-                                           instagramLink)
+                        openSocialMediaLink(platform: "Instagram",
+                                            link: instagramLink.isEmpty ?
+                                            (profileViewModel.userSocialMedia?.instagramLink ?? "") :
+                                                instagramLink)
                     }
             }
         }
