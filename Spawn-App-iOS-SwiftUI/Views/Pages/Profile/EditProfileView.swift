@@ -28,8 +28,12 @@ struct EditProfileView: View {
         self.userId = userId
         self.profileViewModel = profileViewModel
         
+        var initialName = ""
+        
         // Use a local variable to get the name
-        let initialName = UserAuthViewModel.shared.spawnUser?.firstName ?? ""
+        if let spawnUser = UserAuthViewModel.shared.spawnUser {
+            initialName = FormatterService.shared.formatName(user: spawnUser)
+        }
         let initialUsername = UserAuthViewModel.shared.spawnUser?.username ?? ""
         let initialWhatsapp = profileViewModel.userSocialMedia?.whatsappLink ?? ""
         let initialInstagram = profileViewModel.userSocialMedia?.instagramLink ?? ""
@@ -165,7 +169,6 @@ struct ProfileImageSection: View {
     
     var body: some View {
         HStack {
-            Spacer()
             ZStack(alignment: .bottomTrailing) {
                 if isImageLoading {
                     ProgressView()
@@ -230,8 +233,14 @@ struct PersonalInfoSection: View {
                 TextField("Full Name", text: $name)
                     .font(.subheadline)
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .foregroundColor(universalAccentColor)
                     .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: universalRectangleCornerRadius
+                        )
+                            .stroke(universalAccentColor, lineWidth: 1)
+                    )
             }
             
             // Username field
@@ -245,10 +254,16 @@ struct PersonalInfoSection: View {
                         .foregroundColor(.gray)
                     
                     TextField("username", text: $username)
+                        .foregroundColor(universalAccentColor)
                         .font(.subheadline)
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: universalRectangleCornerRadius
+                        )
+                            .stroke(universalAccentColor, lineWidth: 1)
+                    )
                 }
                 .padding()
-                .background(Color.gray.opacity(0.1))
                 .cornerRadius(10)
             }
         }
@@ -274,11 +289,18 @@ struct InterestsSection: View {
             TextField("Type and press enter to add...", text: $newInterest)
                 .font(.subheadline)
                 .padding()
-                .background(Color.gray.opacity(0.1))
+                .foregroundColor(universalAccentColor)
                 .cornerRadius(10)
                 .onSubmit {
                     addInterest()
                 }
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: universalRectangleCornerRadius
+                    )
+                        .stroke(universalAccentColor, lineWidth: 1)
+                )
+            
             
             // Existing interests as chips
             if !profileViewModel.userInterests.isEmpty {
@@ -412,7 +434,8 @@ struct SocialMediaField: View {
             }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
         .cornerRadius(10)
+        // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
+        .background(Color.gray.opacity(0.1))
     }
 } 

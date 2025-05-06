@@ -367,6 +367,7 @@ extension ProfileView {
                     .frame(height: 36)
                     .frame(maxWidth: .infinity)
                 }
+                .navigationBarBackButtonHidden(true)
                 .overlay(
                     RoundedRectangle(cornerRadius: 18)
                         .stroke(universalAccentColor, lineWidth: 1)
