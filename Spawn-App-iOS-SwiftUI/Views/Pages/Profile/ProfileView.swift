@@ -528,14 +528,17 @@ extension ProfileView {
     private var interestsSection: some View {
         ZStack() {
             // Interests content
-            if profileViewModel.isLoadingInterests {
-                interestsLoadingView
-            } else {
-                interestsContentView
+            Group{
+                if profileViewModel.isLoadingInterests {
+                    interestsLoadingView
+                } else {
+                    interestsContentView
+                }
             }
+            
             interestsSectionHeader
-                .padding(.bottom, 100)
                 .padding(.leading, 6)
+                .padding(.bottom, 100)
         }
     }
     
@@ -613,10 +616,18 @@ extension ProfileView {
             } else {
                 // Interests as chips with proper layout
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        // Dynamic wrapping row layout for interests
-                        CustomFlowLayout(data: profileViewModel.userInterests, spacing: 8) { interest in
-                            interestChip(interest: interest)
+                    LazyVStack(alignment: .leading, spacing: 12) {
+                        // Use a simple LazyVGrid for consistent layout
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.adaptive(minimum: 80, maximum: 150), spacing: 8)
+                            ],
+                            alignment: .leading,
+                            spacing: 8
+                        ) {
+                            ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                                interestChip(interest: interest)
+                            }
                         }
                     }
                     .padding()
