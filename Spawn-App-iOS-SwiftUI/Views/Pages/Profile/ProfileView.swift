@@ -612,13 +612,18 @@ extension ProfileView {
                 emptyInterestsView
             } else {
                 // Interests as chips with proper layout
-                VStack(alignment: .leading) {
-                    interestsFlowView
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 12) {
+                        // Dynamic wrapping row layout for interests
+                        CustomFlowLayout(data: profileViewModel.userInterests, spacing: 8) { interest in
+                            interestChip(interest: interest)
+                        }
+                    }
+                    .padding()
                 }
-                .padding()
             }
         }
-        .frame(height: profileViewModel.userInterests.isEmpty ? 100 : CGFloat(min(4, (profileViewModel.userInterests.count + 1) / 2) * 40 + 20))
+        .frame(height: profileViewModel.userInterests.isEmpty ? 100 : 140)
         .padding(.horizontal)
         .padding(.top, 5)
     }
@@ -631,35 +636,29 @@ extension ProfileView {
             .padding(.top, 12)
     }
     
-    private var interestsFlowView: some View {
-        LazyVGrid(columns: [GridItem(.adaptive(minimum: 80), spacing: 8)], alignment: .leading, spacing: 8) {
-            ForEach(profileViewModel.userInterests, id: \.self) { interest in
-                interestChip(interest: interest)
-            }
-        }
-    }
-    
     private func interestChip(interest: String) -> some View {
-        HStack {
-            Text(interest)
-                .font(.subheadline)
-                .padding(.vertical, 5)
-                .padding(.horizontal, 10)
-                .background(Color.gray.opacity(0.2))
-                .foregroundColor(universalAccentColor)
-                .clipShape(Capsule())
-
-            if isCurrentUserProfile && editingState == .save {
-                Button(action: {
-                    removeInterest(interest)
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.red)
-                        .font(.caption)
-                        .offset(x: -5, y: 0)
-                }
-            }
-        }
+        Text(interest)
+            .font(.subheadline)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 14)
+            .foregroundColor(universalAccentColor)
+            .background(Color.white)
+            .clipShape(Capsule())
+            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+            .overlay(
+                isCurrentUserProfile && editingState == .save ?
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        removeInterest(interest)
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                    .offset(x: 5, y: -8)
+                } : nil
+            )
     }
 }
 

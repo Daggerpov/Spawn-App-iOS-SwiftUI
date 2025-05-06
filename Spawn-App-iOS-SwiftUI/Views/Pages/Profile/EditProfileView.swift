@@ -132,11 +132,15 @@ struct EditProfileView: View {
                 lastName: lastName
             )
             
+            // Format social media links properly before saving
+            let formattedWhatsapp = FormatterService.shared.formatWhatsAppLink(whatsappLink)
+            let formattedInstagram = FormatterService.shared.formatInstagramLink(instagramLink)
+            
             // Update social media links
             await profileViewModel.updateSocialMedia(
                 userId: userId,
-                whatsappLink: whatsappLink.isEmpty ? nil : whatsappLink,
-                instagramLink: instagramLink.isEmpty ? nil : instagramLink
+                whatsappLink: formattedWhatsapp.isEmpty ? nil : formattedWhatsapp,
+                instagramLink: formattedInstagram.isEmpty ? nil : formattedInstagram
             )
             
             // Update profile picture if selected
