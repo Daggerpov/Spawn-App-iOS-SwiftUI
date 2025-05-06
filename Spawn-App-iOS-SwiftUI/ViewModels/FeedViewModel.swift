@@ -22,7 +22,6 @@ class FeedViewModel: ObservableObject {
         self.apiService = apiService
         self.userId = userId
         self.appCache = AppCache.shared
-        self._activeTag = Published(initialValue: nil)  // Initialize as nil since tags is empty
         
         // Subscribe to AppCache events updates
         appCache.$events
