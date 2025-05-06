@@ -49,45 +49,45 @@ struct ProfileView: View {
         NavigationStack {
             ZStack {
                 ScrollView {
-                    VStack(alignment: .center, spacing: 15) {
+                    VStack(alignment: .center, spacing: 10) {
                         // Profile Picture
                         profilePictureSection
-                        .padding(.top, 20)
+                        .padding(.top, 15)
                         
                         // Name and Username
                         Text(FormatterService.shared.formatName(user: user))
-                            .font(.title2)
+                            .font(.title3)
                             .bold()
                             .foregroundColor(universalAccentColor)
                         
                         Text("@\(user.username)")
-                            .font(.body)
+                            .font(.subheadline)
                             .foregroundColor(Color.gray)
-                            .padding(.bottom, 10)
+                            .padding(.bottom, 5)
                         
                         // Profile Action Buttons
                         profileActionButtons
-                        .padding(.horizontal, 30)
-                        .padding(.bottom, 20)
+                        .padding(.horizontal, 25)
+                        .padding(.bottom, 15)
                         
                         // Edit Save Cancel buttons (only when editing)
                         if isCurrentUserProfile && editingState == .save {
                             profileEditButtons
-                            .padding(.bottom, 10)
+                            .padding(.bottom, 5)
                         }
                         
                         // Interests Section with Social Media Icons
                         interestsSection
-                        .padding(.bottom, 20)
+                        .padding(.bottom, 15)
                         
                         // User Stats
                         userStatsSection
-                        .padding(.bottom, 20)
+                        .padding(.bottom, 15)
                         
                         // Weekly Calendar View
                         weeklyCalendarView
                         .padding(.horizontal)
-                        .padding(.bottom, 20)
+                        .padding(.bottom, 15)
                     }
                     .padding(.horizontal)
                 }
@@ -250,12 +250,12 @@ extension ProfileView {
         ZStack(alignment: .bottomTrailing) {
             if isImageLoading {
                 ProgressView()
-                    .frame(width: 150, height: 150)
+                    .frame(width: 130, height: 130)
             } else if let selectedImage = selectedImage {
                 Image(uiImage: selectedImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 150, height: 150)
+                    .frame(width: 130, height: 130)
                     .clipShape(Circle())
                     .transition(.opacity)
                     .id("selectedImage-\(UUID().uuidString)")
@@ -264,32 +264,32 @@ extension ProfileView {
                     Image(profilePictureString)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 150, height: 150)
+                        .frame(width: 130, height: 130)
                         .clipShape(Circle())
                 } else {
                     AsyncImage(url: URL(string: profilePictureString)) { phase in
                         switch phase {
                         case .empty:
                             ProgressView()
-                                .frame(width: 150, height: 150)
+                                .frame(width: 130, height: 130)
                         case .success(let image):
                             image
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 150, height: 150)
+                                .frame(width: 130, height: 130)
                                 .clipShape(Circle())
                                 .transition(.opacity.animation(.easeInOut))
                         case .failure:
                             Image(systemName: "person.circle.fill")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 150, height: 150)
+                                .frame(width: 130, height: 130)
                                 .foregroundColor(Color.gray.opacity(0.5))
                         @unknown default:
                             Image(systemName: "person.circle.fill")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 150, height: 150)
+                                .frame(width: 130, height: 130)
                                 .foregroundColor(Color.gray.opacity(0.5))
                         }
                     }
@@ -299,7 +299,7 @@ extension ProfileView {
                 Image(systemName: "person.circle.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 150, height: 150)
+                    .frame(width: 130, height: 130)
                     .foregroundColor(Color.gray.opacity(0.5))
             }
 
@@ -307,11 +307,11 @@ extension ProfileView {
             if isCurrentUserProfile && editingState == .save {
                 Circle()
                     .fill(profilePicPlusButtonColor)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 26, height: 26)
                     .overlay(
                         Image(systemName: "plus")
                             .foregroundColor(.white)
-                            .font(.system(size: 16, weight: .bold))
+                            .font(.system(size: 14, weight: .bold))
                     )
                     .offset(x: -10, y: -10)
                     .onTapGesture {
@@ -355,20 +355,21 @@ extension ProfileView {
 // MARK: - Profile Action Buttons
 extension ProfileView {
     private var profileActionButtons: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: 12) {
             if isCurrentUserProfile {
                 NavigationLink(destination: EditProfileView(userId: user.id, profileViewModel: profileViewModel)) {
                     HStack {
                         Image(systemName: "pencil")
                         Text("Edit Profile")
                     }
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundColor(universalAccentColor)
-                    .frame(height: 40)
+                    .frame(height: 36)
                     .frame(maxWidth: .infinity)
                 }
+                .navigationBarBackButtonHidden(true)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: 18)
                         .stroke(universalAccentColor, lineWidth: 1)
                 )
             }
@@ -380,12 +381,12 @@ extension ProfileView {
                     Image(systemName: "square.and.arrow.up")
                     Text("Share Profile")
                 }
-                .font(.subheadline)
+                .font(.caption)
                 .foregroundColor(universalAccentColor)
-                .frame(height: 40)
+                .frame(height: 36)
                 .frame(maxWidth: .infinity)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: 18)
                         .stroke(universalAccentColor, lineWidth: 1)
                 )
             }
@@ -651,48 +652,48 @@ extension ProfileView {
 // MARK: - User Stats Section
 extension ProfileView {
     private var userStatsSection: some View {
-        HStack(spacing: 40) {
-            VStack(spacing: 5) {
+        HStack(spacing: 35) {
+            VStack(spacing: 4) {
                 Image(systemName: "link")
-                    .font(.system(size: 18))
+                    .font(.system(size: 16))
                     .foregroundColor(.gray)
                 
                 Text("\(profileViewModel.userStats?.peopleMet ?? 0)")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(universalAccentColor)
                 
                 Text("People\nmet")
-                    .font(.caption)
+                    .font(.caption2)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.gray)
             }
             
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 Image(systemName: "star.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 16))
                     .foregroundColor(.gray)
                 
                 Text("\(profileViewModel.userStats?.spawnsMade ?? 0)")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(universalAccentColor)
                 
                 Text("Spawns\nmade")
-                    .font(.caption)
+                    .font(.caption2)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.gray)
             }
             
-            VStack(spacing: 5) {
+            VStack(spacing: 4) {
                 Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 18))
+                    .font(.system(size: 16))
                     .foregroundColor(.gray)
                 
                 Text("\(profileViewModel.userStats?.spawnsJoined ?? 0)")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: 20, weight: .bold))
                     .foregroundColor(universalAccentColor)
                 
                 Text("Spawns\njoined")
-                    .font(.caption)
+                    .font(.caption2)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.gray)
             }
@@ -703,7 +704,7 @@ extension ProfileView {
 // MARK: - Weekly Calendar
 extension ProfileView {
     private var weeklyCalendarView: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             // Month navigation and title
             HStack {
                 Button(action: {
@@ -711,13 +712,13 @@ extension ProfileView {
                 }) {
                     Image(systemName: "chevron.left")
                         .foregroundColor(universalAccentColor)
-                        .font(.title3)
+                        .font(.body)
                 }
                 
                 Spacer()
                 
                 Text(monthYearString())
-                    .font(.headline)
+                    .font(.subheadline)
                     .foregroundColor(universalAccentColor)
                 
                 Spacer()
@@ -727,16 +728,16 @@ extension ProfileView {
                 }) {
                     Image(systemName: "chevron.right")
                         .foregroundColor(universalAccentColor)
-                        .font(.title3)
+                        .font(.body)
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 15)
             
             // Days of week header
             HStack(spacing: 0) {
                 ForEach(weekDays, id: \.self) { day in
                     Text(day)
-                        .font(.caption)
+                        .font(.caption2)
                         .frame(maxWidth: .infinity)
                         .foregroundColor(.gray)
                 }
@@ -744,17 +745,17 @@ extension ProfileView {
             
             if profileViewModel.isLoadingCalendar {
                 ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: 200)
+                    .frame(maxWidth: .infinity, minHeight: 150)
             } else {
                 // Calendar grid
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     ForEach(0..<5, id: \.self) { row in
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             ForEach(0..<7, id: \.self) { col in
                                 if let activity = profileViewModel.calendarActivities[row][col] {
-                                    RoundedRectangle(cornerRadius: 8)
+                                    RoundedRectangle(cornerRadius: 6)
                                         .fill(activityColor(for: activity.activityType))
-                                        .frame(height: 40)
+                                        .frame(height: 32)
                                         .overlay(
                                             activityIcon(for: activity.activityType)
                                                 .foregroundColor(.white)
@@ -763,9 +764,9 @@ extension ProfileView {
                                             // Handle activity tap
                                         }
                                 } else {
-                                    RoundedRectangle(cornerRadius: 8)
+                                    RoundedRectangle(cornerRadius: 6)
                                         .fill(Color.gray.opacity(0.2))
-                                        .frame(height: 40)
+                                        .frame(height: 32)
                                 }
                             }
                         }

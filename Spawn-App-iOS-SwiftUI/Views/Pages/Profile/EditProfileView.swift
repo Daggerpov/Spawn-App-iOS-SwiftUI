@@ -28,8 +28,12 @@ struct EditProfileView: View {
         self.userId = userId
         self.profileViewModel = profileViewModel
         
+        var initialName = ""
+        
         // Use a local variable to get the name
-        let initialName = UserAuthViewModel.shared.spawnUser?.firstName ?? ""
+        if let spawnUser = UserAuthViewModel.shared.spawnUser {
+            initialName = FormatterService.shared.formatName(user: spawnUser)
+        }
         let initialUsername = UserAuthViewModel.shared.spawnUser?.username ?? ""
         let initialWhatsapp = profileViewModel.userSocialMedia?.whatsappLink ?? ""
         let initialInstagram = profileViewModel.userSocialMedia?.instagramLink ?? ""
@@ -43,7 +47,7 @@ struct EditProfileView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 18) {
                     // Profile picture section
                     ProfileImageSection(
                         selectedImage: $selectedImage,
@@ -76,6 +80,7 @@ struct EditProfileView: View {
                     Spacer()
                 }
             }
+            .background(universalBackgroundColor)
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -90,7 +95,7 @@ struct EditProfileView: View {
                     Button("Save") {
                         saveProfile()
                     }
-                    .foregroundColor(.blue)
+                    .foregroundColor(universalAccentColor)
                     .disabled(isSaving)
                     .opacity(isSaving ? 0.5 : 1.0)
                 }
@@ -107,6 +112,7 @@ struct EditProfileView: View {
                 )
             }
         }
+        .accentColor(universalAccentColor)
     }
     
     private func saveProfile() {
@@ -114,7 +120,7 @@ struct EditProfileView: View {
         
         Task {
             // Check if there's a new profile picture
-            let hasNewProfilePicture = selectedImage != nil
+            _ = selectedImage != nil
             
             // Update profile info first
             let firstName = name.split(separator: " ").first.map(String.init) ?? name
@@ -163,44 +169,43 @@ struct ProfileImageSection: View {
     
     var body: some View {
         HStack {
-            Spacer()
             ZStack(alignment: .bottomTrailing) {
                 if isImageLoading {
                     ProgressView()
-                        .frame(width: 120, height: 120)
+                        .frame(width: 110, height: 110)
                 } else if let selectedImage = selectedImage {
                     Image(uiImage: selectedImage)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 120, height: 120)
+                        .frame(width: 110, height: 110)
                         .clipShape(Circle())
                 } else if let profilePicture = UserAuthViewModel.shared.spawnUser?.profilePicture {
                     AsyncImage(url: URL(string: profilePicture)) { image in
                         image
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 120, height: 120)
+                            .frame(width: 110, height: 110)
                             .clipShape(Circle())
                     } placeholder: {
                         ProgressView()
-                            .frame(width: 120, height: 120)
+                            .frame(width: 110, height: 110)
                     }
                 } else {
                     Image(systemName: "person.circle.fill")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 120, height: 120)
+                        .frame(width: 110, height: 110)
                         .foregroundColor(.gray)
                 }
                 
                 // Edit button
                 Circle()
                     .fill(profilePicPlusButtonColor)
-                    .frame(width: 36, height: 36)
+                    .frame(width: 32, height: 32)
                     .overlay(
                         Image(systemName: "pencil")
                             .foregroundColor(.white)
-                            .font(.system(size: 16))
+                            .font(.system(size: 14))
                     )
                     .onTapGesture {
                         showImagePicker = true
@@ -209,6 +214,7 @@ struct ProfileImageSection: View {
             Spacer()
         }
         .padding(.top, 10)
+        .padding(.horizontal)
     }
 }
 
@@ -218,21 +224,28 @@ struct PersonalInfoSection: View {
     @Binding var username: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 16) {
             // Name field
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Name")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                 
                 TextField("Full Name", text: $name)
+                    .font(.subheadline)
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .foregroundColor(universalAccentColor)
                     .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(
+                            cornerRadius: universalNewRectangleCornerRadius
+                        )
+                            .stroke(universalAccentColor, lineWidth: 1)
+                    )
             }
             
             // Username field
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text("Username")
                     .font(.subheadline)
                     .foregroundColor(.gray)
@@ -242,10 +255,17 @@ struct PersonalInfoSection: View {
                         .foregroundColor(.gray)
                     
                     TextField("username", text: $username)
+                        .foregroundColor(universalAccentColor)
+                        .font(.subheadline)
                 }
                 .padding()
-                .background(Color.gray.opacity(0.1))
                 .cornerRadius(10)
+                .overlay(
+                        RoundedRectangle(
+                            cornerRadius: universalNewRectangleCornerRadius
+                        )
+                            .stroke(universalAccentColor, lineWidth: 1)
+                    )
             }
         }
         .padding(.horizontal)
@@ -262,22 +282,30 @@ struct InterestsSection: View {
     @Binding var alertMessage: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Interests + Hobbies (Max \(maxInterests))")
                 .font(.subheadline)
                 .foregroundColor(.gray)
             
             TextField("Type and press enter to add...", text: $newInterest)
+                .font(.subheadline)
                 .padding()
-                .background(Color.gray.opacity(0.1))
+                .foregroundColor(universalAccentColor)
                 .cornerRadius(10)
                 .onSubmit {
                     addInterest()
                 }
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: universalNewRectangleCornerRadius
+                    )
+                        .stroke(universalAccentColor, lineWidth: 1)
+                )
+            
             
             // Existing interests as chips
             if !profileViewModel.userInterests.isEmpty {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 10) {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 8) {
                     ForEach(profileViewModel.userInterests, id: \.self) { interest in
                         InterestChipView(interest: interest) {
                             removeInterest(interest)
@@ -327,19 +355,21 @@ struct InterestChipView: View {
     var body: some View {
         HStack {
             Text(interest)
-                .padding(.leading, 10)
+                .font(.caption)
+                .padding(.leading, 8)
             
             Spacer()
             
             Button(action: onRemove) {
                 Image(systemName: "xmark")
                     .foregroundColor(.red)
-                    .padding(8)
+                    .font(.caption)
+                    .padding(6)
             }
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, 4)
         .background(Color.gray.opacity(0.2))
-        .cornerRadius(20)
+        .cornerRadius(16)
     }
 }
 
@@ -349,7 +379,7 @@ struct SocialMediaSection: View {
     @Binding var instagramLink: String
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text("Third party apps")
                 .font(.subheadline)
                 .foregroundColor(.gray)
@@ -386,24 +416,23 @@ struct SocialMediaField: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 30, height: 30)
-                .padding(.trailing, 10)
+                .padding(.trailing, 8)
             
             TextField(placeholder, text: $text)
+                .font(.subheadline)
                 .foregroundColor(universalAccentColor)
                 .keyboardType(keyboardType)
             
             Spacer()
-            
-            Button(action: {
-                // Clear the field
-                text = ""
-            }) {
-                Image(systemName: "ellipsis")
-                    .foregroundColor(universalAccentColor)
-            }
         }
         .padding()
-        .background(Color.gray.opacity(0.1))
         .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(
+                cornerRadius: universalNewRectangleCornerRadius
+            )
+                // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
+                .stroke(icon == "instagram" ? Color(red: 1, green: 0.83, blue: 0.33) : Color(red: 0.37, green: 0.98, blue: 0.47), lineWidth: 1)
+        )
     }
 } 
