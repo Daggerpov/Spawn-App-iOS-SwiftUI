@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "instagram.png",
+      "filename" : "instagram_logo.png",
       "idiom" : "universal"
     }
   ],
@@ -9,4 +9,4 @@
     "author" : "xcode",
     "version" : 1
   }
-} 
+}
