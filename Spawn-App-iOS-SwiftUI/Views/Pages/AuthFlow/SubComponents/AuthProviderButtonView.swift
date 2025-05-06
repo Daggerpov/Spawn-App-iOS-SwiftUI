@@ -21,6 +21,8 @@ struct AuthProviderButtonView: View {
 					.resizable()
 					.scaledToFit()
 					.frame(width: 25, height: 25)
+                case .email:
+                    EmptyView()
 			}
 
 			Text(

@@ -18,6 +18,11 @@ struct ChangePasswordView: View {
     @State private var isSuccess = false
     @StateObject var userAuth = UserAuthViewModel.shared
     
+    // Show/hide password toggles
+    @State private var showCurrentPassword = false
+    @State private var showNewPassword = false
+    @State private var showConfirmPassword = false
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -46,41 +51,92 @@ struct ChangePasswordView: View {
             .padding(.bottom, 16)
             
             VStack(spacing: 24) {
-                SecureField("Current Password", text: $currentPassword)
+                // Current Password field with toggle
+                HStack {
+                    Group {
+                        if showCurrentPassword {
+                            TextField("Current Password", text: $currentPassword)
+                        } else {
+                            SecureField("Current Password", text: $currentPassword)
+                        }
+                    }
                     .padding()
                     .foregroundColor(universalAccentColor)
                     .font(.subheadline)
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: universalNewRectangleCornerRadius
-                        )
-                            .stroke(universalAccentColor, lineWidth: 1)
+                    
+                    Button(action: {
+                        showCurrentPassword.toggle()
+                    }) {
+                        Image(systemName: showCurrentPassword ? "eye.slash" : "eye")
+                            .foregroundColor(universalAccentColor)
+                    }
+                    .padding(.trailing)
+                }
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: universalNewRectangleCornerRadius
                     )
+                    .stroke(universalAccentColor, lineWidth: 1)
+                )
                 
-                SecureField("New Password", text: $newPassword)
+                // New Password field with toggle
+                HStack {
+                    Group {
+                        if showNewPassword {
+                            TextField("New Password", text: $newPassword)
+                        } else {
+                            SecureField("New Password", text: $newPassword)
+                        }
+                    }
                     .padding()
                     .foregroundColor(universalAccentColor)
                     .font(.subheadline)
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: universalNewRectangleCornerRadius
-                        )
-                            .stroke(universalAccentColor, lineWidth: 1)
+                    
+                    Button(action: {
+                        showNewPassword.toggle()
+                    }) {
+                        Image(systemName: showNewPassword ? "eye.slash" : "eye")
+                            .foregroundColor(universalAccentColor)
+                    }
+                    .padding(.trailing)
+                }
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: universalNewRectangleCornerRadius
                     )
+                    .stroke(universalAccentColor, lineWidth: 1)
+                )
                 
-                SecureField("Confirm New Password", text: $confirmPassword)
+                // Confirm Password field with toggle
+                HStack {
+                    Group {
+                        if showConfirmPassword {
+                            TextField("Confirm New Password", text: $confirmPassword)
+                        } else {
+                            SecureField("Confirm New Password", text: $confirmPassword)
+                        }
+                    }
                     .padding()
                     .foregroundColor(universalAccentColor)
                     .font(.subheadline)
-                    .cornerRadius(10)
-                    .overlay(
-                        RoundedRectangle(
-                            cornerRadius: universalNewRectangleCornerRadius
-                        )
-                            .stroke(universalAccentColor, lineWidth: 1)
+                    
+                    Button(action: {
+                        showConfirmPassword.toggle()
+                    }) {
+                        Image(systemName: showConfirmPassword ? "eye.slash" : "eye")
+                            .foregroundColor(universalAccentColor)
+                    }
+                    .padding(.trailing)
+                }
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(
+                        cornerRadius: universalNewRectangleCornerRadius
                     )
+                    .stroke(universalAccentColor, lineWidth: 1)
+                )
                 
                 Button(action: {
                     if newPassword.isEmpty || confirmPassword.isEmpty || currentPassword.isEmpty {
@@ -135,3 +191,4 @@ struct ChangePasswordView: View {
         }
     }
 }
+
