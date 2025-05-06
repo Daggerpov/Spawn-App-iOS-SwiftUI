@@ -152,16 +152,6 @@ struct SettingsView: View {
                             .frame(height: 44)
                         }
                     }
-                    
-                    // Delete Account option (optional - could be in Account section)
-                    Button(action: {
-                        userAuth.activeAlert = .deleteConfirmation
-                    }) {
-                        Text("Delete Account")
-                            .font(.body)
-                            .foregroundColor(.red)
-                            .padding(.vertical, 24)
-                    }
                 }
                 .padding(.horizontal)
             }
