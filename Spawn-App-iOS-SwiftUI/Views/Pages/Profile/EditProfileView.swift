@@ -415,7 +415,7 @@ struct SocialMediaField: View {
             Image(icon)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 26, height: 26)
+                .frame(width: 30, height: 30)
                 .padding(.trailing, 8)
             
             TextField(placeholder, text: $text)
@@ -424,15 +424,6 @@ struct SocialMediaField: View {
                 .keyboardType(keyboardType)
             
             Spacer()
-            
-            Button(action: {
-                // Clear the field
-                text = ""
-            }) {
-                Image(systemName: "ellipsis")
-                    .foregroundColor(universalAccentColor)
-                    .font(.caption)
-            }
         }
         .padding()
         .cornerRadius(10)
@@ -441,7 +432,7 @@ struct SocialMediaField: View {
                 cornerRadius: universalNewRectangleCornerRadius
             )
                 // TODO DANIEL A: adjust this color to be the gradient of the logo, like in Figma
-                .stroke(universalAccentColor, lineWidth: 1)
+                .stroke(icon == "instagram" ? Color(red: 1, green: 0.83, blue: 0.33) : Color(red: 0.37, green: 0.98, blue: 0.47), lineWidth: 1)
         )
     }
 } 
