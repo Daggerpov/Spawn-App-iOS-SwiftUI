@@ -359,10 +359,13 @@ extension ProfileView {
                     HStack {
                         Image(systemName: "pencil")
                         Text("Edit Profile")
+                            .bold()
                     }
                     .font(.caption)
                     .foregroundColor(universalSecondaryColor)
-                    .frame(height: 24)
+                    .padding(.vertical, 24)
+                    .padding(.horizontal, 8)
+                    .frame(height: 32)
                     .frame(maxWidth: .infinity)
                 }
                 .navigationBarBackButtonHidden(true)
@@ -378,10 +381,13 @@ extension ProfileView {
                 HStack {
                     Image(systemName: "square.and.arrow.up")
                     Text("Share Profile")
+                        .bold()
                 }
                 .font(.caption)
                 .foregroundColor(universalSecondaryColor)
-                .frame(height: 24)
+                .padding(.vertical, 24)
+                .padding(.horizontal, 8)
+                .frame(height: 32)
                 .frame(maxWidth: .infinity)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
