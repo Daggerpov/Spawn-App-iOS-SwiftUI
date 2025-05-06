@@ -412,7 +412,6 @@ class APIService: IAPIService {
 			"username": userDTO.username,
 			"firstName": userDTO.firstName,
 			"lastName": userDTO.lastName,
-			"bio": userDTO.bio,
 			"email": userDTO.email,
 		]
 
