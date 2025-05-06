@@ -863,37 +863,6 @@ extension ProfileView {
                 Image(systemName: "line.3.horizontal")
                     .foregroundColor(universalAccentColor)
                     .font(.title3)
-                    
-                // User avatar in menu button
-                if let profilePictureString = userAuth.spawnUser?.profilePicture, 
-                   !profilePictureString.isEmpty {
-                    AsyncImage(url: URL(string: profilePictureString)) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 30, height: 30)
-                                .clipShape(Circle())
-                        default:
-                            Circle()
-                                .fill(Color.gray.opacity(0.3))
-                                .frame(width: 30, height: 30)
-                                .overlay(
-                                    Text(String(userAuth.spawnUser?.username.prefix(1) ?? "U"))
-                                        .foregroundColor(.gray)
-                                )
-                        }
-                    }
-                } else {
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 30, height: 30)
-                        .overlay(
-                            Text(String(userAuth.spawnUser?.username.prefix(1) ?? "U"))
-                                .foregroundColor(.gray)
-                        )
-                }
             }
         }
     }
