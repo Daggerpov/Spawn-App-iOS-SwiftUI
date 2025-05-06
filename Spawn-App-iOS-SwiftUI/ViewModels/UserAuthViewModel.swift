@@ -672,6 +672,35 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
+	// Add a method to fetch the latest user data from the backend
+	func fetchUserData() async {
+		guard let userId = spawnUser?.id else {
+			print("Cannot fetch user data: No user ID found")
+			return
+		}
+		
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
+			do {
+				let updatedUser: BaseUserDTO = try await self.apiService.fetchData(
+					from: url,
+					parameters: nil
+				)
+				
+				await MainActor.run {
+					// Update the current user object with fresh data
+					self.spawnUser = updatedUser
+					
+					// Force UI to update
+					self.objectWillChange.send()
+					
+					print("User data refreshed: \(updatedUser.username), \(updatedUser.firstName ?? "") \(updatedUser.lastName ?? "")")
+				}
+			} catch {
+				print("Error fetching user data: \(error.localizedDescription)")
+			}
+		}
+	}
+
 	func changePassword(currentPassword: String, newPassword: String) async throws {
 		guard let userId = spawnUser?.id else {
 			throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "User ID not found"])

@@ -134,6 +134,14 @@ struct EditProfileView: View {
                 lastName: lastName
             )
             
+            // Force UI update by triggering objectWillChange
+            await MainActor.run {
+                userAuth.objectWillChange.send()
+            }
+            
+            // Explicitly fetch updated user data
+            await userAuth.fetchUserData()
+            
             // Format social media links properly before saving
             let formattedWhatsapp = FormatterService.shared.formatWhatsAppLink(whatsappLink)
             let formattedInstagram = FormatterService.shared.formatInstagramLink(instagramLink)
@@ -160,6 +168,14 @@ struct EditProfileView: View {
             
             // Refresh all profile data
             await profileViewModel.loadAllProfileData(userId: userId)
+            
+            // Ensure the user object is fully refreshed
+            if let spawnUser = userAuth.spawnUser {
+                print("Updated profile: \(spawnUser.firstName ?? "") \(spawnUser.lastName ?? ""), @\(spawnUser.username)")
+                await MainActor.run {
+                    userAuth.objectWillChange.send()
+                }
+            }
             
             await MainActor.run {
                 isSaving = false

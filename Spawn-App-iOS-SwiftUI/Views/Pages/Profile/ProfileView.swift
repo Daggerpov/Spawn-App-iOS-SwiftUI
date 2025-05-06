@@ -24,6 +24,7 @@ struct ProfileView: View {
     @State private var instagramLink: String = ""
     @State private var currentMonth = Calendar.current.component(.month, from: Date())
     @State private var currentYear = Calendar.current.component(.year, from: Date())
+    @State private var refreshFlag = false
 
     @StateObject var userAuth = UserAuthViewModel.shared
     @StateObject var profileViewModel = ProfileViewModel()
@@ -53,16 +54,33 @@ struct ProfileView: View {
                         profilePictureSection
                         .padding(.top, 15)
                         
-                        // Name and Username
-                        Text(FormatterService.shared.formatName(user: user))
-                            .font(.title3)
-                            .bold()
-                            .foregroundColor(universalAccentColor)
-                        
-                        Text("@\(user.username)")
-                            .font(.subheadline)
-                            .foregroundColor(Color.gray)
-                            .padding(.bottom, 5)
+                        // Name and Username - make this more reactive to changes
+                        Group {
+                            if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
+                                // For the current user, always display the latest from userAuth
+                                Text(FormatterService.shared.formatName(user: currentUser))
+                                    .font(.title3)
+                                    .bold()
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Text("@\(currentUser.username)")
+                                    .font(.subheadline)
+                                    .foregroundColor(Color.gray)
+                                    .padding(.bottom, 5)
+                            } else {
+                                // For other users, use the passed-in user
+                                Text(FormatterService.shared.formatName(user: user))
+                                    .font(.title3)
+                                    .bold()
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Text("@\(user.username)")
+                                    .font(.subheadline)
+                                    .foregroundColor(Color.gray)
+                                    .padding(.bottom, 5)
+                            }
+                        }
+                        .id(refreshFlag) // Force refresh when flag changes
                         
                         // Profile Action Buttons
                         profileActionButtons
@@ -138,11 +156,7 @@ struct ProfileView: View {
         }
         .onAppear {
             // Update local state from userAuth.spawnUser when view appears
-            if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
-                username = currentUser.username
-                firstName = currentUser.firstName ?? ""
-                lastName = currentUser.lastName ?? ""
-            }
+            refreshUserData()
 
             // Load profile data
             Task {
@@ -159,11 +173,7 @@ struct ProfileView: View {
         }
         .onChange(of: userAuth.spawnUser) { newUser in
             // Update local state whenever spawnUser changes
-            if isCurrentUserProfile, let currentUser = newUser {
-                username = currentUser.username
-                firstName = currentUser.firstName ?? ""
-                lastName = currentUser.lastName ?? ""
-            }
+            refreshUserData()
         }
         .onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
             // Update local state when social media changes
@@ -172,6 +182,11 @@ struct ProfileView: View {
                 instagramLink = socialMedia.instagramLink ?? ""
                 print("Updated social media links in ProfileView: WhatsApp=\(whatsappLink), Instagram=\(instagramLink)")
             }
+        }
+        // Add a timer to periodically refresh data
+        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
+            refreshUserData()
+            refreshFlag.toggle()  // Force the view to update
         }
         .accentColor(universalAccentColor)
         .toast(
@@ -246,6 +261,15 @@ struct ProfileView: View {
                 userId: user.id,
                 interest: interest
             )
+        }
+    }
+
+    // Add a function to refresh user data from UserAuthViewModel
+    private func refreshUserData() {
+        if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
+            username = currentUser.username
+            firstName = currentUser.firstName ?? ""
+            lastName = currentUser.lastName ?? ""
         }
     }
 }
