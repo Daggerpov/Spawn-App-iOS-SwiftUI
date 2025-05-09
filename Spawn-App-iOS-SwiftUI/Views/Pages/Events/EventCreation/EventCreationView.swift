@@ -13,6 +13,7 @@ struct EventCreationView: View {
     
     @State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
     @State private var selectedCategory: EventCategory = .general
+    @State private var showInviteView: Bool = false
     
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
@@ -162,21 +163,24 @@ struct EventCreationView: View {
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         
-                        HStack(spacing: 8) {
-                            ForEach(EventCategory.allCases, id: \.self) { category in
-                                Button(action: {
-                                    selectedCategory = category
-                                }) {
-                                    Text(category.rawValue)
-                                        .font(.subheadline)
-                                        .padding(.vertical, 8)
-                                        .padding(.horizontal, 12)
-                                        .foregroundColor(selectedCategory == category ? .white : .black)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 20)
-                                                .fill(selectedCategory == category ?
-                                                      category.color : Color.gray.opacity(0.15))
-                                        )
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(EventCategory.allCases, id: \.self) { category in
+                                    Button(action: {
+                                        selectedCategory = category
+                                    }) {
+                                        Text(category.rawValue)
+                                            .font(.subheadline)
+                                            .padding(.vertical, 8)
+                                            .padding(.horizontal, 12)
+                                            .foregroundColor(selectedCategory == category ? .white : .black)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .fill(selectedCategory == category ?
+                                                          category.color : Color.gray.opacity(0.15))
+                                            )
+                                            .lineLimit(1)
+                                    }
                                 }
                             }
                         }
@@ -188,80 +192,127 @@ struct EventCreationView: View {
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         
-                        HStack {
+                        Button(action: {
+                            showInviteView = true
+                        }) {
                             HStack {
-                                Image(systemName: "person.2.fill")
-                                    .foregroundColor(.white)
-                                Text("20")
-                                    .font(.caption)
-                                    .foregroundColor(.white)
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color.black)
-                            .clipShape(Capsule())
-                            
-                            Button(action: {
-                                // Show invite view
-                            }) {
-                                HStack {
-                                    Text("Close Friends")
-                                        .font(.subheadline)
+                                // Profile pictures and count
+                                HStack(spacing: -10) {
+                                    Image(systemName: "person.2.fill")
                                         .foregroundColor(.white)
-                                    Image(systemName: "xmark")
+                                        .padding(5)
+                                        .background(Circle().fill(Color.black))
+                                    Text("20")
                                         .font(.caption)
                                         .foregroundColor(.white)
+                                        .padding(.leading, 5)
+                                        .padding(.trailing, 10)
+                                        .padding(.vertical, 5)
+                                        .background(Capsule().fill(Color.black))
                                 }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.green)
-                                .clipShape(Capsule())
-                            }
-                            
-                            Button(action: {
-                                // Navigate to invite view
-                            }) {
-                                HStack {
-                                    Image(systemName: "plus")
-                                        .font(.caption)
-                                    Text("Add more!")
-                                        .font(.subheadline)
+                                
+                                Button(action: {
+                                    showInviteView = true
+                                }) {
+                                    HStack {
+                                        Text("Close Friends")
+                                            .font(.subheadline)
+                                            .foregroundColor(.white)
+                                        Image(systemName: "xmark")
+                                            .font(.caption)
+                                            .foregroundColor(.white)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color.green)
+                                    .clipShape(Capsule())
                                 }
-                                .foregroundColor(.gray)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                                )
+                                
+                                Spacer()
+                                
+                                Button(action: {
+                                    showInviteView = true
+                                }) {
+                                    HStack {
+                                        Image(systemName: "plus")
+                                            .font(.caption)
+                                        Text("Add more!")
+                                            .font(.subheadline)
+                                    }
+                                    .foregroundColor(.gray)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                                    )
+                                }
                             }
                         }
                     }
                     
                     // Location
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Location*")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
+                    VStack(alignment: .leading, spacing: 10) {
                         HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("AMS Student Nest")
-                                    .font(.subheadline)
-                                Text("6133 University Blvd, Vancouver, BC V6T 1Z1")
-                                    .font(.caption)
-                                    .foregroundColor(.gray)
-                            }
-                            Spacer()
-                            Text("12km")
-                                .font(.caption)
+                            Text("Location*")
+                                .font(.subheadline)
                                 .foregroundColor(.gray)
+
+                            if !viewModel.isLocationValid {
+                                HStack {
+                                    Image(
+                                        systemName:
+                                            "exclamationmark.circle.fill"
+                                    )
+                                    .foregroundColor(.red)
+                                    .font(.system(size: 12))
+                                    Text("Location is required")
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                        .padding(.horizontal, 5)
+                                        .transition(.opacity)
+                                }
+                            }
                         }
-                        .padding(10)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                        )
+
+                        HStack {
+                            TextField("Select a location", text: Binding(
+                                get: {
+                                    viewModel.event.location?.name ?? ""
+                                },
+                                set: { newValue in
+                                    if viewModel.event.location == nil {
+                                        viewModel.event.location =
+                                            Location(
+                                                id: UUID(),
+                                                name: newValue,
+                                                latitude: 0,
+                                                longitude: 0
+                                            )
+                                    } else {
+                                        viewModel.event.location?.name = newValue
+                                    }
+                                }
+                            ))
+                            .padding(10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            )
+
+                            NavigationLink(destination: {
+                                LocationSelectionView()
+                                    .environmentObject(viewModel)
+                            }) {
+                                Image(systemName: "map")
+                                    .foregroundColor(universalSecondaryColor)
+                                    .padding(12)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 15)
+                                            .stroke(Color.black, lineWidth: 1.5)
+                                    )
+                            }
+                        }
                     }
                     
                     // Caption
@@ -311,6 +362,9 @@ struct EventCreationView: View {
         .sheet(isPresented: $showFullDatePicker) {
             fullDatePickerView
         }
+        .sheet(isPresented: $showInviteView) {
+            InviteView(user: creatingUser)
+        }
         .background(universalBackgroundColor)
     }
     
@@ -339,29 +393,6 @@ struct EventCreationView: View {
             .padding()
         }
         .presentationDetents([.medium])
-    }
-}
-
-enum EventCategory: String, CaseIterable {
-    case general = "General"
-    case foodAndDrink = "Food & Drink"
-    case active = "Active"
-    case study = "Study"
-    case grind = "Grind"
-    
-    var color: Color {
-        switch self {
-        case .general:
-            return Color.red
-        case .foodAndDrink:
-            return Color.gray
-        case .active:
-            return Color.gray
-        case .study:
-            return Color.gray
-        case .grind:
-            return Color.gray
-        }
     }
 }
 
