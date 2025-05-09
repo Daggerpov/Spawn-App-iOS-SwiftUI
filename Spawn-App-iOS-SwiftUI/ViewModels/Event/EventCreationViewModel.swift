@@ -19,6 +19,7 @@ class EventCreationViewModel: ObservableObject {
 
 	@Published var selectedTags: [FullFriendTagDTO] = []
 	@Published var selectedFriends: [FullFriendUserDTO] = []
+	@Published var selectedCategory: EventCategory = .general
 	
 	// Validation properties
 	@Published var isTitleValid: Bool = true
@@ -49,10 +50,35 @@ class EventCreationViewModel: ObservableObject {
 			endTime: defaultEnd,
 			location: Location(
 				id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
+			icon: "⭐️",
+			category: .general,
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}
 	
+	// Helper function to format the date for display
+	func formatDate(_ date: Date) -> String {
+		let calendar = Calendar.current
+		let now = Date()
+
+		// If the date is today, show "today" without time
+		if calendar.isDate(date, equalTo: now, toGranularity: .day) {
+			return "Today"
+		}
+		
+		// If the date is tomorrow, show "tomorrow"
+		if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
+           calendar.isDate(date, equalTo: tomorrow, toGranularity: .day) {
+			return "Tomorrow"
+		}
+
+		// Otherwise, return the formatted date
+		let formatter = DateFormatter()
+		formatter.dateStyle = .medium
+		formatter.timeStyle = .none
+		return formatter.string(from: date)
+	}
+
 	// Validates all form fields and returns if the form is valid
 	func validateEventForm() async {
         // Check title
@@ -69,7 +95,6 @@ class EventCreationViewModel: ObservableObject {
             // Update overall form validity
             isFormValid = isTitleValid && isInvitesValid && isLocationValid
         }
-		
 	}
 
 	func createEvent() async {
@@ -94,6 +119,9 @@ class EventCreationViewModel: ObservableObject {
 		// Populate invited user and tag IDs from the selected arrays
 		event.invitedFriendUserIds = selectedFriends.map { $0.id }
 		event.invitedFriendTagIds = selectedTags.map { $0.id }
+		
+		// Set the selected category
+		event.category = selectedCategory
 
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {
@@ -127,22 +155,5 @@ class EventCreationViewModel: ObservableObject {
 		combinedComponents.hour = timeComponents.hour
 		combinedComponents.minute = timeComponents.minute
 		return calendar.date(from: combinedComponents) ?? date
-	}
-
-	// Helper function to format the date for display
-	func formatDate(_ date: Date) -> String {
-		let calendar = Calendar.current
-		let now = Date()
-
-		// If the date is today, show "today" without time
-		if calendar.isDate(date, equalTo: now, toGranularity: .day) {
-			return "today"
-		}
-
-		// If the date is the current date, return it without time
-		let formatter = DateFormatter()
-		formatter.dateStyle = .medium
-		formatter.timeStyle = .none
-		return formatter.string(from: date)
 	}
 }
