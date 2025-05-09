@@ -175,7 +175,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friends/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "users/friends/\(userId)") else { return }
             
             let fetchedFriends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
@@ -200,7 +200,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "events/user/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId)") else { return }
             
             let fetchedEvents: [FullFeedEventDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
@@ -284,7 +284,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recommended-friends") else { return }
+            guard let url = URL(string: APIService.baseURL + "users/recommended-friends/\(userId)") else { return }
             
             let fetchedRecommendedFriends: [RecommendedFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
