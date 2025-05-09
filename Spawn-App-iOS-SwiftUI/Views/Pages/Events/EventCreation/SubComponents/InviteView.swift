@@ -227,33 +227,47 @@ struct InviteView: View {
                 .padding(.leading, 10)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 15) {
+                HStack(spacing: 8) {
                     ForEach(eventCreationViewModel.selectedFriends) { friend in
-                        VStack {
-                            if let profilePicUrl = friend.profilePicture,
-                                let url = URL(string: profilePicUrl)
-                            {
-                                AsyncImage(url: url) { image in
-                                    image
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(width: 60, height: 60)
-                                        .clipShape(Circle())
-                                } placeholder: {
+                        Button(action: {
+                            if let index = eventCreationViewModel.selectedFriends.firstIndex(where: { $0.id == friend.id }) {
+                                eventCreationViewModel.selectedFriends.remove(at: index)
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                if let profilePicUrl = friend.profilePicture,
+                                    let url = URL(string: profilePicUrl)
+                                {
+                                    AsyncImage(url: url) { image in
+                                        image
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(width: 30, height: 30)
+                                            .clipShape(Circle())
+                                    } placeholder: {
+                                        Circle()
+                                            .fill(Color.gray)
+                                            .frame(width: 30, height: 30)
+                                    }
+                                } else {
                                     Circle()
                                         .fill(Color.gray)
-                                        .frame(width: 60, height: 60)
+                                        .frame(width: 30, height: 30)
                                 }
-                            } else {
-                                Circle()
-                                    .fill(Color.gray)
-                                    .frame(width: 60, height: 60)
+                                
+                                Text(friend.username)
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .lineLimit(1)
+                                
+                                Image(systemName: "xmark")
+                                    .font(.caption)
+                                    .foregroundColor(.white)
                             }
-
-                            Text(friend.username)
-                                .font(.caption)
-                                .foregroundColor(universalAccentColor)
-                                .lineLimit(1)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(universalSecondaryColor)
+                            .clipShape(Capsule())
                         }
                     }
                 }
@@ -262,7 +276,7 @@ struct InviteView: View {
         }
     }
 
-    // Friends list section with real data
+    // Friends list section with real data and improved search
     var friendsListSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Friends")
@@ -277,14 +291,30 @@ struct InviteView: View {
                         .padding(.vertical)
                 } else {
                     // Use filtered friends directly from the view model
-                    ForEach(friendsViewModel.filteredFriends) { friend in
-                        FriendListRow(
-                            friend: friend,
-                            isSelected: eventCreationViewModel.selectedFriends
-                                .contains(friend)
-                        )
-                        .onTapGesture {
-                            toggleFriendSelection(friend)
+                    let filteredFriends = searchViewModel.searchText.isEmpty ? 
+                        friendsViewModel.friends : 
+                        friendsViewModel.friends.filter { friend in
+                            let searchText = searchViewModel.searchText.lowercased()
+                            return friend.username.lowercased().contains(searchText) ||
+                                friend.firstName?.lowercased().contains(searchText) == true ||
+                                friend.lastName?.lowercased().contains(searchText) == true ||
+                                friend.email.lowercased().contains(searchText)
+                        }
+                    
+                    if filteredFriends.isEmpty {
+                        Text("No friends match your search")
+                            .foregroundColor(.gray)
+                            .padding(.vertical)
+                    } else {
+                        ForEach(filteredFriends) { friend in
+                            FriendListRow(
+                                friend: friend,
+                                isSelected: eventCreationViewModel.selectedFriends
+                                    .contains(friend)
+                            )
+                            .onTapGesture {
+                                toggleFriendSelection(friend)
+                            }
                         }
                     }
                 }

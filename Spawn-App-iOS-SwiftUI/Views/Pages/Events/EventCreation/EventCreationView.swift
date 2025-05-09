@@ -12,7 +12,6 @@ struct EventCreationView: View {
     EventCreationViewModel.shared
     
     @State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
-    @State private var selectedCategory: EventCategory = .general
     @State private var showInviteView: Bool = false
     @State private var showLocationSelection: Bool = false // Add state for location selection
     @State private var showEmojiPicker: Bool = false // For emoji picker
@@ -187,16 +186,23 @@ struct EventCreationView: View {
                                 
                                 ForEach(sortedCategories, id: \.self) { category in
                                     Button(action: {
-                                        selectedCategory = category
+                                        if viewModel.selectedCategory == category {
+                                            // Allow deselecting by clicking on the same category
+                                            if category != .general {
+                                                viewModel.selectedCategory = .general
+                                            }
+                                        } else {
+                                            viewModel.selectedCategory = category
+                                        }
                                     }) {
                                         Text(category.rawValue)
                                             .font(.subheadline)
                                             .padding(.vertical, 8)
                                             .padding(.horizontal, 12)
-                                            .foregroundColor(selectedCategory == category ? .white : .black)
+                                            .foregroundColor(viewModel.selectedCategory == category ? .white : .black)
                                             .background(
                                                 RoundedRectangle(cornerRadius: 20)
-                                                    .fill(selectedCategory == category ?
+                                                    .fill(viewModel.selectedCategory == category ?
                                                           category.color : Color.gray.opacity(0.15))
                                             )
                                             .lineLimit(1)
@@ -208,98 +214,98 @@ struct EventCreationView: View {
                     
                     // Who's Invited
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Who's Invited?*")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        Button(action: {
-                            showInviteView = true
-                        }) {
-                            HStack {
-                                // Profile pictures and count
+                        HStack{
+                            Text("Who's Invited?*")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            // Profile pictures and count
+                            if !viewModel.selectedFriends.isEmpty {
                                 HStack(spacing: -10) {
-                                    if viewModel.selectedFriends.isEmpty {
-                                        Circle()
-                                            .fill(Color.gray.opacity(0.3))
-                                            .frame(width: 30, height: 30)
-                                            .overlay(
-                                                Image(systemName: "person.fill")
-                                                    .foregroundColor(.gray)
-                                                    .font(.system(size: 16))
-                                            )
-                                    } else {
-                                        // Show first two profile pictures
-                                        ForEach(0..<min(2, viewModel.selectedFriends.count), id: \.self) { index in
-                                            let friend = viewModel.selectedFriends[index]
-                                            if let pfpUrl = friend.profilePicture, let url = URL(string: pfpUrl) {
-                                                AsyncImage(url: url) { image in
-                                                    image
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 30, height: 30)
-                                                        .clipShape(Circle())
-                                                } placeholder: {
-                                                    Circle()
-                                                        .fill(Color.gray)
-                                                        .frame(width: 30, height: 30)
-                                                }
-                                            } else {
+                                    // Show first two profile pictures
+                                    ForEach(0..<min(2, viewModel.selectedFriends.count), id: \.self) { index in
+                                        let friend = viewModel.selectedFriends[index]
+                                        if let pfpUrl = friend.profilePicture, let url = URL(string: pfpUrl) {
+                                            AsyncImage(url: url) { image in
+                                                image
+                                                    .resizable()
+                                                    .scaledToFill()
+                                                    .frame(width: 30, height: 30)
+                                                    .clipShape(Circle())
+                                                    .onTapGesture {
+                                                        viewModel.selectedFriends.remove(at: index)
+                                                    }
+                                            } placeholder: {
                                                 Circle()
                                                     .fill(Color.gray)
                                                     .frame(width: 30, height: 30)
                                             }
-                                        }
-                                        
-                                        // Show +X if there are more than 2 friends
-                                        if viewModel.selectedFriends.count > 2 {
+                                        } else {
                                             Circle()
-                                                .fill(Color.blue)
+                                                .fill(Color.gray)
                                                 .frame(width: 30, height: 30)
-                                                .overlay(
-                                                    Text("+\(viewModel.selectedFriends.count - 2)")
-                                                        .font(.system(size: 12, weight: .bold))
-                                                        .foregroundColor(.white)
-                                                )
                                         }
                                     }
-                                }
-                                
-                                Button(action: {
-                                    showInviteView = true
-                                }) {
-                                    HStack {
-                                        Text("Close Friends")
-                                            .font(.subheadline)
-                                            .foregroundColor(.white)
-                                        Image(systemName: "xmark")
-                                            .font(.caption)
-                                            .foregroundColor(.white)
+                                    
+                                    // Show +X if there are more than 2 friends
+                                    if viewModel.selectedFriends.count > 2 {
+                                        Circle()
+                                            .fill(universalSecondaryColor)
+                                            .frame(width: 30, height: 30)
+                                            .overlay(
+                                                Text("+\(viewModel.selectedFriends.count - 2)")
+                                                    .font(.system(size: 12, weight: .bold))
+                                                    .foregroundColor(.white)
+                                            )
                                     }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
-                                    .background(Color.green)
-                                    .clipShape(Capsule())
                                 }
-                                
-                                Spacer()
-                                
-                                Button(action: {
-                                    showInviteView = true
-                                }) {
-                                    HStack {
-                                        Image(systemName: "plus")
-                                            .font(.caption)
-                                        Text("Add more!")
-                                            .font(.subheadline)
-                                    }
-                                    .foregroundColor(.gray)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
+                            } else {
+                                Circle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(width: 30, height: 30)
                                     .overlay(
-                                        Capsule()
-                                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                                        Image(systemName: "person.fill")
+                                            .foregroundColor(.gray)
+                                            .font(.system(size: 16))
                                     )
+                            }
+                        }
+                        
+                        HStack {
+                            Button(action: {
+                                showInviteView = true
+                            }) {
+                                HStack {
+                                    Text("Close Friends")
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                    Image(systemName: "xmark")
+                                        .font(.caption)
+                                        .foregroundColor(.white)
                                 }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color.green)
+                                .clipShape(Capsule())
+                            }
+                            
+                            Spacer()
+                            
+                            Button(action: {
+                                showInviteView = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "plus")
+                                        .font(.caption)
+                                    Text("Add more!")
+                                        .font(.subheadline)
+                                }
+                                .foregroundColor(.gray)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                                )
                             }
                         }
                     }
@@ -464,16 +470,9 @@ struct EventCreationView: View {
             .datePickerStyle(GraphicalDatePickerStyle())
             .labelsHidden()
             .padding()
-            
-            Button("Done") {
+            .onChange(of: viewModel.selectedDate) { _ in
                 showFullDatePicker = false
             }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .foregroundColor(.white)
-            .background(universalSecondaryColor)
-            .cornerRadius(10)
-            .padding()
         }
         .presentationDetents([.medium])
     }

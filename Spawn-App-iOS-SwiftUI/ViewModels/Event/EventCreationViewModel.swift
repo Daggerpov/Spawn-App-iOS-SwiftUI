@@ -19,6 +19,7 @@ class EventCreationViewModel: ObservableObject {
 
 	@Published var selectedTags: [FullFriendTagDTO] = []
 	@Published var selectedFriends: [FullFriendUserDTO] = []
+	@Published var selectedCategory: EventCategory = .general
 	
 	// Validation properties
 	@Published var isTitleValid: Bool = true
@@ -50,6 +51,7 @@ class EventCreationViewModel: ObservableObject {
 			location: Location(
 				id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
 			icon: "⭐️",
+			category: .general,
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}
@@ -117,6 +119,9 @@ class EventCreationViewModel: ObservableObject {
 		// Populate invited user and tag IDs from the selected arrays
 		event.invitedFriendUserIds = selectedFriends.map { $0.id }
 		event.invitedFriendTagIds = selectedTags.map { $0.id }
+		
+		// Set the selected category
+		event.category = selectedCategory
 
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {

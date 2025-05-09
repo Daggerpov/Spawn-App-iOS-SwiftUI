@@ -124,7 +124,6 @@ struct InviteTagRow: View {
 				}  // Remove from selected tags, if it's already in
 			}
 		}
-
 	}
 }
 
