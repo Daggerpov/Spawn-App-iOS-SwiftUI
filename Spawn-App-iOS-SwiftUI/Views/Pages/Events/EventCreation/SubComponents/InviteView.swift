@@ -11,11 +11,12 @@ struct InviteView: View {
     let user: BaseUserDTO
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var eventCreationViewModel = EventCreationViewModel.shared
-    @State private var searchText = ""
-
+    @StateObject private var searchViewModel = SearchViewModel()
+    
     // Add view models for friends and tags
     @StateObject private var friendsViewModel: FriendsTabViewModel
     @StateObject private var tagsViewModel: TagsViewModel
+    @ObservedObject private var appCache = AppCache.shared
 
     init(user: BaseUserDTO) {
         self.user = user
@@ -44,6 +45,7 @@ struct InviteView: View {
                 // Header
                 Text("Invite tags and friends!")
                     .font(.headline)
+                    .foregroundColor(universalAccentColor)
                     .padding(.top, 30)
 
                 // Tags section
@@ -66,16 +68,8 @@ struct InviteView: View {
                 // Search bar at bottom
                 VStack {
                     // Search bar
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.gray)
-                        TextField("Search", text: $searchText)
-                    }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(10)
-                    .padding(.horizontal)
-                    .padding(.top)
+                    SearchView(searchPlaceholderText: "Search", viewModel: searchViewModel)
+                        .padding(.top)
 
                     // Done button
                     Button(action: {
@@ -88,7 +82,7 @@ struct InviteView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(universalSecondaryColor)
                         .cornerRadius(25)
                         .padding(.horizontal)
                         .padding(.bottom, 15)
@@ -103,13 +97,32 @@ struct InviteView: View {
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                 }
             )
             .onAppear {
-                Task {
-                    await friendsViewModel.fetchAllData()
-                    await tagsViewModel.fetchTags()
+                // Use cached tags and friends if available
+                if !appCache.userTags.isEmpty {
+                    // Convert FriendTagDTO to FullFriendTagDTO if needed
+                    Task {
+                        await tagsViewModel.fetchTags()
+                    }
+                } else {
+                    Task {
+                        await tagsViewModel.fetchTags()
+                    }
+                }
+                
+                friendsViewModel.connectSearchViewModel(searchViewModel)
+                
+                if appCache.friends.isEmpty {
+                    Task {
+                        await friendsViewModel.fetchAllData()
+                    }
+                } else {
+                    // Use cached friends data
+                    friendsViewModel.friends = appCache.friends
+                    friendsViewModel.filteredFriends = appCache.friends
                 }
             }
         }
@@ -196,9 +209,11 @@ struct InviteView: View {
     }
 
     private func toggleTagSelection(_ tag: FullFriendTagDTO) {
-        if eventCreationViewModel.selectedTags.contains(tag) {
-            eventCreationViewModel.selectedTags.removeAll { $0.id == tag.id }
+        if let index = eventCreationViewModel.selectedTags.firstIndex(where: { $0.id == tag.id }) {
+            // Tag exists in selectedTags, remove it
+            eventCreationViewModel.selectedTags.remove(at: index)
         } else {
+            // Tag does not exist in selectedTags, add it
             eventCreationViewModel.selectedTags.append(tag)
         }
     }
@@ -208,7 +223,7 @@ struct InviteView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Invited")
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundColor(universalAccentColor)
                 .padding(.leading, 10)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -237,6 +252,7 @@ struct InviteView: View {
 
                             Text(friend.username)
                                 .font(.caption)
+                                .foregroundColor(universalAccentColor)
                                 .lineLimit(1)
                         }
                     }
@@ -251,7 +267,7 @@ struct InviteView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Friends")
                 .font(.headline)
-                .foregroundColor(.primary)
+                .foregroundColor(universalAccentColor)
                 .padding(.leading, 10)
 
             VStack(spacing: 15) {
@@ -260,17 +276,8 @@ struct InviteView: View {
                         .foregroundColor(.gray)
                         .padding(.vertical)
                 } else {
-                    // Filter friends based on search text
-                    let filteredFriends =
-                        searchText.isEmpty
-                        ? friendsViewModel.friends
-                        : friendsViewModel.friends.filter { friend in
-                            friend.username.lowercased().contains(
-                                searchText.lowercased()
-                            )
-                        }
-
-                    ForEach(filteredFriends) { friend in
+                    // Use filtered friends directly from the view model
+                    ForEach(friendsViewModel.filteredFriends) { friend in
                         FriendListRow(
                             friend: friend,
                             isSelected: eventCreationViewModel.selectedFriends
@@ -302,7 +309,7 @@ struct TagBubble: View {
     let isSelected: Bool
 
     var body: some View {
-        Text(tag.displayName)
+        Text("+ \(tag.displayName)")
             .foregroundColor(isSelected ? .white : Color(hex: tag.colorHexCode))
             .padding(.vertical, 8)
             .padding(.horizontal, 15)
@@ -364,6 +371,7 @@ struct FriendListRow: View {
             VStack(alignment: .leading) {
                 Text(friend.username)
                     .font(.headline)
+                    .foregroundColor(universalAccentColor)
 
                 Text("@\(friend.email.split(separator: "@").first ?? "")")
                     .font(.subheadline)
@@ -377,7 +385,7 @@ struct FriendListRow: View {
             )
             .resizable()
             .frame(width: 30, height: 30)
-            .foregroundColor(isSelected ? .green : .blue)
+            .foregroundColor(isSelected ? .green : universalSecondaryColor)
         }
         .padding(.horizontal)
         .padding(.vertical, 5)

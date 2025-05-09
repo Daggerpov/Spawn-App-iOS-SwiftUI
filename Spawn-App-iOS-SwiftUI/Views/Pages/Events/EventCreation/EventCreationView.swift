@@ -16,6 +16,8 @@ struct EventCreationView: View {
     @State private var showInviteView: Bool = false
     @State private var showLocationSelection: Bool = false // Add state for location selection
     @State private var showEmojiPicker: Bool = false // For emoji picker
+    @State private var showValidationAlert: Bool = false // For validation alert
+    @State private var selectedEmoji: String = "⭐️" // Track selected emoji locally
     
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
@@ -38,7 +40,7 @@ struct EventCreationView: View {
                     closeCallback()
                 }) {
                     Image(systemName: "xmark")
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                         .padding(8)
                 }
             }
@@ -60,7 +62,7 @@ struct EventCreationView: View {
                                     .fill(Color.yellow.opacity(0.2))
                                     .frame(width: 45, height: 45)
                                     .overlay(
-                                        Text(viewModel.event.icon ?? "⭐️")
+                                        Text(selectedEmoji)
                                             .font(.system(size: 24))
                                     )
                             }
@@ -76,6 +78,7 @@ struct EventCreationView: View {
                                 get: { viewModel.event.title ?? "" },
                                 set: { viewModel.event.title = $0 }
                             ))
+                            .foregroundColor(universalAccentColor)
                             .padding(10)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
@@ -83,8 +86,6 @@ struct EventCreationView: View {
                             )
                         }
                     }
-                    
-                    
                     
                     // Date & Time
                     VStack(alignment: .leading, spacing: 8) {
@@ -95,10 +96,10 @@ struct EventCreationView: View {
                         Button(action: { showFullDatePicker = true }) {
                             HStack {
                                 Text(Calendar.current.isDateInToday(viewModel.selectedDate) ? "Today" : viewModel.formatDate(viewModel.selectedDate))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                                 Spacer()
                                 Image(systemName: "calendar")
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                             }
                             .padding(10)
                             .background(
@@ -116,50 +117,56 @@ struct EventCreationView: View {
                         
                         HStack {
                             // Start time
-                            DatePicker(
-                                "",
-                                selection: Binding(
-                                    get: {
-                                        viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
-                                    },
-                                    set: { time in
-                                        viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
-                                    }
-                                ),
-                                displayedComponents: .hourAndMinute
-                            )
-                            .labelsHidden()
-                            .frame(maxWidth: .infinity)
-                            .padding(10)
-                            .background(
+                            ZStack {
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                            )
+                                    .frame(height: 44)
+                                
+                                DatePicker(
+                                    "",
+                                    selection: Binding(
+                                        get: {
+                                            viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
+                                        },
+                                        set: { time in
+                                            viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                                        }
+                                    ),
+                                    displayedComponents: .hourAndMinute
+                                )
+                                .labelsHidden()
+                                .colorScheme(.light)
+                                .accentColor(universalAccentColor)
+                                .padding(.horizontal, 10)
+                            }
                             
                             Text("-")
                                 .font(.headline)
                                 .padding(.horizontal, 4)
                             
                             // End time
-                            DatePicker(
-                                "",
-                                selection: Binding(
-                                    get: {
-                                        viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
-                                    },
-                                    set: { time in
-                                        viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
-                                    }
-                                ),
-                                displayedComponents: .hourAndMinute
-                            )
-                            .labelsHidden()
-                            .frame(maxWidth: .infinity)
-                            .padding(10)
-                            .background(
+                            ZStack {
                                 RoundedRectangle(cornerRadius: 8)
                                     .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                            )
+                                    .frame(height: 44)
+                                
+                                DatePicker(
+                                    "",
+                                    selection: Binding(
+                                        get: {
+                                            viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
+                                        },
+                                        set: { time in
+                                            viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                                        }
+                                    ),
+                                    displayedComponents: .hourAndMinute
+                                )
+                                .labelsHidden()
+                                .colorScheme(.light)
+                                .accentColor(universalAccentColor)
+                                .padding(.horizontal, 10)
+                            }
                         }
                     }
                     
@@ -325,30 +332,29 @@ struct EventCreationView: View {
                             Button(action: {
                                 showLocationSelection = true
                             }) {
-                                TextField("Select a location", text: Binding(
-                                    get: {
-                                        viewModel.event.location?.name ?? ""
-                                    },
-                                    set: { newValue in
-                                        if viewModel.event.location == nil {
-                                            viewModel.event.location =
-                                                Location(
-                                                    id: UUID(),
-                                                    name: newValue,
-                                                    latitude: 0,
-                                                    longitude: 0
-                                                )
-                                        } else {
-                                            viewModel.event.location?.name = newValue
-                                        }
-                                    }
-                                ))
-                                .padding(10)
-                                .background(
+                                ZStack(alignment: .leading) {
                                     RoundedRectangle(cornerRadius: 8)
                                         .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                                )
-                                .disabled(true) // Make it non-editable, just for display
+                                        .frame(height: 44)
+                                    
+                                    HStack {
+                                        Text(viewModel.event.location?.name.isEmpty ?? true
+                                           ? "Select location"
+                                           : viewModel.event.location?.name ?? "")
+                                        .foregroundColor(
+                                            viewModel.event.location?.name.isEmpty ?? true
+                                            ? .gray
+                                            : universalAccentColor
+                                        )
+                                        .padding(.leading, 10)
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: "chevron.right")
+                                            .foregroundColor(.gray)
+                                            .padding(.trailing, 10)
+                                    }
+                                }
                             }
 
                             Button(action: {
@@ -359,7 +365,7 @@ struct EventCreationView: View {
                                     .padding(12)
                                     .background(
                                         RoundedRectangle(cornerRadius: 15)
-                                            .stroke(Color.black, lineWidth: 1.5)
+                                            .stroke(universalAccentColor, lineWidth: 1.5)
                                     )
                             }
                         }
@@ -375,6 +381,7 @@ struct EventCreationView: View {
                             get: { viewModel.event.note ?? "" },
                             set: { viewModel.event.note = $0 }
                         ))
+                        .foregroundColor(universalAccentColor)
                         .padding()
                         .frame(height: 60)
                         .background(
@@ -387,8 +394,12 @@ struct EventCreationView: View {
                     Button(action: {
                         Task {
                             await viewModel.validateEventForm()
-                            await viewModel.createEvent()
-                            closeCallback()
+                            if viewModel.isFormValid {
+                                await viewModel.createEvent()
+                                closeCallback()
+                            } else {
+                                showValidationAlert = true
+                            }
                         }
                     }) {
                         HStack {
@@ -401,7 +412,7 @@ struct EventCreationView: View {
                             Spacer()
                         }
                         .padding()
-                        .background(Color.blue)
+                        .background(universalSecondaryColor)
                         .cornerRadius(30)
                     }
                     .padding(.top, 10)
@@ -420,10 +431,24 @@ struct EventCreationView: View {
         }
         .sheet(isPresented: $showEmojiPicker) {
             EmojiPickerView { emoji in
+                selectedEmoji = emoji
                 viewModel.event.icon = emoji
             }
         }
+        .alert(isPresented: $showValidationAlert) {
+            Alert(
+                title: Text("Incomplete Form"),
+                message: Text("Please fill in all required fields marked with *"),
+                dismissButton: .default(Text("OK"))
+            )
+        }
         .background(universalBackgroundColor)
+        .onAppear {
+            // Initialize selectedEmoji from viewModel if available
+            if let icon = viewModel.event.icon {
+                selectedEmoji = icon
+            }
+        }
     }
     
     var fullDatePickerView: some View {
@@ -446,7 +471,7 @@ struct EventCreationView: View {
             .padding()
             .frame(maxWidth: .infinity)
             .foregroundColor(.white)
-            .background(Color.blue)
+            .background(universalSecondaryColor)
             .cornerRadius(10)
             .padding()
         }
