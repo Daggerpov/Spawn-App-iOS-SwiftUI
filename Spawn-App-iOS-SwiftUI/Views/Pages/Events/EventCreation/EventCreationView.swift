@@ -29,7 +29,7 @@ struct EventCreationView: View {
             HStack {
                 Text("Create a Spawn")
                     .font(.headline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(universalAccentColor)
                 Spacer()
                 Button(action: {
                     closeCallback()
@@ -311,6 +311,7 @@ struct EventCreationView: View {
         .sheet(isPresented: $showFullDatePicker) {
             fullDatePickerView
         }
+        .background(universalBackgroundColor)
     }
     
     var fullDatePickerView: some View {
@@ -346,6 +347,7 @@ enum EventCategory: String, CaseIterable {
     case foodAndDrink = "Food & Drink"
     case active = "Active"
     case study = "Study"
+    case grind = "Grind"
     
     var color: Color {
         switch self {
@@ -356,6 +358,8 @@ enum EventCategory: String, CaseIterable {
         case .active:
             return Color.gray
         case .study:
+            return Color.gray
+        case .grind:
             return Color.gray
         }
     }
