@@ -49,6 +49,7 @@ class EventCreationViewModel: ObservableObject {
 			endTime: defaultEnd,
 			location: Location(
 				id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
+			icon: "⭐️",
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}

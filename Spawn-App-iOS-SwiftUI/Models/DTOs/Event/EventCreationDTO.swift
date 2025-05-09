@@ -17,6 +17,7 @@ class EventCreationDTO: Identifiable, Codable {
 	var endTime: Date?
 	var location: Location?
 	var note: String?
+	var icon: String?
 
 	// MARK: Relations
 	var creatorUserId: UUID
@@ -30,6 +31,7 @@ class EventCreationDTO: Identifiable, Codable {
 		endTime: Date? = nil,
 		location: Location? = nil,
 		note: String? = nil,
+		icon: String? = nil,
 		creatorUserId: UUID,
 		invitedFriendTagIds: [UUID]? = nil,
 		invitedFriendUserIds: [UUID]? = nil
@@ -40,6 +42,7 @@ class EventCreationDTO: Identifiable, Codable {
 		self.endTime = endTime
 		self.location = location
 		self.note = note
+		self.icon = icon
 		self.creatorUserId = creatorUserId
 		self.invitedFriendTagIds = invitedFriendTagIds
 		self.invitedFriendUserIds = invitedFriendUserIds

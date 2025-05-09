@@ -14,6 +14,8 @@ struct EventCreationView: View {
     @State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
     @State private var selectedCategory: EventCategory = .general
     @State private var showInviteView: Bool = false
+    @State private var showLocationSelection: Bool = false // Add state for location selection
+    @State private var showEmojiPicker: Bool = false // For emoji picker
     
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
@@ -51,13 +53,17 @@ struct EventCreationView: View {
                             Text("Icon*")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
-                            Circle()
-                                .fill(Color.yellow.opacity(0.2))
-                                .frame(width: 45, height: 45)
-                                .overlay(
-                                    Image(systemName: "star.fill")
-                                        .foregroundColor(.yellow)
-                                )
+                            Button(action: {
+                                showEmojiPicker = true
+                            }) {
+                                Circle()
+                                    .fill(Color.yellow.opacity(0.2))
+                                    .frame(width: 45, height: 45)
+                                    .overlay(
+                                        Text(viewModel.event.icon ?? "⭐️")
+                                            .font(.system(size: 24))
+                                    )
+                            }
                         }
                         
                         // Title Field
@@ -165,7 +171,14 @@ struct EventCreationView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
-                                ForEach(EventCategory.allCases, id: \.self) { category in
+                                // Reordering categories to put General last
+                                let sortedCategories = EventCategory.allCases.sorted { cat1, cat2 in
+                                    if cat1 == .general { return false }
+                                    if cat2 == .general { return true }
+                                    return cat1.rawValue < cat2.rawValue
+                                }
+                                
+                                ForEach(sortedCategories, id: \.self) { category in
                                     Button(action: {
                                         selectedCategory = category
                                     }) {
@@ -198,17 +211,50 @@ struct EventCreationView: View {
                             HStack {
                                 // Profile pictures and count
                                 HStack(spacing: -10) {
-                                    Image(systemName: "person.2.fill")
-                                        .foregroundColor(.white)
-                                        .padding(5)
-                                        .background(Circle().fill(Color.black))
-                                    Text("20")
-                                        .font(.caption)
-                                        .foregroundColor(.white)
-                                        .padding(.leading, 5)
-                                        .padding(.trailing, 10)
-                                        .padding(.vertical, 5)
-                                        .background(Capsule().fill(Color.black))
+                                    if viewModel.selectedFriends.isEmpty {
+                                        Circle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(width: 30, height: 30)
+                                            .overlay(
+                                                Image(systemName: "person.fill")
+                                                    .foregroundColor(.gray)
+                                                    .font(.system(size: 16))
+                                            )
+                                    } else {
+                                        // Show first two profile pictures
+                                        ForEach(0..<min(2, viewModel.selectedFriends.count), id: \.self) { index in
+                                            let friend = viewModel.selectedFriends[index]
+                                            if let pfpUrl = friend.profilePicture, let url = URL(string: pfpUrl) {
+                                                AsyncImage(url: url) { image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 30, height: 30)
+                                                        .clipShape(Circle())
+                                                } placeholder: {
+                                                    Circle()
+                                                        .fill(Color.gray)
+                                                        .frame(width: 30, height: 30)
+                                                }
+                                            } else {
+                                                Circle()
+                                                    .fill(Color.gray)
+                                                    .frame(width: 30, height: 30)
+                                            }
+                                        }
+                                        
+                                        // Show +X if there are more than 2 friends
+                                        if viewModel.selectedFriends.count > 2 {
+                                            Circle()
+                                                .fill(Color.blue)
+                                                .frame(width: 30, height: 30)
+                                                .overlay(
+                                                    Text("+\(viewModel.selectedFriends.count - 2)")
+                                                        .font(.system(size: 12, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                )
+                                        }
+                                    }
                                 }
                                 
                                 Button(action: {
@@ -276,33 +322,37 @@ struct EventCreationView: View {
                         }
 
                         HStack {
-                            TextField("Select a location", text: Binding(
-                                get: {
-                                    viewModel.event.location?.name ?? ""
-                                },
-                                set: { newValue in
-                                    if viewModel.event.location == nil {
-                                        viewModel.event.location =
-                                            Location(
-                                                id: UUID(),
-                                                name: newValue,
-                                                latitude: 0,
-                                                longitude: 0
-                                            )
-                                    } else {
-                                        viewModel.event.location?.name = newValue
+                            Button(action: {
+                                showLocationSelection = true
+                            }) {
+                                TextField("Select a location", text: Binding(
+                                    get: {
+                                        viewModel.event.location?.name ?? ""
+                                    },
+                                    set: { newValue in
+                                        if viewModel.event.location == nil {
+                                            viewModel.event.location =
+                                                Location(
+                                                    id: UUID(),
+                                                    name: newValue,
+                                                    latitude: 0,
+                                                    longitude: 0
+                                                )
+                                        } else {
+                                            viewModel.event.location?.name = newValue
+                                        }
                                     }
-                                }
-                            ))
-                            .padding(10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                            )
+                                ))
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                                )
+                                .disabled(true) // Make it non-editable, just for display
+                            }
 
-                            NavigationLink(destination: {
-                                LocationSelectionView()
-                                    .environmentObject(viewModel)
+                            Button(action: {
+                                showLocationSelection = true
                             }) {
                                 Image(systemName: "map")
                                     .foregroundColor(universalSecondaryColor)
@@ -365,6 +415,14 @@ struct EventCreationView: View {
         .sheet(isPresented: $showInviteView) {
             InviteView(user: creatingUser)
         }
+        .sheet(isPresented: $showLocationSelection) {
+            LocationSelectionView().environmentObject(viewModel)
+        }
+        .sheet(isPresented: $showEmojiPicker) {
+            EmojiPickerView { emoji in
+                viewModel.event.icon = emoji
+            }
+        }
         .background(universalBackgroundColor)
     }
     
@@ -396,6 +454,65 @@ struct EventCreationView: View {
     }
 }
 
+// Emoji picker view 
+struct EmojiPickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    var onEmojiSelected: (String) -> Void
+    
+    // Common emoji categories
+    let categories = [
+        ("Smileys", ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘"]),
+        ("Animals", ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵"]),
+        ("Sports", ["⚽️", "🏀", "🏈", "⚾️", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "⛳️", "🥊"]),
+        ("Food", ["🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑"]),
+        ("Places", ["🏠", "🏡", "🏢", "🏣", "🏤", "🏥", "🏦", "🏨", "🏩", "🏪", "🏫", "🏬", "🏭", "🏯", "🏰", "💒", "🗼", "🗽"]),
+        ("Objects", ["⌚️", "📱", "💻", "⌨️", "🖥", "🖨", "🖱", "🖲", "🕹", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥"]),
+        ("Symbols", ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟"])
+    ]
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ForEach(categories, id: \.0) { category in
+                        VStack(alignment: .leading) {
+                            Text(category.0)
+                                .font(.headline)
+                                .padding(.leading)
+                            
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 10) {
+                                ForEach(category.1, id: \.self) { emoji in
+                                    Button(action: {
+                                        onEmojiSelected(emoji)
+                                        dismiss()
+                                    }) {
+                                        Text(emoji)
+                                            .font(.system(size: 30))
+                                            .padding(5)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        Divider()
+                    }
+                }
+                .padding(.vertical)
+            }
+            .navigationTitle("Select Icon")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// This needs to be outside the struct
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
