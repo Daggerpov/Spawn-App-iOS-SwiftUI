@@ -152,6 +152,7 @@ struct EventCreationView: View {
                             await viewModel.validateEventForm()
                             if viewModel.isFormValid {
                                 await viewModel.createEvent()
+                                EventCreationViewModel.reInitialize()
                                 closeCallback()
                             } else {
                                 showValidationAlert = true
