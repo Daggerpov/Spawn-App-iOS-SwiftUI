@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import MCEmojiPicker
 
 struct EventCreationView: View {
     @ObservedObject var viewModel: EventCreationViewModel =
@@ -65,6 +66,16 @@ struct EventCreationView: View {
                                             .font(.system(size: 24))
                                     )
                             }
+                            .emojiPicker(
+                                isPresented: $showEmojiPicker,
+                                selectedEmoji: $selectedEmoji,
+                                arrowDirection: .up,
+                                isDismissAfterChoosing: true,
+                                selectedEmojiCategoryTintColor: UIColor(universalAccentColor)
+                            )
+                            .onChange(of: selectedEmoji) { newEmoji in
+                                viewModel.event.icon = newEmoji
+                            }
                         }
                         
                         // Title Field
@@ -108,274 +119,13 @@ struct EventCreationView: View {
                         }
                     }
                     
-                    // Time
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Time*")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        HStack {
-                            // Start time
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                                    .frame(height: 44)
-                                
-                                DatePicker(
-                                    "",
-                                    selection: Binding(
-                                        get: {
-                                            viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
-                                        },
-                                        set: { time in
-                                            viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
-                                        }
-                                    ),
-                                    displayedComponents: .hourAndMinute
-                                )
-                                .labelsHidden()
-                                .colorScheme(.light)
-                                .accentColor(universalAccentColor)
-                                .padding(.horizontal, 10)
-                            }
-                            
-                            Text("-")
-                                .font(.headline)
-                                .padding(.horizontal, 4)
-                            
-                            // End time
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                                    .frame(height: 44)
-                                
-                                DatePicker(
-                                    "",
-                                    selection: Binding(
-                                        get: {
-                                            viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
-                                        },
-                                        set: { time in
-                                            viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
-                                        }
-                                    ),
-                                    displayedComponents: .hourAndMinute
-                                )
-                                .labelsHidden()
-                                .colorScheme(.light)
-                                .accentColor(universalAccentColor)
-                                .padding(.horizontal, 10)
-                            }
-                        }
-                    }
+                    timeSelectionView
                     
-                    // Category
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Category*")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                // Reordering categories to put General last
-                                let sortedCategories = EventCategory.allCases.sorted { cat1, cat2 in
-                                    if cat1 == .general { return false }
-                                    if cat2 == .general { return true }
-                                    return cat1.rawValue < cat2.rawValue
-                                }
-                                
-                                ForEach(sortedCategories, id: \.self) { category in
-                                    Button(action: {
-                                        if viewModel.selectedCategory == category {
-                                            // Allow deselecting by clicking on the same category
-                                            if category != .general {
-                                                viewModel.selectedCategory = .general
-                                            }
-                                        } else {
-                                            viewModel.selectedCategory = category
-                                        }
-                                    }) {
-                                        Text(category.rawValue)
-                                            .font(.subheadline)
-                                            .padding(.vertical, 8)
-                                            .padding(.horizontal, 12)
-                                            .foregroundColor(viewModel.selectedCategory == category ? .white : .black)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 20)
-                                                    .fill(viewModel.selectedCategory == category ?
-                                                          category.color : Color.gray.opacity(0.15))
-                                            )
-                                            .lineLimit(1)
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    categorySelectionView
                     
-                    // Who's Invited
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack{
-                            Text("Who's Invited?*")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-                            // Profile pictures and count
-                            if !viewModel.selectedFriends.isEmpty {
-                                HStack(spacing: -10) {
-                                    // Show first two profile pictures
-                                    ForEach(0..<min(2, viewModel.selectedFriends.count), id: \.self) { index in
-                                        let friend = viewModel.selectedFriends[index]
-                                        if let pfpUrl = friend.profilePicture, let url = URL(string: pfpUrl) {
-                                            AsyncImage(url: url) { image in
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: 30, height: 30)
-                                                    .clipShape(Circle())
-                                                    .onTapGesture {
-                                                        viewModel.selectedFriends.remove(at: index)
-                                                    }
-                                            } placeholder: {
-                                                Circle()
-                                                    .fill(Color.gray)
-                                                    .frame(width: 30, height: 30)
-                                            }
-                                        } else {
-                                            Circle()
-                                                .fill(Color.gray)
-                                                .frame(width: 30, height: 30)
-                                        }
-                                    }
-                                    
-                                    // Show +X if there are more than 2 friends
-                                    if viewModel.selectedFriends.count > 2 {
-                                        Circle()
-                                            .fill(universalSecondaryColor)
-                                            .frame(width: 30, height: 30)
-                                            .overlay(
-                                                Text("+\(viewModel.selectedFriends.count - 2)")
-                                                    .font(.system(size: 12, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            )
-                                    }
-                                }
-                            } else {
-                                Circle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .frame(width: 30, height: 30)
-                                    .overlay(
-                                        Image(systemName: "person.fill")
-                                            .foregroundColor(.gray)
-                                            .font(.system(size: 16))
-                                    )
-                            }
-                        }
-                        
-                        HStack {
-                            Button(action: {
-                                showInviteView = true
-                            }) {
-                                HStack {
-                                    Text("Close Friends")
-                                        .font(.subheadline)
-                                        .foregroundColor(.white)
-                                    Image(systemName: "xmark")
-                                        .font(.caption)
-                                        .foregroundColor(.white)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color.green)
-                                .clipShape(Capsule())
-                            }
-                            
-                            Spacer()
-                            
-                            Button(action: {
-                                showInviteView = true
-                            }) {
-                                HStack {
-                                    Image(systemName: "plus")
-                                        .font(.caption)
-                                    Text("Add more!")
-                                        .font(.subheadline)
-                                }
-                                .foregroundColor(.gray)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                                )
-                            }
-                        }
-                    }
+                    invitedView
                     
-                    // Location
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text("Location*")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
-
-                            if !viewModel.isLocationValid {
-                                HStack {
-                                    Image(
-                                        systemName:
-                                            "exclamationmark.circle.fill"
-                                    )
-                                    .foregroundColor(.red)
-                                    .font(.system(size: 12))
-                                    Text("Location is required")
-                                        .font(.caption)
-                                        .foregroundColor(.red)
-                                        .padding(.horizontal, 5)
-                                        .transition(.opacity)
-                                }
-                            }
-                        }
-
-                        HStack {
-                            Button(action: {
-                                showLocationSelection = true
-                            }) {
-                                ZStack(alignment: .leading) {
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                                        .frame(height: 44)
-                                    
-                                    HStack {
-                                        Text(viewModel.event.location?.name.isEmpty ?? true
-                                           ? "Select location"
-                                           : viewModel.event.location?.name ?? "")
-                                        .foregroundColor(
-                                            viewModel.event.location?.name.isEmpty ?? true
-                                            ? .gray
-                                            : universalAccentColor
-                                        )
-                                        .padding(.leading, 10)
-                                        
-                                        Spacer()
-                                        
-                                        Image(systemName: "chevron.right")
-                                            .foregroundColor(.gray)
-                                            .padding(.trailing, 10)
-                                    }
-                                }
-                            }
-
-                            Button(action: {
-                                showLocationSelection = true
-                            }) {
-                                Image(systemName: "map")
-                                    .foregroundColor(universalSecondaryColor)
-                                    .padding(12)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 15)
-                                            .stroke(universalAccentColor, lineWidth: 1.5)
-                                    )
-                            }
-                        }
-                    }
+                    locationSelectionView
                     
                     // Caption
                     VStack(alignment: .leading, spacing: 8) {
@@ -435,12 +185,6 @@ struct EventCreationView: View {
         .sheet(isPresented: $showLocationSelection) {
             LocationSelectionView().environmentObject(viewModel)
         }
-        .sheet(isPresented: $showEmojiPicker) {
-            EmojiPickerView { emoji in
-                selectedEmoji = emoji
-                viewModel.event.icon = emoji
-            }
-        }
         .alert(isPresented: $showValidationAlert) {
             Alert(
                 title: Text("Incomplete Form"),
@@ -478,65 +222,293 @@ struct EventCreationView: View {
     }
 }
 
-// Emoji picker view 
-struct EmojiPickerView: View {
-    @Environment(\.dismiss) private var dismiss
-    var onEmojiSelected: (String) -> Void
-    
-    // Common emoji categories
-    let categories = [
-        ("Smileys", ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "🙃", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘"]),
-        ("Animals", ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵"]),
-        ("Sports", ["⚽️", "🏀", "🏈", "⚾️", "🥎", "🎾", "🏐", "🏉", "🥏", "🎱", "🏓", "🏸", "🏒", "🏑", "🥍", "🏏", "⛳️", "🥊"]),
-        ("Food", ["🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🥑"]),
-        ("Places", ["🏠", "🏡", "🏢", "🏣", "🏤", "🏥", "🏦", "🏨", "🏩", "🏪", "🏫", "🏬", "🏭", "🏯", "🏰", "💒", "🗼", "🗽"]),
-        ("Objects", ["⌚️", "📱", "💻", "⌨️", "🖥", "🖨", "🖱", "🖲", "🕹", "💽", "💾", "💿", "📀", "📼", "📷", "📸", "📹", "🎥"]),
-        ("Symbols", ["❤️", "🧡", "💛", "💚", "💙", "💜", "🖤", "💔", "❣️", "💕", "💞", "💓", "💗", "💖", "💘", "💝", "💟"])
-    ]
-    
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    ForEach(categories, id: \.0) { category in
-                        VStack(alignment: .leading) {
-                            Text(category.0)
-                                .font(.headline)
-                                .padding(.leading)
-                            
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 8), spacing: 10) {
-                                ForEach(category.1, id: \.self) { emoji in
-                                    Button(action: {
-                                        onEmojiSelected(emoji)
-                                        dismiss()
-                                    }) {
-                                        Text(emoji)
-                                            .font(.system(size: 30))
-                                            .padding(5)
-                                    }
+extension EventCreationView {
+    var categorySelectionView: some View {
+        // Category
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Category*")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    // Reordering categories to put General last
+                    let sortedCategories = EventCategory.allCases.sorted { cat1, cat2 in
+                        if cat1 == .general { return false }
+                        if cat2 == .general { return true }
+                        return cat1.rawValue < cat2.rawValue
+                    }
+                    
+                    ForEach(sortedCategories, id: \.self) { category in
+                        Button(action: {
+                            if viewModel.selectedCategory == category {
+                                // Allow deselecting by clicking on the same category
+                                if category != .general {
+                                    viewModel.selectedCategory = .general
                                 }
+                            } else {
+                                viewModel.selectedCategory = category
                             }
-                            .padding(.horizontal)
+                        }) {
+                            Text(category.rawValue)
+                                .font(.subheadline)
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 12)
+                                .foregroundColor(viewModel.selectedCategory == category ? .white : .black)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .fill(viewModel.selectedCategory == category ?
+                                              category.color : Color.gray.opacity(0.15))
+                                )
+                                .lineLimit(1)
                         }
-                        Divider()
                     }
                 }
-                .padding(.vertical)
             }
-            .navigationTitle("Select Icon")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
+        }
+    }
+    var locationSelectionView: some View {
+        // Location
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Location*")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                
+                if !viewModel.isLocationValid {
+                    HStack {
+                        Image(
+                            systemName:
+                                "exclamationmark.circle.fill"
+                        )
+                        .foregroundColor(.red)
+                        .font(.system(size: 12))
+                        Text("Location is required")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 5)
+                            .transition(.opacity)
                     }
+                }
+            }
+            
+            HStack {
+                Button(action: {
+                    showLocationSelection = true
+                }) {
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            .frame(height: 44)
+                        
+                        HStack {
+                            Text(viewModel.event.location?.name.isEmpty ?? true
+                                 ? "Select location"
+                                 : viewModel.event.location?.name ?? "")
+                            .foregroundColor(
+                                viewModel.event.location?.name.isEmpty ?? true
+                                ? .gray
+                                : universalAccentColor
+                            )
+                            .padding(.leading, 10)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .foregroundColor(.gray)
+                                .padding(.trailing, 10)
+                        }
+                    }
+                }
+                
+                Button(action: {
+                    showLocationSelection = true
+                }) {
+                    Image(systemName: "map")
+                        .foregroundColor(universalSecondaryColor)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 15)
+                                .stroke(universalAccentColor, lineWidth: 1.5)
+                        )
+                }
+            }
+        }
+    }
+    var invitedView: some View {
+        // Who's Invited
+        VStack(alignment: .leading, spacing: 8) {
+            HStack{
+                Text("Who's Invited?*")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                // Profile pictures and count
+                if !viewModel.selectedFriends.isEmpty {
+                    HStack(spacing: -10) {
+                        // Show first two profile pictures
+                        ForEach(0..<min(2, viewModel.selectedFriends.count), id: \.self) { index in
+                            let friend = viewModel.selectedFriends[index]
+                            if let pfpUrl = friend.profilePicture, let url = URL(string: pfpUrl) {
+                                AsyncImage(url: url) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 30, height: 30)
+                                        .clipShape(Circle())
+                                        .onTapGesture {
+                                            viewModel.selectedFriends.remove(at: index)
+                                        }
+                                } placeholder: {
+                                    Circle()
+                                        .fill(Color.gray)
+                                        .frame(width: 30, height: 30)
+                                }
+                            } else {
+                                Circle()
+                                    .fill(Color.gray)
+                                    .frame(width: 30, height: 30)
+                            }
+                        }
+                        
+                        // Show +X if there are more than 2 friends
+                        if viewModel.selectedFriends.count > 2 {
+                            Circle()
+                                .fill(universalSecondaryColor)
+                                .frame(width: 30, height: 30)
+                                .overlay(
+                                    Text("+\(viewModel.selectedFriends.count - 2)")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                )
+                        }
+                    }
+                } else {
+                    Circle()
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(width: 30, height: 30)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.gray)
+                                .font(.system(size: 16))
+                        )
+                }
+            }
+            
+            HStack {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(viewModel.selectedTags) { tag in
+                            Button(action: {
+                                showInviteView = true
+                            }) {
+                                HStack {
+                                    Text(tag.displayName)
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                    Image(systemName: "xmark")
+                                        .font(.caption)
+                                        .foregroundColor(.white)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(Color(hex: tag.colorHexCode))
+                                .clipShape(Capsule())
+                            }
+                        }
+                        
+                        if viewModel.selectedTags.isEmpty {
+                            // No tags selected yet
+                            EmptyView()
+                        }
+                    }
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    showInviteView = true
+                }) {
+                    HStack {
+                        Image(systemName: "plus")
+                            .font(.caption)
+                        Text("Add \(viewModel.selectedTags.count > 0 ? "more " : "")tags!")
+                            .font(.subheadline)
+                    }
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                    )
+                }
+            }
+        }
+    }
+    var timeSelectionView: some View {
+        // Time
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Time*")
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            
+            HStack {
+                // Start time
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                        .frame(height: 44)
+                    
+                    DatePicker(
+                        "",
+                        selection: Binding(
+                            get: {
+                                viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
+                            },
+                            set: { time in
+                                viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                            }
+                        ),
+                        displayedComponents: .hourAndMinute
+                    )
+                    .labelsHidden()
+                    .colorScheme(.light)
+                    .accentColor(universalAccentColor)
+                    .padding(.horizontal, 10)
+                }
+                
+                Text("-")
+                    .font(.headline)
+                    .padding(.horizontal, 4)
+                
+                // End time
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                        .frame(height: 44)
+                    
+                    DatePicker(
+                        "",
+                        selection: Binding(
+                            get: {
+                                viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
+                            },
+                            set: { time in
+                                viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                            }
+                        ),
+                        displayedComponents: .hourAndMinute
+                    )
+                    .labelsHidden()
+                    .colorScheme(.light)
+                    .accentColor(universalAccentColor)
+                    .padding(.horizontal, 10)
                 }
             }
         }
     }
 }
 
-// This needs to be outside the struct
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared

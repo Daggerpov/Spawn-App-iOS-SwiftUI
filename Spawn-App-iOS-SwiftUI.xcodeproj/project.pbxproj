@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		654DED2B2DC095400059C268 /* MapLibre in Frameworks */ = {isa = PBXBuildFile; productRef = 654DED2A2DC095400059C268 /* MapLibre */; };
+		657BA6A42DCDEF9400C2ADDE /* MCEmojiPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 657BA6A32DCDEF9400C2ADDE /* MCEmojiPicker */; };
 		658B2F332D9949F7004DE038 /* SwiftyCrop in Frameworks */ = {isa = PBXBuildFile; productRef = 658B2F322D9949F7004DE038 /* SwiftyCrop */; };
 		AAEC10142DC08AB30089C05A /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10132DC08AB30089C05A /* FirebaseInAppMessaging-Beta */; };
 		AAEC10162DC08AB30089C05A /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10152DC08AB30089C05A /* FirebaseMessaging */; };
@@ -82,6 +83,7 @@
 				AAEC10182DC08D4C0089C05A /* FirebaseCore in Frameworks */,
 				DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */,
 				AAEC10142DC08AB30089C05A /* FirebaseInAppMessaging-Beta in Frameworks */,
+				657BA6A42DCDEF9400C2ADDE /* MCEmojiPicker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -149,6 +151,7 @@
 				AAEC10132DC08AB30089C05A /* FirebaseInAppMessaging-Beta */,
 				AAEC10152DC08AB30089C05A /* FirebaseMessaging */,
 				AAEC10172DC08D4C0089C05A /* FirebaseCore */,
+				657BA6A32DCDEF9400C2ADDE /* MCEmojiPicker */,
 			);
 			productName = "Spawn-App-iOS-SwiftUI";
 			productReference = 65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */;
@@ -238,6 +241,7 @@
 				658B2F312D9949F7004DE038 /* XCRemoteSwiftPackageReference "SwiftyCrop" */,
 				654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
 				AAEC10122DC08AB30089C05A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				657BA6A22DCDEF9400C2ADDE /* XCRemoteSwiftPackageReference "MCEmojiPicker" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65D5035A2CD86EB300923A01 /* Products */;
@@ -620,6 +624,14 @@
 				minimumVersion = 6.12.3;
 			};
 		};
+		657BA6A22DCDEF9400C2ADDE /* XCRemoteSwiftPackageReference "MCEmojiPicker" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/izyumkin/MCEmojiPicker";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.2.3;
+			};
+		};
 		658B2F312D9949F7004DE038 /* XCRemoteSwiftPackageReference "SwiftyCrop" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/benedom/SwiftyCrop";
@@ -651,6 +663,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */;
 			productName = MapLibre;
+		};
+		657BA6A32DCDEF9400C2ADDE /* MCEmojiPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 657BA6A22DCDEF9400C2ADDE /* XCRemoteSwiftPackageReference "MCEmojiPicker" */;
+			productName = MCEmojiPicker;
 		};
 		658B2F322D9949F7004DE038 /* SwiftyCrop */ = {
 			isa = XCSwiftPackageProductDependency;

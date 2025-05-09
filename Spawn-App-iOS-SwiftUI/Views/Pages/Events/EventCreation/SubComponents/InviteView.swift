@@ -136,76 +136,168 @@ struct InviteView: View {
                     .foregroundColor(.gray)
                     .padding(.vertical)
             } else {
-                // Group the tags into rows with staggering
-                VStack(alignment: .leading, spacing: 20) {
-                    // First row
-                    HStack(spacing: 0) {
-                        Spacer().frame(width: 10)
-                        ForEach(tagsViewModel.tags.prefix(2), id: \.id) { tag in
+                // Geometric arrangements for different numbers of tags
+                let tagCount = tagsViewModel.tags.count
+                
+                ZStack {
+                    // Different arrangements based on tag count
+                    if tagCount <= 8 {
+                        ForEach(0..<tagCount, id: \.self) { index in
+                            let tag = tagsViewModel.tags[index]
+                            let rotationAngle = getTagRotation(index: index, count: tagCount)
+                            let position = getTagPosition(index: index, count: tagCount)
+                            
                             TagBubble(
                                 tag: tag,
-                                isSelected: eventCreationViewModel.selectedTags
-                                    .contains(tag)
+                                isSelected: eventCreationViewModel.selectedTags.contains(tag)
                             )
-                            .padding(.horizontal, 5)
+                            .rotationEffect(.degrees(rotationAngle))
+                            .position(x: position.x, y: position.y)
                             .onTapGesture {
                                 toggleTagSelection(tag)
                             }
                         }
-                        Spacer()
-                    }
+                    } else {
+                        // Fallback to the grid layout for more than 8 tags
+                        VStack(alignment: .leading, spacing: 20) {
+                            // First row
+                            HStack(spacing: 0) {
+                                Spacer().frame(width: 10)
+                                ForEach(tagsViewModel.tags.prefix(3), id: \.id) { tag in
+                                    TagBubble(
+                                        tag: tag,
+                                        isSelected: eventCreationViewModel.selectedTags
+                                            .contains(tag)
+                                    )
+                                    .padding(.horizontal, 5)
+                                    .rotationEffect(.degrees(Double.random(in: -10...10)))
+                                    .onTapGesture {
+                                        toggleTagSelection(tag)
+                                    }
+                                }
+                                Spacer()
+                            }
 
-                    // Second row with different staggering
-                    if tagsViewModel.tags.count > 2 {
-                        HStack(spacing: 0) {
-                            Spacer().frame(width: 40)
-                            ForEach(
-                                Array(
-                                    tagsViewModel.tags.dropFirst(2).prefix(2)
-                                ),
-                                id: \.id
-                            ) { tag in
-                                TagBubble(
-                                    tag: tag,
-                                    isSelected: eventCreationViewModel
-                                        .selectedTags.contains(tag)
-                                )
-                                .padding(.horizontal, 5)
-                                .onTapGesture {
-                                    toggleTagSelection(tag)
+                            // Second row with different staggering
+                            if tagsViewModel.tags.count > 3 {
+                                HStack(spacing: 0) {
+                                    Spacer().frame(width: 40)
+                                    ForEach(
+                                        Array(
+                                            tagsViewModel.tags.dropFirst(3).prefix(3)
+                                        ),
+                                        id: \.id
+                                    ) { tag in
+                                        TagBubble(
+                                            tag: tag,
+                                            isSelected: eventCreationViewModel
+                                                .selectedTags.contains(tag)
+                                        )
+                                        .padding(.horizontal, 5)
+                                        .rotationEffect(.degrees(Double.random(in: -10...10)))
+                                        .onTapGesture {
+                                            toggleTagSelection(tag)
+                                        }
+                                    }
+                                    Spacer()
                                 }
                             }
-                            Spacer()
-                        }
-                    }
 
-                    // Third row with different staggering
-                    if tagsViewModel.tags.count > 4 {
-                        HStack(spacing: 0) {
-                            Spacer().frame(width: 20)
-                            ForEach(
-                                Array(
-                                    tagsViewModel.tags.dropFirst(4).prefix(2)
-                                ),
-                                id: \.id
-                            ) { tag in
-                                TagBubble(
-                                    tag: tag,
-                                    isSelected: eventCreationViewModel
-                                        .selectedTags.contains(tag)
-                                )
-                                .padding(.horizontal, 5)
-                                .onTapGesture {
-                                    toggleTagSelection(tag)
+                            // Third row with different staggering
+                            if tagsViewModel.tags.count > 6 {
+                                HStack(spacing: 0) {
+                                    Spacer().frame(width: 20)
+                                    ForEach(
+                                        Array(
+                                            tagsViewModel.tags.dropFirst(6).prefix(3)
+                                        ),
+                                        id: \.id
+                                    ) { tag in
+                                        TagBubble(
+                                            tag: tag,
+                                            isSelected: eventCreationViewModel
+                                                .selectedTags.contains(tag)
+                                        )
+                                        .padding(.horizontal, 5)
+                                        .rotationEffect(.degrees(Double.random(in: -10...10)))
+                                        .onTapGesture {
+                                            toggleTagSelection(tag)
+                                        }
+                                    }
+                                    Spacer()
                                 }
                             }
-                            Spacer()
                         }
                     }
                 }
+                .frame(height: 230) // Adjust height based on your needs
             }
         }
         .padding()
+    }
+    
+    // Helper functions for tag positioning
+    private func getTagRotation(index: Int, count: Int) -> Double {
+        let baseAngle = Double.random(in: -15...15)
+        
+        // For specific arrangements
+        switch count {
+        case 1: return 0
+        case 2: return index == 0 ? -8 : 8
+        case 3: return [-10, 0, 10][index]
+        case 4: return [-12, -4, 4, 12][index]
+        default: return baseAngle
+        }
+    }
+    
+    private func getTagPosition(index: Int, count: Int) -> CGPoint {
+        let screenWidth: CGFloat = 350
+        let screenHeight: CGFloat = 200
+        
+        // Geometric presets based on number of tags
+        switch count {
+        case 1:
+            return CGPoint(x: screenWidth/2, y: screenHeight/2)
+        case 2:
+            return [
+                CGPoint(x: screenWidth/2 - 70, y: screenHeight/2),
+                CGPoint(x: screenWidth/2 + 70, y: screenHeight/2)
+            ][index]
+        case 3:
+            return [
+                CGPoint(x: screenWidth/2 - 80, y: screenHeight/2 - 20),
+                CGPoint(x: screenWidth/2, y: screenHeight/2 + 40),
+                CGPoint(x: screenWidth/2 + 80, y: screenHeight/2 - 20)
+            ][index]
+        case 4:
+            return [
+                CGPoint(x: screenWidth/2 - 90, y: screenHeight/2 - 30),
+                CGPoint(x: screenWidth/2 - 30, y: screenHeight/2 + 40),
+                CGPoint(x: screenWidth/2 + 30, y: screenHeight/2 - 30),
+                CGPoint(x: screenWidth/2 + 90, y: screenHeight/2 + 40)
+            ][index]
+        case 5:
+            let positions = [
+                CGPoint(x: screenWidth/2 - 100, y: screenHeight/2 - 40),
+                CGPoint(x: screenWidth/2 - 40, y: screenHeight/2 + 50),
+                CGPoint(x: screenWidth/2, y: screenHeight/2 - 20),
+                CGPoint(x: screenWidth/2 + 60, y: screenHeight/2 + 40),
+                CGPoint(x: screenWidth/2 + 110, y: screenHeight/2 - 30)
+            ]
+            return positions[index]
+        default:
+            // For 6-8 tags, create a more scattered arrangement
+            let radius: CGFloat = 80
+            let angle = 2 * .pi / Double(count) * Double(index)
+            let x = screenWidth/2 + radius * cos(angle)
+            let y = screenHeight/2 + radius * sin(angle)
+            
+            // Add some randomness to avoid perfect circle
+            let randomOffsetX = CGFloat.random(in: -20...20)
+            let randomOffsetY = CGFloat.random(in: -20...20)
+            
+            return CGPoint(x: x + randomOffsetX, y: y + randomOffsetY)
+        }
     }
 
     private func toggleTagSelection(_ tag: FullFriendTagDTO) {
@@ -255,7 +347,9 @@ struct InviteView: View {
                                         .frame(width: 30, height: 30)
                                 }
                                 
-                                Text(friend.username)
+                                // Use FormatterService to display name
+                                let displayName = FormatterService.shared.formatName(user: friend)
+                                Text(displayName.isEmpty ? friend.username : displayName)
                                     .font(.subheadline)
                                     .foregroundColor(.white)
                                     .lineLimit(1)
@@ -399,11 +493,13 @@ struct FriendListRow: View {
             }
 
             VStack(alignment: .leading) {
-                Text(friend.username)
+                // Use FormatterService to format the name
+                let fullName = FormatterService.shared.formatName(user: friend)
+                Text(fullName.isEmpty ? friend.username : fullName)
                     .font(.headline)
                     .foregroundColor(universalAccentColor)
 
-                Text("@\(friend.email.split(separator: "@").first ?? "")")
+                Text("@\(friend.username)")
                     .font(.subheadline)
                     .foregroundColor(.gray)
             }

@@ -30,6 +30,15 @@ struct SearchView: View {
 					)
 					.accentColor(universalAccentColor)
 					.tint(universalAccentColor)
+                
+                if !viewModel.searchText.isEmpty {
+                    Button(action: {
+                        viewModel.searchText = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(universalAccentColor)
+                    }
+                }
 			}
 			.padding(.vertical, 20)
 			.padding(.horizontal, 15)

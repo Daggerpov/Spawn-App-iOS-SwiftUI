@@ -22,6 +22,9 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 	var endTime: Date?
 	var location: Location?
 	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
+	/* The icon is stored as a Unicode emoji character string (e.g. "⭐️", "🎉", "🏀").
+	   This is the literal emoji character, not a shortcode or description.
+	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
 	var category: EventCategory = .general
 
