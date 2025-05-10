@@ -221,16 +221,40 @@ class AppCache: ObservableObject {
     }
     
     func refreshProfilePicture() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh profile picture: No user ID available")
+            return 
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)") else { 
+                print("Invalid URL for refreshing profile picture")
+                return 
+            }
             
+            print("Refreshing profile picture for user \(userId)")
             let fetchedProfile: BaseUserDTO = try await apiService.fetchData(from: url, parameters: nil)
             
             await MainActor.run {
+                print("Successfully fetched profile picture: \(fetchedProfile.profilePicture ?? "nil")")
                 updateProfilePicture(fetchedProfile)
+            }
+        } catch let error as APIError {
+            if case .invalidStatusCode(let code) = error, code == 401 {
+                print("Failed to refresh profile picture: Authentication error (401)")
+                // Token issue - notify the user or attempt to re-authenticate
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .userAuthenticationFailed, object: nil)
+                }
+            } else if case .failedTokenSaving = error {
+                print("Failed to refresh profile picture: JWT token saving error")
+                // Token saving issue
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .userAuthenticationFailed, object: nil)
+                }
+            } else {
+                print("Failed to refresh profile picture: \(error.localizedDescription)")
             }
         } catch {
             print("Failed to refresh profile picture: \(error.localizedDescription)")
@@ -330,16 +354,34 @@ class AppCache: ObservableObject {
     }
     
     func refreshUserTags() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh user tags: No user ID available")
+            return 
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friend-tags/owner/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "friend-tags/owner/\(userId)") else { 
+                print("Invalid URL for refreshing user tags")
+                return 
+            }
             
+            print("Refreshing user tags for user \(userId)")
             let fetchedUserTags: [FriendTagDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
             await MainActor.run {
+                print("Successfully fetched \(fetchedUserTags.count) user tags")
                 updateUserTags(fetchedUserTags)
+            }
+        } catch let error as APIError {
+            if case .invalidStatusCode(let code) = error, code == 401 {
+                print("Failed to refresh user tags: Authentication error (401)")
+                // Token issue - notify the user or attempt to re-authenticate
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: .userAuthenticationFailed, object: nil)
+                }
+            } else {
+                print("Failed to refresh user tags: \(error.localizedDescription)")
             }
         } catch {
             print("Failed to refresh user tags: \(error.localizedDescription)")

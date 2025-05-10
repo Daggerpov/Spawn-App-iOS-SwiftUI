@@ -523,20 +523,22 @@ class APIService: IAPIService {
 		let cleanAccessToken = accessToken.replacingOccurrences(
 			of: "Bearer ", with: "")
 
-		// Store both tokens in keychain
+		// Store both tokens in keychain with retry mechanism
 		if let accessTokenData = cleanAccessToken.data(using: .utf8),
-			let refreshTokenData = refreshToken.data(using: .utf8)
+		   let refreshTokenData = refreshToken.data(using: .utf8)
 		{
-			if !KeychainService.shared.save(
-				key: "accessToken", data: accessTokenData)
-			{
+			// Use the retry mechanism for important token data
+			if !KeychainService.shared.saveWithRetry(key: "accessToken", data: accessTokenData) {
+				print("❌ CRITICAL: Failed to save access token to keychain after multiple attempts")
 				throw APIError.failedTokenSaving(tokenType: "accessToken")
 			}
-			if !KeychainService.shared.save(
-				key: "refreshToken", data: refreshTokenData)
-			{
+			
+			if !KeychainService.shared.saveWithRetry(key: "refreshToken", data: refreshTokenData) {
+				print("❌ CRITICAL: Failed to save refresh token to keychain after multiple attempts")
 				throw APIError.failedTokenSaving(tokenType: "refreshToken")
 			}
+			
+			print("✅ Successfully saved auth tokens to keychain")
 		}
 	}
 
@@ -832,9 +834,12 @@ class APIService: IAPIService {
 				let cleanAccessToken = newAccessToken.replacingOccurrences(of: "Bearer ", with: "")
 
 				if let accessTokenData = cleanAccessToken.data(using: .utf8) {
-				    if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
+				    // Use the retry mechanism for token saving
+				    if !KeychainService.shared.saveWithRetry(key: "accessToken", data: accessTokenData) {
+				        print("❌ CRITICAL: Failed to save refreshed access token to keychain after multiple attempts")
 				        throw APIError.failedTokenSaving(tokenType: "accessToken")
 				    }
+				    print("✅ Successfully refreshed and saved new access token")
 				    return "Bearer \(cleanAccessToken)"
 				} else {
 				    throw APIError.failedTokenSaving(tokenType: "accessToken")

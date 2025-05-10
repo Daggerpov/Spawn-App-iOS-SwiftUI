@@ -21,11 +21,16 @@ class KeychainService {
 				kSecAttrService as String: service,
 				kSecAttrAccount as String: key,
 				kSecValueData as String: data,
+				kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly,
 			] as [String: Any]
 
 		SecItemDelete(query as CFDictionary)  // Delete existing item if any
 		let status = SecItemAdd(query as CFDictionary, nil)
-		return status == errSecSuccess
+		if status != errSecSuccess {
+			print("❌ Keychain save error: \(status) for key \(key)")
+			return false
+		}
+		return true
 	}
 
 	func load(key: String) -> Data? {
@@ -44,6 +49,9 @@ class KeychainService {
 		if status == errSecSuccess {
 			return dataTypeRef as? Data
 		}
+		if status != errSecItemNotFound {
+			print("❌ Keychain load error: \(status) for key \(key)")
+		}
 		return nil
 	}
 
@@ -56,6 +64,23 @@ class KeychainService {
 			] as [String: Any]
 
 		let status = SecItemDelete(query as CFDictionary)
-		return status == errSecSuccess
+		if status != errSecSuccess && status != errSecItemNotFound {
+			print("❌ Keychain delete error: \(status) for key \(key)")
+			return false
+		}
+		return true
+	}
+
+	// A more robust method that attempts multiple times before giving up
+	func saveWithRetry(key: String, data: Data, retryCount: Int = 3) -> Bool {
+		for attempt in 1...retryCount {
+			if save(key: key, data: data) {
+				return true
+			}
+			print("Retrying keychain save for \(key), attempt \(attempt)/\(retryCount)")
+			// Short delay before retry
+			Thread.sleep(forTimeInterval: 0.1)
+		}
+		return false
 	}
 }

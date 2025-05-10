@@ -26,7 +26,55 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
             handleReceivedNotification(notification)
         }
         
+        // Register for authentication failure notifications
+        setupAuthFailureNotificationHandling()
+        
         return true
+    }
+    
+    // Setup observer for authentication failures
+    private func setupAuthFailureNotificationHandling() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleAuthenticationFailure),
+            name: .userAuthenticationFailed,
+            object: nil
+        )
+        print("✅ Registered for authentication failure notifications")
+    }
+    
+    // Handle authentication failures
+    @objc private func handleAuthenticationFailure() {
+        print("⚠️ Authentication failure detected - attempting to handle")
+        
+        // If multiple auth failures happen close together, only handle the first one
+        DispatchQueue.main.async { [weak self] in
+            // Show an alert to the user
+            let alertController = UIAlertController(
+                title: "Authentication Error",
+                message: "There was a problem with your account. Please sign in again.",
+                preferredStyle: .alert
+            )
+            
+            alertController.addAction(UIAlertAction(
+                title: "OK",
+                style: .default,
+                handler: { _ in
+                    // Sign the user out
+                    UserAuthViewModel.shared.signOut()
+                }
+            ))
+            
+            // Get the top-most view controller to present the alert
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootViewController = windowScene.windows.first?.rootViewController {
+                var topController = rootViewController
+                while let presentedController = topController.presentedViewController {
+                    topController = presentedController
+                }
+                topController.present(alertController, animated: true)
+            }
+        }
     }
     
     // Handle device token registration

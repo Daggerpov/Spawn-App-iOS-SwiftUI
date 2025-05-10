@@ -12,4 +12,7 @@ extension Notification.Name {
     
     // Notification for event creation
     static let eventCreated = Notification.Name("eventCreated")
+    
+    // Notification for authentication failures
+    static let userAuthenticationFailed = Notification.Name("userAuthenticationFailed")
 }

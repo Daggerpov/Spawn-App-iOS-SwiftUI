@@ -243,7 +243,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		GIDSignIn.sharedInstance.signOut()
 
 		// Clear Apple Sign-In state
-		if let externalUserId = self.externalUserId {
+		if let externalUserId = self.externalUserId, authProvider == .apple {
 			// Invalidate Apple ID credential state (optional but recommended)
 			let appleIDProvider = ASAuthorizationAppleIDProvider()
 			appleIDProvider.getCredentialState(forUserID: externalUserId) {
@@ -252,6 +252,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					print(
 						"Failed to get Apple ID credential state: \(error.localizedDescription)"
 					)
+					// Continue with sign out process even if Apple credential state check fails
 					return
 				}
 				switch credentialState {
