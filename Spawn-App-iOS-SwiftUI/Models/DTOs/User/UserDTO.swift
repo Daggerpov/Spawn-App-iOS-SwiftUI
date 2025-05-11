@@ -16,8 +16,7 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 	var friendUserIds: [UUID]?
 	var username: String
 	var profilePicture: String?
-	var firstName: String?
-	var lastName: String?
+	var name: String?
 	var bio: String?
 	var friendTagIds: [UUID]?
 	var email: String
@@ -27,8 +26,7 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 		friendUserIds: [UUID]? = nil,
 		username: String,
 		profilePicture: String? = nil,
-		firstName: String? = nil,
-		lastName: String? = nil,
+		name: String? = nil,
 		bio: String? = nil,
 		friendTagIds: [UUID]? = nil,
 		email: String
@@ -37,8 +35,7 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.friendUserIds = friendUserIds
 		self.username = username
 		self.profilePicture = profilePicture
-		self.firstName = firstName
-		self.lastName = lastName
+		self.name = name
 		self.bio = bio
 		self.friendTagIds = friendTagIds
 		self.email = email
@@ -54,8 +51,7 @@ extension UserDTO {
 			friendUserIds: friendIds,
 			username: "daggerpov",
 			profilePicture: "Daniel_Agapov_pfp",
-			firstName: "Daniel",
-			lastName: "Agapov",
+			name: "Daniel Agapov",
 			bio: "This is my bio.",
 			friendTagIds: [UUID(), UUID()],
 			email: "daniel@agapov.com"
@@ -69,8 +65,7 @@ extension UserDTO {
 			friendUserIds: [UUID(), UUID()],
 			username: "uhdlee",
 			profilePicture: "Daniel_Lee_pfp",
-			firstName: "Daniel",
-			lastName: "Lee",
+			name: "Daniel Lee",
 			bio: "This is my bio.",
 			friendTagIds: [UUID(), UUID()],
 			email: "daniel2456@gmail.com"
@@ -82,7 +77,7 @@ extension UserDTO {
 		friendUserIds: [],
 		username: "shannonaurl",
 		profilePicture: "Shannon_pfp",
-		firstName: "Shannon",
+		name: "Shannon",
 		bio: "This is my bio.",
 		email: "shannon@gmail.com"
 	)
@@ -92,8 +87,7 @@ extension UserDTO {
 		friendUserIds: [],
 		username: "jenntjen",
 		profilePicture: "Jennifer_pfp",
-		firstName: "Jennifer",
-		lastName: "Tjen",
+		name: "Jennifer Tjen",
 		bio: "This is my bio.",
 		email: "jennifer@gmail.com"
 	)
@@ -103,8 +97,7 @@ extension UserDTO {
 		friendUserIds: [],
 		username: "michaeltham",
 		profilePicture: "Michael_pfp",
-		firstName: "Michael",
-		lastName: "Tham",
+		name: "Michael Tham",
 		bio: "This is my bio.",
 		email: "haley@gmail.com"
 	)
@@ -114,7 +107,7 @@ extension UserDTO {
 		friendUserIds: [],
 		username: "haleyusername",
 		profilePicture: "Haley_pfp",
-		firstName: "Haley",
+		name: "Haley",
 		bio: "This is my bio.",
 		email: "haley@gmail.com"
 	)

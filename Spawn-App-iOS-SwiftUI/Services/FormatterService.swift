@@ -12,22 +12,6 @@ class FormatterService {
 
 	private init() {}
 
-	// `Nameable` applies to either `UserDTO` or `PotentialFriendUserDTO`, making
-	// either of those a valid param to this method.
-	public func formatName(user: Nameable) -> String {
-		if let firstName = user.firstName {
-			if let lastName = user.lastName {
-				return "\(firstName) \(lastName)"
-			} else {
-				return firstName
-			}
-		}
-		if let lastName = user.lastName {
-			return lastName
-		}
-		return ""
-	}
-
 	func formatEventTime(event: FullFeedEventDTO) -> String {
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "h:mm a"

@@ -348,11 +348,18 @@ struct InviteView: View {
                                 }
                                 
                                 // Use FormatterService to display name
-                                let displayName = FormatterService.shared.formatName(user: friend)
-                                Text(displayName.isEmpty ? friend.username : displayName)
+                                if let displayName = friend.name {
+                                    Text(displayName.isEmpty ? friend.username : displayName)
                                     .font(.subheadline)
                                     .foregroundColor(.white)
                                     .lineLimit(1)
+                                } else {
+                                    Text(friend.username)
+                                        .font(.subheadline)
+                                        .foregroundColor(.white)
+                                        .lineLimit(1)
+                                    
+                                }
                                 
                                 Image(systemName: "xmark")
                                     .font(.caption)

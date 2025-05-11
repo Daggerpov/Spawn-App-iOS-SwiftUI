@@ -125,13 +125,9 @@ struct EditProfileView: View {
             _ = selectedImage != nil
             
             // Update profile info first
-            let firstName = name.split(separator: " ").first.map(String.init) ?? name
-            let lastName = name.contains(" ") ? name.split(separator: " ").dropFirst().joined(separator: " ") : ""
-            
             await userAuth.spawnEditProfile(
                 username: username,
-                firstName: firstName,
-                lastName: lastName
+                name: name
             )
             
             // Force UI update by triggering objectWillChange
@@ -171,7 +167,7 @@ struct EditProfileView: View {
             
             // Ensure the user object is fully refreshed
             if let spawnUser = userAuth.spawnUser {
-                print("Updated profile: \(spawnUser.firstName ?? "") \(spawnUser.lastName ?? ""), @\(spawnUser.username)")
+                print("Updated profile: \(spawnUser.name ?? ""), @\(spawnUser.username)")
                 await MainActor.run {
                     userAuth.objectWillChange.send()
                 }
