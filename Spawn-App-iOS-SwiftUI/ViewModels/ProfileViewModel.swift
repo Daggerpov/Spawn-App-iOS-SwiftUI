@@ -285,7 +285,7 @@ class ProfileViewModel: ObservableObject {
         
         if let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(interest)") {
             do {
-                try await apiService.deleteData(from: url)
+                let _ = try await apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
                 // Refresh interests after removing
                 await fetchUserInterests(userId: userId)
             } catch {

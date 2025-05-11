@@ -11,3 +11,4 @@ struct DeviceTokenDTO: Codable {
     /// The user ID associated with this device token
     let userId: UUID
 } 
+

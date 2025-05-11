@@ -26,7 +26,7 @@ protocol IAPIService {
 		from url: URL,
 		with object: T
 	) async throws -> U
-	func deleteData(from url: URL) async throws
+    func deleteData<T: Encodable>(from url: URL, parameters: [String: String]?, object: T?) async throws
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO
 	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse]

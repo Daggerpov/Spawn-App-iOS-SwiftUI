@@ -349,13 +349,32 @@ class APIService: IAPIService {
 		return try decoder.decode(R.self, from: data)
 	}
 
-	internal func deleteData(from url: URL) async throws {
-		resetState()
-
-		var request = URLRequest(url: url)
-		request.httpMethod = "DELETE"  // Set the HTTP method to DELETE
-		setAuthHeader(request: &request)  // Set auth headers if needed
-		let (_, response) = try await URLSession.shared.data(for: request)
+    internal func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T?) async throws {
+        resetState()
+        
+        // Build final URL with query parameters if present
+        var finalUrl = url
+        if let parameters = parameters, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+            guard let urlWithParams = components.url else {
+                errorMessage = "Invalid URL after adding query parameters"
+                print(errorMessage ?? "no error message to log")
+                throw APIError.URLError
+            }
+            finalUrl = urlWithParams
+        }
+        
+        var request = URLRequest(url: finalUrl)
+        request.httpMethod = "DELETE"
+        setAuthHeader(request: &request)
+        
+        if let object = object {
+            let encoder = APIService.makeEncoder()
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try encoder.encode(object)
+        }
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
@@ -823,7 +842,6 @@ class APIService: IAPIService {
         if httpResponse.statusCode == 401 {
             // Refresh token didn't work so logout
             UserAuthViewModel.shared.signOut()
-            
         }
         
 		if httpResponse.statusCode == 200 {
@@ -920,3 +938,4 @@ class APIService: IAPIService {
 struct EmptyRequestBody: Codable {}
 // for empty responses from requests:
 struct EmptyResponse: Codable {}
+struct EmptyObject: Encodable {}
