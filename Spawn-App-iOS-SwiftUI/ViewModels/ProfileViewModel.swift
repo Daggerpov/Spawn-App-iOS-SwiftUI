@@ -14,6 +14,7 @@ class ProfileViewModel: ObservableObject {
         count: 5
     )
     @Published var isLoadingCalendar: Bool = false
+    @Published var allCalendarActivities: [CalendarActivityDTO] = []
     
     private let apiService: IAPIService
     
@@ -162,7 +163,7 @@ class ProfileViewModel: ObservableObject {
             return
         }
         
-        // Create parameters dictionary
+        // Create parameters dictionary with month and year
         let parameters = [
             "month": String(month),
             "year": String(year),
@@ -183,10 +184,54 @@ class ProfileViewModel: ObservableObject {
                 self.isLoadingCalendar = false
             }
         } catch {
-            // Handle error and provide fallback
+            // Handle error with empty grid instead of mock data
             await MainActor.run {
                 self.errorMessage = "Failed to load calendar: \(error.localizedDescription)"
-                self.calendarActivities = generateMockCalendarData(month: month, year: year)
+                self.calendarActivities = Array(repeating: Array(repeating: nil, count: 7), count: 5)
+                self.isLoadingCalendar = false
+            }
+        }
+    }
+    
+    func fetchAllCalendarActivities() async {
+        await MainActor.run {
+            self.isLoadingCalendar = true
+        }
+        
+        // Get the user ID
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            await MainActor.run {
+                self.isLoadingCalendar = false
+                self.errorMessage = "User ID not available"
+            }
+            return
+        }
+        
+        // Construct the URL for all calendar activities
+        guard let url = URL(string: APIService.baseURL + "users/\(userId)/calendar") else {
+            await MainActor.run {
+                self.isLoadingCalendar = false
+                self.errorMessage = "Failed to construct URL for calendar activities"
+            }
+            return
+        }
+        
+        do {
+            // Fetch all calendar activities from API without month/year parameters
+            let activities: [CalendarActivityDTO] = try await apiService.fetchData(
+                from: url, parameters: nil
+            )
+            
+            // Update UI on main thread
+            await MainActor.run {
+                self.allCalendarActivities = activities
+                self.isLoadingCalendar = false
+            }
+        } catch {
+            // Handle error
+            await MainActor.run {
+                self.errorMessage = "Failed to load calendar: \(error.localizedDescription)"
+                self.allCalendarActivities = []
                 self.isLoadingCalendar = false
             }
         }
@@ -201,16 +246,30 @@ class ProfileViewModel: ObservableObject {
         let firstDayOffset = firstDayOfMonth(month: month, year: year)
         
         for activity in activities {
-            let day = extractDay(from: activity.date)
-            let position = day + firstDayOffset - 1
-            if position >= 0 && position < 35 {
-                let row = position / 7
-                let col = position % 7
-                grid[row][col] = activity
+            if let activityDate = dateFromString(activity.date) {
+                let activityMonth = Calendar.current.component(.month, from: activityDate)
+                let activityYear = Calendar.current.component(.year, from: activityDate)
+                
+                // Only include activities from the specified month and year
+                if activityMonth == month && activityYear == year {
+                    let day = Calendar.current.component(.day, from: activityDate)
+                    let position = day + firstDayOffset - 1
+                    if position >= 0 && position < 35 {
+                        let row = position / 7
+                        let col = position % 7
+                        grid[row][col] = activity
+                    }
+                }
             }
         }
         
         return grid
+    }
+    
+    private func dateFromString(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: dateString)
     }
     
     private func extractDay(from date: Date) -> Int {
@@ -230,44 +289,6 @@ class ProfileViewModel: ObservableObject {
             return weekday - 1
         }
         return 0
-    }
-    
-    private func generateMockCalendarData(month: Int, year: Int) -> [[CalendarActivityDTO?]] {
-        var activities = Array(
-            repeating: Array(repeating: nil as CalendarActivityDTO?, count: 7),
-            count: 5
-        )
-        
-        // Use EventCategory enum cases
-        let eventCategories = EventCategory.allCases
-        
-        // Sample icons (emoji)
-        let icons = ["🎮", "🍔", "⚽", "🎵", "✨", "🧠"]
-        
-        // Generate some random activities
-        for row in 0..<5 {
-            for col in 0..<7 {
-                if row > 0 && Bool.random() && Bool.random() {
-                    let day = (row * 7) + col + 1
-                    if day <= daysInMonth(month: month, year: year) {
-                        let date = Calendar.current.date(from: DateComponents(year: year, month: month, day: day)) ?? Date()
-                        
-                        // Occasionally create an activity with nil category (for testing null handling)
-                        let category = Bool.random() && Bool.random() ? eventCategories.randomElement() : nil
-                        
-                        activities[row][col] = CalendarActivityDTO(
-                            id: UUID(),
-                            date: date,
-                            eventCategory: category,
-                            icon: icons.randomElement(),
-                            eventId: UUID()
-                        )
-                    }
-                }
-            }
-        }
-        
-        return activities
     }
     
     private func daysInMonth(month: Int, year: Int) -> Int {
