@@ -41,7 +41,7 @@ class APIService: IAPIService {
 			let container = try decoder.singleValueContainer()
 			let dateString = try container.decode(String.self)
 
-			// Try with fractional seconds first
+			// Try ISO8601 with fractional seconds first
 			let formatterWithFractional = ISO8601DateFormatter()
 			formatterWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 			
@@ -49,7 +49,7 @@ class APIService: IAPIService {
 				return date
 			}
 			
-			// If that fails, try without fractional seconds
+			// Try ISO8601 without fractional seconds
 			let formatterWithoutFractional = ISO8601DateFormatter()
 			formatterWithoutFractional.formatOptions = [.withInternetDateTime]
 			
@@ -57,7 +57,16 @@ class APIService: IAPIService {
 				return date
 			}
 			
-			// If both fail, throw an error
+			// Try simple YYYY-MM-DD format (for CalendarActivityDTO)
+			let dateFormatter = DateFormatter()
+			dateFormatter.dateFormat = "yyyy-MM-dd"
+			dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+			
+			if let date = dateFormatter.date(from: dateString) {
+				return date
+			}
+			
+			// If all attempts fail, throw an error
 			throw DecodingError.dataCorruptedError(
 				in: container,
 				debugDescription: "Invalid date format: \(dateString)")

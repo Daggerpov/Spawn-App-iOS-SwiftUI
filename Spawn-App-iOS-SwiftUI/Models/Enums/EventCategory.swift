@@ -15,6 +15,27 @@ enum EventCategory: String, Codable, CaseIterable {
     case grind = "GRIND"
     case chill = "CHILL"
 
+    // Custom initializer for decoding, handling null values
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        // First, check if the value is null
+        if container.decodeNil() {
+            // Default to general if null
+            self = .general
+            return
+        }
+        
+        // Otherwise try to decode the string value
+        let rawValue = try container.decode(String.self)
+        if let value = EventCategory(rawValue: rawValue) {
+            self = value
+        } else {
+            // If string doesn't match any case, default to general
+            self = .general
+        }
+    }
+
     var displayName: String {
         switch self {
         case .general:
@@ -30,18 +51,23 @@ enum EventCategory: String, Codable, CaseIterable {
         }
     }
 
-    var color: Color {
+    func color() -> Color {
         switch self {
-            case .general:
-                return .red
-            case .foodAndDrink:
-                return .pink
-            case .active:
-                return .blue
-            case .grind:
-                return .gray
-            case .chill:
-                return .purple
+        case .foodAndDrink: return .green
+        case .active: return .blue
+        case .grind: return .purple
+        case .chill: return .orange
+        case .general: return .gray
+        }
+    }
+
+    func systemIcon() -> String {
+        switch self {
+        case .foodAndDrink: return "fork.knife"
+        case .active: return "figure.walk"
+        case .grind: return "briefcase.fill"
+        case .chill: return "sofa.fill"
+        case .general: return "star.fill"
         }
     }
 }

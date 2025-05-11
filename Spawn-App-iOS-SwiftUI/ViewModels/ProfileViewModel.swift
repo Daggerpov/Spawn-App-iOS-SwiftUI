@@ -238,7 +238,11 @@ class ProfileViewModel: ObservableObject {
             count: 5
         )
         
-        let activityTypes = ["music", "sports", "food", "travel", "gaming", "outdoors"]
+        // Use EventCategory enum cases
+        let eventCategories = EventCategory.allCases
+        
+        // Sample icons (emoji)
+        let icons = ["🎮", "🍔", "⚽", "🎵", "✨", "🧠"]
         
         // Generate some random activities
         for row in 0..<5 {
@@ -247,11 +251,16 @@ class ProfileViewModel: ObservableObject {
                     let day = (row * 7) + col + 1
                     if day <= daysInMonth(month: month, year: year) {
                         let date = Calendar.current.date(from: DateComponents(year: year, month: month, day: day)) ?? Date()
+                        
+                        // Occasionally create an activity with nil category (for testing null handling)
+                        let category = Bool.random() && Bool.random() ? eventCategories.randomElement() : nil
+                        
                         activities[row][col] = CalendarActivityDTO(
                             id: UUID(),
-                            title: "Activity \(day)",
                             date: date,
-                            activityType: activityTypes.randomElement() ?? "other"
+                            eventCategory: category,
+                            icon: icons.randomElement(),
+                            eventId: UUID()
                         )
                     }
                 }
