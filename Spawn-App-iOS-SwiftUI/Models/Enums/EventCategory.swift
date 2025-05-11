@@ -12,8 +12,8 @@ enum EventCategory: String, Codable, CaseIterable {
     case general = "GENERAL"
     case foodAndDrink = "FOOD_AND_DRINK"
     case active = "ACTIVE"
-    case study = "STUDY"
     case grind = "GRIND"
+    case chill = "CHILL"
 
     var rawValue: String {
         switch self {
@@ -23,25 +23,25 @@ enum EventCategory: String, Codable, CaseIterable {
             return "Food & Drink"
         case .active:
             return "Active"
-        case .study:
-            return "Study"
         case .grind:
             return "Grind"
+        case .chill:
+            return "Chill"
         }
     }
 
     var color: Color {
         switch self {
-        case .general:
-            return .red
-        case .foodAndDrink:
-            return .pink
-        case .active:
-            return .blue
-        case .study:
-            return .gray
-        case .grind:
-            return Color.purple
+            case .general:
+                return .red
+            case .foodAndDrink:
+                return .pink
+            case .active:
+                return .blue
+            case .grind:
+                return .gray
+            case .chill:
+                return .purple
         }
     }
 }

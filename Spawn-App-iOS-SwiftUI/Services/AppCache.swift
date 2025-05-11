@@ -334,7 +334,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friend-tags/owner/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId)") else { return }
             
             let fetchedUserTags: [FriendTagDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
@@ -361,7 +361,7 @@ class AppCache: ObservableObject {
         // Refresh friends for each tag
         for tag in userTags {
             do {
-                guard let url = URL(string: APIService.baseURL + "friend-tags/\(tag.id)/friends") else { continue }
+                guard let url = URL(string: APIService.baseURL + "friendTags/\(tag.id)/friends") else { continue }
                 
                 let fetchedTagFriends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
                 
