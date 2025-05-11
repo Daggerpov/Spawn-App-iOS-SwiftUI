@@ -9,6 +9,7 @@ import AuthenticationServices
 import GoogleSignIn
 import SwiftUI
 import UIKit
+import FirebaseMessaging
 
 class UserAuthViewModel: NSObject, ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(
@@ -262,12 +263,18 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					// The user has revoked access. Clear local state.
 					print("User has revoked Apple ID access.")
 				case .notFound:
-					// The user is not found. Clear local state.
+					// The user not found. Clear local state.
 					print("User not found in Apple ID system.")
 				default:
 					break
 				}
 			}
+		}
+		
+		// Unregister device token from backend
+		Task {
+			// Use the NotificationService to unregister the token
+			await NotificationService.shared.unregisterDeviceToken()
 		}
 
 		// Clear externalUserId from Keychain
@@ -275,14 +282,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if !success {
 			print("Failed to delete externalUserId from Keychain")
 		}
-        success = KeychainService.shared.delete(key: "accessToken")
-        if !success {
-            print("Failed to delete accessToken from Keychain")
-        }
-        success = KeychainService.shared.delete(key: "refreshToken")
-        if !success {
-            print("Failed to delete refreshToken from Keychain")
-        }
+		success = KeychainService.shared.delete(key: "accessToken")
+		if !success {
+			print("Failed to delete accessToken from Keychain")
+		}
+		success = KeychainService.shared.delete(key: "refreshToken")
+		if !success {
+			print("Failed to delete refreshToken from Keychain")
+		}
 
 		resetState()
 	}
@@ -513,7 +520,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
-				try await self.apiService.deleteData(from: url)
+                await NotificationService.shared.unregisterDeviceToken()
+
+                try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
 				var success = KeychainService.shared.delete(
 					key: "externalUserId")
 				if !success {
@@ -757,3 +766,4 @@ struct ChangePasswordDTO: Codable {
 	let currentPassword: String
 	let newPassword: String
 }
+
