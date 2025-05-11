@@ -22,14 +22,8 @@ struct ProfileView: View {
     @State private var newInterest: String = ""
     @State private var whatsappLink: String = ""
     @State private var instagramLink: String = ""
-    @State private var currentMonth = Calendar.current.component(
-        .month,
-        from: Date()
-    )
-    @State private var currentYear = Calendar.current.component(
-        .year,
-        from: Date()
-    )
+    @State private var currentMonth = Calendar.current.component(.month, from: Date())
+    @State private var currentYear = Calendar.current.component(.year, from: Date())
     @State private var refreshFlag = false
 
     @StateObject var userAuth = UserAuthViewModel.shared
@@ -58,69 +52,59 @@ struct ProfileView: View {
                     VStack(alignment: .center, spacing: 10) {
                         // Profile Picture
                         profilePictureSection
-                            .padding(.top, 15)
-
+                        .padding(.top, 15)
+                        
                         // Name and Username - make this more reactive to changes
                         Group {
-                            if isCurrentUserProfile,
-                                let currentUser = userAuth.spawnUser
-                            {
+                            if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
                                 // For the current user, always display the latest from userAuth
-                                Text(
-                                    FormatterService.shared.formatName(
-                                        user: currentUser
-                                    )
-                                )
-                                .font(.title3)
-                                .bold()
-                                .foregroundColor(universalAccentColor)
-
+                                Text(FormatterService.shared.formatName(user: currentUser))
+                                    .font(.title3)
+                                    .bold()
+                                    .foregroundColor(universalAccentColor)
+                                
                                 Text("@\(currentUser.username)")
                                     .font(.subheadline)
                                     .foregroundColor(Color.gray)
                                     .padding(.bottom, 5)
                             } else {
                                 // For other users, use the passed-in user
-                                Text(
-                                    FormatterService.shared.formatName(
-                                        user: user
-                                    )
-                                )
-                                .font(.title3)
-                                .bold()
-                                .foregroundColor(universalAccentColor)
-
+                                Text(FormatterService.shared.formatName(user: user))
+                                    .font(.title3)
+                                    .bold()
+                                    .foregroundColor(universalAccentColor)
+                                
                                 Text("@\(user.username)")
                                     .font(.subheadline)
                                     .foregroundColor(Color.gray)
                                     .padding(.bottom, 5)
                             }
                         }
-                        .id(refreshFlag)  // Force refresh when flag changes
-
+                        .id(refreshFlag) // Force refresh when flag changes
+                        
                         // Profile Action Buttons
                         profileActionButtons
-                            .padding(.horizontal, 25)
-                            .padding(.bottom, 15)
-
+                        .padding(.horizontal, 25)
+                        .padding(.bottom, 15)
+                        
                         // Edit Save Cancel buttons (only when editing)
                         if isCurrentUserProfile && editingState == .save {
                             profileEditButtons
-                                .padding(.bottom, 5)
+                            .padding(.bottom, 5)
                         }
-
+                        
                         // Interests Section with Social Media Icons
                         interestsSection
-                            .padding(.bottom, 15)
-
+                        .padding(.bottom, 15)
+                        
                         // User Stats
                         userStatsSection
-                            .padding(.bottom, 15)
-
+                        .padding(.bottom, 15)
+                        
                         // Weekly Calendar View
                         weeklyCalendarView
-                            .padding(.horizontal)
-                            .padding(.bottom, 15)
+                        .padding(.horizontal)
+                        .padding(.bottom, 15)
                     }
                     .padding(.horizontal)
                 }
@@ -196,15 +180,11 @@ struct ProfileView: View {
             if let socialMedia = newSocialMedia {
                 whatsappLink = socialMedia.whatsappLink ?? ""
                 instagramLink = socialMedia.instagramLink ?? ""
-                print(
-                    "Updated social media links in ProfileView: WhatsApp=\(whatsappLink), Instagram=\(instagramLink)"
-                )
+                print("Updated social media links in ProfileView: WhatsApp=\(whatsappLink), Instagram=\(instagramLink)")
             }
         }
         // Add a timer to periodically refresh data
-        .onReceive(
-            Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
-        ) { _ in
+        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
             refreshUserData()
             refreshFlag.toggle()  // Force the view to update
         }
@@ -215,7 +195,7 @@ struct ProfileView: View {
             duration: 3.0
         )
     }
-
+    
     private func addInterest() {
         guard !newInterest.isEmpty else { return }
 
@@ -229,7 +209,7 @@ struct ProfileView: View {
             }
         }
     }
-
+    
     private func openSocialMediaLink(platform: String, link: String) {
         // Handle different platforms
         var urlString: String?
@@ -259,33 +239,22 @@ struct ProfileView: View {
             UIApplication.shared.open(url)
         }
     }
-
+    
     private func shareProfile() {
         // Create a URL to share (could be a deep link to the user's profile)
         let profileURL = "https://spawnapp.com/profile/\(user.id)"
-        let shareText =
-            "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn!"
-
+        let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn!"
+        
         let activityItems: [Any] = [shareText, profileURL]
-        let activityController = UIActivityViewController(
-            activityItems: activityItems,
-            applicationActivities: nil
-        )
-
+        let activityController = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        
         // Present the activity controller
-        if let windowScene = UIApplication.shared.connectedScenes.first
-            as? UIWindowScene,
-            let rootViewController = windowScene.windows.first?
-                .rootViewController
-        {
-            rootViewController.present(
-                activityController,
-                animated: true,
-                completion: nil
-            )
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(activityController, animated: true, completion: nil)
         }
     }
-
+    
     private func removeInterest(_ interest: String) {
         Task {
             await profileViewModel.removeUserInterest(
@@ -328,8 +297,7 @@ extension ProfileView {
                         .frame(width: 130, height: 130)
                         .clipShape(Circle())
                 } else {
-                    AsyncImage(url: URL(string: profilePictureString)) {
-                        phase in
+                    AsyncImage(url: URL(string: profilePictureString)) { phase in
                         switch phase {
                         case .empty:
                             ProgressView()
@@ -419,12 +387,7 @@ extension ProfileView {
     private var profileActionButtons: some View {
         HStack(spacing: 12) {
             if isCurrentUserProfile {
-                NavigationLink(
-                    destination: EditProfileView(
-                        userId: user.id,
-                        profileViewModel: profileViewModel
-                    )
-                ) {
+                NavigationLink(destination: EditProfileView(userId: user.id, profileViewModel: profileViewModel)) {
                     HStack {
                         Image(systemName: "pencil")
                         Text("Edit Profile")
@@ -443,7 +406,7 @@ extension ProfileView {
                         .stroke(universalSecondaryColor, lineWidth: 1)
                 )
             }
-
+            
             Button(action: {
                 shareProfile()
             }) {
@@ -524,7 +487,7 @@ extension ProfileView {
             .disabled(isImageLoading)
         }
     }
-
+    
     private func saveProfile() async {
         // Check if there's a new profile picture
         let hasNewProfilePicture = selectedImage != nil
@@ -604,15 +567,15 @@ extension ProfileView {
                     interestsContentView
                 }
             }
-            .padding(.top, 24)  // Add padding to push content below the header
-
+            .padding(.top, 24) // Add padding to push content below the header
+            
             // Position the header to be centered on the top border
             interestsSectionHeader
                 .padding(.leading, 6)
-            //                .offset() // Align with the top border
+//                .offset() // Align with the top border
         }
     }
-
+    
     private var interestsSectionHeader: some View {
         HStack {
             Text("Interests + Hobbies")
@@ -628,7 +591,7 @@ extension ProfileView {
                 .clipShape(Capsule())
 
             Spacer()
-
+            
             // Social media icons
             if !profileViewModel.isLoadingSocialMedia {
                 socialMediaIcons
@@ -636,56 +599,46 @@ extension ProfileView {
         }
         .padding(.horizontal)
     }
-
+    
     private var socialMediaIcons: some View {
         HStack(spacing: 10) {
-            if let whatsappLink = profileViewModel.userSocialMedia?
-                .whatsappLink, !whatsappLink.isEmpty
-            {
+            if let whatsappLink = profileViewModel.userSocialMedia?.whatsappLink, !whatsappLink.isEmpty {
                 Image("whatsapp")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 48, height: 48)
                     .rotationEffect(.degrees(-8))
                     .onTapGesture {
-                        openSocialMediaLink(
-                            platform: "WhatsApp",
-                            link: whatsappLink
-                        )
+                        openSocialMediaLink(platform: "WhatsApp", link: whatsappLink)
                     }
             }
-
-            if let instagramLink = profileViewModel.userSocialMedia?
-                .instagramLink, !instagramLink.isEmpty
-            {
+            
+            if let instagramLink = profileViewModel.userSocialMedia?.instagramLink, !instagramLink.isEmpty {
                 Image("instagram")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 40, height: 40)
                     .rotationEffect(.degrees(8))
                     .onTapGesture {
-                        openSocialMediaLink(
-                            platform: "Instagram",
-                            link: instagramLink
-                        )
+                        openSocialMediaLink(platform: "Instagram", link: instagramLink)
                     }
             }
         }
     }
-
+    
     private var interestsLoadingView: some View {
         ProgressView()
             .frame(maxWidth: .infinity, alignment: .center)
             .padding()
     }
-
+    
     private var interestsContentView: some View {
         ZStack(alignment: .topLeading) {
             // Background for interests section
             RoundedRectangle(cornerRadius: 15)
                 .stroke(Color.red.opacity(0.7), lineWidth: 1)
                 .background(Color.white.opacity(0.5).cornerRadius(15))
-
+            
             if profileViewModel.userInterests.isEmpty {
                 emptyInterestsView
             } else {
@@ -695,16 +648,12 @@ extension ProfileView {
                         // Use a simple LazyVGrid for consistent layout
                         LazyVGrid(
                             columns: [
-                                GridItem(
-                                    .adaptive(minimum: 80, maximum: 150),
-                                    spacing: 8
-                                )
+                                GridItem(.adaptive(minimum: 80, maximum: 150), spacing: 8)
                             ],
                             alignment: .leading,
                             spacing: 8
                         ) {
-                            ForEach(profileViewModel.userInterests, id: \.self)
-                            { interest in
+                            ForEach(profileViewModel.userInterests, id: \.self) { interest in
                                 interestChip(interest: interest)
                             }
                         }
@@ -717,7 +666,7 @@ extension ProfileView {
         .padding(.horizontal)
         .padding(.top, 5)
     }
-
+    
     private var emptyInterestsView: some View {
         Text("No interests added yet.")
             .foregroundColor(.gray)
@@ -725,7 +674,7 @@ extension ProfileView {
             .padding()
             .padding(.top, 12)
     }
-
+    
     private func interestChip(interest: String) -> some View {
         Text(interest)
             .font(.subheadline)
@@ -736,18 +685,18 @@ extension ProfileView {
             .clipShape(Capsule())
             .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
             .overlay(
-                isCurrentUserProfile && editingState == .save
-                    ? HStack {
-                        Spacer()
-                        Button(action: {
-                            removeInterest(interest)
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.caption)
-                        }
-                        .offset(x: 5, y: -8)
-                    } : nil
+                isCurrentUserProfile && editingState == .save ?
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        removeInterest(interest)
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                    .offset(x: 5, y: -8)
+                } : nil
             )
     }
 }
@@ -760,41 +709,41 @@ extension ProfileView {
                 Image(systemName: "link")
                     .font(.system(size: 16))
                     .foregroundColor(.gray)
-
+                
                 Text("\(profileViewModel.userStats?.peopleMet ?? 0)")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(universalAccentColor)
-
+                
                 Text("People\nmet")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.gray)
             }
-
+            
             VStack(spacing: 4) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 16))
                     .foregroundColor(.gray)
-
+                
                 Text("\(profileViewModel.userStats?.spawnsMade ?? 0)")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(universalAccentColor)
-
+                
                 Text("Spawns\nmade")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
                     .foregroundColor(.gray)
             }
-
+            
             VStack(spacing: 4) {
                 Image(systemName: "calendar.badge.plus")
                     .font(.system(size: 16))
                     .foregroundColor(.gray)
-
+                
                 Text("\(profileViewModel.userStats?.spawnsJoined ?? 0)")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(universalAccentColor)
-
+                
                 Text("Spawns\njoined")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
@@ -817,15 +766,15 @@ extension ProfileView {
                         .foregroundColor(universalAccentColor)
                         .font(.body)
                 }
-
+                
                 Spacer()
-
+                
                 Text(monthYearString())
                     .font(.subheadline)
                     .foregroundColor(universalAccentColor)
-
+                
                 Spacer()
-
+                
                 Button(action: {
                     navigateToNextMonth()
                 }) {
@@ -835,7 +784,7 @@ extension ProfileView {
                 }
             }
             .padding(.horizontal, 15)
-
+            
             // Days of week header
             HStack(spacing: 0) {
                 ForEach(weekDays, id: \.self) { day in
@@ -845,7 +794,7 @@ extension ProfileView {
                         .foregroundColor(.gray)
                 }
             }
-
+            
             if profileViewModel.isLoadingCalendar {
                 ProgressView()
                     .frame(maxWidth: .infinity, minHeight: 150)
@@ -855,20 +804,12 @@ extension ProfileView {
                     ForEach(0..<5, id: \.self) { row in
                         HStack(spacing: 6) {
                             ForEach(0..<7, id: \.self) { col in
-                                if let activity =
-                                    profileViewModel.calendarActivities[row][
-                                        col
-                                    ]
-                                {
+                                if let activity = profileViewModel.calendarActivities[row][col] {
                                     RoundedRectangle(cornerRadius: 6)
-                                        .fill(
-                                            activityColor(
-                                                for: activity.eventCategory
-                                            )
-                                        )
+                                        .fill(activityColor(for: activity.activityType))
                                         .frame(height: 32)
                                         .overlay(
-                                            activityIcon(for: activity)
+                                            activityIcon(for: activity.activityType)
                                                 .foregroundColor(.white)
                                         )
                                         .onTapGesture {
@@ -889,11 +830,11 @@ extension ProfileView {
             fetchCalendarData()
         }
     }
-
+    
     private var weekDays: [String] {
         ["S", "M", "T", "W", "T", "F", "S"]
     }
-
+    
     private func navigateToPreviousMonth() {
         if currentMonth == 1 {
             currentMonth = 12
@@ -903,7 +844,7 @@ extension ProfileView {
         }
         fetchCalendarData()
     }
-
+    
     private func navigateToNextMonth() {
         if currentMonth == 12 {
             currentMonth = 1
@@ -913,7 +854,7 @@ extension ProfileView {
         }
         fetchCalendarData()
     }
-
+    
     private func fetchCalendarData() {
         Task {
             await profileViewModel.fetchCalendarActivities(
@@ -922,7 +863,7 @@ extension ProfileView {
             )
         }
     }
-
+    
     private func monthYearString() -> String {
         let dateComponents = DateComponents(
             year: currentYear,
@@ -935,25 +876,31 @@ extension ProfileView {
         }
         return "\(currentMonth)/\(currentYear)"
     }
-
-    private func activityColor(for eventCategory: EventCategory?) -> Color {
-        guard let category = eventCategory else {
-            return Color.gray.opacity(0.6) // Default color for null category
+    
+    private func activityColor(for activityType: String) -> Color {
+        switch activityType {
+        case "music": return .pink
+        case "sports": return .blue
+        case "food": return .green
+        case "travel": return .orange
+        case "gaming": return .purple
+        case "outdoors": return .red
+        default: return .gray
         }
-        return category.color()
     }
-
-    private func activityIcon(for activity: CalendarActivityDTO) -> some View {
-        Group {
-            // If we have an icon from the backend, use it directly
-            if let icon = activity.icon, !icon.isEmpty {
-                Text(icon)
-                    .font(.system(size: 16))
-            } else {
-                // Fallback to system icon from the EventCategory enum
-                Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
-            }
+    
+    private func activityIcon(for activityType: String) -> some View {
+        let iconName: String
+        switch activityType {
+        case "music": iconName = "music.note"
+        case "sports": iconName = "figure.walk"
+        case "food": iconName = "fork.knife"
+        case "travel": iconName = "airplane"
+        case "gaming": iconName = "gamecontroller"
+        case "outdoors": iconName = "bicycle"
+        default: iconName = "star.fill"
         }
+        return Image(systemName: iconName)
     }
 }
 

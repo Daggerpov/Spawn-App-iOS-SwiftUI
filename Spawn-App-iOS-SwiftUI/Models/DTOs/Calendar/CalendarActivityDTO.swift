@@ -1,10 +1,10 @@
 import Foundation
-import SwiftUI
 
 struct CalendarActivityDTO: Codable, Identifiable {
     let id: UUID
+    let title: String
     let date: Date // Changed from String to Date
-    let eventCategory: EventCategory? // Using EventCategory enum, now optional
-    let icon: String?
+    let activityType: String
     var eventId: UUID?
+    var userId: UUID?
 } 

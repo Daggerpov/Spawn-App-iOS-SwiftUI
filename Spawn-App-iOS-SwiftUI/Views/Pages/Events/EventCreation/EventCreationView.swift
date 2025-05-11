@@ -259,7 +259,7 @@ extension EventCreationView {
                                 .background(
                                     RoundedRectangle(cornerRadius: 20)
                                         .fill(viewModel.selectedCategory == category ?
-                                              category.color() : Color.gray.opacity(0.15))
+                                              category.color : Color.gray.opacity(0.15))
                                 )
                                 .lineLimit(1)
                         }
