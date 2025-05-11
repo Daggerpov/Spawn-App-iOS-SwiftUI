@@ -1032,10 +1032,8 @@ struct InfiniteCalendarView: View {
         var years = Set<Int>()
         
         for activity in activities {
-            if let date = dateFromString(activity.date) {
-                let year = Calendar.current.component(.year, from: date)
+            let year = Calendar.current.component(.year, from: activity.date)
                 years.insert(year)
-            }
         }
         
         // If no valid years found, use current year
@@ -1049,12 +1047,9 @@ struct InfiniteCalendarView: View {
     
     private func activitiesForMonth(month: Int, year: Int) -> [CalendarActivityDTO] {
         return activities.filter { activity in
-            if let date = dateFromString(activity.date) {
-                let activityMonth = Calendar.current.component(.month, from: date)
-                let activityYear = Calendar.current.component(.year, from: date)
-                return activityMonth == month && activityYear == year
-            }
-            return false
+            let activityMonth = Calendar.current.component(.month, from: activity.date)
+            let activityYear = Calendar.current.component(.year, from: activity.date)
+            return activityMonth == month && activityYear == year
         }
     }
     
@@ -1127,19 +1122,16 @@ struct MonthCalendarView: View {
         )
         
         let firstDayOffset = firstDayOfMonth(month: month, year: year)
-        let daysInMonth = daysInMonth(month: month, year: year)
         
         // Populate grid with activities
         for activity in activities {
-            if let date = dateFromString(activity.date) {
-                let day = Calendar.current.component(.day, from: date)
-                let position = day + firstDayOffset - 1
-                
-                if position >= 0 && position < 42 { // 6 rows * 7 columns = 42 cells
-                    let row = position / 7
-                    let col = position % 7
-                    grid[row][col] = activity
-                }
+            let day = Calendar.current.component(.day, from: activity.date)
+            let position = day + firstDayOffset - 1
+            
+            if position >= 0 && position < 42 { // 6 rows * 7 columns = 42 cells
+                let row = position / 7
+                let col = position % 7
+                grid[row][col] = activity
             }
         }
         
