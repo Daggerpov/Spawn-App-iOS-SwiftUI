@@ -349,52 +349,13 @@ class APIService: IAPIService {
 		return try decoder.decode(R.self, from: data)
 	}
 
-    internal func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T?) async throws {
+	internal func deleteData(from url: URL) async throws {
 		resetState()
-        
-        var finalUrl = url
-        var request = URLRequest(url: finalUrl)
-        var response = EmptyResponse()
-        
-        if parameters != nil && object != nil {
-            // Create a URLComponents object from the URL
-            var urlComponents = URLComponents(
-                url: url, resolvingAgainstBaseURL: false)
-            
-            // Add query items if parameters are provided
-            if let parameters = parameters {
-                urlComponents?.queryItems = parameters.map {
-                    URLQueryItem(name: $0.key, value: $0.value)
-                }
-            }
-            
-            // Ensure the URL is valid after adding query items
-            guard let fullUrl = urlComponents?.url else {
-                errorMessage = "Invalid URL after adding query parameters"
-                print(errorMessage ?? "no error message to log")
-                throw APIError.URLError
-            }
-            
-            finalUrl = fullUrl
-            
-            let encoder = APIService.makeEncoder()
-            let encodedData = try encoder.encode(object)
-            
-            request = URLRequest(url: finalUrl)
-            request.httpMethod = "DELETE"  // Set the HTTP method to DELETE
-            if object != nil {
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                request.httpBody = encodedData
-            }
-            
-            setAuthHeader(request: &request)  // Set auth headers if needed
-            (_, response) = try await URLSession.shared.data(for: request)
-        } else {
-            request = URLRequest(url: finalUrl)
-            request.httpMethod = "DELETE"  // Set the HTTP method to DELETE
-            setAuthHeader(request: &request)  // Set auth headers if needed
-            (_, response) = try await URLSession.shared.data(for: request)
-        }
+
+		var request = URLRequest(url: url)
+		request.httpMethod = "DELETE"  // Set the HTTP method to DELETE
+		setAuthHeader(request: &request)  // Set auth headers if needed
+		let (_, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
@@ -862,6 +823,7 @@ class APIService: IAPIService {
         if httpResponse.statusCode == 401 {
             // Refresh token didn't work so logout
             UserAuthViewModel.shared.signOut()
+            
         }
         
 		if httpResponse.statusCode == 200 {
@@ -958,4 +920,3 @@ class APIService: IAPIService {
 struct EmptyRequestBody: Codable {}
 // for empty responses from requests:
 struct EmptyResponse: Codable {}
-struct EmptyObject: Encodable {}

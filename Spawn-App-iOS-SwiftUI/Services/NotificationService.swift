@@ -154,7 +154,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 userId: userId
             )
             
-            print("[PUSH DEBUG] Device token payload: token=\(token), deviceType=IOS, userId=\(userId)")
+            print("[PUSH DEBUG] Device token payload: token=\(token.prefix(8))...(truncated), deviceType=IOS, userId=\(userId)")
             
             Task {
                 do {
@@ -640,45 +640,6 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 print("Unknown notification type: \(type)")
                 // For unknown notification types, validate the entire cache
                 await appCache.validateCache()
-            }
-        }
-    }
-    
-    // Add a method to unregister the device token when signing out
-    func unregisterDeviceToken() async {
-        guard let token = storedDeviceToken ?? Messaging.messaging().fcmToken else {
-            print("[PUSH DEBUG] No device token to unregister")
-            return
-        }
-        
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-            print("[PUSH DEBUG] Cannot unregister token: no user ID available")
-            return
-        }
-        
-        print("[PUSH DEBUG] Preparing to unregister device token: \(token)")
-        
-        if let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/unregister") {
-            do {
-                // Create device token DTO
-                let deviceTokenDTO = DeviceTokenDTO(
-                    token: token,
-                    deviceType: "IOS",
-                    userId: userId
-                )
-                
-                // Send DELETE request with token in body
-                try await apiService.deleteData(
-                    from: url,
-                    parameters: nil,
-                    object: deviceTokenDTO
-                )
-                
-                print("[PUSH DEBUG] Successfully unregistered device token")
-                // Clear the stored token after successful unregistration
-                storedDeviceToken = nil
-            } catch {
-                print("[PUSH DEBUG] Failed to unregister device token: \(error.localizedDescription)")
             }
         }
     }
