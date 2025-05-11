@@ -44,7 +44,6 @@ struct FeedView: View {
                 VStack {
                     Spacer()
                     HeaderView(user: user, numEvents: viewModel.events.count).padding(.top, 50)
-                
                     Spacer()
                     TagsScrollView(activeTag: $activeTag)
                     Spacer()
@@ -104,7 +103,7 @@ struct FeedView: View {
             }
             .refreshable {
                 Task {
-                    //await appCache.refreshEvents()
+                    await appCache.refreshEvents()
                     await viewModel.fetchAllData()
                 }
             }
@@ -143,25 +142,36 @@ struct FeedView: View {
 extension FeedView {
     var eventsListView: some View {
         ScrollView(.vertical) {
-            LazyVStack(spacing: 15) {
+            LazyVStack(spacing: 25) {
                 if viewModel.events.isEmpty {
-                    Text("Add some friends to see what they're up to!")
-                        .foregroundColor(universalAccentColor)
+                    Spacer()
+                    Spacer()
+                    Image("EventNotFound")
+                    Text("No Events Found").font(.onestSemiBold(size: 32))
+                    Text("We couldn't find any events nearby.\nStart one yourself and be spontaneous!")
+                        .font(.onestRegular(size: 16))
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(figmaBlack300)
+                    Spacer()
+                    CreateEventButton(showEventCreationDrawer: $showEventCreationDrawer)
                 } else {
+                    Spacer()
                     ForEach(viewModel.events) { event in
-                        EventCardView(
+                        CardEventView(
                             userId: user.id,
                             event: event,
                             color: Color(
-                                hex: event
-                                    .eventFriendTagColorHexCodeForRequestingUser
-                                    ?? eventColorHexCodes[0]
-                            )
-                        ) { event, color in
+                            hex: event
+                                .eventFriendTagColorHexCodeForRequestingUser
+                                ?? eventColorHexCodes[0])
+                        )
+                        { event, color in
                             eventInPopup = event
                             colorInPopup = color
                             showingEventDescriptionPopup = true
                         }
+                        Spacer()
+                        Spacer()
                     }
                 }
             }

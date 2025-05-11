@@ -10,6 +10,7 @@ import SwiftUI
 
 struct ParticipantsImagesView: View {
 	var event: FullFeedEventDTO
+    let maxCount: Int = 2
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
 		var participantsFiltered = participants
@@ -27,12 +28,14 @@ struct ParticipantsImagesView: View {
 	}
 
 	var body: some View {
-		HStack {
-			Spacer()
+		HStack(spacing: -8) {
+			//Spacer()
+            let participants: [BaseUserDTO] = participantsCleanup(participants: event.participantUsers ?? [])
 			ForEach(
-				participantsCleanup(participants: event.participantUsers ?? []),
-				id: \.self.id
-			) { participant in
+                0..<min(maxCount, participants.count),
+				id: \.self
+			) { participantIndex in
+                let participant: BaseUserDTO = participants[participantIndex]
 				NavigationLink(
 					destination: ProfileView(user: participant),
 					label: {
@@ -45,16 +48,27 @@ struct ParticipantsImagesView: View {
 							} placeholder: {
 								Circle()
 									.fill(Color.gray)
-									.frame(width: 25, height: 25)
+									.frame(width: 24, height: 24)
 							}
 						} else {
 							Circle()
 								.fill(Color.gray)
-								.frame(width: 25, height: 25)
+								.frame(width: 24, height: 24)
 						}
 					}
 				)
 			}
+            if participants.count > maxCount {
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 24, height: 24)
+                    Text("+\(participants.count - maxCount)")
+                        .font(.onestSemiBold(size: 12))
+                        .foregroundColor(figmaSoftBlue)
+                }
+                .shadow(radius: 2)
+            }
 		}
 	}
 }

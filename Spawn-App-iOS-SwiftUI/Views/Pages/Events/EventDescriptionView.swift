@@ -29,12 +29,17 @@ struct EventDescriptionView: View {
 	var body: some View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 20) {
-				// Title and Time Information
+				// Title and Information
 				EventCardTopRowView(event: viewModel.event)
 				
 				// Username display
 				HStack {
-					usernamesView
+                    Text(EventInfoViewModel(event: viewModel.event, eventInfoType: .time)
+                        .eventInfoDisplayString)
+                        .font(.onestSemiBold(size: 14))
+                        .foregroundColor(.white)
+                        .opacity(0.5)
+        
 					Spacer()
 				}
 

@@ -140,6 +140,7 @@ extension EventCardView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
+
     EventCardView(
         userId: UUID(),
         event: FullFeedEventDTO.mockDinnerEvent,
