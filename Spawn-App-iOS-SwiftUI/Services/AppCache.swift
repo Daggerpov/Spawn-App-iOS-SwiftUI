@@ -21,7 +21,7 @@ class AppCache: ObservableObject {
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var friendRequests: [FetchFriendRequestDTO] = []
     @Published var userTags: [FriendTagDTO] = []
-    @Published var tagFriends: [UUID: [FullFriendUserDTO]] = [:] // Tag ID -> Friends in tag
+    @Published var tagFriends: [UUID: [BaseUserDTO]] = [:] // Tag ID -> Friends in tag
     
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
@@ -348,7 +348,7 @@ class AppCache: ObservableObject {
     
     // MARK: - Tag Friends Methods
     
-    func updateTagFriends(_ tagId: UUID, _ friends: [FullFriendUserDTO]) {
+    func updateTagFriends(_ tagId: UUID, _ friends: [BaseUserDTO]) {
         tagFriends[tagId] = friends
         lastChecked[CacheKeys.tagFriends] = Date()
         saveToDisk()
@@ -363,7 +363,7 @@ class AppCache: ObservableObject {
             do {
                 guard let url = URL(string: APIService.baseURL + "friendTags/\(tag.id)/friends") else { continue }
                 
-                let fetchedTagFriends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+                let fetchedTagFriends: [BaseUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
                 
                 await MainActor.run {
                     tagFriends[tag.id] = fetchedTagFriends
@@ -432,7 +432,7 @@ class AppCache: ObservableObject {
         
         // Load tag friends
         if let tagFriendsData = UserDefaults.standard.data(forKey: CacheKeys.tagFriends),
-           let loadedTagFriends = try? JSONDecoder().decode([UUID: [FullFriendUserDTO]].self, from: tagFriendsData) {
+           let loadedTagFriends = try? JSONDecoder().decode([UUID: [BaseUserDTO]].self, from: tagFriendsData) {
             tagFriends = loadedTagFriends
         }
     }
