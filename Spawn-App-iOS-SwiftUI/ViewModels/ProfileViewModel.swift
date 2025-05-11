@@ -154,7 +154,7 @@ class ProfileViewModel: ObservableObject {
         }
         
         // Construct the base URL without query parameters
-        guard let url = URL(string: APIService.baseURL + "calendar/activities") else {
+        guard let url = URL(string: APIService.baseURL + "users/\(userId)/calendar") else {
             await MainActor.run {
                 self.isLoadingCalendar = false
                 self.errorMessage = "Failed to construct URL for calendar activities"
@@ -166,7 +166,6 @@ class ProfileViewModel: ObservableObject {
         let parameters = [
             "month": String(month),
             "year": String(year),
-            "userId": userId.uuidString
         ]
         
         do {
