@@ -15,7 +15,7 @@ enum EventCategory: String, Codable, CaseIterable {
     case grind = "GRIND"
     case chill = "CHILL"
 
-    var rawValue: String {
+    var displayName: String {
         switch self {
         case .general:
             return "General"

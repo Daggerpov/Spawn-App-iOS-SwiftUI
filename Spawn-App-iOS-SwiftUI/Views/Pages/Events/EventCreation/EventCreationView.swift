@@ -237,7 +237,7 @@ extension EventCreationView {
                     let sortedCategories = EventCategory.allCases.sorted { cat1, cat2 in
                         if cat1 == .general { return false }
                         if cat2 == .general { return true }
-                        return cat1.rawValue < cat2.rawValue
+                        return cat1.displayName < cat2.displayName
                     }
                     
                     ForEach(sortedCategories, id: \.self) { category in
@@ -251,7 +251,7 @@ extension EventCreationView {
                                 viewModel.selectedCategory = category
                             }
                         }) {
-                            Text(category.rawValue)
+                            Text(category.displayName)
                                 .font(.subheadline)
                                 .padding(.vertical, 8)
                                 .padding(.horizontal, 12)
