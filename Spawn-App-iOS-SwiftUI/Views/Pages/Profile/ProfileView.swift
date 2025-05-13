@@ -215,6 +215,31 @@ struct ProfileView: View {
             message: notificationMessage,
             duration: 3.0
         )
+        .sheet(isPresented: $showCalendarPopup) {
+            InfiniteCalendarView(
+                activities: profileViewModel.allCalendarActivities,
+                isLoading: profileViewModel.isLoadingCalendar,
+                onDismiss: { showCalendarPopup = false },
+                onEventSelected: { activity in
+                    handleEventSelection(activity)
+                }
+            )
+        }
+        .sheet(isPresented: $showEventDetails) {
+            if let event = profileViewModel.selectedEvent {
+                // Use the same color scheme as EventCardView would
+                let eventColor = event.isSelfOwned == true ? 
+                    universalAccentColor : determineEventColor(for: event)
+                
+                EventDescriptionView(
+                    event: event,
+                    users: event.participantUsers,
+                    color: eventColor,
+                    userId: userAuth.spawnUser?.id ?? UUID()
+                )
+                .presentationDetents([.medium, .large])
+            }
+        }
     }
 
     private func addInterest() {
