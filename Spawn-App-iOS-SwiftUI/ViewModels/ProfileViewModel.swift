@@ -318,7 +318,41 @@ class ProfileViewModel: ObservableObject {
                 self.isLoadingInterests = false
             }
         }
+    }
+    
+    // MARK: - Event Management
+    
+    func fetchEventDetails(eventId: UUID) async -> FullFeedEventDTO? {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            await MainActor.run {
+                self.errorMessage = "User ID not available"
             }
+            return nil
+        }
+        
+        await MainActor.run { self.isLoadingEvent = true }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "events/\(eventId)")!
+            let parameters = ["requestingUserId": userId.uuidString]
+            
+            let event: FullFeedEventDTO = try await apiService.fetchData(
+                from: url,
+                parameters: parameters
+            )
+            
+            await MainActor.run {
+                self.selectedEvent = event
+                self.isLoadingEvent = false
+            }
+            
+            return event
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load event: \(error.localizedDescription)"
+                self.isLoadingEvent = false
+            }
+            return nil
         }
     }
 }
