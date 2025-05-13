@@ -5,21 +5,35 @@ struct DayEventsView: View {
     let onDismiss: () -> Void
     let onEventSelected: (CalendarActivityDTO) -> Void
     
+    @StateObject private var viewModel: DayEventsViewModel
+    
+    init(activities: [CalendarActivityDTO], onDismiss: @escaping () -> Void, onEventSelected: @escaping (CalendarActivityDTO) -> Void) {
+        self.activities = activities
+        self.onDismiss = onDismiss
+        self.onEventSelected = onEventSelected
+        
+        // Initialize the view model
+        let apiService: IAPIService = MockAPIService.isMocking
+            ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
+            : APIService()
+        
+        _viewModel = StateObject(wrappedValue: DayEventsViewModel(apiService: apiService, activities: activities))
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                if let firstActivity = activities.first {
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "MMMM d, yyyy"
-                    Text(formatter.string(from: firstActivity.date))
-                        .font(.headline)
-                        .padding(.leading)
-                } else {
-                    Text("Events")
-                        .font(.headline)
-                        .padding(.leading)
+                Group {
+                    if let firstActivity = activities.first {
+                        Text(viewModel.formatDate(firstActivity.date))
+                            .font(.headline)
+                    } else {
+                        Text(viewModel.headerTitle)
+                            .font(.headline)
+                    }
                 }
+                .padding(.leading)
                 
                 Spacer()
                 
@@ -37,94 +51,59 @@ struct DayEventsView: View {
             ScrollView {
                 VStack(spacing: 15) {
                     ForEach(activities, id: \.id) { activity in
-                        EventCardForCalendar(activity: activity)
-                            .onTapGesture {
-                                onEventSelected(activity)
-                            }
+                        if let eventId = activity.eventId, let event = AppCache.shared.getEventById(eventId) {
+                            EventCardView(
+                                userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+                                event: event,
+                                color: getColorForEvent(activity, event: event),
+                                callback: { _, _ in
+                                    onEventSelected(activity)
+                                }
+                            )
                             .padding(.horizontal)
+                        } else {
+                            // Fallback if the event is not in the cache
+                            HStack {
+                                Text("Loading event details...")
+                                if let eventId = activity.eventId, viewModel.isEventLoading(eventId) {
+                                    ProgressView()
+                                        .padding(.leading, 5)
+                                }
+                            }
+                            .padding()
+                            .onAppear {
+                                if let eventId = activity.eventId {
+                                    Task {
+                                        await viewModel.fetchEvent(eventId)
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 .padding(.vertical)
             }
         }
-        .background(Color(UIColor.systemBackground))
-    }
-}
-
-struct EventCardForCalendar: View {
-    let activity: CalendarActivityDTO
-    
-    var body: some View {
-        HStack(spacing: 0) {
-            // Left color band
-            activityColor(for: activity)
-                .frame(width: 8)
-                .cornerRadius(8, corners: [.topLeft, .bottomLeft])
-            
-            // Card content
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    // Icon and title
-                    activityIcon(for: activity)
-                        .font(.headline)
-                        .foregroundColor(activityColor(for: activity))
-                        .padding(.trailing, 4)
-                    
-                    Text(activity.title)
-                        .font(.headline)
-                        .lineLimit(1)
-                    
-                    Spacer()
-                    
-                    // Time
-                    if let time = activity.formattedTime {
-                        Text(time)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                }
-                
-                // Description or location
-                if let location = activity.location, !location.isEmpty {
-                    HStack(spacing: 4) {
-                        Image(systemName: "mappin.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        
-                        Text(location)
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                            .lineLimit(1)
-                    }
-                }
-                
-                // Participants preview
-                HStack {
-                    // This is a placeholder for participants
-                    // In a real implementation, you would fetch and display user avatars here
-                    Circle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 24, height: 24)
-                    
-                    Text("Participants info")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
-                    Spacer()
-                }
+        .background(universalBackgroundColor)
+        .onAppear {
+            Task {
+                await viewModel.loadEventsIfNeeded()
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 12)
-            .background(Color.white)
         }
-        .frame(maxWidth: .infinity)
-        .background(Color.white)
-        .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
     }
     
-    private func activityColor(for activity: CalendarActivityDTO) -> Color {
-        // First check if activity has a custom color hex code
+    func getColorForEvent(_ activity: CalendarActivityDTO, event: FullFeedEventDTO? = nil) -> Color {
+        // First, check if this is a self-owned event
+        if let event = event, event.isSelfOwned == true {
+            return universalAccentColor
+        }
+        
+        // Check if the event has a friend tag color
+        if let event = event, let hexCode = event.eventFriendTagColorHexCodeForRequestingUser, !hexCode.isEmpty {
+            return Color(hex: hexCode)
+        }
+        
+        // Check if activity has a custom color hex code
         if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
             return Color(hex: colorHexCode)
         }
@@ -134,20 +113,6 @@ struct EventCardForCalendar: View {
             return Color.gray.opacity(0.6) // Default color for null category
         }
         return category.color()
-    }
-    
-    private func activityIcon(for activity: CalendarActivityDTO) -> some View {
-        Group {
-            // If we have an icon from the backend, use it directly
-            if let icon = activity.icon, !icon.isEmpty {
-                Text(icon)
-                    .font(.system(size: 16))
-            } else {
-                // Fallback to system icon from the EventCategory enum
-                Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
-                    .font(.system(size: 14))
-            }
-        }
     }
 }
 
@@ -160,7 +125,7 @@ struct DayEventsView_Previews: PreviewProvider {
             ],
             onDismiss: {},
             onEventSelected: { _ in }
-        )
+        ).environmentObject(AppCache.shared)
     }
 }
 #endif 

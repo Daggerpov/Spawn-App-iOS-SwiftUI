@@ -289,50 +289,7 @@ struct DayCell: View {
     }
     
     var body: some View {
-        ZStack {
-            // Gradient background
-            RoundedRectangle(cornerRadius: 6)
-                .fill(LinearGradient(
-                    gradient: Gradient(colors: gradientColors),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                ))
-                .frame(height: 32)
-            
-            if activities.count <= 4 {
-                // Show up to 4 icons in a grid
-                let columns = [
-                    GridItem(.flexible(), spacing: 1),
-                    GridItem(.flexible(), spacing: 1)
-                ]
-                
-                LazyVGrid(columns: columns, spacing: 1) {
-                    ForEach(activities.prefix(4), id: \.id) { activity in
-                        activityIcon(for: activity)
-                            .foregroundColor(.white)
-                            .font(.system(size: 10))
-                    }
-                }
-                .padding(2)
-            } else {
-                // Show 3 icons + overflow indicator
-                HStack(spacing: 2) {
-                    ForEach(0..<2, id: \.self) { index in
-                        if index < activities.count {
-                            activityIcon(for: activities[index])
-                                .foregroundColor(.white)
-                                .font(.system(size: 10))
-                        }
-                    }
-                    
-                    Text("+\(activities.count - 2)")
-                        .font(.system(size: 10))
-                        .foregroundColor(.white)
-                        .fontWeight(.bold)
-                }
-            }
-        }
-        .onTapGesture {
+        Button(action: {
             if activities.count == 1 {
                 // If only one activity, directly open it
                 onEventSelected(activities[0])
@@ -340,73 +297,40 @@ struct DayCell: View {
                 // If multiple activities, show the day events list
                 onDaySelected(activities)
             }
-        }
-    }
-    
-    private func activityIcon(for activity: CalendarActivityDTO) -> some View {
-        Group {
-            // If we have an icon from the backend, use it directly
-            if let icon = activity.icon, !icon.isEmpty {
-                Text(icon)
-                    .font(.system(size: 10))
-            } else {
-                // Fallback to system icon from the EventCategory enum
-                Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
-                    .font(.system(size: 10))
-            }
-        }
-    }
-}
-
-// Card-like view for activities in the day events sheet
-struct EventDayCard: View {
-    let activity: CalendarActivityDTO
-    
-    var body: some View {
-        HStack {
-            activityIcon(for: activity)
-                .font(.title3)
-                .padding(.horizontal, 8)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(activity.title)
-                    .font(.headline)
-                    .foregroundColor(.white)
+        }) {
+            ZStack {
+                // Gradient background
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(LinearGradient(
+                        gradient: Gradient(colors: gradientColors),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    .frame(height: 32)
                 
-                if let time = activity.formattedTime {
-                    Text(time)
-                        .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.9))
+                if activities.count == 1 {
+                    // For a single activity, show just the icon
+                    activityIcon(for: activities[0])
+                        .foregroundColor(.white)
+                        .font(.system(size: 12))
+                } else if activities.count <= 3 {
+                    // For 2-3 activities, show icons in a row
+                    HStack(spacing: 2) {
+                        ForEach(activities.prefix(3), id: \.id) { activity in
+                            activityIcon(for: activity)
+                                .foregroundColor(.white)
+                                .font(.system(size: 10))
+                        }
+                    }
+                } else {
+                    // For 4+ activities, show count
+                    Text("\(activities.count)")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
                 }
             }
-            
-            Spacer()
         }
-        .padding()
-        .background(
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    activityColor(for: activity).opacity(0.8),
-                    activityColor(for: activity)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .cornerRadius(12)
-    }
-    
-    private func activityColor(for activity: CalendarActivityDTO) -> Color {
-        // First check if activity has a custom color hex code
-        if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
-            return Color(hex: colorHexCode)
-        }
-        
-        // Fallback to category color
-        guard let category = activity.eventCategory else {
-            return Color.gray.opacity(0.6) // Default color for null category
-        }
-        return category.color()
+        .buttonStyle(PlainButtonStyle())
     }
     
     private func activityIcon(for activity: CalendarActivityDTO) -> some View {
@@ -414,13 +338,12 @@ struct EventDayCard: View {
             // If we have an icon from the backend, use it directly
             if let icon = activity.icon, !icon.isEmpty {
                 Text(icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 10))
             } else {
                 // Fallback to system icon from the EventCategory enum
                 Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
-                    .font(.system(size: 16))
+                    .font(.system(size: 10))
             }
         }
-        .foregroundColor(.white)
     }
 } 
