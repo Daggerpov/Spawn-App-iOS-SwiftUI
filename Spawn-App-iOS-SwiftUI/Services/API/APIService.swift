@@ -583,12 +583,25 @@ class APIService: IAPIService {
 			// Don't set auth headers for these endpoints
 			return
 		}
+		
 		// Get the access token from keychain
         guard
             let accessTokenData = KeychainService.shared.load(key: "accessToken"),
             let accessToken = String(data: accessTokenData, encoding: .utf8)
 		else {
-			print("❌ ERROR: Missing access in Keychain")
+			// If we have a refresh token, we can try to refresh the access token
+			if let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
+			   let _ = String(data: refreshTokenData, encoding: .utf8) {
+				// We have a refresh token, but we'll let the API call handle the refresh
+				// This will happen in the 401 handler in fetchData/sendData methods
+				print("⚠️ Missing access token but refresh token exists - will refresh during API call")
+			} else {
+				print("❌ ERROR: Missing access token and refresh token in Keychain")
+				// User might need to be logged out due to expired/missing tokens
+				DispatchQueue.main.async {
+					UserAuthViewModel.shared.signOut()
+				}
+			}
 			return
 		}
 
