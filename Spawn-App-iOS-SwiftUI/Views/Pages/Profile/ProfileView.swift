@@ -32,6 +32,7 @@ struct ProfileView: View {
     )
     @State private var refreshFlag = false
     @State private var showCalendarPopup: Bool = false
+    @State private var showEventDetails: Bool = false
 
     @StateObject var userAuth = UserAuthViewModel.shared
     @StateObject var profileViewModel = ProfileViewModel()
@@ -197,9 +198,6 @@ struct ProfileView: View {
             if let socialMedia = newSocialMedia {
                 whatsappLink = socialMedia.whatsappLink ?? ""
                 instagramLink = socialMedia.instagramLink ?? ""
-                print(
-                    "Updated social media links in ProfileView: WhatsApp=\(whatsappLink), Instagram=\(instagramLink)"
-                )
             }
         }
         // Add a timer to periodically refresh data
@@ -327,6 +325,30 @@ struct ProfileView: View {
             username = currentUser.username
             firstName = currentUser.firstName ?? ""
             lastName = currentUser.lastName ?? ""
+        }
+    }
+
+    private func handleEventSelection(_ activity: CalendarActivityDTO) {
+        // First close the calendar popup
+        showCalendarPopup = false
+        
+        // Then fetch and show the event details
+        Task {
+            if let eventId = activity.eventId,
+               let _ = await profileViewModel.fetchEventDetails(eventId: eventId) {
+                await MainActor.run {
+                    showEventDetails = true
+                }
+            }
+        }
+    }
+    
+    private func determineEventColor(for event: FullFeedEventDTO) -> Color {
+        // Logic to determine event color based on friend tag or category
+        if let hexCode = event.eventFriendTagColorHexCodeForRequestingUser, !hexCode.isEmpty {
+            return Color(hex: hexCode)
+        } else {
+            return event.category.color()
         }
     }
 }
@@ -842,7 +864,7 @@ extension ProfileView {
 
             // Days of week header
             HStack(spacing: 0) {
-                ForEach(weekDays, id: \.self) { day in
+                ForEach(Array(zip(0..<weekDays.count, weekDays)), id: \.0) { index, day in
                     Text(day)
                         .font(.caption2)
                         .frame(maxWidth: .infinity)
@@ -859,22 +881,19 @@ extension ProfileView {
                     ForEach(0..<5, id: \.self) { row in
                         HStack(spacing: 6) {
                             ForEach(0..<7, id: \.self) { col in
-                                if let activity =
-                                    profileViewModel.calendarActivities[row][
-                                        col
-                                    ]
-                                {
-                                    RoundedRectangle(cornerRadius: 6)
-                                        .fill(
-                                            activityColor(
-                                                for: activity.eventCategory
-                                            )
-                                        )
-                                        .frame(height: 32)
-                                        .overlay(
-                                            activityIcon(for: activity)
-                                                .foregroundColor(.white)
-                                        )
+                                if let dayActivities = getDayActivities(row: row, col: col) {
+                                    if dayActivities.isEmpty {
+                                        // Empty day cell
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .frame(height: 32)
+                                    } else {
+                                        // Mini day cell with multiple activities
+                                        MiniDayCell(activities: dayActivities)
+                                            .onTapGesture {
+                                                handleDaySelection(activities: dayActivities)
+                                            }
+                                    }
                                 } else {
                                     RoundedRectangle(cornerRadius: 6)
                                         .fill(Color.gray.opacity(0.2))
@@ -898,13 +917,97 @@ extension ProfileView {
         .onAppear {
             fetchCalendarData()
         }
-        .sheet(isPresented: $showCalendarPopup) {
-            InfiniteCalendarView(
-                activities: profileViewModel.allCalendarActivities,
-                isLoading: profileViewModel.isLoadingCalendar,
-                onDismiss: { showCalendarPopup = false }
-            )
+        .sheet(isPresented: $showEventDetails) {
+            if let event = profileViewModel.selectedEvent {
+                // Use the same color scheme as EventCardView would
+                let eventColor = event.isSelfOwned == true ? 
+                    universalAccentColor : determineEventColor(for: event)
+                
+                EventDescriptionView(
+                    event: event,
+                    users: event.participantUsers,
+                    color: eventColor,
+                    userId: userAuth.spawnUser?.id ?? UUID()
+                )
+                .presentationDetents([.medium, .large])
+            }
         }
+    }
+    
+    private func handleDaySelection(activities: [CalendarActivityDTO]) {
+        if activities.count == 1 {
+            // If only one activity, directly open it
+            handleEventSelection(activities[0])
+        } else if activities.count > 1 {
+            // If multiple activities, show day's events in a sheet
+            Task {
+                await profileViewModel.fetchAllCalendarActivities()
+                await MainActor.run {
+                    showDayEvents(activities: activities)
+                }
+            }
+        }
+    }
+    
+    private func showDayEvents(activities: [CalendarActivityDTO]) {
+        // Present a sheet with EventCardViews for each activity
+        let sheet = UIViewController()
+        let hostingController = UIHostingController(rootView: DayEventsView(
+            activities: activities,
+            onDismiss: {
+                sheet.dismiss(animated: true)
+            },
+            onEventSelected: { activity in
+                sheet.dismiss(animated: true) {
+                    self.handleEventSelection(activity)
+                }
+            }
+        ))
+        
+        sheet.addChild(hostingController)
+        hostingController.view.frame = sheet.view.bounds
+        sheet.view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: sheet)
+        
+        // Set up sheet presentation controller
+        if let presentationController = sheet.presentationController as? UISheetPresentationController {
+            presentationController.detents = [.medium(), .large()]
+            presentationController.prefersGrabberVisible = true
+        }
+        
+        // Present the sheet
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(sheet, animated: true)
+        }
+    }
+    
+    // Get array of activities for a specific day cell
+    private func getDayActivities(row: Int, col: Int) -> [CalendarActivityDTO]? {
+        // Convert the original single-activity grid to an array of activities per cell
+        let activity = profileViewModel.calendarActivities[row][col]
+        
+        if activity == nil {
+            return nil
+        }
+        
+        // Find all activities for this day by date checking
+        if let firstActivity = activity {
+            let day = Calendar.current.component(.day, from: firstActivity.date)
+            let month = Calendar.current.component(.month, from: firstActivity.date)
+            let year = Calendar.current.component(.year, from: firstActivity.date)
+            
+            // Filter all activities matching this date
+            return profileViewModel.allCalendarActivities.filter { act in
+                let actDay = Calendar.current.component(.day, from: act.date)
+                let actMonth = Calendar.current.component(.month, from: act.date)
+                let actYear = Calendar.current.component(.year, from: act.date)
+                
+                return actDay == day && actMonth == month && actYear == year
+            }
+        }
+        
+        return []
     }
 
     private var weekDays: [String] {
@@ -917,6 +1020,8 @@ extension ProfileView {
                 month: currentMonth,
                 year: currentYear
             )
+            // Also fetch all activities to have them ready
+            await profileViewModel.fetchAllCalendarActivities()
         }
     }
 
@@ -932,23 +1037,105 @@ extension ProfileView {
         }
         return "\(currentMonth)/\(currentYear)"
     }
+}
 
-    private func activityColor(for eventCategory: EventCategory?) -> Color {
-        guard let category = eventCategory else {
+// Helper struct for the mini day cell in the profile view
+struct MiniDayCell: View {
+    let activities: [CalendarActivityDTO]
+    
+    private var gradientColors: [Color] {
+        // Get up to 3 unique colors from activities
+        let colors = activities.prefix(3).compactMap { activity -> Color? in
+            if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
+                return Color(hex: colorHex)
+            } else if let category = activity.eventCategory {
+                return category.color()
+            }
+            return nil
+        }
+        
+        // If no colors found, return default gray
+        if colors.isEmpty {
+            return [Color.gray.opacity(0.5)]
+        }
+        
+        // If only one color, use it with different opacity
+        if colors.count == 1 {
+            return [colors[0].opacity(0.7), colors[0].opacity(0.9)]
+        }
+        
+        return colors
+    }
+    
+    var body: some View {
+        ZStack {
+            // Gradient background
+            RoundedRectangle(cornerRadius: 6)
+                .fill(LinearGradient(
+                    gradient: Gradient(colors: gradientColors),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
+                .frame(height: 32)
+            
+            if activities.count <= 4 {
+                // Show up to 4 icons in a grid
+                let columns = [
+                    GridItem(.flexible(), spacing: 1),
+                    GridItem(.flexible(), spacing: 1)
+                ]
+                
+                LazyVGrid(columns: columns, spacing: 1) {
+                    ForEach(activities.prefix(4), id: \.id) { activity in
+                        activityIcon(for: activity)
+                            .foregroundColor(.white)
+                            .font(.system(size: 10))
+                    }
+                }
+                .padding(2)
+            } else {
+                // Show 2 icons + overflow indicator
+                HStack(spacing: 2) {
+                    ForEach(0..<2, id: \.self) { index in
+                        if index < activities.count {
+                            activityIcon(for: activities[index])
+                                .foregroundColor(.white)
+                                .font(.system(size: 10))
+                        }
+                    }
+                    
+                    Text("+\(activities.count - 2)")
+                        .font(.system(size: 10))
+                        .foregroundColor(.white)
+                        .fontWeight(.bold)
+                }
+            }
+        }
+    }
+    
+    private func activityColor(for activity: CalendarActivityDTO) -> Color {
+        // First check if activity has a custom color hex code
+        if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
+            return Color(hex: colorHexCode)
+        }
+        
+        // Fallback to category color
+        guard let category = activity.eventCategory else {
             return Color.gray.opacity(0.6) // Default color for null category
         }
         return category.color()
     }
-
+    
     private func activityIcon(for activity: CalendarActivityDTO) -> some View {
         Group {
             // If we have an icon from the backend, use it directly
             if let icon = activity.icon, !icon.isEmpty {
                 Text(icon)
-                    .font(.system(size: 16))
+                    .font(.system(size: 10))
             } else {
                 // Fallback to system icon from the EventCategory enum
-                Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
+                Image(systemName: activity.eventCategory?.systemIcon() ?? "star.fill")
+                    .font(.system(size: 10))
             }
         }
     }
@@ -978,242 +1165,4 @@ struct RoundedCorner: Shape {
 @available(iOS 17, *)
 #Preview {
     ProfileView(user: BaseUserDTO.danielAgapov)
-}
-
-// Add the InfiniteCalendarView as a new struct outside of ProfileView:
-struct InfiniteCalendarView: View {
-    let activities: [CalendarActivityDTO]
-    let isLoading: Bool
-    let onDismiss: () -> Void
-    
-    @State private var selectedYear: Int = Calendar.current.component(.year, from: Date())
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if activities.isEmpty {
-                    VStack(spacing: 15) {
-                        Image(systemName: "calendar.badge.exclamationmark")
-                            .font(.system(size: 50))
-                            .foregroundColor(.gray)
-                        
-                        Text("No calendar activities")
-                            .font(.headline)
-                        
-                        Text("When you create or participate in events, they'll appear here.")
-                            .font(.subheadline)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.gray)
-                            .padding(.horizontal)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    // Year picker
-                    Picker("Year", selection: $selectedYear) {
-                        ForEach(availableYears(), id: \.self) { year in
-                            Text("\(year)").tag(year)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
-                    
-                    // Calendar content
-                    ScrollView {
-                        LazyVStack(spacing: 30) {
-                            ForEach(1...12, id: \.self) { month in
-                                MonthCalendarView(
-                                    month: month,
-                                    year: selectedYear,
-                                    activities: activitiesForMonth(month: month, year: selectedYear)
-                                )
-                            }
-                        }
-                        .padding()
-                    }
-                }
-            }
-            .navigationTitle("Calendar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        onDismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func availableYears() -> [Int] {
-        // Determine the range of years from activities
-        if activities.isEmpty {
-            // Default to current year if no activities
-            return [Calendar.current.component(.year, from: Date())]
-        }
-        
-        var years = Set<Int>()
-        
-        for activity in activities {
-            let year = Calendar.current.component(.year, from: activity.date)
-                years.insert(year)
-        }
-        
-        // If no valid years found, use current year
-        if years.isEmpty {
-            return [Calendar.current.component(.year, from: Date())]
-        }
-        
-        // Return sorted years
-        return Array(years).sorted()
-    }
-    
-    private func activitiesForMonth(month: Int, year: Int) -> [CalendarActivityDTO] {
-        return activities.filter { activity in
-            let activityMonth = Calendar.current.component(.month, from: activity.date)
-            let activityYear = Calendar.current.component(.year, from: activity.date)
-            return activityMonth == month && activityYear == year
-        }
-    }
-    
-    private func dateFromString(_ dateString: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: dateString)
-    }
-}
-
-struct MonthCalendarView: View {
-    let month: Int
-    let year: Int
-    let activities: [CalendarActivityDTO]
-    
-    private var monthName: String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MMMM"
-        let date = Calendar.current.date(from: DateComponents(year: year, month: month))!
-        return dateFormatter.string(from: date)
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(monthName)
-                .font(.headline)
-                .padding(.leading, 8)
-            
-            // Days of week header
-            HStack(spacing: 0) {
-                ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
-                    Text(day)
-                        .font(.caption2)
-                        .frame(maxWidth: .infinity)
-                        .foregroundColor(.gray)
-                }
-            }
-            
-            // Calendar grid
-            let calendarGrid = createCalendarGrid()
-            VStack(spacing: 6) {
-                ForEach(0..<calendarGrid.count, id: \.self) { row in
-                    HStack(spacing: 6) {
-                        ForEach(0..<7, id: \.self) { col in
-                            if let activity = calendarGrid[row][col] {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(activityColor(for: activity.eventCategory))
-                                    .frame(height: 32)
-                                    .overlay(
-                                        activityIcon(for: activity)
-                                            .foregroundColor(.white)
-                                    )
-                            } else {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.gray.opacity(0.2))
-                                    .frame(height: 32)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        .padding(.bottom, 10)
-    }
-    
-    private func createCalendarGrid() -> [[CalendarActivityDTO?]] {
-        var grid = Array(
-            repeating: Array(repeating: nil as CalendarActivityDTO?, count: 7),
-            count: 6 // Use 6 rows to accommodate months that span 6 weeks
-        )
-        
-        let firstDayOffset = firstDayOfMonth(month: month, year: year)
-        
-        // Populate grid with activities
-        for activity in activities {
-            let day = Calendar.current.component(.day, from: activity.date)
-            let position = day + firstDayOffset - 1
-            
-            if position >= 0 && position < 42 { // 6 rows * 7 columns = 42 cells
-                let row = position / 7
-                let col = position % 7
-                grid[row][col] = activity
-            }
-        }
-        
-        return grid
-    }
-    
-    private func dateFromString(_ dateString: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: dateString)
-    }
-    
-    private func firstDayOfMonth(month: Int, year: Int) -> Int {
-        var components = DateComponents()
-        components.year = year
-        components.month = month
-        components.day = 1
-        
-        let calendar = Calendar.current
-        if let date = calendar.date(from: components) {
-            let weekday = calendar.component(.weekday, from: date)
-            // Convert from 1-7 (Sunday-Saturday) to 0-6 for our grid
-            return weekday - 1
-        }
-        return 0
-    }
-    
-    private func daysInMonth(month: Int, year: Int) -> Int {
-        let calendar = Calendar.current
-        var components = DateComponents()
-        components.year = year
-        components.month = month
-        
-        if let date = calendar.date(from: components),
-           let range = calendar.range(of: .day, in: .month, for: date) {
-            return range.count
-        }
-        return 30 // Default fallback
-    }
-    
-    private func activityColor(for eventCategory: EventCategory?) -> Color {
-        guard let category = eventCategory else {
-            return Color.gray.opacity(0.6) // Default color for null category
-        }
-        return category.color()
-    }
-    
-    private func activityIcon(for activity: CalendarActivityDTO) -> some View {
-        Group {
-            // If we have an icon from the backend, use it directly
-            if let icon = activity.icon, !icon.isEmpty {
-                Text(icon)
-                    .font(.system(size: 16))
-            } else {
-                // Fallback to system icon from the EventCategory enum
-                Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
-            }
-        }
-    }
 }
