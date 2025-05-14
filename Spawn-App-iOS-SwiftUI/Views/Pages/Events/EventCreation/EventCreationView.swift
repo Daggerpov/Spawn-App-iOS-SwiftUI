@@ -28,7 +28,7 @@ struct EventCreationView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 10) {
             // Header with close button
             Spacer()
             HStack {
@@ -44,7 +44,7 @@ struct EventCreationView: View {
                         .padding(8)
                 }
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 24)
             
             // Content
             ScrollView {
@@ -96,30 +96,36 @@ struct EventCreationView: View {
                             )
                         }
                     }
+                    .padding(.horizontal, 24)
                     
                     // Date & Time
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Date*")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        Button(action: { showFullDatePicker = true }) {
-                            HStack {
-                                Text(Calendar.current.isDateInToday(viewModel.selectedDate) ? "Today" : viewModel.formatDate(viewModel.selectedDate))
-                                    .foregroundColor(universalAccentColor)
-                                Spacer()
-                                Image(systemName: "calendar")
-                                    .foregroundColor(universalAccentColor)
+                    HStack {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Date*")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            Button(action: { showFullDatePicker = true }) {
+                                HStack {
+                                    Text(Calendar.current.isDateInToday(viewModel.selectedDate) ? "Today" : viewModel.formatDate(viewModel.selectedDate))
+                                        .foregroundColor(universalAccentColor)
+                                    Spacer()
+                                    Image(systemName: "calendar")
+                                        .foregroundColor(universalAccentColor)
+                                }
+                                .padding(10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                                )
                             }
-                            .padding(10)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.gray.opacity(0.5), lineWidth: 1)
-                            )
                         }
+                        timeSelectionView
                     }
+                    .padding(.horizontal)
+                
                     
-                    timeSelectionView
+               
                     
                     categorySelectionView
                     
@@ -145,6 +151,7 @@ struct EventCreationView: View {
                                 .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                         )
                     }
+                    .padding(.horizontal)
                     
                     // Create Button
                     Button(action: {
@@ -170,11 +177,10 @@ struct EventCreationView: View {
                         }
                         .padding()
                         .background(universalSecondaryColor)
-                        .cornerRadius(30)
+                        .cornerRadius(16)
                     }
-                    .padding(.top, 10)
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
         }
         .sheet(isPresented: $showFullDatePicker) {
@@ -194,6 +200,7 @@ struct EventCreationView: View {
             )
         }
         .background(universalBackgroundColor)
+        .padding(.horizontal, 0)
         .onAppear {
             // Initialize selectedEmoji from viewModel if available
             if let icon = viewModel.event.icon {
@@ -267,6 +274,7 @@ extension EventCreationView {
                 }
             }
         }
+        .padding(.leading, 24)
     }
     var locationSelectionView: some View {
         // Location
@@ -314,27 +322,20 @@ extension EventCreationView {
                             .padding(.leading, 10)
                             
                             Spacer()
+                            Button(action: {
+                                showLocationSelection = true
+                            }) {
+                                Image(systemName: "arrow.up.right")
+                                    .foregroundColor(.gray)
+                                    .padding(.trailing, 10)
+                            }
                             
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                                .padding(.trailing, 10)
                         }
                     }
                 }
-                
-                Button(action: {
-                    showLocationSelection = true
-                }) {
-                    Image(systemName: "map")
-                        .foregroundColor(universalSecondaryColor)
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(universalAccentColor, lineWidth: 1.5)
-                        )
-                }
             }
         }
+        .padding(.horizontal)
     }
     var invitedView: some View {
         // Who's Invited
@@ -385,13 +386,10 @@ extension EventCreationView {
                     }
                 } else {
                     Circle()
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 30, height: 30)
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 16))
-                        )
+                        .stroke(style: StrokeStyle(lineWidth: 1, dash: [3]))
+                        .foregroundColor(.gray)
+                        .frame(width: 20, height: 20)
+                        
                 }
             }
             
@@ -440,11 +438,13 @@ extension EventCreationView {
                     .padding(.vertical, 8)
                     .overlay(
                         Capsule()
-                            .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                .foregroundColor(.gray.opacity(0.5))
                     )
                 }
             }
         }
+        .padding(.horizontal)
     }
     var timeSelectionView: some View {
         // Time
