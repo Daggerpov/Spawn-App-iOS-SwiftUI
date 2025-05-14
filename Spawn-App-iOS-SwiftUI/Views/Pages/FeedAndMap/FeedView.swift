@@ -157,7 +157,7 @@ extension FeedView {
                 } else {
                     Spacer()
                     ForEach(viewModel.events) { event in
-                        CardEventView(
+                        EventCardView(
                             userId: user.id,
                             event: event,
                             color: Color(
