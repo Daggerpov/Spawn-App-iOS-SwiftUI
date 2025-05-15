@@ -14,121 +14,117 @@ class ProfileViewModel: ObservableObject {
         count: 5
     )
     @Published var isLoadingCalendar: Bool = false
+    @Published var allCalendarActivities: [CalendarActivityDTO] = []
+    @Published var selectedEvent: FullFeedEventDTO?
+    @Published var isLoadingEvent: Bool = false
     
     private let apiService: IAPIService
     
-    init(apiService: IAPIService = MockAPIService.isMocking ? MockAPIService() : APIService()) {
+    init(
+        apiService: IAPIService = MockAPIService.isMocking
+        ? MockAPIService() : APIService()
+    ) {
         self.apiService = apiService
     }
     
     func fetchUserStats(userId: UUID) async {
-        await MainActor.run {
-            self.isLoadingStats = true
-        }
+        await MainActor.run { self.isLoadingStats = true }
         
-        if let url = URL(string: APIService.baseURL + "users/\(userId)/stats") {
-            do {
-                let stats: UserStatsDTO = try await self.apiService.fetchData(from: url, parameters: nil)
-                await MainActor.run {
-                    self.userStats = stats
-                    self.isLoadingStats = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to load user stats: \(error.localizedDescription)"
-                    self.isLoadingStats = false
-                }
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/stats")!
+            let stats: UserStatsDTO = try await self.apiService.fetchData(
+                from: url,
+                parameters: nil
+            )
+            
+            await MainActor.run {
+                self.userStats = stats
+                self.isLoadingStats = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load user stats: \(error.localizedDescription)"
+                self.isLoadingStats = false
             }
         }
     }
     
     func fetchUserInterests(userId: UUID) async {
-        await MainActor.run {
-            self.isLoadingInterests = true
-        }
+        await MainActor.run { self.isLoadingInterests = true }
         
-        if let url = URL(string: APIService.baseURL + "users/\(userId)/interests") {
-            do {
-                let interests: [String] = try await self.apiService.fetchData(from: url, parameters: nil)
-                await MainActor.run {
-                    self.userInterests = interests
-                    self.isLoadingInterests = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to load user interests: \(error.localizedDescription)"
-                    self.isLoadingInterests = false
-                }
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
+            let interests: [String] = try await self.apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                self.userInterests = interests
+                self.isLoadingInterests = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load user interests: \(error.localizedDescription)"
+                self.isLoadingInterests = false
             }
         }
     }
     
     func addUserInterest(userId: UUID, interest: String) async {
-        if let url = URL(string: APIService.baseURL + "users/\(userId)/interests") {
-            do {
-                let _ = try await self.apiService.sendData(
-                    interest,
-                    to: url,
-                    parameters: nil
-                )
-                // Refresh interests after adding
-                await fetchUserInterests(userId: userId)
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to add interest: \(error.localizedDescription)"
-                }
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
+            _ = try await self.apiService.sendData(interest, to: url, parameters: nil)
+            
+            // Refresh interests after adding
+            await fetchUserInterests(userId: userId)
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to add interest: \(error.localizedDescription)"
             }
         }
     }
     
     func fetchUserSocialMedia(userId: UUID) async {
-        await MainActor.run {
-            self.isLoadingSocialMedia = true
-        }
+        await MainActor.run { self.isLoadingSocialMedia = true }
         
-        if let url = URL(string: APIService.baseURL + "users/\(userId)/social-media") {
-            do {
-                let socialMedia: UserSocialMediaDTO = try await self.apiService.fetchData(from: url, parameters: nil)
-                await MainActor.run {
-                    self.userSocialMedia = socialMedia
-                    self.isLoadingSocialMedia = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to load social media: \(error.localizedDescription)"
-                    self.isLoadingSocialMedia = false
-                }
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
+            let socialMedia: UserSocialMediaDTO = try await self.apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                self.userSocialMedia = socialMedia
+                self.isLoadingSocialMedia = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load social media: \(error.localizedDescription)"
+                self.isLoadingSocialMedia = false
             }
         }
     }
     
-    func updateSocialMedia(userId: UUID, whatsappLink: String?, instagramLink: String?) async {
-        if let url = URL(string: APIService.baseURL + "users/\(userId)/social-media") {
-            do {
-                let updateDTO = UpdateUserSocialMediaDTO(
-                    whatsappNumber: whatsappLink,
-                    instagramUsername: instagramLink
-                )
-                
-                print("updateDTO: \(updateDTO)")
-                
-                // Use the existing updateData method correctly
-                // Make sure to provide the correct type parameters
-                let updatedSocialMedia: UserSocialMediaDTO = try await self.apiService.updateData(
-                    updateDTO,
-                    to: url,
-                    parameters: nil
-                )
-                
-                await MainActor.run {
-                    self.userSocialMedia = updatedSocialMedia
-                    print("Social media updated successfully: \(updatedSocialMedia)")
-                }
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to update social media: \(error.localizedDescription)"
-                    print("Social media update error: \(error)")
-                }
+    func updateSocialMedia(
+        userId: UUID,
+        whatsappLink: String?,
+        instagramLink: String?
+    ) async {
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
+            let updateDTO = UpdateUserSocialMediaDTO(
+                whatsappNumber: whatsappLink,
+                instagramUsername: instagramLink
+            )
+            
+            let updatedSocialMedia: UserSocialMediaDTO = try await self.apiService.updateData(
+                updateDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            await MainActor.run {
+                self.userSocialMedia = updatedSocialMedia
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to update social media: \(error.localizedDescription)"
             }
         }
     }
@@ -140,11 +136,8 @@ class ProfileViewModel: ObservableObject {
     }
     
     func fetchCalendarActivities(month: Int, year: Int) async {
-        await MainActor.run {
-            self.isLoadingCalendar = true
-        }
+        await MainActor.run { self.isLoadingCalendar = true }
         
-        // Get the user ID
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             await MainActor.run {
                 self.isLoadingCalendar = false
@@ -153,46 +146,73 @@ class ProfileViewModel: ObservableObject {
             return
         }
         
-        // Construct the base URL without query parameters
-        guard let url = URL(string: APIService.baseURL + "users/\(userId)/calendar") else {
-            await MainActor.run {
-                self.isLoadingCalendar = false
-                self.errorMessage = "Failed to construct URL for calendar activities"
-            }
-            return
-        }
-        
-        // Create parameters dictionary
-        let parameters = [
-            "month": String(month),
-            "year": String(year),
-        ]
-        
         do {
-            // Fetch calendar activities from API using parameters
+            let url = URL(string: APIService.baseURL + "users/\(userId)/calendar")!
+            let parameters = [
+                "month": String(month),
+                "year": String(year),
+            ]
+            
             let activities: [CalendarActivityDTO] = try await apiService.fetchData(
-                from: url, parameters: parameters
+                from: url,
+                parameters: parameters
             )
             
-            // Convert to grid format
-            let grid = convertToCalendarGrid(activities: activities, month: month, year: year)
+            let grid = convertToCalendarGrid(
+                activities: activities,
+                month: month,
+                year: year
+            )
             
-            // Update UI on main thread
             await MainActor.run {
                 self.calendarActivities = grid
                 self.isLoadingCalendar = false
             }
         } catch {
-            // Handle error and provide fallback
             await MainActor.run {
                 self.errorMessage = "Failed to load calendar: \(error.localizedDescription)"
-                self.calendarActivities = generateMockCalendarData(month: month, year: year)
+                self.calendarActivities = Array(
+                    repeating: Array(repeating: nil, count: 7),
+                    count: 5
+                )
                 self.isLoadingCalendar = false
             }
         }
     }
     
-    private func convertToCalendarGrid(activities: [CalendarActivityDTO], month: Int, year: Int) -> [[CalendarActivityDTO?]] {
+    func fetchAllCalendarActivities() async {
+        await MainActor.run { self.isLoadingCalendar = true }
+        
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            await MainActor.run {
+                self.isLoadingCalendar = false
+                self.errorMessage = "User ID not available"
+            }
+            return
+        }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/calendar")!
+            let activities: [CalendarActivityDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                self.allCalendarActivities = activities
+                self.isLoadingCalendar = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load calendar: \(error.localizedDescription)"
+                self.allCalendarActivities = []
+                self.isLoadingCalendar = false
+            }
+        }
+    }
+    
+    private func convertToCalendarGrid(
+        activities: [CalendarActivityDTO],
+        month: Int,
+        year: Int
+    ) -> [[CalendarActivityDTO?]] {
         var grid = Array(
             repeating: Array(repeating: nil as CalendarActivityDTO?, count: 7),
             count: 5
@@ -200,17 +220,49 @@ class ProfileViewModel: ObservableObject {
         
         let firstDayOffset = firstDayOfMonth(month: month, year: year)
         
+        // Group activities by day
+        var activitiesByDay: [Int: [CalendarActivityDTO]] = [:]
+        
         for activity in activities {
-            let day = extractDay(from: activity.date)
-            let position = day + firstDayOffset - 1
-            if position >= 0 && position < 35 {
-                let row = position / 7
-                let col = position % 7
-                grid[row][col] = activity
+            let activityMonth = Calendar.current.component(
+                .month,
+                from: activity.date
+            )
+            let activityYear = Calendar.current.component(
+                .year,
+                from: activity.date
+            )
+            
+            // Only include activities from the specified month and year
+            if activityMonth == month && activityYear == year {
+                let day = Calendar.current.component(.day, from: activity.date)
+                
+                if activitiesByDay[day] == nil {
+                    activitiesByDay[day] = []
+                }
+                activitiesByDay[day]?.append(activity)
+            }
+        }
+        
+        // Place first activity of each day in the grid
+        for (day, dayActivities) in activitiesByDay {
+            if !dayActivities.isEmpty {
+                let position = day + firstDayOffset - 1
+                if position >= 0 && position < 35 {
+                    let row = position / 7
+                    let col = position % 7
+                    grid[row][col] = dayActivities.first
+                }
             }
         }
         
         return grid
+    }
+    
+    private func dateFromString(_ dateString: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: dateString)
     }
     
     private func extractDay(from date: Date) -> Int {
@@ -232,35 +284,6 @@ class ProfileViewModel: ObservableObject {
         return 0
     }
     
-    private func generateMockCalendarData(month: Int, year: Int) -> [[CalendarActivityDTO?]] {
-        var activities = Array(
-            repeating: Array(repeating: nil as CalendarActivityDTO?, count: 7),
-            count: 5
-        )
-        
-        let activityTypes = ["music", "sports", "food", "travel", "gaming", "outdoors"]
-        
-        // Generate some random activities
-        for row in 0..<5 {
-            for col in 0..<7 {
-                if row > 0 && Bool.random() && Bool.random() {
-                    let day = (row * 7) + col + 1
-                    if day <= daysInMonth(month: month, year: year) {
-                        let date = Calendar.current.date(from: DateComponents(year: year, month: month, day: day)) ?? Date()
-                        activities[row][col] = CalendarActivityDTO(
-                            id: UUID(),
-                            title: "Activity \(day)",
-                            date: date,
-                            activityType: activityTypes.randomElement() ?? "other"
-                        )
-                    }
-                }
-            }
-        }
-        
-        return activities
-    }
-    
     private func daysInMonth(month: Int, year: Int) -> Int {
         let calendar = Calendar.current
         var components = DateComponents()
@@ -268,31 +291,68 @@ class ProfileViewModel: ObservableObject {
         components.month = month
         
         if let date = calendar.date(from: components),
-           let range = calendar.range(of: .day, in: .month, for: date) {
+           let range = calendar.range(of: .day, in: .month, for: date)
+        {
             return range.count
         }
-        return 30 // Default fallback
+        return 30  // Default fallback
     }
     
     // Interest management methods
-    
     func removeUserInterest(userId: UUID, interest: String) async {
-        // Add loading state for better UX
-        await MainActor.run {
-            self.isLoadingInterests = true
-        }
+        await MainActor.run { self.isLoadingInterests = true }
         
-        if let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(interest)") {
-            do {
-                let _ = try await apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
-                // Refresh interests after removing
-                await fetchUserInterests(userId: userId)
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
-                    self.isLoadingInterests = false
-                }
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(interest)")!
+            let _ = try await apiService.deleteData(
+                from: url,
+                parameters: nil,
+                object: EmptyObject()
+            )
+            
+            // Refresh interests after removing
+            await fetchUserInterests(userId: userId)
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
+                self.isLoadingInterests = false
             }
         }
     }
-} 
+    
+    // MARK: - Event Management
+    
+    func fetchEventDetails(eventId: UUID) async -> FullFeedEventDTO? {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            await MainActor.run {
+                self.errorMessage = "User ID not available"
+            }
+            return nil
+        }
+        
+        await MainActor.run { self.isLoadingEvent = true }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "events/\(eventId)")!
+            let parameters = ["requestingUserId": userId.uuidString]
+            
+            let event: FullFeedEventDTO = try await apiService.fetchData(
+                from: url,
+                parameters: parameters
+            )
+            
+            await MainActor.run {
+                self.selectedEvent = event
+                self.isLoadingEvent = false
+            }
+            
+            return event
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load event: \(error.localizedDescription)"
+                self.isLoadingEvent = false
+            }
+            return nil
+        }
+    }
+}

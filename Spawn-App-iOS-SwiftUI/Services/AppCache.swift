@@ -212,6 +212,22 @@ class AppCache: ObservableObject {
         }
     }
     
+    // Get an event by ID from the cache
+    func getEventById(_ eventId: UUID) -> FullFeedEventDTO? {
+        return events.first { $0.id == eventId }
+    }
+    
+    // Add or update an event in the cache
+    func addOrUpdateEvent(_ event: FullFeedEventDTO) {
+        if let index = events.firstIndex(where: { $0.id == event.id }) {
+            events[index] = event
+        } else {
+            events.append(event)
+        }
+        lastChecked[CacheKeys.events] = Date()
+        saveToDisk()
+    }
+    
     // MARK: - Profile Picture Methods
     
     func updateProfilePicture(_ newProfile: BaseUserDTO) {

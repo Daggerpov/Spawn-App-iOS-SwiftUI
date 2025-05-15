@@ -20,6 +20,7 @@ class EventCreationViewModel: ObservableObject {
 	@Published var selectedTags: [FullFriendTagDTO] = []
 	@Published var selectedFriends: [FullFriendUserDTO] = []
 	@Published var selectedCategory: EventCategory = .general
+	@Published var selectedColorHexCode: String = eventColorHexCodes[0]
 	
 	// Validation properties
 	@Published var isTitleValid: Bool = true
@@ -43,6 +44,7 @@ class EventCreationViewModel: ObservableObject {
 
 		let defaultStart = Date()
 		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
+        self.selectedColorHexCode = eventColorHexCodes.randomElement() ?? eventColorHexCodes[0]
 		self.event = EventCreationDTO(
 			id: UUID(),
 			title: "",
@@ -52,6 +54,7 @@ class EventCreationViewModel: ObservableObject {
 				id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
 			icon: "⭐️",
 			category: .general,
+			colorHexCode: eventColorHexCodes.randomElement() ?? eventColorHexCodes[0],
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
 		)
 	}
@@ -120,8 +123,9 @@ class EventCreationViewModel: ObservableObject {
 		event.invitedFriendUserIds = selectedFriends.map { $0.id }
 		event.invitedFriendTagIds = selectedTags.map { $0.id }
 		
-		// Set the selected category
+		// Set the selected category and color
 		event.category = selectedCategory
+		event.colorHexCode = selectedColorHexCode
 
 		if let url = URL(string: APIService.baseURL + "events") {
 			do {

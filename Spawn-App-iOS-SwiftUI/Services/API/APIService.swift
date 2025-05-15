@@ -41,7 +41,7 @@ class APIService: IAPIService {
 			let container = try decoder.singleValueContainer()
 			let dateString = try container.decode(String.self)
 
-			// Try with fractional seconds first
+			// Try ISO8601 with fractional seconds first
 			let formatterWithFractional = ISO8601DateFormatter()
 			formatterWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 			
@@ -49,7 +49,7 @@ class APIService: IAPIService {
 				return date
 			}
 			
-			// If that fails, try without fractional seconds
+			// Try ISO8601 without fractional seconds
 			let formatterWithoutFractional = ISO8601DateFormatter()
 			formatterWithoutFractional.formatOptions = [.withInternetDateTime]
 			
@@ -57,7 +57,16 @@ class APIService: IAPIService {
 				return date
 			}
 			
-			// If both fail, throw an error
+			// Try simple YYYY-MM-DD format (for CalendarActivityDTO)
+			let dateFormatter = DateFormatter()
+			dateFormatter.dateFormat = "yyyy-MM-dd"
+			dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+			
+			if let date = dateFormatter.date(from: dateString) {
+				return date
+			}
+			
+			// If all attempts fail, throw an error
 			throw DecodingError.dataCorruptedError(
 				in: container,
 				debugDescription: "Invalid date format: \(dateString)")
@@ -574,12 +583,25 @@ class APIService: IAPIService {
 			// Don't set auth headers for these endpoints
 			return
 		}
+		
 		// Get the access token from keychain
         guard
             let accessTokenData = KeychainService.shared.load(key: "accessToken"),
             let accessToken = String(data: accessTokenData, encoding: .utf8)
 		else {
-			print("❌ ERROR: Missing access in Keychain")
+			// If we have a refresh token, we can try to refresh the access token
+			if let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
+			   let _ = String(data: refreshTokenData, encoding: .utf8) {
+				// We have a refresh token, but we'll let the API call handle the refresh
+				// This will happen in the 401 handler in fetchData/sendData methods
+				print("⚠️ Missing access token but refresh token exists - will refresh during API call")
+			} else {
+				print("❌ ERROR: Missing access token and refresh token in Keychain")
+				// User might need to be logged out due to expired/missing tokens
+				DispatchQueue.main.async {
+					UserAuthViewModel.shared.signOut()
+				}
+			}
 			return
 		}
 
