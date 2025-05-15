@@ -59,7 +59,7 @@ struct EventCreationView: View {
                                 showEmojiPicker = true
                             }) {
                                 Circle()
-                                    .fill(Color(hex: viewModel.selectedColorHexCode))
+                                    .fill(viewModel.selectedCategory.color())
                                     .frame(width: 45, height: 45)
                                     .overlay(
                                         Text(selectedEmoji)
@@ -98,33 +98,6 @@ struct EventCreationView: View {
                     }
                     .padding(.horizontal, 24)
                     
-                    // Event Color Selection
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Event Color*")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        HStack(spacing: 12) {
-                            ForEach(eventColorHexCodes, id: \.self) { colorHex in
-                                Button(action: {
-                                    viewModel.selectedColorHexCode = colorHex
-                                }) {
-                                    Circle()
-                                        .fill(Color(hex: colorHex))
-                                        .frame(width: 35, height: 35)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white, lineWidth: 2)
-                                                .padding(3)
-                                                .opacity(viewModel.selectedColorHexCode == colorHex ? 1 : 0)
-                                        )
-                                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
-                                }
-                            }
-                        }
-                        .padding(.vertical, 8)
-                    }
-                    
                     // Date & Time
                     HStack {
                         VStack(alignment: .leading, spacing: 8) {
@@ -151,9 +124,6 @@ struct EventCreationView: View {
                     }
                     .padding(.horizontal)
                 
-                    
-               
-                    
                     categorySelectionView
                     
                     invitedView
