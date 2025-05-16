@@ -176,7 +176,7 @@ class MockAPIService: IAPIService {
         throw APIError.invalidData
     }
 
-    func deleteData(from url: URL) async throws {
+    func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T? = nil) async throws {
         // do nothing
     }
 

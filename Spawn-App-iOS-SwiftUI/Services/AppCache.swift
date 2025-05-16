@@ -21,7 +21,7 @@ class AppCache: ObservableObject {
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var friendRequests: [FetchFriendRequestDTO] = []
     @Published var userTags: [FriendTagDTO] = []
-    @Published var tagFriends: [UUID: [FullFriendUserDTO]] = [:] // Tag ID -> Friends in tag
+    @Published var tagFriends: [UUID: [BaseUserDTO]] = [:] // Tag ID -> Friends in tag
     
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
@@ -175,7 +175,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friends/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "users/friends/\(userId)") else { return }
             
             let fetchedFriends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
@@ -200,7 +200,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "events/user/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId)") else { return }
             
             let fetchedEvents: [FullFeedEventDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
@@ -210,6 +210,22 @@ class AppCache: ObservableObject {
         } catch {
             print("Failed to refresh events: \(error.localizedDescription)")
         }
+    }
+    
+    // Get an event by ID from the cache
+    func getEventById(_ eventId: UUID) -> FullFeedEventDTO? {
+        return events.first { $0.id == eventId }
+    }
+    
+    // Add or update an event in the cache
+    func addOrUpdateEvent(_ event: FullFeedEventDTO) {
+        if let index = events.firstIndex(where: { $0.id == event.id }) {
+            events[index] = event
+        } else {
+            events.append(event)
+        }
+        lastChecked[CacheKeys.events] = Date()
+        saveToDisk()
     }
     
     // MARK: - Profile Picture Methods
@@ -284,7 +300,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recommended-friends") else { return }
+            guard let url = URL(string: APIService.baseURL + "users/recommended-friends/\(userId)") else { return }
             
             let fetchedRecommendedFriends: [RecommendedFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
@@ -334,7 +350,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friend-tags/owner/\(userId)") else { return }
+            guard let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId)") else { return }
             
             let fetchedUserTags: [FriendTagDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
@@ -348,7 +364,7 @@ class AppCache: ObservableObject {
     
     // MARK: - Tag Friends Methods
     
-    func updateTagFriends(_ tagId: UUID, _ friends: [FullFriendUserDTO]) {
+    func updateTagFriends(_ tagId: UUID, _ friends: [BaseUserDTO]) {
         tagFriends[tagId] = friends
         lastChecked[CacheKeys.tagFriends] = Date()
         saveToDisk()
@@ -361,9 +377,9 @@ class AppCache: ObservableObject {
         // Refresh friends for each tag
         for tag in userTags {
             do {
-                guard let url = URL(string: APIService.baseURL + "friend-tags/\(tag.id)/friends") else { continue }
+                guard let url = URL(string: APIService.baseURL + "friendTags/\(tag.id)/friends") else { continue }
                 
-                let fetchedTagFriends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+                let fetchedTagFriends: [BaseUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
                 
                 await MainActor.run {
                     tagFriends[tag.id] = fetchedTagFriends
@@ -432,7 +448,7 @@ class AppCache: ObservableObject {
         
         // Load tag friends
         if let tagFriendsData = UserDefaults.standard.data(forKey: CacheKeys.tagFriends),
-           let loadedTagFriends = try? JSONDecoder().decode([UUID: [FullFriendUserDTO]].self, from: tagFriendsData) {
+           let loadedTagFriends = try? JSONDecoder().decode([UUID: [BaseUserDTO]].self, from: tagFriendsData) {
             tagFriends = loadedTagFriends
         }
     }

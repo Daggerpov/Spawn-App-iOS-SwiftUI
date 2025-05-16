@@ -41,7 +41,7 @@ class APIService: IAPIService {
 			let container = try decoder.singleValueContainer()
 			let dateString = try container.decode(String.self)
 
-			// Try with fractional seconds first
+			// Try ISO8601 with fractional seconds first
 			let formatterWithFractional = ISO8601DateFormatter()
 			formatterWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
 			
@@ -49,7 +49,7 @@ class APIService: IAPIService {
 				return date
 			}
 			
-			// If that fails, try without fractional seconds
+			// Try ISO8601 without fractional seconds
 			let formatterWithoutFractional = ISO8601DateFormatter()
 			formatterWithoutFractional.formatOptions = [.withInternetDateTime]
 			
@@ -57,7 +57,16 @@ class APIService: IAPIService {
 				return date
 			}
 			
-			// If both fail, throw an error
+			// Try simple YYYY-MM-DD format (for CalendarActivityDTO)
+			let dateFormatter = DateFormatter()
+			dateFormatter.dateFormat = "yyyy-MM-dd"
+			dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+			
+			if let date = dateFormatter.date(from: dateString) {
+				return date
+			}
+			
+			// If all attempts fail, throw an error
 			throw DecodingError.dataCorruptedError(
 				in: container,
 				debugDescription: "Invalid date format: \(dateString)")
@@ -349,13 +358,32 @@ class APIService: IAPIService {
 		return try decoder.decode(R.self, from: data)
 	}
 
-	internal func deleteData(from url: URL) async throws {
-		resetState()
-
-		var request = URLRequest(url: url)
-		request.httpMethod = "DELETE"  // Set the HTTP method to DELETE
-		setAuthHeader(request: &request)  // Set auth headers if needed
-		let (_, response) = try await URLSession.shared.data(for: request)
+    internal func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T?) async throws {
+        resetState()
+        
+        // Build final URL with query parameters if present
+        var finalUrl = url
+        if let parameters = parameters, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+            components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+            guard let urlWithParams = components.url else {
+                errorMessage = "Invalid URL after adding query parameters"
+                print(errorMessage ?? "no error message to log")
+                throw APIError.URLError
+            }
+            finalUrl = urlWithParams
+        }
+        
+        var request = URLRequest(url: finalUrl)
+        request.httpMethod = "DELETE"
+        setAuthHeader(request: &request)
+        
+        if let object = object {
+            let encoder = APIService.makeEncoder()
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try encoder.encode(object)
+        }
+        
+        let (_, response) = try await URLSession.shared.data(for: request)
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
@@ -555,12 +583,25 @@ class APIService: IAPIService {
 			// Don't set auth headers for these endpoints
 			return
 		}
+		
 		// Get the access token from keychain
         guard
             let accessTokenData = KeychainService.shared.load(key: "accessToken"),
             let accessToken = String(data: accessTokenData, encoding: .utf8)
 		else {
-			print("❌ ERROR: Missing access in Keychain")
+			// If we have a refresh token, we can try to refresh the access token
+			if let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
+			   let _ = String(data: refreshTokenData, encoding: .utf8) {
+				// We have a refresh token, but we'll let the API call handle the refresh
+				// This will happen in the 401 handler in fetchData/sendData methods
+				print("⚠️ Missing access token but refresh token exists - will refresh during API call")
+			} else {
+				print("❌ ERROR: Missing access token and refresh token in Keychain")
+				// User might need to be logged out due to expired/missing tokens
+				DispatchQueue.main.async {
+					UserAuthViewModel.shared.signOut()
+				}
+			}
 			return
 		}
 
@@ -823,7 +864,6 @@ class APIService: IAPIService {
         if httpResponse.statusCode == 401 {
             // Refresh token didn't work so logout
             UserAuthViewModel.shared.signOut()
-            
         }
         
 		if httpResponse.statusCode == 200 {
@@ -920,3 +960,4 @@ class APIService: IAPIService {
 struct EmptyRequestBody: Codable {}
 // for empty responses from requests:
 struct EmptyResponse: Codable {}
+struct EmptyObject: Encodable {}
