@@ -427,7 +427,7 @@ extension EventCreationView {
                     HStack {
                         Image(systemName: "plus")
                             .font(.caption)
-                        Text("Add \(viewModel.selectedTags.count > 0 ? "more " : "")tags!")
+                        Text("Add \(viewModel.selectedTags.count + viewModel.selectedFriends.count > 0 ? "more " : "")people!")
                             .font(.subheadline)
                     }
                     .foregroundColor(.gray)

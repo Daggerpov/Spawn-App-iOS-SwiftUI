@@ -107,33 +107,27 @@ class FriendsTabViewModel: ObservableObject {
         
         await MainActor.run {
             self.filteredFriends = self.friends.filter { friend in
-                let firstName = friend.firstName?.lowercased() ?? ""
-                let lastName = friend.lastName?.lowercased() ?? ""
+                let name = friend.name?.lowercased() ?? ""
                 let username = friend.username.lowercased()
                 
-                return firstName.contains(lowercaseQuery) || 
-                       lastName.contains(lowercaseQuery) || 
+                return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
             }
             
             self.filteredRecommendedFriends = self.recommendedFriends.filter { friend in
-                let firstName = friend.firstName?.lowercased() ?? ""
-                let lastName = friend.lastName?.lowercased() ?? ""
+                let name = friend.name?.lowercased() ?? ""
                 let username = friend.username.lowercased()
                 
-                return firstName.contains(lowercaseQuery) || 
-                       lastName.contains(lowercaseQuery) || 
+                return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
             }
             
             self.filteredIncomingFriendRequests = self.incomingFriendRequests.filter { request in
                 let friend = request.senderUser
-                let firstName = friend.firstName?.lowercased() ?? ""
-                let lastName = friend.lastName?.lowercased() ?? ""
+                let name = friend.name?.lowercased() ?? ""
                 let username = friend.username.lowercased()
                 
-                return firstName.contains(lowercaseQuery) || 
-                       lastName.contains(lowercaseQuery) || 
+                return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
             }
         }

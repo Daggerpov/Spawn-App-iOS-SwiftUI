@@ -327,7 +327,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")), request ID: \(requestId)")
+            print("[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username), name: \(user.name ?? "")), request ID: \(requestId)")
         } else {
             print("[PUSH DEBUG] Friend request from user \(senderId), request ID: \(requestId)")
         }
@@ -379,7 +379,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
         } else {
             print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId)")
         }
@@ -409,7 +409,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             
             // Add more detailed logging
             if let user = UserAuthViewModel.shared.spawnUser {
-                print("Test Friend Request - User ID: \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+                print("Test Friend Request - User ID: \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
             }
             
         case .eventInvite:
@@ -439,7 +439,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             
             // Add more detailed logging
             if let user = UserAuthViewModel.shared.spawnUser {
-                print("Test Chat Message - User ID: \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+                print("Test Chat Message - User ID: \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
             }
             
         case .welcome:
@@ -478,7 +478,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         
         // Log user details
         if let user = UserAuthViewModel.shared.spawnUser {
-            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.name ?? ""))")
         }
         
         // Don't fetch from backend if in mock mode
@@ -529,7 +529,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         
         // Log user details
         if let user = UserAuthViewModel.shared.spawnUser {
-            print("Updating notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            print("Updating notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.name ?? ""))")
         }
         
         // Save to UserDefaults immediately (optimistic update)

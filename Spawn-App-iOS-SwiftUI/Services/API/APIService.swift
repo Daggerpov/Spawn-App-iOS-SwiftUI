@@ -438,8 +438,7 @@ class APIService: IAPIService {
 		// Create the user creation DTO
 		var userCreationDTO: [String: Any] = [
 			"username": userDTO.username,
-			"firstName": userDTO.firstName,
-			"lastName": userDTO.lastName,
+			"name": userDTO.name,
 			"email": userDTO.email,
 		]
 

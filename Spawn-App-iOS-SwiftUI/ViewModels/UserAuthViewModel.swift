@@ -28,9 +28,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	@Published var givenName: String?
-	@Published var fullName: String?
-	@Published var familyName: String?
+	@Published var name: String?
 	@Published var email: String?
 	@Published var profilePicUrl: String?
 
@@ -95,9 +93,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             if GIDSignIn.sharedInstance.currentUser != nil {
                 let user = GIDSignIn.sharedInstance.currentUser
                 guard let user = user else { return }
-                self.fullName = user.profile?.name
-                self.givenName = user.profile?.givenName
-                self.familyName = user.profile?.familyName
+                self.name = user.profile?.name
                 self.email = user.profile?.email
                 self.profilePicUrl =
                 user.profile?.imageURL(withDimension: 100)?.absoluteString
@@ -123,9 +119,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.hasCheckedSpawnUserExistence = false
 		self.spawnUser = nil
 
-		self.givenName = ""
-		self.fullName = nil
-		self.familyName = nil
+		self.name = nil
 		self.email = nil
 		self.profilePicUrl = nil
 
@@ -153,8 +147,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				// Set user details
-				self.givenName = appleIDCredential.fullName?.givenName
-				self.familyName = appleIDCredential.fullName?.familyName
+				if let givenName = appleIDCredential.fullName?.givenName,
+                   let familyName = appleIDCredential.fullName?.familyName {
+                    self.name = "\(givenName) \(familyName)"
+                } else if let givenName = appleIDCredential.fullName?.givenName {
+                    self.name = givenName
+                }
 				self.isLoggedIn = true
 				self.externalUserId = userIdentifier
 
@@ -209,9 +207,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 400)?.absoluteString
 					?? ""
-				self.fullName = user.profile?.name
-				self.givenName = user.profile?.givenName
-				self.familyName = user.profile?.familyName
+				self.name = user.profile?.name
 				self.email = user.profile?.email
 				self.isLoggedIn = true
 				self.externalUserId = user.userID
@@ -407,8 +403,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	func spawnMakeUser(
 		username: String,
 		profilePicture: UIImage?,
-		firstName: String,
-		lastName: String,
+		name: String,
 		email: String
 	) async {
 		// Reset any previous navigation flags to prevent automatic navigation
@@ -420,8 +415,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Create the DTO
 		let userDTO = UserCreateDTO(
 			username: username,
-			firstName: firstName,
-			lastName: lastName,
+			name: name,
 			email: email
 		)
 
@@ -582,7 +576,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 		
 		if let user = spawnUser {
-			print("Starting profile picture update for user \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")) with image data size: \(imageData.count) bytes")
+			print("Starting profile picture update for user \(userId) (username: \(user.username), name: \(user.name ?? "")) with image data size: \(imageData.count) bytes")
 		} else {
 			print("Starting profile picture update for user \(userId) with image data size: \(imageData.count) bytes")
 		}
@@ -640,7 +634,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func spawnEditProfile(username: String, firstName: String, lastName: String) async {
+	func spawnEditProfile(username: String, name: String) async {
 		guard let userId = spawnUser?.id else {
 			print("Cannot edit profile: No user ID found")
 			return
@@ -648,18 +642,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		
 		// Log user details
 		if let user = spawnUser {
-			print("Editing profile for user \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+			print("Editing profile for user \(userId) (username: \(user.username), name: \(user.name ?? ""))")
 		}
 
 		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {
 			do {
 				let updateDTO = UserUpdateDTO(
 					username: username,
-					firstName: firstName,
-					lastName: lastName
+					name: name
 				)
 
-				print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName)")
+				print("Updating profile with: username=\(username), name=\(name)")
 				
 				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
 					from: url,
@@ -702,7 +695,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					// Force UI to update
 					self.objectWillChange.send()
 					
-					print("User data refreshed: \(updatedUser.username), \(updatedUser.firstName ?? "") \(updatedUser.lastName ?? "")")
+					print("User data refreshed: \(updatedUser.username), \(updatedUser.name ?? "")")
 				}
 			} catch {
 				print("Error fetching user data: \(error.localizedDescription)")
