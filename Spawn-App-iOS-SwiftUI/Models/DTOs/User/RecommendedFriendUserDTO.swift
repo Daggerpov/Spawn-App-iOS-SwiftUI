@@ -16,8 +16,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var id: UUID
 	var username: String
 	var profilePicture: String?
-	var firstName: String?
-	var lastName: String?
+	var name: String?
 	var bio: String?
 	var email: String
     var mutualFriendCount: Int?
@@ -26,8 +25,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		id: UUID,
 		username: String,
 		profilePicture: String? = nil,
-		firstName: String? = nil,
-		lastName: String? = nil,
+		name: String? = nil,
 		bio: String? = nil,
 		email: String,
         mutualFriendCount: Int? = 0
@@ -35,8 +33,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.id = id
 		self.username = username
 		self.profilePicture = profilePicture
-		self.firstName = firstName
-		self.lastName = lastName
+		self.name = name
 		self.bio = bio
 		self.email = email
         self.mutualFriendCount = mutualFriendCount
@@ -50,8 +47,7 @@ extension RecommendedFriendUserDTO {
 			id: id,
 			username: "daggerpov",
 			profilePicture: "Daniel_Agapov_pfp",
-			firstName: "Daniel",
-			lastName: "Agapov",
+			name: "Daniel Agapov",
 			bio: "This is my bio.",
 			email: "daniel@agapov.com"
 		)
@@ -63,8 +59,7 @@ extension RecommendedFriendUserDTO {
 			id: id,
 			username: "uhdlee",
 			profilePicture: "Daniel_Lee_pfp",
-			firstName: "Daniel",
-			lastName: "Lee",
+			name: "Daniel Lee",
 			bio: "This is my bio.",
 			email: "daniel2456@gmail.com"
 		)
@@ -74,7 +69,7 @@ extension RecommendedFriendUserDTO {
 		id: UUID(),
 		username: "shannonaurl",
 		profilePicture: "Shannon_pfp",
-		firstName: "Shannon",
+		name: "Shannon",
 		bio: "This is my bio.",
 		email: "shannon@gmail.com"
 	)
@@ -83,8 +78,7 @@ extension RecommendedFriendUserDTO {
 		id: UUID(),
 		username: "jenntjen",
 		profilePicture: "Jennifer_pfp",
-		firstName: "Jennifer",
-		lastName: "Tjen",
+		name: "Jennifer Tjen",
 		bio: "This is my bio.",
 		email: "jennifer@gmail.com"
 	)
@@ -93,8 +87,7 @@ extension RecommendedFriendUserDTO {
 		id: UUID(),
 		username: "michaeltham",
 		profilePicture: "Michael_pfp",
-		firstName: "Michael",
-		lastName: "Tham",
+		name: "Michael Tham",
 		bio: "This is my bio.",
 		email: "haley@gmail.com"
 	)
@@ -103,7 +96,7 @@ extension RecommendedFriendUserDTO {
 		id: UUID(),
 		username: "haleyusername",
 		profilePicture: "Haley_pfp",
-		firstName: "Haley",
+		name: "Haley",
 		bio: "This is my bio.",
 		email: "haley@gmail.com"
 	)

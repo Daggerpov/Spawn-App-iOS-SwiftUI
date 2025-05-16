@@ -9,7 +9,7 @@ struct UserInfoInputView: View {
 	@State private var username: String = ""
 
 	// Validation flags
-	@State private var isFirstNameValid: Bool = true
+	@State private var isNameValid: Bool = true
 	@State private var isUsernameValid: Bool = true
 	@State private var isFormValid: Bool = false
 	@State private var isEmailValid: Bool = true
@@ -142,12 +142,12 @@ struct UserInfoInputView: View {
 							VStack(spacing: 16) {
 								InputFieldView(
 									label: "Name",
-									text: Binding(
-										get: { userAuth.name ?? "" },
-										set: { userAuth.name = $0 }
-									),
-									isValid: $isFirstNameValid,
-									placeholder: "Full name"
+                                    text: Binding(
+                                        get: { userAuth.name ?? "" },
+                                        set: { userAuth.name = $0 }
+                                    ),
+									isValid: $isNameValid,
+									placeholder: "Name"
 								)
 
 								// Always show email field for Apple sign-ins
@@ -297,9 +297,9 @@ struct UserInfoInputView: View {
 	}
 
 	private func validateFields() {
-		// Check first name
-		isFirstNameValid = !(userAuth.name ?? "").trimmingCharacters(
-			in: .whitespaces
+		// Check name
+        isNameValid = !(userAuth.name ?? "").trimmingCharacters(
+			in: .whitespacesAndNewlines
 		).isEmpty
 
 		// Check username
@@ -316,7 +316,7 @@ struct UserInfoInputView: View {
 		}
 
 		// Only set form as valid if all required fields are valid
-		isFormValid = isFirstNameValid && isUsernameValid && (!needsEmail || isEmailValid)
+		isFormValid = isNameValid && isUsernameValid && (!needsEmail || isEmailValid)
 	}
 
 	private func requestNotificationPermission() {

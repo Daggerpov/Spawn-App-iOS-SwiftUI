@@ -50,7 +50,7 @@ class AddFriendToTagViewModel: ObservableObject {
 
 				print("Fetched friends to add to tag: \(fetchedFriends.count) friends")
 				print(
-					"Friends data: \(fetchedFriends.map { $0.firstName ?? "?" + " " + ($0.lastName ?? "?")})"
+					"Friends data: \(fetchedFriends.map { $0.name ?? "Unknown" })"
 				)
 				
 				// Ensure updating on the main thread

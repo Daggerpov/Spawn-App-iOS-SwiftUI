@@ -12,6 +12,11 @@ class FormatterService {
 
 	private init() {}
 
+	// Format name from a user object
+	func formatName(user: Nameable) -> String {
+		return user.name ?? "No Name"
+	}
+
 	func formatEventTime(event: FullFeedEventDTO) -> String {
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "h:mm a"

@@ -11,8 +11,7 @@ import SwiftUI
 struct ProfileView: View {
     let user: BaseUserDTO
     @State private var username: String
-    @State private var firstName: String
-    @State private var lastName: String
+    @State private var name: String
     @State private var editingState: ProfileEditText = .edit
     @State private var selectedImage: UIImage?
     @State private var showImagePicker: Bool = false
@@ -49,8 +48,7 @@ struct ProfileView: View {
     init(user: BaseUserDTO) {
         self.user = user
         username = user.username
-        firstName = user.firstName ?? ""
-        lastName = user.lastName ?? ""
+        name = user.name ?? ""
     }
 
     var body: some View {
@@ -323,8 +321,7 @@ struct ProfileView: View {
     private func refreshUserData() {
         if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
             username = currentUser.username
-            firstName = currentUser.firstName ?? ""
-            lastName = currentUser.lastName ?? ""
+            name = currentUser.name ?? ""
         }
     }
 
@@ -524,8 +521,7 @@ extension ProfileView {
                 // Revert to original values from userAuth.spawnUser
                 if let currentUser = userAuth.spawnUser {
                     username = currentUser.username
-                    firstName = currentUser.firstName ?? ""
-                    lastName = currentUser.lastName ?? ""
+                    name = currentUser.name ?? ""
                     selectedImage = nil
 
                     // Revert social media links
@@ -588,8 +584,7 @@ extension ProfileView {
         // Update profile info first
         await userAuth.spawnEditProfile(
             username: username,
-            firstName: firstName,
-            lastName: lastName
+            name: name
         )
 
         // Update social media links
@@ -623,8 +618,7 @@ extension ProfileView {
 
         if let updatedUser = userAuth.spawnUser {
             username = updatedUser.username
-            firstName = updatedUser.firstName ?? ""
-            lastName = updatedUser.lastName ?? ""
+            name = updatedUser.name ?? ""
         }
 
         // Refresh profile data

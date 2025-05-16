@@ -397,8 +397,7 @@ struct InviteView: View {
                         friendsViewModel.friends.filter { friend in
                             let searchText = searchViewModel.searchText.lowercased()
                             return friend.username.lowercased().contains(searchText) ||
-                                friend.firstName?.lowercased().contains(searchText) == true ||
-                                friend.lastName?.lowercased().contains(searchText) == true ||
+                                friend.name?.lowercased().contains(searchText) == true ||
                                 friend.email.lowercased().contains(searchText)
                         }
                     
@@ -535,8 +534,7 @@ extension FullFriendUserDTO {
             id: self.id,
             username: self.username,
             profilePicture: self.profilePicture,
-            firstName: self.firstName,
-            lastName: self.lastName,
+            name: self.name,
             bio: self.bio,
             email: self.email
         )
