@@ -17,17 +17,12 @@ struct HeaderView: View {
                 Image("SpawnLogo")
                 Spacer().frame(height: 61)
 				HStack {
-                    Text("Hey \(user.firstName ?? user.username)! 👋")
+                    Text("Hey \(user.name?.components(separatedBy: " ")[0] ?? user.username)! 👋")
 					Spacer()
 				}
                 .font(.onestBold(size: 32))
                 Spacer().frame(height: 5)
-                HStack {
-                    Text("There are ").font(.onestRegular(size: 16))
-                    + Text("\(numEvents) events ").foregroundColor(figmaSoftBlue).font(.onestBold(size: 16))
-                    + Text("in your area.").font(.onestRegular(size: 16))
-                    Spacer()
-                }
+                eventsInAreaView
 			}
 			.foregroundColor(universalAccentColor)
 			.frame(alignment: .leading)
@@ -37,6 +32,17 @@ struct HeaderView: View {
 		.padding(.horizontal)
 		.padding(.vertical, 2)
 	}
+}
+
+extension HeaderView {
+    var eventsInAreaView: some View {
+        HStack {
+            Text("There are ").font(.onestSemiBold(size: 20))
+            + Text("\(numEvents) events ").foregroundColor(figmaSoftBlue).font(.onestSemiBold(size: 20))
+            + Text("in your area.").font(.onestSemiBold(size: 20))
+            Spacer()
+        }
+    }
 }
 
 @available(iOS 17, *)
