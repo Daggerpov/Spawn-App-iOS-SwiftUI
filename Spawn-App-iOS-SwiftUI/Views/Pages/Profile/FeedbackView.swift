@@ -146,19 +146,19 @@ struct ImagePickerView: View {
 
 // MARK: - Submit Button Component
 struct SubmitButtonView: View {
-    @ObservedObject var feedbackService: FeedbackService
+    @ObservedObject var viewModel: FeedbackViewModel
     var message: String
     var onSubmit: () -> Void
     
     var body: some View {
         Button(action: onSubmit) {
             HStack {
-                if feedbackService.isSubmitting {
+                if viewModel.isSubmitting {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .padding(.trailing, 5)
                 }
-                Text(feedbackService.isSubmitting ? "Submitting..." : "Submit Feedback")
+                Text(viewModel.isSubmitting ? "Submitting..." : "Submit Feedback")
                     .font(.headline)
                     .foregroundColor(.white)
             }
@@ -167,19 +167,19 @@ struct SubmitButtonView: View {
             .background(universalAccentColor)
             .cornerRadius(10)
         }
-        .disabled(message.isEmpty || feedbackService.isSubmitting)
+        .disabled(message.isEmpty || viewModel.isSubmitting)
         .padding(.horizontal)
     }
 }
 
 // MARK: - Feedback Status Component
 struct FeedbackStatusView: View {
-    @ObservedObject var feedbackService: FeedbackService
+    @ObservedObject var viewModel: FeedbackViewModel
     var onSuccess: () -> Void
     
     var body: some View {
         VStack {
-            if let successMessage = feedbackService.successMessage {
+            if let successMessage = viewModel.successMessage {
                 Text(successMessage)
                     .foregroundColor(.green)
                     .padding()
@@ -191,7 +191,7 @@ struct FeedbackStatusView: View {
                     }
             }
             
-            if let errorMessage = feedbackService.errorMessage {
+            if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
                     .padding()
@@ -202,7 +202,7 @@ struct FeedbackStatusView: View {
 
 // MARK: - Main Feedback View
 struct FeedbackView: View {
-    @StateObject private var feedbackService = FeedbackService()
+    @StateObject private var viewModel: FeedbackViewModel
     @Environment(\.dismiss) private var dismiss
     
     @State private var selectedType: FeedbackType = .GENERAL_FEEDBACK
@@ -214,9 +214,10 @@ struct FeedbackView: View {
     let userId: UUID?
     let email: String?
     
-    init(userId: UUID?, email: String?) {
+    init(userId: UUID?, email: String?, apiService: IAPIService = APIService()) {
         self.userId = userId
         self.email = email
+        _viewModel = StateObject(wrappedValue: FeedbackViewModel(apiService: apiService))
     }
     
     var body: some View {
@@ -238,11 +239,11 @@ struct FeedbackView: View {
                     
                     // Submit button
                     SubmitButtonView(
-                        feedbackService: feedbackService,
+                        viewModel: viewModel,
                         message: message,
                         onSubmit: {
                             Task {
-                                await feedbackService.submitFeedback(
+                                await viewModel.submitFeedback(
                                     type: selectedType,
                                     message: message,
                                     userId: userId,
@@ -255,7 +256,7 @@ struct FeedbackView: View {
                     
                     // Success/Error message
                     FeedbackStatusView(
-                        feedbackService: feedbackService,
+                        viewModel: viewModel,
                         onSuccess: { dismiss() }
                     )
                     
