@@ -1,16 +1,18 @@
 //
-//  FeedbackService.swift
+//  FeedbackViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Claude on 2025-02-18.
+//  Created by Claude on 2025-08-27.
 //
 
 import Foundation
 import SwiftUI
 
-class FeedbackService: ObservableObject {
+class FeedbackViewModel: ObservableObject {
+    // API Service injected via dependency injection
     private var apiService: IAPIService
     
+    // Published properties that the view can observe
     @Published var isSubmitting = false
     @Published var successMessage: String?
     @Published var errorMessage: String?
@@ -32,62 +34,30 @@ class FeedbackService: ObservableObject {
         }
         
         do {
-            // Create URL
+            // Create the feedback endpoint URL
             guard let url = URL(string: APIService.baseURL + "feedback") else {
                 throw APIError.URLError
             }
             
-            // Create feedback data as dictionary with manual handling for image
-            var feedbackDict: [String: Any] = [
-                "type": type.rawValue,
-                "message": message,
-            ]
+            // Create feedback data model
+            var feedback = FeedbackSubmissionDTO(
+                type: type.rawValue,
+                message: message,
+                fromUserId: userId?.uuidString
+            )
             
-            // Add userId if available
-            if let userId = userId {
-                feedbackDict["fromUserId"] = userId.uuidString
-            }
-            
-            // Handle image the same way as in createUser
+            // Handle image using the resize helper
             if let image = image {
                 let resizedImage = resizeImageIfNeeded(image, maxDimension: 1024)
                 if let imageData = resizedImage.jpegData(compressionQuality: 0.7) {
                     let base64String = imageData.base64EncodedString()
-                    feedbackDict["imageData"] = base64String
+                    feedback.imageData = base64String
                     print("Including feedback image data of size: \(imageData.count) bytes")
                 }
             }
             
-            // Convert dictionary to JSON data
-            guard let jsonData = try? JSONSerialization.data(withJSONObject: feedbackDict) else {
-                throw APIError.invalidData
-            }
-            
-            // Create request manually
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = jsonData
-            
-            // Send the request
-            let (data, response) = try await URLSession.shared.data(for: request)
-            
-            // Check response
-            guard let httpResponse = response as? HTTPURLResponse else {
-                throw APIError.failedHTTPRequest(description: "HTTP request failed")
-            }
-            
-            guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
-                // Try to parse error message
-                if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                   let errorMessage = errorJson["message"] as? String {
-                    print("Error response: \(errorMessage)")
-                } else if let errorString = String(data: data, encoding: .utf8) {
-                    print("Error response: \(errorString)")
-                }
-                
-                throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
-            }
+            // Use apiService.sendData to handle the POST request
+            let _: FeedbackSubmissionDTO? = try await apiService.sendData(feedback, to: url, parameters: nil)
             
             await MainActor.run {
                 isSubmitting = false
@@ -130,5 +100,20 @@ class FeedbackService: ObservableObject {
     private func setError(_ message: String) {
         isSubmitting = false
         errorMessage = message
+    }
+}
+
+// DTO for submitting feedback
+struct FeedbackSubmissionDTO: Codable {
+    let type: String
+    let message: String
+    let fromUserId: String?
+    var imageData: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case type
+        case message
+        case fromUserId
+        case imageData
     }
 } 

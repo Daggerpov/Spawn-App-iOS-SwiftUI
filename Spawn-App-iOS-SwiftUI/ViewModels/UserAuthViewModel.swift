@@ -9,6 +9,7 @@ import AuthenticationServices
 import GoogleSignIn
 import SwiftUI
 import UIKit
+import FirebaseMessaging
 
 class UserAuthViewModel: NSObject, ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(
@@ -27,9 +28,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	@Published var givenName: String?
-	@Published var fullName: String?
-	@Published var familyName: String?
+	@Published var name: String?
 	@Published var email: String?
 	@Published var profilePicUrl: String?
 
@@ -54,6 +53,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var defaultPfpUrlString: String? = nil
 
 	private init(apiService: IAPIService) {
+        self.spawnUser = BaseUserDTO.danielAgapov
 		self.apiService = apiService
 
 		// Retrieve externalUserId from Keychain
@@ -93,9 +93,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             if GIDSignIn.sharedInstance.currentUser != nil {
                 let user = GIDSignIn.sharedInstance.currentUser
                 guard let user = user else { return }
-                self.fullName = user.profile?.name
-                self.givenName = user.profile?.givenName
-                self.familyName = user.profile?.familyName
+                self.name = user.profile?.name
                 self.email = user.profile?.email
                 self.profilePicUrl =
                 user.profile?.imageURL(withDimension: 100)?.absoluteString
@@ -121,9 +119,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.hasCheckedSpawnUserExistence = false
 		self.spawnUser = nil
 
-		self.givenName = ""
-		self.fullName = nil
-		self.familyName = nil
+		self.name = nil
 		self.email = nil
 		self.profilePicUrl = nil
 
@@ -151,8 +147,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				// Set user details
-				self.givenName = appleIDCredential.fullName?.givenName
-				self.familyName = appleIDCredential.fullName?.familyName
+				if let givenName = appleIDCredential.fullName?.givenName,
+                   let familyName = appleIDCredential.fullName?.familyName {
+                    self.name = "\(givenName) \(familyName)"
+                } else if let givenName = appleIDCredential.fullName?.givenName {
+                    self.name = givenName
+                }
 				self.isLoggedIn = true
 				self.externalUserId = userIdentifier
 
@@ -207,9 +207,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 400)?.absoluteString
 					?? ""
-				self.fullName = user.profile?.name
-				self.givenName = user.profile?.givenName
-				self.familyName = user.profile?.familyName
+				self.name = user.profile?.name
 				self.email = user.profile?.email
 				self.isLoggedIn = true
 				self.externalUserId = user.userID
@@ -261,12 +259,18 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					// The user has revoked access. Clear local state.
 					print("User has revoked Apple ID access.")
 				case .notFound:
-					// The user is not found. Clear local state.
+					// The user not found. Clear local state.
 					print("User not found in Apple ID system.")
 				default:
 					break
 				}
 			}
+		}
+		
+		// Unregister device token from backend
+		Task {
+			// Use the NotificationService to unregister the token
+			await NotificationService.shared.unregisterDeviceToken()
 		}
 
 		// Clear externalUserId from Keychain
@@ -274,14 +278,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if !success {
 			print("Failed to delete externalUserId from Keychain")
 		}
-        success = KeychainService.shared.delete(key: "accessToken")
-        if !success {
-            print("Failed to delete accessToken from Keychain")
-        }
-        success = KeychainService.shared.delete(key: "refreshToken")
-        if !success {
-            print("Failed to delete refreshToken from Keychain")
-        }
+		success = KeychainService.shared.delete(key: "accessToken")
+		if !success {
+			print("Failed to delete accessToken from Keychain")
+		}
+		success = KeychainService.shared.delete(key: "refreshToken")
+		if !success {
+			print("Failed to delete refreshToken from Keychain")
+		}
 
 		resetState()
 	}
@@ -295,15 +299,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
-		// For Apple Sign In, if email is nil, we should direct to UserInfoInputView
-		if self.authProvider == .apple && self.email == nil {
-			await MainActor.run {
-				self.spawnUser = nil
-				self.shouldNavigateToUserInfoInputView = true
-				self.hasCheckedSpawnUserExistence = true
-			}
-			return
-		}
 
 		// Only proceed with API call if we have email or it's not Apple auth
 		let emailToUse = self.email ?? ""
@@ -409,8 +404,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	func spawnMakeUser(
 		username: String,
 		profilePicture: UIImage?,
-		firstName: String,
-		lastName: String,
+		name: String,
 		email: String
 	) async {
 		// Reset any previous navigation flags to prevent automatic navigation
@@ -422,9 +416,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Create the DTO
 		let userDTO = UserCreateDTO(
 			username: username,
-			firstName: firstName,
-			lastName: lastName,
-			bio: "",
+			name: name,
 			email: email
 		)
 
@@ -523,7 +515,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
-				try await self.apiService.deleteData(from: url)
+                await NotificationService.shared.unregisterDeviceToken()
+
+                try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
 				var success = KeychainService.shared.delete(
 					key: "externalUserId")
 				if !success {
@@ -583,7 +577,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 		
 		if let user = spawnUser {
-			print("Starting profile picture update for user \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")) with image data size: \(imageData.count) bytes")
+			print("Starting profile picture update for user \(userId) (username: \(user.username), name: \(user.name ?? "")) with image data size: \(imageData.count) bytes")
 		} else {
 			print("Starting profile picture update for user \(userId) with image data size: \(imageData.count) bytes")
 		}
@@ -641,7 +635,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func spawnEditProfile(username: String, firstName: String, lastName: String, bio: String) async {
+	func spawnEditProfile(username: String, name: String) async {
 		guard let userId = spawnUser?.id else {
 			print("Cannot edit profile: No user ID found")
 			return
@@ -649,19 +643,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		
 		// Log user details
 		if let user = spawnUser {
-			print("Editing profile for user \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+			print("Editing profile for user \(userId) (username: \(user.username), name: \(user.name ?? ""))")
 		}
 
 		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {
 			do {
 				let updateDTO = UserUpdateDTO(
 					username: username,
-					firstName: firstName,
-					lastName: lastName,
-					bio: bio
+					name: name
 				)
 
-				print("Updating profile with: username=\(username), firstName=\(firstName), lastName=\(lastName), bio=\(bio)")
+				print("Updating profile with: username=\(username), name=\(name)")
 				
 				let updatedUser: BaseUserDTO = try await self.apiService.patchData(
 					from: url,
@@ -682,6 +674,67 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		}
 	}
+
+	// Add a method to fetch the latest user data from the backend
+	func fetchUserData() async {
+		guard let userId = spawnUser?.id else {
+			print("Cannot fetch user data: No user ID found")
+			return
+		}
+		
+		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
+			do {
+				let updatedUser: BaseUserDTO = try await self.apiService.fetchData(
+					from: url,
+					parameters: nil
+				)
+				
+				await MainActor.run {
+					// Update the current user object with fresh data
+					self.spawnUser = updatedUser
+					
+					// Force UI to update
+					self.objectWillChange.send()
+					
+					print("User data refreshed: \(updatedUser.username), \(updatedUser.name ?? "")")
+				}
+			} catch {
+				print("Error fetching user data: \(error.localizedDescription)")
+			}
+		}
+	}
+
+	func changePassword(currentPassword: String, newPassword: String) async throws {
+		guard let userId = spawnUser?.id else {
+			throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "User ID not found"])
+		}
+		
+		if let url = URL(string: APIService.baseURL + "auth/change-password") {
+			let changePasswordDTO = ChangePasswordDTO(
+				userId: userId.uuidString,
+				currentPassword: currentPassword,
+				newPassword: newPassword
+			)
+			
+			do {
+                let result: Bool = ((try await self.apiService.sendData(changePasswordDTO,
+                                                                        to: url,
+                                                                        parameters: nil
+                                                                       )) != nil)
+				
+				if !result {
+					throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Password change failed"])
+				}
+				
+				print("Password changed successfully for user \(userId)")
+			} catch {
+				print("Error changing password: \(error.localizedDescription)")
+				throw error
+			}
+		} else {
+			throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
+		}
+	}
 }
 
 // Conform to ASAuthorizationControllerDelegate
@@ -700,3 +753,11 @@ extension UserAuthViewModel: ASAuthorizationControllerDelegate {
 	}
 
 }
+
+// Add ChangePasswordDTO struct
+struct ChangePasswordDTO: Codable {
+	let userId: String
+	let currentPassword: String
+	let newPassword: String
+}
+

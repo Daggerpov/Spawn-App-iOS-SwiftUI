@@ -6,6 +6,5 @@
 //
 
 protocol Nameable {
-	var firstName: String? { get }
-	var lastName: String? { get }
+	var name: String? { get }
 }

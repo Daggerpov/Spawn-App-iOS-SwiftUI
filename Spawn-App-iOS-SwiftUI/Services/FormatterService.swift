@@ -12,20 +12,9 @@ class FormatterService {
 
 	private init() {}
 
-	// `Nameable` applies to either `UserDTO` or `PotentialFriendUserDTO`, making
-	// either of those a valid param to this method.
-	public func formatName(user: Nameable) -> String {
-		if let firstName = user.firstName {
-			if let lastName = user.lastName {
-				return "\(firstName) \(lastName)"
-			} else {
-				return firstName
-			}
-		}
-		if let lastName = user.lastName {
-			return lastName
-		}
-		return ""
+	// Format name from a user object
+	func formatName(user: Nameable) -> String {
+		return user.name ?? "No Name"
 	}
 
 	func formatEventTime(event: FullFeedEventDTO) -> String {
@@ -69,5 +58,42 @@ class FormatterService {
 			let days = secondsAgo / day
 			return days == 1 ? "1 day ago" : "\(days) days ago"
 		}
+	}
+
+	// Format Instagram link to ensure proper storage format
+	func formatInstagramLink(_ link: String) -> String {
+		let trimmed = link.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.isEmpty { return "" }
+		
+		// If it starts with @, remove it for storage (we'll add it back when displaying)
+		if trimmed.hasPrefix("@") {
+			return String(trimmed.dropFirst())
+		}
+		
+		// If it's a full URL, extract just the username
+		if trimmed.lowercased().contains("instagram.com/") {
+			if let username = trimmed.components(separatedBy: "instagram.com/").last {
+				return username.components(separatedBy: "/").first ?? trimmed
+			}
+		}
+		
+		return trimmed
+	}
+	
+	// Format WhatsApp link to ensure proper storage format
+	func formatWhatsAppLink(_ link: String) -> String {
+		let trimmed = link.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.isEmpty { return "" }
+		
+		// Remove any non-numeric characters for phone number
+		let numericOnly = trimmed.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
+		
+		// Ensure it's a valid length for a phone number (at least 10 digits)
+		if numericOnly.count >= 10 {
+			return numericOnly
+		}
+		
+		// If not a valid phone number format, return original (trimmed)
+		return trimmed
 	}
 }

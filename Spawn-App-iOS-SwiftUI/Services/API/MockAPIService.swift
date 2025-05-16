@@ -176,7 +176,7 @@ class MockAPIService: IAPIService {
         throw APIError.invalidData
     }
 
-    func deleteData(from url: URL) async throws {
+    func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T? = nil) async throws {
         // do nothing
     }
 
@@ -204,7 +204,7 @@ class MockAPIService: IAPIService {
         // Try to find user details for logging
         if let existingUser = mockUsers.first(where: { $0.id == userId }) {
             // Log with user details
-            print("🔍 MOCK: Updating profile picture for user \(userId) (username: \(existingUser.username), name: \(existingUser.firstName ?? "") \(existingUser.lastName ?? ""))")
+            print("🔍 MOCK: Updating profile picture for user \(userId) (username: \(existingUser.username), name: \(existingUser.name ?? ""))")
         } else {
             // Log just the ID if user not found
             print("🔍 MOCK: Updating profile picture for user \(userId)")
@@ -225,7 +225,7 @@ class MockAPIService: IAPIService {
             mockUsers[existingUserIndex].profilePicture = mockProfilePicURL
             let updatedUser = mockUsers[existingUserIndex]
             print(
-                "✅ MOCK: Profile picture updated successfully for user \(userId) (username: \(updatedUser.username), name: \(updatedUser.firstName ?? "") \(updatedUser.lastName ?? "")) with URL: \(mockProfilePicURL)"
+                "✅ MOCK: Profile picture updated successfully for user \(userId) (username: \(updatedUser.username), name: \(updatedUser.name ?? "")) with URL: \(mockProfilePicURL)"
             )
             return mockUsers[existingUserIndex]
         } else {
@@ -234,8 +234,7 @@ class MockAPIService: IAPIService {
                 id: userId,
                 username: "mockuser",
                 profilePicture: mockProfilePicURL,
-                firstName: "Mock",
-                lastName: "User",
+                name: "Mock User",
                 bio: "This is a mock user",
                 email: "mock@example.com"
             )
@@ -300,8 +299,7 @@ class MockAPIService: IAPIService {
                             id: userId,
                             username: "mockuser",
                             profilePicture: "https://mock-s3.amazonaws.com/profile-pictures/\(UUID().uuidString).jpg",
-                            firstName: "Mock",
-                            lastName: "User",
+                            name: "Mock User",
                             bio: "This is a mock user",
                             email: "mock@example.com"
                         )
@@ -352,8 +350,7 @@ class MockAPIService: IAPIService {
                 id: userDTO.id,
                 username: userDTO.username,
                 profilePicture: userDTO.profilePicture,
-                firstName: userDTO.firstName,
-                lastName: userDTO.lastName,
+                name: userDTO.name,
                 bio: userDTO.bio,
                 email: userDTO.email
             )

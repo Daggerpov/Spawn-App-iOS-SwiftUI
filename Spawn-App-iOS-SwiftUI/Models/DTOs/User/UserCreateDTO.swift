@@ -7,8 +7,6 @@
 
 struct UserCreateDTO: Codable {
 	let username: String
-	let firstName: String
-	let lastName: String
-	let bio: String
+	let name: String
 	let email: String
 }

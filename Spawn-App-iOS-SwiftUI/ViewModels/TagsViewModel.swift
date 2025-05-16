@@ -127,7 +127,12 @@ class TagsViewModel: ObservableObject {
 		
 		if let url = URL(string: APIService.baseURL + "friendTags/\(id)") {
 			do {
-				try await self.apiService.deleteData(from: url)
+                try await self.apiService
+                    .deleteData(
+                        from: url,
+                        parameters: nil,
+                        object: EmptyObject()
+                    )
 				await MainActor.run {
 					self.tags.removeAll { $0.id == id }  // Remove the tag from the local list
 				}

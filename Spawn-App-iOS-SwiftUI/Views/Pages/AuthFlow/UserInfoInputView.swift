@@ -9,7 +9,7 @@ struct UserInfoInputView: View {
 	@State private var username: String = ""
 
 	// Validation flags
-	@State private var isFirstNameValid: Bool = true
+	@State private var isNameValid: Bool = true
 	@State private var isUsernameValid: Bool = true
 	@State private var isFormValid: Bool = false
 	@State private var isEmailValid: Bool = true
@@ -140,26 +140,15 @@ struct UserInfoInputView: View {
 							Spacer()
 
 							VStack(spacing: 16) {
-								HStack {
-									InputFieldView(
-										label: "First Name",
-										text: Binding(
-											get: { userAuth.givenName ?? "" },
-											set: { userAuth.givenName = $0 }
-										),
-										isValid: $isFirstNameValid,
-										placeholder: "First name"
-									)
-									InputFieldView(
-										label: "Last Name",
-										text: Binding(
-											get: { userAuth.familyName ?? "" },
-											set: { userAuth.familyName = $0 }
-										),
-										isValid: .constant(true),
-										placeholder: "Last name"
-									)
-								}
+								InputFieldView(
+									label: "Name",
+                                    text: Binding(
+                                        get: { userAuth.name ?? "" },
+                                        set: { userAuth.name = $0 }
+                                    ),
+									isValid: $isNameValid,
+									placeholder: "Name"
+								)
 
 								// Always show email field for Apple sign-ins
 								if userAuth.authProvider == .apple {
@@ -218,8 +207,7 @@ struct UserInfoInputView: View {
 										await userAuth.spawnMakeUser(
 											username: username,
 											profilePicture: selectedImage, // Pass the selected image or nil
-											firstName: userAuth.givenName ?? "",
-											lastName: userAuth.familyName ?? "",
+											name: userAuth.name ?? "",
 											email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
 										)
 
@@ -309,9 +297,9 @@ struct UserInfoInputView: View {
 	}
 
 	private func validateFields() {
-		// Check first name
-		isFirstNameValid = !(userAuth.givenName ?? "").trimmingCharacters(
-			in: .whitespaces
+		// Check name
+        isNameValid = !(userAuth.name ?? "").trimmingCharacters(
+			in: .whitespacesAndNewlines
 		).isEmpty
 
 		// Check username
@@ -328,7 +316,7 @@ struct UserInfoInputView: View {
 		}
 
 		// Only set form as valid if all required fields are valid
-		isFormValid = isFirstNameValid && isUsernameValid && (!needsEmail || isEmailValid)
+		isFormValid = isNameValid && isUsernameValid && (!needsEmail || isEmailValid)
 	}
 
 	private func requestNotificationPermission() {

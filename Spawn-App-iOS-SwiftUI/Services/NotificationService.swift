@@ -154,7 +154,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 userId: userId
             )
             
-            print("[PUSH DEBUG] Device token payload: token=\(token.prefix(8))...(truncated), deviceType=IOS, userId=\(userId)")
+            print("[PUSH DEBUG] Device token payload: token=\(token), deviceType=IOS, userId=\(userId)")
             
             Task {
                 do {
@@ -327,7 +327,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? "")), request ID: \(requestId)")
+            print("[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username), name: \(user.name ?? "")), request ID: \(requestId)")
         } else {
             print("[PUSH DEBUG] Friend request from user \(senderId), request ID: \(requestId)")
         }
@@ -379,7 +379,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
         } else {
             print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId)")
         }
@@ -409,7 +409,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             
             // Add more detailed logging
             if let user = UserAuthViewModel.shared.spawnUser {
-                print("Test Friend Request - User ID: \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+                print("Test Friend Request - User ID: \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
             }
             
         case .eventInvite:
@@ -439,7 +439,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             
             // Add more detailed logging
             if let user = UserAuthViewModel.shared.spawnUser {
-                print("Test Chat Message - User ID: \(senderId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+                print("Test Chat Message - User ID: \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
             }
             
         case .welcome:
@@ -478,7 +478,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         
         // Log user details
         if let user = UserAuthViewModel.shared.spawnUser {
-            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.name ?? ""))")
         }
         
         // Don't fetch from backend if in mock mode
@@ -529,7 +529,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         
         // Log user details
         if let user = UserAuthViewModel.shared.spawnUser {
-            print("Updating notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.firstName ?? "") \(user.lastName ?? ""))")
+            print("Updating notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.name ?? ""))")
         }
         
         // Save to UserDefaults immediately (optimistic update)
@@ -640,6 +640,45 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 print("Unknown notification type: \(type)")
                 // For unknown notification types, validate the entire cache
                 await appCache.validateCache()
+            }
+        }
+    }
+    
+    // Add a method to unregister the device token when signing out
+    func unregisterDeviceToken() async {
+        guard let token = storedDeviceToken ?? Messaging.messaging().fcmToken else {
+            print("[PUSH DEBUG] No device token to unregister")
+            return
+        }
+        
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("[PUSH DEBUG] Cannot unregister token: no user ID available")
+            return
+        }
+        
+        print("[PUSH DEBUG] Preparing to unregister device token: \(token)")
+        
+        if let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/unregister") {
+            do {
+                // Create device token DTO
+                let deviceTokenDTO = DeviceTokenDTO(
+                    token: token,
+                    deviceType: "IOS",
+                    userId: userId
+                )
+                
+                // Send DELETE request with token in body
+                try await apiService.deleteData(
+                    from: url,
+                    parameters: nil,
+                    object: deviceTokenDTO
+                )
+                
+                print("[PUSH DEBUG] Successfully unregistered device token")
+                // Clear the stored token after successful unregistration
+                storedDeviceToken = nil
+            } catch {
+                print("[PUSH DEBUG] Failed to unregister device token: \(error.localizedDescription)")
             }
         }
     }

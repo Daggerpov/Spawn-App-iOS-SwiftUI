@@ -10,8 +10,6 @@
     - [SwiftUI Syntax](#swiftui-syntax)
     - [MVVM Architecture](#mvvm-architecture)
     - [Mobile Caching Implementation](#mobile-caching-implementation)
-- [Current App Look](#current-app-look)
-  - [Legacy Screenshots:](#legacy-screenshots)
 - [Entity Relationship Diagram](#entity-relationship-diagram)
 - [Map Integration](#map-integration)
 
@@ -327,34 +325,6 @@ For complete implementation details, see the [cache-implementation-guide.md](cac
 </details>
 
 </br>
-
-# Current App Look
-
-Note that this is usually behind our actual 'current' app; stay tuned on [getspawn.com](https://getspawn.com/) for our beta for the actual app
-
-<img src="https://github.com/user-attachments/assets/1d9f156e-39d9-4d03-b9f4-5eff24b68b4e" width="200" height="400" />
-<img src="images/current-app-look-images/map-view.png" width="200" height="400" />
-<img src="images/current-app-look-images/tags-for-new-friend.png" width="200" height="400" />
-<img src="images/current-app-look-images/new-friends-tab.png" width="200" height="400" />
-<img src="images/current-app-look-images/tags-tab.png" width="200" height="400" />
-<img src="images/current-app-look-images/profile-page.png" width="200" height="400" />
-<img src="images/current-app-look-images/event-description-modal.png" width="200" height="400" />
-<img src="images/current-app-look-images/event-creation.png" width="200" height="400" />
-<img src="images/current-app-look-images/event-creation-invite-tags.png" width="200" />
-<img src="images/current-app-look-images/event-creation-invite-friends.png" width="200"/>
-<img src="images/current-app-look-images/tag-deletion.png" width="200"/>
-
-## Legacy Screenshots:
-
-<img src="images/current-app-look-images/friends-tab.png" width="200" height="400" />
-<img src="images/current-app-look-images/tags-view.png" width="200" height="400" />
-<img src="images/current-app-look-images/friends-list.png" width="200" height="400" />
-
-
-
-# Entity Relationship Diagram
-
-![erd-nov-21](images/entity-relationship-diagram.png)
 
 # Map Integration
 
