@@ -8,55 +8,46 @@
 import SwiftUI
 
 struct HeaderView: View {
-    var user: BaseUserDTO
-    var body: some View {
+	var user: BaseUserDTO
+    var numEvents: Int
+	var body: some View {
+		HStack {
+			Spacer()
+			VStack {
+                Image("SpawnLogo")
+                Spacer().frame(height: 61)
+				HStack {
+                    Text("Hey \(user.name?.components(separatedBy: " ")[0] ?? user.username)! 👋")
+					Spacer()
+				}
+                .font(.onestBold(size: 32))
+                Spacer().frame(height: 5)
+                eventsInAreaView
+			}
+			.foregroundColor(universalAccentColor)
+			.frame(alignment: .leading)
+			Spacer()
+			Spacer()
+		}
+		.padding(.horizontal)
+		.padding(.vertical, 2)
+	}
+}
+
+extension HeaderView {
+    var eventsInAreaView: some View {
         HStack {
-            Spacer()
-            VStack {
-                HStack {
-                    Text("Hello,")
-                        .font(.title)
-                    Spacer()
-                }
-                
-                HStack {
-                    Image(systemName: "star.fill")
-                    Text(user.username)
-                        .bold()
-                    Spacer()
-                }
-                .font(.title)
-            }
-            .foregroundColor(universalAccentColor)
-            .frame(alignment: .leading)
-            Spacer()
-            
-            if let profilePictureString = user.profilePicture {
-                if MockAPIService.isMocking {
-                    Image(profilePictureString)
-                        .ProfileImageModifier(imageType: .feedPage)
-                } else {
-                    AsyncImage(url: URL(string: profilePictureString)) {
-                        image in
-                        image
-                            .ProfileImageModifier(imageType: .feedPage)
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: 55, height: 55)  // 55 matches .feedPage image type for `ProfileImageModifier`
-                    }
-                }
-            }
+            Text("There are ").font(.onestSemiBold(size: 20))
+            + Text("\(numEvents) events ").foregroundColor(figmaSoftBlue).font(.onestSemiBold(size: 20))
+            + Text("in your area.").font(.onestSemiBold(size: 20))
             Spacer()
         }
-        .padding(.horizontal)
-        .padding(.vertical, 2)
     }
 }
 
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    HeaderView(user: BaseUserDTO.danielAgapov).environmentObject(appCache)
+	HeaderView(user: BaseUserDTO.danielAgapov, numEvents: 2).environmentObject(appCache)
 }
 

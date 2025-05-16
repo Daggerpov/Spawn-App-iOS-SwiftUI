@@ -22,6 +22,8 @@ struct FeedView: View {
     // for popups:
     @State private var creationOffset: CGFloat = 1000
     // --------
+    
+    @State private var activeTag: FilterTag? = nil
 
     var user: BaseUserDTO
 
@@ -40,54 +42,17 @@ struct FeedView: View {
         ZStack {
             NavigationStack {
                 VStack {
+                    HeaderView(user: user, numEvents: viewModel.events.count).padding(.top, 75)
                     Spacer()
-                    HeaderView(user: user).padding(.top, 50)
-                    Spacer()
-                    TagsScrollView(
-                        tags: viewModel.tags,
-                        activeTag: $viewModel.activeTag
-                    )
-                    Spacer()
-                    Spacer()
-                    VStack {
-                        eventsListView
+                    if viewModel.events.count > 0 {
+                        TagsScrollView(activeTag: $activeTag)
                     }
-                    .padding(.horizontal)
+                    eventsListView
                 }
-                .padding()
                 .background(universalBackgroundColor)
-                .ignoresSafeArea(.container)
+                .ignoresSafeArea(.container, edges: .top)
                 .dimmedBackground(
                     isActive: showEventCreationDrawer
-                )
-                .gesture(
-                    DragGesture(minimumDistance: 3.0, coordinateSpace: .local)
-                        .onEnded { value in
-                            switch (
-                                value.translation.width,
-                                value.translation.height
-                            ) {
-                            case (...0, -30...30):  // left swipe
-                                if let currentIndex = viewModel.tags.firstIndex(
-                                    where: { $0.id == viewModel.activeTag?.id }
-                                ),
-                                    currentIndex < viewModel.tags.count - 1
-                                {
-                                    viewModel.activeTag =
-                                        viewModel.tags[currentIndex + 1]
-                                }
-                            case (0..., -30...30):  // right swipe
-                                if let currentIndex = viewModel.tags.firstIndex(
-                                    where: { $0.id == viewModel.activeTag?.id }
-                                ),
-                                    currentIndex > 0
-                                {
-                                    viewModel.activeTag =
-                                        viewModel.tags[currentIndex - 1]
-                                }
-                            default: break
-                            }
-                        }
                 )
             }
             .background(universalBackgroundColor)
@@ -105,7 +70,7 @@ struct FeedView: View {
                     await viewModel.fetchAllData()
                 }
             }
-            .onChange(of: viewModel.activeTag) { _ in
+            .onChange(of: self.activeTag) { _ in
                 Task {
                     await viewModel.fetchEventsForUser()
                 }
@@ -120,6 +85,15 @@ struct FeedView: View {
                     )
                     .presentationDragIndicator(.visible)
                 }
+            }
+            .sheet(isPresented: $showEventCreationDrawer) {
+                EventCreationView(
+                    creatingUser: user,
+                    closeCallback: {
+                        showEventCreationDrawer = false
+                    }
+                )
+                .presentationDragIndicator(.visible)
             }
         }
     }
@@ -140,21 +114,28 @@ struct FeedView: View {
 extension FeedView {
     var eventsListView: some View {
         ScrollView(.vertical) {
-            LazyVStack(spacing: 15) {
+            LazyVStack(spacing: 25) {
                 if viewModel.events.isEmpty {
-                    Text("Add some friends to see what they're up to!")
-                        .foregroundColor(universalAccentColor)
+                    Image("EventNotFound")
+                        .resizable()
+                        .frame(width: 125, height: 125)
+                    Text("No Events Found").font(.onestSemiBold(size: 32)).foregroundColor(universalAccentColor)
+                    Text("We couldn't find any events nearby.\nStart one yourself and be spontaneous!")
+                        .font(.onestRegular(size: 16))
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(figmaBlack300)
+                    CreateEventButton(showEventCreationDrawer: $showEventCreationDrawer)
                 } else {
                     ForEach(viewModel.events) { event in
                         EventCardView(
                             userId: user.id,
                             event: event,
                             color: Color(
-                                hex: event
-                                    .eventFriendTagColorHexCodeForRequestingUser
-                                    ?? eventColorHexCodes[0]
-                            )
-                        ) { event, color in
+                            hex: event
+                                .eventFriendTagColorHexCodeForRequestingUser
+                                ?? eventColorHexCodes[0])
+                        )
+                        { event, color in
                             eventInPopup = event
                             colorInPopup = color
                             showingEventDescriptionPopup = true
@@ -163,6 +144,9 @@ extension FeedView {
                 }
             }
         }
+        .scrollIndicators(.hidden)
+        .padding()
+        .padding(.top, 16)
     }
 }
 

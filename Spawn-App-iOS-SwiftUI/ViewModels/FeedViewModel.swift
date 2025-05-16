@@ -11,7 +11,6 @@ import Combine
 class FeedViewModel: ObservableObject {
     @Published var events: [FullFeedEventDTO] = []
     @Published var tags: [FullFriendTagDTO] = []
-    @Published var activeTag: FullFriendTagDTO?
 
     var apiService: IAPIService
     var userId: UUID
@@ -26,7 +25,7 @@ class FeedViewModel: ObservableObject {
         // Subscribe to AppCache events updates
         appCache.$events
             .sink { [weak self] cachedEvents in
-                if !cachedEvents.isEmpty && self?.activeTag == nil {
+                if !cachedEvents.isEmpty {
                     // Only use cache if this is the "Everyone" view (no active tag filter)
                     // Convert Event to FullFeedEventDTO - this is a simplified conversion
                     let feedEvents = cachedEvents.map { event -> FullFeedEventDTO in
@@ -64,38 +63,32 @@ class FeedViewModel: ObservableObject {
     }
 
     func fetchEventsForUser() async {
-        // Check if we should use the filtered events or general events
-        if let unwrappedActiveTag = activeTag, !unwrappedActiveTag.isEveryone {
-            // Get events filtered by tag - this is not cached since it's a filtered view
-            await fetchFilteredEvents(for: unwrappedActiveTag.id)
-        } else {
-            // Check the cache first for unfiltered events
-            if !appCache.events.isEmpty {
-                // Convert Event to FullFeedEventDTO
-                let feedEvents = appCache.events.map { event -> FullFeedEventDTO in
-                    return FullFeedEventDTO(
-                        id: event.id,
-                        title: event.title,
-                        startTime: event.startTime,
-                        endTime: event.endTime,
-                        location: event.location,
-                        note: event.note,
-                        creatorUser: event.creatorUser,
-                        participantUsers: event.participantUsers,
-                        chatMessages: nil,
-                        eventFriendTagColorHexCodeForRequestingUser: nil
-                    )
-                }
-                
-                await MainActor.run {
-                    self.events = feedEvents
-                }
-                return
+        // Check the cache first for unfiltered events
+        if !appCache.events.isEmpty {
+            // Convert Event to FullFeedEventDTO
+            let feedEvents = appCache.events.map { event -> FullFeedEventDTO in
+                return FullFeedEventDTO(
+                    id: event.id,
+                    title: event.title,
+                    startTime: event.startTime,
+                    endTime: event.endTime,
+                    location: event.location,
+                    note: event.note,
+                    creatorUser: event.creatorUser,
+                    participantUsers: event.participantUsers,
+                    chatMessages: nil,
+                    eventFriendTagColorHexCodeForRequestingUser: nil
+                )
             }
             
-            // If not in cache, fetch from API
-            await fetchEventsFromAPI()
+            await MainActor.run {
+                self.events = feedEvents
+            }
+            return
         }
+        
+        // If not in cache, fetch from API
+        await fetchEventsFromAPI()
     }
     
     private func fetchFilteredEvents(for tagId: UUID) async {
@@ -173,7 +166,6 @@ class FeedViewModel: ObservableObject {
                 // Ensure updating on the main thread
                 await MainActor.run {
                     self.tags = fetchedTags
-                    self.activeTag = fetchedTags.first
                 }
             } catch {
                 await MainActor.run {

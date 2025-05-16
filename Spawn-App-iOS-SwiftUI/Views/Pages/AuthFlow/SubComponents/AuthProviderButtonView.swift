@@ -15,7 +15,7 @@ struct AuthProviderButtonView: View {
 			switch authProviderType {
 			case .apple:
 				Image(systemName: "applelogo")
-					.font(.system(size: 20))
+					.font(.onestMedium(size: 20))
 			case .google:
 				Image("google_logo")
 					.resizable()
@@ -28,7 +28,7 @@ struct AuthProviderButtonView: View {
 			Text(
 				"Continue with \(authProviderType == .google ? "Google" : "Apple")"
 			)
-			.fontWeight(.medium)
+			.font(.onestMedium(size: 16))
 		}
 		.padding()
 		.frame(maxWidth: .infinity)

@@ -19,7 +19,7 @@ let universalSecondaryColor: Color = Color(
     hex: universalSecondaryColorHexCode
 )
 let universalTertiaryColor: Color = Color(red: 1, green: 0.45, blue: 0.44)
-let universalAccentColorHexCode: String = "#000000"
+let universalAccentColorHexCode: String = "#1D1D1D"
 let universalAccentColor: Color = Color(
 	hex: universalAccentColorHexCode
 )
@@ -28,3 +28,13 @@ let universalPassiveColor: Color = Color(hex: universalPassiveColorHex)
 let profilePicPlusButtonColor: Color = Color(hex: "#8693FF")
 let universalPlaceHolderTextColor: Color = Color(hex: "#B0AFAF")
 let authPageBackgroundColor: Color = Color(hex: "#8693FF")
+
+// Colors from the Figma design
+let figmaBlueHex: String = "#5667FF"
+let figmaBlue: Color = Color(hex: figmaBlueHex)
+
+let figmaSoftBlueHex: String = "#6B81FB"
+let figmaSoftBlue: Color = Color(hex: figmaSoftBlueHex)
+
+let figmaBlack300Hex: String = "#8E8484"
+let figmaBlack300: Color = Color(hex: figmaBlack300Hex)
