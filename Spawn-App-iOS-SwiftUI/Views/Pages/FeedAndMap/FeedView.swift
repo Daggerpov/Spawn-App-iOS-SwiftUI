@@ -86,6 +86,15 @@ struct FeedView: View {
                     .presentationDragIndicator(.visible)
                 }
             }
+            .sheet(isPresented: $showEventCreationDrawer) {
+                EventCreationView(
+                    creatingUser: user,
+                    closeCallback: {
+                        showEventCreationDrawer = false
+                    }
+                )
+                .presentationDragIndicator(.visible)
+            }
         }
     }
 
