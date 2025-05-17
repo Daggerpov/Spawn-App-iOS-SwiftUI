@@ -10,8 +10,14 @@ import SwiftUI
 struct TagDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var appCache: AppCache
-    var tag: FullFriendTagDTO
     @State private var showAddFriendToTagView: Bool = false
+    @State private var showActionSheet: Bool = false
+    @State private var showManageTaggedPeopleView: Bool = false
+    @State private var showRenameTagView: Bool = false
+    @State private var showChangeTagColorView: Bool = false
+    @State private var showDeleteTagConfirmation: Bool = false
+    
+    var tag: FullFriendTagDTO
     
     var body: some View {
         ZStack {
@@ -36,7 +42,7 @@ struct TagDetailView: View {
                     
                     // Menu button
                     Button(action: {
-                        // Show options menu (future implementation)
+                        showActionSheet = true
                     }) {
                         Image(systemName: "ellipsis")
                             .font(.title3)
@@ -120,7 +126,7 @@ struct TagDetailView: View {
                     Spacer()
                     
                     Button(action: {
-                        // Show all action (future implementation)
+                        showManageTaggedPeopleView = true
                     }) {
                         Text("Show All")
                             .font(.subheadline)
@@ -221,6 +227,39 @@ struct TagDetailView: View {
                     .padding(24)
                 }
             }
+            
+            // Show action sheet if active
+            if showActionSheet {
+                Color.black.opacity(0.3)
+                    .edgesIgnoringSafeArea(.all)
+                    .onTapGesture {
+                        showActionSheet = false
+                    }
+                
+                TagActionSheet(
+                    tag: tag,
+                    onRenameTag: {
+                        // Handle rename tag action
+                        showRenameTagView = true
+                    },
+                    onChangeTagColor: {
+                        // Handle change tag color action
+                        showChangeTagColorView = true
+                    },
+                    onManageTaggedPeople: {
+                        // Handle manage tagged people action
+                        showManageTaggedPeopleView = true
+                    },
+                    onDeleteTag: {
+                        // Handle delete tag action
+                        showDeleteTagConfirmation = true
+                    },
+                    onDismiss: {
+                        showActionSheet = false
+                    }
+                )
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            }
         }
         .sheet(isPresented: $showAddFriendToTagView) {
             AddFriendToTagView(
@@ -234,6 +273,23 @@ struct TagDetailView: View {
             .presentationDragIndicator(.visible)
             .presentationDetents([.height(400)])
         }
+        .sheet(isPresented: $showManageTaggedPeopleView) {
+            ManageTaggedPeopleView(tag: tag)
+        }
+        .alert("Delete Tag", isPresented: $showDeleteTagConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                // Delete tag implementation would go here
+                // For example:
+                // Task {
+                //     await tagsViewModel.deleteTag(id: tag.id)
+                //     dismiss()
+                // }
+            }
+        } message: {
+            Text("Are you sure you want to delete this tag? This action cannot be undone.")
+        }
+        // Add other sheets for rename tag and change tag color here when implemented
     }
 }
 
