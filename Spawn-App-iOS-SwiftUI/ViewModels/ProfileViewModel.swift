@@ -369,7 +369,7 @@ class ProfileViewModel: ObservableObject {
         // Don't check if it's the current user's profile
         if currentUserId == profileUserId {
             await MainActor.run {
-                self.friendshipStatus = .self
+                self.friendshipStatus = .themself
             }
             return
         }
@@ -419,15 +419,16 @@ class ProfileViewModel: ObservableObject {
         do {
             let url = URL(string: APIService.baseURL + "friend-requests")!
             let requestDTO = CreateFriendRequestDTO(
-                senderId: fromUserId,
-                receiverId: toUserId
+                id: UUID(),
+                senderUserId: fromUserId,
+                receiverUserId: toUserId
             )
             
-            let _: CreateFriendRequestDTO = try await self.apiService.sendData(
+            guard let _: CreateFriendRequestDTO = try await self.apiService.sendData(
                 requestDTO,
                 to: url,
                 parameters: nil
-            )
+            ) else {return}
             
             await MainActor.run {
                 self.friendshipStatus = .requestSent
@@ -509,7 +510,7 @@ enum FriendshipStatus {
     case friends    // Already friends
     case requestSent // Current user sent request to profile user
     case requestReceived // Profile user sent request to current user
-    case self       // It's the current user's own profile
+    case themself       // It's the current user's own profile
 }
 
 // DTOs for friend status checking
@@ -523,10 +524,3 @@ struct PendingFriendRequestDTO: Codable, Identifiable {
     let receiverId: UUID
 }
 
-struct CreateFriendRequestDTO: Codable {
-    let senderId: UUID
-    let receiverId: UUID
-}
-
-struct EmptyRequestBody: Codable {}
-struct EmptyResponse: Codable {}
