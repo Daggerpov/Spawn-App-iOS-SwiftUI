@@ -104,11 +104,15 @@ struct BaseFriendNavButtonView: View {
 
 extension FriendsAndTagsView {
     var FriendRequestNavButtonView: some View {
-        BaseFriendNavButtonView(
-            iconImageName: "friend_request_icon",
-            topText: "Friend Requests",
-            bottomText: "Accept or Deny"
-        )
+        NavigationLink(destination: {
+            FriendRequestsView(userId: user.id)
+        }) {
+            BaseFriendNavButtonView(
+                iconImageName: "friend_request_icon",
+                topText: "Friend Requests",
+                bottomText: "Accept or Deny"
+            )
+        }
     }
 
     var FriendTagNavButtonView: some View {

@@ -11,6 +11,7 @@ struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
 	let user: BaseUserDTO
     @EnvironmentObject private var appCache: AppCache
+    @State private var showingFriendSearchView = false
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -39,11 +40,14 @@ struct FriendsTabView: View {
 		ZStack {
 			ScrollView {
 				VStack(spacing: 16) {
-					// Search bar
-					SearchView(
-						searchPlaceholderText: "Search for friends",
-						viewModel: searchViewModel)
-                        .padding(.horizontal, 16)
+					// Search bar button that navigates to search view
+					SearchBarButtonView(
+						placeholder: "Search for friends",
+						action: {
+							showingFriendSearchView = true
+						}
+					)
+					.padding(.horizontal, 16)
                     
                     // Friends section
 					friendsSection
@@ -66,14 +70,10 @@ struct FriendsTabView: View {
                     await viewModel.fetchAllData()
                 }
             }
+            .fullScreenCover(isPresented: $showingFriendSearchView) {
+                FriendSearchView(userId: user.id)
+            }
 
-			if showingFriendRequestPopup {
-				friendRequestPopUpView
-			}
-
-			if showingChooseTagsPopup {
-				choosingTagViewPopup
-			}
 		}
 	}
     
@@ -197,111 +197,7 @@ struct FriendsTabView: View {
 		.padding(.horizontal, 16)
 	}
 
-	func closeFriendPopUp() {
-		friendRequestOffset = 1000
-		showingFriendRequestPopup = false
-	}
-
-	func closeChoosingTagPopUp() {
-		chooseTagsOffset = 1000
-		showingChooseTagsPopup = false
-		Task {
-			await viewModel.fetchAllData()
-		}
-	}
-}
-
-extension FriendsTabView {
-	var choosingTagViewPopup: some View {
-        Group {
-            if let unwrappedFriendInPopUp = friendInPopUp
-            {  // ensuring it isn't null
-                ZStack {
-                    Color(.black)
-                        .opacity(0.5)
-                        .onTapGesture {
-                            closeChoosingTagPopUp()
-							closeFriendPopUp()
-                        }
-                        .ignoresSafeArea(edges: .top)
-
-                    // call your new view here
-                    ChoosingTagPopupView(
-                        friend: unwrappedFriendInPopUp,
-                        userId: user.id,
-                        closeCallback: {
-                            closeChoosingTagPopUp()
-                        }
-                    )
-                    
-                }
-            } else {
-                // do nothing; maybe figure something out later
-                ZStack {
-                    Color(.black)
-                        .opacity(0.5)
-                        .onTapGesture {
-                            closeChoosingTagPopUp()
-                        }
-                        .ignoresSafeArea()
-
-                    // call your new view here
-
-                    Text(
-                        "Sorry, this friend request cannot be viewed at the moment. There is an error."
-                    )
-                    .font(.onestRegular(size: 14))
-                }
-            }
-        }
-	}
-
-	var friendRequestPopUpView: some View {
-		Group {
-			if let unwrappedFriendInPopUp = friendInPopUp,
-				let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup,
-                let unwrappedMutualFriendCountInPopup = mutualFriendCountInPopup
-			{  // ensuring it isn't null
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeFriendPopUp()
-							closeChoosingTagPopUp()
-						}
-						.ignoresSafeArea()
-
-					// call your new view here
-
-					FriendRequestView(
-						user: unwrappedFriendInPopUp,
-						friendRequestId: unwrappedFriendRequestIdInPopup,
-                        mutualFriendCount: unwrappedMutualFriendCountInPopup,
-						closeCallback: closeFriendPopUp,
-						showingChoosingTagView: $showingChooseTagsPopup,
-                        friendsTabViewModel: viewModel
-					)
-				}
-			} else {
-				// do nothing; maybe figure something out later
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeFriendPopUp()
-						}
-						.ignoresSafeArea()
-
-					// call your new view here
-
-					Text(
-						"Sorry, this friend request cannot be viewed at the moment. There is an error."
-					)
-                    .font(.onestRegular(size: 14))
-				}
-			}
-		}
-	}
+	
 }
 
 // Move RecommendedFriendView out of FriendsTabView
