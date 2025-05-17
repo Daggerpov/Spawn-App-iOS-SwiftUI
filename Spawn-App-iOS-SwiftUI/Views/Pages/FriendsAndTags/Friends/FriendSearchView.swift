@@ -15,6 +15,19 @@ enum FriendListDisplayMode {
     case recentlySpawnedWith
 }
 
+// Environment key for safe area insets
+private struct SafeAreaInsetsKey: EnvironmentKey {
+    static let defaultValue: EdgeInsets = EdgeInsets()
+}
+
+// Extend EnvironmentValues to include safe area insets
+extension EnvironmentValues {
+    var safeAreaInsets: EdgeInsets {
+        get { self[SafeAreaInsetsKey.self] }
+        set { self[SafeAreaInsetsKey.self] = newValue }
+    }
+}
+
 struct FriendSearchView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var searchViewModel = SearchViewModel()
@@ -45,88 +58,99 @@ struct FriendSearchView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Background that extends behind safe areas
-            universalBackgroundColor.ignoresSafeArea()
-            
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title3)
-                            .foregroundColor(universalAccentColor)
-                    }
-                    
-                    Spacer()
-                    
-                    Text(titleText)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(universalAccentColor)
-                    
-                    Spacer()
-                    
-                    // Empty view to balance the back button
-                    Image(systemName: "chevron.left")
-                        .font(.title3)
-                        .foregroundColor(.clear)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 12)
+        VStack(spacing: 0) {
+            // Header
+            ZStack(alignment: .top) {
+                // Background color that extends into safe area
+                universalBackgroundColor.ignoresSafeArea(edges: .top)
                 
-                // Search bar
-                if displayMode == .search || displayMode == .allFriends {
-                    SearchBarView(
-                        searchText: $searchViewModel.searchText,
-                        isSearching: $searchViewModel.isSearching,
-                        placeholder: "Search for friends"
-                    )
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                }
-                
-                // Content based on display mode
-                ScrollView {
-                    VStack(spacing: 16) {
-                        switch displayMode {
-                        case .search:
-                            if searchViewModel.searchText.isEmpty {
-                                recentlySpawnedWithView
-                            } else {
-                                searchResultsView
-                            }
-                        case .allFriends:
-                            allFriendsView
-                        case .recentlySpawnedWith:
-                            recentlySpawnedWithView
-                        }
-                    }
-                    .padding(.top, 16)
-                }
-                .navigationBarHidden(true)
-                .onAppear {
-                    Task {
-                        // Load appropriate data based on display mode
-                        switch displayMode {
-                        case .search:
-                            await viewModel.fetchRecentlySpawnedWith()
-                        case .allFriends:
-                            await viewModel.fetchAllData()
-                        case .recentlySpawnedWith:
-                            await viewModel.fetchRecentlySpawnedWith()
+                // Header content with padding for safe area
+                VStack(spacing: 0) {
+                    // This creates space for the status bar
+                    Color.clear.frame(height: getSafeAreaTopInset())
+                    
+                    // Actual header content
+                    HStack {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.title3)
+                                .foregroundColor(universalAccentColor)
                         }
                         
-                        viewModel.connectSearchViewModel(searchViewModel)
+                        Spacer()
+                        
+                        Text(titleText)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(universalAccentColor)
+                        
+                        Spacer()
+                        
+                        // Empty view to balance the back button
+                        Image(systemName: "chevron.left")
+                            .font(.title3)
+                            .foregroundColor(.clear)
                     }
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
                 }
             }
-            .padding(.top, UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .first?.windows.first?.safeAreaInsets.top ?? 47)
+            
+            // Search bar
+            if displayMode == .search || displayMode == .allFriends {
+                SearchBarView(
+                    searchText: $searchViewModel.searchText,
+                    isSearching: $searchViewModel.isSearching,
+                    placeholder: "Search for friends"
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            }
+            
+            // Content based on display mode
+            ScrollView {
+                VStack(spacing: 16) {
+                    switch displayMode {
+                    case .search:
+                        if searchViewModel.searchText.isEmpty {
+                            recentlySpawnedWithView
+                        } else {
+                            searchResultsView
+                        }
+                    case .allFriends:
+                        allFriendsView
+                    case .recentlySpawnedWith:
+                        recentlySpawnedWithView
+                    }
+                }
+                .padding(.top, 16)
+            }
+            .navigationBarHidden(true)
+            .onAppear {
+                Task {
+                    // Load appropriate data based on display mode
+                    switch displayMode {
+                    case .search:
+                        await viewModel.fetchRecentlySpawnedWith()
+                    case .allFriends:
+                        await viewModel.fetchAllData()
+                    case .recentlySpawnedWith:
+                        await viewModel.fetchRecentlySpawnedWith()
+                    }
+                    
+                    viewModel.connectSearchViewModel(searchViewModel)
+                }
+            }
         }
+        .background(universalBackgroundColor)
+    }
+    
+    // Helper to get safe area inset for the top of the screen
+    private func getSafeAreaTopInset() -> CGFloat {
+        // Default height that works for most devices with notches
+        return 47
     }
     
     var searchResultsView: some View {

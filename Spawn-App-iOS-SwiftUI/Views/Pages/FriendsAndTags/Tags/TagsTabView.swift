@@ -38,31 +38,43 @@ struct TagsTabView: View {
 
 	var body: some View {
 		VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title3)
-                        .foregroundColor(.black)
+            // Header with safe area handling
+            ZStack(alignment: .top) {
+                // Background color that extends into safe area
+                universalBackgroundColor.ignoresSafeArea(edges: .top)
+                
+                // Header content with padding for safe area
+                VStack(spacing: 0) {
+                    // This creates space for the status bar
+                    Color.clear.frame(height: getSafeAreaTopInset())
+                    
+                    // Actual header content
+                    HStack {
+                        Button(action: {
+                            dismiss()
+                        }) {
+                            Image(systemName: "chevron.left")
+                                .font(.title3)
+                                .foregroundColor(.black)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("Tags")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                        
+                        Spacer()
+                        
+                        // Empty view to balance the back button
+                        Image(systemName: "chevron.left")
+                            .font(.title3)
+                            .foregroundColor(.clear)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 12)
                 }
-                
-                Spacer()
-                
-                Text("Tags")
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                
-                Spacer()
-                
-                // Empty view to balance the back button
-                Image(systemName: "chevron.left")
-                    .font(.title3)
-                    .foregroundColor(.clear)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 12)
             
             if displayTags.isEmpty && viewModel.isLoading == false {
                 emptyStateView
@@ -113,6 +125,12 @@ struct TagsTabView: View {
 		.background(universalBackgroundColor)
         .navigationBarHidden(true)
 	}
+    
+    // Helper to get safe area inset for the top of the screen
+    private func getSafeAreaTopInset() -> CGFloat {
+        // Default height that works for most devices with notches
+        return 47
+    }
 }
 
 extension TagsTabView {

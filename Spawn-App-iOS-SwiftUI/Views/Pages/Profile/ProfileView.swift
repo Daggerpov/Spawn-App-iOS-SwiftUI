@@ -51,7 +51,7 @@ struct ProfileView: View {
         return currentUser.id == user.id
     }
 
-    init(user: BaseUserDTO) {
+    init(user: Nameable) {
         self.user = user
         username = user.username
         name = user.name ?? ""
