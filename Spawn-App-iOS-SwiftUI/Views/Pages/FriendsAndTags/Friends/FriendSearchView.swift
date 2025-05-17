@@ -45,85 +45,87 @@ struct FriendSearchView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title3)
-                        .foregroundColor(universalAccentColor)
-                }
-                
-                Spacer()
-                
-                Text(titleText)
-                    .font(.title3)
-                    .fontWeight(.semibold)
-                    .foregroundColor(universalAccentColor)
-                
-                Spacer()
-                
-                // Empty view to balance the back button
-                Image(systemName: "chevron.left")
-                    .font(.title3)
-                    .foregroundColor(.clear)
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 12)
-            .background(universalBackgroundColor)
+        ZStack {
+            // Background that extends behind safe areas
+            universalBackgroundColor.ignoresSafeArea()
             
-            // Search bar
-            if displayMode == .search || displayMode == .allFriends {
-                SearchBarView(
-                    searchText: $searchViewModel.searchText,
-                    isSearching: $searchViewModel.isSearching,
-                    placeholder: "Search for friends"
-                )
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-            }
-            
-            // Content based on display mode
-            ScrollView {
-                VStack(spacing: 16) {
-                    switch displayMode {
-                    case .search:
-                        if searchViewModel.searchText.isEmpty {
-                            recentlySpawnedWithView
-                        } else {
-                            searchResultsView
-                        }
-                    case .allFriends:
-                        allFriendsView
-                    case .recentlySpawnedWith:
-                        recentlySpawnedWithView
-                    }
-                }
-                .padding(.top, 16)
-            }
-            .background(universalBackgroundColor)
-            .navigationBarHidden(true)
-            .onAppear {
-                Task {
-                    // Load appropriate data based on display mode
-                    switch displayMode {
-                    case .search:
-                        await viewModel.fetchRecentlySpawnedWith()
-                    case .allFriends:
-                        await viewModel.fetchAllData()
-                    case .recentlySpawnedWith:
-                        await viewModel.fetchRecentlySpawnedWith()
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title3)
+                            .foregroundColor(universalAccentColor)
                     }
                     
-                    viewModel.connectSearchViewModel(searchViewModel)
+                    Spacer()
+                    
+                    Text(titleText)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(universalAccentColor)
+                    
+                    Spacer()
+                    
+                    // Empty view to balance the back button
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                        .foregroundColor(.clear)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+                
+                // Search bar
+                if displayMode == .search || displayMode == .allFriends {
+                    SearchBarView(
+                        searchText: $searchViewModel.searchText,
+                        isSearching: $searchViewModel.isSearching,
+                        placeholder: "Search for friends"
+                    )
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+                
+                // Content based on display mode
+                ScrollView {
+                    VStack(spacing: 16) {
+                        switch displayMode {
+                        case .search:
+                            if searchViewModel.searchText.isEmpty {
+                                recentlySpawnedWithView
+                            } else {
+                                searchResultsView
+                            }
+                        case .allFriends:
+                            allFriendsView
+                        case .recentlySpawnedWith:
+                            recentlySpawnedWithView
+                        }
+                    }
+                    .padding(.top, 16)
+                }
+                .navigationBarHidden(true)
+                .onAppear {
+                    Task {
+                        // Load appropriate data based on display mode
+                        switch displayMode {
+                        case .search:
+                            await viewModel.fetchRecentlySpawnedWith()
+                        case .allFriends:
+                            await viewModel.fetchAllData()
+                        case .recentlySpawnedWith:
+                            await viewModel.fetchRecentlySpawnedWith()
+                        }
+                        
+                        viewModel.connectSearchViewModel(searchViewModel)
+                    }
                 }
             }
-        }
-        .background(universalBackgroundColor)
-        .safeAreaInset(edge: .top) {
-            Color.clear.frame(height: 0)
+            .padding(.top, UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .first?.windows.first?.safeAreaInsets.top ?? 47)
         }
     }
     
