@@ -1567,7 +1567,6 @@ struct RoundedCorner: Shape {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable
     ProfileView(user: BaseUserDTO.danielAgapov)
 }
 
