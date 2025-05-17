@@ -95,7 +95,7 @@ struct AddFriendToTagView: View {
                             }
                         }) {
                             HStack {
-                                TagBubble(tag: tag)
+                                TagBubble(tag: tag.asFullFriendTag, isSelected: false)
                                 
                                 Spacer()
                                 
@@ -131,7 +131,12 @@ struct AddFriendToTagView: View {
             }
         }
         .sheet(isPresented: $viewModel.showCreateTagSheet) {
-            CreateTagView()
+            CreatingTagRowView(creationStatus: .constant(.creating))
+                .environmentObject(TagsViewModel(
+                    apiService: MockAPIService.isMocking ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()) : APIService(),
+                    userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+                ))
+                .padding()
         }
     }
     
@@ -140,9 +145,22 @@ struct AddFriendToTagView: View {
             return viewModel.tags
         } else {
             return viewModel.tags.filter { tag in
-                tag.name.localizedCaseInsensitiveContains(searchText)
+                tag.displayName.localizedCaseInsensitiveContains(searchText)
             }
         }
+    }
+}
+
+// Extension to convert FriendTagDTO to FullFriendTagDTO
+extension FriendTagDTO {
+    var asFullFriendTag: FullFriendTagDTO {
+        return FullFriendTagDTO(
+            id: self.id,
+            displayName: self.displayName,
+            colorHexCode: self.colorHexCode,
+            friends: nil,
+            isEveryone: self.isEveryone
+        )
     }
 }
 
