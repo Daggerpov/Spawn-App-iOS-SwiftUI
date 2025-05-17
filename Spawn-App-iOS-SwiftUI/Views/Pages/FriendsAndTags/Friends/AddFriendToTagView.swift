@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AddFriendToTagView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = TagsViewModel(
+    @StateObject private var viewModel = AddFriendToTagViewModel(
         userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
         apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService()
     )
@@ -88,7 +88,10 @@ struct AddFriendToTagView: View {
                     ForEach(filteredTags) { tag in
                         Button(action: {
                             Task {
-                                await addFriendToTag(tagId: tag.id)
+                                let success = await viewModel.addFriendToTag(friendId: friendId, tagId: tag.id)
+                                if success {
+                                    dismiss()
+                                }
                             }
                         }) {
                             HStack {
@@ -138,25 +141,6 @@ struct AddFriendToTagView: View {
         } else {
             return viewModel.tags.filter { tag in
                 tag.name.localizedCaseInsensitiveContains(searchText)
-            }
-        }
-    }
-    
-    private func addFriendToTag(tagId: UUID) async {
-        if let url = URL(string: APIService.baseURL + "friendTags/addFriendToTag") {
-            do {
-                let params = ["friendTagId": tagId.uuidString, "friendId": friendId.uuidString]
-                let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService()
-                _ = try await apiService.sendDataNoBody(to: url, parameters: params)
-                
-                // Show success feedback
-                await MainActor.run {
-                    // Post notification that a friend was added to a tag
-                    NotificationCenter.default.post(name: .friendAddedToTag, object: nil)
-                    dismiss()
-                }
-            } catch {
-                print("Error adding friend to tag: \(error.localizedDescription)")
             }
         }
     }
