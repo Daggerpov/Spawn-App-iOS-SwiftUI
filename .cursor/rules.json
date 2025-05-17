@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "name": "Swift Indentation",
+      "pattern": "\\.(swift)$",
+      "rule": "Use tabs for indentation in Swift files"
+    },
+    {
+      "name": "Function Spacing",
+      "pattern": "\\.(swift)$",
+      "rule": "Leave a single blank line between functions"
+    },
+    {
+      "name": "Variable declarations",
+      "pattern": "\\.(swift)$",
+      "rule": "Group related property declarations together. Start with @Published properties, followed by dependencies, then private properties"
+    },
+    {
+      "name": "Naming Convention",
+      "pattern": "\\.(swift)$",
+      "rule": "Use camelCase for properties, functions, and variables. Use PascalCase for types, protocols and file names"
+    },
+    {
+      "name": "Commenting",
+      "pattern": "\\.(swift)$",
+      "rule": "Use Swift comment conventions: // for single-line comments and /* */ for multi-line comments. Each file should have a standard header comment"
+    },
+    {
+      "name": "MARK Usage",
+      "pattern": "\\.(swift)$",
+      "rule": "Use MARK: - Section Name to organize code sections in larger files"
+    },
+    {
+      "name": "Private Properties",
+      "pattern": "\\.(swift)$",
+      "rule": "Mark properties as private when they are only used within the class/struct"
+    },
+    {
+      "name": "Trailing Whitespace",
+      "pattern": "\\.(swift)$",
+      "rule": "Remove trailing whitespace from all lines"
+    },
+    {
+      "name": "Line Length",
+      "pattern": "\\.(swift)$",
+      "rule": "Keep line length under 100 characters when possible"
+    },
+    {
+      "name": "Braces Style",
+      "pattern": "\\.(swift)$",
+      "rule": "Opening braces should be on the same line as the declaration, closing braces should be on a new line"
+    },
+    {
+      "name": "Class/Struct Organization",
+      "pattern": "\\.(swift)$",
+      "rule": "Organize types in this order: properties, initializers, lifecycle methods, public methods, private methods"
+    },
+    {
+      "name": "View Model Organization",
+      "pattern": "\\.(swift)$",
+      "rule": "In view models, group API calls together and separate them from UI-related code"
+    },
+    {
+      "name": "SwiftUI View Organization",
+      "pattern": "\\.(swift)$",
+      "rule": "In SwiftUI views, organize in this order: properties, body, helper view methods, preview"
+    },
+    {
+      "name": "Force Unwrapping",
+      "pattern": "\\.(swift)$",
+      "rule": "Avoid force unwrapping (!) optionals when possible. Use guard let, if let, or nil coalescing"
+    },
+    {
+      "name": "Empty Lines",
+      "pattern": "\\.(swift)$",
+      "rule": "No consecutive empty lines (maximum one empty line)"
+    },
+    {
+      "name": "Early Returns",
+      "pattern": "\\.(swift)$",
+      "rule": "Use early returns to reduce nesting and complexity"
+    },
+    {
+      "name": "Self Usage",
+      "pattern": "\\.(swift)$",
+      "rule": "Use self explicitly only when required (in closures or to disambiguate)"
+    },
+    {
+      "name": "File Organization",
+      "pattern": "\\.(swift)$", 
+      "rule": "Follow MVVM architecture with separate folders for Models, Views, ViewModels, and Services"
+    },
+    {
+      "name": "Asset Naming",
+      "pattern": "\\.(swift)$",
+      "rule": "Use snake_case for asset names"
+    },
+    {
+      "name": "Function Parameter Formatting",
+      "pattern": "\\.(swift)$", 
+      "rule": "For functions with multiple parameters that span multiple lines, align the parameters"
+    }
+  ]
+} 
