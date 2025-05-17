@@ -66,7 +66,7 @@ struct AddFriendToTagView: View {
                         let isSelected = selectedTagId == tag.id
                         let position = getTagPosition(for: tag, in: viewModel.tags)
                         
-                        TagBubble(tag: tag, isSelected: isSelected)
+                        FriendTagBubble(tag: tag, isSelected: isSelected)
                             .position(position)
                             .onTapGesture {
                                 handleTagSelection(tag, at: position)
@@ -261,7 +261,7 @@ struct ProfileImageView: View {
 }
 
 // Modified TagBubble specific to this view
-struct TagBubble: View {
+struct FriendTagBubble: View {
     let tag: FullFriendTagDTO
     let isSelected: Bool
     
