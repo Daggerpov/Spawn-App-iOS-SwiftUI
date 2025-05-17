@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Spawn_App_iOS_SwiftUI
 
 struct FriendRow: View {
 	@EnvironmentObject var viewModel: TagsViewModel
@@ -15,25 +16,36 @@ struct FriendRow: View {
 	var body: some View {
 		HStack {
 			if let pfpUrl = friend.profilePicture {
-				AsyncImage(url: URL(string: pfpUrl)) {
-					image in
-					image
-						.ProfileImageModifier(imageType: .tagFriends)
-				} placeholder: {
+				NavigationLink(destination: ProfileView(user: friend)) {
+					AsyncImage(url: URL(string: pfpUrl)) {
+						image in
+						image
+							.ProfileImageModifier(imageType: .tagFriends)
+					} placeholder: {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 35, height: 35)
+					}
+				}
+			} else {
+				NavigationLink(destination: ProfileView(user: friend)) {
 					Circle()
 						.fill(Color.gray)
 						.frame(width: 35, height: 35)
 				}
-			} else {
-				Circle()
-					.fill(Color.gray)
-					.frame(width: 35, height: 35)
 			}
 
-			Image(systemName: "star.fill")
-				.font(.system(size: 10))
-			Text(friend.username)
-				.font(.headline)
+			NavigationLink(destination: ProfileView(user: friend)) {
+				HStack {
+					Image(systemName: "star.fill")
+						.font(.system(size: 10))
+					Text(friend.username)
+						.font(.headline)
+				}
+				.foregroundColor(.white)
+			}
+			.buttonStyle(PlainButtonStyle())
+			
 			Spacer()
 			if !friendTag.isEveryone{
 				Button(action: {
