@@ -89,7 +89,7 @@ struct FriendsTabView: View {
     
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			if viewModel.filteredRecommendedFriends.count > 0 {
+			if !viewModel.filteredRecommendedFriends.isEmpty {
                 HStack{
                     Text("Recently Spawned With")
                         .font(.onestMedium(size: 16))
@@ -101,11 +101,27 @@ struct FriendsTabView: View {
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
 						ForEach(viewModel.filteredRecommendedFriends) { friend in
-							FriendRowView(user: friend)
+							RecommendedFriendView(viewModel: viewModel, friend: friend)
 						}
 					}
 				}
-			}
+			} else if !viewModel.recommendedFriends.isEmpty {
+                // Show "Recommended Friends" when "Recently Spawned With" is empty
+                HStack{
+                    Text("Recommended Friends")
+                        .font(.onestMedium(size: 16))
+                        .foregroundColor(universalAccentColor)
+                    Spacer()
+                }
+
+				ScrollView(showsIndicators: false) {
+					VStack(spacing: 16) {
+						ForEach(viewModel.recommendedFriends) { friend in
+							RecommendedFriendView(viewModel: viewModel, friend: friend)
+						}
+					}
+				}
+            }
 		}
 		.padding(.horizontal, 16)
 	}
@@ -170,10 +186,6 @@ struct FriendsTabView: View {
                                                 .font(.onestMedium(size: 16))
                                                 .foregroundColor(universalAccentColor)
                                                 .lineLimit(1)
-                                            
-                                            if let tags = friend.associatedFriendTagsToOwner {
-                                                FriendTagsForFriendView(friend: friend)
-                                            }
                                         }
                                         .padding(.horizontal, 8)
                                     }
@@ -251,8 +263,6 @@ struct RecommendedFriendView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(FormatterService.shared.formatName(user: friend))
                     .font(.onestBold(size: 14))
-                Text("@\(friend.username)")
-                    .font(.onestRegular(size: 12))
             }
             .padding(.leading, 8)
 

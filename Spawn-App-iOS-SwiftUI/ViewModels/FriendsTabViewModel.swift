@@ -19,7 +19,7 @@ class FriendsTabViewModel: ObservableObject {
     @Published var searchQuery: String = ""
     @Published var isLoading: Bool = false
     
-    @Published var recentlySpawnedWith: [BaseUserDTO] = []
+    @Published var recentlySpawnedWith: [RecommendedFriendUserDTO] = []
     @Published var searchResults: [BaseUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
@@ -56,7 +56,7 @@ class FriendsTabViewModel: ObservableObject {
                 if query.isEmpty {
                     self?.isSearching = false
                     self?.filteredFriends = self?.friends ?? []
-                    self?.filteredRecommendedFriends = self?.recommendedFriends ?? []
+                    self?.filteredRecommendedFriends = self?.recentlySpawnedWith ?? []
                     self?.filteredIncomingFriendRequests = self?.incomingFriendRequests ?? []
                 } else {
                     self?.isSearching = true
@@ -118,7 +118,7 @@ class FriendsTabViewModel: ObservableObject {
                        username.contains(lowercaseQuery)
             }
             
-            self.filteredRecommendedFriends = self.recommendedFriends.filter { friend in
+            self.filteredRecommendedFriends = self.recentlySpawnedWith.filter { friend in
                 let name = friend.name?.lowercased() ?? ""
                 let username = friend.username.lowercased()
                 
@@ -147,12 +147,13 @@ class FriendsTabViewModel: ObservableObject {
             group.addTask { await self.fetchIncomingFriendRequests() }
             group.addTask { await self.fetchRecommendedFriends() }
             group.addTask { await self.fetchFriends() }
+            group.addTask { await self.fetchRecentlySpawnedWith() }
         }
         
         // Initialize filtered lists with full lists after fetching
         await MainActor.run {
             self.filteredFriends = self.friends
-            self.filteredRecommendedFriends = self.recommendedFriends
+            self.filteredRecommendedFriends = self.recentlySpawnedWith
             self.filteredIncomingFriendRequests = self.incomingFriendRequests
             self.isLoading = false
         }
@@ -276,7 +277,17 @@ class FriendsTabViewModel: ObservableObject {
         
         // In a real app, fetch recently spawned with users from API
         if MockAPIService.isMocking {
-            self.recentlySpawnedWith = BaseUserDTO.mockUsers
+            // Convert mock users to RecommendedFriendUserDTO format for testing
+            self.recentlySpawnedWith = BaseUserDTO.mockUsers.map { baseUser in
+                RecommendedFriendUserDTO(
+                    id: baseUser.id,
+                    username: baseUser.username,
+                    profilePicture: baseUser.profilePicture,
+                    name: baseUser.name,
+                    email: baseUser.email,
+                    mutualFriendCount: Int.random(in: 1...5)
+                )
+            }
             return
         }
         
@@ -286,11 +297,11 @@ class FriendsTabViewModel: ObservableObject {
                 return
             }
             
-            let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            let fetchedUsers: [RecommendedFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
             self.recentlySpawnedWith = fetchedUsers
         } catch {
-            // Use mock data for development
-            self.recentlySpawnedWith = BaseUserDTO.mockUsers
+            // If API fails, try to use recommended friends instead
+            self.recentlySpawnedWith = []
         }
     }
     

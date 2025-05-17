@@ -512,7 +512,8 @@ class ProfileViewModel: ObservableObject {
                 "userBId": profileUserId.uuidString
             ]
             
-            let _: EmptyResponse = try await self.apiService.sendData(
+            // Discard the return value since we don't need it
+            _ = try await self.apiService.sendData(
                 EmptyRequestBody(),
                 to: url,
                 parameters: parameters
@@ -538,7 +539,8 @@ class ProfileViewModel: ObservableObject {
                 reason: reason
             )
             
-            let _: EmptyResponse = try await self.apiService.sendData(
+            // Discard the return value
+            _ = try await self.apiService.sendData(
                 reportDTO,
                 to: url,
                 parameters: nil
@@ -564,7 +566,8 @@ class ProfileViewModel: ObservableObject {
                 reason: reason
             )
             
-            let _: EmptyResponse = try await self.apiService.sendData(
+            // Discard the return value
+            _ = try await self.apiService.sendData(
                 blockDTO,
                 to: url,
                 parameters: nil
