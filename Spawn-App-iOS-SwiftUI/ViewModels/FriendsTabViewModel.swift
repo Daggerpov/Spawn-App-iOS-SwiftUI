@@ -18,6 +18,9 @@ class FriendsTabViewModel: ObservableObject {
     @Published var isSearching: Bool = false
     @Published var searchQuery: String = ""
     @Published var isLoading: Bool = false
+    
+    @Published var recentlySpawnedWith: [BaseUserDTO] = []
+    @Published var searchResults: [BaseUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
 	@Published var createdFriendRequest: FetchFriendRequestDTO?
@@ -59,6 +62,7 @@ class FriendsTabViewModel: ObservableObject {
                     self?.isSearching = true
                     Task {
                         await self?.fetchFilteredResults(query: query)
+                        await self?.performSearch(searchText: query)
                     }
                 }
             }
@@ -264,4 +268,67 @@ class FriendsTabViewModel: ObservableObject {
             }
         }
 	}
+
+    @MainActor
+    func fetchRecentlySpawnedWith() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        // In a real app, fetch recently spawned with users from API
+        if MockAPIService.isMocking {
+            self.recentlySpawnedWith = BaseUserDTO.mockUsers
+            return
+        }
+        
+        do {
+            // API endpoint for getting recently spawned with users
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recently-spawned-with") else {
+                return
+            }
+            
+            let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            self.recentlySpawnedWith = fetchedUsers
+        } catch {
+            // Use mock data for development
+            self.recentlySpawnedWith = BaseUserDTO.mockUsers
+        }
+    }
+    
+    @MainActor
+    private func performSearch(searchText: String) async {
+        if searchText.isEmpty {
+            searchResults = []
+            return
+        }
+        
+        isLoading = true
+        defer { isLoading = false }
+        
+        if MockAPIService.isMocking {
+            // Filter mock data for testing
+            let lowercasedSearchText = searchText.lowercased()
+            searchResults = BaseUserDTO.mockUsers.filter { user in
+                let name = FormatterService.shared.formatName(user: user).lowercased()
+                let username = user.username.lowercased()
+                
+                return name.contains(lowercasedSearchText) || username.contains(lowercasedSearchText)
+            }
+            return
+        }
+        
+        do {
+            // API endpoint for searching users: /api/v1/users/search?query={searchText}
+            guard let url = URL(string: APIService.baseURL + "users/search") else {
+                return
+            }
+            
+            let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(
+                from: url, 
+                parameters: ["query": searchText]
+            )
+            self.searchResults = fetchedUsers
+        } catch {
+            // Handle error
+        }
+    }
 }

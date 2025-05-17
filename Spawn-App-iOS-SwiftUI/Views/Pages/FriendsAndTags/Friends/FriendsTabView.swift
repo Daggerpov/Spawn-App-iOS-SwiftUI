@@ -12,6 +12,8 @@ struct FriendsTabView: View {
 	let user: BaseUserDTO
     @EnvironmentObject private var appCache: AppCache
     @State private var showingFriendSearchView = false
+    @State private var showingAllFriendsView = false
+    @State private var showingRecentlySpawnedWithView = false
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -71,15 +73,30 @@ struct FriendsTabView: View {
                 }
             }
             .fullScreenCover(isPresented: $showingFriendSearchView) {
-                FriendSearchView(userId: user.id)
+                FriendSearchView(userId: user.id, displayMode: .search)
             }
-
+            .fullScreenCover(isPresented: $showingAllFriendsView) {
+                FriendSearchView(userId: user.id, displayMode: .allFriends)
+            }
+            .fullScreenCover(isPresented: $showingRecentlySpawnedWithView) {
+                FriendSearchView(userId: user.id, displayMode: .recentlySpawnedWith)
+            }
 		}
 	}
     
-    var showAllButtonView: some View {
+    var showAllFriendsButton: some View {
         Button(action: {
-            // TODO DANIEL: fill this in to actually show all
+            showingAllFriendsView = true
+        }) {
+            Text("Show All")
+                .font(.onestRegular(size: 14))
+                .foregroundColor(universalSecondaryColor)
+        }
+    }
+    
+    var showAllRecentlySpawnedButton: some View {
+        Button(action: {
+            showingRecentlySpawnedWithView = true
         }) {
             Text("Show All")
                 .font(.onestRegular(size: 14))
@@ -95,7 +112,7 @@ struct FriendsTabView: View {
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
-                    showAllButtonView
+                    showAllRecentlySpawnedButton
                 }
 
 				ScrollView(showsIndicators: false) {
@@ -119,12 +136,12 @@ struct FriendsTabView: View {
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
-                    showAllButtonView
+                    showAllFriendsButton
                 }
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
-						ForEach(viewModel.filteredFriends) { friend in
+						ForEach(viewModel.filteredFriends.prefix(5)) { friend in
                             // Updated Friend Card
                             VStack {
                                 HStack {

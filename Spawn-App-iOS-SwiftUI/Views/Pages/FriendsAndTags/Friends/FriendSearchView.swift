@@ -8,14 +8,40 @@
 import SwiftUI
 import Combine
 
+// Define the different modes the view can operate in
+enum FriendListDisplayMode {
+    case search
+    case allFriends
+    case recentlySpawnedWith
+}
+
 struct FriendSearchView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var searchViewModel = SearchViewModel()
-    @StateObject private var viewModel: FriendSearchViewModel
+    @StateObject private var viewModel: FriendsTabViewModel
     
-    init(userId: UUID? = nil) {
+    // Mode determines what content to display
+    var displayMode: FriendListDisplayMode
+    
+    init(userId: UUID? = nil, displayMode: FriendListDisplayMode = .search) {
         let id = userId ?? (UserDefaults.standard.string(forKey: "currentUserId").flatMap { UUID(uuidString: $0) } ?? UUID())
-        self._viewModel = StateObject(wrappedValue: FriendSearchViewModel(userId: id))
+        self._viewModel = StateObject(wrappedValue: FriendsTabViewModel(
+            userId: id,
+            apiService: MockAPIService.isMocking ? MockAPIService(userId: id) : APIService())
+        )
+        self.displayMode = displayMode
+    }
+    
+    // Title based on display mode
+    private var titleText: String {
+        switch displayMode {
+        case .search:
+            return "Find Friends"
+        case .allFriends:
+            return "Your Friends"
+        case .recentlySpawnedWith:
+            return "Recently Spawned With"
+        }
     }
     
     var body: some View {
@@ -33,7 +59,7 @@ struct FriendSearchView: View {
                     
                     Spacer()
                     
-                    Text("Find Friends")
+                    Text(titleText)
                         .font(.title3)
                         .fontWeight(.semibold)
                     
@@ -53,12 +79,20 @@ struct FriendSearchView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 16)
                 
-                // Search results or recently spawned with
+                // Content based on display mode and search status
                 ScrollView {
                     if searchViewModel.isSearching {
                         searchResultsView
                     } else {
-                        recentlySpawnedWithView
+                        switch displayMode {
+                        case .search:
+                            // Empty state when not searching
+                            EmptyView()
+                        case .allFriends:
+                            allFriendsView
+                        case .recentlySpawnedWith:
+                            recentlySpawnedWithView
+                        }
                     }
                 }
                 
@@ -68,7 +102,16 @@ struct FriendSearchView: View {
             .navigationBarHidden(true)
             .onAppear {
                 Task {
-                    await viewModel.fetchRecentlySpawnedWith()
+                    // Load appropriate data based on display mode
+                    switch displayMode {
+                    case .search:
+                        await viewModel.fetchRecentlySpawnedWith()
+                    case .allFriends:
+                        await viewModel.fetchAllData()
+                    case .recentlySpawnedWith:
+                        await viewModel.fetchRecentlySpawnedWith()
+                    }
+                    
                     viewModel.connectSearchViewModel(searchViewModel)
                 }
             }
@@ -77,63 +120,75 @@ struct FriendSearchView: View {
     
     var searchResultsView: some View {
         VStack(spacing: 16) {
-            ForEach(viewModel.searchResults) { user in
-                FriendRowView(user: user, viewModel: viewModel)
-            }
-            
-            if viewModel.searchResults.isEmpty && searchViewModel.searchText.count > 0 {
+            if viewModel.isLoading {
+                ProgressView()
+                    .padding(.top, 24)
+            } else if viewModel.searchResults.isEmpty && searchViewModel.searchText.count > 0 {
                 Text("No results found")
                     .font(.onestRegular(size: 16))
                     .foregroundColor(universalAccentColor)
                     .padding(.top, 24)
+            } else {
+                ForEach(viewModel.searchResults) { user in
+                    FriendRowView(user: user, viewModel: viewModel)
+                        .padding(.horizontal, 16)
+                }
             }
         }
-        .padding(.horizontal, 16)
+    }
+    
+    var allFriendsView: some View {
+        VStack(spacing: 16) {
+            if viewModel.isLoading {
+                ProgressView()
+                    .padding(.top, 24)
+            } else if viewModel.filteredFriends.isEmpty {
+                Text("No friends found")
+                    .font(.onestRegular(size: 16))
+                    .foregroundColor(universalAccentColor)
+                    .padding(.top, 24)
+            } else {
+                ForEach(viewModel.filteredFriends) { friend in
+                    FriendRowView(friend: friend)
+                        .padding(.horizontal, 16)
+                }
+            }
+        }
     }
     
     var recentlySpawnedWithView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("Recently Spawned With")
-                    .font(.onestMedium(size: 16))
-                    .foregroundColor(universalAccentColor)
-                
-                Spacer()
-                
-                Button(action: {
-                    // Handle show all
-                }) {
-                    Text("Show All")
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(universalSecondaryColor)
-                }
-            }
-            .padding(.horizontal, 16)
-            
-            if viewModel.recentlySpawnedWith.isEmpty {
+            if viewModel.isLoading {
+                ProgressView()
+                    .padding(.top, 24)
+            } else if viewModel.recentlySpawnedWith.isEmpty {
                 Text("No recent spawns found")
                     .font(.onestRegular(size: 14))
                     .foregroundColor(universalAccentColor)
                     .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .padding(.top, 24)
             } else {
                 ForEach(viewModel.recentlySpawnedWith) { user in
                     FriendRowView(user: user, viewModel: viewModel)
+                        .padding(.horizontal, 16)
                 }
             }
         }
     }
 }
 
+// Unified FriendRowView that can work with either BaseUserDTO or FullFriendUserDTO
 struct FriendRowView: View {
-    let user: BaseUserDTO
-    let viewModel: FriendSearchViewModel
+    var user: BaseUserDTO? = nil
+    var friend: FullFriendUserDTO? = nil
+    var viewModel: FriendsTabViewModel? = nil
     @State private var isAdded: Bool = false
     
     var body: some View {
         HStack {
-            // Profile picture
-            if let pfpUrl = user.profilePicture {
+            // Profile picture - works with either user or friend
+            let profilePicture = user?.profilePicture ?? friend?.profilePicture
+            if let pfpUrl = profilePicture {
                 if MockAPIService.isMocking {
                     Image(pfpUrl)
                         .resizable()
@@ -160,36 +215,64 @@ struct FriendRowView: View {
             }
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(FormatterService.shared.formatName(user: user))
-                    .font(.onestRegular(size: 14))
-                    .foregroundColor(universalAccentColor)
-                Text("@\(user.username)")
-                    .font(.onestRegular(size: 14))
-                    .foregroundColor(Color.gray)
+                // Works with either user or friend
+                if let user = user {
+                    Text(FormatterService.shared.formatName(user: user))
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(universalAccentColor)
+                    Text("@\(user.username)")
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(Color.gray)
+                } else if let friend = friend {
+                    Text(FormatterService.shared.formatName(user: friend))
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(universalAccentColor)
+                    Text("@\(friend.username)")
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(Color.gray)
+                }
             }
             .padding(.leading, 8)
             
             Spacer()
             
-            Button(action: {
-                isAdded = true
-                Task {
-                    await viewModel.addFriend(friendUserId: user.id)
+            // Different controls depending on the context
+            if let friend = friend, let tags = friend.associatedFriendTagsToOwner, !tags.isEmpty {
+                // Show tag indicators for friends
+                HStack(spacing: 4) {
+                    ForEach(tags.prefix(2)) { tag in
+                        Circle()
+                            .fill(Color(hex: tag.colorHexCode))
+                            .frame(width: 10, height: 10)
+                    }
+                    
+                    if (tags.count > 2) {
+                        Text("+\(tags.count - 2)")
+                            .font(.onestRegular(size: 12))
+                            .foregroundColor(.gray)
+                    }
                 }
-            }) {
-                Text(isAdded ? "Request Sent" : "Add +")
-                    .font(.onestRegular(size: 14))
-                    .foregroundColor(isAdded ? Color.gray : universalSecondaryColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(isAdded ? Color.gray : universalSecondaryColor, lineWidth: 1)
-                    )
+            } else if let user = user, let viewModel = viewModel {
+                // Show add button for non-friends
+                Button(action: {
+                    isAdded = true
+                    Task {
+                        await viewModel.addFriend(friendUserId: user.id)
+                    }
+                }) {
+                    Text(isAdded ? "Request Sent" : "Add +")
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(isAdded ? Color.gray : universalSecondaryColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(isAdded ? Color.gray : universalSecondaryColor, lineWidth: 1)
+                        )
+                }
+                .disabled(isAdded)
             }
-            .disabled(isAdded)
         }
-        .padding(.horizontal, 16)
         .padding(.vertical, 8)
     }
 }
@@ -313,5 +396,5 @@ class FriendSearchViewModel: ObservableObject {
 }
 
 #Preview {
-    FriendSearchView(userId: UUID())
+    FriendSearchView(userId: UUID(), displayMode: .allFriends)
 }
