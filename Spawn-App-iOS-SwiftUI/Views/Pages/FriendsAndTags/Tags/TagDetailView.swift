@@ -262,9 +262,9 @@ struct TagDetailView: View {
             }
         }
         .sheet(isPresented: $showAddFriendToTagView) {
-            // Using AddFriendToTagView for adding multiple friends to this tag
+            // Using AddFriendsToTagView for adding multiple friends to this tag
             NavigationView {
-                AddFriendToTagView(friendTagId: tag.id)
+                AddFriendsToTagView(friendTagId: tag.id)
                     .onDisappear {
                         // Refresh data if needed after adding friends
                         // You might want to add additional refresh logic here

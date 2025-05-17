@@ -122,5 +122,4 @@ class AddFriendsToTagViewModel: ObservableObject {
             }
         }
 	}
-
-}
+} 
