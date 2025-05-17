@@ -70,8 +70,8 @@ struct FriendsTabView: View {
                     await viewModel.fetchAllData()
                 }
             }
-            .sheet(isPresented: $showingFriendSearchView) {
-                FriendSearchView()
+            .fullScreenCover(isPresented: $showingFriendSearchView) {
+                FriendSearchView(userId: user.id)
             }
 
 		}

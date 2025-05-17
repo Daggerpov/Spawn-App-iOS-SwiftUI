@@ -31,8 +31,8 @@ class FriendRequestsViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            // API endpoint for getting friend requests: /api/v1/users/{userId}/friend-requests
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/friend-requests") else {
+            // Correct API endpoint for getting incoming friend requests: /api/v1/friend-requests/incoming/{userId}
+            guard let url = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") else {
                 errorMessage = "Invalid URL"
                 return
             }
