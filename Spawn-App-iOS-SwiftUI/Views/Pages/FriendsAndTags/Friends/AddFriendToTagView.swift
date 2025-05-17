@@ -19,7 +19,7 @@ struct AddFriendToTagView: View {
     init(user: BaseUserDTO) {
         self.user = user
         self._viewModel = StateObject(wrappedValue: ChooseTagPopUpViewModel(
-            userId: AppCache.shared.currentUser?.id ?? UUID(),
+            userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
             apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService()
         ))
     }
@@ -176,28 +176,28 @@ struct AddFriendToTagView: View {
         case 1:
             return CGPoint(x: centerX, y: centerY - radius)
         case 2:
-            let angles = [-.pi/4, .pi*3/4]
+            let angles = [-CGFloat.pi/4, CGFloat.pi*3/4]
             let angle = angles[index]
             return CGPoint(
                 x: centerX + radius * cos(angle),
                 y: centerY + radius * sin(angle)
             )
         case 3:
-            let angles = [-.pi/4, .pi/2, .pi*5/4]
+            let angles = [-CGFloat.pi/4, CGFloat.pi/2, CGFloat.pi*5/4]
             let angle = angles[index]
             return CGPoint(
                 x: centerX + radius * cos(angle),
                 y: centerY + radius * sin(angle)
             )
         case 4:
-            let angles = [-.pi/4, .pi/4, .pi*3/4, .pi*5/4]
+            let angles = [-CGFloat.pi/4, CGFloat.pi/4, CGFloat.pi*3/4, CGFloat.pi*5/4]
             let angle = angles[index]
             return CGPoint(
                 x: centerX + radius * cos(angle),
                 y: centerY + radius * sin(angle)
             )
         case 5:
-            let angles = [-.pi/4, .pi/8, .pi/2, .pi*7/8, .pi*5/4]
+            let angles = [-CGFloat.pi/4, CGFloat.pi/8, CGFloat.pi/2, CGFloat.pi*7/8, CGFloat.pi*5/4]
             let angle = angles[index]
             return CGPoint(
                 x: centerX + radius * cos(angle),
@@ -205,7 +205,7 @@ struct AddFriendToTagView: View {
             )
         default:
             // For more than 5 tags, distribute evenly in a circle
-            let angle = 2 * .pi / CGFloat(count) * CGFloat(index)
+            let angle = 2 * CGFloat.pi / CGFloat(count) * CGFloat(index)
             return CGPoint(
                 x: centerX + radius * cos(angle),
                 y: centerY + radius * sin(angle)
