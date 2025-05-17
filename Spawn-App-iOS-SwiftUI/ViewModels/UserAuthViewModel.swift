@@ -14,6 +14,25 @@ import FirebaseMessaging
 class UserAuthViewModel: NSObject, ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
+        
+    #if DEBUG
+    // When running in preview environment, swap out shared instance with preview-friendly one if needed
+    static var previewInstance: UserAuthViewModel? = nil
+    
+    // Method to access the appropriate instance based on context
+    static var current: UserAuthViewModel {
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1",
+           let previewInstance = previewInstance {
+            return previewInstance
+        }
+        return shared
+    }
+    
+    /// Use this in place of UserAuthViewModel.shared to get the appropriate instance for the current context
+    static func getCurrent() -> UserAuthViewModel {
+        return current
+    }
+    #endif
 	@Published var errorMessage: String?
 
 	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider
@@ -52,7 +71,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var defaultPfpFetchError: Bool = false
 	@Published var defaultPfpUrlString: String? = nil
 
-	private init(apiService: IAPIService) {
+	init(apiService: IAPIService) {
         self.spawnUser = BaseUserDTO.danielAgapov
 		self.apiService = apiService
 
