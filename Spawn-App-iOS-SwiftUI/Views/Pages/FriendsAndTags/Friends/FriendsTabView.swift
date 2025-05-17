@@ -130,45 +130,57 @@ struct FriendsTabView: View {
                                     // Profile picture
                                     if MockAPIService.isMocking {
                                         if let pfp = friend.profilePicture {
-                                            Image(pfp)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 50, height: 50)
-                                                .clipShape(Circle())
-                                        }
-                                    } else {
-                                        if let pfpUrl = friend.profilePicture {
-                                            AsyncImage(url: URL(string: pfpUrl)) { image in
-                                                image
+                                            NavigationLink(destination: ProfileView(user: friend)) {
+                                                Image(pfp)
                                                     .resizable()
                                                     .scaledToFill()
                                                     .frame(width: 50, height: 50)
                                                     .clipShape(Circle())
-                                            } placeholder: {
-                                                Circle()
-                                                    .fill(Color.gray)
-                                                    .frame(width: 50, height: 50)
                                             }
-                                        } else {
-                                            Circle()
-                                                .fill(.white)
-                                                .frame(width: 50, height: 50)
+                                        }
+                                    } else {
+                                        NavigationLink(destination: ProfileView(user: friend)) {
+                                            if let pfpUrl = friend.profilePicture {
+                                                AsyncImage(url: URL(string: pfpUrl)) {
+                                                    image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 50, height: 50)
+                                                        .clipShape(Circle())
+                                                        .transition(.opacity.animation(.easeInOut))
+                                                } placeholder: {
+                                                    ProgressView()
+                                                        .frame(width: 50, height: 50)
+                                                }
+                                            } else {
+                                                Image(systemName: "person.circle.fill")
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: 50, height: 50)
+                                                    .foregroundColor(Color.gray.opacity(0.5))
+                                            }
                                         }
                                     }
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        // Display full name
-                                        Text(FormatterService.shared.formatName(user: friend))
-                                            .font(.onestRegular(size: 14))
-                                        Text("@\(friend.username)")
-                                            .font(.onestBold(size: 16))
+                                    
+                                    // Friend info
+                                    NavigationLink(destination: ProfileView(user: friend)) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(friend.name ?? friend.username)
+                                                .font(.onestMedium(size: 16))
+                                                .foregroundColor(universalAccentColor)
+                                                .lineLimit(1)
+                                            
+                                            if let tags = friend.associatedFriendTagsToOwner {
+                                                FriendTagsForFriendView(friend: friend)
+                                            }
+                                        }
+                                        .padding(.horizontal, 8)
                                     }
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(.leading, 8)
-
+                                    .buttonStyle(PlainButtonStyle())
+                                    
                                     Spacer()
                                     
-                                    // More options button
                                     Button(action: {
                                         // Handle more options
                                     }) {
