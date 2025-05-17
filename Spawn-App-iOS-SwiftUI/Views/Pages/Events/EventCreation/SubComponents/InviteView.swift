@@ -88,7 +88,7 @@ struct InviteView: View {
                         .padding(.bottom, 15)
                     }
                 }
-                .background(Color(.systemBackground))
+                .background(universalBackgroundColor)
             }
             .background(universalBackgroundColor)
             .navigationBarBackButtonHidden(true)
