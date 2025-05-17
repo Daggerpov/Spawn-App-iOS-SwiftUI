@@ -126,13 +126,15 @@ struct ProfileView: View {
                 }
                 .background(universalBackgroundColor)
                 .navigationBarBackButtonHidden()
-                .navigationBarItems(
-                    trailing: NavigationLink(destination: SettingsView()) {
-                        Image(systemName: "gearshape")
-                            .foregroundColor(universalAccentColor)
-                            .font(.title3)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        NavigationLink(destination: SettingsView()) {
+                            Image(systemName: "gearshape")
+                                .foregroundColor(universalAccentColor)
+                                .font(.title3)
+                        }
                     }
-                )
+                }
             }
         }
         .alert(item: $userAuth.activeAlert) { alertType in
