@@ -21,8 +21,9 @@ The rules enforce conventions around:
 - MVVM architecture patterns
 - Line length and spacing
 - Bracing style
-- API call organization
+- API call organization (using APIService)
 - SwiftUI view construction
+- Reusable component creation and usage
 
 ## How to Use
 
