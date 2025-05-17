@@ -224,7 +224,7 @@ struct TagDetailView: View {
         }
         .sheet(isPresented: $showAddFriendToTagView) {
             AddFriendToTagView(
-                userId: appCache.currentUser?.id ?? UUID(), // Use the current user ID from appCache
+                userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                 friendTagId: tag.id,
                 closeCallback: {
                     showAddFriendToTagView = false

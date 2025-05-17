@@ -11,9 +11,6 @@ struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
 	let user: BaseUserDTO
     @EnvironmentObject private var appCache: AppCache
-    @State private var showingFriendSearchView = false
-    @State private var showingAllFriendsView = false
-    @State private var showingRecentlySpawnedWithView = false
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -43,13 +40,12 @@ struct FriendsTabView: View {
 			ScrollView {
 				VStack(spacing: 16) {
 					// Search bar button that navigates to search view
-					SearchBarButtonView(
-						placeholder: "Search for friends",
-						action: {
-							showingFriendSearchView = true
-						}
-					)
-					.padding(.horizontal, 16)
+					NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .search)) {
+						SearchBarButtonView(
+							placeholder: "Search for friends"
+						)
+						.padding(.horizontal, 16)
+					}
                     
                     // Friends section
 					friendsSection
@@ -72,22 +68,11 @@ struct FriendsTabView: View {
                     await viewModel.fetchAllData()
                 }
             }
-            .fullScreenCover(isPresented: $showingFriendSearchView) {
-                FriendSearchView(userId: user.id, displayMode: .search)
-            }
-            .fullScreenCover(isPresented: $showingAllFriendsView) {
-                FriendSearchView(userId: user.id, displayMode: .allFriends)
-            }
-            .fullScreenCover(isPresented: $showingRecentlySpawnedWithView) {
-                FriendSearchView(userId: user.id, displayMode: .recentlySpawnedWith)
-            }
 		}
 	}
     
     var showAllFriendsButton: some View {
-        Button(action: {
-            showingAllFriendsView = true
-        }) {
+        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .allFriends)) {
             Text("Show All")
                 .font(.onestRegular(size: 14))
                 .foregroundColor(universalSecondaryColor)
@@ -95,9 +80,7 @@ struct FriendsTabView: View {
     }
     
     var showAllRecentlySpawnedButton: some View {
-        Button(action: {
-            showingRecentlySpawnedWithView = true
-        }) {
+        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recentlySpawnedWith)) {
             Text("Show All")
                 .font(.onestRegular(size: 14))
                 .foregroundColor(universalSecondaryColor)
@@ -118,8 +101,7 @@ struct FriendsTabView: View {
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
 						ForEach(viewModel.filteredRecommendedFriends) { friend in
-							RecommendedFriendView(
-								viewModel: viewModel, friend: friend)
+							FriendRowView(user: friend)
 						}
 					}
 				}
