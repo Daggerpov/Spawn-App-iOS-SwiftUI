@@ -293,14 +293,27 @@ class FriendsTabViewModel: ObservableObject {
         
         do {
             // API endpoint for getting recently spawned with users
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recently-spawned-with") else {
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recent-users") else {
                 return
             }
             
-            let fetchedUsers: [RecommendedFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            self.recentlySpawnedWith = fetchedUsers
+            let fetchedUsers: [RecentlySpawnedUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            // Convert RecentlySpawnedUserDTO to RecommendedFriendUserDTO for consistency in the UI
+            self.recentlySpawnedWith = fetchedUsers.map { recentUser in
+                RecommendedFriendUserDTO(
+                    id: recentUser.user.id,
+                    username: recentUser.user.username,
+                    profilePicture: recentUser.user.profilePicture,
+                    name: recentUser.user.name,
+                    bio: recentUser.user.bio,
+                    email: recentUser.user.email,
+                    mutualFriendCount: 0
+                )
+            }
         } catch {
-            // If API fails, try to use recommended friends instead
+            print("Error fetching recently spawned users: \(error.localizedDescription)")
+            // If API fails, use empty array
             self.recentlySpawnedWith = []
         }
     }
