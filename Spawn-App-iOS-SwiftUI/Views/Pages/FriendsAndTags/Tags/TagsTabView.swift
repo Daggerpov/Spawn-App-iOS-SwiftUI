@@ -11,6 +11,11 @@ struct TagsTabView: View {
 	@StateObject var viewModel: TagsViewModel
 	@State private var creationStatus: CreationStatus = .notCreating
     @Environment(\.dismiss) private var dismiss
+    
+    // Computed property to filter out the "everyone" tag
+    private var displayTags: [FullFriendTagDTO] {
+        return viewModel.tags.filter { !$0.isEveryone }
+    }
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
@@ -59,17 +64,21 @@ struct TagsTabView: View {
             .padding(.horizontal)
             .padding(.vertical, 12)
             
-            // Tags content
-			VStack(alignment: .leading, spacing: 15) {
-				AddTagButtonView(
-					creationStatus: $creationStatus, color: universalAccentColor
-				)
-				.environmentObject(viewModel)
-			}
-			.padding(.horizontal)
-            .padding(.top, 8)
-            
-			tagsSection
+            if displayTags.isEmpty && viewModel.isLoading == false {
+                emptyStateView
+            } else {
+                // Tags content
+                VStack(alignment: .leading, spacing: 15) {
+                    AddTagButtonView(
+                        creationStatus: $creationStatus, color: universalAccentColor
+                    )
+                    .environmentObject(viewModel)
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
+                tagsSection
+            }
 		}
 		.onAppear {
 			Task {
@@ -107,10 +116,60 @@ struct TagsTabView: View {
 }
 
 extension TagsTabView {
+    var emptyStateView: some View {
+        VStack(spacing: 25) {
+            Spacer()
+            
+            // Circle for animation placeholder
+            Circle()
+                .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [5]))
+                .foregroundColor(.gray.opacity(0.5))
+                .frame(width: 200, height: 200)
+                .overlay(
+                    Text("[insert rive\nanimation here]")
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                )
+            
+            // No Tags text
+            Text("No Tags Yet!")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            
+            // Description text
+            Text("Friend tags are the best way to streamline the flow for inviting groups of friends to hang out.")
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            // Create First Tag button
+            Button(action: {
+                creationStatus = .creating
+            }) {
+                HStack {
+                    Image(systemName: "plus")
+                    Text("Create First Tag")
+                        .fontWeight(.medium)
+                }
+                .foregroundColor(.green)
+                .padding(.vertical, 12)
+                .padding(.horizontal, 24)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .strokeBorder(Color.green, style: StrokeStyle(lineWidth: 1, dash: [5]))
+                )
+            }
+            
+            Spacer()
+            Spacer()
+        }
+        .padding()
+    }
+
 	var tagsSection: some View {
 		ScrollView {
             VStack(spacing: 15) {
-                ForEach(viewModel.tags) { friendTag in
+                ForEach(displayTags) { friendTag in
                     NavigationLink(destination: TagDetailView(tag: friendTag)) {
                         HStack {
                             Text(friendTag.displayName)
