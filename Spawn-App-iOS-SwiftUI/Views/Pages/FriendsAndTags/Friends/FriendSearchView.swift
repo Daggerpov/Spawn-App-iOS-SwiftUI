@@ -359,17 +359,17 @@ class FriendSearchViewModel: ObservableObject {
         
         do {
             // API endpoint for getting recently spawned with users
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recently-spawned-with") else {
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recent-users") else {
                 errorMessage = "Invalid URL"
                 return
             }
             
-            let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            self.recentlySpawnedWith = fetchedUsers
+            let fetchedUsers: [RecentlySpawnedUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            // Extract just the user object from each RecentlySpawnedUserDTO
+            self.recentlySpawnedWith = fetchedUsers.map { $0.user }
         } catch {
             errorMessage = "Failed to fetch recently spawned with users: \(error.localizedDescription)"
-            // Use mock data for development
-            self.recentlySpawnedWith = BaseUserDTO.mockUsers
+            self.recentlySpawnedWith = []
         }
     }
     
