@@ -100,6 +100,16 @@
       "name": "Function Parameter Formatting",
       "pattern": "\\.(swift)$", 
       "rule": "For functions with multiple parameters that span multiple lines, align the parameters"
+    },
+    {
+      "name": "Reusable Components",
+      "pattern": "\\.(swift)$",
+      "rule": "Create and use reusable components when UI patterns repeat across the application. Extract common UI elements into separate View files"
+    },
+    {
+      "name": "APIService Usage",
+      "pattern": "\\.(swift)$",
+      "rule": "Always use the APIService methods for network calls. Never implement direct URL session calls in ViewModels"
     }
   ]
 } 
