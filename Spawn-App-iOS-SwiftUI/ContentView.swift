@@ -94,7 +94,7 @@ struct ContentView: View {
                     showEventCreationDrawer = false
                 }
             )
-            .presentationDragIndicator(.visible)
+            .compatiblePresentationDragIndicator(.visible)
         }
     }
 }

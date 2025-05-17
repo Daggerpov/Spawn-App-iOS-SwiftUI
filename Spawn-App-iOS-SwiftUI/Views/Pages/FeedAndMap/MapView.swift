@@ -127,7 +127,7 @@ struct MapView: View {
                         color: color,
                         userId: user.id
                     )
-                    .presentationDragIndicator(.visible)
+                    .compatiblePresentationDragIndicator(.visible)
                 }
             }
         }
