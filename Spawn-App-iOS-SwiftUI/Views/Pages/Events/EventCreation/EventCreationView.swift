@@ -223,7 +223,7 @@ struct EventCreationView: View {
                 showFullDatePicker = false
             }
         }
-        .presentationDetents([.medium])
+        .compatiblePresentationDetent(.medium)
     }
 }
 
