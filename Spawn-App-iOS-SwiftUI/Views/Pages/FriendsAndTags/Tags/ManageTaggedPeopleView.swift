@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ManageTaggedPeopleView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var appCache: AppCache
     @StateObject var viewModel: TaggedPeopleSuggestionsViewModel
     @State private var searchText = ""
     
@@ -308,7 +307,5 @@ struct ManageTaggedPeopleView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
     ManageTaggedPeopleView(tag: FullFriendTagDTO.close)
-        .environmentObject(appCache)
 } 

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct TagDetailView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var appCache: AppCache
+    // Access AppCache as a singleton
     @State private var showAddFriendToTagView: Bool = false
     @State private var showActionSheet: Bool = false
     @State private var showManageTaggedPeopleView: Bool = false
@@ -265,7 +265,6 @@ struct TagDetailView: View {
             // Using AddFriendToTagView for adding multiple friends to this tag
             NavigationView {
                 AddFriendToTagView(friendTagId: tag.id)
-                    .environmentObject(appCache)
                     .onDisappear {
                         // Refresh data if needed after adding friends
                         // You might want to add additional refresh logic here
@@ -295,7 +294,5 @@ struct TagDetailView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
     TagDetailView(tag: FullFriendTagDTO.close)
-        .environmentObject(appCache)
 } 

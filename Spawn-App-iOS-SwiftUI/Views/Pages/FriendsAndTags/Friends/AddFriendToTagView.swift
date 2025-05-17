@@ -1,5 +1,5 @@
 //
-//  AddFriendToTagView.swift
+//  AddFriendsToTagView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-07-12.
@@ -7,9 +7,8 @@
 
 import SwiftUI
 
-struct AddFriendToTagView: View {
+struct AddFriendsToTagView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var appCache: AppCache
     @StateObject private var viewModel: AddFriendToTagViewModel
     @State private var searchText: String = ""
     
@@ -207,8 +206,8 @@ struct SelectableFriendRow: View {
     }
 }
 
-struct AddFriendToTagView_Previews: PreviewProvider {
+struct AddFriendsToTagView_Previews: PreviewProvider {
     static var previews: some View {
-        AddFriendToTagView(friendTagId: UUID())
+        AddFriendsToTagView(friendTagId: UUID())
     }
 } 

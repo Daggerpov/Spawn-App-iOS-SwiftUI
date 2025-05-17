@@ -10,7 +10,6 @@ import SwiftUI
 struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
 	let user: BaseUserDTO
-    @EnvironmentObject private var appCache: AppCache
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -64,7 +63,7 @@ struct FriendsTabView: View {
             .refreshable {
                 // Pull to refresh functionality
                 Task {
-                    await appCache.refreshFriends()
+                    await AppCache.shared.refreshFriends()
                     await viewModel.fetchAllData()
                 }
             }
@@ -323,6 +322,5 @@ struct FriendTagsForFriendView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-	FriendsTabView(user: .danielAgapov).environmentObject(appCache)
+	FriendsTabView(user: .danielAgapov)
 }

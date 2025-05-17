@@ -68,7 +68,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 							await appCache.validateCache()
 						}
 					}
-					.environmentObject(appCache)
                     .onestFontTheme()
 			} else {
 				LaunchView()
@@ -79,7 +78,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						// Connect the app delegate to the app
 						appDelegate.app = self
 					}
-                    .environmentObject(appCache)
                     .onestFontTheme()
 			}
 		}
