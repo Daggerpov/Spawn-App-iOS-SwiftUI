@@ -262,16 +262,16 @@ struct TagDetailView: View {
             }
         }
         .sheet(isPresented: $showAddFriendToTagView) {
-            AddFriendToTagView(
-                userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-                friendTagId: tag.id,
-                closeCallback: {
-                    showAddFriendToTagView = false
-                    // Handle any refresh needed after adding friends
-                }
-            )
+            // Using AddFriendToTagView for adding multiple friends to this tag
+            NavigationView {
+                AddFriendToTagView(friendTagId: tag.id)
+                    .environmentObject(appCache)
+                    .onDisappear {
+                        // Refresh data if needed after adding friends
+                        // You might want to add additional refresh logic here
+                    }
+            }
             .presentationDragIndicator(.visible)
-            .presentationDetents([.height(400)])
         }
         .sheet(isPresented: $showManageTaggedPeopleView) {
             ManageTaggedPeopleView(tag: tag)
