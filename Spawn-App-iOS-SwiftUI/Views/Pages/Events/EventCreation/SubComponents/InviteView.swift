@@ -288,7 +288,7 @@ struct InviteView: View {
         default:
             // For 6-8 tags, create a more scattered arrangement
             let radius: CGFloat = 80
-            let angle = 2 * .pi / Double(count) * Double(index)
+            let angle = 2 * CGFloat.pi / Double(count) * Double(index)
             let x = screenWidth/2 + radius * cos(angle)
             let y = screenHeight/2 + radius * sin(angle)
             
