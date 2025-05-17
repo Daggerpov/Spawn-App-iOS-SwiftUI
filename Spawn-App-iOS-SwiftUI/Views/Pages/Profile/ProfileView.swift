@@ -35,6 +35,12 @@ struct ProfileView: View {
 
     @StateObject var userAuth = UserAuthViewModel.shared
     @StateObject var profileViewModel = ProfileViewModel()
+    
+    // Add environment object for navigation
+    @Environment(\.presentationMode) var presentationMode
+    
+    // For the back button
+    @State private var showBackButton: Bool = false
 
     // Check if this is the current user's profile
     private var isCurrentUserProfile: Bool {
@@ -98,10 +104,31 @@ struct ProfileView: View {
                         }
                         .id(refreshFlag)  // Force refresh when flag changes
 
+                        // Friendship badge (for other users' profiles)
+                        if !isCurrentUserProfile && profileViewModel.friendshipStatus == .friends {
+                            Text("Friends")
+                                .font(.caption)
+                                .bold()
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color(hex: "#4CAF50")) // Green color as in Figma
+                                .cornerRadius(12)
+                                .padding(.bottom, 10)
+                        }
+
                         // Profile Action Buttons
-                        profileActionButtons
-                            .padding(.horizontal, 25)
-                            .padding(.bottom, 15)
+                        if isCurrentUserProfile {
+                            // Original action buttons for current user
+                            profileActionButtons
+                                .padding(.horizontal, 25)
+                                .padding(.bottom, 15)
+                        } else {
+                            // Friend action buttons for other users (based on friendship status)
+                            friendActionButtons
+                                .padding(.horizontal, 25)
+                                .padding(.bottom, 15)
+                        }
 
                         // Edit Save Cancel buttons (only when editing)
                         if isCurrentUserProfile && editingState == .save {
@@ -113,25 +140,56 @@ struct ProfileView: View {
                         interestsSection
                             .padding(.bottom, 15)
 
-                        // User Stats
-                        userStatsSection
-                            .padding(.bottom, 15)
+                        // User Stats (only for current user or friends)
+                        if isCurrentUserProfile || profileViewModel.friendshipStatus == .friends {
+                            userStatsSection
+                                .padding(.bottom, 15)
+                        }
 
-                        // Weekly Calendar View
-                        weeklyCalendarView
-                            .padding(.horizontal)
-                            .padding(.bottom, 15)
+                        // Weekly Calendar View (only for current user)
+                        if isCurrentUserProfile {
+                            weeklyCalendarView
+                                .padding(.horizontal)
+                                .padding(.bottom, 15)
+                        } else if profileViewModel.friendshipStatus == .friends {
+                            // User Events Section (for friends)
+                            userEventsSection
+                                .padding(.bottom, 15)
+                        } else {
+                            // Add to see events message (for non-friends)
+                            addToSeeEventsSection
+                                .padding(.horizontal)
+                                .padding(.vertical, 20)
+                        }
                     }
                     .padding(.horizontal)
                 }
                 .background(universalBackgroundColor)
                 .navigationBarBackButtonHidden()
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        NavigationLink(destination: SettingsView()) {
-                            Image(systemName: "gearshape")
+                    // Back button (only show for non-self profiles)
+                    if showBackButton {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button(action: {
+                                presentationMode.wrappedValue.dismiss()
+                            }) {
+                                HStack {
+                                    Image(systemName: "chevron.left")
+                                    Text("Back")
+                                }
                                 .foregroundColor(universalAccentColor)
-                                .font(.title3)
+                            }
+                        }
+                    }
+                    
+                    // Settings button (only for current user)
+                    if isCurrentUserProfile {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            NavigationLink(destination: SettingsView()) {
+                                Image(systemName: "gearshape")
+                                    .foregroundColor(universalAccentColor)
+                                    .font(.title3)
+                            }
                         }
                     }
                 }
@@ -187,6 +245,24 @@ struct ProfileView: View {
                         instagramLink = socialMedia.instagramLink ?? ""
                     }
                 }
+                
+                // Check friendship status if not viewing own profile
+                if !isCurrentUserProfile, let currentUserId = userAuth.spawnUser?.id {
+                    await profileViewModel.checkFriendshipStatus(
+                        currentUserId: currentUserId,
+                        profileUserId: user.id
+                    )
+                    
+                    // If they're friends, fetch their events
+                    if profileViewModel.friendshipStatus == .friends {
+                        await profileViewModel.fetchUserUpcomingEvents(userId: user.id)
+                    }
+                }
+                
+                // Determine if back button should be shown based on navigation
+                if !isCurrentUserProfile {
+                    showBackButton = true
+                }
             }
         }
         .onChange(of: userAuth.spawnUser) { newUser in
@@ -198,6 +274,14 @@ struct ProfileView: View {
             if let socialMedia = newSocialMedia {
                 whatsappLink = socialMedia.whatsappLink ?? ""
                 instagramLink = socialMedia.instagramLink ?? ""
+            }
+        }
+        .onChange(of: profileViewModel.friendshipStatus) { newStatus in
+            // Fetch events when friendship status changes to friends
+            if newStatus == .friends {
+                Task {
+                    await profileViewModel.fetchUserUpcomingEvents(userId: user.id)
+                }
             }
         }
         // Add a timer to periodically refresh data
@@ -349,6 +433,209 @@ struct ProfileView: View {
         } else {
             return event.category.color()
         }
+    }
+
+    // Friend Action Buttons based on friendship status
+    private var friendActionButtons: some View {
+        Group {
+            switch profileViewModel.friendshipStatus {
+            case .none:
+                // Add as Friend button
+                Button(action: {
+                    if let currentUserId = userAuth.spawnUser?.id {
+                        Task {
+                            await profileViewModel.sendFriendRequest(
+                                fromUserId: currentUserId,
+                                toUserId: user.id
+                            )
+                        }
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "person.badge.plus")
+                        Text("Add as Friend")
+                            .bold()
+                    }
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .padding(.vertical, 24)
+                    .padding(.horizontal, 8)
+                    .frame(height: 32)
+                    .frame(maxWidth: .infinity)
+                    .background(universalAccentColor)
+                    .cornerRadius(12)
+                }
+                
+            case .requestSent:
+                // Request Sent (disabled button)
+                HStack {
+                    Image(systemName: "clock")
+                    Text("Request Sent")
+                        .bold()
+                }
+                .font(.caption)
+                .foregroundColor(Color.gray)
+                .padding(.vertical, 24)
+                .padding(.horizontal, 8)
+                .frame(height: 32)
+                .frame(maxWidth: .infinity)
+                .background(Color.gray.opacity(0.3))
+                .cornerRadius(12)
+                
+            case .requestReceived:
+                // Accept/Deny buttons
+                HStack(spacing: 12) {
+                    Button(action: {
+                        if let requestId = profileViewModel.pendingFriendRequestId {
+                            Task {
+                                await profileViewModel.acceptFriendRequest(requestId: requestId)
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "checkmark")
+                            Text("Accept Request")
+                                .bold()
+                        }
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.vertical, 24)
+                        .padding(.horizontal, 8)
+                        .frame(height: 32)
+                        .frame(maxWidth: .infinity)
+                        .background(universalAccentColor)
+                        .cornerRadius(12)
+                    }
+                    
+                    Button(action: {
+                        if let requestId = profileViewModel.pendingFriendRequestId {
+                            Task {
+                                await profileViewModel.declineFriendRequest(requestId: requestId)
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "xmark")
+                            Text("Deny")
+                                .bold()
+                        }
+                        .font(.caption)
+                        .foregroundColor(universalAccentColor)
+                        .padding(.vertical, 24)
+                        .padding(.horizontal, 8)
+                        .frame(height: 32)
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(universalAccentColor, lineWidth: 1)
+                        )
+                    }
+                }
+                
+            case .friends:
+                // Share Profile button (same as in the original view)
+                Button(action: {
+                    shareProfile()
+                }) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share Profile")
+                            .bold()
+                    }
+                    .font(.caption)
+                    .foregroundColor(universalSecondaryColor)
+                    .padding(.vertical, 24)
+                    .padding(.horizontal, 8)
+                    .frame(height: 32)
+                    .frame(maxWidth: .infinity)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(universalSecondaryColor, lineWidth: 1)
+                    )
+                }
+                
+            default:
+                EmptyView()
+            }
+        }
+    }
+    
+    // User Events Section for friend profiles
+    private var userEventsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Upcoming Events by \(FormatterService.shared.formatFirstName(user: user))")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+                .padding(.horizontal)
+            
+            if profileViewModel.isLoadingUserEvents {
+                ProgressView()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else if profileViewModel.userEvents.isEmpty {
+                Text("No upcoming events")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .center)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(profileViewModel.userEvents) { event in
+                            EventCardView(event: event)
+                                .frame(width: 300, height: 180)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+            
+            HStack {
+                Spacer()
+                Button(action: {
+                    // Navigate to all events by this user
+                }) {
+                    Text("Show All")
+                        .font(.subheadline)
+                        .foregroundColor(universalSecondaryColor)
+                }
+                .padding(.trailing)
+            }
+        }
+    }
+    
+    // "Add to see events" section for non-friends
+    private var addToSeeEventsSection: some View {
+        VStack(spacing: 15) {
+            Image(systemName: "mappin.and.ellipse")
+                .font(.system(size: 28))
+                .foregroundColor(Color.gray.opacity(0.7))
+            
+            Text("Add \(FormatterService.shared.formatFirstName(user: user)) to see their upcoming spawns!")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundColor(Color.gray)
+                .padding(.horizontal)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 30)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(15)
+    }
+}
+
+// Extension to add a first name formatter
+extension FormatterService {
+    func formatFirstName(user: BaseUserDTO) -> String {
+        // Split the name and get the first component as the first name
+        if let fullName = user.name, !fullName.isEmpty {
+            let components = fullName.components(separatedBy: " ")
+            if let firstName = components.first {
+                return firstName
+            }
+        }
+        // Fallback to username if no name available
+        return user.username
     }
 }
 
