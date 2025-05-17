@@ -39,26 +39,6 @@ struct FriendsAndTagsView: View {
                 .navigationBarHidden(true)
             }
         }
-        .sheet(isPresented: $showAddFriendToTagButtonPressedView) {
-            if let friendTagIdForSheet = selectedFriendTagId {
-                AddFriendToTagView(
-                    userId: user.id,
-                    friendTagId: friendTagIdForSheet,
-                    closeCallback: closeSheet
-                )
-                .presentationDragIndicator(.visible)
-                .presentationDetents([.height(400)])
-            }
-        }
-    }
-
-    func closeSheet() {
-        showAddFriendToTagButtonPressedView = false
-
-        // Re-fetch tags after closing the sheet
-        Task {
-            await tagsViewModel?.fetchTags()
-        }
     }
 }
 
