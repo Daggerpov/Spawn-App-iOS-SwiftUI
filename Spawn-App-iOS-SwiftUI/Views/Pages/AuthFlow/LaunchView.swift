@@ -63,7 +63,7 @@ struct LaunchView: View {
 			if userAuth.shouldNavigateToUserInfoInputView {
 				UserInfoInputView()
 			} else if let loggedInSpawnUser = userAuth.spawnUser {
-				FeedView(user: loggedInSpawnUser)
+				ContentView(user: loggedInSpawnUser)
 			} else {
 				// Fallback: Stay on LaunchView
 				EmptyView()
