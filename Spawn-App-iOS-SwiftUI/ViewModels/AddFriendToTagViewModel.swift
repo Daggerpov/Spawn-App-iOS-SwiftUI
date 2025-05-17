@@ -58,11 +58,15 @@ class AddFriendToTagViewModel: ObservableObject {
 		if let url = URL(string: APIService.baseURL + "friendTags/addFriendToTag") {
 			do {
 				let params = ["friendTagId": tagId.uuidString, "friendId": friendId.uuidString]
-				_ = try await self.apiService.sendDataNoBody(to: url, parameters: params)
+				_ = try await self.apiService.sendData(
+                    EmptyBody(), 
+                    to: url, 
+                    parameters: params
+                )
 				
 				// Notify that friend was added to tag
 				await MainActor.run {
-					NotificationCenter.default.post(name: .friendAddedToTag, object: nil)
+					NotificationCenter.default.post(name: .friendsAddedToTag, object: nil)
 				}
 				
 				return true
