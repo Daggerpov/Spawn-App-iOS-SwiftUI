@@ -101,7 +101,6 @@ struct ContentView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable
     ContentView(user: BaseUserDTO.danielAgapov)
 }
 
