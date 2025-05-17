@@ -46,8 +46,8 @@ struct FriendsAndTagsView: View {
                     friendTagId: friendTagIdForSheet,
                     closeCallback: closeSheet
                 )
-                .compatiblePresentationDragIndicator(.visible)
-                .compatiblePresentationDetents([.height(400)])
+                .presentationDragIndicator(.visible)
+                .presentationDetents([.height(400)])
             }
         }
     }

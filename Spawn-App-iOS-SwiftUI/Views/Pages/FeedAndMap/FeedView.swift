@@ -83,7 +83,7 @@ struct FeedView: View {
                         color: color,
                         userId: user.id
                     )
-                    .compatiblePresentationDragIndicator(.visible)
+                    .presentationDragIndicator(.visible)
                 }
             }
             .sheet(isPresented: $showEventCreationDrawer) {
@@ -93,7 +93,7 @@ struct FeedView: View {
                         showEventCreationDrawer = false
                     }
                 )
-                .compatiblePresentationDragIndicator(.visible)
+                .presentationDragIndicator(.visible)
             }
         }
     }

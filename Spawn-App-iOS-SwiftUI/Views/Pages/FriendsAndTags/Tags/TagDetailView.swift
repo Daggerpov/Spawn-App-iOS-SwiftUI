@@ -270,8 +270,8 @@ struct TagDetailView: View {
                     // Handle any refresh needed after adding friends
                 }
             )
-            .compatiblePresentationDragIndicator(.visible)
-            .compatiblePresentationDetents([.height(400)])
+            .presentationDragIndicator(.visible)
+            .presentationDetents([.height(400)])
         }
         .sheet(isPresented: $showManageTaggedPeopleView) {
             ManageTaggedPeopleView(tag: tag)
