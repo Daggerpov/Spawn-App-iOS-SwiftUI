@@ -38,6 +38,7 @@ struct ProfileView: View {
     @State private var reportReason: String = ""
     @State private var blockReason: String = ""
     @State private var showRemoveFriendConfirmation: Bool = false
+    @State private var showProfileMenu: Bool = false
 
     @StateObject var userAuth = UserAuthViewModel.shared
     @StateObject var profileViewModel = ProfileViewModel()
@@ -200,47 +201,9 @@ struct ProfileView: View {
                     } else {
                         // Three dots menu for other users' profiles
                         ToolbarItem(placement: .navigationBarTrailing) {
-                            Menu {
-                                Button(action: {
-                                    showTagDialog = true
-                                }) {
-                                    Label("Add to Tag", systemImage: "tag")
-                                }
-                                
-                                if profileViewModel.friendshipStatus == .friends {
-                                    Button(action: {
-                                        showRemoveFriendConfirmation = true
-                                    }) {
-                                        Label("Remove as friend", systemImage: "person.badge.minus")
-                                    }
-                                }
-                                
-                                Button(action: {
-                                    copyProfileURL()
-                                }) {
-                                    Label("Copy profile URL", systemImage: "link")
-                                }
-                                
-                                Button(action: {
-                                    shareProfile()
-                                }) {
-                                    Label("Share this Profile", systemImage: "square.and.arrow.up")
-                                }
-                                
-                                Divider()
-                                
-                                Button(role: .destructive, action: {
-                                    showReportDialog = true
-                                }) {
-                                    Label("Report user", systemImage: "flag")
-                                }
-                                
-                                Button(role: .destructive, action: {
-                                    showBlockDialog = true
-                                }) {
-                                    Label("Block user", systemImage: "hand.raised")
-                                }
-                            } label: {
+                            Button(action: {
+                                showProfileMenu = true
+                            }) {
                                 Image(systemName: "ellipsis")
                                     .foregroundColor(universalAccentColor)
                                     .font(.title3)
@@ -449,6 +412,18 @@ struct ProfileView: View {
             }
         } message: {
             Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or events.")
+        }
+        .sheet(isPresented: $showProfileMenu) {
+            ProfileMenuView(
+                user: user as! BaseUserDTO,
+                showTagDialog: $showTagDialog,
+                showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+                showReportDialog: $showReportDialog,
+                showBlockDialog: $showBlockDialog,
+                isFriend: profileViewModel.friendshipStatus == .friends,
+                copyProfileURL: copyProfileURL,
+                shareProfile: shareProfile
+            )
         }
     }
 
@@ -1592,5 +1567,9 @@ struct RoundedCorner: Shape {
 
 @available(iOS 17, *)
 #Preview {
+    @Previewable
     ProfileView(user: BaseUserDTO.danielAgapov)
 }
+
+// Add ProfileMenuView at the end of the file
+// ProfileMenuView is now in its own file: ProfileMenuView.swift
