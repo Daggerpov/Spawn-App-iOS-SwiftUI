@@ -137,7 +137,7 @@ struct ProfileMenuView: View {
             .padding(.bottom)
         }
         .sheet(isPresented: $showAddFriendToTagView) {
-            AddFriendsToTagView(friendTagId: user.id)
+            AddFriendToTagView(friendId: user.id)
         }
     }
     

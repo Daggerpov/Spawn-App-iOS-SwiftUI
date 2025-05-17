@@ -1,32 +1,27 @@
 //
-//  AddFriendsToTagView.swift
+//  AddFriendToTagView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 2025-07-12.
+//  Created by Daniel Agapov on 2025-07-13.
 //
 
 import SwiftUI
 
-struct AddFriendsToTagView: View {
+struct AddFriendToTagView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel: AddFriendsToTagViewModel
+    @StateObject private var viewModel = TagsViewModel(
+        userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+        apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService()
+    )
+    
+    let friendId: UUID
     @State private var searchText: String = ""
-    
-    init(friendTagId: UUID) {
-        self._viewModel = StateObject(wrappedValue: AddFriendsToTagViewModel(
-            userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-            apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService()
-        ))
-        self.friendTagId = friendTagId
-    }
-    
-    var friendTagId: UUID
     
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Add Friends to Tag")
+                Text("Add to Tag")
                     .font(.title3)
                     .fontWeight(.semibold)
                 
@@ -47,7 +42,7 @@ struct AddFriendsToTagView: View {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.gray)
                 
-                TextField("Search friends", text: $searchText)
+                TextField("Search tags", text: $searchText)
                     .autocapitalization(.none)
                 
                 if !searchText.isEmpty {
@@ -64,150 +59,111 @@ struct AddFriendsToTagView: View {
             .cornerRadius(10)
             .padding(.horizontal)
             
-            // Friends list
+            // Tags list
             if viewModel.isLoading {
                 ProgressView()
                     .padding()
-            } else if viewModel.friends.isEmpty {
+                Spacer()
+            } else if viewModel.tags.isEmpty {
                 VStack {
-                    Text("No friends available to add")
+                    Text("You don't have any tags yet")
                         .foregroundColor(.gray)
                         .padding()
+                    
+                    Button(action: {
+                        viewModel.showCreateTagSheet = true
+                    }) {
+                        Text("Create a Tag")
+                            .foregroundColor(.white)
+                            .padding()
+                            .background(universalAccentColor)
+                            .cornerRadius(10)
+                    }
+                    .padding()
+                    
                     Spacer()
                 }
             } else {
                 List {
-                    ForEach(filteredFriends) { friend in
-                        SelectableFriendRow(
-                            friend: friend,
-                            isSelected: viewModel.selectedFriends.contains(where: { $0.id == friend.id }),
-                            action: {
-                                viewModel.toggleFriendSelection(friend)
+                    ForEach(filteredTags) { tag in
+                        Button(action: {
+                            Task {
+                                await addFriendToTag(tagId: tag.id)
                             }
-                        )
+                        }) {
+                            HStack {
+                                TagBubble(tag: tag)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "plus.circle")
+                                    .foregroundColor(universalAccentColor)
+                                    .font(.title3)
+                            }
+                            .contentShape(Rectangle())
+                            .padding(.vertical, 4)
+                        }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .listStyle(PlainListStyle())
             }
             
-            // Action buttons
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Text("Cancel")
-                        .foregroundColor(.gray)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(10)
-                }
-                
-                Button(action: {
-                    Task {
-                        await viewModel.addSelectedFriendsToTag(friendTagId: friendTagId)
-                        dismiss()
-                    }
-                }) {
-                    Text("Add \(viewModel.selectedFriends.count) Friends")
-                        .foregroundColor(.white)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(viewModel.selectedFriends.isEmpty ? Color.gray : universalAccentColor)
-                        .cornerRadius(10)
-                }
-                .disabled(viewModel.selectedFriends.isEmpty)
+            // Cancel button
+            Button(action: {
+                dismiss()
+            }) {
+                Text("Cancel")
+                    .foregroundColor(.gray)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
             }
             .padding()
         }
         .onAppear {
             Task {
-                await viewModel.fetchAllData(friendTagId: friendTagId)
+                await viewModel.fetchAllData()
             }
+        }
+        .sheet(isPresented: $viewModel.showCreateTagSheet) {
+            CreateTagView()
         }
     }
     
-    var filteredFriends: [BaseUserDTO] {
+    private var filteredTags: [FriendTagDTO] {
         if searchText.isEmpty {
-            return viewModel.friends
+            return viewModel.tags
         } else {
-            return viewModel.friends.filter { friend in
-                let name = friend.name ?? ""
-                let username = friend.username
-                return name.localizedCaseInsensitiveContains(searchText) || 
-                       username.localizedCaseInsensitiveContains(searchText)
+            return viewModel.tags.filter { tag in
+                tag.name.localizedCaseInsensitiveContains(searchText)
             }
         }
     }
-}
-
-// Friend row component
-struct SelectableFriendRow: View {
-    let friend: BaseUserDTO
-    let isSelected: Bool
-    let action: () -> Void
     
-    var body: some View {
-        Button(action: action) {
-            HStack {
-                // Profile image
-                if let pfpUrl = friend.profilePicture {
-                    if MockAPIService.isMocking {
-                        Image(pfpUrl)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 50, height: 50)
-                            .clipShape(Circle())
-                    } else {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
-                        }
-                    }
-                } else {
-                    Circle()
-                        .fill(Color.gray)
-                        .frame(width: 50, height: 50)
-                }
+    private func addFriendToTag(tagId: UUID) async {
+        if let url = URL(string: APIService.baseURL + "friendTags/addFriendToTag") {
+            do {
+                let params = ["friendTagId": tagId.uuidString, "friendId": friendId.uuidString]
+                let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService()
+                _ = try await apiService.sendDataNoBody(to: url, parameters: params)
                 
-                // Name and username
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(friend.name ?? "")
-                        .font(.headline)
-                    
-                    Text("@\(friend.username)")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                // Show success feedback
+                await MainActor.run {
+                    // Post notification that a friend was added to a tag
+                    NotificationCenter.default.post(name: .friendAddedToTag, object: nil)
+                    dismiss()
                 }
-                
-                Spacer()
-                
-                // Selection indicator
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(universalAccentColor)
-                        .font(.title3)
-                } else {
-                    Circle()
-                        .stroke(Color.gray, lineWidth: 2)
-                        .frame(width: 24, height: 24)
-                }
+            } catch {
+                print("Error adding friend to tag: \(error.localizedDescription)")
             }
-            .contentShape(Rectangle())
         }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
-struct AddFriendsToTagView_Previews: PreviewProvider {
+struct AddFriendToTagView_Previews: PreviewProvider {
     static var previews: some View {
-        AddFriendsToTagView(friendTagId: UUID())
+        AddFriendToTagView(friendId: UUID())
     }
 } 
