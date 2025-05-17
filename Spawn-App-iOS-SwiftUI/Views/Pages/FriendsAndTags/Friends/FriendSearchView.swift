@@ -45,58 +45,63 @@ struct FriendSearchView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Navigation header
-                HStack {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(.black)
-                            .font(.system(size: 20))
-                    }
-                    
-                    Spacer()
-                    
-                    Text(titleText)
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                    
-                    Spacer()
-                    
-                    // Empty view to balance the back button
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
                     Image(systemName: "chevron.left")
                         .font(.title3)
-                        .foregroundColor(.clear)
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                
-                // Search bar
-                SearchView(searchPlaceholderText: "Search for friends...", viewModel: searchViewModel)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .padding(.bottom, 16)
-                
-                // Content based on display mode and search status
-                ScrollView {
-                    if searchViewModel.isSearching {
-                        searchResultsView
-                    } else {
-                        switch displayMode {
-                        case .search:
-                            // Empty state when not searching
-                            EmptyView()
-                        case .allFriends:
-                            allFriendsView
-                        case .recentlySpawnedWith:
-                            recentlySpawnedWithView
-                        }
-                    }
+                        .foregroundColor(universalAccentColor)
                 }
                 
                 Spacer()
+                
+                Text(titleText)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                    .foregroundColor(universalAccentColor)
+                
+                Spacer()
+                
+                // Empty view to balance the back button
+                Image(systemName: "chevron.left")
+                    .font(.title3)
+                    .foregroundColor(.clear)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            .background(universalBackgroundColor)
+            
+            // Search bar
+            if displayMode == .search || displayMode == .allFriends {
+                SearchBarView(
+                    searchText: $searchViewModel.searchText,
+                    isSearching: $searchViewModel.isSearching,
+                    placeholder: "Search for friends"
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+            }
+            
+            // Content based on display mode
+            ScrollView {
+                VStack(spacing: 16) {
+                    switch displayMode {
+                    case .search:
+                        if searchViewModel.searchText.isEmpty {
+                            recentlySpawnedWithView
+                        } else {
+                            searchResultsView
+                        }
+                    case .allFriends:
+                        allFriendsView
+                    case .recentlySpawnedWith:
+                        recentlySpawnedWithView
+                    }
+                }
+                .padding(.top, 16)
             }
             .background(universalBackgroundColor)
             .navigationBarHidden(true)
@@ -116,13 +121,21 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .background(universalBackgroundColor)
+        .safeAreaInset(edge: .top) {
+            Color.clear.frame(height: 0)
+        }
     }
     
     var searchResultsView: some View {
         VStack(spacing: 16) {
+            // Background for loading state
+            Color.clear.frame(width: 0, height: 0)
+                .background(universalBackgroundColor)
             if viewModel.isLoading {
                 ProgressView()
                     .padding(.top, 24)
+                    .background(universalBackgroundColor)
             } else if viewModel.searchResults.isEmpty && searchViewModel.searchText.count > 0 {
                 Text("No results found")
                     .font(.onestRegular(size: 16))
@@ -135,13 +148,18 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .background(universalBackgroundColor)
     }
     
     var allFriendsView: some View {
         VStack(spacing: 16) {
+            // Background for loading state
+            Color.clear.frame(width: 0, height: 0)
+                .background(universalBackgroundColor)
             if viewModel.isLoading {
                 ProgressView()
                     .padding(.top, 24)
+                    .background(universalBackgroundColor)
             } else if viewModel.filteredFriends.isEmpty {
                 Text("No friends found")
                     .font(.onestRegular(size: 16))
@@ -154,13 +172,18 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .background(universalBackgroundColor)
     }
     
     var recentlySpawnedWithView: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Background for loading state
+            Color.clear.frame(width: 0, height: 0)
+                .background(universalBackgroundColor)
             if viewModel.isLoading {
                 ProgressView()
                     .padding(.top, 24)
+                    .background(universalBackgroundColor)
             } else if viewModel.recentlySpawnedWith.isEmpty {
                 Text("No recent spawns found")
                     .font(.onestRegular(size: 14))
@@ -174,12 +197,13 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .background(universalBackgroundColor)
     }
 }
 
 // Unified FriendRowView that can work with either BaseUserDTO or FullFriendUserDTO
 struct FriendRowView: View {
-    var user: BaseUserDTO? = nil
+    var user: Nameable? = nil
     var friend: FullFriendUserDTO? = nil
     var viewModel: FriendsTabViewModel? = nil
     @State private var isAdded: Bool = false
