@@ -10,6 +10,7 @@ import SwiftUI
 struct TagsTabView: View {
 	@StateObject var viewModel: TagsViewModel
 	@State private var creationStatus: CreationStatus = .notCreating
+    @Environment(\.dismiss) private var dismiss
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
@@ -31,19 +32,43 @@ struct TagsTabView: View {
 	}
 
 	var body: some View {
-		VStack {
+		VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                        .foregroundColor(.black)
+                }
+                
+                Spacer()
+                
+                Text("Tags")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                // Empty view to balance the back button
+                Image(systemName: "chevron.left")
+                    .font(.title3)
+                    .foregroundColor(.clear)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            
+            // Tags content
 			VStack(alignment: .leading, spacing: 15) {
-				Text("TAGS")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
-
 				AddTagButtonView(
 					creationStatus: $creationStatus, color: universalAccentColor
 				)
 				.environmentObject(viewModel)
 			}
-			Spacer()
-			Spacer()
+			.padding(.horizontal)
+            .padding(.top, 8)
+            
 			tagsSection
 		}
 		.onAppear {
@@ -76,37 +101,104 @@ struct TagsTabView: View {
 				}
 			}
 		}
-		.padding()
+		.background(universalBackgroundColor)
+        .navigationBarHidden(true)
 	}
 }
 
 extension TagsTabView {
 	var tagsSection: some View {
-		Group {
-			ScrollView {
-				VStack(spacing: 15) {
-					ForEach(viewModel.tags) { friendTag in
-						TagRow(
-							friendTag: friendTag,
-							addFriendToTagButtonPressedCallback:
-								addFriendToTagButtonPressedCallback
-						)
-						.background(
-							RoundedRectangle(cornerRadius: 12)
-								.fill(
-									Color(hex: friendTag.colorHexCode)
-										.opacity(0.5)
-								)
-								.cornerRadius(
-									universalRectangleCornerRadius
-								)
-						)
-						.environmentObject(viewModel)
-					}
-				}
-			}
+		ScrollView {
+            VStack(spacing: 15) {
+                ForEach(viewModel.tags) { friendTag in
+                    NavigationLink(destination: TagDetailView(tag: friendTag)) {
+                        HStack {
+                            Text(friendTag.displayName)
+                                .foregroundColor(.white)
+                                .font(.title)
+                                .fontWeight(.semibold)
+                                .padding(.leading)
+                            
+                            Spacer()
+                            
+                            // Show tag friends preview
+                            TagFriendsPreview(friends: friendTag.friends)
+                                .padding(.trailing)
+                        }
+                        .padding(.vertical, 15)
+                        .background(
+                            RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+                                .fill(Color(hex: friendTag.colorHexCode).opacity(0.5))
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal)
+                }
+            }
+            .padding(.vertical, 8)
 		}
 	}
+}
+
+struct TagFriendsPreview: View {
+    var friends: [BaseUserDTO]?
+    
+    // Computed properties to use throughout the view
+    private var displayedFriends: [BaseUserDTO] {
+        return (friends ?? []).prefix(3).map { $0 }
+    }
+    
+    private var remainingCount: Int {
+        return (friends?.count ?? 0) - displayedFriends.count
+    }
+    
+    private var trailingPadding: CGFloat {
+        return min(CGFloat(displayedFriends.count) * 15, 45) + (remainingCount > 0 ? 30 : 0)
+    }
+
+    var body: some View {
+        HStack {
+            ZStack {
+                // Show only up to 3 friends
+                ForEach(
+                    Array(displayedFriends.enumerated().reversed()), id: \.element.id
+                ) { index, friend in
+                    if let pfpUrl = friend.profilePicture {
+                        AsyncImage(url: URL(string: pfpUrl)) { image in
+                            image
+                                .ProfileImageModifier(imageType: .eventParticipants)
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 25, height: 25)
+                        }
+                        .offset(x: CGFloat(index) * 15)  // Adjust overlap spacing
+                    } else {
+                        Circle()
+                            .fill(.gray)
+                            .frame(width: 25, height: 25)
+                            .offset(x: CGFloat(index) * 15)  // Adjust overlap spacing
+                    }
+                }
+                
+                // Show "+X" indicator if there are more than 3 friends
+                if remainingCount > 0 {
+                    Text("+\(remainingCount)")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 25, height: 25)
+                        .background(Circle().fill(universalAccentColor))
+                        .offset(x: 45)  // Position after the 3rd friend
+                }
+            }
+            .padding(.trailing, trailingPadding)
+            
+            // Add the chevron indicator
+            Image(systemName: "chevron.right")
+                .foregroundColor(.white)
+                .font(.system(size: 14, weight: .bold))
+        }
+    }
 }
 
 @available(iOS 17, *)
