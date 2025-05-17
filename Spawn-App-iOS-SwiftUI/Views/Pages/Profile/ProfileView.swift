@@ -9,7 +9,7 @@ import PhotosUI
 import SwiftUI
 
 struct ProfileView: View {
-    let user: BaseUserDTO
+    let user: Nameable
     @State private var username: String
     @State private var name: String
     @State private var editingState: ProfileEditText = .edit
@@ -32,6 +32,12 @@ struct ProfileView: View {
     @State private var refreshFlag = false
     @State private var showCalendarPopup: Bool = false
     @State private var showEventDetails: Bool = false
+    @State private var showTagDialog: Bool = false
+    @State private var showReportDialog: Bool = false
+    @State private var showBlockDialog: Bool = false
+    @State private var reportReason: String = ""
+    @State private var blockReason: String = ""
+    @State private var showRemoveFriendConfirmation: Bool = false
 
     @StateObject var userAuth = UserAuthViewModel.shared
     @StateObject var profileViewModel = ProfileViewModel()
@@ -191,6 +197,55 @@ struct ProfileView: View {
                                     .font(.title3)
                             }
                         }
+                    } else {
+                        // Three dots menu for other users' profiles
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Menu {
+                                Button(action: {
+                                    showTagDialog = true
+                                }) {
+                                    Label("Add to Tag", systemImage: "tag")
+                                }
+                                
+                                if profileViewModel.friendshipStatus == .friends {
+                                    Button(action: {
+                                        showRemoveFriendConfirmation = true
+                                    }) {
+                                        Label("Remove as friend", systemImage: "person.badge.minus")
+                                    }
+                                }
+                                
+                                Button(action: {
+                                    copyProfileURL()
+                                }) {
+                                    Label("Copy profile URL", systemImage: "link")
+                                }
+                                
+                                Button(action: {
+                                    shareProfile()
+                                }) {
+                                    Label("Share this Profile", systemImage: "square.and.arrow.up")
+                                }
+                                
+                                Divider()
+                                
+                                Button(role: .destructive, action: {
+                                    showReportDialog = true
+                                }) {
+                                    Label("Report user", systemImage: "flag")
+                                }
+                                
+                                Button(role: .destructive, action: {
+                                    showBlockDialog = true
+                                }) {
+                                    Label("Block user", systemImage: "hand.raised")
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis")
+                                    .foregroundColor(universalAccentColor)
+                                    .font(.title3)
+                            }
+                        }
                     }
                 }
             }
@@ -322,6 +377,79 @@ struct ProfileView: View {
                 .presentationDetents([.medium, .large])
             }
         }
+        .sheet(isPresented: $showTagDialog) {
+            // Show tag selection dialog
+            if let currentUserId = userAuth.spawnUser?.id {
+                ChoosingTagPopupView(
+                    friend: user as! BaseUserDTO,
+                    userId: currentUserId,
+                    closeCallback: {
+                        showTagDialog = false
+                    }
+                )
+                .presentationDetents([.medium])
+            }
+        }
+        .alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Remove", role: .destructive) {
+                if let currentUserId = userAuth.spawnUser?.id {
+                    Task {
+                        await profileViewModel.removeFriend(
+                            currentUserId: currentUserId,
+                            profileUserId: user.id
+                        )
+                    }
+                }
+            }
+        } message: {
+            Text("Are you sure you want to remove \(FormatterService.shared.formatName(user: user)) from your friends?")
+        }
+        .alert("Report User", isPresented: $showReportDialog) {
+            TextField("Reason for report", text: $reportReason)
+            Button("Cancel", role: .cancel) { 
+                reportReason = ""
+            }
+            Button("Report", role: .destructive) {
+                if let currentUserId = userAuth.spawnUser?.id, !reportReason.isEmpty {
+                    Task {
+                        await profileViewModel.reportUser(
+                            reporterId: currentUserId,
+                            reportedId: user.id,
+                            reason: reportReason
+                        )
+                        reportReason = ""
+                        
+                        // Show success notification
+                        notificationMessage = "User reported successfully"
+                        showNotification = true
+                    }
+                }
+            }
+        }
+        .alert("Block User", isPresented: $showBlockDialog) {
+            TextField("Reason for blocking", text: $blockReason)
+            Button("Cancel", role: .cancel) { 
+                blockReason = ""
+            }
+            Button("Block", role: .destructive) {
+                if let currentUserId = userAuth.spawnUser?.id, !blockReason.isEmpty {
+                    Task {
+                        await profileViewModel.blockUser(
+                            blockerId: currentUserId,
+                            blockedId: user.id,
+                            reason: blockReason
+                        )
+                        blockReason = ""
+                        
+                        // Navigate back to previous screen after blocking
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+        } message: {
+            Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or events.")
+        }
     }
 
     private func addInterest() {
@@ -392,6 +520,15 @@ struct ProfileView: View {
                 completion: nil
             )
         }
+    }
+
+    private func copyProfileURL() {
+        let profileURL = "https://spawnapp.com/profile/\(user.id)"
+        UIPasteboard.general.string = profileURL
+        
+        // Show notification toast
+        notificationMessage = "Profile URL copied to clipboard"
+        showNotification = true
     }
 
     private func removeInterest(_ interest: String) {
@@ -582,8 +719,16 @@ struct ProfileView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
                         ForEach(profileViewModel.userEvents) { event in
-                            EventCardView(event: event)
-                                .frame(width: 300, height: 180)
+                            EventCardView(
+                                userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+                                event: event,
+                                color: event.isSelfOwned == true ? universalAccentColor : determineEventColor(for: event),
+                                callback: { selectedEvent, color in
+                                    profileViewModel.selectedEvent = selectedEvent
+                                    showEventDetails = true
+                                }
+                            )
+                            .frame(width: 300, height: 180)
                         }
                     }
                     .padding(.horizontal)
@@ -626,7 +771,7 @@ struct ProfileView: View {
 
 // Extension to add a first name formatter
 extension FormatterService {
-    func formatFirstName(user: BaseUserDTO) -> String {
+    func formatFirstName(user: Nameable) -> String {
         // Split the name and get the first component as the first name
         if let fullName = user.name, !fullName.isEmpty {
             let components = fullName.components(separatedBy: " ")

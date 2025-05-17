@@ -501,6 +501,85 @@ class ProfileViewModel: ObservableObject {
             }
         }
     }
+    
+    // MARK: - Friend Management
+    
+    func removeFriend(currentUserId: UUID, profileUserId: UUID) async {
+        do {
+            let url = URL(string: APIService.baseURL + "blocked-users/remove-friendship")!
+            let parameters = [
+                "userAId": currentUserId.uuidString,
+                "userBId": profileUserId.uuidString
+            ]
+            
+            let _: EmptyResponse = try await self.apiService.sendData(
+                EmptyRequestBody(),
+                to: url,
+                parameters: parameters
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .none
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to remove friend: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func reportUser(reporterId: UUID, reportedId: UUID, reason: String) async {
+        do {
+            let url = URL(string: APIService.baseURL + "user-reports")!
+            let reportDTO = UserReportCreationDTO(
+                id: UUID(),
+                reporterUserId: reporterId,
+                reportedUserId: reportedId,
+                reason: reason
+            )
+            
+            let _: EmptyResponse = try await self.apiService.sendData(
+                reportDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            await MainActor.run {
+                self.errorMessage = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to report user: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
+        do {
+            let url = URL(string: APIService.baseURL + "blocked-users/block")!
+            let blockDTO = BlockedUserCreationDTO(
+                id: UUID(),
+                blockerId: blockerId,
+                blockedId: blockedId,
+                reason: reason
+            )
+            
+            let _: EmptyResponse = try await self.apiService.sendData(
+                blockDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .blocked
+                self.errorMessage = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to block user: \(error.localizedDescription)"
+            }
+        }
+    }
 }
 
 // Enum to represent friendship status
@@ -511,6 +590,7 @@ enum FriendshipStatus {
     case requestSent // Current user sent request to profile user
     case requestReceived // Profile user sent request to current user
     case themself       // It's the current user's own profile
+    case blocked        // User is blocked
 }
 
 // DTOs for friend status checking
@@ -522,5 +602,20 @@ struct PendingFriendRequestDTO: Codable, Identifiable {
     let id: UUID
     let senderId: UUID
     let receiverId: UUID
+}
+
+// DTOs for user reporting and blocking
+struct UserReportCreationDTO: Codable {
+    let id: UUID
+    let reporterUserId: UUID
+    let reportedUserId: UUID
+    let reason: String
+}
+
+struct BlockedUserCreationDTO: Codable {
+    let id: UUID
+    let blockerId: UUID
+    let blockedId: UUID
+    let reason: String
 }
 
