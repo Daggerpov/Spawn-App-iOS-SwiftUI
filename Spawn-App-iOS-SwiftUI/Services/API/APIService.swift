@@ -959,4 +959,4 @@ class APIService: IAPIService {
 struct EmptyRequestBody: Codable {}
 // for empty responses from requests:
 struct EmptyResponse: Codable {}
-struct EmptyObject: Encodable {}
+struct EmptyObject: Codable {}

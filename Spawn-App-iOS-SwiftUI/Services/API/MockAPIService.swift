@@ -99,13 +99,18 @@ class MockAPIService: IAPIService {
             }
         }
 
-        /// ChoosingTagViewModel.swift:
-        if let userIdForUrl = userId {
-            if url.absoluteString == APIService.baseURL
-                + "friendTags/addUserToTags/\(userIdForUrl)"
-            {
-                return FullFriendTagDTO.mockTags as! T
-            }
+        /// TaggedPeopleSuggestionsViewModel.swift
+        
+        // fetchSuggestedFriends():
+        if url.absoluteString.contains("friendTags/friendsNotAddedToTag/") {
+            // Return some mock suggested friends
+            return BaseUserDTO.mockUsers.prefix(3).map({ $0 }) as! T
+        }
+        
+        // fetchTagFriends():
+        if url.absoluteString.contains("friendTags/") && url.absoluteString.contains("/friends") {
+            // Return mock added friends
+            return BaseUserDTO.mockUsers.prefix(4).map({ $0 }) as! T
         }
 
         if T.self == UserDTO.self {
@@ -151,6 +156,15 @@ class MockAPIService: IAPIService {
 
         if url.absoluteString == APIService.baseURL + "friendTags" {
             return FullFriendTagDTO.close as! U?
+        }
+        
+        // Handle adding/removing friends from tags
+        if url.absoluteString.contains("friendTags/") && parameters != nil {
+            // Handle the modifyFriendTagFriends endpoint
+            if let action = parameters?["friendTagAction"] {
+                // Return empty success response
+                return EmptyObject() as! U?
+            }
         }
 
         throw APIError.invalidData
