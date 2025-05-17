@@ -11,6 +11,7 @@ struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
 	let user: BaseUserDTO
     @EnvironmentObject private var appCache: AppCache
+    @State private var showingFriendSearchView = false
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -39,11 +40,14 @@ struct FriendsTabView: View {
 		ZStack {
 			ScrollView {
 				VStack(spacing: 16) {
-					// Search bar
-					SearchView(
-						searchPlaceholderText: "Search for friends",
-						viewModel: searchViewModel)
-                        .padding(.horizontal, 16)
+					// Search bar button that navigates to search view
+					SearchBarButtonView(
+						placeholder: "Search for friends",
+						action: {
+							showingFriendSearchView = true
+						}
+					)
+					.padding(.horizontal, 16)
                     
                     // Friends section
 					friendsSection
@@ -65,6 +69,9 @@ struct FriendsTabView: View {
                     await appCache.refreshFriends()
                     await viewModel.fetchAllData()
                 }
+            }
+            .sheet(isPresented: $showingFriendSearchView) {
+                FriendSearchView()
             }
 
 			if showingFriendRequestPopup {
