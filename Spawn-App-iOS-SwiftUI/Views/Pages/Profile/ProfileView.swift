@@ -270,6 +270,7 @@ struct ProfileView: View {
                         currentUserId: currentUserId,
                         profileUserId: user.id
                     )
+                    print("checked friendship status")
                     
                     // If they're friends, fetch their events
                     if profileViewModel.friendshipStatus == .friends {

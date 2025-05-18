@@ -7,25 +7,7 @@
 
 import Foundation
 
-struct RecentlySpawnedUserDTO: Identifiable, Codable, Hashable {
-    var id: UUID { user.id }
+struct RecentlySpawnedUserDTO: Codable, Hashable {
     var user: BaseUserDTO
-    var lastEncounteredAt: Date
-    
-    enum CodingKeys: String, CodingKey {
-        case user
-        case lastEncounteredAt
-    }
+    var dateTime: Date
 }
-
-// Extension with mock data for testing
-extension RecentlySpawnedUserDTO {
-    static var mockUsers: [RecentlySpawnedUserDTO] {
-        BaseUserDTO.mockUsers.map { user in
-            RecentlySpawnedUserDTO(
-                user: user,
-                lastEncounteredAt: Date()
-            )
-        }
-    }
-} 

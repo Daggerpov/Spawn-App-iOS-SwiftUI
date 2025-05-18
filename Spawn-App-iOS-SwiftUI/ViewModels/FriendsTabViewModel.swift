@@ -19,7 +19,7 @@ class FriendsTabViewModel: ObservableObject {
     @Published var searchQuery: String = ""
     @Published var isLoading: Bool = false
     
-    @Published var recentlySpawnedWith: [RecommendedFriendUserDTO] = []
+    @Published var recentlySpawnedWith: [RecentlySpawnedUserDTO] = []
     @Published var searchResults: [BaseUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
@@ -275,22 +275,6 @@ class FriendsTabViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // In a real app, fetch recently spawned with users from API
-        if MockAPIService.isMocking {
-            // Convert mock users to RecommendedFriendUserDTO format for testing
-            self.recentlySpawnedWith = BaseUserDTO.mockUsers.map { baseUser in
-                RecommendedFriendUserDTO(
-                    id: baseUser.id,
-                    username: baseUser.username,
-                    profilePicture: baseUser.profilePicture,
-                    name: baseUser.name,
-                    email: baseUser.email,
-                    mutualFriendCount: Int.random(in: 1...5)
-                )
-            }
-            return
-        }
-        
         do {
             // API endpoint for getting recently spawned with users
             guard let url = URL(string: APIService.baseURL + "users/\(userId)/recent-users") else {
@@ -299,17 +283,8 @@ class FriendsTabViewModel: ObservableObject {
             
             let fetchedUsers: [RecentlySpawnedUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
-            // Convert RecentlySpawnedUserDTO to RecommendedFriendUserDTO for consistency in the UI
-            self.recentlySpawnedWith = fetchedUsers.map { recentUser in
-                RecommendedFriendUserDTO(
-                    id: recentUser.user.id,
-                    username: recentUser.user.username,
-                    profilePicture: recentUser.user.profilePicture,
-                    name: recentUser.user.name,
-                    bio: recentUser.user.bio,
-                    email: recentUser.user.email,
-                    mutualFriendCount: 0
-                )
+            await MainActor.run {
+                self.recentlySpawnedWith = fetchedUsers
             }
         } catch {
             print("Error fetching recently spawned users: \(error.localizedDescription)")

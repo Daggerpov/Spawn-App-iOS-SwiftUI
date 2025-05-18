@@ -328,7 +328,7 @@ struct FriendRowView: View {
 }
 
 class FriendSearchViewModel: ObservableObject {
-    @Published var recentlySpawnedWith: [BaseUserDTO] = []
+    @Published var recentlySpawnedWith: [RecentlySpawnedUserDTO] = []
     @Published var searchResults: [BaseUserDTO] = []
     @Published var errorMessage: String = ""
     @Published var isLoading: Bool = false
@@ -340,10 +340,6 @@ class FriendSearchViewModel: ObservableObject {
     init(userId: UUID, apiService: IAPIService = MockAPIService.isMocking ? MockAPIService() : APIService()) {
         self.userId = userId
         self.apiService = apiService
-        
-        if MockAPIService.isMocking {
-            self.recentlySpawnedWith = BaseUserDTO.mockUsers
-        }
     }
     
     @MainActor
@@ -366,7 +362,9 @@ class FriendSearchViewModel: ObservableObject {
             
             let fetchedUsers: [RecentlySpawnedUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
             // Extract just the user object from each RecentlySpawnedUserDTO
-            self.recentlySpawnedWith = fetchedUsers.map { $0.user }
+            await MainActor.run {
+                self.recentlySpawnedWith = fetchedUsers
+            }
         } catch {
             errorMessage = "Failed to fetch recently spawned with users: \(error.localizedDescription)"
             self.recentlySpawnedWith = []
