@@ -18,6 +18,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider
 	@Published var externalUserId: String?  // For both Google and Apple
+	@Published var googleIdToken: String?  // Store Google ID token for authentication
 	@Published var isLoggedIn: Bool = false
 	@Published var hasCheckedSpawnUserExistence: Bool = false
 	@Published var spawnUser: BaseUserDTO? {
@@ -64,6 +65,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.isLoggedIn = true
 			print("Retrieved externalUserId from Keychain: \(externalUserId)")
 		}
+		
+		// Retrieve Google ID token from Keychain
+		if let data = KeychainService.shared.load(key: "googleIdToken"),
+		   let googleIdToken = String(data: data, encoding: .utf8)
+		{
+			self.googleIdToken = googleIdToken
+			print("Retrieved Google ID token from Keychain")
+		}
 
 		super.init()  // Call super.init() before using `self`
 
@@ -100,6 +109,25 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.isLoggedIn = true
                 self.externalUserId = user.userID  // Google's externalUserId
                 
+                // Refresh token if needed to get valid ID token
+                user.refreshTokensIfNeeded { user, error in
+                    guard error == nil else { 
+                        print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
+                        return 
+                    }
+                    guard let user = user else { return }
+                    
+                    self.googleIdToken = user.idToken?.tokenString
+                    
+                    // Save ID token to keychain
+                    if let idToken = self.googleIdToken, let data = idToken.data(using: .utf8) {
+                        let success = KeychainService.shared.save(key: "googleIdToken", data: data)
+                        if !success {
+                            print("Error saving googleIdToken to Keychain")
+                        }
+                    }
+                }
+                
                 // If we have a spawnUser already, post the login notification
                 if self.spawnUser != nil {
                     NotificationCenter.default.post(name: .userDidLogin, object: nil)
@@ -115,6 +143,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.errorMessage = nil
 		self.authProvider = nil
 		self.externalUserId = nil
+		self.googleIdToken = nil
 		self.isLoggedIn = false
 		self.hasCheckedSpawnUserExistence = false
 		self.spawnUser = nil
@@ -202,7 +231,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					return
 				}
 
-				guard let user = signInResult?.user else { return }
+				guard let signInResult = signInResult else { return }
+				guard let user = signInResult.user else { return }
 				// Request a higher resolution image (400px instead of 100px)
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 400)?.absoluteString
@@ -212,10 +242,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.isLoggedIn = true
 				self.externalUserId = user.userID
 				self.authProvider = .google
-
-				Task { [weak self] in
+				
+				// Get ID token
+				user.refreshTokensIfNeeded { [weak self] user, error in
 					guard let self = self else { return }
-					await self.spawnFetchUserIfAlreadyExists()
+					guard error == nil else { 
+						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
+						return 
+					}
+					guard let user = user else { return }
+					
+					self.googleIdToken = user.idToken?.tokenString
+					
+					// Save ID token to keychain
+					if let idToken = self.googleIdToken, let data = idToken.data(using: .utf8) {
+						let success = KeychainService.shared.save(key: "googleIdToken", data: data)
+						if !success {
+							print("Error saving googleIdToken to Keychain")
+						}
+					}
+					
+					Task { [weak self] in
+						guard let self = self else { return }
+						await self.spawnFetchUserIfAlreadyExists()
+					}
 				}
 			}
 		}
@@ -291,36 +341,56 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func spawnFetchUserIfAlreadyExists() async {
-		guard let unwrappedExternalUserId = self.externalUserId else {
+		// For Google auth, use ID token if available, otherwise fall back to external user ID
+		let authIdentifier: String
+		let isGoogleAuth = self.authProvider == .google
+		
+		if isGoogleAuth, let unwrappedIdToken = self.googleIdToken {
+			authIdentifier = unwrappedIdToken
+		} else if let unwrappedExternalUserId = self.externalUserId {
+			authIdentifier = unwrappedExternalUserId
+		} else {
 			await MainActor.run {
-				self.errorMessage = "External User ID is missing."
+				self.errorMessage = "Authentication identifier is missing."
 				print(self.errorMessage as Any)
 			}
 			return
 		}
 		
-
 		// Only proceed with API call if we have email or it's not Apple auth
 		let emailToUse = self.email ?? ""
 		
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 				// First, try to decode as a single user object
 				do {
+					let parameters: [String: String] = isGoogleAuth 
+						? ["idToken": authIdentifier, "email": emailToUse] 
+						: ["externalUserId": authIdentifier, "email": emailToUse]
+						
 					let fetchedSpawnUser: BaseUserDTO = try await self.apiService
 						.fetchData(
 							from: url,
-							parameters: [
-								"externalUserId": unwrappedExternalUserId,
-								"email": emailToUse,
-							]
+							parameters: parameters
 						)
-                    if let data = unwrappedExternalUserId.data(using: .utf8) {
-                        print("Saving externalUserId to Keychain")
-                        let success = KeychainService.shared.save(key: "externalUserId", data: data)
-                        if !success {
-                            print("Error saving externalUserId to Keychain")
-                        }
-                    }
+							
+					// Save authentication identifier to keychain
+					if isGoogleAuth {
+						if let data = self.googleIdToken?.data(using: .utf8) {
+							print("Saving googleIdToken to Keychain")
+							let success = KeychainService.shared.save(key: "googleIdToken", data: data)
+							if !success {
+								print("Error saving googleIdToken to Keychain")
+							}
+						}
+					} else {
+						if let data = authIdentifier.data(using: .utf8) {
+							print("Saving externalUserId to Keychain")
+							let success = KeychainService.shared.save(key: "externalUserId", data: data)
+							if !success {
+								print("Error saving externalUserId to Keychain")
+							}
+						}
+					}
                     
 					await MainActor.run {
 						self.spawnUser = fetchedSpawnUser
@@ -332,18 +402,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
 					}
-				} catch {
+				} catch let error as APIError {
 					// If decoding as a single user fails, try to decode as an array
 					print("Failed to decode response as a single user, trying as an array: \(error.localizedDescription)")
 					
 					do {
+						let parameters: [String: String] = isGoogleAuth 
+							? ["idToken": authIdentifier, "email": emailToUse] 
+							: ["externalUserId": authIdentifier, "email": emailToUse]
+							
 						let fetchedUsers: [BaseUserDTO] = try await self.apiService
 							.fetchData(
 								from: url,
-								parameters: [
-									"externalUserId": unwrappedExternalUserId,
-									"email": emailToUse,
-								]
+								parameters: parameters
 							)
 						
 						// Use the first user if array is not empty
@@ -377,6 +448,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 							self.shouldNavigateToUserInfoInputView = true
 							print("Error fetching user data: \(error.localizedDescription)")
 						}
+					}
+				} catch {
+					await MainActor.run {
+						self.spawnUser = nil
+						self.shouldNavigateToUserInfoInputView = true
+						print("Error fetching user data: \(error.localizedDescription)")
 					}
 				}
 			
@@ -422,9 +499,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		// Prepare parameters
 		var parameters: [String: String] = [:]
-		if let unwrappedExternalUserId = externalUserId {
+		// For Google, use ID token instead of external user ID
+		if self.authProvider == .google, let unwrappedIdToken = googleIdToken {
+			parameters["idToken"] = unwrappedIdToken
+		} else if let unwrappedExternalUserId = externalUserId {
 			parameters["externalUserId"] = unwrappedExternalUserId
 		}
+		
 		if let authProvider = self.authProvider {
 			parameters["provider"] = authProvider.rawValue
 		}
