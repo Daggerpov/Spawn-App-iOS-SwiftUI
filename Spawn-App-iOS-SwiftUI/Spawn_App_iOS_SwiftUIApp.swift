@@ -19,14 +19,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
         // Register custom fonts
         Font.registerFonts()
         
-        // Print available fonts for debugging
-        UIFont.familyNames.forEach { familyName in
-            print("Family: \(familyName)")
-            UIFont.fontNames(forFamilyName: familyName).forEach { fontName in
-                print(" Font: \(fontName)")
-            }
-        }
-        
         // Create font instances for our custom fonts
         let regularFont = UIFont(name: "Onest-Regular", size: 16)!
         let mediumFont = UIFont(name: "Onest-Medium", size: 16)!
