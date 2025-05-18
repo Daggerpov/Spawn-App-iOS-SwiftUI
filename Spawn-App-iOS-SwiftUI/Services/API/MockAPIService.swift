@@ -38,6 +38,15 @@ class MockAPIService: IAPIService {
                     FullFeedEventDTO.mockSelfOwnedEvent2,
                 ] as! T
             }
+            
+            // fetchFilteredEvents() - FeedViewModel
+            if url.absoluteString.contains("events/friendTag/") {
+                // Extract the tag ID from the URL
+                return [
+                    FullFeedEventDTO.mockDinnerEvent,
+                    FullFeedEventDTO.mockSelfOwnedEvent
+                ] as! T
+            }
         }
 
         // fetchTagsForUser():
@@ -75,6 +84,50 @@ class MockAPIService: IAPIService {
             {
                 return FullFriendUserDTO.mockUsers as! T
             }
+            
+            // SearchViewModel - fetchFilteredResults():
+            if url.absoluteString.contains("users/filtered/\(userIdForUrl)") {
+                // Create a mock SearchedUserResult
+                let result = SearchedUserResult(
+                    incomingFriendRequests: FetchFriendRequestDTO.mockFriendRequests,
+                    recommendedFriends: Array(RecommendedFriendUserDTO.mockUsers.prefix(2)),
+                    friends: Array(FullFriendUserDTO.mockUsers.prefix(3))
+                )
+                return result as! T
+            }
+            
+            // ProfileViewModel - fetchUserStats()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/stats" {
+                return UserStatsDTO(
+                    totalEvents: 15,
+                    futureEvents: 3,
+                    friendCount: 24
+                ) as! T
+            }
+            
+            // ProfileViewModel - fetchUserInterests()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/interests" {
+                return ["Music", "Photography", "Hiking", "Reading", "Travel"] as! T
+            }
+            
+            // ProfileViewModel - fetchUserSocialMedia()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/social-media" {
+                return UserSocialMediaDTO(
+                    whatsappNumber: "+1234567890",
+                    instagramUsername: "user_insta"
+                ) as! T
+            }
+            
+            // ProfileViewModel - fetchCalendarActivities()
+            if url.absoluteString.contains("users/\(userIdForUrl)/calendar") {
+                // Mock calendar activities for the current month
+                let activities = [
+                    CalendarActivityDTO(date: "2025-03-01", eventCount: 2),
+                    CalendarActivityDTO(date: "2025-03-05", eventCount: 1),
+                    CalendarActivityDTO(date: "2025-03-15", eventCount: 3)
+                ]
+                return activities as! T
+            }
         }
 
         /// TagsViewModel.swift:
@@ -98,14 +151,16 @@ class MockAPIService: IAPIService {
                 return FullFriendTagDTO.mockTags as! T
             }
         }
-
-        /// ChoosingTagViewModel.swift:
-        if let userIdForUrl = userId {
-            if url.absoluteString == APIService.baseURL
-                + "friendTags/addUserToTags/\(userIdForUrl)"
-            {
-                return FullFriendTagDTO.mockTags as! T
-            }
+        
+        /// AddFriendToTagViewModel.swift:
+        if url.absoluteString.contains("friendTags/friendsNotAddedToTag/") {
+            // Extract the tag ID from the URL
+            return BaseUserDTO.mockUsers as! T
+        }
+        
+        // EventCardViewModel.swift & EventDescriptionViewModel.swift:
+        if url.absoluteString.contains("events/") && url.absoluteString.contains("/participation") {
+            return FullFeedEventDTO.mockDinnerEvent as! T
         }
 
         if T.self == UserDTO.self {
@@ -116,6 +171,11 @@ class MockAPIService: IAPIService {
         if let userIdForUrl = userId {
             if url.absoluteString == APIService.baseURL + "auth/sign-in/\(userIdForUrl)" {
                 return UserDTO.danielAgapov as! T
+            }
+            
+            // fetchUserData()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)" {
+                return BaseUserDTO.danielAgapov as! T
             }
         }
 
@@ -129,7 +189,8 @@ class MockAPIService: IAPIService {
 
         // addFriend():
 
-        if url.absoluteString == APIService.baseURL + "users/friend-request" {
+        if url.absoluteString == APIService.baseURL + "users/friend-request" || 
+           url.absoluteString == APIService.baseURL + "friend-requests" {
             return FetchFriendRequestDTO(
                 id: UUID(),
                 senderUser: BaseUserDTO.danielAgapov
@@ -152,6 +213,42 @@ class MockAPIService: IAPIService {
         if url.absoluteString == APIService.baseURL + "friendTags" {
             return FullFriendTagDTO.close as! U?
         }
+        
+        /// ProfileViewModel.swift:
+        
+        // addUserInterest():
+        if url.absoluteString.contains("users/") && url.absoluteString.contains("/interests") {
+            return EmptyResponse() as! U?
+        }
+        
+        /// FeedbackViewModel.swift:
+        
+        // submitFeedback():
+        if url.absoluteString == APIService.baseURL + "feedback" {
+            // Mock successful feedback submission
+            if T.self == FeedbackSubmissionDTO.self {
+                print("Mocking successful feedback submission")
+                return FeedbackSubmissionDTO(
+                    type: "FEATURE_REQUEST",
+                    message: "Test feedback",
+                    fromUserId: UUID().uuidString
+                ) as! U?
+            }
+        }
+        
+        /// AddFriendToTagViewModel.swift:
+        
+        // addSelectedFriendsToTag():
+        if url.absoluteString == APIService.baseURL + "friendTags/bulkAddFriendsToTag" {
+            return EmptyResponse() as! U?
+        }
+        
+        /// ChoosingTagViewModel.swift:
+        
+        // addTagsToFriend():
+        if url.absoluteString == APIService.baseURL + "friendTags/addUserToTags" {
+            return EmptyResponse() as! U?
+        }
 
         throw APIError.invalidData
     }
@@ -162,15 +259,30 @@ class MockAPIService: IAPIService {
         /// `TagsViewModel.swift`:
 
         // upsertTag(upsertAction: .update):
-        if url.absoluteString == APIService.baseURL + "friendTags" {
+        if url.absoluteString == APIService.baseURL + "friendTags" || 
+           url.absoluteString.contains("friendTags/") {
             return FullFriendTagDTO.close as! U
         }
 
-        // Example: Updating an event's participation status
-        if url.absoluteString.contains("events/")
-            && url.absoluteString.contains("/toggleStatus")
-        {
-            // do nothing; whatever
+        // EventCardViewModel.swift - toggleParticipation():
+        if url.absoluteString.contains("events/") && url.absoluteString.contains("/toggleStatus") {
+            return FullFeedEventDTO.mockDinnerEvent as! U
+        }
+        
+        // FriendRequestViewModel.swift - friendRequestAction():
+        if url.absoluteString.contains("friend-requests/") && 
+           (parameters?["friendRequestAction"] == "accept" || parameters?["friendRequestAction"] == "reject") {
+            return EmptyResponse() as! U
+        }
+        
+        // ProfileViewModel.swift - updateSocialMedia():
+        if url.absoluteString.contains("users/") && url.absoluteString.contains("/social-media") {
+            if let object = object as? UpdateUserSocialMediaDTO {
+                return UserSocialMediaDTO(
+                    whatsappNumber: object.whatsappNumber,
+                    instagramUsername: object.instagramUsername
+                ) as! U
+            }
         }
 
         throw APIError.invalidData
@@ -362,3 +474,6 @@ class MockAPIService: IAPIService {
         return Event.mockEvents
     }
 }
+
+// Add a struct for empty responses
+struct EmptyResponse: Codable {}
