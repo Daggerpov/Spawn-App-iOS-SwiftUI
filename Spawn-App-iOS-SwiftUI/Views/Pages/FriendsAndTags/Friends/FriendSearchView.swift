@@ -217,8 +217,8 @@ struct FriendSearchView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 24)
             } else {
-                ForEach(viewModel.recentlySpawnedWith) { user in
-                    FriendRowView(user: user, viewModel: viewModel)
+                ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
+                    FriendRowView(user: recentUser.user, viewModel: viewModel)
                         .padding(.horizontal, 16)
                 }
             }
@@ -349,7 +349,10 @@ class FriendSearchViewModel: ObservableObject {
         
         // In a real app, fetch recently spawned with users from API
         if MockAPIService.isMocking {
-            self.recentlySpawnedWith = BaseUserDTO.mockUsers
+            // Create mock RecentlySpawnedUserDTO objects using BaseUserDTO.mockUsers
+            self.recentlySpawnedWith = BaseUserDTO.mockUsers.map { user in
+                RecentlySpawnedUserDTO(user: user, dateTime: Date())
+            }
             return
         }
         
@@ -361,7 +364,6 @@ class FriendSearchViewModel: ObservableObject {
             }
             
             let fetchedUsers: [RecentlySpawnedUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            // Extract just the user object from each RecentlySpawnedUserDTO
             await MainActor.run {
                 self.recentlySpawnedWith = fetchedUsers
             }

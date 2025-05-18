@@ -88,7 +88,7 @@ struct FriendsTabView: View {
     
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			if !viewModel.filteredRecommendedFriends.isEmpty {
+			if !viewModel.recentlySpawnedWith.isEmpty {
                 HStack{
                     Text("Recently Spawned With")
                         .font(.onestMedium(size: 16))
@@ -99,8 +99,8 @@ struct FriendsTabView: View {
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
-						ForEach(viewModel.filteredRecommendedFriends) { friend in
-							RecommendedFriendView(viewModel: viewModel, friend: friend)
+						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
+							RecentlySpawnedView(viewModel: viewModel, recentUser: recentUser)
 						}
 					}
 				}
@@ -317,6 +317,77 @@ struct FriendTagsForFriendView: View {
             }
         }
         .padding(.top, 8)
+    }
+}
+
+// Add RecentlySpawnedView for RecentlySpawnedUserDTO
+struct RecentlySpawnedView: View {
+    @ObservedObject var viewModel: FriendsTabViewModel
+    var recentUser: RecentlySpawnedUserDTO
+    @State private var isAdded: Bool = false
+
+    var body: some View {
+        HStack {
+            if MockAPIService.isMocking {
+                if let pfp = recentUser.user.profilePicture {
+                    Image(pfp)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 50, height: 50)
+                        .clipShape(Circle())
+                }
+            } else {
+                if let pfpUrl = recentUser.user.profilePicture {
+                    AsyncImage(url: URL(string: pfpUrl)) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 50, height: 50)
+                            .clipShape(Circle())
+                    } placeholder: {
+                        Circle()
+                            .fill(Color.gray)
+                            .frame(width: 50, height: 50)
+                    }
+                } else {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 50, height: 50)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(FormatterService.shared.formatName(user: recentUser.user))
+                    .font(.onestBold(size: 14))
+            }
+            .padding(.leading, 8)
+
+            Spacer()
+
+            Button(action: {
+                isAdded = true
+                Task {
+                    await viewModel.addFriend(friendUserId: recentUser.user.id)
+                }
+            }) {
+                Text("Add +")
+                    .font(.onestMedium(size: 14))
+                    .padding(12)
+                    .background(
+                        Rectangle()
+                            .foregroundColor(.clear)
+                            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+                            .cornerRadius(15)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .inset(by: 0.75)
+                                    .stroke(.gray)
+                            )
+                    )
+                    .foregroundColor(.gray)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
     }
 }
 

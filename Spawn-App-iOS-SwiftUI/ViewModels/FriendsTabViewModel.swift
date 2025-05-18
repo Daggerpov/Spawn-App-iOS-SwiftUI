@@ -56,7 +56,7 @@ class FriendsTabViewModel: ObservableObject {
                 if query.isEmpty {
                     self?.isSearching = false
                     self?.filteredFriends = self?.friends ?? []
-                    self?.filteredRecommendedFriends = self?.recentlySpawnedWith ?? []
+                    self?.filteredRecommendedFriends = self?.recommendedFriends ?? []
                     self?.filteredIncomingFriendRequests = self?.incomingFriendRequests ?? []
                 } else {
                     self?.isSearching = true
@@ -118,7 +118,7 @@ class FriendsTabViewModel: ObservableObject {
                        username.contains(lowercaseQuery)
             }
             
-            self.filteredRecommendedFriends = self.recentlySpawnedWith.filter { friend in
+            self.filteredRecommendedFriends = self.recommendedFriends.filter { friend in
                 let name = friend.name?.lowercased() ?? ""
                 let username = friend.username.lowercased()
                 
@@ -153,7 +153,7 @@ class FriendsTabViewModel: ObservableObject {
         // Initialize filtered lists with full lists after fetching
         await MainActor.run {
             self.filteredFriends = self.friends
-            self.filteredRecommendedFriends = self.recentlySpawnedWith
+            self.filteredRecommendedFriends = self.recommendedFriends
             self.filteredIncomingFriendRequests = self.incomingFriendRequests
             self.isLoading = false
         }
