@@ -176,6 +176,9 @@ fastlane/test_output
 #
 # After new code Injection tools there's a generated folder /iOSInjectionProject
 # https://github.com/johnno1962/injectionforxcode
+# Preview credentials file - contains personal authentication data
+Spawn-App-iOS-SwiftUI/Preview\ Content/preview_credentials.json
+**/preview_credentials.json
 
 iOSInjectionProject/
 .DS_Store
