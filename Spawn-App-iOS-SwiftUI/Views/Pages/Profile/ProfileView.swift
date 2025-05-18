@@ -415,7 +415,7 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showProfileMenu) {
             ProfileMenuView(
-                user: user as! BaseUserDTO,
+                user: user,
                 showTagDialog: $showTagDialog,
                 showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
                 showReportDialog: $showReportDialog,

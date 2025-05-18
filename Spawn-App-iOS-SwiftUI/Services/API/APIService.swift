@@ -607,7 +607,6 @@ class APIService: IAPIService {
 
 		// Set the auth headers
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-		print("✅ Auth header set for request to: \(url.absoluteString)")
 	} 
 	 
 

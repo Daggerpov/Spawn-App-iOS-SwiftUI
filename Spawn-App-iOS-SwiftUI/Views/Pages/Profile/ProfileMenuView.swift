@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileMenuView: View {
-    let user: BaseUserDTO
+    let user: Nameable
     @Binding var showTagDialog: Bool
     @Binding var showRemoveFriendConfirmation: Bool
     @Binding var showReportDialog: Bool
