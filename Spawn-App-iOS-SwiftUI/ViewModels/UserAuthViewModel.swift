@@ -18,6 +18,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider
 	@Published var externalUserId: String?  // For both Google and Apple
+	@Published var idToken: String?  // ID token for authentication
 	@Published var isLoggedIn: Bool = false
 	@Published var hasCheckedSpawnUserExistence: Bool = false
 	@Published var spawnUser: BaseUserDTO? {
@@ -33,8 +34,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var profilePicUrl: String?
 
 	@Published var isFormValid: Bool = false
-
-	@Published var shouldProceedToFeed: Bool = false
+    
 	@Published var shouldNavigateToFeedView: Bool = false
 	@Published var shouldNavigateToUserInfoInputView: Bool = false  // New property for navigation
 
@@ -56,31 +56,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
         self.spawnUser = BaseUserDTO.danielAgapov
 		self.apiService = apiService
 
-		// Retrieve externalUserId from Keychain
-		if let data = KeychainService.shared.load(key: "externalUserId"),
-			let externalUserId = String(data: data, encoding: .utf8)
-		{
-			self.externalUserId = externalUserId
-			self.isLoggedIn = true
-			print("Retrieved externalUserId from Keychain: \(externalUserId)")
-		}
-
 		super.init()  // Call super.init() before using `self`
 
-		// Only attempt to restore Google sign-in state if we have an externalUserId
-		if self.externalUserId != nil {
-			checkStatus()
-		}
-		
-		// Try to fetch user data using stored externalUserId
-		Task { [weak self] in
-			guard let self = self else { return }
-			
-			if self.externalUserId != nil {
-				print("Attempting to fetch user with stored externalUserId")
-				await self.spawnFetchUserIfAlreadyExists()
-			}
-		}
+        // Attempt quick login
+        Task {
+            print("Attempting a quick login with stored tokens")
+            await quickSignIn()
+        }
 	}
 
 	func checkStatus() {
@@ -100,6 +82,18 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.isLoggedIn = true
                 self.externalUserId = user.userID  // Google's externalUserId
                 
+                // Refresh token if needed to get valid ID token
+                user.refreshTokensIfNeeded { user, error in
+                    guard error == nil else { 
+                        print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
+                        return 
+                    }
+                    guard let user = user else { return }
+                    
+                    self.idToken = user.idToken?.tokenString
+                    
+                }
+                
                 // If we have a spawnUser already, post the login notification
                 if self.spawnUser != nil {
                     NotificationCenter.default.post(name: .userDidLogin, object: nil)
@@ -115,6 +109,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.errorMessage = nil
 		self.authProvider = nil
 		self.externalUserId = nil
+		self.idToken = nil
 		self.isLoggedIn = false
 		self.hasCheckedSpawnUserExistence = false
 		self.spawnUser = nil
@@ -125,7 +120,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		self.isFormValid = false
 
-		self.shouldProceedToFeed = false
 		self.shouldNavigateToFeedView = false
 		self.shouldNavigateToUserInfoInputView = false
 		self.activeAlert = nil
@@ -141,12 +135,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			if let appleIDCredential = authorization.credential
 				as? ASAuthorizationAppleIDCredential
 			{
-				let userIdentifier = appleIDCredential.user
-				if let email = appleIDCredential.email {
-					self.email = email
-				}
-
 				// Set user details
+                let userIdentifier = appleIDCredential.user
+                if let email = appleIDCredential.email {
+                    self.email = email
+                }
 				if let givenName = appleIDCredential.fullName?.givenName,
                    let familyName = appleIDCredential.fullName?.familyName {
                     self.name = "\(givenName) \(familyName)"
@@ -155,6 +148,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 }
 				self.isLoggedIn = true
 				self.externalUserId = userIdentifier
+                guard let idTokenData = appleIDCredential.identityToken else {
+                    print("Error fetching ID Token from Apple ID Credential")
+                    return
+                }
+                self.idToken = String(data: idTokenData, encoding: .utf8)
+                self.authProvider = .apple
 
 				// Check user existence AFTER setting credentials
 				Task { [weak self] in
@@ -189,8 +188,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 
 			_ = GIDConfiguration(
-				clientID:
-					"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
+				clientID: "822760465266-1dunhm4jgrcg17137rfjo2idu5qefchk.apps.googleusercontent.com"
 			)
 
 			GIDSignIn.sharedInstance.signIn(
@@ -202,20 +200,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					return
 				}
 
-				guard let user = signInResult?.user else { return }
-				// Request a higher resolution image (400px instead of 100px)
-				self.profilePicUrl =
-					user.profile?.imageURL(withDimension: 400)?.absoluteString
-					?? ""
-				self.name = user.profile?.name
-				self.email = user.profile?.email
-				self.isLoggedIn = true
-				self.externalUserId = user.userID
-				self.authProvider = .google
-
-				Task { [weak self] in
+                guard let signInResult = signInResult else { return }
+				
+				// Get ID token
+                signInResult.user.refreshTokensIfNeeded { [weak self] user, error in
 					guard let self = self else { return }
-					await self.spawnFetchUserIfAlreadyExists()
+					guard error == nil else { 
+						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
+						return 
+					}
+					guard let user = user else { return }
+                    
+                    // Request a higher resolution image (400px instead of 100px)
+                    self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
+                    self.name = user.profile?.name
+                    self.email = user.profile?.email
+                    self.isLoggedIn = true
+                    self.externalUserId = user.userID
+                    self.authProvider = .google
+                    self.idToken = user.idToken?.tokenString
+					
+					Task { [weak self] in
+						guard let self = self else { return }
+						await self.spawnFetchUserIfAlreadyExists()
+					}
 				}
 			}
 		}
@@ -273,12 +281,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			await NotificationService.shared.unregisterDeviceToken()
 		}
 
-		// Clear externalUserId from Keychain
-		var success = KeychainService.shared.delete(key: "externalUserId")
-		if !success {
-			print("Failed to delete externalUserId from Keychain")
-		}
-		success = KeychainService.shared.delete(key: "accessToken")
+		// Clear Keychain
+		
+		var success = KeychainService.shared.delete(key: "accessToken")
 		if !success {
 			print("Failed to delete accessToken from Keychain")
 		}
@@ -290,38 +295,37 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		resetState()
 	}
 
-	func spawnFetchUserIfAlreadyExists() async {
-		guard let unwrappedExternalUserId = self.externalUserId else {
-			await MainActor.run {
-				self.errorMessage = "External User ID is missing."
-				print(self.errorMessage as Any)
-			}
-			return
-		}
+    func spawnFetchUserIfAlreadyExists() async {
 		
-
+        guard let unwrappedIdToken = self.idToken else {
+            await MainActor.run {
+                self.errorMessage = "ID Token is missing."
+                print(self.errorMessage as Any)
+            }
+            return
+        }
+        
+        guard let unwrappedProvider = self.authProvider else {
+            await MainActor.run {
+                print("Auth provider is missing.")
+            }
+            return
+        }
+		
 		// Only proceed with API call if we have email or it's not Apple auth
 		let emailToUse = self.email ?? ""
 		
 		if let url = URL(string: APIService.baseURL + "auth/sign-in") {
 				// First, try to decode as a single user object
 				do {
+                    let parameters: [String: String] = ["idToken": unwrappedIdToken, "email": emailToUse, "provider": unwrappedProvider.rawValue]
+						
 					let fetchedSpawnUser: BaseUserDTO = try await self.apiService
 						.fetchData(
 							from: url,
-							parameters: [
-								"externalUserId": unwrappedExternalUserId,
-								"email": emailToUse,
-							]
+							parameters: parameters
 						)
-                    if let data = unwrappedExternalUserId.data(using: .utf8) {
-                        print("Saving externalUserId to Keychain")
-                        let success = KeychainService.shared.save(key: "externalUserId", data: data)
-                        if !success {
-                            print("Error saving externalUserId to Keychain")
-                        }
-                    }
-                    
+							
 					await MainActor.run {
 						self.spawnUser = fetchedSpawnUser
                         print("user id: \(fetchedSpawnUser.id)")
@@ -333,53 +337,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
 					}
 				} catch {
-					// If decoding as a single user fails, try to decode as an array
-					print("Failed to decode response as a single user, trying as an array: \(error.localizedDescription)")
-					
-					do {
-						let fetchedUsers: [BaseUserDTO] = try await self.apiService
-							.fetchData(
-								from: url,
-								parameters: [
-									"externalUserId": unwrappedExternalUserId,
-									"email": emailToUse,
-								]
-							)
-						
-						// Use the first user if array is not empty
-						if let firstUser = fetchedUsers.first {
-							await MainActor.run {
-								self.spawnUser = firstUser
-								self.shouldNavigateToUserInfoInputView = false
-								self.isFormValid = true
-								self.setShouldNavigateToFeedView()
-								
-								// Post notification that user did login successfully
-								NotificationCenter.default.post(name: .userDidLogin, object: nil)
-							}
-						} else {
-							// Handle empty array - user doesn't exist
-							await MainActor.run {
-								self.spawnUser = nil
-								self.shouldNavigateToUserInfoInputView = true
-								print("No users found in array response")
-							}
-						}
-					} catch let arrayError as APIError {
-						// Handle API errors, like 404
-						await MainActor.run {
-							self.handleApiError(arrayError)
-						}
-					} catch {
-						// Handle other errors
-						await MainActor.run {
-							self.spawnUser = nil
-							self.shouldNavigateToUserInfoInputView = true
-							print("Error fetching user data: \(error.localizedDescription)")
-						}
+					await MainActor.run {
+						self.spawnUser = nil
+						self.shouldNavigateToUserInfoInputView = true
+						print("Error fetching user data: \(error.localizedDescription)")
 					}
 				}
-			
 			await MainActor.run {
 				self.hasCheckedSpawnUserExistence = true
 			}
@@ -422,12 +385,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		// Prepare parameters
 		var parameters: [String: String] = [:]
-		if let unwrappedExternalUserId = externalUserId {
-			parameters["externalUserId"] = unwrappedExternalUserId
-		}
+		// For Google, use ID token instead of external user ID
+		if let unwrappedIdToken = idToken {
+			parameters["idToken"] = unwrappedIdToken
+        } else {
+            print("Error: Missing Id Token")
+            return
+        }
+		
 		if let authProvider = self.authProvider {
 			parameters["provider"] = authProvider.rawValue
-		}
+        }
 		
 		// If we have a profile picture URL from the provider (Google/Apple) and no selected image,
 		// include it in the parameters so it can be used
@@ -444,19 +412,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					profilePicture: profilePicture,
 					parameters: parameters
 				)
-
-			// Save externalUserId to Keychain
-			if let externalUserId = self.externalUserId,
-				let data = externalUserId.data(using: .utf8)
-			{
-				let success = KeychainService.shared.save(
-					key: "externalUserId", data: data)
-				if !success {
-					print("Failed to save externalUserId to Keychain")
-				} else {
-					print("Successfully saved externalUserId to Keychain: \(externalUserId)")
-				}
-			}
 
 			print("User created successfully: \(fetchedUser.username)")
 			if let profilePic = fetchedUser.profilePicture {
@@ -518,12 +473,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await NotificationService.shared.unregisterDeviceToken()
 
                 try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
-				var success = KeychainService.shared.delete(
-					key: "externalUserId")
-				if !success {
-					print("Failed to delete externalUserId from Keychain")
-				}
-                success = KeychainService.shared.delete(key: "accessToken")
+				
+                var success = KeychainService.shared.delete(key: "accessToken")
                 if !success {
                     print("Failed to delete accessToken from Keychain")
                 }
@@ -735,6 +686,29 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			throw NSError(domain: "UserAuth", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid URL"])
 		}
 	}
+    
+    // Attempts a "quick" sign-in which sends access/refresh tokens to server to verify whether a user is logged in
+    func quickSignIn() async {
+        guard
+            let accessTokenData: Data = KeychainService.shared.load(key: "accessToken"),
+            let accessToken: String = String(data: accessTokenData, encoding: .utf8) else {
+            print("Cannot find refresh token from Keychain. Re-login is required")
+            return
+        }
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/quick-sign-in") {
+                let user: BaseUserDTO = try await self.apiService.fetchData(from: url, parameters: nil)
+                
+                await MainActor.run {
+                    self.spawnUser = user
+                    self.shouldNavigateToFeedView = true
+                }
+            }
+        } catch {
+            print("Error performing quick-login. Re-login is required")
+            return
+        }
+    }
 }
 
 // Conform to ASAuthorizationControllerDelegate
