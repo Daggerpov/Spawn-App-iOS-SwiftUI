@@ -9,7 +9,7 @@ import Foundation
 
 class MockAPIService: IAPIService {
     /// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-    static var isMocking: Bool = false
+    static var isMocking: Bool = true
 
     var errorMessage: String? = nil
     var errorStatusCode: Int? = nil
@@ -105,9 +105,9 @@ class MockAPIService: IAPIService {
             // ProfileViewModel - fetchUserStats()
             if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/stats" {
                 return UserStatsDTO(
-                    totalEvents: 15,
-                    futureEvents: 3,
-                    friendCount: 24
+                    peopleMet: 24,
+                    spawnsMade: 15,
+                    spawnsJoined: 3
                 ) as! T
             }
             
@@ -119,8 +119,10 @@ class MockAPIService: IAPIService {
             // ProfileViewModel - fetchUserSocialMedia()
             if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/social-media" {
                 return UserSocialMediaDTO(
-                    whatsappNumber: "+1234567890",
-                    instagramUsername: "user_insta"
+                    id: UUID(),
+                    userId: userIdForUrl,
+                    whatsappLink: "https://wa.me/+1234567890",
+                    instagramLink: "https://www.instagram.com/user_insta"
                 ) as! T
             }
             
@@ -128,9 +130,30 @@ class MockAPIService: IAPIService {
             if url.absoluteString.contains("users/\(userIdForUrl)/calendar") {
                 // Mock calendar activities for the current month
                 let activities = [
-                    CalendarActivityDTO(date: "2025-03-01", eventCount: 2),
-                    CalendarActivityDTO(date: "2025-03-05", eventCount: 1),
-                    CalendarActivityDTO(date: "2025-03-15", eventCount: 3)
+                    CalendarActivityDTO(
+                        id: UUID(),
+                        date: DateFormatter.iso8601Full.date(from: "2025-03-01T00:00:00Z")!,
+                        eventCategory: .foodAndDrink,
+                        icon: EventCategory.foodAndDrink.systemIcon(),
+                        colorHexCode: "#4CAF50",
+                        eventId: UUID()
+                    ),
+                    CalendarActivityDTO(
+                        id: UUID(),
+                        date: DateFormatter.iso8601Full.date(from: "2025-03-05T00:00:00Z")!,
+                        eventCategory: .active,
+                        icon: EventCategory.active.systemIcon(),
+                        colorHexCode: "#2196F3",
+                        eventId: UUID()
+                    ),
+                    CalendarActivityDTO(
+                        id: UUID(),
+                        date: DateFormatter.iso8601Full.date(from: "2025-03-15T00:00:00Z")!,
+                        eventCategory: .grind,
+                        icon: EventCategory.grind.systemIcon(),
+                        colorHexCode: "#9C27B0",
+                        eventId: UUID()
+                    )
                 ]
                 return activities as! T
             }
@@ -232,10 +255,10 @@ class MockAPIService: IAPIService {
             // Mock successful feedback submission
             if T.self == FeedbackSubmissionDTO.self {
                 print("Mocking successful feedback submission")
-                return FeedbackSubmissionDTO(
-                    type: "FEATURE_REQUEST",
-                    message: "Test feedback",
-                    fromUserId: UUID().uuidString
+                return FetchFeedbackSubmissionDTO(
+                    type: .FEATURE_REQUEST,
+                    fromUserId: UUID(),
+                    message: "Test feedback"
                 ) as! U?
             }
         }
@@ -281,10 +304,12 @@ class MockAPIService: IAPIService {
         
         // ProfileViewModel.swift - updateSocialMedia():
         if url.absoluteString.contains("users/") && url.absoluteString.contains("/social-media") {
-            if let object = object as? UpdateUserSocialMediaDTO {
+            if let socialMediaDTO = object as? UpdateUserSocialMediaDTO {
                 return UserSocialMediaDTO(
-                    whatsappNumber: object.whatsappNumber,
-                    instagramUsername: object.instagramUsername
+                    id: UUID(),
+                    userId: userId ?? UUID(),
+                    whatsappLink: socialMediaDTO.whatsappNumber != nil ? "https://wa.me/\(socialMediaDTO.whatsappNumber!)" : nil,
+                    instagramLink: socialMediaDTO.instagramUsername != nil ? "https://www.instagram.com/\(socialMediaDTO.instagramUsername!)" : nil
                 ) as! U
             }
         }
@@ -499,5 +524,14 @@ class MockAPIService: IAPIService {
     }
 }
 
-// Add a struct for empty responses
-struct EmptyResponse: Codable {}
+// Add DateFormatter extension for ISO8601
+extension DateFormatter {
+    static let iso8601Full: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+}
