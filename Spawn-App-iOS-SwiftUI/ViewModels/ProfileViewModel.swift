@@ -21,10 +21,15 @@ class ProfileViewModel: ObservableObject {
     private let apiService: IAPIService
     
     init(
-        apiService: IAPIService = MockAPIService.isMocking
-        ? MockAPIService() : APIService()
+        userId: UUID? = nil,
+        apiService: IAPIService? = nil
     ) {
-        self.apiService = apiService
+        if let apiService = apiService {
+            self.apiService = apiService
+        } else {
+            self.apiService = MockAPIService.isMocking
+                ? MockAPIService(userId: userId) : APIService()
+        }
     }
     
     func fetchUserStats(userId: UUID) async {

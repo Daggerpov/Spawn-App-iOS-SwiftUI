@@ -34,7 +34,7 @@ struct ProfileView: View {
     @State private var showEventDetails: Bool = false
 
     @StateObject var userAuth = UserAuthViewModel.shared
-    @StateObject var profileViewModel = ProfileViewModel()
+    @StateObject var profileViewModel: ProfileViewModel
 
     // Check if this is the current user's profile
     private var isCurrentUserProfile: Bool {
@@ -47,8 +47,9 @@ struct ProfileView: View {
 
     init(user: BaseUserDTO) {
         self.user = user
-        username = user.username
-        name = user.name ?? ""
+        self._profileViewModel = StateObject(wrappedValue: ProfileViewModel(userId: user.id))
+        self.username = user.username
+        self.name = user.name ?? ""
     }
 
     var body: some View {
