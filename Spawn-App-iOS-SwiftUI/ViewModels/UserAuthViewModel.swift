@@ -235,7 +235,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 
 			_ = GIDConfiguration(
-				clientID: Config.googleClientId
+				clientID: "822760465266-1dunhm4jgrcg17137rfjo2idu5qefchk.apps.googleusercontent.com"
 			)
 
 			GIDSignIn.sharedInstance.signIn(
