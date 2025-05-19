@@ -248,7 +248,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				guard let signInResult = signInResult else { return }
-				guard let user = signInResult.user else { return }
+				let user = signInResult.user
 				// Request a higher resolution image (400px instead of 100px)
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 400)?.absoluteString
