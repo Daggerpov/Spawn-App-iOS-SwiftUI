@@ -49,6 +49,12 @@ class MockAPIService: IAPIService {
             }
         }
 
+        // ProfileViewModel - fetchEventDetails
+        if url.absoluteString.contains(APIService.baseURL + "events/") && !url.absoluteString.contains("events/friendTag/") && !url.absoluteString.contains("events/feedEvents/") {
+            // Extract event ID - this is a simplistic approach and might need refinement
+            return FullFeedEventDTO.mockDinnerEvent as! T
+        }
+
         // fetchTagsForUser():
 
         if url.absoluteString == APIService.baseURL + "friendTags" {
@@ -141,10 +147,8 @@ class MockAPIService: IAPIService {
             {
                 return FullFriendTagDTO.mockTags as! T
             }
-        }
-
-        /// ChoosingTagViewModel.swift:
-        if let userIdForUrl = userId {
+            
+            // ChoosingTagViewModel.swift:
             if url.absoluteString == APIService.baseURL
                 + "friendTags/addUserToTags/\(userIdForUrl)"
             {
@@ -289,7 +293,27 @@ class MockAPIService: IAPIService {
     }
 
     func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T? = nil) async throws {
-        // do nothing
+        // ProfileViewModel - removeUserInterest
+        if url.absoluteString.contains("/interests/") {
+            // Successfully "delete" the interest without actually doing anything
+            print("🔍 MOCK: Successfully deleted interest from URL: \(url.absoluteString)")
+            return
+        }
+        
+        // Handle tag deletion
+        if url.absoluteString.contains("friendTags/") {
+            print("🔍 MOCK: Successfully deleted tag from URL: \(url.absoluteString)")
+            return
+        }
+        
+        // UserAuthViewModel - deleteAccount
+        if url.absoluteString.contains("users/") && !url.absoluteString.contains("/interests/") {
+            print("🔍 MOCK: Successfully deleted user account from URL: \(url.absoluteString)")
+            return
+        }
+        
+        // If we get here, just return without doing anything - this is a mock implementation
+        print("🔍 MOCK: Called deleteData on URL: \(url.absoluteString)")
     }
 
     func patchData<T: Encodable, U: Decodable>(
