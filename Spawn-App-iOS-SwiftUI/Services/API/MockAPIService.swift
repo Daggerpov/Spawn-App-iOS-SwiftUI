@@ -51,7 +51,40 @@ class MockAPIService: IAPIService {
 
         // ProfileViewModel - fetchEventDetails
         if url.absoluteString.contains(APIService.baseURL + "events/") && !url.absoluteString.contains("events/friendTag/") && !url.absoluteString.contains("events/feedEvents/") {
-            // Extract event ID - this is a simplistic approach and might need refinement
+            // Extract event ID from the URL
+            let urlComponents = url.absoluteString.components(separatedBy: "/")
+            if let eventIdString = urlComponents.last, let eventId = UUID(uuidString: eventIdString) {
+                // Check if we're looking for a specific event by ID
+                print("🔍 MOCK: Fetching event details for ID: \(eventId)")
+                
+                // For the mock implementation, set event details based on the eventId in CalendarActivityDTO
+                // First, add this event to the AppCache
+                let eventToCache = FullFeedEventDTO.mockDinnerEvent
+                // Give the mock event the requested ID so it matches
+                eventToCache.id = eventId
+                
+                // Add random variety to the mocked event
+                let possibleTitles = ["Dinner at The Spot", "Study Session", "Workout at Gym", "Coffee Break", "Movie Night", "Game Night", "Beach Day"]
+                let possibleLocations = ["The Spot", "Central Library", "University Gym", "Coffee House", "Cinema", "Game Room", "Beach"]
+                eventToCache.title = possibleTitles.randomElement()
+                eventToCache.category = EventCategory.allCases.randomElement() ?? .general
+                eventToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"].randomElement()
+                eventToCache.location = Location(
+                    id: UUID(), 
+                    name: possibleLocations.randomElement() ?? "The Spot",
+                    latitude: Double.random(in: 49.2...49.3), 
+                    longitude: Double.random(in: -123.3 ... -123.1)
+                )
+                
+                // Add to cache so it will be found next time
+                DispatchQueue.main.async {
+                    AppCache.shared.addOrUpdateEvent(eventToCache)
+                }
+                
+                return eventToCache as! T
+            }
+            
+            // Default fallback
             return FullFeedEventDTO.mockDinnerEvent as! T
         }
 
