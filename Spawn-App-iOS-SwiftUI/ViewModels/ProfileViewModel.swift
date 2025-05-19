@@ -21,10 +21,15 @@ class ProfileViewModel: ObservableObject {
     private let apiService: IAPIService
     
     init(
-        apiService: IAPIService = MockAPIService.isMocking
-        ? MockAPIService() : APIService()
+        userId: UUID? = nil,
+        apiService: IAPIService? = nil
     ) {
-        self.apiService = apiService
+        if let apiService = apiService {
+            self.apiService = apiService
+        } else {
+            self.apiService = MockAPIService.isMocking
+                ? MockAPIService(userId: userId) : APIService()
+        }
     }
     
     func fetchUserStats(userId: UUID) async {
@@ -310,7 +315,13 @@ class ProfileViewModel: ObservableObject {
                 object: EmptyObject()
             )
             
-            // Refresh interests after removing
+            // Update local state immediately after successful deletion
+            await MainActor.run {
+                self.userInterests.removeAll { $0 == interest }
+                self.isLoadingInterests = false
+            }
+            
+            // Refresh interests from server to ensure consistency
             await fetchUserInterests(userId: userId)
         } catch {
             await MainActor.run {

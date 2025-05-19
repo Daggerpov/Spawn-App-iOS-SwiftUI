@@ -38,6 +38,54 @@ class MockAPIService: IAPIService {
                     FullFeedEventDTO.mockSelfOwnedEvent2,
                 ] as! T
             }
+            
+            // fetchFilteredEvents() - FeedViewModel
+            if url.absoluteString.contains("events/friendTag/") {
+                // Extract the tag ID from the URL
+                return [
+                    FullFeedEventDTO.mockDinnerEvent,
+                    FullFeedEventDTO.mockSelfOwnedEvent
+                ] as! T
+            }
+        }
+
+        // ProfileViewModel - fetchEventDetails
+        if url.absoluteString.contains(APIService.baseURL + "events/") && !url.absoluteString.contains("events/friendTag/") && !url.absoluteString.contains("events/feedEvents/") {
+            // Extract event ID from the URL
+            let urlComponents = url.absoluteString.components(separatedBy: "/")
+            if let eventIdString = urlComponents.last, let eventId = UUID(uuidString: eventIdString) {
+                // Check if we're looking for a specific event by ID
+                print("🔍 MOCK: Fetching event details for ID: \(eventId)")
+                
+                // For the mock implementation, set event details based on the eventId in CalendarActivityDTO
+                // First, add this event to the AppCache
+                let eventToCache = FullFeedEventDTO.mockDinnerEvent
+                // Give the mock event the requested ID so it matches
+                eventToCache.id = eventId
+                
+                // Add random variety to the mocked event
+                let possibleTitles = ["Dinner at The Spot", "Study Session", "Workout at Gym", "Coffee Break", "Movie Night", "Game Night", "Beach Day"]
+                let possibleLocations = ["The Spot", "Central Library", "University Gym", "Coffee House", "Cinema", "Game Room", "Beach"]
+                eventToCache.title = possibleTitles.randomElement()
+                eventToCache.category = EventCategory.allCases.randomElement() ?? .general
+                eventToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"].randomElement()
+                eventToCache.location = Location(
+                    id: UUID(), 
+                    name: possibleLocations.randomElement() ?? "The Spot",
+                    latitude: Double.random(in: 49.2...49.3), 
+                    longitude: Double.random(in: -123.3 ... -123.1)
+                )
+                
+                // Add to cache so it will be found next time
+                DispatchQueue.main.async {
+                    AppCache.shared.addOrUpdateEvent(eventToCache)
+                }
+                
+                return eventToCache as! T
+            }
+            
+            // Default fallback
+            return FullFeedEventDTO.mockDinnerEvent as! T
         }
 
         // fetchTagsForUser():
@@ -75,6 +123,156 @@ class MockAPIService: IAPIService {
             {
                 return FullFriendUserDTO.mockUsers as! T
             }
+            
+            // SearchViewModel - fetchFilteredResults():
+            if url.absoluteString.contains("users/filtered/\(userIdForUrl)") {
+                // Create a mock SearchedUserResult
+                let result = SearchedUserResult(
+                    incomingFriendRequests: FetchFriendRequestDTO.mockFriendRequests,
+                    recommendedFriends: Array(RecommendedFriendUserDTO.mockUsers.prefix(2)),
+                    friends: Array(FullFriendUserDTO.mockUsers.prefix(3))
+                )
+                return result as! T
+            }
+            
+            // ProfileViewModel - fetchUserStats()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/stats" {
+                return UserStatsDTO(
+                    peopleMet: 24,
+                    spawnsMade: 15,
+                    spawnsJoined: 3
+                ) as! T
+            }
+            
+            // ProfileViewModel - fetchUserInterests()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/interests" {
+                return ["Music", "Photography", "Hiking", "Reading", "Travel"] as! T
+            }
+            
+            // ProfileViewModel - fetchUserSocialMedia()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/social-media" {
+                return UserSocialMediaDTO(
+                    id: UUID(),
+                    userId: userIdForUrl,
+                    whatsappLink: "https://wa.me/+1234567890",
+                    instagramLink: "https://www.instagram.com/user_insta"
+                ) as! T
+            }
+            
+            // ProfileViewModel - fetchCalendarActivities()
+            if url.absoluteString.contains("users/\(userIdForUrl)/calendar") {
+                // Generate dynamic calendar activities
+                var activities: [CalendarActivityDTO] = []
+                
+                // Get current date information
+                let currentDate = Date()
+                let calendar = Calendar.current
+                let currentMonth = calendar.component(.month, from: currentDate)
+                let currentYear = calendar.component(.year, from: currentDate)
+                
+                // Create a date formatter for consistent dates
+                let dateFormatter = DateFormatter.iso8601Full
+                
+                // Check if specific month and year were requested
+                var targetMonth = currentMonth
+                var targetYear = currentYear
+                
+                if let parameters = parameters {
+                    if let monthStr = parameters["month"], let month = Int(monthStr) {
+                        targetMonth = month
+                    }
+                    if let yearStr = parameters["year"], let year = Int(yearStr) {
+                        targetYear = year
+                    }
+                }
+                
+                // Generate events for current month and the next month
+                for monthOffset in 0...2 {
+                    var month = targetMonth + monthOffset
+                    var year = targetYear
+                    
+                    // Handle year rollover
+                    if month > 12 {
+                        month -= 12
+                        year += 1
+                    }
+                    
+                    // Create events throughout the month
+                    for day in [3, 7, 12, 15, 18, 21, 25, 28] {
+                        // Skip some days randomly to make it more realistic
+                        if Bool.random() && monthOffset > 0 {
+                            continue
+                        }
+                        
+                        // Get potential event categories to use
+                        let categories: [EventCategory] = [.foodAndDrink, .active, .grind, .chill, .general]
+                        
+                        // Add 1-3 events per day
+                        let numEvents = Int.random(in: 1...3)
+                        for _ in 0..<numEvents {
+                            // Select a random category
+                            let category = categories.randomElement()!
+                            
+                            // Create a date string
+                            let dateString = String(format: "%04d-%02d-%02dT%02d:%02d:00Z", 
+                                                   year, month, day, 
+                                                   Int.random(in: 9...20), // Random hour
+                                                   Int.random(in: 0...59)) // Random minute
+                            
+                            // Generate colors (sometimes override category color)
+                            var colorHex: String
+                            if Bool.random() {
+                                // Use a custom color sometimes
+                                let colors = ["#4CAF50", "#2196F3", "#9C27B0", "#FF9800", "#F44336", "#009688", "#673AB7", "#3F51B5", "#FFC107"]
+                                colorHex = colors.randomElement()!
+                            } else {
+                                // Convert category color to hex
+                                switch category {
+                                case .foodAndDrink: colorHex = "#4CAF50" // Green
+                                case .active: colorHex = "#2196F3" // Blue
+                                case .grind: colorHex = "#9C27B0" // Purple
+                                case .chill: colorHex = "#FF9800" // Orange
+                                case .general: colorHex = "#757575" // Gray
+                                }
+                            }
+                            
+                            // Sometimes use custom icon instead of category icon
+                            let useCustomIcon = Bool.random()
+                            let icon = useCustomIcon ? 
+                                ["🍕", "🏃", "💻", "📚", "🎮", "🎭", "🎨", "🎵", "☕️", "🛒", "👨‍👩‍👧‍👦"].randomElement() : 
+                                category.systemIcon()
+                            
+                            // Create event
+                            if let eventDate = dateFormatter.date(from: dateString) {
+                                activities.append(
+                                    CalendarActivityDTO(
+                                        id: UUID(),
+                                        date: eventDate,
+                                        eventCategory: category,
+                                        icon: useCustomIcon ? icon : nil,
+                                        colorHexCode: colorHex,
+                                        eventId: UUID()
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // If no parameters were provided, return all activities
+                if parameters == nil || parameters?.isEmpty == true {
+                    return activities as! T
+                }
+                
+                // Otherwise, filter for the requested month and year
+                let filteredActivities = activities.filter { activity in
+                    let activityMonth = calendar.component(.month, from: activity.date)
+                    let activityYear = calendar.component(.year, from: activity.date)
+                    return activityMonth == targetMonth && activityYear == targetYear
+                }
+                
+                return filteredActivities as! T
+            }
         }
 
         /// TagsViewModel.swift:
@@ -88,24 +286,24 @@ class MockAPIService: IAPIService {
             {
                 return FullFriendTagDTO.mockTags as! T
             }
-        }
-
-        /// ChoosingTagViewModel.swift:
-        if let userIdForUrl = userId {
+            
+            // ChoosingTagViewModel.swift:
             if url.absoluteString == APIService.baseURL
                 + "friendTags/addUserToTags/\(userIdForUrl)"
             {
                 return FullFriendTagDTO.mockTags as! T
             }
         }
-
-        /// ChoosingTagViewModel.swift:
-        if let userIdForUrl = userId {
-            if url.absoluteString == APIService.baseURL
-                + "friendTags/addUserToTags/\(userIdForUrl)"
-            {
-                return FullFriendTagDTO.mockTags as! T
-            }
+        
+        /// AddFriendToTagViewModel.swift:
+        if url.absoluteString.contains("friendTags/friendsNotAddedToTag/") {
+            // Extract the tag ID from the URL
+            return BaseUserDTO.mockUsers as! T
+        }
+        
+        // EventCardViewModel.swift & EventDescriptionViewModel.swift:
+        if url.absoluteString.contains("events/") && url.absoluteString.contains("/participation") {
+            return FullFeedEventDTO.mockDinnerEvent as! T
         }
 
         if T.self == UserDTO.self {
@@ -116,6 +314,11 @@ class MockAPIService: IAPIService {
         if let userIdForUrl = userId {
             if url.absoluteString == APIService.baseURL + "auth/sign-in/\(userIdForUrl)" {
                 return UserDTO.danielAgapov as! T
+            }
+            
+            // fetchUserData()
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)" {
+                return BaseUserDTO.danielAgapov as! T
             }
         }
 
@@ -129,7 +332,8 @@ class MockAPIService: IAPIService {
 
         // addFriend():
 
-        if url.absoluteString == APIService.baseURL + "users/friend-request" {
+        if url.absoluteString == APIService.baseURL + "users/friend-request" || 
+           url.absoluteString == APIService.baseURL + "friend-requests" {
             return FetchFriendRequestDTO(
                 id: UUID(),
                 senderUser: BaseUserDTO.danielAgapov
@@ -152,6 +356,42 @@ class MockAPIService: IAPIService {
         if url.absoluteString == APIService.baseURL + "friendTags" {
             return FullFriendTagDTO.close as! U?
         }
+        
+        /// ProfileViewModel.swift:
+        
+        // addUserInterest():
+        if url.absoluteString.contains("users/") && url.absoluteString.contains("/interests") {
+            return EmptyResponse() as! U?
+        }
+        
+        /// FeedbackViewModel.swift:
+        
+        // submitFeedback():
+        if url.absoluteString == APIService.baseURL + "feedback" {
+            // Mock successful feedback submission
+            if T.self == FeedbackSubmissionDTO.self {
+                print("Mocking successful feedback submission")
+                return FetchFeedbackSubmissionDTO(
+                    type: .FEATURE_REQUEST,
+                    fromUserId: UUID(),
+                    message: "Test feedback"
+                ) as! U?
+            }
+        }
+        
+        /// AddFriendToTagViewModel.swift:
+        
+        // addSelectedFriendsToTag():
+        if url.absoluteString == APIService.baseURL + "friendTags/bulkAddFriendsToTag" {
+            return EmptyResponse() as! U?
+        }
+        
+        /// ChoosingTagViewModel.swift:
+        
+        // addTagsToFriend():
+        if url.absoluteString == APIService.baseURL + "friendTags/addUserToTags" {
+            return EmptyResponse() as! U?
+        }
 
         throw APIError.invalidData
     }
@@ -162,22 +402,59 @@ class MockAPIService: IAPIService {
         /// `TagsViewModel.swift`:
 
         // upsertTag(upsertAction: .update):
-        if url.absoluteString == APIService.baseURL + "friendTags" {
+        if url.absoluteString == APIService.baseURL + "friendTags" || 
+           url.absoluteString.contains("friendTags/") {
             return FullFriendTagDTO.close as! U
         }
 
-        // Example: Updating an event's participation status
-        if url.absoluteString.contains("events/")
-            && url.absoluteString.contains("/toggleStatus")
-        {
-            // do nothing; whatever
+        // EventCardViewModel.swift - toggleParticipation():
+        if url.absoluteString.contains("events/") && url.absoluteString.contains("/toggleStatus") {
+            return FullFeedEventDTO.mockDinnerEvent as! U
+        }
+        
+        // FriendRequestViewModel.swift - friendRequestAction():
+        if url.absoluteString.contains("friend-requests/") && 
+           (parameters?["friendRequestAction"] == "accept" || parameters?["friendRequestAction"] == "reject") {
+            return EmptyResponse() as! U
+        }
+        
+        // ProfileViewModel.swift - updateSocialMedia():
+        if url.absoluteString.contains("users/") && url.absoluteString.contains("/social-media") {
+            if let socialMediaDTO = object as? UpdateUserSocialMediaDTO {
+                return UserSocialMediaDTO(
+                    id: UUID(),
+                    userId: userId ?? UUID(),
+                    whatsappLink: socialMediaDTO.whatsappNumber != nil ? "https://wa.me/\(socialMediaDTO.whatsappNumber!)" : nil,
+                    instagramLink: socialMediaDTO.instagramUsername != nil ? "https://www.instagram.com/\(socialMediaDTO.instagramUsername!)" : nil
+                ) as! U
+            }
         }
 
         throw APIError.invalidData
     }
 
     func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T? = nil) async throws {
-        // do nothing
+        // ProfileViewModel - removeUserInterest
+        if url.absoluteString.contains("/interests/") {
+            // Successfully "delete" the interest without actually doing anything
+            print("🔍 MOCK: Successfully deleted interest from URL: \(url.absoluteString)")
+            return
+        }
+        
+        // Handle tag deletion
+        if url.absoluteString.contains("friendTags/") {
+            print("🔍 MOCK: Successfully deleted tag from URL: \(url.absoluteString)")
+            return
+        }
+        
+        // UserAuthViewModel - deleteAccount
+        if url.absoluteString.contains("users/") && !url.absoluteString.contains("/interests/") {
+            print("🔍 MOCK: Successfully deleted user account from URL: \(url.absoluteString)")
+            return
+        }
+        
+        // If we get here, just return without doing anything - this is a mock implementation
+        print("🔍 MOCK: Called deleteData on URL: \(url.absoluteString)")
     }
 
     func patchData<T: Encodable, U: Decodable>(
@@ -361,4 +638,16 @@ class MockAPIService: IAPIService {
         // Return mock events data
         return Event.mockEvents
     }
+}
+
+// Add DateFormatter extension for ISO8601
+extension DateFormatter {
+    static let iso8601Full: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+        formatter.calendar = Calendar(identifier: .iso8601)
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
 }
