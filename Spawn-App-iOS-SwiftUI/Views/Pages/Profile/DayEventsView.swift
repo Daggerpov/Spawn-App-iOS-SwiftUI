@@ -87,8 +87,6 @@ struct DayEventsView: View {
         }
         .background(universalBackgroundColor)
         .onAppear {
-            // Always make fresh API calls when this view appears
-            print("DayEventsView - Fetching all event details via API")
             Task {
                 await viewModel.loadEventsIfNeeded()
             }
