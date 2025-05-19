@@ -315,7 +315,13 @@ class ProfileViewModel: ObservableObject {
                 object: EmptyObject()
             )
             
-            // Refresh interests after removing
+            // Update local state immediately after successful deletion
+            await MainActor.run {
+                self.userInterests.removeAll { $0 == interest }
+                self.isLoadingInterests = false
+            }
+            
+            // Refresh interests from server to ensure consistency
             await fetchUserInterests(userId: userId)
         } catch {
             await MainActor.run {
