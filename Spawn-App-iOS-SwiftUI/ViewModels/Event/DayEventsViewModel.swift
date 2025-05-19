@@ -13,6 +13,7 @@ class DayEventsViewModel: ObservableObject {
     @Published var activities: [CalendarActivityDTO] = []
     @Published var loadingEvents: Set<UUID> = []
     @Published var headerTitle: String = "Events"
+    @Published private var fetchedEvents: [UUID: FullFeedEventDTO] = [:]
     
     private var appCache: AppCache
     private var apiService: IAPIService
@@ -52,30 +53,19 @@ class DayEventsViewModel: ObservableObject {
         return formatter.string(from: date)
     }
     
-    // Pre-check cache and fetch any missing events
+    // Fetch all events directly via API without checking cache
     func loadEventsIfNeeded() async {
         for activity in activities {
             guard let eventId = activity.eventId else { continue }
             
-            if appCache.getEventById(eventId) == nil {
-                await fetchEvent(eventId)
-            }
+            // Always fetch event details via API
+            await fetchEvent(eventId)
         }
     }
     
     private func updateCachedEvents() {
-        // Clear any loading events that are now in the cache
-        var newLoadingEvents = loadingEvents
-        
-        for eventId in loadingEvents {
-            if appCache.getEventById(eventId) != nil {
-                newLoadingEvents.remove(eventId)
-            }
-        }
-        
-        DispatchQueue.main.async {
-            self.loadingEvents = newLoadingEvents
-        }
+        // This method is still useful for tracking which events are currently loading
+        // However, we now ignore the cache check and just update based on completed API calls
     }
     
     func fetchEvent(_ eventId: UUID) async {
@@ -96,7 +86,12 @@ class DayEventsViewModel: ObservableObject {
                     parameters: ["requestingUserId": UserAuthViewModel.shared.spawnUser?.id.uuidString ?? UUID().uuidString]
                 )
                 await MainActor.run {
+                    // Store in our own dictionary instead of app cache
+                    fetchedEvents[eventId] = event
+                    
+                    // Also update app cache for compatibility with other parts of the app
                     appCache.addOrUpdateEvent(event)
+                    
                     loadingEvents.remove(eventId)
                 }
             }
@@ -108,7 +103,15 @@ class DayEventsViewModel: ObservableObject {
         }
     }
     
-    
+    func getEvent(for eventId: UUID) -> FullFeedEventDTO? {
+        // First check our own fetched events
+        if let event = fetchedEvents[eventId] {
+            return event
+        }
+        
+        // No need to check app cache since we're making direct API calls
+        return nil
+    }
     
     func isEventLoading(_ eventId: UUID) -> Bool {
         return loadingEvents.contains(eventId)

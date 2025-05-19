@@ -51,7 +51,8 @@ struct DayEventsView: View {
             ScrollView {
                 VStack(spacing: 15) {
                     ForEach(activities, id: \.id) { activity in
-                        if let eventId = activity.eventId, let event = AppCache.shared.getEventById(eventId) {
+                        if let eventId = activity.eventId, let event = viewModel.getEvent(for: eventId) {
+                            // If event details are available from the view model
                             EventCardView(
                                 userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                                 event: event,
@@ -62,7 +63,7 @@ struct DayEventsView: View {
                             )
                             .padding(.horizontal)
                         } else {
-                            // Fallback if the event is not in the cache
+                            // Show loading state while fetching event
                             HStack {
                                 Text("Loading event details...")
                                 if let eventId = activity.eventId, viewModel.isEventLoading(eventId) {
@@ -86,6 +87,8 @@ struct DayEventsView: View {
         }
         .background(universalBackgroundColor)
         .onAppear {
+            // Always make fresh API calls when this view appears
+            print("DayEventsView - Fetching all event details via API")
             Task {
                 await viewModel.loadEventsIfNeeded()
             }
