@@ -218,8 +218,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 
 			_ = GIDConfiguration(
-				clientID:
-					"822760465266-hl53d2rku66uk4cljschig9ld0ur57na.apps.googleusercontent.com"
+				clientID: "822760465266-1dunhm4jgrcg17137rfjo2idu5qefchk.apps.googleusercontent.com"
 			)
 
 			GIDSignIn.sharedInstance.signIn(
@@ -232,7 +231,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 
 				guard let signInResult = signInResult else { return }
-				guard let user = signInResult.user else { return }
+				let user = signInResult.user
 				// Request a higher resolution image (400px instead of 100px)
 				self.profilePicUrl =
 					user.profile?.imageURL(withDimension: 400)?.absoluteString
