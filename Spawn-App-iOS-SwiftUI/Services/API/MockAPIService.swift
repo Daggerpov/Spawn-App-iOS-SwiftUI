@@ -77,7 +77,7 @@ class MockAPIService: IAPIService {
                 )
                 
                 // Add to cache so it will be found next time
-                DispatchQueue.main.async {
+                await MainActor.run {
                     AppCache.shared.addOrUpdateEvent(eventToCache)
                 }
                 

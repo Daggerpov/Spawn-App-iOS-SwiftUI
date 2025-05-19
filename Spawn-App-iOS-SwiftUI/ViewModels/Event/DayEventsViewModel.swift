@@ -11,7 +11,6 @@ import SwiftUI
 
 class DayEventsViewModel: ObservableObject {
     @Published var activities: [CalendarActivityDTO] = []
-    @Published var loadingEvents: Set<UUID> = []
     @Published var headerTitle: String = "Events"
     @Published private var fetchedEvents: [UUID: FullFeedEventDTO] = [:]
     
@@ -69,10 +68,6 @@ class DayEventsViewModel: ObservableObject {
     }
     
     func fetchEvent(_ eventId: UUID) async {
-        // Add to loading set
-        await MainActor.run {
-            loadingEvents.insert(eventId)
-        }
         
         let apiService: IAPIService = MockAPIService.isMocking
             ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
@@ -92,14 +87,10 @@ class DayEventsViewModel: ObservableObject {
                     // Also update app cache for compatibility with other parts of the app
                     appCache.addOrUpdateEvent(event)
                     
-                    loadingEvents.remove(eventId)
                 }
             }
         } catch {
             print("Error fetching event: \(error.localizedDescription)")
-            await MainActor.run {
-                loadingEvents.remove(eventId)
-            }
         }
     }
     
@@ -114,6 +105,8 @@ class DayEventsViewModel: ObservableObject {
     }
     
     func isEventLoading(_ eventId: UUID) -> Bool {
-        return loadingEvents.contains(eventId)
+        // An event is considered loading if it's not in our fetchedEvents dictionary
+        // and we have been asked to fetch it (which is implied by checking)
+        return fetchedEvents[eventId] == nil
     }
-} 
+}
