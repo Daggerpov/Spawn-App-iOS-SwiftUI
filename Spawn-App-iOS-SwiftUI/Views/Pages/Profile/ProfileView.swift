@@ -38,9 +38,9 @@ struct ProfileView: View {
 
     // Check if this is the current user's profile
     private var isCurrentUserProfile: Bool {
-//        if MockAPIService.isMocking {
+        if MockAPIService.isMocking {
             return true
- //       }
+        }
         guard let currentUser = userAuth.spawnUser else { return false }
         return currentUser.id == user.id
     }
