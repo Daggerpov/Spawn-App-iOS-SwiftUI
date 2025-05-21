@@ -426,7 +426,26 @@ struct ProfileView: View {
                 copyProfileURL: copyProfileURL,
                 shareProfile: shareProfile
             )
+            .presentationDetents([.height(350)])
         }
+        .onTapGesture {
+            // Dismiss profile menu if it's showing
+            if showProfileMenu {
+                showProfileMenu = false
+            }
+        }
+        .overlay(
+            Group {
+                if showProfileMenu {
+                    // Dimmed background when menu is showing
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showProfileMenu = false
+                        }
+                }
+            }
+        )
     }
 
     private func addInterest() {
