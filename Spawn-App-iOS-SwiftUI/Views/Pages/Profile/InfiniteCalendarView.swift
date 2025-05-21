@@ -19,21 +19,7 @@ struct InfiniteCalendarView: View {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if activities.isEmpty {
-                    VStack(spacing: 15) {
-                        Image(systemName: "calendar.badge.exclamationmark")
-                            .font(.system(size: 50))
-                            .foregroundColor(.gray)
-                        
-                        Text("No calendar activities")
-                            .font(.headline)
-                        
-                        Text("When you create or participate in events, they'll appear here.")
-                            .font(.subheadline)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(.gray)
-                            .padding(.horizontal)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    BlankInfiniteCalendarView()
                 } else {
                     // Year picker
                     Picker("Year", selection: $selectedYear) {
@@ -55,6 +41,7 @@ struct InfiniteCalendarView: View {
                                         activities: activitiesForMonth(month: month, year: selectedYear),
                                         onEventSelected: onEventSelected,
                                         onDaySelected: { dayActivities in
+                                            // Directly show day events without checking cache
                                             self.selectedDayActivities = dayActivities
                                             self.showingDayEvents = true
                                         }
@@ -128,6 +115,26 @@ struct InfiniteCalendarView: View {
             let activityYear = Calendar.current.component(.year, from: activity.date)
             return activityMonth == month && activityYear == year
         }
+    }
+}
+
+struct BlankInfiniteCalendarView: View {
+    var body: some View {
+        VStack(spacing: 15) {
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(.system(size: 50))
+                .foregroundColor(.gray)
+            
+            Text("No calendar activities")
+                .font(.headline)
+            
+            Text("When you create or participate in events, they'll appear here.")
+                .font(.subheadline)
+                .multilineTextAlignment(.center)
+                .foregroundColor(.gray)
+                .padding(.horizontal)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

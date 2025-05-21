@@ -33,7 +33,6 @@ struct EventCardView: View {
             RoundedRectangle(cornerRadius: 14)
                 .fill(Color(red: 0.48, green: 0.60, blue: 1.0))
         )
-        .frame(height: 130)
         .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
         .onAppear {
             viewModel.fetchIsParticipating()

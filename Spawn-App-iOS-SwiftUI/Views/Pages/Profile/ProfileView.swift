@@ -60,8 +60,9 @@ struct ProfileView: View {
 
     init(user: Nameable) {
         self.user = user
-        username = user.username
-        name = user.name ?? ""
+        self._profileViewModel = StateObject(wrappedValue: ProfileViewModel(userId: user.id))
+        self.username = user.username
+        self.name = user.name ?? ""
     }
 
     var body: some View {

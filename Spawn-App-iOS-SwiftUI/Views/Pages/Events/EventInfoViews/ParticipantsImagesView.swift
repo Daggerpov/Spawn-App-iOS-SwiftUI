@@ -40,16 +40,18 @@ struct ParticipantsImagesView: View {
 					destination: ProfileView(user: participant),
 					label: {
 						if let pfpUrl = participant.profilePicture {
-							AsyncImage(url: URL(string: pfpUrl)) {
-								image in
-								image
-									.ProfileImageModifier(
-										imageType: .eventParticipants)
-							} placeholder: {
-								Circle()
-									.fill(Color.gray)
-									.frame(width: 24, height: 24)
-							}
+                            if MockAPIService.isMocking {
+                                Image(pfpUrl)
+                                    .ProfileImageModifier(imageType: .eventParticipants)
+                            } else {
+                                AsyncImage(url: URL(string: pfpUrl)) { image in
+                                    image.ProfileImageModifier(imageType: .eventParticipants)
+                                } placeholder: {
+                                    Circle()
+                                        .fill(Color.gray)
+                                        .frame(width: 24, height: 24)
+                                }
+                            }
 						} else {
 							Circle()
 								.fill(Color.gray)
