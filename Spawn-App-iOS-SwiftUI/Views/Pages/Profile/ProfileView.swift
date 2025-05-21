@@ -290,7 +290,6 @@ struct ProfileView: View {
                         }) {
                             Image(systemName: "ellipsis")
                                 .foregroundColor(universalAccentColor)
-                                .rotationEffect(.degrees(90))
                         }
                     }
                 }

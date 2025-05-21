@@ -39,17 +39,16 @@ struct AddFriendToTagsView: View {
                     header
                     
                     // Main content
-                    ScrollView {
-                        VStack(spacing: 20) {
-                            // Different view based on state
-                            if tagSelectionState == .selection {
-                                selectionView
-                            } else {
-                                confirmationView
-                            }
+                    ZStack {
+                        if tagSelectionState == .selection {
+                            selectionView
+                                .transition(.opacity)
+                        } else {
+                            confirmationView
+                                .transition(.opacity)
                         }
-                        .padding(.horizontal, 16)
                     }
+                    .animation(.easeInOut, value: tagSelectionState)
                     
                     // Footer button
                     footerButton
@@ -93,9 +92,10 @@ struct AddFriendToTagsView: View {
     }
     
     private var selectionView: some View {
-        VStack(spacing: 30) {
+        VStack(spacing: 20) {
             // Friend profile in the center
             friendProfileView
+                .padding(.top, 20)
             
             if viewModel.tags.isEmpty {
                 Text("Create some friend tags to add to your new friends!")
@@ -104,7 +104,7 @@ struct AddFriendToTagsView: View {
                     .padding(.horizontal)
             } else {
                 // Selection instructions
-				Text("Where do you want to put \(FormatterService.shared.formatFirstName(user: friend))?")
+                Text("Where do you want to put \(FormatterService.shared.formatFirstName(user: friend))?")
                     .font(.headline)
                     .foregroundColor(universalAccentColor)
                     .multilineTextAlignment(.center)
@@ -114,48 +114,73 @@ struct AddFriendToTagsView: View {
                     .foregroundColor(Color.gray)
                     .multilineTextAlignment(.center)
                 
-                // Tag bubbles layout
-                tagBubblesLayout
+                // Tag bubbles layout with dynamic positioning
+                ZStack {
+                    ForEach(viewModel.tags.indices, id: \.self) { index in
+                        let tag = viewModel.tags[index]
+                        tagBubble(for: tag)
+                            .offset(tagBubbleOffset(for: index, count: viewModel.tags.count))
+                    }
+                }
+                .frame(height: 400)
+                .padding(.horizontal)
             }
+            
+            Spacer()
         }
-        .padding(.vertical, 20)
     }
     
     private var confirmationView: some View {
-        VStack(spacing: 30) {
-            // Friend profile in the center
-            friendProfileView
-            
-            // Confirmation text
-            Text("Adding \(FormatterService.shared.formatFirstName(user: friend)) to \(viewModel.selectedTags.count) tags")
-                .font(.headline)
-                .foregroundColor(universalAccentColor)
-                .multilineTextAlignment(.center)
-            
-            // Show selected tags with connecting lines
-            selectedTagsWithConnections
+        ScrollView {
+            VStack(spacing: 20) {
+                // Friend profile in the center
+                friendProfileView
+                    .padding(.top, 20)
+                
+                // Confirmation text
+                Text("Adding \(FormatterService.shared.formatFirstName(user: friend)) to \(viewModel.selectedTags.count) tags")
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                    .multilineTextAlignment(.center)
+                
+                // Show selected tags with connecting arrows
+                ZStack {
+                    ForEach(viewModel.getSelectedTags().indices, id: \.self) { index in
+                        tagWithConnection(for: viewModel.getSelectedTags()[index], index: index)
+                    }
+                    
+                    // Friend profile in center
+                    friendProfileView
+                        .zIndex(10)
+                }
+                .frame(height: 400)
+                .padding(.horizontal)
+                
+                Spacer()
+            }
         }
-        .padding(.vertical, 20)
     }
     
     private var friendProfileView: some View {
         ZStack {
-            // Colorful glow behind the profile
+            // Rainbow glow behind profile (matching Figma design)
             Circle()
                 .fill(
                     RadialGradient(
-                        gradient: Gradient(stops: [
-                            Gradient.Stop(color: Color(red: 0.56, green: 0.39, blue: 0.91).opacity(0.6), location: 0.0),
-                            Gradient.Stop(color: Color(red: 0.48, green: 0.74, blue: 0.9).opacity(0.3), location: 1.0),
-                            Gradient.Stop(color: Color.clear, location: 1.2),
+                        gradient: Gradient(colors: [
+                            Color.purple.opacity(0.5),
+                            Color.blue.opacity(0.5),
+                            Color.green.opacity(0.3),
+                            Color.yellow.opacity(0.2),
+                            Color.clear
                         ]),
                         center: .center,
-                        startRadius: 40,
-                        endRadius: 60
+                        startRadius: 30,
+                        endRadius: 70
                     )
                 )
-                .frame(width: 90, height: 90)
-                .blur(radius: 8)
+                .frame(width: 100, height: 100)
+                .blur(radius: 10)
             
             // Profile picture
             if let profilePictureString = friend.profilePicture {
@@ -179,29 +204,13 @@ struct AddFriendToTagsView: View {
         .frame(width: 100, height: 100)
     }
     
-    private var tagBubblesLayout: some View {
-        let columns = viewModel.tags.count >= 5 ? 2 : 1
-        
-        return VStack(spacing: 20) {
-            if columns == 1 {
-                // Single column layout for fewer tags
-                ForEach(viewModel.tags) { tag in
-                    tagBubble(for: tag)
-                }
-            } else {
-                // Two-column layout for more tags
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 15) {
-                    ForEach(viewModel.tags) { tag in
-                        tagBubble(for: tag)
-                    }
-                }
-            }
-        }
-    }
-    
     private func tagBubble(for tag: FullFriendTagDTO) -> some View {
-        Button(action: {
-            viewModel.toggleTagSelection(tag.id)
+        let isSelected = viewModel.selectedTags.contains(tag.id)
+        
+        return Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                viewModel.toggleTagSelection(tag.id)
+            }
         }) {
             HStack {
                 // Tag avatar previews (showing 2 friends in the tag)
@@ -250,62 +259,103 @@ struct AddFriendToTagsView: View {
                 
                 Text(tag.displayName)
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(isSelected ? .white : Color(hex: tag.colorHexCode))
                 
                 Spacer()
                 
                 Text("\(tag.friends?.count ?? 0) people")
                     .font(.caption)
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : Color.gray)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 16)
             .background(
                 Capsule()
-                    .fill(Color(hex: tag.colorHexCode))
+                    .fill(isSelected ? Color(hex: tag.colorHexCode) : Color.clear)
             )
             .overlay(
                 Capsule()
-                    .stroke(viewModel.selectedTags.contains(tag.id) ? Color.white : Color.clear, lineWidth: 2)
+                    .stroke(
+                        style: StrokeStyle(
+                            lineWidth: 1,
+                            dash: isSelected ? [] : [5]
+                        )
+                    )
+                    .foregroundColor(Color(hex: tag.colorHexCode))
             )
+            .frame(width: 220)
         }
         .buttonStyle(ScaleButtonStyle())
     }
     
-    private var selectedTagsWithConnections: some View {
-        ZStack {
-            // Selected tags positioned around the user
-            ForEach(viewModel.getSelectedTags().indices, id: \.self) { index in
-                let tag = viewModel.getSelectedTags()[index]
-                let position = getTagPosition(index: index, count: viewModel.getSelectedTags().count)
-                
-                // Connection line
-                if tagSelectionState == .confirmation {
-                    Path { path in
-                        path.move(to: CGPoint(x: 150, y: 150)) // Center point
-                        path.addLine(to: position)
-                    }
-                    .stroke(Color(hex: tag.colorHexCode), style: StrokeStyle(lineWidth: 2, dash: [5]))
-                }
-                
-                // Tag bubble
-                tagBubble(for: tag)
-                    .frame(width: 200)
-                    .position(position)
-            }
+    private func tagWithConnection(for tag: FullFriendTagDTO, index: Int) -> some View {
+        let count = viewModel.getSelectedTags().count
+        let position = getTagPosition(index: index, count: count)
+        
+        return ZStack {
+            // Connection arrow
+            ConnectionArrow(
+                start: CGPoint(x: 200, y: 200), // Center
+                end: position,
+                color: Color(hex: tag.colorHexCode)
+            )
+            
+            // Tag bubble
+            tagBubble(for: tag)
+                .position(position)
         }
-        .frame(height: 300)
+    }
+    
+    private func tagBubbleOffset(for index: Int, count: Int) -> CGSize {
+        // Distribute tags in a more natural, scattered way
+        let radius: CGFloat = 150
+        let angle = 2 * CGFloat.pi * CGFloat(index) / CGFloat(min(count, 5))
+        
+        // Add some randomness for a more natural look
+        let jitter = CGFloat(index % 3) * 10
+        
+        return CGSize(
+            width: radius * cos(angle) + jitter,
+            height: radius * sin(angle) + jitter
+        )
+    }
+    
+    // Helper functions for tag positioning in confirmation view
+    private func getTagPosition(index: Int, count: Int) -> CGPoint {
+        let containerWidth: CGFloat = 400
+        let containerHeight: CGFloat = 400
+        let center = CGPoint(x: containerWidth / 2, y: containerHeight / 2)
+        
+        if count == 1 {
+            // Single tag at the bottom
+            return CGPoint(x: center.x, y: center.y + 130)
+        } else if count == 2 {
+            // Two tags, one top right, one bottom left
+            let positions = [
+                CGPoint(x: center.x + 120, y: center.y - 100), // Top right
+                CGPoint(x: center.x - 120, y: center.y + 100)  // Bottom left
+            ]
+            return positions[index]
+        } else {
+            // Distribute tags around the center
+            let radius: CGFloat = 150
+            let angle = 2 * CGFloat.pi * CGFloat(index) / CGFloat(count) - CGFloat.pi / 2
+            return CGPoint(
+                x: center.x + radius * cos(angle),
+                y: center.y + radius * sin(angle)
+            )
+        }
     }
     
     private var footerButton: some View {
         Button(action: {
             if tagSelectionState == .selection {
                 if !viewModel.selectedTags.isEmpty {
-                    // Switch to confirmation state if tags are selected
-                    tagSelectionState = .confirmation
+                    withAnimation {
+                        tagSelectionState = .confirmation
+                    }
                 }
             } else {
-                // Complete the process
                 Task {
                     await viewModel.addTagsToFriend(friendUserId: friend.id)
                     dismiss()
@@ -326,28 +376,52 @@ struct AddFriendToTagsView: View {
         }
         .disabled(viewModel.selectedTags.isEmpty)
     }
+}
+
+// Custom view for connecting arrows
+struct ConnectionArrow: View {
+    var start: CGPoint
+    var end: CGPoint
+    var color: Color
+    @State private var animationProgress: CGFloat = 0
     
-    // Helper functions for tag positioning
-    private func getTagPosition(index: Int, count: Int) -> CGPoint {
-        let containerSize = CGSize(width: 300, height: 300)
-        let radius: CGFloat = 120
-        let center = CGPoint(x: containerSize.width / 2, y: containerSize.height / 2)
-        
-        switch count {
-        case 1:
-            return CGPoint(x: center.x, y: center.y - radius)
-        case 2:
-            let angle = 2 * CGFloat.pi * CGFloat(index) / CGFloat(count) - CGFloat.pi / 2
-            return CGPoint(
-                x: center.x + radius * cos(angle),
-                y: center.y + radius * sin(angle)
+    var body: some View {
+        ZStack {
+            // Dashed line
+            Path { path in
+                path.move(to: start)
+                path.addLine(to: end)
+            }
+            .stroke(
+                color,
+                style: StrokeStyle(lineWidth: 2, dash: [5])
             )
-        default:
-            let angle = 2 * CGFloat.pi * CGFloat(index) / CGFloat(count) - CGFloat.pi / 2
-            return CGPoint(
-                x: center.x + radius * cos(angle),
-                y: center.y + radius * sin(angle)
-            )
+            
+            // Arrow tip
+            Path { path in
+                let angle = atan2(end.y - start.y, end.x - start.x)
+                let arrowLength: CGFloat = 10
+                
+                let arrowPoint1 = CGPoint(
+                    x: end.x - arrowLength * cos(angle - .pi/6),
+                    y: end.y - arrowLength * sin(angle - .pi/6)
+                )
+                let arrowPoint2 = CGPoint(
+                    x: end.x - arrowLength * cos(angle + .pi/6),
+                    y: end.y - arrowLength * sin(angle + .pi/6)
+                )
+                
+                path.move(to: end)
+                path.addLine(to: arrowPoint1)
+                path.move(to: end)
+                path.addLine(to: arrowPoint2)
+            }
+            .stroke(color, lineWidth: 2)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.5).delay(0.2)) {
+                animationProgress = 1.0
+            }
         }
     }
 }

@@ -393,6 +393,7 @@ class ProfileViewModel: ObservableObject {
             let isFriendResponse: IsFriendResponseDTO = try await self.apiService.fetchData(from: url, parameters: nil)
             
             if isFriendResponse.isFriend {
+				print("user is friends with this user whose profile they've clicked on.")
                 await MainActor.run {
                     self.friendshipStatus = .friends
                     self.isLoadingFriendshipStatus = false
