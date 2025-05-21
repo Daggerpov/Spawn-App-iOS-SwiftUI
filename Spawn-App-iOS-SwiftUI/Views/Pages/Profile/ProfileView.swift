@@ -342,18 +342,9 @@ struct ProfileView: View {
                 .presentationDetents([.medium, .large])
             }
         }
-        .sheet(isPresented: $showTagDialog) {
-            // Show tag selection dialog
-            if let currentUserId = userAuth.spawnUser?.id {
-                ChoosingTagPopupView(
-                    friend: user as! BaseUserDTO,
-                    userId: currentUserId,
-                    closeCallback: {
-                        showTagDialog = false
-                    }
-                )
-                .presentationDetents([.medium])
-            }
+        .navigationDestination(isPresented: $showTagDialog) {
+            // Navigate to the new AddFriendToTagsView
+            AddFriendToTagsView(friend: user)
         }
         .alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -762,21 +753,6 @@ struct ProfileView: View {
         .padding(.vertical, 30)
         .background(Color.gray.opacity(0.1))
         .cornerRadius(15)
-    }
-}
-
-// Extension to add a first name formatter
-extension FormatterService {
-    func formatFirstName(user: Nameable) -> String {
-        // Split the name and get the first component as the first name
-        if let fullName = user.name, !fullName.isEmpty {
-            let components = fullName.components(separatedBy: " ")
-            if let firstName = components.first {
-                return firstName
-            }
-        }
-        // Fallback to username if no name available
-        return user.username
     }
 }
 
