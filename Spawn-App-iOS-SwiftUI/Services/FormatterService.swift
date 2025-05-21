@@ -12,6 +12,18 @@ class FormatterService {
 
 	private init() {}
 
+	func formatFirstName(user: Nameable) -> String {
+		// Split the name and get the first component as the first name
+		if let fullName = user.name, !fullName.isEmpty {
+			let components = fullName.components(separatedBy: " ")
+			if let firstName = components.first {
+				return firstName
+			}
+		}
+		// Fallback to username if no name available
+		return user.username
+	}
+
 	// Format name from a user object
 	func formatName(user: Nameable) -> String {
 		return user.name ?? "No Name"
