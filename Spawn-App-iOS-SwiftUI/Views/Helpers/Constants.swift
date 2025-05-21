@@ -38,3 +38,9 @@ let figmaSoftBlue: Color = Color(hex: figmaSoftBlueHex)
 
 let figmaBlack300Hex: String = "#8E8484"
 let figmaBlack300: Color = Color(hex: figmaBlack300Hex)
+
+let figmaBlack400Hex: String = "666060"
+let figmaBlack400: Color = Color(hex: figmaBlack400Hex)
+
+let figmaOrangeHex: String = "FF7270"
+let figmaBittersweetOrange: Color = Color(hex: figmaOrangeHex)
