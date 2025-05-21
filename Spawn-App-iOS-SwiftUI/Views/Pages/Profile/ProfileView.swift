@@ -70,11 +70,15 @@ struct ProfileView: View {
             ZStack {
                 ScrollView {
                     VStack(alignment: .center, spacing: 10) {
-                        // Profile Picture
-                        profilePictureSection
-                            .padding(.top, 15)
-
-                        nameAndUsernameView
+                        // Profile Header (Profile Picture + Name)
+                        ProfileHeaderView(
+                            user: user,
+                            selectedImage: $selectedImage,
+                            showImagePicker: $showImagePicker,
+                            isImageLoading: $isImageLoading,
+                            refreshFlag: $refreshFlag,
+                            editingState: $editingState
+                        )
 
                         // Friendship badge (for other users' profiles)
                         if !isCurrentUserProfile && profileViewModel.friendshipStatus == .friends {
@@ -92,9 +96,12 @@ struct ProfileView: View {
                         // Profile Action Buttons
                         if isCurrentUserProfile {
                             // Original action buttons for current user
-                            profileActionButtons
-                                .padding(.horizontal, 25)
-                                .padding(.bottom, 15)
+                            ProfileActionButtonsView(
+                                user: user,
+                                shareProfile: shareProfile
+                            )
+                            .padding(.horizontal, 25)
+                            .padding(.bottom, 15)
                         } else {
                             // Friend action buttons for other users (based on friendship status)
                             friendActionButtons
@@ -104,25 +111,49 @@ struct ProfileView: View {
 
                         // Edit Save Cancel buttons (only when editing)
                         if isCurrentUserProfile && editingState == .save {
-                            profileEditButtons
-                                .padding(.bottom, 5)
+                            ProfileEditButtonsView(
+                                user: user,
+                                profileViewModel: profileViewModel,
+                                editingState: $editingState,
+                                username: $username,
+                                name: $name,
+                                selectedImage: $selectedImage,
+                                whatsappLink: $whatsappLink,
+                                instagramLink: $instagramLink,
+                                isImageLoading: $isImageLoading,
+                                saveProfile: saveProfile
+                            )
+                            .padding(.bottom, 5)
                         }
 
                         // Interests Section with Social Media Icons
-                        interestsSection
-                            .padding(.bottom, 15)
+                        ProfileInterestsView(
+                            user: user,
+                            profileViewModel: profileViewModel,
+                            editingState: $editingState,
+                            newInterest: $newInterest,
+                            openSocialMediaLink: openSocialMediaLink,
+                            removeInterest: removeInterest
+                        )
+                        .padding(.bottom, 15)
 
                         // User Stats (only for current user or friends)
                         if isCurrentUserProfile || profileViewModel.friendshipStatus == .friends {
-                            userStatsSection
-                                .padding(.bottom, 15)
+                            ProfileStatsView(
+                                profileViewModel: profileViewModel
+                            )
+                            .padding(.bottom, 15)
                         }
 
                         // Weekly Calendar View (only for current user)
                         if isCurrentUserProfile {
-                            weeklyCalendarView
-                                .padding(.horizontal)
-                                .padding(.bottom, 15)
+                            ProfileCalendarView(
+                                profileViewModel: profileViewModel,
+                                showCalendarPopup: $showCalendarPopup,
+                                showEventDetails: $showEventDetails
+                            )
+                            .padding(.horizontal)
+                            .padding(.bottom, 15)
                         } else if profileViewModel.friendshipStatus == .friends {
                             // User Events Section (for friends)
                             userEventsSection
@@ -685,89 +716,15 @@ struct ProfileView: View {
     }
 }
 
-// MARK: - Profile Picture Section
+// MARK: - Toolbar View
 extension ProfileView {
 	private var toolbarView: some View {
 		// Name and Username - make this more reactive to changes
-		Group {
-			if isCurrentUserProfile,
-			   let currentUser = userAuth.spawnUser
-			{
-				// For the current user, always display the latest from userAuth
-				Text(
-					FormatterService.shared.formatName(
-						user: currentUser
-					)
-				)
-				.font(.title3)
-				.bold()
-				.foregroundColor(universalAccentColor)
-
-				Text("@\(currentUser.username)")
-					.font(.subheadline)
-					.foregroundColor(Color.gray)
-					.padding(.bottom, 5)
-			} else {
-				// For other users, use the passed-in user
-				Text(
-					FormatterService.shared.formatName(
-						user: user
-					)
-				)
-				.font(.title3)
-				.bold()
-				.foregroundColor(universalAccentColor)
-
-				Text("@\(user.username)")
-					.font(.subheadline)
-					.foregroundColor(Color.gray)
-					.padding(.bottom, 5)
-			}
-		}
-		.id(refreshFlag)  // Force refresh when flag changes
+		ProfileNameView(
+            user: user,
+            refreshFlag: $refreshFlag
+        )
 	}
-
-	private var nameAndUsernameView: some View {
-		// Name and Username - make this more reactive to changes
-		Group {
-			if isCurrentUserProfile,
-			   let currentUser = userAuth.spawnUser
-			{
-				// For the current user, always display the latest from userAuth
-				Text(
-					FormatterService.shared.formatName(
-						user: currentUser
-					)
-				)
-				.font(.title3)
-				.bold()
-				.foregroundColor(universalAccentColor)
-
-				Text("@\(currentUser.username)")
-					.font(.subheadline)
-					.foregroundColor(Color.gray)
-					.padding(.bottom, 5)
-			} else {
-				// For other users, use the passed-in user
-				Text(
-					FormatterService.shared.formatName(
-						user: user
-					)
-				)
-				.font(.title3)
-				.bold()
-				.foregroundColor(universalAccentColor)
-
-				Text("@\(user.username)")
-					.font(.subheadline)
-					.foregroundColor(Color.gray)
-					.padding(.bottom, 5)
-			}
-		}
-		.id(refreshFlag)  // Force refresh when flag changes
-	}
-
-    private var profilePictureSection: some View {
         ZStack(alignment: .bottomTrailing) {
             if isImageLoading {
                 ProgressView()
