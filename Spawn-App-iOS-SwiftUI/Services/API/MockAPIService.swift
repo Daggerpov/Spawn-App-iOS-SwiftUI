@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI // just for UIImage for `createUser()`
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
@@ -477,6 +478,13 @@ class MockAPIService: IAPIService {
 		}
 
 		throw APIError.invalidData
+	}
+
+	func createUser(
+		userDTO: UserCreateDTO, profilePicture: UIImage?,
+		parameters: [String: String]?
+	) async throws -> BaseUserDTO {
+		return BaseUserDTO.danielAgapov
 	}
 
 	func updateData<T: Encodable, U: Decodable>(
