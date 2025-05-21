@@ -17,9 +17,9 @@ struct AddFriendToTagsView: View {
         case confirmation
     }
     
-    var friend: BaseUserDTO
-    
-    init(friend: BaseUserDTO) {
+    var friend: Nameable
+
+    init(friend: Nameable) {
         self.friend = friend
         let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
         self._viewModel = StateObject(wrappedValue: AddFriendToTagsViewModel(
