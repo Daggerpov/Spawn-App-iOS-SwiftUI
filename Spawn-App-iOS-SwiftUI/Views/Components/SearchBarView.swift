@@ -56,9 +56,10 @@ struct SearchBarView: View {
     }
 }
 
+@available(iOS 17, *)
 #Preview {
-    @State var searchText = ""
-    @State var isSearching = false
+    @Previewable @State var searchText = ""
+	@Previewable @State var isSearching = false
     
     return SearchBarView(
         searchText: $searchText,
@@ -66,5 +67,4 @@ struct SearchBarView: View {
         placeholder: "Search for friends"
     )
     .padding()
-    .previewLayout(.sizeThatFits)
-} 
+}

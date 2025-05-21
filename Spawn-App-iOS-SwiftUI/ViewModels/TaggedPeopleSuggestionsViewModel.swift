@@ -85,8 +85,8 @@ class TaggedPeopleSuggestionsViewModel: ObservableObject {
         if let url = URL(string: APIService.baseURL + "friendTags/\(tagId)") {
             do {
                 let parameters = ["friendTagAction": "addFriend", "userId": friend.id.uuidString]
-                try await apiService.sendData(EmptyObject(), to: url, parameters: parameters)
-                
+                let _ = try await apiService.sendData(EmptyObject(), to: url, parameters: parameters)
+
                 await MainActor.run {
                     // Add to added friends and remove from suggested
                     if !self.addedFriends.contains(where: { $0.id == friend.id }) {
@@ -117,7 +117,7 @@ class TaggedPeopleSuggestionsViewModel: ObservableObject {
         if let url = URL(string: APIService.baseURL + "friendTags/\(tagId)") {
             do {
                 let parameters = ["friendTagAction": "removeFriend", "userId": friend.id.uuidString]
-                try await apiService.sendData(EmptyObject(), to: url, parameters: parameters)
+				let _ = try await apiService.sendData(EmptyObject(), to: url, parameters: parameters)
                 
                 await MainActor.run {
                     // Remove from added friends and add to suggested

@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import Spawn_App_iOS_SwiftUI
 
 struct FriendRow: View {
 	@EnvironmentObject var viewModel: TagsViewModel

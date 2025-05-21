@@ -58,5 +58,4 @@ struct SearchBarButtonView: View {
 #Preview {
     SearchBarButtonView(placeholder: "Search for friends", action: {})
         .padding()
-        .previewLayout(.sizeThatFits)
 } 
