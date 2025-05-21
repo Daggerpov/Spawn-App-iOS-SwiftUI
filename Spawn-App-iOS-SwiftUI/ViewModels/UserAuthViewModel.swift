@@ -65,45 +65,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
 	}
 
-	func checkStatus() {
-        GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
-            if let error = error {
-                self.errorMessage = "error: \(error.localizedDescription)"
-                print(self.errorMessage as Any)
-                
-            }
-            if GIDSignIn.sharedInstance.currentUser != nil {
-                let user = GIDSignIn.sharedInstance.currentUser
-                guard let user = user else { return }
-                self.name = user.profile?.name
-                self.email = user.profile?.email
-                self.profilePicUrl =
-                user.profile?.imageURL(withDimension: 100)?.absoluteString
-                self.isLoggedIn = true
-                self.externalUserId = user.userID  // Google's externalUserId
-                
-                // Refresh token if needed to get valid ID token
-                user.refreshTokensIfNeeded { user, error in
-                    guard error == nil else { 
-                        print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
-                        return 
-                    }
-                    guard let user = user else { return }
-                    
-                    self.idToken = user.idToken?.tokenString
-                    
-                }
-                
-                // If we have a spawnUser already, post the login notification
-                if self.spawnUser != nil {
-                    NotificationCenter.default.post(name: .userDidLogin, object: nil)
-                }
-            } else {
-                self.resetState()
-            }
-        }
-	}
-
 	func resetState() {
 		// Reset user state
 		self.errorMessage = nil
@@ -689,24 +650,23 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     // Attempts a "quick" sign-in which sends access/refresh tokens to server to verify whether a user is logged in
     func quickSignIn() async {
-        guard
-            let accessTokenData: Data = KeychainService.shared.load(key: "accessToken"),
-            let accessToken: String = String(data: accessTokenData, encoding: .utf8) else {
-            print("Cannot find refresh token from Keychain. Re-login is required")
-            return
-        }
+        print("Attempting quick sign-in")
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/quick-sign-in") {
                 let user: BaseUserDTO = try await self.apiService.fetchData(from: url, parameters: nil)
                 
+                print("Quick sign-in successful")
                 await MainActor.run {
                     self.spawnUser = user
                     self.shouldNavigateToFeedView = true
+                    self.isLoggedIn = true
                 }
             }
         } catch {
             print("Error performing quick-login. Re-login is required")
-            return
+        }
+        await MainActor.run {
+            self.hasCheckedSpawnUserExistence = true
         }
     }
 }
