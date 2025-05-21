@@ -281,6 +281,19 @@ struct ProfileView: View {
 						refreshFlag: $refreshFlag
 					)
 				}
+                
+                // Add menu button to the trailing position if not current user profile or friends
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !isCurrentUserProfile || profileViewModel.friendshipStatus == .friends {
+                        Button(action: {
+                            showProfileMenu = true
+                        }) {
+                            Image(systemName: "ellipsis")
+                                .foregroundColor(universalAccentColor)
+                                .rotationEffect(.degrees(90))
+                        }
+                    }
+                }
 			}
 
 			// Overlay for profile menu
