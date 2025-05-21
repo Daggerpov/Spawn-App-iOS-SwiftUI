@@ -17,7 +17,6 @@ struct ProfileMenuView: View {
     let copyProfileURL: () -> Void
     let shareProfile: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var showAddFriendToTagView = false
     
     var body: some View {
         ZStack {
@@ -28,93 +27,130 @@ struct ProfileMenuView: View {
                 }
             
             VStack(spacing: 0) {
-                // Handle at top
-                RoundedRectangle(cornerRadius: 2.5)
-                    .fill(Color.gray.opacity(0.5))
-                    .frame(width: 40, height: 5)
-                    .padding(.top, 8)
-                
-                // Header
-                Text("@\(user.username)")
-                    .font(.headline)
-                    .padding(.top, 16)
-                    .padding(.bottom, 20)
-                
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Friend-specific options
-                        if isFriend {
-                            menuItem(
-                                title: "Add Friend to Tag",
-                                icon: "tag",
-                                color: .blue,
-                                action: {
-                                    dismiss()
-                                    showAddFriendToTagView = true
-                                }
-                            )
+                // Menu items container
+                VStack(spacing: 0) {
+                    // Add to Tag option (should always be visible)
+                    Button(action: {
+                        dismiss()
+                        showTagDialog = true
+                    }) {
+                        HStack {
+                            Image(systemName: "tag")
+                                .foregroundColor(universalAccentColor)
                             
-                            menuItem(
-                                title: "Remove Friend",
-                                icon: "person.badge.minus",
-                                color: .orange,
-                                action: {
-                                    dismiss()
-                                    showRemoveFriendConfirmation = true
-                                }
-                            )
+                            Text("Add to Tag")
+                                .foregroundColor(universalAccentColor)
                             
-                            Divider()
-                                .padding(.vertical, 8)
+                            Spacer()
                         }
-                        
-                        // General options
-                        menuItem(
-                            title: "Copy Profile URL",
-                            icon: "link",
-                            color: .gray,
-                            action: {
-                                copyProfileURL()
-                                dismiss()
+                        .padding(.vertical, 16)
+                    }
+                    .padding(.horizontal, 16)
+                    
+                    Divider()
+                    
+                    // Remove as friend (only if they are a friend)
+                    if isFriend {
+                        Button(action: {
+                            dismiss()
+                            showRemoveFriendConfirmation = true
+                        }) {
+                            HStack {
+                                Image(systemName: "person.badge.minus")
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Text("Remove as friend")
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Spacer()
                             }
-                        )
-                        
-                        menuItem(
-                            title: "Share Profile",
-                            icon: "square.and.arrow.up",
-                            color: .blue,
-                            action: {
-                                shareProfile()
-                                dismiss()
-                            }
-                        )
+                            .padding(.vertical, 16)
+                        }
+                        .padding(.horizontal, 16)
                         
                         Divider()
-                            .padding(.vertical, 8)
-                        
-                        // Moderation options
-                        menuItem(
-                            title: "Report User",
-                            icon: "flag",
-                            color: .red,
-                            action: {
-                                dismiss()
-                                showReportDialog = true
-                            }
-                        )
-                        
-                        menuItem(
-                            title: "Block User",
-                            icon: "slash.circle",
-                            color: .red,
-                            action: {
-                                dismiss()
-                                showBlockDialog = true
-                            }
-                        )
                     }
-                    .padding(.horizontal)
+                    
+                    // Copy profile URL
+                    Button(action: {
+                        copyProfileURL()
+                        dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "link")
+                                .foregroundColor(universalAccentColor)
+                            
+                            Text("Copy profile URL")
+                                .foregroundColor(universalAccentColor)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 16)
+                    }
+                    .padding(.horizontal, 16)
+                    
+                    Divider()
+                    
+                    // Share this Profile
+                    Button(action: {
+                        shareProfile()
+                        dismiss()
+                    }) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundColor(universalAccentColor)
+                            
+                            Text("Share this Profile")
+                                .foregroundColor(universalAccentColor)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 16)
+                    }
+                    .padding(.horizontal, 16)
+                    
+                    Divider()
+                    
+                    // Report user
+                    Button(action: {
+                        dismiss()
+                        showReportDialog = true
+                    }) {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundColor(.red)
+                            
+                            Text("Report user")
+                                .foregroundColor(.red)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 16)
+                    }
+                    .padding(.horizontal, 16)
+                    
+                    Divider()
+                    
+                    // Block user
+                    Button(action: {
+                        dismiss()
+                        showBlockDialog = true
+                    }) {
+                        HStack {
+                            Image(systemName: "hand.raised.slash")
+                                .foregroundColor(.red)
+                            
+                            Text("Block user")
+                                .foregroundColor(.red)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 16)
+                    }
+                    .padding(.horizontal, 16)
                 }
+                .background(universalBackgroundColor)
+                .cornerRadius(12, corners: [.topLeft, .topRight])
                 
                 // Cancel button
                 Button(action: {
@@ -125,39 +161,12 @@ struct ProfileMenuView: View {
                         .foregroundColor(universalAccentColor)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color(UIColor.systemGray6))
+                        .background(universalBackgroundColor)
                         .cornerRadius(12)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, 16)
+                .padding(.top, 8)
             }
-            .background(Color.white)
-            .cornerRadius(20)
             .padding(.horizontal)
-            .padding(.bottom)
-        }
-        .sheet(isPresented: $showAddFriendToTagView) {
-            AddFriendToTagView(friendId: user.id)
-        }
-    }
-    
-    private func menuItem(title: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .frame(width: 24)
-                
-                Text(title)
-                    .foregroundColor(universalAccentColor)
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.gray)
-                    .font(.caption)
-            }
-            .padding(.vertical, 14)
         }
     }
 }
