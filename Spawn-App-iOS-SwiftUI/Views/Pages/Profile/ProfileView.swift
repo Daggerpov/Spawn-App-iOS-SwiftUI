@@ -74,43 +74,7 @@ struct ProfileView: View {
                         profilePictureSection
                             .padding(.top, 15)
 
-                        // Name and Username - make this more reactive to changes
-                        Group {
-                            if isCurrentUserProfile,
-                                let currentUser = userAuth.spawnUser
-                            {
-                                // For the current user, always display the latest from userAuth
-                                Text(
-                                    FormatterService.shared.formatName(
-                                        user: currentUser
-                                    )
-                                )
-                                .font(.title3)
-                                .bold()
-                                .foregroundColor(universalAccentColor)
-
-                                Text("@\(currentUser.username)")
-                                    .font(.subheadline)
-                                    .foregroundColor(Color.gray)
-                                    .padding(.bottom, 5)
-                            } else {
-                                // For other users, use the passed-in user
-                                Text(
-                                    FormatterService.shared.formatName(
-                                        user: user
-                                    )
-                                )
-                                .font(.title3)
-                                .bold()
-                                .foregroundColor(universalAccentColor)
-
-                                Text("@\(user.username)")
-                                    .font(.subheadline)
-                                    .foregroundColor(Color.gray)
-                                    .padding(.bottom, 5)
-                            }
-                        }
-                        .id(refreshFlag)  // Force refresh when flag changes
+                        nameAndUsernameView
 
                         // Friendship badge (for other users' profiles)
                         if !isCurrentUserProfile && profileViewModel.friendshipStatus == .friends {
@@ -175,42 +139,7 @@ struct ProfileView: View {
                 .background(universalBackgroundColor)
                 .navigationBarBackButtonHidden()
                 .toolbar {
-                    // Back button (only show for non-self profiles)
-                    if showBackButton {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button(action: {
-                                presentationMode.wrappedValue.dismiss()
-                            }) {
-                                HStack {
-                                    Image(systemName: "chevron.left")
-                                    Text("Back")
-                                }
-                                .foregroundColor(universalAccentColor)
-                            }
-                        }
-                    }
-                    
-                    // Settings button (only for current user)
-                    if isCurrentUserProfile {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            NavigationLink(destination: SettingsView()) {
-                                Image(systemName: "gearshape")
-                                    .foregroundColor(universalAccentColor)
-                                    .font(.title3)
-                            }
-                        }
-                    } else {
-                        // Three dots menu for other users' profiles
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button(action: {
-                                showProfileMenu = true
-                            }) {
-                                Image(systemName: "ellipsis")
-                                    .foregroundColor(universalAccentColor)
-                                    .font(.title3)
-                            }
-                        }
-                    }
+                    toolbarView
                 }
             }
         }
@@ -758,6 +687,86 @@ struct ProfileView: View {
 
 // MARK: - Profile Picture Section
 extension ProfileView {
+	private var toolbarView: some View {
+		// Name and Username - make this more reactive to changes
+		Group {
+			if isCurrentUserProfile,
+			   let currentUser = userAuth.spawnUser
+			{
+				// For the current user, always display the latest from userAuth
+				Text(
+					FormatterService.shared.formatName(
+						user: currentUser
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
+
+				Text("@\(currentUser.username)")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
+			} else {
+				// For other users, use the passed-in user
+				Text(
+					FormatterService.shared.formatName(
+						user: user
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
+
+				Text("@\(user.username)")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
+			}
+		}
+		.id(refreshFlag)  // Force refresh when flag changes
+	}
+
+	private var nameAndUsernameView: some View {
+		// Name and Username - make this more reactive to changes
+		Group {
+			if isCurrentUserProfile,
+			   let currentUser = userAuth.spawnUser
+			{
+				// For the current user, always display the latest from userAuth
+				Text(
+					FormatterService.shared.formatName(
+						user: currentUser
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
+
+				Text("@\(currentUser.username)")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
+			} else {
+				// For other users, use the passed-in user
+				Text(
+					FormatterService.shared.formatName(
+						user: user
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
+
+				Text("@\(user.username)")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
+			}
+		}
+		.id(refreshFlag)  // Force refresh when flag changes
+	}
+
     private var profilePictureSection: some View {
         ZStack(alignment: .bottomTrailing) {
             if isImageLoading {
