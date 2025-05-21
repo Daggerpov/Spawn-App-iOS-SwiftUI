@@ -154,15 +154,13 @@ struct ProfileView: View {
                             )
                             .padding(.horizontal)
                             .padding(.bottom, 15)
-                        } else if profileViewModel.friendshipStatus == .friends {
-                            // User Events Section (for friends)
-                            userEventsSection
-                                .padding(.bottom, 15)
                         } else {
-                            // Add to see events message (for non-friends)
-                            addToSeeEventsSection
-                                .padding(.horizontal)
-                                .padding(.vertical, 20)
+                            // User Events Section for other users (based on friendship status)
+                            UserEventsSection(
+                                user: user,
+                                profileViewModel: profileViewModel,
+                                showEventDetails: $showEventDetails
+                            )
                         }
                     }
                     .padding(.horizontal)
@@ -668,76 +666,7 @@ struct ProfileView: View {
         }
     }
     
-    // User Events Section for friend profiles
-    private var userEventsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Upcoming Events by \(FormatterService.shared.formatFirstName(user: user))")
-                .font(.headline)
-                .foregroundColor(universalAccentColor)
-                .padding(.horizontal)
-            
-            if profileViewModel.isLoadingUserEvents {
-                ProgressView()
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding()
-            } else if profileViewModel.userEvents.isEmpty {
-                Text("No upcoming events")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .center)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(profileViewModel.userEvents) { event in
-                            EventCardView(
-                                userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-                                event: event,
-                                color: event.isSelfOwned == true ? universalAccentColor : determineEventColor(for: event),
-                                callback: { selectedEvent, color in
-                                    profileViewModel.selectedEvent = selectedEvent
-                                    showEventDetails = true
-                                }
-                            )
-                            .frame(width: 300, height: 180)
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-            
-            HStack {
-                Spacer()
-                Button(action: {
-                    // Navigate to all events by this user
-                }) {
-                    Text("Show All")
-                        .font(.subheadline)
-                        .foregroundColor(universalSecondaryColor)
-                }
-                .padding(.trailing)
-            }
-        }
-    }
-    
-    // "Add to see events" section for non-friends
-    private var addToSeeEventsSection: some View {
-        VStack(spacing: 15) {
-            Image(systemName: "mappin.and.ellipse")
-                .font(.system(size: 28))
-                .foregroundColor(Color.gray.opacity(0.7))
-            
-            Text("Add \(FormatterService.shared.formatFirstName(user: user)) to see their upcoming spawns!")
-                .font(.subheadline)
-                .multilineTextAlignment(.center)
-                .foregroundColor(Color.gray)
-                .padding(.horizontal)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 30)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(15)
-    }
+
 }
 
 // MARK: - Toolbar View
