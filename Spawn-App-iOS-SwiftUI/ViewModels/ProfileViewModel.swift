@@ -390,9 +390,12 @@ class ProfileViewModel: ObservableObject {
         do {
             // First check if users are friends
             let url = URL(string: APIService.baseURL + "users/\(currentUserId)/is-friend/\(profileUserId)")!
-            let isFriendResponse: IsFriendResponseDTO = try await self.apiService.fetchData(from: url, parameters: nil)
-            
-            if isFriendResponse.isFriend {
+			let isFriend: Bool = try await self.apiService.fetchData(
+				from: url,
+				parameters: nil
+			)
+
+            if isFriend {
 				print("user is friends with this user whose profile they've clicked on.")
                 await MainActor.run {
                     self.friendshipStatus = .friends
@@ -606,11 +609,6 @@ enum FriendshipStatus {
     case requestReceived // Profile user sent request to current user
     case themself       // It's the current user's own profile
     case blocked        // User is blocked
-}
-
-// DTOs for friend status checking
-struct IsFriendResponseDTO: Codable {
-    let isFriend: Bool
 }
 
 struct PendingFriendRequestDTO: Codable, Identifiable {

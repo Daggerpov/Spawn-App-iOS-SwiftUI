@@ -183,6 +183,12 @@ class MockAPIService: IAPIService {
 				) as! T
 			}
 
+			// ProfileViewModel - checkFriendshipStatus() - is-friend endpoint
+			if url.absoluteString.contains("/is-friend/") {
+				// Always return true for mocking to show friend features
+				return false as! T
+			}
+
 			// ProfileViewModel - fetchCalendarActivities()
 			if url.absoluteString.contains("users/\(userIdForUrl)/calendar") {
 				// Generate dynamic calendar activities
