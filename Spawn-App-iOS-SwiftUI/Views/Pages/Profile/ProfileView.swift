@@ -324,6 +324,33 @@ struct ProfileView: View {
 
 			// Friendship badge (for other users' profiles)
 			friendshipBadge
+			
+			// Add Friend Button for non-friends
+			if !isCurrentUserProfile && profileViewModel.friendshipStatus == .none {
+				Button(action: {
+					if let currentUserId = userAuth.spawnUser?.id {
+						Task {
+							await profileViewModel.sendFriendRequest(
+								fromUserId: currentUserId,
+								toUserId: user.id
+							)
+						}
+					}
+				}) {
+					HStack {
+						Image(systemName: "person.badge.plus")
+						Text("Add as Friend")
+							.bold()
+					}
+					.font(.caption)
+					.foregroundColor(.white)
+					.padding(.vertical, 8)
+					.padding(.horizontal, 16)
+					.background(universalAccentColor)
+					.cornerRadius(12)
+				}
+				.padding(.bottom, 10)
+			}
 
 			// Profile Action Buttons
 			profileActionButtonsSection
@@ -677,30 +704,25 @@ struct ProfileView: View {
 		Group {
 			switch profileViewModel.friendshipStatus {
 			case .none:
-				// Add as Friend button
+				// Share Profile button (same as for friends)
 				Button(action: {
-					if let currentUserId = userAuth.spawnUser?.id {
-						Task {
-							await profileViewModel.sendFriendRequest(
-								fromUserId: currentUserId,
-								toUserId: user.id
-							)
-						}
-					}
+					shareProfile()
 				}) {
 					HStack {
-						Image(systemName: "person.badge.plus")
-						Text("Add as Friend")
+						Image(systemName: "square.and.arrow.up")
+						Text("Share Profile")
 							.bold()
 					}
 					.font(.caption)
-					.foregroundColor(.white)
+					.foregroundColor(universalSecondaryColor)
 					.padding(.vertical, 24)
 					.padding(.horizontal, 8)
 					.frame(height: 32)
 					.frame(maxWidth: .infinity)
-					.background(universalAccentColor)
-					.cornerRadius(12)
+					.overlay(
+						RoundedRectangle(cornerRadius: 12)
+							.stroke(universalSecondaryColor, lineWidth: 1)
+					)
 				}
 
 			case .requestSent:

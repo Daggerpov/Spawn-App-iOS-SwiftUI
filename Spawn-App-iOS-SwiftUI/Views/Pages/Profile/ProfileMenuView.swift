@@ -23,25 +23,27 @@ struct ProfileMenuView: View {
         VStack(spacing: 0) {
             // Menu items container
             VStack(spacing: 0) {
-                // Add to Tag option (should always be visible)
-                Button(action: {
-                    dismiss()
-                    showTagDialog = true
-                }) {
-                    HStack {
-                        Image(systemName: "tag")
-                            .foregroundColor(universalAccentColor)
-                        
-                        Text("Add to Tag")
-                            .foregroundColor(universalAccentColor)
-                        
-                        Spacer()
+                // Add to Tag option (only visible for friends)
+                if isFriend {
+                    Button(action: {
+                        dismiss()
+                        showTagDialog = true
+                    }) {
+                        HStack {
+                            Image(systemName: "tag")
+                                .foregroundColor(universalAccentColor)
+                            
+                            Text("Add to Tag")
+                                .foregroundColor(universalAccentColor)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 16)
+                    
+                    Divider()
                 }
-                
-                Divider()
                 
                 // Remove as friend (only if they are a friend)
                 if isFriend {
