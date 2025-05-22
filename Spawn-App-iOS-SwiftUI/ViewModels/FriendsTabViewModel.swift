@@ -202,7 +202,7 @@ class FriendsTabViewModel: ObservableObject {
 		}
 	}
 
-	internal func fetchFriends() async {
+	func fetchFriends() async {
 		// First check the cache
         if !appCache.friends.isEmpty {
             await MainActor.run {
