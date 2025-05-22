@@ -117,8 +117,7 @@ struct AddFriendToTagsView: View {
                 // Tag bubbles layout with dynamic positioning
                 GeometryReader { geometry in
                     ZStack {
-                        ForEach(viewModel.tags.indices, id: \.self) { index in
-                            let tag = viewModel.tags[index]
+                        ForEach(viewModel.tags) { tag in
                             tagBubble(for: tag)
                                 .position(tagPosition(for: index, count: viewModel.tags.count, in: geometry))
                         }
@@ -494,74 +493,7 @@ struct ScaleButtonStyle: ButtonStyle {
     }
 }
 
-// View Model
-class AddFriendToTagsViewModel: ObservableObject {
-    @Published var tags: [FullFriendTagDTO] = []
-    @Published var selectedTags: Set<UUID> = []
-    @Published var errorMessage: String = ""
-    
-    var userId: UUID
-    var apiService: IAPIService
-    
-    init(userId: UUID, apiService: IAPIService) {
-        self.userId = userId
-        self.apiService = apiService
-    }
-    
-    func fetchTagsToAddToFriend(friendUserId: UUID) async {
-        let urlString = APIService.baseURL + "friendTags/addUserToTags/\(userId)"
-        
-        if let url = URL(string: urlString) {
-            let parameters: [String: String] = [
-                "friendUserId": friendUserId.uuidString
-            ]
-            
-            do {
-                let fetchedTags: [FullFriendTagDTO] = try await self.apiService
-                    .fetchData(from: url, parameters: parameters)
-                
-                await MainActor.run {
-                    self.tags = fetchedTags
-                }
-            } catch {
-                await MainActor.run {
-                    self.tags = []
-                    self.errorMessage = "Failed to load tags. Please try again."
-                }
-            }
-        }
-    }
-    
-    func addTagsToFriend(friendUserId: UUID) async {
-        if let url = URL(string: APIService.baseURL + "friendTags/addUserToTags") {
-            do {
-                _ = try await self.apiService.sendData(
-                    selectedTags,
-                    to: url,
-                    parameters: [
-                        "friendUserId": friendUserId.uuidString
-                    ]
-                )
-            } catch {
-                await MainActor.run {
-                    self.errorMessage = "There was an error adding tags to your friend. Please try again."
-                }
-            }
-        }
-    }
-    
-    func toggleTagSelection(_ tagId: UUID) {
-        if selectedTags.contains(tagId) {
-            selectedTags.remove(tagId)
-        } else {
-            selectedTags.insert(tagId)
-        }
-    }
-    
-    func getSelectedTags() -> [FullFriendTagDTO] {
-        return tags.filter { selectedTags.contains($0.id) }
-    }
-}
+
 
 // Preview
 struct AddFriendToTagsView_Previews: PreviewProvider {
