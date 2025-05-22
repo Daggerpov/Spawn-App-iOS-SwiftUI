@@ -227,6 +227,15 @@ struct TagDetailView: View {
             }
             .background(universalBackgroundColor)
             .navigationBarHidden(true)
+            .navigationDestination(isPresented: $showManageTaggedPeopleView) {
+                ManageTaggedPeopleView(tagsViewModel: viewModel, tagId: tagId)
+                    .onDisappear {
+                        // Refresh data after managing tagged people
+                        Task {
+                            await viewModel.fetchAllData()
+                        }
+                    }
+            }
             
             // Floating add button
             VStack {
@@ -308,15 +317,6 @@ struct TagDetailView: View {
                     }
             }
             .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showManageTaggedPeopleView) {
-            ManageTaggedPeopleView(tagsViewModel: viewModel, tagId: tagId)
-                .onDisappear {
-                    // Refresh data after managing tagged people
-                    Task {
-                        await viewModel.fetchAllData()
-                    }
-                }
         }
         .sheet(isPresented: $showRenameTagView) {
             // Rename tag view
