@@ -117,8 +117,7 @@ struct ProfileHeaderView: View {
     private var nameAndUsernameView: some View {
         // Name and Username - make this more reactive to changes
         Group {
-            if isCurrentUserProfile,
-               let currentUser = userAuth.spawnUser
+            if isCurrentUserProfile, userAuth.spawnUser != nil
             {
                 EmptyView()
             } else {

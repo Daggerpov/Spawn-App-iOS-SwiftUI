@@ -27,13 +27,28 @@ struct ProfileNameView: View {
             if isCurrentUserProfile,
                let currentUser = userAuth.spawnUser
             {
-                // For the current user, only display username
+				Text(
+					FormatterService.shared.formatName(
+						user: currentUser
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
                 Text("@\(currentUser.username)")
                     .font(.subheadline)
                     .foregroundColor(Color.gray)
                     .padding(.bottom, 5)
             } else {
-                // For other users, only display username
+				// For other users, use the passed-in user
+				Text(
+					FormatterService.shared.formatName(
+						user: user
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
                 Text("@\(user.username)")
                     .font(.subheadline)
                     .foregroundColor(Color.gray)
