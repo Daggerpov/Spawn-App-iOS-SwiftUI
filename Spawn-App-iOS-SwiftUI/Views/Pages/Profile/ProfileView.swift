@@ -284,25 +284,27 @@ struct ProfileView: View {
 						)
 					}
 				}
-                
-                // Add appropriate trailing button based on user profile type
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if isCurrentUserProfile {
-                        // Settings button for current user profile
-                        NavigationLink(destination: SettingsView()) {
-                            Image(systemName: "gearshape")
-                                .foregroundColor(universalAccentColor)
-                        }
-                    } else if !isCurrentUserProfile || profileViewModel.friendshipStatus == .friends {
-                        // Menu button for other user profiles
-                        Button(action: {
-                            showProfileMenu = true
-                        }) {
-                            Image(systemName: "ellipsis")
-                                .foregroundColor(universalAccentColor)
-                        }
-                    }
-                }
+
+				// Add appropriate trailing button based on user profile type
+				ToolbarItem(placement: .navigationBarTrailing) {
+					if isCurrentUserProfile {
+						// Settings button for current user profile
+						NavigationLink(destination: SettingsView()) {
+							Image(systemName: "gearshape")
+								.foregroundColor(universalAccentColor)
+						}
+					} else if !isCurrentUserProfile
+						|| profileViewModel.friendshipStatus == .friends
+					{
+						// Menu button for other user profiles
+						Button(action: {
+							showProfileMenu = true
+						}) {
+							Image(systemName: "ellipsis")
+								.foregroundColor(universalAccentColor)
+						}
+					}
+				}
 			}
 
 			// Overlay for profile menu
@@ -324,9 +326,11 @@ struct ProfileView: View {
 
 			// Friendship badge (for other users' profiles)
 			friendshipBadge
-			
+
 			// Add Friend Button for non-friends
-			if !isCurrentUserProfile && profileViewModel.friendshipStatus == .none {
+			if !isCurrentUserProfile
+				&& profileViewModel.friendshipStatus == .none
+			{
 				Button(action: {
 					if let currentUserId = userAuth.spawnUser?.id {
 						Task {
@@ -402,15 +406,28 @@ struct ProfileView: View {
 			if !isCurrentUserProfile
 				&& profileViewModel.friendshipStatus == .friends
 			{
-				Text("Friends")
+				HStack {
+
+					HStack {
+						Image("person.crop.circle.badge.checkmark")
+						Text("Friends")
+					}
 					.font(.caption)
 					.bold()
-					.foregroundColor(.white)
+					.foregroundColor(figmaGreen)
 					.padding(.horizontal, 16)
 					.padding(.vertical, 8)
-					.background(Color(hex: "#4CAF50"))  // Green color as in Figma
-					.cornerRadius(12)
+					.background(
+						RoundedRectangle(
+							cornerRadius: universalRectangleCornerRadius
+						)
+						.fill(figmaGreen)
+					)
+					.cornerRadius(universalRectangleCornerRadius)
 					.padding(.bottom, 10)
+
+				}
+
 			}
 		}
 	}
