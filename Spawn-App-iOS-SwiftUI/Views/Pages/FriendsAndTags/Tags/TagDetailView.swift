@@ -19,6 +19,8 @@ struct TagDetailView: View {
     @State private var showDeleteTagConfirmation: Bool = false
     @State private var tagDisplayName: String = ""
     @State private var tagColorHex: String = ""
+    @State private var showRemoveFriendAlert: Bool = false
+    @State private var friendToRemove: BaseUserDTO? = nil
     
     // Initial tag data for reference
     var tagId: UUID
@@ -189,10 +191,9 @@ struct TagDetailView: View {
                                     
                                     // Remove friend button
                                     Button(action: {
-                                        // Remove friend from tag
-                                        Task {
-                                            await viewModel.removeFriendFromFriendTag(friendUserId: friend.id, friendTagId: tag.id)
-                                        }
+                                        // Show confirmation alert instead of removing immediately
+                                        friendToRemove = friend
+                                        showRemoveFriendAlert = true
                                     }) {
                                         Image(systemName: "minus.circle")
                                             .font(.system(size: 20))
@@ -370,6 +371,22 @@ struct TagDetailView: View {
             }
         } message: {
             Text("Are you sure you want to delete this tag? This action cannot be undone.")
+        }
+        .alert("Remove from Tag", isPresented: $showRemoveFriendAlert) {
+            Button("Cancel", role: .cancel) { 
+                friendToRemove = nil
+            }
+            Button("Remove", role: .destructive) {
+                // Remove friend from tag when confirmed
+                if let friend = friendToRemove {
+                    Task {
+                        await viewModel.removeFriendFromFriendTag(friendUserId: friend.id, friendTagId: tag.id)
+                    }
+                    friendToRemove = nil
+                }
+            }
+        } message: {
+            Text("Are you sure you want to remove this person from the tag?")
         }
         // Listen for friendsAddedToTag notification
         .onReceive(NotificationCenter.default.publisher(for: .friendsAddedToTag)) { _ in
