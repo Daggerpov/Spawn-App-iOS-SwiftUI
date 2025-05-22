@@ -210,51 +210,62 @@ struct FriendRowView: View {
         HStack {
             // Profile picture - works with either user or friend
             let profilePicture = user?.profilePicture ?? friend?.profilePicture
-            if let pfpUrl = profilePicture {
-                if MockAPIService.isMocking {
-                    Image(pfpUrl)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 50, height: 50)
-                        .clipShape(Circle())
-                } else {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image
+            
+            // Extract the appropriate user object for navigation
+            let userForProfile: Nameable = user ?? friend ?? user as! Nameable
+            
+            // Create NavigationLink around the profile picture
+            NavigationLink(destination: ProfileView(user: userForProfile)) {
+                if let pfpUrl = profilePicture {
+                    if MockAPIService.isMocking {
+                        Image(pfpUrl)
                             .resizable()
                             .scaledToFill()
                             .frame(width: 50, height: 50)
                             .clipShape(Circle())
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: 50, height: 50)
+                    } else {
+                        AsyncImage(url: URL(string: pfpUrl)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 50, height: 50)
+                        }
                     }
+                } else {
+                    Circle()
+                        .fill(.gray)
+                        .frame(width: 50, height: 50)
                 }
-            } else {
-                Circle()
-                    .fill(.gray)
-                    .frame(width: 50, height: 50)
             }
             
-            VStack(alignment: .leading, spacing: 2) {
-                // Works with either user or friend
-                if let user = user {
-                    Text(FormatterService.shared.formatName(user: user))
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(universalAccentColor)
-                    Text("@\(user.username)")
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(Color.gray)
-                } else if let friend = friend {
-                    Text(FormatterService.shared.formatName(user: friend))
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(universalAccentColor)
-                    Text("@\(friend.username)")
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(Color.gray)
+            // Navigation link for name and username
+            NavigationLink(destination: ProfileView(user: userForProfile)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    // Works with either user or friend
+                    if let user = user {
+                        Text(FormatterService.shared.formatName(user: user))
+                            .font(.onestRegular(size: 14))
+                            .foregroundColor(universalAccentColor)
+                        Text("@\(user.username)")
+                            .font(.onestRegular(size: 14))
+                            .foregroundColor(Color.gray)
+                    } else if let friend = friend {
+                        Text(FormatterService.shared.formatName(user: friend))
+                            .font(.onestRegular(size: 14))
+                            .foregroundColor(universalAccentColor)
+                        Text("@\(friend.username)")
+                            .font(.onestRegular(size: 14))
+                            .foregroundColor(Color.gray)
+                    }
                 }
+                .padding(.leading, 8)
             }
-            .padding(.leading, 8)
+            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
