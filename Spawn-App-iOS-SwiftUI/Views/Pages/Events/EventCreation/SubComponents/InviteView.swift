@@ -139,12 +139,12 @@ struct InviteView: View {
         let tagCount = tagsViewModel.tags.count
         
         for (index, tag) in tagsViewModel.tags.enumerated() {
-            if tagPositions[tag.id] == nil {
-                tagPositions[tag.id] = calculateTagPosition(index: index, count: tagCount)
+            if tagPositions[tag.id.uuidString] == nil {
+                tagPositions[tag.id.uuidString] = calculateTagPosition(index: index, count: tagCount)
             }
             
-            if tagRotations[tag.id] == nil {
-                tagRotations[tag.id] = calculateTagRotation(index: index, count: tagCount)
+            if tagRotations[tag.id.uuidString] == nil {
+                tagRotations[tag.id.uuidString] = calculateTagRotation(index: index, count: tagCount)
             }
         }
     }
@@ -166,8 +166,8 @@ struct InviteView: View {
                         ForEach(0..<tagCount, id: \.self) { index in
                             let tag = tagsViewModel.tags[index]
                             // Use the stored values from tag.id instead of recalculating
-                            let rotationAngle = tagRotations[tag.id] ?? calculateTagRotation(index: index, count: tagCount)
-                            let position = tagPositions[tag.id] ?? calculateTagPosition(index: index, count: tagCount)
+                            let rotationAngle = tagRotations[tag.id.uuidString] ?? calculateTagRotation(index: index, count: tagCount)
+                            let position = tagPositions[tag.id.uuidString] ?? calculateTagPosition(index: index, count: tagCount)
                             
                             TagBubble(
                                 tag: tag,
@@ -186,7 +186,7 @@ struct InviteView: View {
                             HStack(spacing: 0) {
                                 Spacer().frame(width: 10)
                                 ForEach(tagsViewModel.tags.prefix(3), id: \.id) { tag in
-                                    let rotationAngle = tagRotations[tag.id] ?? Double.random(in: -10...10)
+                                    let rotationAngle = tagRotations[tag.id.uuidString] ?? Double.random(in: -10...10)
                                     
                                     TagBubble(
                                         tag: tag,
@@ -212,7 +212,7 @@ struct InviteView: View {
                                         ),
                                         id: \.id
                                     ) { tag in
-                                        let rotationAngle = tagRotations[tag.id] ?? Double.random(in: -10...10)
+                                        let rotationAngle = tagRotations[tag.id.uuidString] ?? Double.random(in: -10...10)
                                         
                                         TagBubble(
                                             tag: tag,
@@ -239,7 +239,7 @@ struct InviteView: View {
                                         ),
                                         id: \.id
                                     ) { tag in
-                                        let rotationAngle = tagRotations[tag.id] ?? Double.random(in: -10...10)
+                                        let rotationAngle = tagRotations[tag.id.uuidString] ?? Double.random(in: -10...10)
                                         
                                         TagBubble(
                                             tag: tag,
