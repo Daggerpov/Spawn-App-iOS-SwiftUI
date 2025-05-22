@@ -40,9 +40,6 @@ struct TagsTabView: View {
 		VStack(spacing: 0) {
             // Header with safe area handling
             ZStack(alignment: .top) {
-                // Background color that extends into safe area
-                universalBackgroundColor.ignoresSafeArea(edges: .top)
-                
                 // Header content with padding for safe area
                 VStack(spacing: 0) {
                     // This creates space for the status bar
@@ -52,18 +49,19 @@ struct TagsTabView: View {
                     HStack {
                         Button(action: {
                             dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.title3)
-                                .foregroundColor(.black)
-                        }
-                        
+						}) {
+							Image(systemName: "chevron.left")
+								.font(.title3)
+								.foregroundColor(universalAccentColor)
+						}
+
                         Spacer()
                         
                         Text("Tags")
                             .font(.title3)
                             .fontWeight(.semibold)
-                        
+							.foregroundColor(universalAccentColor)
+
                         Spacer()
                         
                         // Empty view to balance the back button
