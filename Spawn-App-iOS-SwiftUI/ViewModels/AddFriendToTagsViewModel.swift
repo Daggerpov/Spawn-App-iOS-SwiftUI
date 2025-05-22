@@ -77,17 +77,17 @@ class AddFriendToTagsViewModel: ObservableObject {
 					fullTags.append(fullTag)
 				}
 
-				await MainActor.run {
-
-
-					self.tags = fullTags
+				let tagsToStore = fullTags
+                let fetchedTagsToStore = fetchedTags
+				await MainActor.run { [tagsToStore, fetchedTagsToStore] in
+					self.tags = tagsToStore
 					self.errorMessage = nil
 					
 					// Update the cache
-					self.appCache.updateUserTags(fetchedTags)
+					self.appCache.updateUserTags(fetchedTagsToStore)
                     
                     // Update tag friends in cache
-                    for fullTag in fullTags {
+                    for fullTag in tagsToStore {
                         if let friends = fullTag.friends {
                             self.appCache.updateTagFriends(fullTag.id, friends)
                         }
@@ -127,7 +127,7 @@ class AddFriendToTagsViewModel: ObservableObject {
                 )
             }
             
-            await MainActor.run {
+            await MainActor.run { [filteredTags] in
                 self.tags = filteredTags
                 self.isLoading = false
             }
@@ -153,8 +153,9 @@ class AddFriendToTagsViewModel: ObservableObject {
                     fullTags.append(fullTag)
                 }
                 
-                await MainActor.run {
-                    self.tags = fullTags
+                let tagsToStore = fullTags
+                await MainActor.run { [tagsToStore] in
+                    self.tags = tagsToStore
                     self.errorMessage = nil
                     self.isLoading = false
                 }
