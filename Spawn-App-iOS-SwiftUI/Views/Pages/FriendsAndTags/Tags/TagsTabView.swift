@@ -144,23 +144,11 @@ extension TagsTabView {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
             
-            // Create First Tag button
-            Button(action: {
-                creationStatus = .creating
-            }) {
-                HStack {
-                    Image(systemName: "plus")
-                    Text("Create First Tag")
-                        .fontWeight(.medium)
-                }
-                .foregroundColor(.green)
-                .padding(.vertical, 12)
-                .padding(.horizontal, 24)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .strokeBorder(Color.green, style: StrokeStyle(lineWidth: 1, dash: [5]))
-                )
-            }
+            // Use the same AddTagButtonView as in main view
+            AddTagButtonView(
+                creationStatus: $creationStatus, color: universalAccentColor
+            )
+            .environmentObject(viewModel)
             
             Spacer()
             Spacer()
