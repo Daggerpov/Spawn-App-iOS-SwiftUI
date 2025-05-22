@@ -25,7 +25,7 @@ struct TagActionSheet: View {
                     onDismiss()
                 }) {
                     HStack {
-                        Image(systemName: "tag")
+                        Image(systemName: "pencil")
                             .frame(width: 24)
                         Text("Rename Tag")
                             .font(.system(size: 16, weight: .medium))
@@ -33,6 +33,7 @@ struct TagActionSheet: View {
                     }
                     .padding()
                     .contentShape(Rectangle())
+					.foregroundColor(universalAccentColor)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
@@ -44,7 +45,7 @@ struct TagActionSheet: View {
                     onDismiss()
                 }) {
                     HStack {
-                        Image(systemName: "paintpalette")
+                        Image(systemName: "paintpalette.fill")
                             .frame(width: 24)
                         Text("Change Tag Colour")
                             .font(.system(size: 16, weight: .medium))
@@ -52,6 +53,7 @@ struct TagActionSheet: View {
                     }
                     .padding()
                     .contentShape(Rectangle())
+					.foregroundColor(universalAccentColor)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
@@ -63,7 +65,7 @@ struct TagActionSheet: View {
                     onDismiss()
                 }) {
                     HStack {
-                        Image(systemName: "person.2")
+                        Image(systemName: "person.2.fill")
                             .frame(width: 24)
                         Text("Manage Tagged People")
                             .font(.system(size: 16, weight: .medium))
@@ -71,6 +73,7 @@ struct TagActionSheet: View {
                     }
                     .padding()
                     .contentShape(Rectangle())
+					.foregroundColor(universalAccentColor)
                 }
                 .buttonStyle(PlainButtonStyle())
                 
