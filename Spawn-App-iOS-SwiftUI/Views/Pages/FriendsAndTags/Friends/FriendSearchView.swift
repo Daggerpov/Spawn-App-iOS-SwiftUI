@@ -15,18 +15,7 @@ enum FriendListDisplayMode {
     case recentlySpawnedWith
 }
 
-// Environment key for safe area insets
-private struct SafeAreaInsetsKey: EnvironmentKey {
-    static let defaultValue: EdgeInsets = EdgeInsets()
-}
 
-// Extend EnvironmentValues to include safe area insets
-extension EnvironmentValues {
-    var safeAreaInsets: EdgeInsets {
-        get { self[SafeAreaInsetsKey.self] }
-        set { self[SafeAreaInsetsKey.self] = newValue }
-    }
-}
 
 struct FriendSearchView: View {
     @Environment(\.dismiss) private var dismiss
@@ -59,44 +48,31 @@ struct FriendSearchView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
-            ZStack(alignment: .top) {
-                // Background color that extends into safe area
-                universalBackgroundColor.ignoresSafeArea(edges: .top)
-                
-                // Header content with padding for safe area
-                VStack(spacing: 0) {
-                    // This creates space for the status bar
-                    Color.clear.frame(height: getSafeAreaTopInset())
-                    
-                    // Actual header content
-                    HStack {
-                        Button(action: {
-                            dismiss()
-                        }) {
-                            Image(systemName: "chevron.left")
-                                .font(.title3)
-                                .foregroundColor(universalAccentColor)
-                        }
-                        
-                        Spacer()
-                        
-                        Text(titleText)
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundColor(universalAccentColor)
-                        
-                        Spacer()
-                        
-                        // Empty view to balance the back button
-                        Image(systemName: "chevron.left")
-                            .font(.title3)
-                            .foregroundColor(.clear)
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
+            // Header (simplified to match TagDetailView)
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
                 }
+                
+                Spacer()
+                
+                Text(titleText)
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                // Empty view to balance the back button
+                Image(systemName: "chevron.left")
+                    .font(.title3)
+                    .foregroundColor(.clear)
             }
+            .foregroundColor(universalAccentColor)
+            .padding(.horizontal)
+            .padding(.vertical, 12)
             
             // Search bar
             if displayMode == .search || displayMode == .allFriends {
@@ -147,11 +123,7 @@ struct FriendSearchView: View {
         .background(universalBackgroundColor)
     }
     
-    // Helper to get safe area inset for the top of the screen
-    private func getSafeAreaTopInset() -> CGFloat {
-        // Default height that works for most devices with notches
-        return 47
-    }
+
     
     var searchResultsView: some View {
         VStack(spacing: 16) {

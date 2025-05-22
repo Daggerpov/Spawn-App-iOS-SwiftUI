@@ -407,7 +407,7 @@ struct ProfileView: View {
 				&& profileViewModel.friendshipStatus == .friends
 			{
 				HStack {
-					Image("person.crop.circle.badge.checkmark")
+					Image(systemName: "person.crop.circle.badge.checkmark")
 					Text("Friends")
 				}
 				.font(.caption)
