@@ -134,8 +134,8 @@ struct ProfileView: View {
 
 					// If they're friends, fetch their events
 					if profileViewModel.friendshipStatus == .friends {
-						await profileViewModel.fetchUserUpcomingEvents(
-							userId: user.id
+						await profileViewModel.fetchProfileEvents(
+							profileUserId: user.id
 						)
 					}
 				}
@@ -161,8 +161,8 @@ struct ProfileView: View {
 			// Fetch events when friendship status changes to friends
 			if newStatus == .friends {
 				Task {
-					await profileViewModel.fetchUserUpcomingEvents(
-						userId: user.id
+					await profileViewModel.fetchProfileEvents(
+						profileUserId: user.id
 					)
 				}
 			}

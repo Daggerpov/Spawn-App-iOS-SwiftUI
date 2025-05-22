@@ -15,10 +15,32 @@ struct UserEventsSection: View {
         }
     }
     
+    // Computed property to sort events as specified
+    private var sortedEvents: [ProfileEventDTO] {
+        let upcomingEvents = profileViewModel.profileEvents
+            .filter { !$0.isPastEvent }
+            .sorted { 
+                // Sort upcoming events by soonest to latest
+                guard let date1 = $0.startTime, let date2 = $1.startTime else { return false }
+                return date1 < date2
+            }
+        
+        let pastEvents = profileViewModel.profileEvents
+            .filter { $0.isPastEvent }
+            .sorted {
+                // Sort past events by most recent first
+                guard let date1 = $0.startTime, let date2 = $1.startTime else { return false }
+                return date1 > date2
+            }
+        
+        // Combine upcoming events followed by past events
+        return upcomingEvents + pastEvents
+    }
+    
     // User Events Section for friend profiles
     private var friendEventsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Upcoming Events by \(FormatterService.shared.formatFirstName(user: user))")
+            Text("Events by \(FormatterService.shared.formatFirstName(user: user))")
                 .font(.headline)
                 .foregroundColor(universalAccentColor)
                 .padding(.horizontal)
@@ -27,8 +49,8 @@ struct UserEventsSection: View {
                 ProgressView()
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
-            } else if profileViewModel.userEvents.isEmpty {
-                Text("No upcoming events")
+            } else if profileViewModel.profileEvents.isEmpty {
+                Text("No events")
                     .font(.subheadline)
                     .foregroundColor(.gray)
                     .padding()
@@ -36,7 +58,7 @@ struct UserEventsSection: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(profileViewModel.userEvents) { event in
+                        ForEach(sortedEvents) { event in
                             EventCardView(
                                 userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                                 event: event,

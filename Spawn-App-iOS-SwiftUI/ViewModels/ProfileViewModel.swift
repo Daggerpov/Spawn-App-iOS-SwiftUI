@@ -23,6 +23,7 @@ class ProfileViewModel: ObservableObject {
     @Published var isLoadingFriendshipStatus: Bool = false
     @Published var pendingFriendRequestId: UUID?
     @Published var userEvents: [FullFeedEventDTO] = []
+    @Published var profileEvents: [ProfileEventDTO] = []
     @Published var isLoadingUserEvents: Bool = false
     
     private let apiService: IAPIService
@@ -512,6 +513,39 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.errorMessage = "Failed to load user events: \(error.localizedDescription)"
                 self.userEvents = []
+                self.isLoadingUserEvents = false
+            }
+        }
+    }
+    
+    // New method to fetch profile events (both upcoming and past)
+    func fetchProfileEvents(profileUserId: UUID) async {
+        guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+            await MainActor.run {
+                self.errorMessage = "User ID not available"
+            }
+            return
+        }
+        
+        await MainActor.run { self.isLoadingUserEvents = true }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "events/profile/\(profileUserId)")!
+            let parameters = ["requestingUserId": requestingUserId.uuidString]
+            
+            let events: [ProfileEventDTO] = try await self.apiService.fetchData(
+                from: url,
+                parameters: parameters
+            )
+            
+            await MainActor.run {
+                self.profileEvents = events
+                self.isLoadingUserEvents = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load profile events: \(error.localizedDescription)"
+                self.profileEvents = []
                 self.isLoadingUserEvents = false
             }
         }
