@@ -135,15 +135,12 @@ struct AddFriendToTagsView: View {
     private var confirmationView: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Friend profile in the center
-                friendProfileView
-                    .padding(.top, 20)
-                
                 // Confirmation text
                 Text("Adding \(FormatterService.shared.formatFirstName(user: friend)) to \(viewModel.selectedTags.count) tags")
                     .font(.headline)
                     .foregroundColor(universalAccentColor)
                     .multilineTextAlignment(.center)
+                    .padding(.top, 20)
                 
                 // Show selected tags with connecting arrows
                 ZStack {
