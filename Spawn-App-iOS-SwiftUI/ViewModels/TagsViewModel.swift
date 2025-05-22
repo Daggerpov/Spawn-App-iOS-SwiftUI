@@ -16,12 +16,14 @@ class TagsViewModel: ObservableObject {
 
 	var apiService: IAPIService
 	var userId: UUID
+	var appCache: AppCache
 
 	var newTag: FriendTagCreationDTO
 
 	init(apiService: IAPIService, userId: UUID) {
 		self.apiService = apiService
 		self.userId = userId
+		self.appCache = AppCache.shared
 		self.newTag = FriendTagCreationDTO(
 			id: UUID(),
 			displayName: "",
@@ -61,6 +63,23 @@ class TagsViewModel: ObservableObject {
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.tags = fetchedTags
+					
+					// Cache tag friends in AppCache for faster loading
+					for tag in fetchedTags {
+						if let friends = tag.friends {
+							// Use the existing tagFriends dictionary in AppCache
+							if self.appCache.tagFriends[tag.id] == nil {
+								self.appCache.updateTagFriends(tag.id, friends)
+							}
+							
+							// Also cache individual user profiles
+							for friend in friends {
+								if self.appCache.otherProfiles[friend.id] == nil {
+									self.appCache.updateOtherProfile(friend.id, friend)
+								}
+							}
+						}
+					}
 				}
 			} catch {
 				await MainActor.run {
@@ -135,6 +154,9 @@ class TagsViewModel: ObservableObject {
                     )
 				await MainActor.run {
 					self.tags.removeAll { $0.id == id }  // Remove the tag from the local list
+					
+					// Also remove from AppCache
+					self.appCache.tagFriends.removeValue(forKey: id)
 				}
 				tagDeletedSuccessfully = true
 			} catch {
@@ -166,6 +188,14 @@ class TagsViewModel: ObservableObject {
 						"userId": friendUserId.uuidString,
 					])
 				removalSuccessful = true
+				
+				// Update AppCache to reflect the removal
+				await MainActor.run {
+					if var tagFriends = self.appCache.tagFriends[friendTagId] {
+						tagFriends.removeAll { $0.id == friendUserId }
+						self.appCache.updateTagFriends(friendTagId, tagFriends)
+					}
+				}
 			} catch {
 				await MainActor.run {
 					friendRemovalMessage =
