@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TagDetailView: View {
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject var viewModel: TagsViewModel
     // Access AppCache as a singleton
     @State private var showAddFriendsToTagView: Bool = false
     @State private var showActionSheet: Bool = false
@@ -16,14 +17,25 @@ struct TagDetailView: View {
     @State private var showRenameTagView: Bool = false
     @State private var showChangeTagColorView: Bool = false
     @State private var showDeleteTagConfirmation: Bool = false
+    @State private var tagDisplayName: String = ""
+    @State private var tagColorHex: String = ""
     
-    var tag: FullFriendTagDTO
+    // Initial tag data for reference
+    var tagId: UUID
     
+    // Computed property to get the current tag data from ViewModel
+    private var tag: FullFriendTagDTO {
+        viewModel.tags.first(where: { $0.id == tagId }) ?? FullFriendTagDTO.empty
+    }
+
+	// Initialize with TagsViewModel and tag ID
+	init(viewModel: TagsViewModel, tagId: UUID) {
+		self.viewModel = viewModel
+		self.tagId = tagId
+	}
+
     var body: some View {
         ZStack {
-            Color(UIColor.systemBackground)
-                .edgesIgnoringSafeArea(.all)
-            
             VStack(spacing: 0) {
                 // Header with tag name
                 HStack {
@@ -32,7 +44,6 @@ struct TagDetailView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title3)
-                            .foregroundColor(.primary)
                     }
                     
                     Spacer()
@@ -40,7 +51,7 @@ struct TagDetailView: View {
                     Text("Tags / \(tag.displayName)")
                         .font(.title3)
                         .fontWeight(.semibold)
-                    
+
                     Spacer()
                     
                     // Menu button
@@ -49,12 +60,12 @@ struct TagDetailView: View {
                     }) {
                         Image(systemName: "ellipsis")
                             .font(.title3)
-                            .foregroundColor(.primary)
                     }
                 }
+				.foregroundColor(universalAccentColor)
                 .padding(.horizontal)
                 .padding(.vertical, 12)
-                
+
                 // Tag visual element (pink circle with people)
                 VStack {
                     ZStack {
@@ -176,13 +187,16 @@ struct TagDetailView: View {
                                     
                                     Spacer()
                                     
-                                    // Options button
+                                    // Remove friend button
                                     Button(action: {
-                                        // Show options (future implementation)
+                                        // Remove friend from tag
+                                        Task {
+                                            await viewModel.removeFriendFromFriendTag(friendUserId: friend.id, friendTagId: tag.id)
+                                        }
                                     }) {
-                                        Image(systemName: "ellipsis")
+                                        Image(systemName: "minus.circle")
                                             .font(.system(size: 20))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(.red)
                                     }
                                 }
                                 .padding(.vertical, 8)
@@ -233,7 +247,6 @@ struct TagDetailView: View {
                         }
                     }
                     .padding(24)
-                    .padding(.bottom, 60) // Adjust to position above tab bar
                 }
             }
             
@@ -249,19 +262,25 @@ struct TagDetailView: View {
                     tag: tag,
                     onRenameTag: {
                         // Handle rename tag action
+                        tagDisplayName = tag.displayName
                         showRenameTagView = true
+                        showActionSheet = false
                     },
                     onChangeTagColor: {
                         // Handle change tag color action
+                        tagColorHex = tag.colorHexCode
                         showChangeTagColorView = true
+                        showActionSheet = false
                     },
                     onManageTaggedPeople: {
                         // Handle manage tagged people action
                         showManageTaggedPeopleView = true
+                        showActionSheet = false
                     },
                     onDeleteTag: {
                         // Handle delete tag action
                         showDeleteTagConfirmation = true
+                        showActionSheet = false
                     },
                     onDismiss: {
                         showActionSheet = false
@@ -270,38 +289,204 @@ struct TagDetailView: View {
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
+        .onAppear {
+            // Ensure we have the latest data when view appears
+            Task {
+                await viewModel.fetchAllData()
+            }
+        }
         .sheet(isPresented: $showAddFriendsToTagView) {
             // Using AddFriendsToTagView for adding multiple friends to this tag
             NavigationView {
-                AddFriendsToTagView(friendTagId: tag.id)
+                AddFriendsToTagView(friendTagId: tagId)
                     .onDisappear {
-                        // Refresh data if needed after adding friends
-                        // You might want to add additional refresh logic here
+                        // Refresh data after adding friends
+                        Task {
+                            await viewModel.fetchAllData()
+                        }
                     }
             }
             .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showManageTaggedPeopleView) {
-            ManageTaggedPeopleView(tag: tag)
+            ManageTaggedPeopleView(tagsViewModel: viewModel, tagId: tagId)
+                .onDisappear {
+                    // Refresh data after managing tagged people
+                    Task {
+                        await viewModel.fetchAllData()
+                    }
+                }
+        }
+        .sheet(isPresented: $showRenameTagView) {
+            // Rename tag view
+            TagRenameView(
+                displayName: $tagDisplayName,
+                onSave: {
+                    // Save the renamed tag
+                    Task {
+                        await viewModel.upsertTag(
+                            id: tag.id,
+                            displayName: tagDisplayName,
+                            colorHexCode: tag.colorHexCode,
+                            upsertAction: .update
+                        )
+                    }
+                },
+                onCancel: {
+                    // Cancel renaming
+                    tagDisplayName = tag.displayName
+                }
+            )
+        }
+        .sheet(isPresented: $showChangeTagColorView) {
+            // Change tag color view
+            TagColorPickerView(
+                currentColorHex: $tagColorHex,
+                onSave: {
+                    // Save the color change
+                    Task {
+                        await viewModel.upsertTag(
+                            id: tag.id,
+                            displayName: tag.displayName,
+                            colorHexCode: tagColorHex,
+                            upsertAction: .update
+                        )
+                    }
+                },
+                onCancel: {
+                    // Cancel color change
+                    tagColorHex = tag.colorHexCode
+                }
+            )
         }
         .alert("Delete Tag", isPresented: $showDeleteTagConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
-                // Delete tag implementation would go here
-                // For example:
-                // Task {
-                //     await tagsViewModel.deleteTag(id: tag.id)
-                //     dismiss()
-                // }
+                // Delete tag implementation
+                Task {
+                    await viewModel.deleteTag(id: tag.id)
+                    dismiss()
+                }
             }
         } message: {
             Text("Are you sure you want to delete this tag? This action cannot be undone.")
         }
-        // Add other sheets for rename tag and change tag color here when implemented
+        // Listen for friendsAddedToTag notification
+        .onReceive(NotificationCenter.default.publisher(for: .friendsAddedToTag)) { _ in
+            // Refresh data when notification is received
+            Task {
+                await viewModel.fetchAllData()
+            }
+        }
+    }
+    
+
+}
+
+// Helper structures for tag management
+
+struct TagRenameView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var displayName: String
+    var onSave: () -> Void
+    var onCancel: () -> Void
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                TextField("Tag Name", text: $displayName)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(10)
+                    .padding(.horizontal)
+                
+                Spacer()
+            }
+            .padding(.top)
+            .navigationTitle("Rename Tag")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        onCancel()
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        onSave()
+                        dismiss()
+                    }
+                    .disabled(displayName.isEmpty)
+                }
+            }
+        }
+    }
+}
+
+struct TagColorPickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var currentColorHex: String
+    var onSave: () -> Void
+    var onCancel: () -> Void
+    
+    // Predefined colors
+    let colors = [
+        "#FF6B6B", "#4ECDC4", "#F9DC5C", "#3A86FF", 
+        "#8338EC", "#FF006E", "#FB5607", "#FFBE0B",
+        "#06D6A0", "#118AB2", "#073B4C", "#7B2CBF"
+    ]
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                // Current color preview
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(hex: currentColorHex))
+                    .frame(height: 80)
+                    .padding()
+                
+                // Color grid
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 15) {
+                    ForEach(colors, id: \.self) { colorHex in
+                        Circle()
+                            .fill(Color(hex: colorHex))
+                            .frame(width: 60, height: 60)
+                            .overlay(
+                                Circle()
+                                    .stroke(currentColorHex == colorHex ? Color.white : Color.clear, lineWidth: 3)
+                            )
+                            .onTapGesture {
+                                currentColorHex = colorHex
+                            }
+                    }
+                }
+                .padding()
+                
+                Spacer()
+            }
+            .navigationTitle("Choose Color")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        onCancel()
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        onSave()
+                        dismiss()
+                    }
+                }
+            }
+        }
     }
 }
 
 @available(iOS 17, *)
 #Preview {
-    TagDetailView(tag: FullFriendTagDTO.close)
+    let viewModel = TagsViewModel(apiService: MockAPIService(userId: UUID()), userId: UUID())
+    return TagDetailView(viewModel: viewModel, tagId: FullFriendTagDTO.close.id)
 } 
