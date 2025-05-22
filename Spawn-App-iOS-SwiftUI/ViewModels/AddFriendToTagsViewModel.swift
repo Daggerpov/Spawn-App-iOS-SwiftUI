@@ -15,10 +15,12 @@ class AddFriendToTagViewModel: ObservableObject {
 	
 	var userId: UUID
 	var apiService: IAPIService
+	private var appCache: AppCache
 	
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
 		self.apiService = apiService
+		self.appCache = AppCache.shared
 	}
 	
 	func fetchAllData() async {
@@ -34,6 +36,16 @@ class AddFriendToTagViewModel: ObservableObject {
 	}
 	
 	func fetchUserTags() async {
+		// First check if we have tags in the cache
+		if !appCache.userTags.isEmpty {
+			await MainActor.run {
+				self.tags = appCache.userTags
+				self.errorMessage = nil
+			}
+			return
+		}
+		
+		// If no cache data, fetch from API
 		if let url = URL(string: APIService.baseURL + "friendTags/user/\(userId)") {
 			do {
 				let fetchedTags: [FriendTagDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
@@ -43,6 +55,9 @@ class AddFriendToTagViewModel: ObservableObject {
 				await MainActor.run {
 					self.tags = fetchedTags
 					self.errorMessage = nil
+					
+					// Update the cache
+					self.appCache.updateUserTags(fetchedTags)
 				}
 			} catch {
 				print("Error fetching tags: \(error.localizedDescription)")
@@ -66,7 +81,27 @@ class AddFriendToTagViewModel: ObservableObject {
 				
 				// Notify that friend was added to tag
 				await MainActor.run {
-					NotificationCenter.default.post(name: .friendsAddedToTag, object: nil)
+					NotificationCenter.default.post(name: .friendsAddedToTag, object: tagId)
+					
+					// Update the cache for the tag's friends
+					if var cachedTagFriends = appCache.tagFriends[tagId] {
+						// Get the friend from the friends cache
+						if let friend = appCache.friends.first(where: { $0.id == friendId }) {
+							// Add to the cached tag friends
+							let baseUser = BaseUserDTO.from(friendUser: friend)
+
+							// Only add if not already in the list
+							if !cachedTagFriends.contains(where: { $0.id == friendId }) {
+								cachedTagFriends.append(baseUser)
+								appCache.updateTagFriends(tagId, cachedTagFriends)
+							}
+						}
+					} else {
+						// Fetch tag friends from API if not in cache
+						Task {
+							await self.fetchAndUpdateTagFriends(tagId: tagId)
+						}
+					}
 				}
 				
 				return true
@@ -76,5 +111,20 @@ class AddFriendToTagViewModel: ObservableObject {
 			}
 		}
 		return false
+	}
+	
+	// Helper method to fetch tag friends and update cache
+	private func fetchAndUpdateTagFriends(tagId: UUID) async {
+		if let url = URL(string: APIService.baseURL + "friendTags/\(tagId)/friends") {
+			do {
+				let fetchedFriends: [BaseUserDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+				
+				await MainActor.run {
+					appCache.updateTagFriends(tagId, fetchedFriends)
+				}
+			} catch {
+				print("Error fetching tag friends: \(error.localizedDescription)")
+			}
+		}
 	}
 }
