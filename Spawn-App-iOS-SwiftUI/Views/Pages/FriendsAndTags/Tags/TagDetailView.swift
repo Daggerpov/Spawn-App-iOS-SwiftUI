@@ -213,37 +213,6 @@ struct TagDetailView: View {
             .background(universalBackgroundColor)
             .navigationBarHidden(true)
             
-            // Tab bar at bottom
-            VStack {
-                Spacer()
-                HStack(spacing: 0) {
-                    ForEach(0..<5) { index in
-                        VStack {
-                            Image(systemName: tabBarIcons[index])
-                                .font(.system(size: 24))
-                                .foregroundColor(.gray)
-                            
-                            if index == 3 {
-                                Rectangle()
-                                    .frame(width: 30, height: 2)
-                                    .cornerRadius(1)
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(.top, 4)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-                .padding(.vertical, 8)
-                .background(universalBackgroundColor)
-                .overlay(
-                    Rectangle()
-                        .frame(height: 0.5)
-                        .foregroundColor(Color.gray.opacity(0.3)),
-                    alignment: .top
-                )
-            }
-            
             // Floating add button
             VStack {
                 Spacer()
@@ -330,11 +299,6 @@ struct TagDetailView: View {
         }
         // Add other sheets for rename tag and change tag color here when implemented
     }
-    
-    // Tab bar icons
-    private let tabBarIcons = [
-        "house", "paperplane", "plus.square", "list.bullet", "person.circle"
-    ]
 }
 
 @available(iOS 17, *)

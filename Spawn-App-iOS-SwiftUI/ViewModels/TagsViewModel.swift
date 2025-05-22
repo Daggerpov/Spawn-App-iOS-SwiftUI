@@ -13,6 +13,7 @@ class TagsViewModel: ObservableObject {
 	@Published var deletionMessage: String = ""
 	@Published var friendRemovalMessage: String = ""
 	@Published var isLoading: Bool = false
+	@Published var profileCache: [UUID: String] = [:] // Cache profile picture URLs by user ID
 
 	var apiService: IAPIService
 	var userId: UUID
@@ -30,6 +31,13 @@ class TagsViewModel: ObservableObject {
 			colorHexCode: "",
 			ownerUserId: userId
 		)
+        
+        // Initialize profile cache from AppCache
+        for (userId, profile) in AppCache.shared.otherProfiles {
+            if let profilePic = profile.profilePicture {
+                profileCache[userId] = profilePic
+            }
+        }
 	}
 
 	// Optimized method to fetch all required data in parallel
@@ -68,14 +76,25 @@ class TagsViewModel: ObservableObject {
 					for tag in fetchedTags {
 						if let friends = tag.friends {
 							// Use the existing tagFriends dictionary in AppCache
-							if self.appCache.tagFriends[tag.id] == nil {
-								self.appCache.updateTagFriends(tag.id, friends)
-							}
+							AppCache.shared.updateTagFriends(tag.id, friends)
 							
 							// Also cache individual user profiles
 							for friend in friends {
-								if self.appCache.otherProfiles[friend.id] == nil {
-									self.appCache.updateOtherProfile(friend.id, friend)
+								if let profilePic = friend.profilePicture {
+                                    // Update our local view model cache
+                                    self.profileCache[friend.id] = profilePic
+                                    
+                                    // Update the shared AppCache
+                                    if AppCache.shared.otherProfiles[friend.id] == nil {
+                                        let profile = BaseUserDTO(
+                                            id: friend.id,
+                                            username: friend.username,
+                                            profilePicture: profilePic,
+                                            name: friend.name,
+                                            email: ""
+                                        )
+                                        AppCache.shared.updateOtherProfile(friend.id, profile)
+                                    }
 								}
 							}
 						}
@@ -88,6 +107,24 @@ class TagsViewModel: ObservableObject {
 			}
 		}
 	}
+    
+    // Get profile picture URL from cache
+    func getProfilePictureURL(for userId: UUID) -> String? {
+        // First check our local cache
+        if let cachedURL = profileCache[userId] {
+            return cachedURL
+        }
+        
+        // Then check AppCache
+        if let cachedProfile = AppCache.shared.otherProfiles[userId], 
+           let profilePicture = cachedProfile.profilePicture {
+            // Update our local cache
+            profileCache[userId] = profilePicture
+            return profilePicture
+        }
+        
+        return nil
+    }
 
 	func upsertTag(
 		id: UUID? = nil, displayName: String, colorHexCode: String,
@@ -156,7 +193,7 @@ class TagsViewModel: ObservableObject {
 					self.tags.removeAll { $0.id == id }  // Remove the tag from the local list
 					
 					// Also remove from AppCache
-					self.appCache.tagFriends.removeValue(forKey: id)
+					AppCache.shared.tagFriends.removeValue(forKey: id)
 				}
 				tagDeletedSuccessfully = true
 			} catch {
@@ -191,9 +228,9 @@ class TagsViewModel: ObservableObject {
 				
 				// Update AppCache to reflect the removal
 				await MainActor.run {
-					if var tagFriends = self.appCache.tagFriends[friendTagId] {
+					if var tagFriends = AppCache.shared.tagFriends[friendTagId] {
 						tagFriends.removeAll { $0.id == friendUserId }
-						self.appCache.updateTagFriends(friendTagId, tagFriends)
+						AppCache.shared.updateTagFriends(friendTagId, tagFriends)
 					}
 				}
 			} catch {
