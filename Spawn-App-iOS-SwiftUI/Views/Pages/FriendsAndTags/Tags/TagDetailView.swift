@@ -80,13 +80,12 @@ struct TagDetailView: View {
                         VStack(spacing: 4) {
                             Text(tag.displayName)
                                 .font(.system(size: 32, weight: .bold))
-                                .foregroundColor(.white)
                             
                             Text("\(tag.friends?.count ?? 0) people")
                                 .font(.system(size: 16))
-                                .foregroundColor(.white.opacity(0.8))
                         }
-                        
+						.foregroundColor(universalAccentColor)
+
                         // People icons overlapping
                         if let friends = tag.friends, !friends.isEmpty {
                             HStack(spacing: -8) {
