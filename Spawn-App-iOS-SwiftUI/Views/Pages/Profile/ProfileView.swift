@@ -407,27 +407,23 @@ struct ProfileView: View {
 				&& profileViewModel.friendshipStatus == .friends
 			{
 				HStack {
-
-					HStack {
-						Image("person.crop.circle.badge.checkmark")
-						Text("Friends")
-					}
-					.font(.caption)
-					.bold()
-					.foregroundColor(figmaGreen)
-					.padding(.horizontal, 16)
-					.padding(.vertical, 8)
-					.background(
-						RoundedRectangle(
-							cornerRadius: universalRectangleCornerRadius
-						)
-						.fill(figmaGreen)
-					)
-					.cornerRadius(universalRectangleCornerRadius)
-					.padding(.bottom, 10)
-
+					Image("person.crop.circle.badge.checkmark")
+					Text("Friends")
 				}
-
+				.font(.caption)
+				.bold()
+				.foregroundColor(figmaGreen)
+				.padding(.horizontal, 16)
+				.padding(.vertical, 8)
+				.background(
+					RoundedRectangle(
+						cornerRadius: universalRectangleCornerRadius
+					)
+					.stroke(figmaGreen)
+				)
+				.cornerRadius(universalRectangleCornerRadius)
+				.padding(.bottom, 10)
+				.background(universalBackgroundColor)
 			}
 		}
 	}
