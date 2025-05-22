@@ -117,9 +117,22 @@ struct ProfileHeaderView: View {
     private var nameAndUsernameView: some View {
         // Name and Username - make this more reactive to changes
         Group {
-            if isCurrentUserProfile, userAuth.spawnUser != nil
-            {
-                EmptyView()
+			if isCurrentUserProfile, let currentUser = userAuth.spawnUser
+			{
+				// For the current user, always display the latest from userAuth	                EmptyView()
+				Text(
+					FormatterService.shared.formatName(
+						user: currentUser
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
+
+				Text("@\(currentUser.username)")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
             } else {
                 // For other users, use the passed-in user
                 Text(

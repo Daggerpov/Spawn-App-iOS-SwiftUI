@@ -276,15 +276,25 @@ struct ProfileView: View {
 				}
 
 				ToolbarItem(placement: .principal) {
-					ProfileNameView(
-						user: user,
-						refreshFlag: $refreshFlag
-					)
+					// Only show the ProfileNameView if it's not the current user's profile
+					if !isCurrentUserProfile {
+						ProfileNameView(
+							user: user,
+							refreshFlag: $refreshFlag
+						)
+					}
 				}
                 
-                // Add menu button to the trailing position if not current user profile or friends
+                // Add appropriate trailing button based on user profile type
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    if !isCurrentUserProfile || profileViewModel.friendshipStatus == .friends {
+                    if isCurrentUserProfile {
+                        // Settings button for current user profile
+                        NavigationLink(destination: SettingsView()) {
+                            Image(systemName: "gearshape")
+                                .foregroundColor(universalAccentColor)
+                        }
+                    } else if !isCurrentUserProfile || profileViewModel.friendshipStatus == .friends {
+                        // Menu button for other user profiles
                         Button(action: {
                             showProfileMenu = true
                         }) {
