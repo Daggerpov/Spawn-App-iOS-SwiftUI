@@ -1,3 +1,8 @@
+//
+//  CustomAppDelegate.swift
+//  Spawn-App-iOS-SwiftUI
+//
+
 import SwiftUI
 import UserNotifications
 import FirebaseCore
@@ -48,6 +53,24 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
             await AppCache.shared.validateCache()
             completionHandler(.newData)
         }
+    }
+    
+    // Handle deep links when app is launched via URL
+    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        // Process the deep link
+        DeepLinkManager.shared.handleDeepLink(url: url)
+        return true
+    }
+    
+    // Handle universal links
+    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
+        // Check for universal links
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+           let url = userActivity.webpageURL {
+            DeepLinkManager.shared.handleDeepLink(url: url)
+            return true
+        }
+        return false
     }
     
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {

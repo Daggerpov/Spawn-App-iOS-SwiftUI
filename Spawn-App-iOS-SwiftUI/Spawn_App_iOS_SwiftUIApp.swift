@@ -14,6 +14,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@UIApplicationDelegateAdaptor private var appDelegate: CustomAppDelegate
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var appCache = AppCache.shared
+    @StateObject var deepLinkManager = DeepLinkManager.shared
     
     init() {
         // Register custom fonts
@@ -60,16 +61,29 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 							await appCache.validateCache()
 						}
 					}
+                    .onOpenURL { url in
+                        // Handle deep links for logged in users
+                        DeepLinkManager.shared.handleDeepLink(url: url)
+                    }
+                    .environmentObject(deepLinkManager)
                     .onestFontTheme()
 			} else {
 				LaunchView()
 					.onOpenURL { url in
-						GIDSignIn.sharedInstance.handle(url)
+                        // First try to handle as a deep link
+                        if url.scheme == "spawn" {
+                            // Save this deep link for after login
+                            DeepLinkManager.shared.handleDeepLink(url: url)
+                        } else {
+                            // Otherwise handle as Google Sign In
+                            GIDSignIn.sharedInstance.handle(url)
+                        }
 					}
 					.onAppear {
 						// Connect the app delegate to the app
 						appDelegate.app = self
 					}
+                    .environmentObject(deepLinkManager)
                     .onestFontTheme()
 			}
 		}

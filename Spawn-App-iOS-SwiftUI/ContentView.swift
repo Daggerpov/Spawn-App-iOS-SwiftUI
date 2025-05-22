@@ -11,61 +11,67 @@ struct ContentView: View {
     var user: BaseUserDTO
     @State private var showEventCreationDrawer: Bool = false
     @State private var selectedTab: Int = 0
+    @State private var isShowingDeepLinkedProfile: Bool = false
+    @State private var deepLinkedUserId: UUID? = nil
+    
+    // For deep linking
+    @EnvironmentObject var deepLinkManager: DeepLinkManager
 
     var body: some View {
-        ZStack {
-            TabView(selection: $selectedTab) {
-                FeedView(user: user)
-                    .tag(0)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(systemName: "house")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                    }
-                MapView(user: user)
-                    .tag(1)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(systemName: "location.circle")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                    }
-                FeedView(user: user)
-                    .tag(2)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(systemName: "plus.app")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                    }
-                FriendsAndTagsView(user: user)
-                    .tag(3)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(systemName: "list.bullet")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                    }
-                ProfileView(user: user)
-                    .tag(4)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(systemName: "person.circle")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                    }
-            }
+        NavigationStack {
+            ZStack {
+                TabView(selection: $selectedTab) {
+                    FeedView(user: user)
+                        .tag(0)
+                        .tabItem {
+                            Image(
+                                uiImage: resizeImage(
+                                    UIImage(systemName: "house")!,
+                                    targetSize: CGSize(width: 30, height: 27)
+                                )!
+                            )
+                        }
+                    MapView(user: user)
+                        .tag(1)
+                        .tabItem {
+                            Image(
+                                uiImage: resizeImage(
+                                    UIImage(systemName: "location.circle")!,
+                                    targetSize: CGSize(width: 30, height: 27)
+                                )!
+                            )
+                        }
+                    FeedView(user: user)
+                        .tag(2)
+                        .tabItem {
+                            Image(
+                                uiImage: resizeImage(
+                                    UIImage(systemName: "plus.app")!,
+                                    targetSize: CGSize(width: 30, height: 27)
+                                )!
+                            )
+                        }
+                    FriendsAndTagsView(user: user)
+                        .tag(3)
+                        .tabItem {
+                            Image(
+                                uiImage: resizeImage(
+                                    UIImage(systemName: "list.bullet")!,
+                                    targetSize: CGSize(width: 30, height: 27)
+                                )!
+                            )
+                        }
+                    ProfileView(user: user)
+                        .tag(4)
+                        .tabItem {
+                            Image(
+                                uiImage: resizeImage(
+                                    UIImage(systemName: "person.circle")!,
+                                    targetSize: CGSize(width: 30, height: 27)
+                                )!
+                            )
+                        }
+                }
             .onChange(of: selectedTab) { newValue in
                 if newValue == 2 {
                     // Reset tab selection to previous tab and show the drawer
@@ -86,6 +92,27 @@ struct ContentView: View {
                     .withAlphaComponent(0.9)
                 UITabBar.appearance().unselectedItemTintColor = UIColor.black
             }
+            
+            // Handle navigation to deep linked profiles
+            .navigationDestination(isPresented: $isShowingDeepLinkedProfile) {
+                if let userId = deepLinkedUserId {
+                    // Navigate to a profile based on the user ID
+                    ProfileFromDeepLinkView(userId: userId)
+                }
+            }
+            
+            // Handle deep link processing
+            .onChange(of: deepLinkManager.navigateToDeepLink) { newValue in
+                if newValue {
+                    processDeepLink()
+                }
+            }
+            .onAppear {
+                // Check if there's a pending deep link when the view appears
+                if deepLinkManager.navigateToDeepLink {
+                    processDeepLink()
+                }
+            }
         }
         .sheet(isPresented: $showEventCreationDrawer) {
             EventCreationView(
@@ -97,6 +124,25 @@ struct ContentView: View {
             .presentationDragIndicator(.visible)
         }
     }
+    
+    // Process deep links and navigate accordingly
+    private func processDeepLink() {
+        switch deepLinkManager.currentDeepLinkTarget {
+        case .profile(let userId):
+            // Set the user ID and trigger navigation
+            deepLinkedUserId = userId
+            isShowingDeepLinkedProfile = true
+            
+            // Switch to the friends tab as a default view
+            selectedTab = 3
+            
+            // Reset deep link state after processing
+            deepLinkManager.reset()
+        case .none:
+            break
+        }
+    }
+}
 }
 
 @available(iOS 17.0, *)

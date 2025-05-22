@@ -48,6 +48,14 @@ struct ProfileView: View {
 
 	// For the back button
 	@State private var showBackButton: Bool = false
+    
+    // Initialize with back button visible for deep links
+    init(user: Nameable, showBackButton: Bool = false) {
+        self.user = user
+        self._showBackButton = State(initialValue: showBackButton)
+        self._username = State(initialValue: user.username)
+        self._name = State(initialValue: user.name ?? "")
+    }
 
 	// Check if this is the current user's profile
 	private var isCurrentUserProfile: Bool {
@@ -633,12 +641,14 @@ struct ProfileView: View {
 	}
 
 	private func shareProfile() {
-		// Create a URL to share (could be a deep link to the user's profile)
-		let profileURL = "https://spawnapp.com/profile/\(user.id)"
+		// Create a URL to share with our custom URL scheme for deep linking
+		let profileDeepLink = "spawn://profile/\(user.id)"
+		let webFallbackURL = "https://spawnapp.com/profile/\(user.id)"
 		let shareText =
 			"Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn!"
-
-		let activityItems: [Any] = [shareText, profileURL]
+		
+		// Use both deep link and web URL for sharing
+		let activityItems: [Any] = [shareText, profileDeepLink]
 		let activityController = UIActivityViewController(
 			activityItems: activityItems,
 			applicationActivities: nil
@@ -659,8 +669,9 @@ struct ProfileView: View {
 	}
 
 	private func copyProfileURL() {
-		let profileURL = "https://spawnapp.com/profile/\(user.id)"
-		UIPasteboard.general.string = profileURL
+		// Use deep link URL for in-app sharing
+		let profileDeepLink = "spawn://profile/\(user.id)"
+		UIPasteboard.general.string = profileDeepLink
 
 		// Show notification toast
 		notificationMessage = "Profile URL copied to clipboard"
