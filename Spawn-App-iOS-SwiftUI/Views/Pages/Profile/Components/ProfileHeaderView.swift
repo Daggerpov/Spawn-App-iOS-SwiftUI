@@ -120,20 +120,7 @@ struct ProfileHeaderView: View {
             if isCurrentUserProfile,
                let currentUser = userAuth.spawnUser
             {
-                // For the current user, always display the latest from userAuth
-                Text(
-                    FormatterService.shared.formatName(
-                        user: currentUser
-                    )
-                )
-                .font(.title3)
-                .bold()
-                .foregroundColor(universalAccentColor)
-
-                Text("@\(currentUser.username)")
-                    .font(.subheadline)
-                    .foregroundColor(Color.gray)
-                    .padding(.bottom, 5)
+                EmptyView()
             } else {
                 // For other users, use the passed-in user
                 Text(
