@@ -233,37 +233,45 @@ struct RecommendedFriendView: View {
         HStack {
             if MockAPIService.isMocking {
                 if let pfp = friend.profilePicture {
-                    Image(pfp)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 50, height: 50)
-                        .clipShape(Circle())
-                }
-            } else {
-                if let pfpUrl = friend.profilePicture {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image
+                    NavigationLink(destination: ProfileView(user: friend)) {
+                        Image(pfp)
                             .resizable()
                             .scaledToFill()
                             .frame(width: 50, height: 50)
                             .clipShape(Circle())
-                    } placeholder: {
+                    }
+                }
+            } else {
+                NavigationLink(destination: ProfileView(user: friend)) {
+                    if let pfpUrl = friend.profilePicture {
+                        AsyncImage(url: URL(string: pfpUrl)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 50, height: 50)
+                        }
+                    } else {
                         Circle()
-                            .fill(Color.gray)
+                            .fill(.white)
                             .frame(width: 50, height: 50)
                     }
-                } else {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 50, height: 50)
                 }
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(FormatterService.shared.formatName(user: friend))
-                    .font(.onestBold(size: 14))
+            NavigationLink(destination: ProfileView(user: friend)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(FormatterService.shared.formatName(user: friend))
+                        .font(.onestBold(size: 14))
+                        .foregroundColor(universalAccentColor)
+                }
+                .padding(.leading, 8)
             }
-            .padding(.leading, 8)
+            .buttonStyle(PlainButtonStyle())
 
             Spacer()
 
@@ -330,37 +338,45 @@ struct RecentlySpawnedView: View {
         HStack {
             if MockAPIService.isMocking {
                 if let pfp = recentUser.user.profilePicture {
-                    Image(pfp)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 50, height: 50)
-                        .clipShape(Circle())
-                }
-            } else {
-                if let pfpUrl = recentUser.user.profilePicture {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image
+                    NavigationLink(destination: ProfileView(user: recentUser.user)) {
+                        Image(pfp)
                             .resizable()
                             .scaledToFill()
                             .frame(width: 50, height: 50)
                             .clipShape(Circle())
-                    } placeholder: {
+                    }
+                }
+            } else {
+                NavigationLink(destination: ProfileView(user: recentUser.user)) {
+                    if let pfpUrl = recentUser.user.profilePicture {
+                        AsyncImage(url: URL(string: pfpUrl)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 50, height: 50)
+                        }
+                    } else {
                         Circle()
-                            .fill(Color.gray)
+                            .fill(.white)
                             .frame(width: 50, height: 50)
                     }
-                } else {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 50, height: 50)
                 }
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(FormatterService.shared.formatName(user: recentUser.user))
-                    .font(.onestBold(size: 14))
+            NavigationLink(destination: ProfileView(user: recentUser.user)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(FormatterService.shared.formatName(user: recentUser.user))
+                        .font(.onestBold(size: 14))
+                        .foregroundColor(universalAccentColor)
+                }
+                .padding(.leading, 8)
             }
-            .padding(.leading, 8)
+            .buttonStyle(PlainButtonStyle())
 
             Spacer()
 
