@@ -261,7 +261,7 @@ struct TagDetailView: View {
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
-        .sheet(isPresented: showAddFriendsToTagView) {
+		.sheet(isPresented: $showAddFriendsToTagView) {
             // Using AddFriendsToTagView for adding multiple friends to this tag
             NavigationView {
                 AddFriendsToTagView(friendTagId: tag.id)

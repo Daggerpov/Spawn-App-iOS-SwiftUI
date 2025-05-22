@@ -56,7 +56,7 @@ struct AddFriendToTagsView: View {
             }
             .onAppear {
                 Task {
-                    await viewModel.fetchTagsToAddToFriend(friendUserId: friend.id)
+                    await viewModel.fetchTagsFriendNotIn(friendUserId: friend.id)
                 }
             }
         }
@@ -117,7 +117,8 @@ struct AddFriendToTagsView: View {
                 // Tag bubbles layout with dynamic positioning
                 GeometryReader { geometry in
                     ZStack {
-                        ForEach(viewModel.tags) { tag in
+						ForEach(viewModel.tags.indices, id: \.self) { index in
+							let tag = viewModel.tags[index]
                             tagBubble(for: tag)
                                 .position(tagPosition(for: index, count: viewModel.tags.count, in: geometry))
                         }
