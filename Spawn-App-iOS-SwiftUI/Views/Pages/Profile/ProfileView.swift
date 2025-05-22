@@ -337,19 +337,19 @@ struct ProfileView: View {
 						}
 					}
 				}) {
-					HStack {
+					HStack(spacing: 8) {
 						Image(systemName: "person.badge.plus")
 						Text("Add as Friend")
-							.bold()
+							.fontWeight(.semibold)
 					}
-					.font(.caption)
 					.foregroundColor(.white)
-					.padding(.vertical, 8)
-					.padding(.horizontal, 16)
+					.padding(.vertical, 10)
+					.padding(.horizontal, 20)
 					.background(universalAccentColor)
-					.cornerRadius(12)
+					.cornerRadius(20)
+					.shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
 				}
-				.padding(.bottom, 10)
+				.padding(.vertical, 10)
 			}
 
 			// Profile Action Buttons
