@@ -115,14 +115,16 @@ struct AddFriendToTagsView: View {
                     .multilineTextAlignment(.center)
                 
                 // Tag bubbles layout with dynamic positioning
-                ZStack {
-                    ForEach(viewModel.tags.indices, id: \.self) { index in
-                        let tag = viewModel.tags[index]
-                        tagBubble(for: tag)
-                            .offset(tagBubbleOffset(for: index, count: viewModel.tags.count))
+                GeometryReader { geometry in
+                    ZStack {
+                        ForEach(viewModel.tags.indices, id: \.self) { index in
+                            let tag = viewModel.tags[index]
+                            tagBubble(for: tag)
+                                .position(tagPosition(for: index, count: viewModel.tags.count, in: geometry))
+                        }
                     }
                 }
-                .frame(height: 400)
+                .frame(height: 350)
                 .padding(.horizontal)
             }
             
@@ -206,6 +208,7 @@ struct AddFriendToTagsView: View {
     
     private func tagBubble(for tag: FullFriendTagDTO) -> some View {
         let isSelected = viewModel.selectedTags.contains(tag.id)
+        let rotation = Double(tag.id.hashValue % 10) * 0.5 - 2.5 // Random rotation between -2.5 and 2.5 degrees
         
         return Button(action: {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
@@ -283,7 +286,8 @@ struct AddFriendToTagsView: View {
                     )
                     .foregroundColor(Color(hex: tag.colorHexCode))
             )
-            .frame(width: 220)
+            .frame(width: 180) // Slightly smaller to better fit the screen
+            .rotationEffect(.degrees(rotation)) // Add slight rotation for a more organic look
         }
         .buttonStyle(ScaleButtonStyle())
     }
@@ -306,6 +310,61 @@ struct AddFriendToTagsView: View {
         }
     }
     
+    private func tagPosition(for index: Int, count: Int, in geometry: GeometryProxy) -> CGPoint {
+        // Calculate container dimensions
+        let width = geometry.size.width
+        let height = geometry.size.height
+        let centerX = width / 2
+        let centerY = height / 2
+        
+        // Define tag positions based on index
+        // This creates a more organized layout matching the Figma design
+        let positions: [CGPoint]
+        
+        switch count {
+        case 1:
+            positions = [CGPoint(x: centerX, y: centerY + 60)]
+        case 2:
+            positions = [
+                CGPoint(x: centerX - 80, y: centerY + 80),
+                CGPoint(x: centerX + 80, y: centerY + 80)
+            ]
+        case 3:
+            positions = [
+                CGPoint(x: centerX, y: centerY - 100), // top
+                CGPoint(x: centerX - 100, y: centerY + 80), // bottom left
+                CGPoint(x: centerX + 100, y: centerY + 80)  // bottom right
+            ]
+        case 4:
+            positions = [
+                CGPoint(x: centerX, y: centerY - 100), // top
+                CGPoint(x: centerX + 110, y: centerY), // right
+                CGPoint(x: centerX, y: centerY + 100), // bottom
+                CGPoint(x: centerX - 110, y: centerY)  // left
+            ]
+        case 5:
+            positions = [
+                CGPoint(x: centerX, y: centerY - 100), // top
+                CGPoint(x: centerX + 100, y: centerY - 40), // top right
+                CGPoint(x: centerX + 100, y: centerY + 40), // bottom right
+                CGPoint(x: centerX - 100, y: centerY + 40), // bottom left
+                CGPoint(x: centerX - 100, y: centerY - 40)  // top left
+            ]
+        default:
+            // For more than 5 tags, we'll create an evenly spaced circle
+            let radius: CGFloat = min(width, height) * 0.4 // Use 40% of the container size
+            let angle = 2 * CGFloat.pi * CGFloat(index) / CGFloat(count)
+            
+            return CGPoint(
+                x: centerX + radius * cos(angle),
+                y: centerY + radius * sin(angle)
+            )
+        }
+        
+        return index < positions.count ? positions[index] : CGPoint(x: centerX, y: centerY)
+    }
+    
+    // Legacy function, kept for reference
     private func tagBubbleOffset(for index: Int, count: Int) -> CGSize {
         // Distribute tags in a more natural, scattered way
         let radius: CGFloat = 150
