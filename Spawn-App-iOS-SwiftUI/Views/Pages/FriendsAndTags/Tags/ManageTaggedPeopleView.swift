@@ -11,6 +11,7 @@ struct ManageTaggedPeopleView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject var viewModel: TaggedPeopleSuggestionsViewModel
     @State private var searchText = ""
+    @State private var showAllAdded = false
     
     var tag: FullFriendTagDTO
     
@@ -136,7 +137,8 @@ struct ManageTaggedPeopleView: View {
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding()
                         } else {
-                            ForEach(filteredSuggestions) { friend in
+                            // Limit to 3 suggestions
+                            ForEach(filteredSuggestions.prefix(3)) { friend in
                                 HStack {
                                     // Profile image
                                     if let pfpUrl = friend.profilePicture {
@@ -226,7 +228,10 @@ struct ManageTaggedPeopleView: View {
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding()
                         } else {
-                            ForEach(filteredAdded) { friend in
+                            // Limit to 6 added friends or show all if showAllAdded is true
+							let displayedFriends = showAllAdded ? filteredAdded : Array(filteredAdded.prefix(upTo: 6))
+
+                            ForEach(displayedFriends) { friend in
                                 HStack {
                                     // Profile image
                                     if let pfpUrl = friend.profilePicture {
@@ -277,14 +282,16 @@ struct ManageTaggedPeopleView: View {
                                 }
                             }
                             
-                            if filteredAdded.count > 6 {
+                            // Show more button if there are more than 6 friends and not already showing all
+                            if filteredAdded.count > 6 && !showAllAdded {
                                 Button(action: {
-                                    // Show more friends
+                                    showAllAdded = true
                                 }) {
                                     Text("Show more")
-                                        .foregroundColor(universalAccentColor)
+                                        .font(.subheadline)
+                                        .foregroundColor(figmaBlue)
                                         .frame(maxWidth: .infinity, alignment: .center)
-                                        .padding()
+                                        .padding(.vertical, 10)
                                 }
                             }
                         }
