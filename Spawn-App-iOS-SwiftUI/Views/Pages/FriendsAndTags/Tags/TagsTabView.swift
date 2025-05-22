@@ -189,24 +189,45 @@ extension TagsTabView {
             VStack(spacing: 15) {
                 ForEach(displayTags) { friendTag in
                     NavigationLink(destination: TagDetailView(tag: friendTag)) {
-                        HStack {
-                            Text(friendTag.displayName)
-                                .foregroundColor(.white)
-                                .font(.title)
-                                .fontWeight(.semibold)
-                                .padding(.leading)
-                            
-                            Spacer()
-                            
-                            // Show tag friends preview
-                            TagFriendsPreview(friends: friendTag.friends)
-                                .padding(.trailing)
-                        }
-                        .padding(.vertical, 15)
-                        .background(
+                        ZStack {
+                            // Rounded rectangle with tag color
                             RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-                                .fill(Color(hex: friendTag.colorHexCode).opacity(0.5))
-                        )
+                                .fill(Color(hex: friendTag.colorHexCode))
+                                .frame(height: 120)
+                            
+                            // Content overlay
+                            VStack(alignment: .leading) {
+                                HStack {
+                                    // Tag name
+                                    Text(friendTag.displayName)
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 32, weight: .bold))
+                                        .padding(.leading)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.top, 15)
+                                
+                                Spacer()
+                                
+                                // Tag member count and preview
+                                HStack {
+                                    // Number of people text
+                                    Text("\(friendTag.friends?.count ?? 0) people")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16, weight: .medium))
+                                        .padding(.leading)
+                                        .opacity(0.8)
+                                    
+                                    Spacer()
+                                    
+                                    // Friend avatars preview
+                                    TagFriendsPreview(friendTag: friendTag, viewModel: viewModel)
+                                        .padding(.trailing)
+                                }
+                                .padding(.bottom, 15)
+                            }
+                        }
                     }
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
@@ -217,63 +238,88 @@ extension TagsTabView {
 	}
 }
 
+// MARK: - Friend Preview Component
+
 struct TagFriendsPreview: View {
-    var friends: [BaseUserDTO]?
+    var friendTag: FullFriendTagDTO
+    @ObservedObject var viewModel: TagsViewModel
     
     // Computed properties to use throughout the view
     private var displayedFriends: [BaseUserDTO] {
-        return (friends ?? []).prefix(3).map { $0 }
+        return (friendTag.friends ?? []).prefix(2).map { $0 }
     }
     
     private var remainingCount: Int {
-        return (friends?.count ?? 0) - displayedFriends.count
-    }
-    
-    private var trailingPadding: CGFloat {
-        return min(CGFloat(displayedFriends.count) * 15, 45) + (remainingCount > 0 ? 30 : 0)
+        return (friendTag.friends?.count ?? 0) - displayedFriends.count
     }
 
     var body: some View {
-        HStack {
-            ZStack {
-                // Show only up to 3 friends
-                ForEach(
-                    Array(displayedFriends.enumerated().reversed()), id: \.element.id
-                ) { index, friend in
-                    if let pfpUrl = friend.profilePicture {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image
-                                .ProfileImageModifier(imageType: .eventParticipants)
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 25, height: 25)
-                        }
-                        .offset(x: CGFloat(index) * 15)  // Adjust overlap spacing
-                    } else {
-                        Circle()
-                            .fill(.gray)
-                            .frame(width: 25, height: 25)
-                            .offset(x: CGFloat(index) * 15)  // Adjust overlap spacing
-                    }
-                }
-                
-                // Show "+X" indicator if there are more than 3 friends
-                if remainingCount > 0 {
+        HStack(spacing: -5) {
+            // Show only up to 2 friend avatars
+            ForEach(Array(displayedFriends.enumerated()), id: \.element.id) { index, friend in
+                ProfileImageView(userId: friend.id, urlString: friend.profilePicture, viewModel: viewModel)
+            }
+            
+            // Show "+X" indicator if there are more than 2 friends
+            if remainingCount > 0 {
+                ZStack {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 30, height: 30)
+                    
                     Text("+\(remainingCount)")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 25, height: 25)
-                        .background(Circle().fill(universalAccentColor))
-                        .offset(x: 45)  // Position after the 3rd friend
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color(hex: friendTag.colorHexCode))
                 }
             }
-            .padding(.trailing, trailingPadding)
-            
-            // Add the chevron indicator
-            Image(systemName: "chevron.right")
-                .foregroundColor(.white)
-                .font(.system(size: 14, weight: .bold))
+        }
+    }
+}
+
+// MARK: - Profile Image Component with Caching
+
+struct ProfileImageView: View {
+    var userId: UUID
+    var urlString: String?
+    @ObservedObject var viewModel: TagsViewModel
+    
+    var body: some View {
+        ZStack {
+            if let urlString = urlString {
+                if MockAPIService.isMocking {
+                    Image(urlString)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 30, height: 30)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                } else {
+                    // Get URL from cache if available, otherwise use the provided URL
+                    let finalURLString = viewModel.getProfilePictureURL(for: userId) ?? urlString
+                    
+                    AsyncImage(url: URL(string: finalURLString)) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 30, height: 30)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    } placeholder: {
+                        Circle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 30, height: 30)
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    }
+                    .id("profile-\(finalURLString)")
+                }
+            } else {
+                // Fallback for no profile picture
+                Image(systemName: "person.fill")
+                    .foregroundColor(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color.gray.opacity(0.5)))
+                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+            }
         }
     }
 }
@@ -281,5 +327,5 @@ struct TagFriendsPreview: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	TagsTabView(userId: UUID(), addFriendToTagButtonPressedCallback: {_ in }).environmentObject(appCache)
+	TagsTabView(userId: UUID(), addFriendToTagButtonPressedCallback: {_ in })
 }
