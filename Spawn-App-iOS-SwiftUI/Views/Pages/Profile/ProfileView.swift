@@ -327,12 +327,13 @@ struct ProfileView: View {
 			// Friendship badge (for other users' profiles)
 			friendshipBadge
 
-			// Add Friend Button for non-friends
-			if !isCurrentUserProfile
-				&& profileViewModel.friendshipStatus == .none
+			// Add Friend Button for non-friends or showing Friend Request Sent
+			if !isCurrentUserProfile && 
+				(profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent)
 			{
 				Button(action: {
-					if let currentUserId = userAuth.spawnUser?.id {
+					if profileViewModel.friendshipStatus == .none, 
+					   let currentUserId = userAuth.spawnUser?.id {
 						Task {
 							await profileViewModel.sendFriendRequest(
 								fromUserId: currentUserId,
@@ -342,18 +343,25 @@ struct ProfileView: View {
 					}
 				}) {
 					HStack {
-						Image(systemName: "person.badge.plus")
-						Text("Add as Friend")
-							.bold()
+						if profileViewModel.friendshipStatus == .none {
+							Image(systemName: "person.badge.plus")
+							Text("Add Friend")
+								.bold()
+						} else {
+							Text("Friend Request Sent")
+								.bold()
+						}
 					}
-					.font(.caption)
+					.font(.system(size: 16))
 					.foregroundColor(.white)
-					.padding(.vertical, 8)
-					.padding(.horizontal, 16)
+					.padding(.vertical, 10)
+					.padding(.horizontal, 20)
+					.frame(maxWidth: 200)
 					.background(universalAccentColor)
 					.cornerRadius(12)
 				}
-				.padding(.bottom, 10)
+				.disabled(profileViewModel.friendshipStatus == .requestSent)
+				.padding(.vertical, 10)
 			}
 
 			// Profile Action Buttons
