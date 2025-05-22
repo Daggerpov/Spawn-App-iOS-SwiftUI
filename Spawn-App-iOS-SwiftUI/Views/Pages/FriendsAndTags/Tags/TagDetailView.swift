@@ -21,6 +21,9 @@ struct TagDetailView: View {
     
     var body: some View {
         ZStack {
+            Color(UIColor.systemBackground)
+                .edgesIgnoringSafeArea(.all)
+            
             VStack(spacing: 0) {
                 // Header with tag name
                 HStack {
@@ -29,7 +32,7 @@ struct TagDetailView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title3)
-                            .foregroundColor(.black)
+                            .foregroundColor(.primary)
                     }
                     
                     Spacer()
@@ -46,7 +49,7 @@ struct TagDetailView: View {
                     }) {
                         Image(systemName: "ellipsis")
                             .font(.title3)
-                            .foregroundColor(.black)
+                            .foregroundColor(.primary)
                     }
                 }
                 .padding(.horizontal)
@@ -60,8 +63,8 @@ struct TagDetailView: View {
                             .fill(Color(hex: tag.colorHexCode).opacity(0.5))
                             .frame(width: 240, height: 240)
                         
-                        // Tag name text
-                        VStack {
+                        // Tag name and count
+                        VStack(spacing: 4) {
                             Text(tag.displayName)
                                 .font(.system(size: 32, weight: .bold))
                                 .foregroundColor(.white)
@@ -73,8 +76,8 @@ struct TagDetailView: View {
                         
                         // People icons overlapping
                         if let friends = tag.friends, !friends.isEmpty {
-                            HStack(spacing: -10) {
-                                ForEach(friends.prefix(3)) { friend in
+                            HStack(spacing: -8) {
+                                ForEach(friends.prefix(2)) { friend in
                                     if let pfpUrl = friend.profilePicture {
                                         AsyncImage(url: URL(string: pfpUrl)) { image in
                                             image
@@ -97,31 +100,31 @@ struct TagDetailView: View {
                                     }
                                 }
                                 
-                                if (tag.friends?.count ?? 0) > 3 {
+                                if (tag.friends?.count ?? 0) > 2 {
                                     ZStack {
                                         Circle()
-                                            .fill(universalAccentColor)
+                                            .fill(.white)
                                             .frame(width: 40, height: 40)
                                             .overlay(Circle().stroke(Color.white, lineWidth: 2))
                                         
-                                        Text("+\((tag.friends?.count ?? 0) - 3)")
-                                            .font(.system(size: 12, weight: .bold))
-                                            .foregroundColor(.white)
+                                        Text("+\((tag.friends?.count ?? 0) - 2)")
+                                            .font(.system(size: 14, weight: .semibold))
+                                            .foregroundColor(Color(hex: tag.colorHexCode))
                                     }
                                 }
                             }
-                            .offset(y: 60)
+                            .offset(y: -70)
+                            .offset(x: 40)
                         }
                     }
                     .padding(.top, 20)
-                    .padding(.bottom, 60)
                 }
                 
                 // People section header
                 HStack {
                     Text("People (\(tag.friends?.count ?? 0))")
                         .font(.headline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     
                     Spacer()
                     
@@ -134,6 +137,7 @@ struct TagDetailView: View {
                     }
                 }
                 .padding(.horizontal)
+                .padding(.top, 20)
                 
                 // People list
                 ScrollView {
@@ -161,8 +165,8 @@ struct TagDetailView: View {
                                     }
                                     
                                     // Name and username
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(friend.name ?? "")
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(friend.name ?? "First Last")
                                             .font(.headline)
                                         
                                         Text("@\(friend.username)")
@@ -177,13 +181,15 @@ struct TagDetailView: View {
                                         // Show options (future implementation)
                                     }) {
                                         Image(systemName: "ellipsis")
-                                            .font(.title3)
-                                            .foregroundColor(.gray)
+                                            .font(.system(size: 20))
+                                            .foregroundColor(.secondary)
                                     }
                                 }
-                                .padding()
+                                .padding(.vertical, 8)
+                                .padding(.horizontal, 16)
                                 
                                 Divider()
+                                    .padding(.leading, 16)
                             }
                         } else {
                             VStack(spacing: 20) {
@@ -201,9 +207,42 @@ struct TagDetailView: View {
                         }
                     }
                 }
+                
+                Spacer(minLength: 60) // Add space for tab bar and floating button
             }
             .background(universalBackgroundColor)
             .navigationBarHidden(true)
+            
+            // Tab bar at bottom
+            VStack {
+                Spacer()
+                HStack(spacing: 0) {
+                    ForEach(0..<5) { index in
+                        VStack {
+                            Image(systemName: tabBarIcons[index])
+                                .font(.system(size: 24))
+                                .foregroundColor(.gray)
+                            
+                            if index == 3 {
+                                Rectangle()
+                                    .frame(width: 30, height: 2)
+                                    .cornerRadius(1)
+                                    .foregroundColor(universalAccentColor)
+                                    .padding(.top, 4)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(.vertical, 8)
+                .background(universalBackgroundColor)
+                .overlay(
+                    Rectangle()
+                        .frame(height: 0.5)
+                        .foregroundColor(Color.gray.opacity(0.3)),
+                    alignment: .top
+                )
+            }
             
             // Floating add button
             VStack {
@@ -211,7 +250,7 @@ struct TagDetailView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-						showAddFriendsToTagView = true
+                        showAddFriendsToTagView = true
                     }) {
                         ZStack {
                             Circle()
@@ -225,6 +264,7 @@ struct TagDetailView: View {
                         }
                     }
                     .padding(24)
+                    .padding(.bottom, 60) // Adjust to position above tab bar
                 }
             }
             
@@ -261,7 +301,7 @@ struct TagDetailView: View {
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
-		.sheet(isPresented: $showAddFriendsToTagView) {
+        .sheet(isPresented: $showAddFriendsToTagView) {
             // Using AddFriendsToTagView for adding multiple friends to this tag
             NavigationView {
                 AddFriendsToTagView(friendTagId: tag.id)
@@ -290,6 +330,11 @@ struct TagDetailView: View {
         }
         // Add other sheets for rename tag and change tag color here when implemented
     }
+    
+    // Tab bar icons
+    private let tabBarIcons = [
+        "house", "paperplane", "plus.square", "list.bullet", "person.circle"
+    ]
 }
 
 @available(iOS 17, *)
