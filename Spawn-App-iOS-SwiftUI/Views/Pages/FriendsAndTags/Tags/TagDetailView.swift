@@ -10,7 +10,7 @@ import SwiftUI
 struct TagDetailView: View {
     @Environment(\.dismiss) private var dismiss
     // Access AppCache as a singleton
-    @State private var showAddFriendToTagView: Bool = false
+    @State private var showAddFriendsToTagView: Bool = false
     @State private var showActionSheet: Bool = false
     @State private var showManageTaggedPeopleView: Bool = false
     @State private var showRenameTagView: Bool = false
@@ -211,7 +211,7 @@ struct TagDetailView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-                        showAddFriendToTagView = true
+						showAddFriendsToTagView = true
                     }) {
                         ZStack {
                             Circle()
@@ -261,7 +261,7 @@ struct TagDetailView: View {
                 .frame(maxHeight: .infinity, alignment: .bottom)
             }
         }
-        .sheet(isPresented: $showAddFriendToTagView) {
+        .sheet(isPresented: showAddFriendsToTagView) {
             // Using AddFriendsToTagView for adding multiple friends to this tag
             NavigationView {
                 AddFriendsToTagView(friendTagId: tag.id)

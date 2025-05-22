@@ -1,5 +1,5 @@
 //
-//  AddFriendToTagViewModel.swift
+//  AddFriendToTagsViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-02-06.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-class AddFriendToTagViewModel: ObservableObject {
+class AddFriendToTagsViewModel: ObservableObject {
 	@Published var tags: [FriendTagDTO] = []
 	@Published var errorMessage: String? = nil
 	@Published var isLoading: Bool = false

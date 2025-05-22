@@ -1,5 +1,5 @@
 //
-//  AddFriendToTagView.swift
+//  AddFriendToTagsView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-07-13.
@@ -7,9 +7,9 @@
 
 import SwiftUI
 
-struct AddFriendToTagView: View {
+struct AddFriendToTagsView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = AddFriendToTagViewModel(
+    @StateObject private var viewModel = AddFriendToTagsViewModel(
         userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
         apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService()
     )
@@ -164,8 +164,8 @@ extension FriendTagDTO {
     }
 }
 
-struct AddFriendToTagView_Previews: PreviewProvider {
+struct AddFriendToTagsView_Previews: PreviewProvider {
     static var previews: some View {
-        AddFriendToTagView(friendId: UUID())
+        AddFriendToTagsView(friendId: UUID())
     }
 } 

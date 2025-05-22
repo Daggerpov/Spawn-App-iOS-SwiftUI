@@ -360,7 +360,7 @@ class MockAPIService: IAPIService {
 			return BaseUserDTO.mockUsers.prefix(4).map({ $0 }) as! T
 		}
 
-		/// AddFriendToTagViewModel.swift:
+		/// AddFriendToTagsViewModel.swift:
 		if url.absoluteString.contains("friendTags/friendsNotAddedToTag/") {
 			// Extract the tag ID from the URL
 			return BaseUserDTO.mockUsers as! T
@@ -460,7 +460,7 @@ class MockAPIService: IAPIService {
 			}
 		}
 
-		/// AddFriendToTagViewModel.swift:
+		/// AddFriendsToTagViewModel.swift:
 
 		// addSelectedFriendsToTag():
 		if url.absoluteString == APIService.baseURL
