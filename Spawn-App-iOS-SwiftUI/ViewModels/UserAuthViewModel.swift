@@ -53,7 +53,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var defaultPfpUrlString: String? = nil
 
 	private init(apiService: IAPIService) {
-        self.spawnUser = BaseUserDTO.danielAgapov
+        self.spawnUser = nil
 		self.apiService = apiService
 
 		super.init()  // Call super.init() before using `self`
@@ -664,6 +664,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
             }
         } catch {
             print("Error performing quick-login. Re-login is required")
+            await MainActor.run {
+                self.isLoggedIn = false
+                self.spawnUser = nil
+                self.shouldNavigateToFeedView = false
+                self.shouldNavigateToUserInfoInputView = false
+            }
         }
         await MainActor.run {
             self.hasCheckedSpawnUserExistence = true

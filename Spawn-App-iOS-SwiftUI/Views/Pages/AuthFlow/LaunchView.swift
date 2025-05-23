@@ -13,6 +13,7 @@ import UserNotifications // Add this import for notifications
 
 struct LaunchView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
+    @Environment(\.dismiss) private var dismiss
 
 	var body: some View {
 		NavigationStack {
@@ -49,24 +50,22 @@ struct LaunchView: View {
 			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
 			.navigationDestination(
-				isPresented: $userAuth.hasCheckedSpawnUserExistence
+				isPresented: $userAuth.shouldNavigateToUserInfoInputView
 			) {
-				getAuthNavDestinationView()
+				UserInfoInputView()
 					.navigationBarTitle("")
 					.navigationBarHidden(true)
 			}
-		}
-	}
-
-	private func getAuthNavDestinationView() -> some View {
-		Group {
-			if userAuth.shouldNavigateToUserInfoInputView {
-				UserInfoInputView()
-			} else if let loggedInSpawnUser = userAuth.spawnUser {
-				ContentView(user: loggedInSpawnUser)
-			} else {
-				// Fallback: Stay on LaunchView
-				EmptyView()
+			.navigationDestination(
+				isPresented: $userAuth.shouldNavigateToFeedView
+			) {
+				if let loggedInSpawnUser = userAuth.spawnUser {
+					ContentView(user: loggedInSpawnUser)
+						.navigationBarTitle("")
+						.navigationBarHidden(true)
+				} else {
+					EmptyView() // This should never happen
+				}
 			}
 		}
 	}
