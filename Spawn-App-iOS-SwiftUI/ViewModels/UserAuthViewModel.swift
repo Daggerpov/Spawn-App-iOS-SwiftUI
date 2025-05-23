@@ -62,6 +62,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
         Task {
             print("Attempting a quick login with stored tokens")
             await quickSignIn()
+            self.hasCheckedSpawnUserExistence = true
         }
 	}
 
@@ -72,7 +73,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.externalUserId = nil
 		self.idToken = nil
 		self.isLoggedIn = false
-		self.hasCheckedSpawnUserExistence = false
 		self.spawnUser = nil
 
 		self.name = nil
@@ -670,9 +670,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
             }
-        }
-        await MainActor.run {
-            self.hasCheckedSpawnUserExistence = true
         }
     }
 }
