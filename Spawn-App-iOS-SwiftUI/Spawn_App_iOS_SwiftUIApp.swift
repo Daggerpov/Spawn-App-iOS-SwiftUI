@@ -48,30 +48,38 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 
 	var body: some Scene {
 		WindowGroup {
-			if userAuth.isLoggedIn && userAuth.spawnUser != nil
-			{
-                ContentView(user: userAuth.spawnUser!)
-					.onAppear {
-						// Connect the app delegate to the app
-						appDelegate.app = self
-						
-						// Initialize and validate the cache
-						Task {
-							await appCache.validateCache()
-						}
-					}
-                    .onestFontTheme()
-			} else {
-				LaunchView()
-					.onOpenURL { url in
-						GIDSignIn.sharedInstance.handle(url)
-					}
-					.onAppear {
-						// Connect the app delegate to the app
-						appDelegate.app = self
-					}
-                    .onestFontTheme()
-			}
+			Group {
+                if !userAuth.hasCheckedSpawnUserExistence {
+                    // Show loading screen while auth checks are in progress
+                    LoadingView()
+                        .onAppear {
+                            // Connect the app delegate to the app
+                            appDelegate.app = self
+                        }
+                } else if userAuth.isLoggedIn && userAuth.spawnUser != nil {
+                    ContentView(user: userAuth.spawnUser!)
+                        .onAppear {
+                            // Connect the app delegate to the app
+                            appDelegate.app = self
+                            
+                            // Initialize and validate the cache
+                            Task {
+                                await appCache.validateCache()
+                            }
+                        }
+                        .onestFontTheme()
+                } else {
+                    LaunchView()
+                        .onOpenURL { url in
+                            GIDSignIn.sharedInstance.handle(url)
+                        }
+                        .onAppear {
+                            // Connect the app delegate to the app
+                            appDelegate.app = self
+                        }
+                        .onestFontTheme()
+                }
+            }
 		}
 	}
 }
