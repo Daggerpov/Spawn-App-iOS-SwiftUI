@@ -62,8 +62,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
         Task {
             print("Attempting a quick login with stored tokens")
             await quickSignIn()
-            self.hasCheckedSpawnUserExistence = true
         }
+        self.hasCheckedSpawnUserExistence = true
 	}
 
 	func resetState() {
