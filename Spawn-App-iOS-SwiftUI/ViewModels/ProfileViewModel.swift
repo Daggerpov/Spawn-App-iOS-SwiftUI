@@ -18,6 +18,14 @@ class ProfileViewModel: ObservableObject {
     @Published var selectedEvent: FullFeedEventDTO?
     @Published var isLoadingEvent: Bool = false
     
+    // New properties for friendship status
+    @Published var friendshipStatus: FriendshipStatus = .unknown
+    @Published var isLoadingFriendshipStatus: Bool = false
+    @Published var pendingFriendRequestId: UUID?
+    @Published var userEvents: [FullFeedEventDTO] = []
+    @Published var profileEvents: [ProfileEventDTO] = []
+    @Published var isLoadingUserEvents: Bool = false
+    
     private let apiService: IAPIService
     
     init(
@@ -366,4 +374,295 @@ class ProfileViewModel: ObservableObject {
             return nil
         }
     }
+    
+    // MARK: - Friendship Management
+    
+    func checkFriendshipStatus(currentUserId: UUID, profileUserId: UUID) async {
+        // Don't check if it's the current user's profile
+        if currentUserId == profileUserId {
+            await MainActor.run {
+                self.friendshipStatus = .themself
+            }
+            return
+        }
+        
+        await MainActor.run { self.isLoadingFriendshipStatus = true }
+        
+        do {
+            // First check if users are friends
+            let url = URL(string: APIService.baseURL + "users/\(currentUserId)/is-friend/\(profileUserId)")!
+			let isFriend: Bool = try await self.apiService.fetchData(
+				from: url,
+				parameters: nil
+			)
+
+            if isFriend {
+				print("user is friends with this user whose profile they've clicked on.")
+                await MainActor.run {
+                    self.friendshipStatus = .friends
+                    self.isLoadingFriendshipStatus = false
+                }
+                return
+            }
+            
+            // If not friends, check for pending friend requests
+            let pendingRequestUrl = URL(string: APIService.baseURL + "friend-requests/pending-between/\(currentUserId)/\(profileUserId)")!
+            let pendingRequest: PendingFriendRequestDTO? = try await self.apiService.fetchData(from: pendingRequestUrl, parameters: nil)
+            
+            await MainActor.run {
+                if let pendingRequest = pendingRequest {
+                    if pendingRequest.senderId == currentUserId {
+                        self.friendshipStatus = .requestSent
+                    } else {
+                        self.friendshipStatus = .requestReceived
+                        self.pendingFriendRequestId = pendingRequest.id
+                    }
+                } else {
+                    self.friendshipStatus = .none
+                }
+                self.isLoadingFriendshipStatus = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to check friendship status: \(error.localizedDescription)"
+                self.friendshipStatus = .unknown
+                self.isLoadingFriendshipStatus = false
+            }
+        }
+    }
+    
+    func sendFriendRequest(fromUserId: UUID, toUserId: UUID) async {
+        do {
+            let url = URL(string: APIService.baseURL + "friend-requests")!
+            let requestDTO = CreateFriendRequestDTO(
+                id: UUID(),
+                senderUserId: fromUserId,
+                receiverUserId: toUserId
+            )
+            
+            guard let _: CreateFriendRequestDTO = try await self.apiService.sendData(
+                requestDTO,
+                to: url,
+                parameters: nil
+            ) else {return}
+            
+            await MainActor.run {
+                self.friendshipStatus = .requestSent
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to send friend request: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func acceptFriendRequest(requestId: UUID) async {
+        do {
+            let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)")!
+            let _: EmptyResponse = try await self.apiService.updateData(
+                EmptyRequestBody(),
+                to: url,
+                parameters: ["friendRequestAction": "accept"]
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .friends
+                self.pendingFriendRequestId = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to accept friend request: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func declineFriendRequest(requestId: UUID) async {
+        do {
+            let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)")!
+            let _: EmptyResponse = try await self.apiService.updateData(
+                EmptyRequestBody(),
+                to: url,
+                parameters: ["friendRequestAction": "reject"]
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .none
+                self.pendingFriendRequestId = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to decline friend request: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    // MARK: - User Events
+    
+    func fetchUserUpcomingEvents(userId: UUID) async {
+        await MainActor.run { self.isLoadingUserEvents = true }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "events/user/\(userId)/upcoming")!
+            let events: [FullFeedEventDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                self.userEvents = events
+                self.isLoadingUserEvents = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load user events: \(error.localizedDescription)"
+                self.userEvents = []
+                self.isLoadingUserEvents = false
+            }
+        }
+    }
+    
+    // New method to fetch profile events (both upcoming and past)
+    func fetchProfileEvents(profileUserId: UUID) async {
+        guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+            await MainActor.run {
+                self.errorMessage = "User ID not available"
+            }
+            return
+        }
+        
+        await MainActor.run { self.isLoadingUserEvents = true }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "events/profile/\(profileUserId)")!
+            let parameters = ["requestingUserId": requestingUserId.uuidString]
+            
+            let events: [ProfileEventDTO] = try await self.apiService.fetchData(
+                from: url,
+                parameters: parameters
+            )
+            
+            await MainActor.run {
+                self.profileEvents = events
+                self.isLoadingUserEvents = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load profile events: \(error.localizedDescription)"
+                self.profileEvents = []
+                self.isLoadingUserEvents = false
+            }
+        }
+    }
+    
+    // MARK: - Friend Management
+    
+    func removeFriend(currentUserId: UUID, profileUserId: UUID) async {
+        do {
+            let url = URL(string: APIService.baseURL + "blocked-users/remove-friendship")!
+            let parameters = [
+                "userAId": currentUserId.uuidString,
+                "userBId": profileUserId.uuidString
+            ]
+            
+            // Discard the return value since we don't need it
+            _ = try await self.apiService.sendData(
+                EmptyRequestBody(),
+                to: url,
+                parameters: parameters
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .none
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to remove friend: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func reportUser(reporterId: UUID, reportedId: UUID, reason: String) async {
+        do {
+            let url = URL(string: APIService.baseURL + "user-reports")!
+            let reportDTO = UserReportCreationDTO(
+                id: UUID(),
+                reporterUserId: reporterId,
+                reportedUserId: reportedId,
+                reason: reason
+            )
+            
+            // Discard the return value
+            _ = try await self.apiService.sendData(
+                reportDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            await MainActor.run {
+                self.errorMessage = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to report user: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
+        do {
+            let url = URL(string: APIService.baseURL + "blocked-users/block")!
+            let blockDTO = BlockedUserCreationDTO(
+                id: UUID(),
+                blockerId: blockerId,
+                blockedId: blockedId,
+                reason: reason
+            )
+            
+            // Discard the return value
+            _ = try await self.apiService.sendData(
+                blockDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .blocked
+                self.errorMessage = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to block user: \(error.localizedDescription)"
+            }
+        }
+    }
 }
+
+// Enum to represent friendship status
+enum FriendshipStatus {
+    case unknown    // Status not yet determined
+    case none       // Not friends
+    case friends    // Already friends
+    case requestSent // Current user sent request to profile user
+    case requestReceived // Profile user sent request to current user
+    case themself       // It's the current user's own profile
+    case blocked        // User is blocked
+}
+
+struct PendingFriendRequestDTO: Codable, Identifiable {
+    let id: UUID
+    let senderId: UUID
+    let receiverId: UUID
+}
+
+// DTOs for user reporting and blocking
+struct UserReportCreationDTO: Codable {
+    let id: UUID
+    let reporterUserId: UUID
+    let reportedUserId: UUID
+    let reason: String
+}
+
+struct BlockedUserCreationDTO: Codable {
+    let id: UUID
+    let blockerId: UUID
+    let blockedId: UUID
+    let reason: String
+}
+

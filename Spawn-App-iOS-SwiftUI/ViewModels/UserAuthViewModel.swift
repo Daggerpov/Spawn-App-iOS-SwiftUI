@@ -367,7 +367,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		do {
 			// Use the new createUser method
-			let fetchedUser: BaseUserDTO = try await (apiService as! APIService)
+			let fetchedUser: BaseUserDTO = try await apiService
 				.createUser(
 					userDTO: userDTO,
 					profilePicture: profilePicture,

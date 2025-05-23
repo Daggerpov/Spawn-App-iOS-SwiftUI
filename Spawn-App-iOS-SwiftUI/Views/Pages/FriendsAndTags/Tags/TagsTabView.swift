@@ -10,6 +10,12 @@ import SwiftUI
 struct TagsTabView: View {
 	@StateObject var viewModel: TagsViewModel
 	@State private var creationStatus: CreationStatus = .notCreating
+    @Environment(\.dismiss) private var dismiss
+    
+    // Computed property to filter out the "everyone" tag
+    private var displayTags: [FullFriendTagDTO] {
+        return viewModel.tags.filter { !$0.isEveryone }
+    }
 
 	var addFriendToTagButtonPressedCallback: (UUID) -> Void
 
@@ -31,20 +37,48 @@ struct TagsTabView: View {
 	}
 
 	var body: some View {
-		VStack {
-			VStack(alignment: .leading, spacing: 15) {
-				Text("TAGS")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
-
-				AddTagButtonView(
-					creationStatus: $creationStatus, color: universalAccentColor
-				)
-				.environmentObject(viewModel)
-			}
-			Spacer()
-			Spacer()
-			tagsSection
+		VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                }
+                
+                Spacer()
+                
+                Text("Tags")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                // Empty view to balance the back button
+                Image(systemName: "chevron.left")
+                    .font(.title3)
+                    .foregroundColor(.clear)
+            }
+            .foregroundColor(universalAccentColor)
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            
+            if displayTags.isEmpty && viewModel.isLoading == false {
+                emptyStateView
+            } else {
+                // Tags content
+                VStack(alignment: .leading, spacing: 15) {
+                    AddTagButtonView(
+                        creationStatus: $creationStatus, color: universalAccentColor
+                    )
+                    .environmentObject(viewModel)
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+                
+                tagsSection
+            }
 		}
 		.onAppear {
 			Task {
@@ -76,41 +110,194 @@ struct TagsTabView: View {
 				}
 			}
 		}
-		.padding()
+		.background(universalBackgroundColor)
+        .navigationBarHidden(true)
 	}
+    
+
 }
 
 extension TagsTabView {
+    var emptyStateView: some View {
+        VStack(spacing: 25) {
+            Spacer()
+            
+            // Circle for animation placeholder
+            Circle()
+                .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [5]))
+                .foregroundColor(.gray.opacity(0.5))
+                .frame(width: 200, height: 200)
+                .overlay(
+                    Text("[insert rive\nanimation here]")
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                )
+            
+            // No Tags text
+            Text("No Tags Yet!")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+            
+            // Description text
+            Text("Friend tags are the best way to streamline the flow for inviting groups of friends to hang out.")
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+            
+            // Use the same AddTagButtonView as in main view
+            AddTagButtonView(
+                creationStatus: $creationStatus, color: universalAccentColor
+            )
+            .environmentObject(viewModel)
+            
+            Spacer()
+            Spacer()
+        }
+        .padding()
+    }
+
 	var tagsSection: some View {
-		Group {
-			ScrollView {
-				VStack(spacing: 15) {
-					ForEach(viewModel.tags) { friendTag in
-						TagRow(
-							friendTag: friendTag,
-							addFriendToTagButtonPressedCallback:
-								addFriendToTagButtonPressedCallback
-						)
-						.background(
-							RoundedRectangle(cornerRadius: 12)
-								.fill(
-									Color(hex: friendTag.colorHexCode)
-										.opacity(0.5)
-								)
-								.cornerRadius(
-									universalRectangleCornerRadius
-								)
-						)
-						.environmentObject(viewModel)
-					}
-				}
-			}
+		ScrollView {
+            VStack(spacing: 15) {
+                ForEach(displayTags) { friendTag in
+                    NavigationLink(destination: TagDetailView(viewModel: viewModel, tagId: friendTag.id)) {
+                        ZStack {
+                            // Rounded rectangle with tag color
+                            RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+                                .fill(Color(hex: friendTag.colorHexCode))
+                                .frame(height: 120)
+                            
+                            // Content overlay
+                            VStack(alignment: .leading) {
+                                HStack {
+                                    // Tag name
+                                    Text(friendTag.displayName)
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 32, weight: .bold))
+                                        .padding(.leading)
+                                    
+                                    Spacer()
+                                }
+                                .padding(.top, 15)
+                                
+                                Spacer()
+                                
+                                // Tag member count and preview
+                                HStack {
+                                    // Number of people text
+                                    Text("\(friendTag.friends?.count ?? 0) people")
+                                        .foregroundColor(.white)
+                                        .font(.system(size: 16, weight: .medium))
+                                        .padding(.leading)
+                                        .opacity(0.8)
+                                    
+                                    Spacer()
+                                    
+                                    // Friend avatars preview
+                                    TagFriendsPreview(friendTag: friendTag, viewModel: viewModel)
+                                        .padding(.trailing)
+                                }
+                                .padding(.bottom, 15)
+                            }
+                        }
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal)
+                }
+            }
+            .padding(.vertical, 8)
 		}
 	}
+}
+
+// MARK: - Friend Preview Component
+
+struct TagFriendsPreview: View {
+    var friendTag: FullFriendTagDTO
+    @ObservedObject var viewModel: TagsViewModel
+    
+    // Computed properties to use throughout the view
+    private var displayedFriends: [BaseUserDTO] {
+        return (friendTag.friends ?? []).prefix(2).map { $0 }
+    }
+    
+    private var remainingCount: Int {
+        return (friendTag.friends?.count ?? 0) - displayedFriends.count
+    }
+
+    var body: some View {
+        HStack(spacing: -5) {
+            // Show only up to 2 friend avatars
+            ForEach(Array(displayedFriends.enumerated()), id: \.element.id) { index, friend in
+                ProfileImageView(userId: friend.id, urlString: friend.profilePicture, viewModel: viewModel)
+            }
+            
+            // Show "+X" indicator if there are more than 2 friends
+            if remainingCount > 0 {
+                ZStack {
+                    Circle()
+                        .fill(.white)
+                        .frame(width: 30, height: 30)
+                    
+                    Text("+\(remainingCount)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color(hex: friendTag.colorHexCode))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Profile Image Component with Caching
+
+struct ProfileImageView: View {
+    var userId: UUID
+    var urlString: String?
+    @ObservedObject var viewModel: TagsViewModel
+    
+    var body: some View {
+        ZStack {
+            if let urlString = urlString {
+                if MockAPIService.isMocking {
+                    Image(urlString)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 30, height: 30)
+                        .clipShape(Circle())
+                        .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                } else {
+                    // Get URL from cache if available, otherwise use the provided URL
+                    let finalURLString = viewModel.getProfilePictureURL(for: userId) ?? urlString
+                    
+                    AsyncImage(url: URL(string: finalURLString)) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 30, height: 30)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    } placeholder: {
+                        Circle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 30, height: 30)
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    }
+                    .id("profile-\(finalURLString)")
+                }
+            } else {
+                // Fallback for no profile picture
+                Image(systemName: "person.fill")
+                    .foregroundColor(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Circle().fill(Color.gray.opacity(0.5)))
+                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+            }
+        }
+    }
 }
 
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	TagsTabView(userId: UUID(), addFriendToTagButtonPressedCallback: {_ in }).environmentObject(appCache)
+	TagsTabView(userId: UUID(), addFriendToTagButtonPressedCallback: {_ in })
 }

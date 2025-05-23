@@ -13,21 +13,31 @@ class TagsViewModel: ObservableObject {
 	@Published var deletionMessage: String = ""
 	@Published var friendRemovalMessage: String = ""
 	@Published var isLoading: Bool = false
+	@Published var profileCache: [UUID: String] = [:] // Cache profile picture URLs by user ID
 
 	var apiService: IAPIService
 	var userId: UUID
+	var appCache: AppCache
 
 	var newTag: FriendTagCreationDTO
 
 	init(apiService: IAPIService, userId: UUID) {
 		self.apiService = apiService
 		self.userId = userId
+		self.appCache = AppCache.shared
 		self.newTag = FriendTagCreationDTO(
 			id: UUID(),
 			displayName: "",
 			colorHexCode: "",
 			ownerUserId: userId
 		)
+        
+        // Initialize profile cache from AppCache
+        for (userId, profile) in AppCache.shared.otherProfiles {
+            if let profilePic = profile.profilePicture {
+                profileCache[userId] = profilePic
+            }
+        }
 	}
 
 	// Optimized method to fetch all required data in parallel
@@ -61,6 +71,34 @@ class TagsViewModel: ObservableObject {
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.tags = fetchedTags
+					
+					// Cache tag friends in AppCache for faster loading
+					for tag in fetchedTags {
+						if let friends = tag.friends {
+							// Use the existing tagFriends dictionary in AppCache
+							AppCache.shared.updateTagFriends(tag.id, friends)
+							
+							// Also cache individual user profiles
+							for friend in friends {
+								if let profilePic = friend.profilePicture {
+                                    // Update our local view model cache
+                                    self.profileCache[friend.id] = profilePic
+                                    
+                                    // Update the shared AppCache
+                                    if AppCache.shared.otherProfiles[friend.id] == nil {
+                                        let profile = BaseUserDTO(
+                                            id: friend.id,
+                                            username: friend.username,
+                                            profilePicture: profilePic,
+                                            name: friend.name,
+                                            email: ""
+                                        )
+                                        AppCache.shared.updateOtherProfile(friend.id, profile)
+                                    }
+								}
+							}
+						}
+					}
 				}
 			} catch {
 				await MainActor.run {
@@ -69,6 +107,24 @@ class TagsViewModel: ObservableObject {
 			}
 		}
 	}
+    
+    // Get profile picture URL from cache
+    func getProfilePictureURL(for userId: UUID) -> String? {
+        // First check our local cache
+        if let cachedURL = profileCache[userId] {
+            return cachedURL
+        }
+        
+        // Then check AppCache
+        if let cachedProfile = AppCache.shared.otherProfiles[userId], 
+           let profilePicture = cachedProfile.profilePicture {
+            // Update our local cache
+            profileCache[userId] = profilePicture
+            return profilePicture
+        }
+        
+        return nil
+    }
 
 	func upsertTag(
 		id: UUID? = nil, displayName: String, colorHexCode: String,
@@ -135,6 +191,9 @@ class TagsViewModel: ObservableObject {
                     )
 				await MainActor.run {
 					self.tags.removeAll { $0.id == id }  // Remove the tag from the local list
+					
+					// Also remove from AppCache
+					AppCache.shared.tagFriends.removeValue(forKey: id)
 				}
 				tagDeletedSuccessfully = true
 			} catch {
@@ -166,6 +225,14 @@ class TagsViewModel: ObservableObject {
 						"userId": friendUserId.uuidString,
 					])
 				removalSuccessful = true
+				
+				// Update AppCache to reflect the removal
+				await MainActor.run {
+					if var tagFriends = AppCache.shared.tagFriends[friendTagId] {
+						tagFriends.removeAll { $0.id == friendUserId }
+						AppCache.shared.updateTagFriends(friendTagId, tagFriends)
+					}
+				}
 			} catch {
 				await MainActor.run {
 					friendRemovalMessage =

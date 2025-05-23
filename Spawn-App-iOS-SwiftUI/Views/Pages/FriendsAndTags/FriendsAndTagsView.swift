@@ -39,26 +39,6 @@ struct FriendsAndTagsView: View {
                 .navigationBarHidden(true)
             }
         }
-        .sheet(isPresented: $showAddFriendToTagButtonPressedView) {
-            if let friendTagIdForSheet = selectedFriendTagId {
-                AddFriendToTagView(
-                    userId: user.id,
-                    friendTagId: friendTagIdForSheet,
-                    closeCallback: closeSheet
-                )
-                .presentationDragIndicator(.visible)
-                .presentationDetents([.height(400)])
-            }
-        }
-    }
-
-    func closeSheet() {
-        showAddFriendToTagButtonPressedView = false
-
-        // Re-fetch tags after closing the sheet
-        Task {
-            await tagsViewModel?.fetchTags()
-        }
     }
 }
 
@@ -104,11 +84,15 @@ struct BaseFriendNavButtonView: View {
 
 extension FriendsAndTagsView {
     var FriendRequestNavButtonView: some View {
-        BaseFriendNavButtonView(
-            iconImageName: "friend_request_icon",
-            topText: "Friend Requests",
-            bottomText: "Accept or Deny"
-        )
+        NavigationLink(destination: {
+            FriendRequestsView(userId: user.id)
+        }) {
+            BaseFriendNavButtonView(
+                iconImageName: "friend_request_icon",
+                topText: "Friend Requests",
+                bottomText: "Accept or Deny"
+            )
+        }
     }
 
     var FriendTagNavButtonView: some View {
