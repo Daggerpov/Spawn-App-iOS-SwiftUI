@@ -48,9 +48,9 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 
 	var body: some Scene {
 		WindowGroup {
-			if userAuth.isLoggedIn, let unwrappedSpawnUser = userAuth.spawnUser
+			if userAuth.isLoggedIn && userAuth.spawnUser != nil
 			{
-                ContentView(user: unwrappedSpawnUser)
+                ContentView(user: userAuth.spawnUser!)
 					.onAppear {
 						// Connect the app delegate to the app
 						appDelegate.app = self
