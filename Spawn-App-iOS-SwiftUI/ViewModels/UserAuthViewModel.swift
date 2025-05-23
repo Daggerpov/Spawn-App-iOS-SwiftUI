@@ -664,6 +664,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
             }
         } catch {
             print("Error performing quick-login. Re-login is required")
+            await MainActor.run {
+                self.isLoggedIn = false
+                self.spawnUser = nil
+                self.shouldNavigateToFeedView = false
+                self.shouldNavigateToUserInfoInputView = false
+            }
         }
         await MainActor.run {
             self.hasCheckedSpawnUserExistence = true

@@ -57,6 +57,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
                             appDelegate.app = self
                         }
                 } else if userAuth.isLoggedIn && userAuth.spawnUser != nil {
+                    // User is logged in and user data exists - go to main content
                     ContentView(user: userAuth.spawnUser!)
                         .onAppear {
                             // Connect the app delegate to the app
@@ -69,6 +70,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
                         }
                         .onestFontTheme()
                 } else {
+                    // User is not logged in or has no user data - show launch screen with login options
                     LaunchView()
                         .onOpenURL { url in
                             GIDSignIn.sharedInstance.handle(url)
