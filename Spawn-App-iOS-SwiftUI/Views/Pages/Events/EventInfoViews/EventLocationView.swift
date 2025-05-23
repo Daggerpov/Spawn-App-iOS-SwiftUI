@@ -25,7 +25,7 @@ struct EventLocationView: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 3)
-        .background(Color.white.opacity(0.18))
+        .background(eventCardInfoCapsuleColor)
         .cornerRadius(12)
     }
 }

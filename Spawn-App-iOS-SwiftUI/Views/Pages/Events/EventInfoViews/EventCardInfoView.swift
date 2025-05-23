@@ -50,7 +50,7 @@ struct EventCardInfoView: View {
             }
         }
         .padding(8)
-        .background(Color.white.opacity(0.13))
+        .background(eventCardInfoCapsuleColor)
         .cornerRadius(10)
     }
 }

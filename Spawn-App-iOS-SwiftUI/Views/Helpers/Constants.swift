@@ -38,3 +38,10 @@ let figmaSoftBlue: Color = Color(hex: figmaSoftBlueHex)
 
 let figmaBlack300Hex: String = "#8E8484"
 let figmaBlack300: Color = Color(hex: figmaBlack300Hex)
+
+let figmaGreen700Hex: String = "#30D996"
+let figmaGreen700: Color = Color(hex: figmaGreen700Hex)
+
+let eventCardInfoCapsuleOpacity: Double = 0.15
+let eventCardInfoCapsuleColor: Color = Color.black.opacity(eventCardInfoCapsuleOpacity)
+
