@@ -10,7 +10,6 @@ import SwiftUI
 struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
 	let user: BaseUserDTO
-    @EnvironmentObject private var appCache: AppCache
 
 	@State private var showingFriendRequestPopup: Bool = false
 	@State var showingChooseTagsPopup: Bool = false
@@ -39,11 +38,13 @@ struct FriendsTabView: View {
 		ZStack {
 			ScrollView {
 				VStack(spacing: 16) {
-					// Search bar
-					SearchView(
-						searchPlaceholderText: "Search for friends",
-						viewModel: searchViewModel)
-                        .padding(.horizontal, 16)
+					// Search bar button that navigates to search view
+					NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .search)) {
+						SearchBarButtonView(
+							placeholder: "Search for friends"
+						)
+						.padding(.horizontal, 16)
+					}
                     
                     // Friends section
 					friendsSection
@@ -62,25 +63,23 @@ struct FriendsTabView: View {
             .refreshable {
                 // Pull to refresh functionality
                 Task {
-                    await appCache.refreshFriends()
+                    await AppCache.shared.refreshFriends()
                     await viewModel.fetchAllData()
                 }
             }
-
-			if showingFriendRequestPopup {
-				friendRequestPopUpView
-			}
-
-			if showingChooseTagsPopup {
-				choosingTagViewPopup
-			}
 		}
 	}
     
-    var showAllButtonView: some View {
-        Button(action: {
-            // TODO DANIEL: fill this in to actually show all
-        }) {
+    var showAllFriendsButton: some View {
+        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .allFriends)) {
+            Text("Show All")
+                .font(.onestRegular(size: 14))
+                .foregroundColor(universalSecondaryColor)
+        }
+    }
+    
+    var showAllRecentlySpawnedButton: some View {
+        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recentlySpawnedWith)) {
             Text("Show All")
                 .font(.onestRegular(size: 14))
                 .foregroundColor(universalSecondaryColor)
@@ -89,24 +88,39 @@ struct FriendsTabView: View {
     
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			if viewModel.filteredRecommendedFriends.count > 0 {
+			if !viewModel.recentlySpawnedWith.isEmpty {
                 HStack{
                     Text("Recently Spawned With")
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
-                    showAllButtonView
+                    showAllRecentlySpawnedButton
                 }
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
-						ForEach(viewModel.filteredRecommendedFriends) { friend in
-							RecommendedFriendView(
-								viewModel: viewModel, friend: friend)
+						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
+							RecentlySpawnedView(viewModel: viewModel, recentUser: recentUser)
 						}
 					}
 				}
-			}
+			} else if !viewModel.recommendedFriends.isEmpty {
+                // Show "Recommended Friends" when "Recently Spawned With" is empty
+                HStack{
+                    Text("Recommended Friends")
+                        .font(.onestMedium(size: 16))
+                        .foregroundColor(universalAccentColor)
+                    Spacer()
+                }
+
+				ScrollView(showsIndicators: false) {
+					VStack(spacing: 16) {
+						ForEach(viewModel.recommendedFriends) { friend in
+							RecommendedFriendView(viewModel: viewModel, friend: friend)
+						}
+					}
+				}
+            }
 		}
 		.padding(.horizontal, 16)
 	}
@@ -119,57 +133,65 @@ struct FriendsTabView: View {
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
-                    showAllButtonView
+                    showAllFriendsButton
                 }
 
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
-						ForEach(viewModel.filteredFriends) { friend in
+						ForEach(viewModel.filteredFriends.prefix(5)) { friend in
                             // Updated Friend Card
                             VStack {
                                 HStack {
                                     // Profile picture
                                     if MockAPIService.isMocking {
                                         if let pfp = friend.profilePicture {
-                                            Image(pfp)
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 50, height: 50)
-                                                .clipShape(Circle())
-                                        }
-                                    } else {
-                                        if let pfpUrl = friend.profilePicture {
-                                            AsyncImage(url: URL(string: pfpUrl)) { image in
-                                                image
+                                            NavigationLink(destination: ProfileView(user: friend)) {
+                                                Image(pfp)
                                                     .resizable()
                                                     .scaledToFill()
                                                     .frame(width: 50, height: 50)
                                                     .clipShape(Circle())
-                                            } placeholder: {
-                                                Circle()
-                                                    .fill(Color.gray)
-                                                    .frame(width: 50, height: 50)
                                             }
-                                        } else {
-                                            Circle()
-                                                .fill(.white)
-                                                .frame(width: 50, height: 50)
+                                        }
+                                    } else {
+                                        NavigationLink(destination: ProfileView(user: friend)) {
+                                            if let pfpUrl = friend.profilePicture {
+                                                AsyncImage(url: URL(string: pfpUrl)) {
+                                                    image in
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: 50, height: 50)
+                                                        .clipShape(Circle())
+                                                        .transition(.opacity.animation(.easeInOut))
+                                                } placeholder: {
+                                                    ProgressView()
+                                                        .frame(width: 50, height: 50)
+                                                }
+                                            } else {
+                                                Image(systemName: "person.circle.fill")
+                                                    .resizable()
+                                                    .scaledToFit()
+                                                    .frame(width: 50, height: 50)
+                                                    .foregroundColor(Color.gray.opacity(0.5))
+                                            }
                                         }
                                     }
-
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        // Display full name
-                                        Text(FormatterService.shared.formatName(user: friend))
-                                            .font(.onestRegular(size: 14))
-                                        Text("@\(friend.username)")
-                                            .font(.onestBold(size: 16))
+                                    
+                                    // Friend info
+                                    NavigationLink(destination: ProfileView(user: friend)) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(friend.name ?? friend.username)
+                                                .font(.onestMedium(size: 16))
+                                                .foregroundColor(universalAccentColor)
+                                                .lineLimit(1)
+                                        }
+                                        .padding(.horizontal, 8)
                                     }
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(.leading, 8)
-
+                                    .buttonStyle(PlainButtonStyle())
+                                    
                                     Spacer()
                                     
-                                    // More options button
                                     Button(action: {
                                         // Handle more options
                                     }) {
@@ -197,111 +219,7 @@ struct FriendsTabView: View {
 		.padding(.horizontal, 16)
 	}
 
-	func closeFriendPopUp() {
-		friendRequestOffset = 1000
-		showingFriendRequestPopup = false
-	}
-
-	func closeChoosingTagPopUp() {
-		chooseTagsOffset = 1000
-		showingChooseTagsPopup = false
-		Task {
-			await viewModel.fetchAllData()
-		}
-	}
-}
-
-extension FriendsTabView {
-	var choosingTagViewPopup: some View {
-        Group {
-            if let unwrappedFriendInPopUp = friendInPopUp
-            {  // ensuring it isn't null
-                ZStack {
-                    Color(.black)
-                        .opacity(0.5)
-                        .onTapGesture {
-                            closeChoosingTagPopUp()
-							closeFriendPopUp()
-                        }
-                        .ignoresSafeArea(edges: .top)
-
-                    // call your new view here
-                    ChoosingTagPopupView(
-                        friend: unwrappedFriendInPopUp,
-                        userId: user.id,
-                        closeCallback: {
-                            closeChoosingTagPopUp()
-                        }
-                    )
-                    
-                }
-            } else {
-                // do nothing; maybe figure something out later
-                ZStack {
-                    Color(.black)
-                        .opacity(0.5)
-                        .onTapGesture {
-                            closeChoosingTagPopUp()
-                        }
-                        .ignoresSafeArea()
-
-                    // call your new view here
-
-                    Text(
-                        "Sorry, this friend request cannot be viewed at the moment. There is an error."
-                    )
-                    .font(.onestRegular(size: 14))
-                }
-            }
-        }
-	}
-
-	var friendRequestPopUpView: some View {
-		Group {
-			if let unwrappedFriendInPopUp = friendInPopUp,
-				let unwrappedFriendRequestIdInPopup = friendRequestIdInPopup,
-                let unwrappedMutualFriendCountInPopup = mutualFriendCountInPopup
-			{  // ensuring it isn't null
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeFriendPopUp()
-							closeChoosingTagPopUp()
-						}
-						.ignoresSafeArea()
-
-					// call your new view here
-
-					FriendRequestView(
-						user: unwrappedFriendInPopUp,
-						friendRequestId: unwrappedFriendRequestIdInPopup,
-                        mutualFriendCount: unwrappedMutualFriendCountInPopup,
-						closeCallback: closeFriendPopUp,
-						showingChoosingTagView: $showingChooseTagsPopup,
-                        friendsTabViewModel: viewModel
-					)
-				}
-			} else {
-				// do nothing; maybe figure something out later
-				ZStack {
-					Color(.black)
-						.opacity(0.5)
-						.onTapGesture {
-							closeFriendPopUp()
-						}
-						.ignoresSafeArea()
-
-					// call your new view here
-
-					Text(
-						"Sorry, this friend request cannot be viewed at the moment. There is an error."
-					)
-                    .font(.onestRegular(size: 14))
-				}
-			}
-		}
-	}
+	
 }
 
 // Move RecommendedFriendView out of FriendsTabView
@@ -315,39 +233,45 @@ struct RecommendedFriendView: View {
         HStack {
             if MockAPIService.isMocking {
                 if let pfp = friend.profilePicture {
-                    Image(pfp)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 50, height: 50)
-                        .clipShape(Circle())
-                }
-            } else {
-                if let pfpUrl = friend.profilePicture {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image
+                    NavigationLink(destination: ProfileView(user: friend)) {
+                        Image(pfp)
                             .resizable()
                             .scaledToFill()
                             .frame(width: 50, height: 50)
                             .clipShape(Circle())
-                    } placeholder: {
+                    }
+                }
+            } else {
+                NavigationLink(destination: ProfileView(user: friend)) {
+                    if let pfpUrl = friend.profilePicture {
+                        AsyncImage(url: URL(string: pfpUrl)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 50, height: 50)
+                        }
+                    } else {
                         Circle()
-                            .fill(Color.gray)
+                            .fill(.white)
                             .frame(width: 50, height: 50)
                     }
-                } else {
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 50, height: 50)
                 }
             }
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(FormatterService.shared.formatName(user: friend))
-                    .font(.onestBold(size: 14))
-                Text("@\(friend.username)")
-                    .font(.onestRegular(size: 12))
+            NavigationLink(destination: ProfileView(user: friend)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(FormatterService.shared.formatName(user: friend))
+                        .font(.onestBold(size: 14))
+                        .foregroundColor(universalAccentColor)
+                }
+                .padding(.leading, 8)
             }
-            .padding(.leading, 8)
+            .buttonStyle(PlainButtonStyle())
 
             Spacer()
 
@@ -404,8 +328,86 @@ struct FriendTagsForFriendView: View {
     }
 }
 
+// Add RecentlySpawnedView for RecentlySpawnedUserDTO
+struct RecentlySpawnedView: View {
+    @ObservedObject var viewModel: FriendsTabViewModel
+    var recentUser: RecentlySpawnedUserDTO
+    @State private var isAdded: Bool = false
+
+    var body: some View {
+        HStack {
+            if MockAPIService.isMocking {
+                if let pfp = recentUser.user.profilePicture {
+                    NavigationLink(destination: ProfileView(user: recentUser.user)) {
+                        Image(pfp)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 50, height: 50)
+                            .clipShape(Circle())
+                    }
+                }
+            } else {
+                NavigationLink(destination: ProfileView(user: recentUser.user)) {
+                    if let pfpUrl = recentUser.user.profilePicture {
+                        AsyncImage(url: URL(string: pfpUrl)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 50, height: 50)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 50, height: 50)
+                        }
+                    } else {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 50, height: 50)
+                    }
+                }
+            }
+
+            NavigationLink(destination: ProfileView(user: recentUser.user)) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(FormatterService.shared.formatName(user: recentUser.user))
+                        .font(.onestBold(size: 14))
+                        .foregroundColor(universalAccentColor)
+                }
+                .padding(.leading, 8)
+            }
+            .buttonStyle(PlainButtonStyle())
+
+            Spacer()
+
+            Button(action: {
+                isAdded = true
+                Task {
+                    await viewModel.addFriend(friendUserId: recentUser.user.id)
+                }
+            }) {
+                Text("Add +")
+                    .font(.onestMedium(size: 14))
+                    .padding(12)
+                    .background(
+                        Rectangle()
+                            .foregroundColor(.clear)
+                            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+                            .cornerRadius(15)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .inset(by: 0.75)
+                                    .stroke(.gray)
+                            )
+                    )
+                    .foregroundColor(.gray)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+    }
+}
+
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-	FriendsTabView(user: .danielAgapov).environmentObject(appCache)
+	FriendsTabView(user: .danielAgapov)
 }

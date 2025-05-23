@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var viewModel: FeedViewModel
-    @EnvironmentObject private var appCache: AppCache
+    // Using AppCache as a singleton instead of environment object
 
     @Namespace private var animation: Namespace.ID
 
@@ -59,14 +59,14 @@ struct FeedView: View {
             .onAppear {
                 Task {
                     if !MockAPIService.isMocking {
-                        await appCache.validateCache()
+                        await AppCache.shared.validateCache()
                     }
                     await viewModel.fetchAllData()
                 }
             }
             .refreshable {
                 Task {
-                    await appCache.refreshEvents()
+                    await AppCache.shared.refreshEvents()
                     await viewModel.fetchAllData()
                 }
             }
@@ -107,8 +107,7 @@ struct FeedView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-    FeedView(user: .danielAgapov).environmentObject(appCache)
+    FeedView(user: .danielAgapov)
 }
 
 extension FeedView {

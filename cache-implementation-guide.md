@@ -26,10 +26,10 @@ Example of using the AppCache:
 ```swift
 // Access cached friends in a view
 struct FriendsListView: View {
-    @EnvironmentObject var appCache: AppCache
+    // Access AppCache directly through the shared singleton
     
     var body: some View {
-        List(appCache.friends) { friend in
+        List(AppCache.shared.friends) { friend in
             FriendRow(friend: friend)
         }
     }

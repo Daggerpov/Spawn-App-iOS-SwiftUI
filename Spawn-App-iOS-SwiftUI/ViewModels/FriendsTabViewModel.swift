@@ -18,6 +18,9 @@ class FriendsTabViewModel: ObservableObject {
     @Published var isSearching: Bool = false
     @Published var searchQuery: String = ""
     @Published var isLoading: Bool = false
+    
+    @Published var recentlySpawnedWith: [RecentlySpawnedUserDTO] = []
+    @Published var searchResults: [BaseUserDTO] = []
 
 	@Published var friendRequestCreationMessage: String = ""
 	@Published var createdFriendRequest: FetchFriendRequestDTO?
@@ -59,6 +62,7 @@ class FriendsTabViewModel: ObservableObject {
                     self?.isSearching = true
                     Task {
                         await self?.fetchFilteredResults(query: query)
+                        await self?.performSearch(searchText: query)
                     }
                 }
             }
@@ -143,6 +147,7 @@ class FriendsTabViewModel: ObservableObject {
             group.addTask { await self.fetchIncomingFriendRequests() }
             group.addTask { await self.fetchRecommendedFriends() }
             group.addTask { await self.fetchFriends() }
+            group.addTask { await self.fetchRecentlySpawnedWith() }
         }
         
         // Initialize filtered lists with full lists after fetching
@@ -197,7 +202,7 @@ class FriendsTabViewModel: ObservableObject {
 		}
 	}
 
-	internal func fetchFriends() async {
+	func fetchFriends() async {
 		// First check the cache
         if !appCache.friends.isEmpty {
             await MainActor.run {
@@ -264,4 +269,65 @@ class FriendsTabViewModel: ObservableObject {
             }
         }
 	}
+
+    @MainActor
+    func fetchRecentlySpawnedWith() async {
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            // API endpoint for getting recently spawned with users
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/recent-users") else {
+                return
+            }
+            
+            let fetchedUsers: [RecentlySpawnedUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                self.recentlySpawnedWith = fetchedUsers
+            }
+        } catch {
+            print("Error fetching recently spawned users: \(error.localizedDescription)")
+            // If API fails, use empty array
+            self.recentlySpawnedWith = []
+        }
+    }
+    
+    @MainActor
+    private func performSearch(searchText: String) async {
+        if searchText.isEmpty {
+            searchResults = []
+            return
+        }
+        
+        isLoading = true
+        defer { isLoading = false }
+        
+        if MockAPIService.isMocking {
+            // Filter mock data for testing
+            let lowercasedSearchText = searchText.lowercased()
+            searchResults = BaseUserDTO.mockUsers.filter { user in
+                let name = FormatterService.shared.formatName(user: user).lowercased()
+                let username = user.username.lowercased()
+                
+                return name.contains(lowercasedSearchText) || username.contains(lowercasedSearchText)
+            }
+            return
+        }
+        
+        do {
+            // API endpoint for searching users: /api/v1/users/search?query={searchText}
+            guard let url = URL(string: APIService.baseURL + "users/search") else {
+                return
+            }
+            
+            let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(
+                from: url, 
+                parameters: ["query": searchText]
+            )
+            self.searchResults = fetchedUsers
+        } catch {
+            // Handle error
+        }
+    }
 }

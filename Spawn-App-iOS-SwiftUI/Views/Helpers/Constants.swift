@@ -45,3 +45,4 @@ let figmaGreen700: Color = Color(hex: figmaGreen700Hex)
 let eventCardInfoCapsuleOpacity: Double = 0.15
 let eventCardInfoCapsuleColor: Color = Color.black.opacity(eventCardInfoCapsuleOpacity)
 
+let figmaGreen: Color = Color(hex: "30D996")

@@ -17,6 +17,10 @@ struct InviteView: View {
     @StateObject private var friendsViewModel: FriendsTabViewModel
     @StateObject private var tagsViewModel: TagsViewModel
     @ObservedObject private var appCache = AppCache.shared
+    
+    // Store initial tag positions and rotations to prevent reshuffling
+    @State private var tagPositions: [String: CGPoint] = [:]
+    @State private var tagRotations: [String: Double] = [:]
 
     init(user: BaseUserDTO) {
         self.user = user
@@ -88,7 +92,7 @@ struct InviteView: View {
                         .padding(.bottom, 15)
                     }
                 }
-                .background(Color(.systemBackground))
+                .background(universalBackgroundColor)
             }
             .background(universalBackgroundColor)
             .navigationBarBackButtonHidden(true)
@@ -106,10 +110,12 @@ struct InviteView: View {
                     // Convert FriendTagDTO to FullFriendTagDTO if needed
                     Task {
                         await tagsViewModel.fetchTags()
+                        initializeTagPositionsAndRotations()
                     }
                 } else {
                     Task {
                         await tagsViewModel.fetchTags()
+                        initializeTagPositionsAndRotations()
                     }
                 }
                 
@@ -124,6 +130,21 @@ struct InviteView: View {
                     friendsViewModel.friends = appCache.friends
                     friendsViewModel.filteredFriends = appCache.friends
                 }
+            }
+        }
+    }
+    
+    // Initialize positions and rotations for all tags once when the view appears
+    private func initializeTagPositionsAndRotations() {
+        let tagCount = tagsViewModel.tags.count
+        
+        for (index, tag) in tagsViewModel.tags.enumerated() {
+            if tagPositions[tag.id.uuidString] == nil {
+                tagPositions[tag.id.uuidString] = calculateTagPosition(index: index, count: tagCount)
+            }
+            
+            if tagRotations[tag.id.uuidString] == nil {
+                tagRotations[tag.id.uuidString] = calculateTagRotation(index: index, count: tagCount)
             }
         }
     }
@@ -144,8 +165,9 @@ struct InviteView: View {
                     if tagCount <= 8 {
                         ForEach(0..<tagCount, id: \.self) { index in
                             let tag = tagsViewModel.tags[index]
-                            let rotationAngle = getTagRotation(index: index, count: tagCount)
-                            let position = getTagPosition(index: index, count: tagCount)
+                            // Use the stored values from tag.id instead of recalculating
+                            let rotationAngle = tagRotations[tag.id.uuidString] ?? calculateTagRotation(index: index, count: tagCount)
+                            let position = tagPositions[tag.id.uuidString] ?? calculateTagPosition(index: index, count: tagCount)
                             
                             TagBubble(
                                 tag: tag,
@@ -164,13 +186,15 @@ struct InviteView: View {
                             HStack(spacing: 0) {
                                 Spacer().frame(width: 10)
                                 ForEach(tagsViewModel.tags.prefix(3), id: \.id) { tag in
+                                    let rotationAngle = tagRotations[tag.id.uuidString] ?? Double.random(in: -10...10)
+                                    
                                     TagBubble(
                                         tag: tag,
                                         isSelected: eventCreationViewModel.selectedTags
                                             .contains(tag)
                                     )
                                     .padding(.horizontal, 5)
-                                    .rotationEffect(.degrees(Double.random(in: -10...10)))
+                                    .rotationEffect(.degrees(rotationAngle))
                                     .onTapGesture {
                                         toggleTagSelection(tag)
                                     }
@@ -188,13 +212,15 @@ struct InviteView: View {
                                         ),
                                         id: \.id
                                     ) { tag in
+                                        let rotationAngle = tagRotations[tag.id.uuidString] ?? Double.random(in: -10...10)
+                                        
                                         TagBubble(
                                             tag: tag,
                                             isSelected: eventCreationViewModel
                                                 .selectedTags.contains(tag)
                                         )
                                         .padding(.horizontal, 5)
-                                        .rotationEffect(.degrees(Double.random(in: -10...10)))
+                                        .rotationEffect(.degrees(rotationAngle))
                                         .onTapGesture {
                                             toggleTagSelection(tag)
                                         }
@@ -213,13 +239,15 @@ struct InviteView: View {
                                         ),
                                         id: \.id
                                     ) { tag in
+                                        let rotationAngle = tagRotations[tag.id.uuidString] ?? Double.random(in: -10...10)
+                                        
                                         TagBubble(
                                             tag: tag,
                                             isSelected: eventCreationViewModel
                                                 .selectedTags.contains(tag)
                                         )
                                         .padding(.horizontal, 5)
-                                        .rotationEffect(.degrees(Double.random(in: -10...10)))
+                                        .rotationEffect(.degrees(rotationAngle))
                                         .onTapGesture {
                                             toggleTagSelection(tag)
                                         }
@@ -236,8 +264,8 @@ struct InviteView: View {
         .padding()
     }
     
-    // Helper functions for tag positioning
-    private func getTagRotation(index: Int, count: Int) -> Double {
+    // Helper functions for tag positioning - renamed to indicate they calculate initial positions
+    private func calculateTagRotation(index: Int, count: Int) -> Double {
         let baseAngle = Double.random(in: -15...15)
         
         // For specific arrangements
@@ -250,7 +278,7 @@ struct InviteView: View {
         }
     }
     
-    private func getTagPosition(index: Int, count: Int) -> CGPoint {
+    private func calculateTagPosition(index: Int, count: Int) -> CGPoint {
         let screenWidth: CGFloat = 350
         let screenHeight: CGFloat = 200
         
@@ -288,7 +316,7 @@ struct InviteView: View {
         default:
             // For 6-8 tags, create a more scattered arrangement
             let radius: CGFloat = 80
-            let angle = 2 * .pi / Double(count) * Double(index)
+            let angle = 2 * CGFloat.pi / Double(count) * Double(index)
             let x = screenWidth/2 + radius * cos(angle)
             let y = screenHeight/2 + radius * sin(angle)
             

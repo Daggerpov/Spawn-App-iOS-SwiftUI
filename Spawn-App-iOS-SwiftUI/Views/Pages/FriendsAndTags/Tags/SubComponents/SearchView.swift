@@ -24,13 +24,13 @@ struct SearchView: View {
 			
 			TextField(searchPlaceholderText, text: $viewModel.searchText)
 				.font(.onestRegular(size: 16))
-                .foregroundColor(.black)
+                .foregroundColor(universalAccentColor)
 		}
 		.padding(.vertical, 12)
 		.padding(.horizontal, 16)
         .background(
             Rectangle()
-                .foregroundColor(.clear)
+                .foregroundColor(universalBackgroundColor)
                 .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
                 .cornerRadius(15)
                 .overlay(
@@ -41,7 +41,8 @@ struct SearchView: View {
                         .stroke(.gray)
                 )
         )
-        .foregroundColor(.black)
+        .foregroundColor(universalAccentColor)
+        .colorScheme(.light)
 	}
 }
 

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI // just for UIImage for `createUser()`
 
 protocol IAPIService {
 	var errorMessage: String? { get set }
@@ -30,4 +31,8 @@ protocol IAPIService {
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO
 	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse]
+	func createUser(
+		userDTO: UserCreateDTO, profilePicture: UIImage?,
+		parameters: [String: String]?
+	) async throws -> BaseUserDTO
 }

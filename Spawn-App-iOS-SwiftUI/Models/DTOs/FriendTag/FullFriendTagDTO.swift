@@ -55,4 +55,13 @@ extension FullFriendTagDTO {
 		id: UUID(), displayName: "Hobbies", colorHexCode: eventColorHexCodes[3],
 		friends: [BaseUserDTO.danielLee])
 	static let mockTags = [everyone, close, sports, hobbies]
+    
+    // Empty tag for fallback
+    static let empty = FullFriendTagDTO(
+        id: UUID(),
+        displayName: "Tag Not Found",
+        colorHexCode: "#CCCCCC",
+        friends: [],
+        isEveryone: false
+    )
 }

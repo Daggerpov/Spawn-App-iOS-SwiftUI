@@ -268,6 +268,8 @@ class AppCache: ObservableObject {
         
         let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
         
+        var usersToRemove: [UUID] = []
+        
         for userId in otherProfiles.keys {
             do {
                 guard let url = URL(string: APIService.baseURL + "users/\(userId)") else { continue }
@@ -276,12 +278,25 @@ class AppCache: ObservableObject {
                 await MainActor.run {
                     otherProfiles[userId] = fetchedProfile
                 }
+            } catch let error as APIError {
+                // If user not found (404), mark for removal from cache
+                if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+                    print("User with ID \(userId) no longer exists, removing from cache")
+                    usersToRemove.append(userId)
+                } else {
+                    print("Failed to refresh profile for user \(userId): \(error.localizedDescription)")
+                }
             } catch {
                 print("Failed to refresh profile for user \(userId): \(error.localizedDescription)")
             }
         }
         
         await MainActor.run {
+            // Remove profiles that returned 404
+            for userId in usersToRemove {
+                otherProfiles.removeValue(forKey: userId)
+            }
+            
             lastChecked[CacheKeys.otherProfiles] = Date()
             saveToDisk()
         }

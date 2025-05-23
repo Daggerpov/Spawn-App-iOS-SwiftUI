@@ -1,5 +1,5 @@
 //
-//  AddFriendToTagViewModel.swift
+//  AddFriendsToTagViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-02-06.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-class AddFriendToTagViewModel: ObservableObject {
+class AddFriendsToTagViewModel: ObservableObject {
 	@Published var friends: [BaseUserDTO] = []
 	@Published var selectedFriends: [BaseUserDTO] = []
 	@Published var errorMessage: String? = nil
@@ -15,10 +15,12 @@ class AddFriendToTagViewModel: ObservableObject {
 
 	var userId: UUID
 	var apiService: IAPIService
+	private var appCache: AppCache
 
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
 		self.apiService = apiService
+		self.appCache = AppCache.shared
 	}
 
 	// Fetch all data in parallel
@@ -39,6 +41,32 @@ class AddFriendToTagViewModel: ObservableObject {
 	}
 
 	func fetchFriendsToAddToTag(friendTagId: UUID) async {
+		// First check if we have friends in the cache
+		if !appCache.friends.isEmpty {
+			// Get all tag friends for this tag from the cache
+			if let tagFriends = appCache.tagFriends[friendTagId] {
+				// Filter cached friends to exclude friends that are already in the tag
+				let tagFriendIds = Set(tagFriends.map { $0.id })
+				let friendsNotInTag = appCache.friends.filter { !tagFriendIds.contains($0.id) }
+				
+				// Convert FullFriendUserDTO to BaseUserDTO
+				let baseUsers = friendsNotInTag.map { friend -> BaseUserDTO in
+					BaseUserDTO.from(friendUser: friend)
+				}
+				
+				await MainActor.run {
+					print("Using cached friends: \(baseUsers.count) friends")
+					self.friends = baseUsers
+					self.errorMessage = nil
+					self.objectWillChange.send()
+				}
+				
+				// Return early if we have cache data
+				return
+			}
+		}
+		
+		// If no cache or missing tag friends data, fetch from API
 		// full path: /api/v1/friendTags/friendsNotAddedToTag/{friendTagId}
 		if let url = URL(
 			string: APIService.baseURL
@@ -106,6 +134,16 @@ class AddFriendToTagViewModel: ObservableObject {
                 await MainActor.run {
                     NotificationCenter.default.post(name: .friendsAddedToTag, object: friendTagId)
                     isLoading = false
+                    
+                    // Update the cached tag friends for this tag
+                    if let existingTagFriends = appCache.tagFriends[friendTagId] {
+                        // Append selected friends to existing friends
+                        let updatedTagFriends = existingTagFriends + selectedFriends
+                        appCache.updateTagFriends(friendTagId, updatedTagFriends)
+                    } else {
+                        // Just add the selected friends if no existing data
+                        appCache.updateTagFriends(friendTagId, selectedFriends)
+                    }
                 }
 			} catch {
 				print("Error adding friends to tag: \(error.localizedDescription)")
@@ -122,5 +160,4 @@ class AddFriendToTagViewModel: ObservableObject {
             }
         }
 	}
-
-}
+} 
