@@ -53,7 +53,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var defaultPfpUrlString: String? = nil
 
 	private init(apiService: IAPIService) {
-        self.spawnUser = BaseUserDTO.danielAgapov
+        self.spawnUser = nil
 		self.apiService = apiService
 
 		super.init()  // Call super.init() before using `self`
