@@ -44,9 +44,6 @@ struct FeedView: View {
                 VStack {
                     HeaderView(user: user, numEvents: viewModel.events.count).padding(.top, 75)
                     Spacer()
-                    if viewModel.events.count > 0 {
-                        TagsScrollView(activeTag: $activeTag)
-                    }
                     eventsListView
                 }
                 .background(universalBackgroundColor)

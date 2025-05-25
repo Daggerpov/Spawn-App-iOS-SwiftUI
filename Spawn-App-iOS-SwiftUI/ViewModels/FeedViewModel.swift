@@ -58,7 +58,6 @@ class FeedViewModel: ObservableObject {
 
     func fetchAllData() async {
         await fetchEventsForUser()
-        await fetchTagsForUser()
     }
 
     func fetchEventsForUser() async {
@@ -88,29 +87,6 @@ class FeedViewModel: ObservableObject {
         
         // If not in cache, fetch from API
         await fetchEventsFromAPI()
-    }
-    
-    private func fetchFilteredEvents(for tagId: UUID) async {
-        // Full path: /api/v1/events/friendTag/{friendTagFilterId}
-        guard let url = URL(string: APIService.baseURL + "events/friendTag/\(tagId)") else {
-            print("Failed to construct URL for filtered events")
-            return
-        }
-        
-        do {
-            let fetchedEvents: [FullFeedEventDTO] = try await self.apiService.fetchData(
-                from: url, parameters: nil
-            )
-
-            // Ensure updating on the main thread
-            await MainActor.run {
-                self.events = fetchedEvents
-            }
-        } catch {
-            await MainActor.run {
-                self.events = []
-            }
-        }
     }
     
     private func fetchEventsFromAPI() async {
@@ -149,27 +125,6 @@ class FeedViewModel: ObservableObject {
         } catch {
             await MainActor.run {
                 self.events = []
-            }
-        }
-    }
-
-    func fetchTagsForUser() async {
-        // /api/v1/friendTags/owner/{ownerId}?full=full
-        if let url = URL(
-            string: APIService.baseURL + "friendTags/owner/\(userId)"
-        ) {
-            do {
-                let fetchedTags: [FullFriendTagDTO] = try await self.apiService
-                    .fetchData(from: url, parameters: nil)
-
-                // Ensure updating on the main thread
-                await MainActor.run {
-                    self.tags = fetchedTags
-                }
-            } catch {
-                await MainActor.run {
-                    self.tags = []
-                }
             }
         }
     }

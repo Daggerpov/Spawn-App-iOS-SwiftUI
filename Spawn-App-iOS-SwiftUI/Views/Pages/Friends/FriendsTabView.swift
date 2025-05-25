@@ -308,21 +308,7 @@ struct RecommendedFriendView: View {
 struct FriendTagsForFriendView: View {
     var friend: FullFriendUserDTO
     var body: some View {
-        HStack(spacing: 8) {
-            ForEach(friend.associatedFriendTagsToOwner?.prefix(3) ?? []) { friendTag in
-                if !friendTag.isEveryone {
-                    Text(friendTag.displayName)
-                        .font(.onestMedium(size: 12))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color(hex: friendTag.colorHexCode))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                        .lineLimit(1)
-                }
-            }
-        }
-        .padding(.top, 8)
+        EmptyView()
     }
 }
 

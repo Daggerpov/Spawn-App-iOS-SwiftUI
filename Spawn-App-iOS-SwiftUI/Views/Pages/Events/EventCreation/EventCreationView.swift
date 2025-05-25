@@ -393,27 +393,8 @@ extension EventCreationView {
             HStack {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(viewModel.selectedTags) { tag in
-                            Button(action: {
-                                showInviteView = true
-                            }) {
-                                HStack {
-                                    Text(tag.displayName)
-                                        .font(.subheadline)
-                                        .foregroundColor(.white)
-                                    Image(systemName: "xmark")
-                                        .font(.caption)
-                                        .foregroundColor(.white)
-                                }
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(Color(hex: tag.colorHexCode))
-                                .clipShape(Capsule())
-                            }
-                        }
-                        
-                        if viewModel.selectedTags.isEmpty {
-                            // No tags selected yet
+                        if viewModel.selectedFriends.isEmpty {
+                            // No friends selected yet
                             EmptyView()
                         }
                     }
@@ -427,7 +408,7 @@ extension EventCreationView {
                     HStack {
                         Image(systemName: "plus")
                             .font(.caption)
-                        Text("Add \(viewModel.selectedTags.count + viewModel.selectedFriends.count > 0 ? "more " : "")people!")
+                        Text("Add \(viewModel.selectedFriends.count > 0 ? "more " : "")people!")
                             .font(.subheadline)
                     }
                     .foregroundColor(.gray)

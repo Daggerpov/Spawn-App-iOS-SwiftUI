@@ -16,28 +16,31 @@ class AppCache: ObservableObject {
     // MARK: - Cached Data
     @Published var friends: [FullFriendUserDTO] = []
     @Published var events: [FullFeedEventDTO] = []
-    @Published var profilePicture: BaseUserDTO?
-    @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var friendRequests: [FetchFriendRequestDTO] = []
-
+    @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
+    
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
     private var isInitialized = false
     
     // MARK: - Constants
     private enum CacheKeys {
+        static let lastChecked = "lastChecked"
         static let friends = "friends"
         static let events = "events"
-        static let profilePicture = "profilePicture"
-        static let otherProfiles = "otherProfiles"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
-        static let lastChecked = "cache_last_checked"
+        static let otherProfiles = "otherProfiles"
     }
     
     private init() {
         loadFromDisk()
+        
+        // Set up a timer to periodically save to disk
+        Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+            self?.saveToDisk()
+        }
     }
     
     // MARK: - Public Methods
@@ -85,18 +88,6 @@ class AppCache: ObservableObject {
                         // Need to fetch new data
                         Task {
                             await refreshEvents()
-                        }
-                    }
-                }
-                
-                // Profile Picture Cache
-                if let profilePictureResponse = result[CacheKeys.profilePicture], profilePictureResponse.invalidate {
-                    if let updatedItems = profilePictureResponse.updatedItems,
-                       let updatedProfile = try? JSONDecoder().decode(BaseUserDTO.self, from: updatedItems) {
-                        updateProfilePicture(updatedProfile)
-                    } else {
-                        Task {
-                            await refreshProfilePicture()
                         }
                     }
                 }
@@ -205,31 +196,6 @@ class AppCache: ObservableObject {
         saveToDisk()
     }
     
-    // MARK: - Profile Picture Methods
-    
-    func updateProfilePicture(_ newProfile: BaseUserDTO) {
-        profilePicture = newProfile
-        lastChecked[CacheKeys.profilePicture] = Date()
-        saveToDisk()
-    }
-    
-    func refreshProfilePicture() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)") else { return }
-            
-            let fetchedProfile: BaseUserDTO = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateProfilePicture(fetchedProfile)
-            }
-        } catch {
-            print("Failed to refresh profile picture: \(error.localizedDescription)")
-        }
-    }
-    
     // MARK: - Other Profiles Methods
     
     func updateOtherProfile(_ userId: UUID, _ profile: BaseUserDTO) {
@@ -334,8 +300,8 @@ class AppCache: ObservableObject {
     private func loadFromDisk() {
         // Load cache timestamps
         if let timestampsData = UserDefaults.standard.data(forKey: CacheKeys.lastChecked),
-           let timestamps = try? JSONDecoder().decode([String: Date].self, from: timestampsData) {
-            lastChecked = timestamps
+           let loadedTimestamps = try? JSONDecoder().decode([String: Date].self, from: timestampsData) {
+            lastChecked = loadedTimestamps
         }
         
         // Load friends
@@ -348,12 +314,6 @@ class AppCache: ObservableObject {
         if let eventsData = UserDefaults.standard.data(forKey: CacheKeys.events),
            let loadedEvents = try? JSONDecoder().decode([FullFeedEventDTO].self, from: eventsData) {
             events = loadedEvents
-        }
-       
-        // Load profile picture
-        if let profileData = UserDefaults.standard.data(forKey: CacheKeys.profilePicture),
-           let loadedProfile = try? JSONDecoder().decode(BaseUserDTO.self, from: profileData) {
-            profilePicture = loadedProfile
         }
         
         // Load other profiles
@@ -373,18 +333,6 @@ class AppCache: ObservableObject {
            let loadedRequests = try? JSONDecoder().decode([FetchFriendRequestDTO].self, from: requestsData) {
             friendRequests = loadedRequests
         }
-        
-        // Load user tags
-        if let tagsData = UserDefaults.standard.data(forKey: CacheKeys.userTags),
-           let loadedTags = try? JSONDecoder().decode([FriendTagDTO].self, from: tagsData) {
-            userTags = loadedTags
-        }
-        
-        // Load tag friends
-        if let tagFriendsData = UserDefaults.standard.data(forKey: CacheKeys.tagFriends),
-           let loadedTagFriends = try? JSONDecoder().decode([UUID: [BaseUserDTO]].self, from: tagFriendsData) {
-            tagFriends = loadedTagFriends
-        }
     }
     
     private func saveToDisk() {
@@ -403,12 +351,6 @@ class AppCache: ObservableObject {
             UserDefaults.standard.set(eventsData, forKey: CacheKeys.events)
         }
         
-        // Save profile picture
-        if let profilePicture = profilePicture,
-           let profileData = try? JSONEncoder().encode(profilePicture) {
-            UserDefaults.standard.set(profileData, forKey: CacheKeys.profilePicture)
-        }
-        
         // Save other profiles
         if let profilesData = try? JSONEncoder().encode(otherProfiles) {
             UserDefaults.standard.set(profilesData, forKey: CacheKeys.otherProfiles)
@@ -422,16 +364,6 @@ class AppCache: ObservableObject {
         // Save friend requests
         if let requestsData = try? JSONEncoder().encode(friendRequests) {
             UserDefaults.standard.set(requestsData, forKey: CacheKeys.friendRequests)
-        }
-        
-        // Save user tags
-        if let tagsData = try? JSONEncoder().encode(userTags) {
-            UserDefaults.standard.set(tagsData, forKey: CacheKeys.userTags)
-        }
-        
-        // Save tag friends
-        if let tagFriendsData = try? JSONEncoder().encode(tagFriends) {
-            UserDefaults.standard.set(tagFriendsData, forKey: CacheKeys.tagFriends)
         }
     }
 } 

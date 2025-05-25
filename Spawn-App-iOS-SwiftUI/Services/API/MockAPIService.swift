@@ -102,232 +102,35 @@ class MockAPIService: IAPIService {
 			return FullFeedEventDTO.mockDinnerEvent as! T
 		}
 
-		// fetchTagsForUser():
+		/// FriendRequestViewModel.swift:
 
-		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FullFriendTagDTO.mockTags as! T
+		// fetchFriendRequests():
+		if url.absoluteString == APIService.baseURL + "friend-requests/\(userId)" {
+			return FetchFriendRequestDTO.mockFriendRequests as! T
 		}
 
-		/// FriendsTabViewModel.swift:
+		// fetchRecommendedFriends():
+		if url.absoluteString == APIService.baseURL + "users/recommended/\(userId)" {
+			return RecommendedFriendUserDTO.mockUsers as! T
+		}
 
-		if let userIdForUrl = userId {
-			// fetchIncomingFriendRequests():
+		// fetchFriends():
+		if url.absoluteString == APIService.baseURL + "users/friends/\(userId)" {
+			return FullFriendUserDTO.mockUsers as! T
+		}
 
-			if url.absoluteString == APIService.baseURL
-				+ "friend-requests/incoming/\(userIdForUrl)"
-			{
-				return FetchFriendRequestDTO.mockFriendRequests as! T
-			}
+		// fetchRecentlySpawnedWith():
+		if url.absoluteString == APIService.baseURL + "users/recentlySpawnedWith/\(userId)" {
+			return RecentlySpawnedUserDTO.mockUsers as! T
+		}
 
-			// fetchRecommendedFriends():
-
-			if url.absoluteString == APIService.baseURL
-				+ "users/recommended-friends/\(userIdForUrl)"
-			{
-				let firstThreeUsers = Array(
-					RecommendedFriendUserDTO.mockUsers.prefix(3)
-				)
-				return firstThreeUsers as! T
-			}
-
-			// fetchFriends():
-
-			if url.absoluteString == APIService.baseURL
-				+ "users/friends/\(userIdForUrl)"
-			{
-				return FullFriendUserDTO.mockUsers as! T
-			}
-
-			// SearchViewModel - fetchFilteredResults():
-			if url.absoluteString.contains("users/filtered/\(userIdForUrl)") {
-				// Create a mock SearchedUserResult
-				let result = SearchedUserResult(
-					incomingFriendRequests: FetchFriendRequestDTO
-						.mockFriendRequests,
-					recommendedFriends: Array(
-						RecommendedFriendUserDTO.mockUsers.prefix(2)
-					),
-					friends: Array(FullFriendUserDTO.mockUsers.prefix(3))
-				)
-				return result as! T
-			}
-
-			// ProfileViewModel - fetchUserStats()
-			if url.absoluteString == APIService.baseURL
-				+ "users/\(userIdForUrl)/stats"
-			{
-				return UserStatsDTO(
-					peopleMet: 24,
-					spawnsMade: 15,
-					spawnsJoined: 3
-				) as! T
-			}
-
-			// ProfileViewModel - fetchUserInterests()
-			if url.absoluteString == APIService.baseURL
-				+ "users/\(userIdForUrl)/interests"
-			{
-				return ["Music", "Photography", "Hiking", "Reading", "Travel"]
-					as! T
-			}
-
-			// ProfileViewModel - fetchUserSocialMedia()
-			if url.absoluteString == APIService.baseURL
-				+ "users/\(userIdForUrl)/social-media"
-			{
-				return UserSocialMediaDTO(
-					id: UUID(),
-					userId: userIdForUrl,
-					whatsappLink: "https://wa.me/+1234567890",
-					instagramLink: "https://www.instagram.com/user_insta"
-				) as! T
-			}
-
-			// ProfileViewModel - checkFriendshipStatus() - is-friend endpoint
-			if url.absoluteString.contains("/is-friend/") {
-				// Always return true for mocking to show friend features
-				return false as! T
-			}
-
-			// ProfileViewModel - fetchCalendarActivities()
-			if url.absoluteString.contains("users/\(userIdForUrl)/calendar") {
-				// Generate dynamic calendar activities
-				var activities: [CalendarActivityDTO] = []
-
-				// Get current date information
-				let currentDate = Date()
-				let calendar = Calendar.current
-				let currentMonth = calendar.component(.month, from: currentDate)
-				let currentYear = calendar.component(.year, from: currentDate)
-
-				// Create a date formatter for consistent dates
-				let dateFormatter = DateFormatter.iso8601Full
-
-				// Check if specific month and year were requested
-				var targetMonth = currentMonth
-				var targetYear = currentYear
-
-				if let parameters = parameters {
-					if let monthStr = parameters["month"],
-						let month = Int(monthStr)
-					{
-						targetMonth = month
-					}
-					if let yearStr = parameters["year"], let year = Int(yearStr)
-					{
-						targetYear = year
-					}
-				}
-
-				// Generate events for current month and the next month
-				for monthOffset in 0...2 {
-					var month = targetMonth + monthOffset
-					var year = targetYear
-
-					// Handle year rollover
-					if month > 12 {
-						month -= 12
-						year += 1
-					}
-
-					// Create events throughout the month
-					for day in [3, 7, 12, 15, 18, 21, 25, 28] {
-						// Skip some days randomly to make it more realistic
-						if Bool.random() && monthOffset > 0 {
-							continue
-						}
-
-						// Get potential event categories to use
-						let categories: [EventCategory] = [
-							.foodAndDrink, .active, .grind, .chill, .general,
-						]
-
-						// Add 1-3 events per day
-						let numEvents = Int.random(in: 1...3)
-						for _ in 0..<numEvents {
-							// Select a random category
-							let category = categories.randomElement()!
-
-							// Create a date string
-							let dateString = String(
-								format: "%04d-%02d-%02dT%02d:%02d:00Z",
-								year,
-								month,
-								day,
-								Int.random(in: 9...20),  // Random hour
-								Int.random(in: 0...59)
-							)  // Random minute
-
-							// Generate colors (sometimes override category color)
-							var colorHex: String
-							if Bool.random() {
-								// Use a custom color sometimes
-								let colors = [
-									"#4CAF50", "#2196F3", "#9C27B0", "#FF9800",
-									"#F44336", "#009688", "#673AB7", "#3F51B5",
-									"#FFC107",
-								]
-								colorHex = colors.randomElement()!
-							} else {
-								// Convert category color to hex
-								switch category {
-								case .foodAndDrink: colorHex = "#4CAF50"  // Green
-								case .active: colorHex = "#2196F3"  // Blue
-								case .grind: colorHex = "#9C27B0"  // Purple
-								case .chill: colorHex = "#FF9800"  // Orange
-								case .general: colorHex = "#757575"  // Gray
-								}
-							}
-
-							// Sometimes use custom icon instead of category icon
-							let useCustomIcon = Bool.random()
-							let icon =
-								useCustomIcon
-								? [
-									"🍕", "🏃", "💻", "📚", "🎮", "🎭", "🎨", "🎵", "☕️",
-									"🛒", "👨‍👩‍👧‍👦",
-								].randomElement() : category.systemIcon()
-
-							// Create event
-							if let eventDate = dateFormatter.date(
-								from: dateString
-							) {
-								activities.append(
-									CalendarActivityDTO(
-										id: UUID(),
-										date: eventDate,
-										eventCategory: category,
-										icon: useCustomIcon ? icon : nil,
-										colorHexCode: colorHex,
-										eventId: UUID()
-									)
-								)
-							}
-						}
-					}
-				}
-
-				// If no parameters were provided, return all activities
-				if parameters == nil || parameters?.isEmpty == true {
-					return activities as! T
-				}
-
-				// Otherwise, filter for the requested month and year
-				let filteredActivities = activities.filter { activity in
-					let activityMonth = calendar.component(
-						.month,
-						from: activity.date
-					)
-					let activityYear = calendar.component(
-						.year,
-						from: activity.date
-					)
-					return activityMonth == targetMonth
-						&& activityYear == targetYear
-				}
-
-				return filteredActivities as! T
-			}
+		// fetchSearchResults():
+		if url.absoluteString == APIService.baseURL + "users/search/\(userId)" {
+			return SearchedUserResult(
+				incomingFriendRequests: FetchFriendRequestDTO.mockFriendRequests,
+				recommendedFriends: RecommendedFriendUserDTO.mockUsers,
+				friends: FullFriendUserDTO.mockUsers
+			) as! T
 		}
 
 		/// TagsViewModel.swift:
@@ -426,22 +229,6 @@ class MockAPIService: IAPIService {
 			// do nothing; whatever
 		}
 
-		/// TagsViewModel.swift:
-
-		// upsertTag(upsertAction: .create):
-		if url.absoluteString == APIService.baseURL + "friendTags" {
-			return FullFriendTagDTO.close as! U?
-		}
-
-		// Handle adding/removing friends from tags
-		if url.absoluteString.contains("friendTags/") && parameters != nil {
-			// Handle the modifyFriendTagFriends endpoint
-			if (parameters?["friendTagAction"]) != nil {
-				// Return empty success response
-				return EmptyObject() as! U?
-			}
-		}
-
 		/// ProfileViewModel.swift:
 
 		// addUserInterest():
@@ -466,23 +253,6 @@ class MockAPIService: IAPIService {
 			}
 		}
 
-		/// AddFriendsToTagViewModel.swift:
-
-		// addSelectedFriendsToTag():
-		if url.absoluteString == APIService.baseURL
-			+ "friendTags/bulkAddFriendsToTag"
-		{
-			return EmptyResponse() as! U?
-		}
-
-		/// ChoosingTagViewModel.swift:
-
-		// addTagsToFriend():
-		if url.absoluteString == APIService.baseURL + "friendTags/addUserToTags"
-		{
-			return EmptyResponse() as! U?
-		}
-
 		throw APIError.invalidData
 	}
 
@@ -499,13 +269,6 @@ class MockAPIService: IAPIService {
 		parameters: [String: String]? = nil
 	) async throws -> U {
 		/// `TagsViewModel.swift`:
-
-		// upsertTag(upsertAction: .update):
-		if url.absoluteString == APIService.baseURL + "friendTags"
-			|| url.absoluteString.contains("friendTags/")
-		{
-			return FullFriendTagDTO.close as! U
-		}
 
 		// EventCardViewModel.swift - toggleParticipation():
 		if url.absoluteString.contains("events/")
@@ -548,35 +311,7 @@ class MockAPIService: IAPIService {
 		parameters: [String: String]? = nil,
 		object: T? = nil
 	) async throws {
-		// ProfileViewModel - removeUserInterest
-		if url.absoluteString.contains("/interests/") {
-			// Successfully "delete" the interest without actually doing anything
-			print(
-				"🔍 MOCK: Successfully deleted interest from URL: \(url.absoluteString)"
-			)
-			return
-		}
-
-		// Handle tag deletion
-		if url.absoluteString.contains("friendTags/") {
-			print(
-				"🔍 MOCK: Successfully deleted tag from URL: \(url.absoluteString)"
-			)
-			return
-		}
-
-		// UserAuthViewModel - deleteAccount
-		if url.absoluteString.contains("users/")
-			&& !url.absoluteString.contains("/interests/")
-		{
-			print(
-				"🔍 MOCK: Successfully deleted user account from URL: \(url.absoluteString)"
-			)
-			return
-		}
-
-		// If we get here, just return without doing anything - this is a mock implementation
-		print("🔍 MOCK: Called deleteData on URL: \(url.absoluteString)")
+		// Handle delete operations
 	}
 
 	func patchData<T: Encodable, U: Decodable>(
