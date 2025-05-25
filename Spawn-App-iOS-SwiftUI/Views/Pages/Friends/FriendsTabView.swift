@@ -304,14 +304,6 @@ struct RecommendedFriendView: View {
     }
 }
 
-// Move FriendTagsForFriendView out of FriendsTabView
-struct FriendTagsForFriendView: View {
-    var friend: FullFriendUserDTO
-    var body: some View {
-        EmptyView()
-    }
-}
-
 // Add RecentlySpawnedView for RecentlySpawnedUserDTO
 struct RecentlySpawnedView: View {
     @ObservedObject var viewModel: FriendsTabViewModel

@@ -25,7 +25,6 @@ class FeedViewModel: ObservableObject {
         appCache.$events
             .sink { [weak self] cachedEvents in
                 if !cachedEvents.isEmpty {
-                    // Only use cache if this is the "Everyone" view (no active tag filter)
                     // Convert Event to FullFeedEventDTO - this is a simplified conversion
                     let feedEvents = cachedEvents.map { event -> FullFeedEventDTO in
                         return FullFeedEventDTO(
@@ -37,8 +36,7 @@ class FeedViewModel: ObservableObject {
                             note: event.note,
                             creatorUser: event.creatorUser,
                             participantUsers: event.participantUsers,
-                            chatMessages: nil,
-                            eventFriendTagColorHexCodeForRequestingUser: nil
+                            chatMessages: nil
                         )
                     }
                     self?.events = feedEvents
@@ -74,8 +72,7 @@ class FeedViewModel: ObservableObject {
                     note: event.note,
                     creatorUser: event.creatorUser,
                     participantUsers: event.participantUsers,
-                    chatMessages: nil,
-                    eventFriendTagColorHexCodeForRequestingUser: nil
+                    chatMessages: nil
                 )
             }
             
@@ -112,8 +109,7 @@ class FeedViewModel: ObservableObject {
                     note: event.note,
                     creatorUser: event.creatorUser,
                     participantUsers: event.participantUsers,
-                    chatMessages: nil,
-                    eventFriendTagColorHexCodeForRequestingUser: nil
+                    chatMessages: nil
                 )
             }
             
