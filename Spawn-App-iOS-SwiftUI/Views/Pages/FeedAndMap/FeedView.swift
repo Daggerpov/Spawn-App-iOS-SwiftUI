@@ -23,8 +23,6 @@ struct FeedView: View {
     @State private var creationOffset: CGFloat = 1000
     // --------
     
-    @State private var activeTag: FilterTag? = nil
-
     var user: BaseUserDTO
 
     init(user: BaseUserDTO) {
@@ -126,10 +124,7 @@ extension FeedView {
                         EventCardView(
                             userId: user.id,
                             event: event,
-                            color: Color(
-                            hex: event
-                                .eventFriendTagColorHexCodeForRequestingUser
-                                ?? eventColorHexCodes[0])
+                            color: event.category.color()
                         )
                         { event, color in
                             eventInPopup = event

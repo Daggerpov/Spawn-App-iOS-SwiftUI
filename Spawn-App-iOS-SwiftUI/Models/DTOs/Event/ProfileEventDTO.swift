@@ -24,7 +24,6 @@ class ProfileEventDTO: FullFeedEventDTO {
         participantUsers: [BaseUserDTO]? = nil,
         invitedUsers: [BaseUserDTO]? = nil,
         chatMessages: [FullEventChatMessageDTO]? = nil,
-        eventFriendTagColorHexCodeForRequestingUser: String? = nil,
         participationStatus: ParticipationStatus? = nil,
         isSelfOwned: Bool? = nil,
         isPastEvent: Bool = false
@@ -44,7 +43,6 @@ class ProfileEventDTO: FullFeedEventDTO {
             participantUsers: participantUsers,
             invitedUsers: invitedUsers,
             chatMessages: chatMessages,
-            eventFriendTagColorHexCodeForRequestingUser: eventFriendTagColorHexCodeForRequestingUser,
             participationStatus: participationStatus,
             isSelfOwned: isSelfOwned
         )
@@ -84,7 +82,6 @@ class ProfileEventDTO: FullFeedEventDTO {
             participantUsers: fullFeedEventDTO.participantUsers,
             invitedUsers: fullFeedEventDTO.invitedUsers,
             chatMessages: fullFeedEventDTO.chatMessages,
-            eventFriendTagColorHexCodeForRequestingUser: fullFeedEventDTO.eventFriendTagColorHexCodeForRequestingUser,
             participationStatus: fullFeedEventDTO.participationStatus,
             isSelfOwned: fullFeedEventDTO.isSelfOwned,
             isPastEvent: isPastEvent
