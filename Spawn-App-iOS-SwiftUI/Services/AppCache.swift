@@ -20,9 +20,7 @@ class AppCache: ObservableObject {
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var friendRequests: [FetchFriendRequestDTO] = []
-    @Published var userTags: [FriendTagDTO] = []
-    @Published var tagFriends: [UUID: [BaseUserDTO]] = [:] // Tag ID -> Friends in tag
-    
+
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
     private var isInitialized = false
@@ -35,8 +33,6 @@ class AppCache: ObservableObject {
         static let otherProfiles = "otherProfiles"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
-        static let userTags = "userTags"
-        static let tagFriends = "tagFriends"
         static let lastChecked = "cache_last_checked"
     }
     
@@ -133,25 +129,6 @@ class AppCache: ObservableObject {
                         Task {
                             await refreshFriendRequests()
                         }
-                    }
-                }
-                
-                // User Tags Cache
-                if let userTagsResponse = result[CacheKeys.userTags], userTagsResponse.invalidate {
-                    if let updatedItems = userTagsResponse.updatedItems,
-                       let updatedUserTags = try? JSONDecoder().decode([FriendTagDTO].self, from: updatedItems) {
-                        updateUserTags(updatedUserTags)
-                    } else {
-                        Task {
-                            await refreshUserTags()
-                        }
-                    }
-                }
-                
-                // Tag Friends Cache
-                if let tagFriendsResponse = result[CacheKeys.tagFriends], tagFriendsResponse.invalidate {
-                    Task {
-                        await refreshTagFriends()
                     }
                 }
             }
@@ -349,64 +326,6 @@ class AppCache: ObservableObject {
             }
         } catch {
             print("Failed to refresh friend requests: \(error.localizedDescription)")
-        }
-    }
-    
-    // MARK: - User Tags Methods
-    
-    func updateUserTags(_ newUserTags: [FriendTagDTO]) {
-        userTags = newUserTags
-        lastChecked[CacheKeys.userTags] = Date()
-        saveToDisk()
-    }
-    
-    func refreshUserTags() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId)") else { return }
-            
-            let fetchedUserTags: [FriendTagDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateUserTags(fetchedUserTags)
-            }
-        } catch {
-            print("Failed to refresh user tags: \(error.localizedDescription)")
-        }
-    }
-    
-    // MARK: - Tag Friends Methods
-    
-    func updateTagFriends(_ tagId: UUID, _ friends: [BaseUserDTO]) {
-        tagFriends[tagId] = friends
-        lastChecked[CacheKeys.tagFriends] = Date()
-        saveToDisk()
-    }
-    
-    func refreshTagFriends() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-        
-        // Refresh friends for each tag
-        for tag in userTags {
-            do {
-                guard let url = URL(string: APIService.baseURL + "friendTags/\(tag.id)/friends") else { continue }
-                
-                let fetchedTagFriends: [BaseUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-                
-                await MainActor.run {
-                    tagFriends[tag.id] = fetchedTagFriends
-                }
-            } catch {
-                print("Failed to refresh friends for tag \(tag.id): \(error.localizedDescription)")
-            }
-        }
-        
-        await MainActor.run {
-            lastChecked[CacheKeys.tagFriends] = Date()
-            saveToDisk()
         }
     }
     

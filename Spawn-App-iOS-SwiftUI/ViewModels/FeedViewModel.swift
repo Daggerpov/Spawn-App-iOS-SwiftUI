@@ -10,7 +10,6 @@ import Combine
 
 class FeedViewModel: ObservableObject {
     @Published var events: [FullFeedEventDTO] = []
-    @Published var tags: [FullFriendTagDTO] = []
 
     var apiService: IAPIService
     var userId: UUID

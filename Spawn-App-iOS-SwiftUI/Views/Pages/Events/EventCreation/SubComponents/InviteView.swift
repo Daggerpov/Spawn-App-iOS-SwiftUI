@@ -15,7 +15,6 @@ struct InviteView: View {
     
     // Add view models for friends and tags
     @StateObject private var friendsViewModel: FriendsTabViewModel
-    @StateObject private var tagsViewModel: TagsViewModel
     @ObservedObject private var appCache = AppCache.shared
     
     // Store initial tag positions and rotations to prevent reshuffling
@@ -328,16 +327,6 @@ struct InviteView: View {
         }
     }
 
-    private func toggleTagSelection(_ tag: FullFriendTagDTO) {
-        if let index = eventCreationViewModel.selectedTags.firstIndex(where: { $0.id == tag.id }) {
-            // Tag exists in selectedTags, remove it
-            eventCreationViewModel.selectedTags.remove(at: index)
-        } else {
-            // Tag does not exist in selectedTags, add it
-            eventCreationViewModel.selectedTags.append(tag)
-        }
-    }
-
     // Invited friends section
     var invitedFriendsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -458,44 +447,6 @@ struct InviteView: View {
         } else {
             eventCreationViewModel.selectedFriends.append(friend)
         }
-    }
-}
-
-// TagBubble Component
-struct TagBubble: View {
-    let tag: FullFriendTagDTO
-    let isSelected: Bool
-
-    var body: some View {
-        Text("+ \(tag.displayName)")
-            .foregroundColor(isSelected ? .white : Color(hex: tag.colorHexCode))
-            .padding(.vertical, 8)
-            .padding(.horizontal, 15)
-            .background(
-                Group {
-                    if isSelected {
-                        Capsule().fill(Color(hex: tag.colorHexCode))
-                    } else {
-                        Capsule().stroke(
-                            Color(hex: tag.colorHexCode),
-                            style: StrokeStyle(lineWidth: 1, dash: [5])
-                        )
-                    }
-                }
-            )
-            .overlay(
-                Group {
-                    if isSelected {
-                        HStack {
-                            Spacer()
-                            Image(systemName: "xmark")
-                                .font(.caption)
-                                .foregroundColor(.white)
-                                .padding(.trailing, 5)
-                        }
-                    }
-                }
-            )
     }
 }
 

@@ -13,7 +13,6 @@ struct FriendsAndTagsView: View {
     // for add friend to tag drawer:
     @State private var showAddFriendToTagButtonPressedView: Bool = false
     @State private var selectedFriendTagId: UUID? = nil
-    @State private var tagsViewModel: TagsViewModel? = nil
 
     init(user: BaseUserDTO) {
         self.user = user
@@ -26,7 +25,6 @@ struct FriendsAndTagsView: View {
                     HStack {
                         Spacer()
                         FriendRequestNavButtonView
-                        FriendTagNavButtonView
                         Spacer()
                     }
                     .padding(.horizontal)
@@ -91,25 +89,6 @@ extension FriendsAndTagsView {
                 iconImageName: "friend_request_icon",
                 topText: "Friend Requests",
                 bottomText: "Accept or Deny"
-            )
-        }
-    }
-
-    var FriendTagNavButtonView: some View {
-        NavigationLink(destination: {
-            TagsTabView(
-                userId: user.id,
-                addFriendToTagButtonPressedCallback: {
-                    friendTagId in
-                    selectedFriendTagId = friendTagId
-                    showAddFriendToTagButtonPressedView = true
-                }
-            )
-        }) {
-            BaseFriendNavButtonView(
-                iconImageName: "friend_tag_icon",
-                topText: "Friend Tags",
-                bottomText: "Create or Edit"
             )
         }
     }

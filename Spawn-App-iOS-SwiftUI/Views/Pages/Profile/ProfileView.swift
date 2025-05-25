@@ -32,7 +32,6 @@ struct ProfileView: View {
 	@State private var refreshFlag = false
 	@State private var showCalendarPopup: Bool = false
 	@State private var showEventDetails: Bool = false
-	@State private var showTagDialog: Bool = false
 	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
 	@State private var reportReason: String = ""
@@ -213,10 +212,6 @@ struct ProfileView: View {
 			.sheet(isPresented: $showEventDetails) {
 				eventDetailsView
 			}
-			.navigationDestination(isPresented: $showTagDialog) {
-				// Navigate to the new AddFriendToTagsView
-				AddFriendToTagsView(friend: user)
-			}
 			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation)
 		{
 			removeFriendConfirmationAlert
@@ -234,7 +229,6 @@ struct ProfileView: View {
 			.sheet(isPresented: $showProfileMenu) {
 				ProfileMenuView(
 					user: user,
-					showTagDialog: $showTagDialog,
 					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
 					showReportDialog: $showReportDialog,
 					showBlockDialog: $showBlockDialog,
