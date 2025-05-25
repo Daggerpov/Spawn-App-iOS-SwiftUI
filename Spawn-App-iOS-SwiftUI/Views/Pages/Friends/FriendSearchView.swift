@@ -270,22 +270,7 @@ struct FriendRowView: View {
             Spacer()
             
             // Different controls depending on the context
-            if let friend = friend, let tags = friend.associatedFriendTagsToOwner, !tags.isEmpty {
-                // Show tag indicators for friends
-                HStack(spacing: 4) {
-                    ForEach(tags.prefix(2)) { tag in
-                        Circle()
-                            .fill(Color(hex: tag.colorHexCode))
-                            .frame(width: 10, height: 10)
-                    }
-                    
-                    if (tags.count > 2) {
-                        Text("+\(tags.count - 2)")
-                            .font(.onestRegular(size: 12))
-                            .foregroundColor(.gray)
-                    }
-                }
-            } else if let user = user, let viewModel = viewModel {
+            if let friend = friend, !isAdded {
                 // Show add button for non-friends
                 Button(action: {
                     isAdded = true

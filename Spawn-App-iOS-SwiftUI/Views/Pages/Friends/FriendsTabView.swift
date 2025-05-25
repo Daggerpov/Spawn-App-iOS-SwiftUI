@@ -12,10 +12,9 @@ struct FriendsTabView: View {
 	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
-	@State var showingChooseTagsPopup: Bool = false
 	@State private var friendInPopUp: BaseUserDTO?
 	@State private var friendRequestIdInPopup: UUID?
-    @State private var mutualFriendCountInPopup: Int?
+	@State private var mutualFriendCountInPopup: Int?
 
 	// for pop-ups:
 	@State private var friendRequestOffset: CGFloat = 1000
@@ -26,7 +25,6 @@ struct FriendsTabView: View {
 
 	init(user: BaseUserDTO) {
 		self.user = user
-		// Initialize the StateObject with proper wrapping to avoid warning
 		let vm = FriendsTabViewModel(
 			userId: user.id,
 			apiService: MockAPIService.isMocking
@@ -57,7 +55,7 @@ struct FriendsTabView: View {
 			.onAppear {
 				Task {
 					await viewModel.fetchAllData()
-                    viewModel.connectSearchViewModel(searchViewModel)
+					viewModel.connectSearchViewModel(searchViewModel)
 				}
 			}
             .refreshable {

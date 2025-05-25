@@ -6,14 +6,6 @@ Table User {
     firstName String
     lastName String
     bio String
-    friendTags UUID[] [ref: > FriendTag.id, note: "List of associated FriendTag IDs"]
-}
-
-Table FriendTag {
-    id UUID [pk]
-    displayName String
-    colorHexCode String // Adjust type as needed
-    friends UUID[] [ref: > User.id, note: "List of User IDs"]
 }
 
 Table Event {
