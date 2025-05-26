@@ -136,36 +136,36 @@ struct MapView: View {
                     VStack {
                         HStack {
                             Spacer()
-                            
-                            // Location button
-                            Button(action: {
-                                if let userLocation = locationManager.userLocation {
-                                    withAnimation(.easeInOut(duration: 0.75)) {
-                                        region = MKCoordinateRegion(
-                                            center: userLocation,
-                                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                                        )
+                            VStack(spacing: 8) {
+                                // 3D mode toggle button (iOS 17+ only)
+                                if #available(iOS 17.0, *) {
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            is3DMode.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(universalAccentColor)
+                                            .padding(12)
+                                            .background(Color.white)
+                                            .clipShape(Circle())
+                                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                                     }
                                 }
-                            }) {
-                                Image(systemName: "location.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(12)
-                                    .background(Color.white)
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                            }
-                            .padding(.trailing, 8)
-                            
-                            // 3D mode toggle button (iOS 17+ only)
-                            if #available(iOS 17.0, *) {
+                                
+                                // Location button
                                 Button(action: {
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        is3DMode.toggle()
+                                    if let userLocation = locationManager.userLocation {
+                                        withAnimation(.easeInOut(duration: 0.75)) {
+                                            region = MKCoordinateRegion(
+                                                center: userLocation,
+                                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                            )
+                                        }
                                     }
                                 }) {
-                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                    Image(systemName: "location.fill")
                                         .font(.system(size: 18))
                                         .foregroundColor(universalAccentColor)
                                         .padding(12)
@@ -173,8 +173,8 @@ struct MapView: View {
                                         .clipShape(Circle())
                                         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                                 }
-                                .padding(.trailing, 16)
                             }
+                            .padding(.trailing, 16)
                         }
                         .padding(.top, 16)
                         
@@ -409,9 +409,9 @@ struct EventMapViewRepresentable: UIViewRepresentable {
         mapView.delegate = context.coordinator
         
         if #available(iOS 17.0, *) {
-            // Configure 3D camera
+            // Configure initial camera
             let camera = MKMapCamera(lookingAtCenter: region.center, 
-                                   fromDistance: 1000, // Initial distance in meters
+                                   fromDistance: 2000, // Initial distance in meters
                                    pitch: 0, // Initial pitch (0 for top-down)
                                    heading: 0) // Initial heading (0 for north)
             mapView.camera = camera
@@ -421,43 +421,40 @@ struct EventMapViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        // Check if this is a significant location change
-        let isLocationChange = mapView.region.center.latitude != region.center.latitude || 
-                             mapView.region.center.longitude != region.center.longitude
-        
         if #available(iOS 17.0, *) {
-            // Update camera configuration for 3D mode
-            if is3DMode {
-                let camera = mapView.camera
-                camera.pitch = 45 // 45-degree angle for 3D view
-                camera.altitude = 1000 // Height in meters
+            // Get current camera state
+            let currentCamera = mapView.camera
+            let targetPitch = is3DMode ? 45.0 : 0.0
+            
+            // Only update camera if mode changed or significant location change
+            let isLocationChange = abs(mapView.region.center.latitude - region.center.latitude) > 0.0001 || 
+                                 abs(mapView.region.center.longitude - region.center.longitude) > 0.0001
+            
+            if isLocationChange || abs(currentCamera.pitch - targetPitch) > 1.0 {
+                // Create new camera while preserving current altitude and heading
+                let newCamera = MKMapCamera(
+                    lookingAtCenter: region.center,
+                    fromDistance: currentCamera.altitude, // Preserve current altitude
+                    pitch: targetPitch,
+                    heading: currentCamera.heading
+                )
                 
-                UIView.animate(withDuration: 0.75, delay: 0, 
-                              options: [.curveEaseInOut], 
-                              animations: {
-                    mapView.camera = camera
-                }, completion: nil)
-            } else {
-                let camera = mapView.camera
-                camera.pitch = 0 // 0-degree angle for 2D view
-                
-                UIView.animate(withDuration: 0.75, delay: 0, 
-                              options: [.curveEaseInOut], 
-                              animations: {
-                    mapView.camera = camera
-                }, completion: nil)
+                UIView.animate(
+                    withDuration: 0.75,
+                    delay: 0,
+                    options: [.curveEaseInOut],
+                    animations: {
+                        mapView.camera = newCamera
+                    }
+                )
             }
-        }
-        
-        if isLocationChange {
-            // Use UIView animation for a smoother visual effect
-            UIView.animate(withDuration: 0.75, delay: 0, 
-                          options: [.curveEaseInOut], 
-                          animations: {
-                mapView.setRegion(region, animated: false)
-            }, completion: nil)
+            
+            // Update region only if not in 3D mode or if it's a significant change
+            if !is3DMode || isLocationChange {
+                mapView.setRegion(region, animated: true)
+            }
         } else {
-            // For minor adjustments, use standard animation
+            // For iOS 16 and below, just update the region
             mapView.setRegion(region, animated: true)
         }
         
@@ -490,9 +487,17 @@ struct EventMapViewRepresentable: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
-            // Use async to prevent modifying state during view update
-            DispatchQueue.main.async {
-                self.parent.region = mapView.region
+            if #available(iOS 17.0, *) {
+                // Only update region binding if not in 3D mode
+                if !parent.is3DMode {
+                    DispatchQueue.main.async {
+                        self.parent.region = mapView.region
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.parent.region = mapView.region
+                }
             }
         }
         

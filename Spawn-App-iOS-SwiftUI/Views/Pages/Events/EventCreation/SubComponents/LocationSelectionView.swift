@@ -48,38 +48,38 @@ struct LocationSelectionView: View {
                     // Top control buttons
                     HStack {
                         Spacer()
-                        
-                        // Location button
-                        Button(action: {
-                            if let userLocation = locationManager.userLocation {
-                                pinLocation = userLocation
-                                withAnimation(.easeInOut(duration: 0.75)) {
-                                    region = MKCoordinateRegion(
-                                        center: userLocation,
-                                        span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                                    )
+                        VStack(spacing: 8) {
+                            // 3D mode toggle button (iOS 17+ only)
+                            if #available(iOS 17.0, *) {
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        is3DMode.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                                 }
-                                reverseGeocode(coordinate: userLocation)
                             }
-                        }) {
-                            Image(systemName: "location.fill")
-                                .font(.system(size: 18))
-                                .foregroundColor(universalAccentColor)
-                                .padding(12)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                        }
-                        .padding(.trailing, 8)
-                        
-                        // 3D mode toggle button (iOS 17+ only)
-                        if #available(iOS 17.0, *) {
+                            
+                            // Location button
                             Button(action: {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    is3DMode.toggle()
+                                if let userLocation = locationManager.userLocation {
+                                    pinLocation = userLocation
+                                    withAnimation(.easeInOut(duration: 0.75)) {
+                                        region = MKCoordinateRegion(
+                                            center: userLocation,
+                                            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                                        )
+                                    }
+                                    reverseGeocode(coordinate: userLocation)
                                 }
                             }) {
-                                Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                Image(systemName: "location.fill")
                                     .font(.system(size: 18))
                                     .foregroundColor(universalAccentColor)
                                     .padding(12)
@@ -87,8 +87,8 @@ struct LocationSelectionView: View {
                                     .clipShape(Circle())
                                     .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                             }
-                            .padding(.trailing, 16)
                         }
+                        .padding(.trailing, 16)
                     }
                     .padding(.top, 16)
                     
