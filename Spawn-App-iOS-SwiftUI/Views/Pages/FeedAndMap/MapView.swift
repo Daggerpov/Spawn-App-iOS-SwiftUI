@@ -21,6 +21,7 @@ struct MapView: View {
 
     // Add state for tracking mode
     @State private var userTrackingMode: MapUserTrackingMode = .none
+    @State private var is3DMode: Bool = false
 
     // MARK - Event Description State Vars
     @State private var showingEventDescriptionPopup: Bool = false
@@ -119,31 +120,66 @@ struct MapView: View {
             VStack {
                 ZStack {
                     // Map layer
-                    Map(
-                        coordinateRegion: $region,
-                        showsUserLocation: true,
+                    EventMapViewRepresentable(
+                        region: $region,
+                        is3DMode: $is3DMode,
                         userTrackingMode: $userTrackingMode,
                         annotationItems: filteredEvents.filter { $0.location != nil }
                     ) { event in
-                        MapAnnotation(
-                            coordinate: CLLocationCoordinate2D(
-                                latitude: event.location?.latitude ?? 0,
-                                longitude: event.location?.longitude ?? 0
-                            )
-                        ) {
-                            Button(action: {
-                                print("🔍 DEBUG: Tapped event pin for '\(event.title ?? "Untitled")'")
-                                eventInPopup = event
-                                colorInPopup = eventColors.randomElement()
-                                showingEventDescriptionPopup = true
-                            }) {
-                                Image(systemName: "mappin.circle.fill")
-                                    .font(.system(size: 30))
-                                    .foregroundColor(universalAccentColor)
-                            }
-                        }
+                        eventInPopup = event
+                        colorInPopup = eventColors.randomElement()
+                        showingEventDescriptionPopup = true
                     }
                     .ignoresSafeArea()
+
+                    // Top control buttons
+                    VStack {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 8) {
+                                // 3D mode toggle button (iOS 17+ only)
+                                if #available(iOS 17.0, *) {
+                                    Button(action: {
+                                        withAnimation(.easeInOut(duration: 0.3)) {
+                                            is3DMode.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(universalAccentColor)
+                                            .padding(12)
+                                            .background(Color.white)
+                                            .clipShape(Circle())
+                                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                    }
+                                }
+                                
+                                // Location button
+                                Button(action: {
+                                    if let userLocation = locationManager.userLocation {
+                                        withAnimation(.easeInOut(duration: 0.75)) {
+                                            region = MKCoordinateRegion(
+                                                center: userLocation,
+                                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                            )
+                                        }
+                                    }
+                                }) {
+                                    Image(systemName: "location.fill")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                }
+                            }
+                            .padding(.trailing, 16)
+                        }
+                        .padding(.top, 16)
+                        
+                        Spacer()
+                    }
                 }
             }
             .task {
@@ -189,6 +225,17 @@ struct MapView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
                     .animation(.easeInOut, value: showEventCreationDrawer || showFilterOverlay)
+                    .blur(radius: 0) // Ensure overlay itself isn't blurred
+            }
+
+            // Base content blur when filters are shown
+            if showFilterOverlay {
+                Rectangle()
+                    .fill(.clear)
+					.background(.ultraThinMaterial)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .animation(.easeInOut, value: showFilterOverlay)
             }
 
             // Filter overlay and buttons
@@ -210,9 +257,32 @@ struct MapView: View {
                     Spacer()
                     VStack(spacing: 8) {
                         if showFilterOverlay {
-                            ForEach(Array(TimeFilter.allCases.dropLast()).reversed(), id: \.self) { filter in
+                            // Show "All Activities" at the top if it's not currently selected
+                            if selectedTimeFilter != .allActivities {
                                 Button(action: {
-                                    print("Filter selected: \(filter.rawValue)")  // Debug print
+                                    print("Filter selected: All Activities")
+                                    withAnimation(.spring()) {
+                                        selectedTimeFilter = .allActivities
+                                        showFilterOverlay = false
+                                    }
+                                }) {
+                                    HStack {
+                                        Text(TimeFilter.allActivities.rawValue)
+                                            .font(.onestMedium(size: 16))
+                                            .foregroundColor(.black)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .background(Color.white)
+                                    .cornerRadius(20)
+                                }
+                            }
+                            
+                            // Show all other filters except the currently selected one and "All Activities"
+                            ForEach(Array(TimeFilter.allCases.dropLast().filter { $0 != selectedTimeFilter }).reversed(), id: \.self) { filter in
+                                Button(action: {
+                                    print("Filter selected: \(filter.rawValue)")
                                     withAnimation(.spring()) {
                                         selectedTimeFilter = filter
                                         showFilterOverlay = false
@@ -289,21 +359,21 @@ struct MapView: View {
 
     private func adjustRegionForEvents() {
         guard !viewModel.events.isEmpty else { return }
-
+        
         let latitudes = viewModel.events.compactMap { $0.location?.latitude }
         let longitudes = viewModel.events.compactMap { $0.location?.longitude }
-
+        
         guard let minLatitude = latitudes.min(),
-            let maxLatitude = latitudes.max(),
-            let minLongitude = longitudes.min(),
-            let maxLongitude = longitudes.max()
+              let maxLatitude = latitudes.max(),
+              let minLongitude = longitudes.min(),
+              let maxLongitude = longitudes.max()
         else { return }
-
+        
         let centerLatitude = (minLatitude + maxLatitude) / 2
         let centerLongitude = (minLongitude + maxLongitude) / 2
         let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
         let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
-
+        
         withAnimation {
             region = MKCoordinateRegion(
                 center: CLLocationCoordinate2D(
@@ -322,6 +392,144 @@ struct MapView: View {
         EventCreationViewModel.reInitialize()
         creationOffset = 1000
         showEventCreationDrawer = false
+    }
+}
+
+// MARK: - EventMapViewRepresentable
+struct EventMapViewRepresentable: UIViewRepresentable {
+    @Binding var region: MKCoordinateRegion
+    @Binding var is3DMode: Bool
+    var userTrackingMode: Binding<MapUserTrackingMode>
+    var annotationItems: [FullFeedEventDTO]
+    var onEventTap: (FullFeedEventDTO) -> Void
+    
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.showsUserLocation = true
+        mapView.delegate = context.coordinator
+        
+        if #available(iOS 17.0, *) {
+            // Configure initial camera
+            let camera = MKMapCamera(lookingAtCenter: region.center, 
+                                   fromDistance: 2000, // Initial distance in meters
+                                   pitch: 0, // Initial pitch (0 for top-down)
+                                   heading: 0) // Initial heading (0 for north)
+            mapView.camera = camera
+        }
+        
+        return mapView
+    }
+    
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        if #available(iOS 17.0, *) {
+            // Get current camera state
+            let currentCamera = mapView.camera
+            let targetPitch = is3DMode ? 45.0 : 0.0
+            
+            // Only update camera if mode changed or significant location change
+            let isLocationChange = abs(mapView.region.center.latitude - region.center.latitude) > 0.0001 || 
+                                 abs(mapView.region.center.longitude - region.center.longitude) > 0.0001
+            
+            if isLocationChange || abs(currentCamera.pitch - targetPitch) > 1.0 {
+                // Create new camera while preserving current altitude and heading
+                let newCamera = MKMapCamera(
+                    lookingAtCenter: region.center,
+                    fromDistance: currentCamera.altitude, // Preserve current altitude
+                    pitch: targetPitch,
+                    heading: currentCamera.heading
+                )
+                
+                UIView.animate(
+                    withDuration: 0.75,
+                    delay: 0,
+                    options: [.curveEaseInOut],
+                    animations: {
+                        mapView.camera = newCamera
+                    }
+                )
+            }
+            
+            // Update region only if not in 3D mode or if it's a significant change
+            if !is3DMode || isLocationChange {
+                mapView.setRegion(region, animated: true)
+            }
+        } else {
+            // For iOS 16 and below, just update the region
+            mapView.setRegion(region, animated: true)
+        }
+        
+        // Update annotations
+        let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
+        mapView.removeAnnotations(currentAnnotations)
+        
+        let newAnnotations = annotationItems.compactMap { event -> MKPointAnnotation? in
+            guard let location = event.location else { return nil }
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+            annotation.title = event.title
+            return annotation
+        }
+        mapView.addAnnotations(newAnnotations)
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: EventMapViewRepresentable
+        
+        init(_ parent: EventMapViewRepresentable) {
+            self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            if #available(iOS 17.0, *) {
+                // Only update region binding if not in 3D mode
+                if !parent.is3DMode {
+                    DispatchQueue.main.async {
+                        self.parent.region = mapView.region
+                    }
+                }
+            } else {
+                DispatchQueue.main.async {
+                    self.parent.region = mapView.region
+                }
+            }
+        }
+        
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                return nil
+            }
+            
+            let identifier = "EventPin"
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+            
+            if annotationView == nil {
+                annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+                annotationView?.canShowCallout = true
+            } else {
+                annotationView?.annotation = annotation
+            }
+            
+            if let markerView = annotationView as? MKMarkerAnnotationView {
+                markerView.markerTintColor = UIColor(universalAccentColor)
+            }
+            
+            return annotationView
+        }
+        
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            if let annotation = view.annotation,
+               let title = annotation.title,
+               let event = parent.annotationItems.first(where: { $0.title == title }) {
+                parent.onEventTap(event)
+            }
+        }
     }
 }
 
