@@ -2,71 +2,66 @@
 //  ProfileStatsView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Lee on 11/09/24.
+//  Created by Daniel Agapov on 11/9/24.
 //
 
 import SwiftUI
 
 struct ProfileStatsView: View {
-    let userStats: UserStatsDTO?
+    @StateObject var profileViewModel: ProfileViewModel
     
     var body: some View {
-        HStack(spacing: 48) {
+        HStack(spacing: 35) {
             VStack(spacing: 4) {
-                HStack {
-                    Image(systemName: "link")
-                        .font(.system(size: 16))
-                        .foregroundColor(figmaBlack400)
+                Image(systemName: "link")
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
 
-                    Text("\(userStats?.peopleMet ?? 0)")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(figmaBlack400)
-                }
+                Text("\(profileViewModel.userStats?.peopleMet ?? 0)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(universalAccentColor)
+
                 Text("People\nmet")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(figmaBlack400)
+                    .foregroundColor(.gray)
             }
 
             VStack(spacing: 4) {
-                HStack {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(figmaBlack400)
+                Image(systemName: "star.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
 
-                    Text("\(userStats?.spawnsMade ?? 0)")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(figmaBlack400)
-                }
+                Text("\(profileViewModel.userStats?.spawnsMade ?? 0)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(universalAccentColor)
+
                 Text("Spawns\nmade")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(figmaBlack400)
+                    .foregroundColor(.gray)
             }
 
             VStack(spacing: 4) {
-                HStack {
-                    Image(systemName: "calendar.badge.plus")
-                        .font(.system(size: 16))
-                        .foregroundColor(figmaBlack400)
+                Image(systemName: "calendar.badge.plus")
+                    .font(.system(size: 16))
+                    .foregroundColor(.gray)
 
-                    Text("\(userStats?.spawnsJoined ?? 0)")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(figmaBlack400)
-                }
+                Text("\(profileViewModel.userStats?.spawnsJoined ?? 0)")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundColor(universalAccentColor)
+
                 Text("Spawns\njoined")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(figmaBlack400)
+                    .foregroundColor(.gray)
             }
         }
     }
 }
 
 #Preview {
-    ProfileStatsView(userStats: UserStatsDTO(
-        peopleMet: 12,
-        spawnsMade: 5,
-        spawnsJoined: 3
-    ))
+    ProfileStatsView(
+        profileViewModel: ProfileViewModel(userId: UUID())
+    )
 } 

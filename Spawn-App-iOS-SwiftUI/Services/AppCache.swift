@@ -16,12 +16,9 @@ class AppCache: ObservableObject {
     // MARK: - Cached Data
     @Published var friends: [FullFriendUserDTO] = []
     @Published var events: [FullFeedEventDTO] = []
-    @Published var profilePicture: BaseUserDTO?
-    @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var friendRequests: [FetchFriendRequestDTO] = []
-    @Published var userTags: [FriendTagDTO] = []
-    @Published var tagFriends: [UUID: [BaseUserDTO]] = [:] // Tag ID -> Friends in tag
+    @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
@@ -29,19 +26,21 @@ class AppCache: ObservableObject {
     
     // MARK: - Constants
     private enum CacheKeys {
+        static let lastChecked = "lastChecked"
         static let friends = "friends"
         static let events = "events"
-        static let profilePicture = "profilePicture"
-        static let otherProfiles = "otherProfiles"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
-        static let userTags = "userTags"
-        static let tagFriends = "tagFriends"
-        static let lastChecked = "cache_last_checked"
+        static let otherProfiles = "otherProfiles"
     }
     
     private init() {
         loadFromDisk()
+        
+        // Set up a timer to periodically save to disk
+        Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+            self?.saveToDisk()
+        }
     }
     
     // MARK: - Public Methods
@@ -93,18 +92,6 @@ class AppCache: ObservableObject {
                     }
                 }
                 
-                // Profile Picture Cache
-                if let profilePictureResponse = result[CacheKeys.profilePicture], profilePictureResponse.invalidate {
-                    if let updatedItems = profilePictureResponse.updatedItems,
-                       let updatedProfile = try? JSONDecoder().decode(BaseUserDTO.self, from: updatedItems) {
-                        updateProfilePicture(updatedProfile)
-                    } else {
-                        Task {
-                            await refreshProfilePicture()
-                        }
-                    }
-                }
-                
                 // Other Profiles Cache
                 if let otherProfilesResponse = result[CacheKeys.otherProfiles], otherProfilesResponse.invalidate {
                     Task {
@@ -133,25 +120,6 @@ class AppCache: ObservableObject {
                         Task {
                             await refreshFriendRequests()
                         }
-                    }
-                }
-                
-                // User Tags Cache
-                if let userTagsResponse = result[CacheKeys.userTags], userTagsResponse.invalidate {
-                    if let updatedItems = userTagsResponse.updatedItems,
-                       let updatedUserTags = try? JSONDecoder().decode([FriendTagDTO].self, from: updatedItems) {
-                        updateUserTags(updatedUserTags)
-                    } else {
-                        Task {
-                            await refreshUserTags()
-                        }
-                    }
-                }
-                
-                // Tag Friends Cache
-                if let tagFriendsResponse = result[CacheKeys.tagFriends], tagFriendsResponse.invalidate {
-                    Task {
-                        await refreshTagFriends()
                     }
                 }
             }
@@ -228,31 +196,6 @@ class AppCache: ObservableObject {
         saveToDisk()
     }
     
-    // MARK: - Profile Picture Methods
-    
-    func updateProfilePicture(_ newProfile: BaseUserDTO) {
-        profilePicture = newProfile
-        lastChecked[CacheKeys.profilePicture] = Date()
-        saveToDisk()
-    }
-    
-    func refreshProfilePicture() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)") else { return }
-            
-            let fetchedProfile: BaseUserDTO = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateProfilePicture(fetchedProfile)
-            }
-        } catch {
-            print("Failed to refresh profile picture: \(error.localizedDescription)")
-        }
-    }
-    
     // MARK: - Other Profiles Methods
     
     func updateOtherProfile(_ userId: UUID, _ profile: BaseUserDTO) {
@@ -268,6 +211,8 @@ class AppCache: ObservableObject {
         
         let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
         
+        var usersToRemove: [UUID] = []
+        
         for userId in otherProfiles.keys {
             do {
                 guard let url = URL(string: APIService.baseURL + "users/\(userId)") else { continue }
@@ -276,12 +221,25 @@ class AppCache: ObservableObject {
                 await MainActor.run {
                     otherProfiles[userId] = fetchedProfile
                 }
+            } catch let error as APIError {
+                // If user not found (404), mark for removal from cache
+                if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
+                    print("User with ID \(userId) no longer exists, removing from cache")
+                    usersToRemove.append(userId)
+                } else {
+                    print("Failed to refresh profile for user \(userId): \(error.localizedDescription)")
+                }
             } catch {
                 print("Failed to refresh profile for user \(userId): \(error.localizedDescription)")
             }
         }
         
         await MainActor.run {
+            // Remove profiles that returned 404
+            for userId in usersToRemove {
+                otherProfiles.removeValue(forKey: userId)
+            }
+            
             lastChecked[CacheKeys.otherProfiles] = Date()
             saveToDisk()
         }
@@ -337,71 +295,13 @@ class AppCache: ObservableObject {
         }
     }
     
-    // MARK: - User Tags Methods
-    
-    func updateUserTags(_ newUserTags: [FriendTagDTO]) {
-        userTags = newUserTags
-        lastChecked[CacheKeys.userTags] = Date()
-        saveToDisk()
-    }
-    
-    func refreshUserTags() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friendTags/owner/\(userId)") else { return }
-            
-            let fetchedUserTags: [FriendTagDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateUserTags(fetchedUserTags)
-            }
-        } catch {
-            print("Failed to refresh user tags: \(error.localizedDescription)")
-        }
-    }
-    
-    // MARK: - Tag Friends Methods
-    
-    func updateTagFriends(_ tagId: UUID, _ friends: [BaseUserDTO]) {
-        tagFriends[tagId] = friends
-        lastChecked[CacheKeys.tagFriends] = Date()
-        saveToDisk()
-    }
-    
-    func refreshTagFriends() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-        
-        // Refresh friends for each tag
-        for tag in userTags {
-            do {
-                guard let url = URL(string: APIService.baseURL + "friendTags/\(tag.id)/friends") else { continue }
-                
-                let fetchedTagFriends: [BaseUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-                
-                await MainActor.run {
-                    tagFriends[tag.id] = fetchedTagFriends
-                }
-            } catch {
-                print("Failed to refresh friends for tag \(tag.id): \(error.localizedDescription)")
-            }
-        }
-        
-        await MainActor.run {
-            lastChecked[CacheKeys.tagFriends] = Date()
-            saveToDisk()
-        }
-    }
-    
     // MARK: - Persistence
     
     private func loadFromDisk() {
         // Load cache timestamps
         if let timestampsData = UserDefaults.standard.data(forKey: CacheKeys.lastChecked),
-           let timestamps = try? JSONDecoder().decode([String: Date].self, from: timestampsData) {
-            lastChecked = timestamps
+           let loadedTimestamps = try? JSONDecoder().decode([String: Date].self, from: timestampsData) {
+            lastChecked = loadedTimestamps
         }
         
         // Load friends
@@ -414,12 +314,6 @@ class AppCache: ObservableObject {
         if let eventsData = UserDefaults.standard.data(forKey: CacheKeys.events),
            let loadedEvents = try? JSONDecoder().decode([FullFeedEventDTO].self, from: eventsData) {
             events = loadedEvents
-        }
-       
-        // Load profile picture
-        if let profileData = UserDefaults.standard.data(forKey: CacheKeys.profilePicture),
-           let loadedProfile = try? JSONDecoder().decode(BaseUserDTO.self, from: profileData) {
-            profilePicture = loadedProfile
         }
         
         // Load other profiles
@@ -439,18 +333,6 @@ class AppCache: ObservableObject {
            let loadedRequests = try? JSONDecoder().decode([FetchFriendRequestDTO].self, from: requestsData) {
             friendRequests = loadedRequests
         }
-        
-        // Load user tags
-        if let tagsData = UserDefaults.standard.data(forKey: CacheKeys.userTags),
-           let loadedTags = try? JSONDecoder().decode([FriendTagDTO].self, from: tagsData) {
-            userTags = loadedTags
-        }
-        
-        // Load tag friends
-        if let tagFriendsData = UserDefaults.standard.data(forKey: CacheKeys.tagFriends),
-           let loadedTagFriends = try? JSONDecoder().decode([UUID: [BaseUserDTO]].self, from: tagFriendsData) {
-            tagFriends = loadedTagFriends
-        }
     }
     
     private func saveToDisk() {
@@ -469,12 +351,6 @@ class AppCache: ObservableObject {
             UserDefaults.standard.set(eventsData, forKey: CacheKeys.events)
         }
         
-        // Save profile picture
-        if let profilePicture = profilePicture,
-           let profileData = try? JSONEncoder().encode(profilePicture) {
-            UserDefaults.standard.set(profileData, forKey: CacheKeys.profilePicture)
-        }
-        
         // Save other profiles
         if let profilesData = try? JSONEncoder().encode(otherProfiles) {
             UserDefaults.standard.set(profilesData, forKey: CacheKeys.otherProfiles)
@@ -488,16 +364,6 @@ class AppCache: ObservableObject {
         // Save friend requests
         if let requestsData = try? JSONEncoder().encode(friendRequests) {
             UserDefaults.standard.set(requestsData, forKey: CacheKeys.friendRequests)
-        }
-        
-        // Save user tags
-        if let tagsData = try? JSONEncoder().encode(userTags) {
-            UserDefaults.standard.set(tagsData, forKey: CacheKeys.userTags)
-        }
-        
-        // Save tag friends
-        if let tagFriendsData = try? JSONEncoder().encode(tagFriends) {
-            UserDefaults.standard.set(tagFriendsData, forKey: CacheKeys.tagFriends)
         }
     }
 } 

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var viewModel: FeedViewModel
-    @EnvironmentObject private var appCache: AppCache
+    // Using AppCache as a singleton instead of environment object
 
     @Namespace private var animation: Namespace.ID
 
@@ -23,8 +23,6 @@ struct FeedView: View {
     @State private var creationOffset: CGFloat = 1000
     // --------
     
-    @State private var activeTag: FilterTag? = nil
-
     var user: BaseUserDTO
 
     init(user: BaseUserDTO) {
@@ -44,9 +42,6 @@ struct FeedView: View {
                 VStack {
                     HeaderView(user: user, numEvents: viewModel.events.count).padding(.top, 75)
                     Spacer()
-                    if viewModel.events.count > 0 {
-                        TagsScrollView(activeTag: $activeTag)
-                    }
                     eventsListView
                 }
                 .background(universalBackgroundColor)
@@ -59,20 +54,15 @@ struct FeedView: View {
             .onAppear {
                 Task {
                     if !MockAPIService.isMocking {
-                        await appCache.validateCache()
+                        await AppCache.shared.validateCache()
                     }
                     await viewModel.fetchAllData()
                 }
             }
             .refreshable {
                 Task {
-                    await appCache.refreshEvents()
+                    await AppCache.shared.refreshEvents()
                     await viewModel.fetchAllData()
-                }
-            }
-            .onChange(of: self.activeTag) { _ in
-                Task {
-                    await viewModel.fetchEventsForUser()
                 }
             }
             .sheet(isPresented: $showingEventDescriptionPopup) {
@@ -107,8 +97,7 @@ struct FeedView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-    FeedView(user: .danielAgapov).environmentObject(appCache)
+    FeedView(user: .danielAgapov)
 }
 
 extension FeedView {
@@ -130,10 +119,7 @@ extension FeedView {
                         EventCardView(
                             userId: user.id,
                             event: event,
-                            color: Color(
-                            hex: event
-                                .eventFriendTagColorHexCodeForRequestingUser
-                                ?? eventColorHexCodes[0])
+                            color: event.category.color()
                         )
                         { event, color in
                             eventInPopup = event

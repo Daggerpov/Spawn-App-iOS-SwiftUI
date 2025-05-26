@@ -17,7 +17,6 @@ class EventCreationViewModel: ObservableObject {
 	@Published var event: EventCreationDTO
 	@Published var creationMessage: String = ""
 
-	@Published var selectedTags: [FullFriendTagDTO] = []
 	@Published var selectedFriends: [FullFriendUserDTO] = []
 	@Published var selectedCategory: EventCategory = .general
 	
@@ -85,8 +84,8 @@ class EventCreationViewModel: ObservableObject {
         let trimmedTitle = event.title?.trimmingCharacters(in: .whitespaces) ?? ""
         await MainActor.run {
             isTitleValid = !trimmedTitle.isEmpty
-            // Check if at least one friend or tag is invited
-            isInvitesValid = !selectedFriends.isEmpty || !selectedTags.isEmpty
+            // Check if at least one friend is invited
+            isInvitesValid = !selectedFriends.isEmpty
             // Check if location is valid
             isLocationValid = event.location != nil && 
                              !event.location!.name.trimmingCharacters(in: .whitespaces).isEmpty && 
@@ -116,9 +115,8 @@ class EventCreationViewModel: ObservableObject {
 				selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
 		}
 
-		// Populate invited user and tag IDs from the selected arrays
+		// Populate invited user IDs from the selected array
 		event.invitedFriendUserIds = selectedFriends.map { $0.id }
-		event.invitedFriendTagIds = selectedTags.map { $0.id }
 		
 		// Set the selected category
 		event.category = selectedCategory

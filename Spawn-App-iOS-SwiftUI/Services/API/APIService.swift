@@ -593,9 +593,9 @@ class APIService: IAPIService {
 			   let _ = String(data: refreshTokenData, encoding: .utf8) {
 				// We have a refresh token, but we'll let the API call handle the refresh
 				// This will happen in the 401 handler in fetchData/sendData methods
-				print("⚠️ Missing access token but refresh token exists - will refresh during API call")
+				print("⚠️ Missing access token but refresh token exists - will refresh during API call for \(url.absoluteString)")
 			} else {
-				print("❌ ERROR: Missing access token and refresh token in Keychain")
+				print("❌ ERROR: Missing access token and refresh token in Keychain for \(url.absoluteString)")
 				// User might need to be logged out due to expired/missing tokens
 				DispatchQueue.main.async {
 					UserAuthViewModel.shared.signOut()
@@ -959,4 +959,4 @@ class APIService: IAPIService {
 struct EmptyRequestBody: Codable {}
 // for empty responses from requests:
 struct EmptyResponse: Codable {}
-struct EmptyObject: Encodable {}
+struct EmptyObject: Codable {}

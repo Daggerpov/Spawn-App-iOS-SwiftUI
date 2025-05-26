@@ -45,7 +45,7 @@ struct ContentView: View {
                             )!
                         )
                     }
-                FriendsAndTagsView(user: user)
+                FriendsView(user: user)
                     .tag(3)
                     .tabItem {
                         Image(
@@ -101,8 +101,7 @@ struct ContentView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache: AppCache = AppCache.shared
-    ContentView(user: BaseUserDTO.danielAgapov).environmentObject(appCache)
+    ContentView(user: BaseUserDTO.danielAgapov)
 }
 
 func resizeImage(_ image: UIImage, targetSize: CGSize) -> UIImage? {

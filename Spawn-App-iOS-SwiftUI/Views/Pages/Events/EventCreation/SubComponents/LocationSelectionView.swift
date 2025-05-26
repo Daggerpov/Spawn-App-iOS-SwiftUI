@@ -50,7 +50,7 @@ struct LocationSelectionView: View {
                     
                     if isSearching && !searchResults.isEmpty {
                         searchResultsView
-                            .background(Color(.systemBackground).opacity(0.95))
+                            .background(universalBackgroundColor.opacity(0.95))
                             .cornerRadius(10)
                             .padding(.horizontal)
                     }
@@ -108,7 +108,7 @@ struct LocationSelectionView: View {
                         }
                         .disabled(locationName.isEmpty)
                     }
-                    .background(Color(.systemBackground).opacity(0.95))
+                    .background(universalBackgroundColor.opacity(0.95))
                 }
             }
             .navigationTitle("Select Location")
@@ -322,9 +322,10 @@ extension LocationSelectionView {
             }
         }
         .padding(10)
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor)
         .cornerRadius(10)
         .shadow(radius: 2)
+        .colorScheme(.light)
     }
     
     var searchResultsView: some View {
@@ -349,6 +350,7 @@ extension LocationSelectionView {
         }
         .listStyle(PlainListStyle())
         .frame(maxHeight: 250)
+        .colorScheme(.light)
     }
     
     var locationNameInputView: some View {
@@ -418,6 +420,5 @@ extension MKPlacemark {
     @Previewable @StateObject var appCache = AppCache.shared
     LocationSelectionView()
         .environmentObject(EventCreationViewModel.shared)
-        .environmentObject(appCache)
 } 
 

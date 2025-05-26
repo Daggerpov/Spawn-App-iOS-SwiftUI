@@ -2,19 +2,28 @@
 //  ProfileInterestsView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Lee on 11/09/24.
+//  Created by Daniel Agapov on 11/9/24.
 //
 
 import SwiftUI
 
 struct ProfileInterestsView: View {
-    let profileViewModel: ProfileViewModel
-    let isCurrentUserProfile: Bool
-    let editingState: ProfileEditText
-    @Binding var whatsappLink: String
-    @Binding var instagramLink: String
-    let onRemoveInterest: (String) -> Void
-    let openSocialMediaLink: (String, String) -> Void
+    let user: Nameable
+    @StateObject var profileViewModel: ProfileViewModel
+    @Binding var editingState: ProfileEditText
+    @Binding var newInterest: String
+    
+    var openSocialMediaLink: (String, String) -> Void
+    var removeInterest: (String) -> Void
+    
+    // Check if this is the current user's profile
+    var isCurrentUserProfile: Bool {
+        if MockAPIService.isMocking {
+            return true
+        }
+        guard let currentUser = UserAuthViewModel.shared.spawnUser else { return false }
+        return currentUser.id == user.id
+    }
     
     var body: some View {
         ZStack(alignment: .top) {
@@ -30,19 +39,23 @@ struct ProfileInterestsView: View {
 
             // Position the header to be centered on the top border
             interestsSectionHeader
-                .padding(.leading, 8)
+                .padding(.leading, 6)
         }
     }
-    
+
     private var interestsSectionHeader: some View {
         HStack {
             Text("Interests + Hobbies")
                 .font(.headline)
                 .foregroundColor(.white)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(figmaBittersweetOrange)
-                .cornerRadius(12)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(universalTertiaryColor, lineWidth: 1)
+                )
+                .background(universalTertiaryColor)
+                .clipShape(Capsule())
 
             Spacer()
 
@@ -100,7 +113,7 @@ struct ProfileInterestsView: View {
         ZStack(alignment: .topLeading) {
             // Background for interests section
             RoundedRectangle(cornerRadius: 15)
-                .stroke(figmaBittersweetOrange, lineWidth: 1)
+                .stroke(Color.red.opacity(0.7), lineWidth: 1)
                 .background(Color.white.opacity(0.5).cornerRadius(15))
 
             if profileViewModel.userInterests.isEmpty {
@@ -132,6 +145,7 @@ struct ProfileInterestsView: View {
         }
         .frame(height: profileViewModel.userInterests.isEmpty ? 100 : 140)
         .padding(.horizontal)
+        .padding(.top, 5)
     }
 
     private var emptyInterestsView: some View {
@@ -156,7 +170,7 @@ struct ProfileInterestsView: View {
                     ? HStack {
                         Spacer()
                         Button(action: {
-                            onRemoveInterest(interest)
+                            removeInterest(interest)
                         }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(.red)
@@ -170,12 +184,11 @@ struct ProfileInterestsView: View {
 
 #Preview {
     ProfileInterestsView(
-        profileViewModel: ProfileViewModel(),
-        isCurrentUserProfile: true,
-        editingState: .edit,
-        whatsappLink: .constant(""),
-        instagramLink: .constant(""),
-        onRemoveInterest: { _ in },
-        openSocialMediaLink: { _, _ in }
+        user: BaseUserDTO.danielAgapov,
+        profileViewModel: ProfileViewModel(userId: UUID()),
+        editingState: .constant(.edit),
+        newInterest: .constant(""),
+        openSocialMediaLink: { _, _ in },
+        removeInterest: { _ in }
     )
 } 

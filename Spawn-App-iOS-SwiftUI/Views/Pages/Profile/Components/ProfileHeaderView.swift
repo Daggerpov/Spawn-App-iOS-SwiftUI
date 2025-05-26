@@ -2,20 +2,43 @@
 //  ProfileHeaderView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Lee on 11/09/24.
+//  Created by Daniel Agapov on 11/9/24.
 //
 
 import SwiftUI
+import PhotosUI
 
 struct ProfileHeaderView: View {
-    let user: BaseUserDTO
+    let user: Nameable
+    @StateObject var userAuth = UserAuthViewModel.shared
+    
     @Binding var selectedImage: UIImage?
     @Binding var showImagePicker: Bool
     @Binding var isImageLoading: Bool
-    let isCurrentUserProfile: Bool
-    let editingState: ProfileEditText
+    @Binding var refreshFlag: Bool
+    @Binding var editingState: ProfileEditText
+    
+    // Check if this is the current user's profile
+    var isCurrentUserProfile: Bool {
+        if MockAPIService.isMocking {
+            return true
+        }
+        guard let currentUser = userAuth.spawnUser else { return false }
+        return currentUser.id == user.id
+    }
     
     var body: some View {
+        VStack {
+            // Profile Picture
+            profilePictureSection
+                .padding(.top, 15)
+            
+            // Name and Username
+            nameAndUsernameView
+        }
+    }
+    
+    private var profilePictureSection: some View {
         ZStack(alignment: .bottomTrailing) {
             if isImageLoading {
                 ProgressView()
@@ -36,7 +59,8 @@ struct ProfileHeaderView: View {
                         .frame(width: 130, height: 130)
                         .clipShape(Circle())
                 } else {
-                    AsyncImage(url: URL(string: profilePictureString)) { phase in
+                    AsyncImage(url: URL(string: profilePictureString)) {
+                        phase in
                         switch phase {
                         case .empty:
                             ProgressView()
@@ -88,46 +112,55 @@ struct ProfileHeaderView: View {
                     }
             }
         }
-        .animation(.easeInOut, value: selectedImage != nil)
-        .animation(.easeInOut, value: isImageLoading)
-        .sheet(
-            isPresented: $showImagePicker,
-            onDismiss: {
-                // Only show loading if we actually have a new image
-                if selectedImage != nil {
-                    DispatchQueue.main.async {
-                        isImageLoading = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            isImageLoading = false
-                        }
-                    }
-                }
+    }
+    
+    private var nameAndUsernameView: some View {
+        // Name and Username - make this more reactive to changes
+        Group {
+			if isCurrentUserProfile, let currentUser = userAuth.spawnUser
+			{
+				// For the current user, always display the latest from userAuth	                EmptyView()
+				Text(
+					FormatterService.shared.formatName(
+						user: currentUser
+					)
+				)
+				.font(.title3)
+				.bold()
+				.foregroundColor(universalAccentColor)
+
+				Text("@\(currentUser.username)")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
+            } else {
+                // For other users, use the passed-in user
+                Text(
+                    FormatterService.shared.formatName(
+                        user: user
+                    )
+                )
+                .font(.title3)
+                .bold()
+                .foregroundColor(universalAccentColor)
+
+                Text("@\(user.username)")
+                    .font(.subheadline)
+                    .foregroundColor(Color.gray)
+                    .padding(.bottom, 5)
             }
-        ) {
-            SwiftUIImagePicker(selectedImage: $selectedImage)
-                .ignoresSafeArea()
         }
-        .onChange(of: selectedImage) { newImage in
-            if newImage != nil {
-                // Force UI update when image changes
-                DispatchQueue.main.async {
-                    isImageLoading = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        isImageLoading = false
-                    }
-                }
-            }
-        }
+        .id(refreshFlag)  // Force refresh when flag changes
     }
 }
 
 #Preview {
     ProfileHeaderView(
-        user: BaseUserDTO.danielAgapov,
+		user: BaseUserDTO.danielAgapov,
         selectedImage: .constant(nil),
         showImagePicker: .constant(false),
         isImageLoading: .constant(false),
-        isCurrentUserProfile: true,
-        editingState: .edit
+        refreshFlag: .constant(false),
+        editingState: .constant(.edit)
     )
 } 

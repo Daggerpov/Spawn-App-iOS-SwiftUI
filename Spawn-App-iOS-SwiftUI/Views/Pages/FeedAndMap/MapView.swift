@@ -71,18 +71,6 @@ struct MapView: View {
                         }
                     }
                     
-//                    VStack {
-//                        VStack {
-//                            TagsScrollView(
-//                                tags: viewModel.tags,
-//                                activeTag: $viewModel.activeTag
-//                            )
-//                        }
-//                        .padding(.horizontal)
-//                        .padding(.top, 20)
-//                        Spacer()
-//                    }
-//                    .padding(.top, 50)
                 }
                 .ignoresSafeArea()
                 .dimmedBackground(

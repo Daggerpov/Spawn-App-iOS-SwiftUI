@@ -1,19 +1,14 @@
 //
-//  FriendsAndTagsView.swift
+//  FriendsView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 11/24/24.
+//  Created by Daniel Agapov on 2025-05-24.
 //
 
 import SwiftUI
 
-struct FriendsAndTagsView: View {
+struct FriendsView: View {
     let user: BaseUserDTO
-
-    // for add friend to tag drawer:
-    @State private var showAddFriendToTagButtonPressedView: Bool = false
-    @State private var selectedFriendTagId: UUID? = nil
-    @State private var tagsViewModel: TagsViewModel? = nil
 
     init(user: BaseUserDTO) {
         self.user = user
@@ -26,38 +21,16 @@ struct FriendsAndTagsView: View {
                     HStack {
                         Spacer()
                         FriendRequestNavButtonView
-                        FriendTagNavButtonView
                         Spacer()
                     }
                     .padding(.horizontal)
 
                     FriendsTabView(user: user)
-
                 }
                 .padding()
                 .background(universalBackgroundColor)
                 .navigationBarHidden(true)
             }
-        }
-        .sheet(isPresented: $showAddFriendToTagButtonPressedView) {
-            if let friendTagIdForSheet = selectedFriendTagId {
-                AddFriendToTagView(
-                    userId: user.id,
-                    friendTagId: friendTagIdForSheet,
-                    closeCallback: closeSheet
-                )
-                .presentationDragIndicator(.visible)
-                .presentationDetents([.height(400)])
-            }
-        }
-    }
-
-    func closeSheet() {
-        showAddFriendToTagButtonPressedView = false
-
-        // Re-fetch tags after closing the sheet
-        Task {
-            await tagsViewModel?.fetchTags()
         }
     }
 }
@@ -92,7 +65,6 @@ struct BaseFriendNavButtonView: View {
             .foregroundColor(.white)
             .padding(.leading, 8)
             .padding(.vertical, 8)
-            // TODO DANIEL A: insert logic here to get from view model the num of friend requests, like in Figma
             Image(iconImageName)
                 .resizable()
                 .frame(width: 50, height: 50)
@@ -102,30 +74,15 @@ struct BaseFriendNavButtonView: View {
     }
 }
 
-extension FriendsAndTagsView {
+extension FriendsView {
     var FriendRequestNavButtonView: some View {
-        BaseFriendNavButtonView(
-            iconImageName: "friend_request_icon",
-            topText: "Friend Requests",
-            bottomText: "Accept or Deny"
-        )
-    }
-
-    var FriendTagNavButtonView: some View {
         NavigationLink(destination: {
-            TagsTabView(
-                userId: user.id,
-                addFriendToTagButtonPressedCallback: {
-                    friendTagId in
-                    selectedFriendTagId = friendTagId
-                    showAddFriendToTagButtonPressedView = true
-                }
-            )
+            FriendRequestsView(userId: user.id)
         }) {
             BaseFriendNavButtonView(
-                iconImageName: "friend_tag_icon",
-                topText: "Friend Tags",
-                bottomText: "Create or Edit"
+                iconImageName: "friend_request_icon",
+                topText: "Friend Requests",
+                bottomText: "Accept or Deny"
             )
         }
     }
@@ -134,5 +91,5 @@ extension FriendsAndTagsView {
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    FriendsAndTagsView(user: .danielAgapov).environmentObject(appCache)
+    FriendsView(user: .danielAgapov).environmentObject(appCache)
 }
