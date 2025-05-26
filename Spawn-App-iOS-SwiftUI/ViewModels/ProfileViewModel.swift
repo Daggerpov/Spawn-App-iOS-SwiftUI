@@ -43,6 +43,15 @@ class ProfileViewModel: ObservableObject {
     func fetchUserStats(userId: UUID) async {
         await MainActor.run { self.isLoadingStats = true }
         
+        // Check cache first
+        if let cachedStats = AppCache.shared.profileStats[userId] {
+            await MainActor.run {
+                self.userStats = cachedStats
+                self.isLoadingStats = false
+            }
+            return
+        }
+        
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/stats")!
             let stats: UserStatsDTO = try await self.apiService.fetchData(
@@ -53,6 +62,8 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.userStats = stats
                 self.isLoadingStats = false
+                // Update cache
+                AppCache.shared.updateProfileStats(userId, stats)
             }
         } catch {
             await MainActor.run {
@@ -65,6 +76,15 @@ class ProfileViewModel: ObservableObject {
     func fetchUserInterests(userId: UUID) async {
         await MainActor.run { self.isLoadingInterests = true }
         
+        // Check cache first
+        if let cachedInterests = AppCache.shared.profileInterests[userId] {
+            await MainActor.run {
+                self.userInterests = cachedInterests
+                self.isLoadingInterests = false
+            }
+            return
+        }
+        
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
             let interests: [String] = try await self.apiService.fetchData(from: url, parameters: nil)
@@ -72,6 +92,8 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.userInterests = interests
                 self.isLoadingInterests = false
+                // Update cache
+                AppCache.shared.updateProfileInterests(userId, interests)
             }
         } catch {
             await MainActor.run {
@@ -88,6 +110,8 @@ class ProfileViewModel: ObservableObject {
             
             // Refresh interests after adding
             await fetchUserInterests(userId: userId)
+            // Also refresh the cache
+            await AppCache.shared.refreshProfileInterests(userId)
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to add interest: \(error.localizedDescription)"
@@ -98,6 +122,15 @@ class ProfileViewModel: ObservableObject {
     func fetchUserSocialMedia(userId: UUID) async {
         await MainActor.run { self.isLoadingSocialMedia = true }
         
+        // Check cache first
+        if let cachedSocialMedia = AppCache.shared.profileSocialMedia[userId] {
+            await MainActor.run {
+                self.userSocialMedia = cachedSocialMedia
+                self.isLoadingSocialMedia = false
+            }
+            return
+        }
+        
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
             let socialMedia: UserSocialMediaDTO = try await self.apiService.fetchData(from: url, parameters: nil)
@@ -105,6 +138,8 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.userSocialMedia = socialMedia
                 self.isLoadingSocialMedia = false
+                // Update cache
+                AppCache.shared.updateProfileSocialMedia(userId, socialMedia)
             }
         } catch {
             await MainActor.run {
@@ -134,6 +169,8 @@ class ProfileViewModel: ObservableObject {
             
             await MainActor.run {
                 self.userSocialMedia = updatedSocialMedia
+                // Update cache
+                AppCache.shared.updateProfileSocialMedia(userId, updatedSocialMedia)
             }
         } catch {
             await MainActor.run {
@@ -331,6 +368,8 @@ class ProfileViewModel: ObservableObject {
             
             // Refresh interests from server to ensure consistency
             await fetchUserInterests(userId: userId)
+            // Also refresh the cache
+            await AppCache.shared.refreshProfileInterests(userId)
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
@@ -529,6 +568,15 @@ class ProfileViewModel: ObservableObject {
         
         await MainActor.run { self.isLoadingUserEvents = true }
         
+        // Check cache first
+        if let cachedEvents = AppCache.shared.profileEvents[profileUserId] {
+            await MainActor.run {
+                self.profileEvents = cachedEvents
+                self.isLoadingUserEvents = false
+            }
+            return
+        }
+        
         do {
             let url = URL(string: APIService.baseURL + "events/profile/\(profileUserId)")!
             let parameters = ["requestingUserId": requestingUserId.uuidString]
@@ -541,6 +589,8 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.profileEvents = events
                 self.isLoadingUserEvents = false
+                // Update cache
+                AppCache.shared.updateProfileEvents(profileUserId, events)
             }
         } catch {
             await MainActor.run {

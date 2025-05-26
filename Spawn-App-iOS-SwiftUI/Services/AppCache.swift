@@ -20,6 +20,12 @@ class AppCache: ObservableObject {
     @Published var friendRequests: [FetchFriendRequestDTO] = []
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     
+    // Profile caches
+    @Published var profileStats: [UUID: UserStatsDTO] = [:]
+    @Published var profileInterests: [UUID: [String]] = [:]
+    @Published var profileSocialMedia: [UUID: UserSocialMediaDTO] = [:]
+    @Published var profileEvents: [UUID: [ProfileEventDTO]] = [:]
+    
     // MARK: - Cache Metadata
     private var lastChecked: [String: Date] = [:]
     private var isInitialized = false
@@ -32,6 +38,10 @@ class AppCache: ObservableObject {
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
         static let otherProfiles = "otherProfiles"
+        static let profileStats = "profileStats"
+        static let profileInterests = "profileInterests"
+        static let profileSocialMedia = "profileSocialMedia"
+        static let profileEvents = "profileEvents"
     }
     
     private init() {
@@ -294,6 +304,101 @@ class AppCache: ObservableObject {
         }
     }
     
+    // MARK: - Profile Methods
+    
+    func updateProfileStats(_ userId: UUID, _ stats: UserStatsDTO) {
+        profileStats[userId] = stats
+        lastChecked[CacheKeys.profileStats] = Date()
+        saveToDisk()
+    }
+    
+    func updateProfileInterests(_ userId: UUID, _ interests: [String]) {
+        profileInterests[userId] = interests
+        lastChecked[CacheKeys.profileInterests] = Date()
+        saveToDisk()
+    }
+    
+    func updateProfileSocialMedia(_ userId: UUID, _ socialMedia: UserSocialMediaDTO) {
+        profileSocialMedia[userId] = socialMedia
+        lastChecked[CacheKeys.profileSocialMedia] = Date()
+        saveToDisk()
+    }
+    
+    func updateProfileEvents(_ userId: UUID, _ events: [ProfileEventDTO]) {
+        profileEvents[userId] = events
+        lastChecked[CacheKeys.profileEvents] = Date()
+        saveToDisk()
+    }
+    
+    func refreshProfileStats(_ userId: UUID) async {
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/stats") else { return }
+            
+            let stats: UserStatsDTO = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                updateProfileStats(userId, stats)
+            }
+        } catch {
+            print("Failed to refresh profile stats: \(error.localizedDescription)")
+        }
+    }
+    
+    func refreshProfileInterests(_ userId: UUID) async {
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/interests") else { return }
+            
+            let interests: [String] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                updateProfileInterests(userId, interests)
+            }
+        } catch {
+            print("Failed to refresh profile interests: \(error.localizedDescription)")
+        }
+    }
+    
+    func refreshProfileSocialMedia(_ userId: UUID) async {
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/social-media") else { return }
+            
+            let socialMedia: UserSocialMediaDTO = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                updateProfileSocialMedia(userId, socialMedia)
+            }
+        } catch {
+            print("Failed to refresh profile social media: \(error.localizedDescription)")
+        }
+    }
+    
+    func refreshProfileEvents(_ userId: UUID) async {
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "users/profile/\(userId)") else { return }
+            let parameters = ["requestingUserId": myUserId.uuidString]
+            
+            let events: [ProfileEventDTO] = try await apiService.fetchData(from: url, parameters: parameters)
+            
+            await MainActor.run {
+                updateProfileEvents(userId, events)
+            }
+        } catch {
+            print("Failed to refresh profile events: \(error.localizedDescription)")
+        }
+    }
+    
     // MARK: - Persistence
     
     private func loadFromDisk() {
@@ -332,6 +437,30 @@ class AppCache: ObservableObject {
            let loadedRequests = try? JSONDecoder().decode([FetchFriendRequestDTO].self, from: requestsData) {
             friendRequests = loadedRequests
         }
+        
+        // Load profile stats
+        if let statsData = UserDefaults.standard.data(forKey: CacheKeys.profileStats),
+           let loadedStats = try? JSONDecoder().decode([UUID: UserStatsDTO].self, from: statsData) {
+            profileStats = loadedStats
+        }
+        
+        // Load profile interests
+        if let interestsData = UserDefaults.standard.data(forKey: CacheKeys.profileInterests),
+           let loadedInterests = try? JSONDecoder().decode([UUID: [String]].self, from: interestsData) {
+            profileInterests = loadedInterests
+        }
+        
+        // Load profile social media
+        if let socialMediaData = UserDefaults.standard.data(forKey: CacheKeys.profileSocialMedia),
+           let loadedSocialMedia = try? JSONDecoder().decode([UUID: UserSocialMediaDTO].self, from: socialMediaData) {
+            profileSocialMedia = loadedSocialMedia
+        }
+        
+        // Load profile events
+        if let eventsData = UserDefaults.standard.data(forKey: CacheKeys.profileEvents),
+           let loadedEvents = try? JSONDecoder().decode([UUID: [ProfileEventDTO]].self, from: eventsData) {
+            profileEvents = loadedEvents
+        }
     }
     
     private func saveToDisk() {
@@ -363,6 +492,26 @@ class AppCache: ObservableObject {
         // Save friend requests
         if let requestsData = try? JSONEncoder().encode(friendRequests) {
             UserDefaults.standard.set(requestsData, forKey: CacheKeys.friendRequests)
+        }
+        
+        // Save profile stats
+        if let statsData = try? JSONEncoder().encode(profileStats) {
+            UserDefaults.standard.set(statsData, forKey: CacheKeys.profileStats)
+        }
+        
+        // Save profile interests
+        if let interestsData = try? JSONEncoder().encode(profileInterests) {
+            UserDefaults.standard.set(interestsData, forKey: CacheKeys.profileInterests)
+        }
+        
+        // Save profile social media
+        if let socialMediaData = try? JSONEncoder().encode(profileSocialMedia) {
+            UserDefaults.standard.set(socialMediaData, forKey: CacheKeys.profileSocialMedia)
+        }
+        
+        // Save profile events
+        if let eventsData = try? JSONEncoder().encode(profileEvents) {
+            UserDefaults.standard.set(eventsData, forKey: CacheKeys.profileEvents)
         }
     }
 } 
