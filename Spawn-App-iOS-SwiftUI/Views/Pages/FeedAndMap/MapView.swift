@@ -66,7 +66,7 @@ struct MapView: View {
                         coordinateRegion: $region,
                         showsUserLocation: true,
                         userTrackingMode: $userTrackingMode,
-                        annotationItems: viewModel.events
+                        annotationItems: filteredEvents
                     ) { event in
                         MapAnnotation(
                             coordinate: CLLocationCoordinate2D(
@@ -95,10 +95,11 @@ struct MapView: View {
                                 showFilterOverlay = true
                             }) {
                                 HStack {
+									if selectedTimeFilter == .allActivities {
+										Circle().fill(figmaGreen).frame(width: 10, height: 10)
+									}
                                     Text(selectedTimeFilter.rawValue)
                                         .font(.onestMedium(size: 16))
-                                        .foregroundColor(.black)
-                                    Image(systemName: "chevron.up")
                                         .foregroundColor(.black)
                                 }
                                 .padding(.vertical, 12)
@@ -109,7 +110,7 @@ struct MapView: View {
                             }
                             .padding(.trailing, 16)
                         }
-                        .padding(.bottom, 16)
+                        .padding(.bottom, 85)
                     }
                 }
                 .ignoresSafeArea()
@@ -125,20 +126,28 @@ struct MapView: View {
                                     showFilterOverlay = false
                                 }
                             VStack(spacing: 8) {
-                                ForEach(TimeFilter.allCases.reversed(), id: \.self) { filter in
+                                ForEach(TimeFilter.allCases, id: \.self) { filter in
                                     Button(action: {
                                         selectedTimeFilter = filter
                                         showFilterOverlay = false
                                     }) {
-                                        Text(filter.rawValue)
-                                            .font(.onestMedium(size: 16))
-                                            .foregroundColor(.black)
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color.white)
-                                            )
+                                        HStack {
+                                            if filter == .allActivities {
+                                                Circle()
+                                                    .fill(figmaGreen)
+                                                    .frame(width: 10, height: 10)
+                                            }
+                                            Text(filter.rawValue)
+                                                .font(.onestMedium(size: 16))
+                                                .foregroundColor(.black)
+                                        }
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.vertical, 12)
+                                        .padding(.horizontal, 16)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(Color.white)
+                                        )
                                     }
                                 }
                             }
@@ -146,9 +155,11 @@ struct MapView: View {
                             .background(Color.clear)
                             .transition(.move(edge: .bottom))
                             .animation(.easeInOut, value: showFilterOverlay)
-                            .padding(.horizontal)
-                            .padding(.bottom, 100)
+                            .frame(width: 200)
                             .frame(maxHeight: .infinity, alignment: .bottom)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.horizontal)
+                            .padding(.bottom, 185)
                         }
                     }
                 )
@@ -157,7 +168,7 @@ struct MapView: View {
                 // Fetch data
                 await viewModel.fetchAllData()
                 
-                // Focus on user location only on initial load
+                // Focus on user location or events after data is loaded
                 await MainActor.run {
                     if let userLocation = locationManager.userLocation {
                         region = MKCoordinateRegion(
@@ -170,8 +181,10 @@ struct MapView: View {
                 }
             }
             .onChange(of: locationManager.locationUpdated) { _ in
-                // Only update region if we haven't set it yet
-                if locationManager.locationUpdated && locationManager.userLocation != nil && region.center.latitude == 49.26468617023799 {
+                // Only update region if we're still at the default location
+                if locationManager.locationUpdated && locationManager.userLocation != nil && 
+                   abs(region.center.latitude - 49.26468617023799) < 0.0001 && 
+                   abs(region.center.longitude - -123.25859833051356) < 0.0001 {
                     adjustRegionToUserLocation()
                 }
             }
