@@ -189,6 +189,17 @@ struct MapView: View {
                     .ignoresSafeArea()
                     .transition(.opacity)
                     .animation(.easeInOut, value: showEventCreationDrawer || showFilterOverlay)
+                    .blur(radius: 0) // Ensure overlay itself isn't blurred
+            }
+
+            // Base content blur when filters are shown
+            if showFilterOverlay {
+                Rectangle()
+                    .fill(.clear)
+					.background(.ultraThinMaterial)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .animation(.easeInOut, value: showFilterOverlay)
             }
 
             // Filter overlay and buttons
