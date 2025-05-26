@@ -289,7 +289,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 							
 					await MainActor.run {
 						self.spawnUser = fetchedSpawnUser
-                        print("user id: \(fetchedSpawnUser.id)")
 						self.shouldNavigateToUserInfoInputView = false
 						self.isFormValid = true
 						self.setShouldNavigateToFeedView()
