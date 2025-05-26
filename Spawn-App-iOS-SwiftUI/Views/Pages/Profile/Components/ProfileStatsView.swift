@@ -11,50 +11,53 @@ struct ProfileStatsView: View {
     @StateObject var profileViewModel: ProfileViewModel
     
     var body: some View {
-        HStack(spacing: 35) {
+        HStack(spacing: 48) {
             VStack(spacing: 4) {
-                Image(systemName: "link")
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
+                HStack {
+                    Image(systemName: "link")
+                        .font(.system(size: 16))
+                        .foregroundColor(figmaBlack400)
 
-                Text("\(profileViewModel.userStats?.peopleMet ?? 0)")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(universalAccentColor)
-
+                    Text("\(profileViewModel.userStats?.peopleMet ?? 0)")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(figmaBlack400)
+                }
                 Text("People\nmet")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.gray)
+                    .foregroundColor(figmaBlack400)
             }
 
             VStack(spacing: 4) {
-                Image(systemName: "star.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
+                HStack {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(figmaBlack400)
 
-                Text("\(profileViewModel.userStats?.spawnsMade ?? 0)")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(universalAccentColor)
-
+                    Text("\(profileViewModel.userStats?.spawnsMade ?? 0)")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(figmaBlack400)
+                }
                 Text("Spawns\nmade")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.gray)
+                    .foregroundColor(figmaBlack400)
             }
 
             VStack(spacing: 4) {
-                Image(systemName: "calendar.badge.plus")
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
+                HStack {
+                    Image(systemName: "calendar.badge.plus")
+                        .font(.system(size: 16))
+                        .foregroundColor(figmaBlack400)
 
-                Text("\(profileViewModel.userStats?.spawnsJoined ?? 0)")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(universalAccentColor)
-
+                    Text("\(profileViewModel.userStats?.spawnsJoined ?? 0)")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(figmaBlack400)
+                }
                 Text("Spawns\njoined")
                     .font(.caption2)
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.gray)
+                    .foregroundColor(figmaBlack400)
             }
         }
     }

@@ -48,14 +48,10 @@ struct ProfileInterestsView: View {
             Text("Interests + Hobbies")
                 .font(.headline)
                 .foregroundColor(.white)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(universalTertiaryColor, lineWidth: 1)
-                )
-                .background(universalTertiaryColor)
-                .clipShape(Capsule())
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(figmaBittersweetOrange)
+                .cornerRadius(12)
 
             Spacer()
 
@@ -113,7 +109,7 @@ struct ProfileInterestsView: View {
         ZStack(alignment: .topLeading) {
             // Background for interests section
             RoundedRectangle(cornerRadius: 15)
-                .stroke(Color.red.opacity(0.7), lineWidth: 1)
+                .stroke(figmaBittersweetOrange, lineWidth: 1)
                 .background(Color.white.opacity(0.5).cornerRadius(15))
 
             if profileViewModel.userInterests.isEmpty {

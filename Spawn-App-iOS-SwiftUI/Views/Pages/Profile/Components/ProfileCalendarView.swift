@@ -32,11 +32,11 @@ struct ProfileCalendarView: View {
                 .padding(.vertical, 5)
 
             // Days of week header
-            HStack(spacing: 0) {
+            HStack(spacing: 4) {
                 ForEach(Array(zip(0..<weekDays.count, weekDays)), id: \.0) { index, day in
                     Text(day)
                         .font(.caption2)
-                        .frame(maxWidth: .infinity)
+                        .frame(width: 28)
                         .foregroundColor(.gray)
                 }
             }
@@ -46,27 +46,31 @@ struct ProfileCalendarView: View {
                     .frame(maxWidth: .infinity, minHeight: 150)
             } else {
                 // Calendar grid (clickable to show popup)
-                VStack(spacing: 6) {
+                VStack(spacing: 4) {
                     ForEach(0..<5, id: \.self) { row in
-                        HStack(spacing: 6) {
+                        HStack(spacing: 4) {
                             ForEach(0..<7, id: \.self) { col in
                                 if let dayActivities = getDayActivities(row: row, col: col) {
                                     if dayActivities.isEmpty {
                                         // Empty day cell
                                         RoundedRectangle(cornerRadius: 6)
                                             .fill(Color.gray.opacity(0.2))
-                                            .frame(height: 32)
+                                            .frame(height: 28)
+                                            .frame(width: 28)
                                     } else {
                                         // Mini day cell with multiple activities
                                         MiniDayCell(activities: dayActivities)
                                             .onTapGesture {
-                                                handleDaySelection(activities: dayActivities)
+												handleDaySelection(
+													activities: dayActivities
+												)
                                             }
                                     }
                                 } else {
                                     RoundedRectangle(cornerRadius: 6)
                                         .fill(Color.gray.opacity(0.2))
-                                        .frame(height: 32)
+                                        .frame(height: 28)
+                                        .frame(width: 28)
                                 }
                             }
                         }
