@@ -285,10 +285,8 @@ struct ProfileView: View {
 							Image(systemName: "gearshape")
 								.foregroundColor(universalAccentColor)
 						}
-					} else if !isCurrentUserProfile
-						|| profileViewModel.friendshipStatus == .friends
-					{
-						// Menu button for other user profiles
+					} else {
+						// Menu button for other user profiles - always show immediately
 						Button(action: {
 							showProfileMenu = true
 						}) {
