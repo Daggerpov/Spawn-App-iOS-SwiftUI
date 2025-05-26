@@ -15,7 +15,7 @@ struct MapView: View {
 
     // Region for Map - using closer zoom level
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 49.26468617023799, longitude: -123.25859833051356), // Default to UBC
+        center: CLLocationCoordinate2D(latitude: defaultMapLatitude, longitude: defaultMapLongitude), // Default to UBC
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
 
@@ -206,7 +206,6 @@ struct MapView: View {
                             .frame(maxHeight: .infinity, alignment: .bottom)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                             .padding(.horizontal)
-                            .padding(.bottom, 185)
                         }
                     }
                 )
@@ -230,8 +229,8 @@ struct MapView: View {
             .onChange(of: locationManager.locationUpdated) { _ in
                 // Only update region if we're still at the default location
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
-                   abs(region.center.latitude - 49.26468617023799) < 0.0001 && 
-                   abs(region.center.longitude - -123.25859833051356) < 0.0001 {
+                   abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
+                   abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
                     adjustRegionToUserLocation()
                 }
             }
