@@ -10,7 +10,7 @@ import SwiftUI // just for UIImage for `createUser()`
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = false
+	static var isMocking: Bool = true
 
 	var errorMessage: String? = nil
 	var errorStatusCode: Int? = nil
@@ -131,6 +131,40 @@ class MockAPIService: IAPIService {
 			) as! T
 		}
 
+		// Handle calendar activities fetch
+		if url.absoluteString.contains("users/") && url.absoluteString.contains("/calendar") {
+			// Create mock calendar activities based on mock events
+			let mockActivities = createMockCalendarActivities(parameters: parameters)
+			
+			// If parameters are provided, return activities for that month
+			// If no parameters, return all activities
+			if let _ = parameters?["month"], let _ = parameters?["year"] {
+				return mockActivities as! T
+			} else {
+				// For fetchAllCalendarActivities, return activities for multiple months
+				var allActivities: [CalendarActivityDTO] = []
+				
+				// Create activities for current month and next 2 months
+				let calendar = Calendar.current
+				let currentDate = Date()
+				
+				for monthOffset in 0...2 {
+					if let futureDate = calendar.date(byAdding: .month, value: monthOffset, to: currentDate) {
+						let month = calendar.component(.month, from: futureDate)
+						let year = calendar.component(.year, from: futureDate)
+						
+						let monthActivities = createMockCalendarActivities(parameters: [
+							"month": String(month),
+							"year": String(year)
+						])
+						allActivities.append(contentsOf: monthActivities)
+					}
+				}
+				
+				return allActivities as! T
+			}
+		}
+
 		// EventCardViewModel.swift & EventDescriptionViewModel.swift:
 		if url.absoluteString.contains("events/")
 			&& url.absoluteString.contains("/participation")
@@ -155,6 +189,12 @@ class MockAPIService: IAPIService {
 				+ "users/\(userIdForUrl)"
 			{
 				return BaseUserDTO.danielAgapov as! T
+			}
+
+			// Fetch user interests
+			if url.absoluteString.contains("users/") && url.absoluteString.contains("/interests") {
+				// Return mock interests
+				return ["Hiking", "Photography", "Cooking", "Travel", "Music"] as! T
 			}
 		}
 
@@ -468,6 +508,50 @@ class MockAPIService: IAPIService {
 	private func createMockEvents() -> [Event] {
 		// Return mock events data
 		return Event.mockEvents
+	}
+
+	private func createMockCalendarActivities(parameters: [String: String]?) -> [CalendarActivityDTO] {
+		// Get the current month and year from parameters, or use current date
+		let calendar = Calendar.current
+		let currentDate = Date()
+		let month = parameters?["month"].flatMap(Int.init) ?? calendar.component(.month, from: currentDate)
+		let year = parameters?["year"].flatMap(Int.init) ?? calendar.component(.year, from: currentDate)
+
+		// Create a date components for the specified month
+		var dateComponents = DateComponents()
+		dateComponents.year = year
+		dateComponents.month = month
+
+		// Create mock activities based on mock events
+		var activities: [CalendarActivityDTO] = []
+
+		// Use the mock events to create calendar activities
+		let mockEvents = [
+			FullFeedEventDTO.mockDinnerEvent,
+			FullFeedEventDTO.mockSelfOwnedEvent,
+			FullFeedEventDTO.mockSelfOwnedEvent2
+		]
+
+		// Create activities spread throughout the month
+		for (index, event) in mockEvents.enumerated() {
+			// Create multiple activities per event
+			for dayOffset in [3, 8, 15, 22] {
+				dateComponents.day = dayOffset + index
+				if let date = calendar.date(from: dateComponents) {
+					let activity = CalendarActivityDTO(
+						id: UUID(),
+						date: date,
+						eventCategory: event.category,
+						icon: event.icon,
+						colorHexCode: event.category.color().hex,
+						eventId: event.id
+					)
+					activities.append(activity)
+				}
+			}
+		}
+
+		return activities
 	}
 }
 

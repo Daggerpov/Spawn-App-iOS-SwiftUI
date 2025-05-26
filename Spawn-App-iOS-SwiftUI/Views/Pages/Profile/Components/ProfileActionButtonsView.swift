@@ -33,7 +33,7 @@ struct ProfileActionButtonsView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "pencil.circle")
                         Text("Edit Profile")
-                            .bold()
+							.font(.onestSemiBold(size: 12))
                     }
                     .bold()
                     .font(.caption)
@@ -54,6 +54,7 @@ struct ProfileActionButtonsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "square.and.arrow.up")
                     Text("Share Profile")
+						.font(.onestSemiBold(size: 12))
                 }
                 .bold()
                 .font(.caption)

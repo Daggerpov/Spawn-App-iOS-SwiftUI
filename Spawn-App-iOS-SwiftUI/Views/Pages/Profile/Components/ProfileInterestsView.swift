@@ -46,7 +46,7 @@ struct ProfileInterestsView: View {
     private var interestsSectionHeader: some View {
         HStack {
             Text("Interests + Hobbies")
-                .font(.headline)
+				.font(.onestBold(size: 14))
                 .foregroundColor(.white)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
@@ -123,11 +123,11 @@ struct ProfileInterestsView: View {
                             columns: [
                                 GridItem(
                                     .adaptive(minimum: 80, maximum: 150),
-                                    spacing: 8
+                                    spacing: 4
                                 )
                             ],
                             alignment: .leading,
-                            spacing: 8
+                            spacing: 4
                         ) {
                             ForEach(profileViewModel.userInterests, id: \.self)
                             { interest in
@@ -139,7 +139,7 @@ struct ProfileInterestsView: View {
                 }
             }
         }
-        .frame(height: profileViewModel.userInterests.isEmpty ? 100 : 140)
+        .frame(height: profileViewModel.userInterests.isEmpty ? 80 : 120)
         .padding(.horizontal)
         .padding(.top, 5)
     }
@@ -154,10 +154,11 @@ struct ProfileInterestsView: View {
 
     private func interestChip(interest: String) -> some View {
         Text(interest)
-            .font(.subheadline)
+			.font(.onestSemiBold(size: 12))
             .padding(.vertical, 8)
             .padding(.horizontal, 14)
             .foregroundColor(universalAccentColor)
+			.lineLimit(1)
             .background(Color.white)
             .clipShape(Capsule())
             .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
@@ -181,7 +182,7 @@ struct ProfileInterestsView: View {
 #Preview {
     ProfileInterestsView(
         user: BaseUserDTO.danielAgapov,
-        profileViewModel: ProfileViewModel(userId: UUID()),
+		profileViewModel: ProfileViewModel(userId: BaseUserDTO.danielAgapov.id),
         editingState: .constant(.edit),
         newInterest: .constant(""),
         openSocialMediaLink: { _, _ in },

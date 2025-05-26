@@ -393,11 +393,10 @@ struct ProfileView: View {
 
 			// User Stats (only for current user or friends)
 			userStatsSection
-				.padding(.bottom, 15)
 
 			// Calendar or Events Section
 			calendarOrEventsSection
-				.padding(.horizontal)
+				.padding(.horizontal, 64)
 				.padding(.bottom, 15)
 		}
 	}
@@ -1518,5 +1517,3 @@ struct RoundedCorner: Shape {
 	ProfileView(user: BaseUserDTO.danielAgapov)
 }
 
-// Add ProfileMenuView at the end of the file
-// ProfileMenuView is now in its own file: ProfileMenuView.swift
