@@ -239,7 +239,7 @@ struct ProfileView: View {
 					shareProfile: shareProfile
 				)
 				.background(universalBackgroundColor)
-				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 320 : 260)])
+				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 310 : 260)])
 			}
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
