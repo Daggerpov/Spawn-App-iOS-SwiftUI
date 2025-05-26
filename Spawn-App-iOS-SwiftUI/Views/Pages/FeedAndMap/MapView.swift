@@ -45,6 +45,53 @@ struct MapView: View {
         case allActivities = "All Activities"
     }
 
+    // Computed property for filtered events
+    private var filteredEvents: [FullFeedEventDTO] {
+        let now = Date()
+        let calendar = Calendar.current
+        
+        return viewModel.events.filter { event in
+            guard let startTime = event.startTime else { return false }
+            
+            switch selectedTimeFilter {
+            case .allActivities:
+                return true
+                
+            case .happeningNow:
+                guard let endTime = event.endTime else { return false }
+                return startTime <= now && endTime >= now
+                
+            case .inTheNextHour:
+                let oneHourFromNow = calendar.date(byAdding: .hour, value: 1, to: now)!
+                return startTime > now && startTime <= oneHourFromNow
+                
+            case .afternoon:
+                let startOfDay = calendar.startOfDay(for: startTime)
+                let noonTime = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: startTime)!
+                let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
+                
+                return startTime >= noonTime && startTime < eveningTime &&
+                       calendar.isDate(startTime, inSameDayAs: now)
+                
+            case .evening:
+                let startOfDay = calendar.startOfDay(for: startTime)
+                let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
+                let nightTime = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: startTime)!
+                
+                return startTime >= eveningTime && startTime < nightTime &&
+                       calendar.isDate(startTime, inSameDayAs: now)
+                
+            case .lateNight:
+                let startOfDay = calendar.startOfDay(for: startTime)
+                let nightTime = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: startTime)!
+                let nextDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+                
+                return (startTime >= nightTime && startTime < nextDay) ||
+                       (startTime >= startOfDay && startTime < calendar.date(bySettingHour: 4, minute: 0, second: 0, of: startTime)!)
+            }
+        }
+    }
+
     var user: BaseUserDTO
 
     init(user: BaseUserDTO) {
