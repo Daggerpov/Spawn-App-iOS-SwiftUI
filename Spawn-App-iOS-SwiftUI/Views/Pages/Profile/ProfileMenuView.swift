@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ProfileMenuView: View {
     let user: Nameable
-    @Binding var showTagDialog: Bool
     @Binding var showRemoveFriendConfirmation: Bool
     @Binding var showReportDialog: Bool
     @Binding var showBlockDialog: Bool
@@ -147,7 +146,6 @@ struct ProfileMenuView_Previews: PreviewProvider {
     static var previews: some View {
         ProfileMenuView(
             user: BaseUserDTO.danielAgapov,
-            showTagDialog: .constant(false),
             showRemoveFriendConfirmation: .constant(false),
             showReportDialog: .constant(false),
             showBlockDialog: .constant(false),

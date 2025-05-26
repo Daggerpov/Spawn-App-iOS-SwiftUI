@@ -103,27 +103,27 @@ class MockAPIService: IAPIService {
 		/// FriendRequestViewModel.swift:
 
 		// fetchFriendRequests():
-		if url.absoluteString == APIService.baseURL + "friend-requests/\(userId)" {
+		if url.absoluteString == APIService.baseURL + "friend-requests/\(userId ?? UUID())" {
 			return FetchFriendRequestDTO.mockFriendRequests as! T
 		}
 
 		// fetchRecommendedFriends():
-		if url.absoluteString == APIService.baseURL + "users/recommended/\(userId)" {
+		if url.absoluteString == APIService.baseURL + "users/recommended/\(userId ?? UUID())" {
 			return RecommendedFriendUserDTO.mockUsers as! T
 		}
 
 		// fetchFriends():
-		if url.absoluteString == APIService.baseURL + "users/friends/\(userId)" {
+		if url.absoluteString == APIService.baseURL + "users/friends/\(userId ?? UUID())" {
 			return FullFriendUserDTO.mockUsers as! T
 		}
 
 		// fetchRecentlySpawnedWith():
-		if url.absoluteString == APIService.baseURL + "users/recentlySpawnedWith/\(userId)" {
-			return RecentlySpawnedUserDTO.mockUsers as! T
+		if url.absoluteString == APIService.baseURL + "users/recentlySpawnedWith/\(userId ?? UUID())" {
+			return [BaseUserDTO.danielAgapov, Date.now] as! T
 		}
 
 		// fetchSearchResults():
-		if url.absoluteString == APIService.baseURL + "users/search/\(userId)" {
+		if url.absoluteString == APIService.baseURL + "users/search/\(userId ?? UUID())" {
 			return SearchedUserResult(
 				incomingFriendRequests: FetchFriendRequestDTO.mockFriendRequests,
 				recommendedFriends: RecommendedFriendUserDTO.mockUsers,
@@ -425,11 +425,6 @@ class MockAPIService: IAPIService {
 					let mockFriendRequests = FetchFriendRequestDTO
 						.mockFriendRequests
 					updatedItems = try? JSONEncoder().encode(mockFriendRequests)
-
-				case "userTags":
-					// Return mock user tags data
-					let mockTags = FullFriendTagDTO.mockTags
-					updatedItems = try? JSONEncoder().encode(mockTags)
 
 				case "otherProfiles":
 					// For other profiles, we don't include data to force a separate fetch

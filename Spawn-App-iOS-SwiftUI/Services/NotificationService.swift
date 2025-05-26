@@ -631,11 +631,6 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                     }
                 }
                 
-            case "tag-updated":
-                // When a tag is updated, refresh tags
-                await appCache.refreshUserTags()
-                await appCache.refreshTagFriends()
-                
             default:
                 print("Unknown notification type: \(type)")
                 // For unknown notification types, validate the entire cache

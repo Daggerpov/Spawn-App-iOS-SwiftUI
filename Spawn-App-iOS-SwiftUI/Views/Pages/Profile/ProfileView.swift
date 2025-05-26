@@ -705,13 +705,7 @@ struct ProfileView: View {
 
 	private func determineEventColor(for event: FullFeedEventDTO) -> Color {
 		// Logic to determine event color based on friend tag or category
-		if let hexCode = event.eventFriendTagColorHexCodeForRequestingUser,
-			!hexCode.isEmpty
-		{
-			return Color(hex: hexCode)
-		} else {
-			return event.category.color()
-		}
+		return event.category.color()
 	}
 
 	// Friend Action Buttons based on friendship status
