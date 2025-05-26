@@ -22,7 +22,7 @@ struct ProfileActionButtonsView: View {
     }
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             if isCurrentUserProfile {
                 NavigationLink(
                     destination: EditProfileView(
@@ -30,42 +30,40 @@ struct ProfileActionButtonsView: View {
                         profileViewModel: ProfileViewModel(userId: user.id)
                     )
                 ) {
-                    HStack {
-                        Image(systemName: "pencil")
+                    HStack(spacing: 8) {
+                        Image(systemName: "pencil.circle")
                         Text("Edit Profile")
-                            .bold()
+							.font(.onestSemiBold(size: 12))
                     }
+                    .bold()
                     .font(.caption)
-                    .foregroundColor(universalSecondaryColor)
-                    .padding(.vertical, 24)
-                    .padding(.horizontal, 8)
-                    .frame(height: 32)
-                    .frame(maxWidth: .infinity)
+                    .foregroundColor(figmaSoftBlue)
+                    .frame(height: 30)
+                    .frame(width: 128)
                 }
                 .navigationBarBackButtonHidden(true)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(universalSecondaryColor, lineWidth: 1)
+                        .stroke(figmaSoftBlue, lineWidth: 1)
                 )
             }
 
             Button(action: {
                 shareProfile()
             }) {
-                HStack {
+                HStack(spacing: 8) {
                     Image(systemName: "square.and.arrow.up")
                     Text("Share Profile")
-                        .bold()
+						.font(.onestSemiBold(size: 12))
                 }
+                .bold()
                 .font(.caption)
-                .foregroundColor(universalSecondaryColor)
-                .padding(.vertical, 24)
-                .padding(.horizontal, 8)
-                .frame(height: 32)
-                .frame(maxWidth: .infinity)
+                .foregroundColor(figmaSoftBlue)
+                .frame(height: 30)
+                .frame(width: 128)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(universalSecondaryColor, lineWidth: 1)
+                        .stroke(figmaSoftBlue, lineWidth: 1)
                 )
             }
         }

@@ -31,8 +31,7 @@ struct ProfileHeaderView: View {
         VStack {
             // Profile Picture
             profilePictureSection
-                .padding(.top, 15)
-            
+
             // Name and Username
             nameAndUsernameView
         }
@@ -42,12 +41,12 @@ struct ProfileHeaderView: View {
         ZStack(alignment: .bottomTrailing) {
             if isImageLoading {
                 ProgressView()
-                    .frame(width: 130, height: 130)
+                    .frame(width: 128, height: 128)
             } else if let selectedImage = selectedImage {
                 Image(uiImage: selectedImage)
                     .resizable()
                     .scaledToFill()
-                    .frame(width: 130, height: 130)
+                    .frame(width: 128, height: 128)
                     .clipShape(Circle())
                     .transition(.opacity)
                     .id("selectedImage-\(UUID().uuidString)")
@@ -56,7 +55,7 @@ struct ProfileHeaderView: View {
                     Image(profilePictureString)
                         .resizable()
                         .scaledToFill()
-                        .frame(width: 130, height: 130)
+                        .frame(width: 128, height: 128)
                         .clipShape(Circle())
                 } else {
                     AsyncImage(url: URL(string: profilePictureString)) {
@@ -64,25 +63,25 @@ struct ProfileHeaderView: View {
                         switch phase {
                         case .empty:
                             ProgressView()
-                                .frame(width: 130, height: 130)
+                                .frame(width: 128, height: 128)
                         case .success(let image):
                             image
                                 .resizable()
                                 .scaledToFill()
-                                .frame(width: 130, height: 130)
+                                .frame(width: 128, height: 128)
                                 .clipShape(Circle())
                                 .transition(.opacity.animation(.easeInOut))
                         case .failure:
                             Image(systemName: "person.circle.fill")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 130, height: 130)
+                                .frame(width: 128, height: 128)
                                 .foregroundColor(Color.gray.opacity(0.5))
                         @unknown default:
                             Image(systemName: "person.circle.fill")
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 130, height: 130)
+                                .frame(width: 128, height: 128)
                                 .foregroundColor(Color.gray.opacity(0.5))
                         }
                     }
@@ -92,7 +91,7 @@ struct ProfileHeaderView: View {
                 Image(systemName: "person.circle.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 130, height: 130)
+                    .frame(width: 128, height: 128)
                     .foregroundColor(Color.gray.opacity(0.5))
             }
 
@@ -125,13 +124,12 @@ struct ProfileHeaderView: View {
 						user: currentUser
 					)
 				)
-				.font(.title3)
-				.bold()
+				.font(.onestBold(size: 24))
 				.foregroundColor(universalAccentColor)
 
 				Text("@\(currentUser.username)")
-					.font(.subheadline)
-					.foregroundColor(Color.gray)
+					.font(.onestRegular(size: 16))
+					.foregroundColor(figmaBlack400)
 					.padding(.bottom, 5)
             } else {
                 // For other users, use the passed-in user
@@ -140,13 +138,12 @@ struct ProfileHeaderView: View {
                         user: user
                     )
                 )
-                .font(.title3)
-                .bold()
+				.font(.onestBold(size: 24))
                 .foregroundColor(universalAccentColor)
 
                 Text("@\(user.username)")
-                    .font(.subheadline)
-                    .foregroundColor(Color.gray)
+					.font(.onestRegular(size: 16))
+					.foregroundColor(figmaBlack400)
                     .padding(.bottom, 5)
             }
         }
