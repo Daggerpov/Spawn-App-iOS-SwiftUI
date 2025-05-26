@@ -69,7 +69,9 @@ struct ProfileView: View {
 	var body: some View {
 		NavigationStack {
 			profileContent
+				.background(universalBackgroundColor.ignoresSafeArea())
 		}
+		.background(universalBackgroundColor)
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
 			case .deleteConfirmation:
@@ -236,7 +238,8 @@ struct ProfileView: View {
 					copyProfileURL: copyProfileURL,
 					shareProfile: shareProfile
 				)
-				.presentationDetents([.height(350)])
+				.background(universalBackgroundColor)
+				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 310 : 260)])
 			}
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
@@ -244,15 +247,17 @@ struct ProfileView: View {
 					showProfileMenu = false
 				}
 			}
+			.background(universalBackgroundColor)
 	}
 
 	private var profileWithOverlay: some View {
 		ZStack {
-			VStack{
+			universalBackgroundColor.ignoresSafeArea()
+			
+			VStack {
 				profileInnerComponentsView
 					.padding(.horizontal)
 			}
-			.background(universalBackgroundColor)
 			.navigationBarBackButtonHidden()
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
@@ -285,10 +290,8 @@ struct ProfileView: View {
 							Image(systemName: "gearshape")
 								.foregroundColor(universalAccentColor)
 						}
-					} else if !isCurrentUserProfile
-						|| profileViewModel.friendshipStatus == .friends
-					{
-						// Menu button for other user profiles
+					} else {
+						// Menu button for other user profiles - always show immediately
 						Button(action: {
 							showProfileMenu = true
 						}) {
@@ -576,7 +579,6 @@ struct ProfileView: View {
 	private var profileMenuOverlay: some View {
 		Group {
 			if showProfileMenu {
-				// Dimmed background when menu is showing
 				Color.black.opacity(0.2)
 					.ignoresSafeArea()
 					.onTapGesture {
