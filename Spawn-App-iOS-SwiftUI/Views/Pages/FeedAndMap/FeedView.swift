@@ -65,11 +65,6 @@ struct FeedView: View {
                     await viewModel.fetchAllData()
                 }
             }
-            .onChange(of: self.activeTag) { _ in
-                Task {
-                    await viewModel.fetchEventsForUser()
-                }
-            }
             .sheet(isPresented: $showingEventDescriptionPopup) {
                 if let event = eventInPopup, let color = colorInPopup {
                     EventDescriptionView(

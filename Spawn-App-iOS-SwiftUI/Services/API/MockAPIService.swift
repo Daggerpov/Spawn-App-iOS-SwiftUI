@@ -42,8 +42,7 @@ class MockAPIService: IAPIService {
 		}
 
 		// fetchFilteredEvents() - FeedViewModel
-		if url.absoluteString.contains("events/friendTag/") {
-			// Extract the tag ID from the URL
+		if url.absoluteString.contains("events/") {
 			return [
 				FullFeedEventDTO.mockDinnerEvent,
 				FullFeedEventDTO.mockSelfOwnedEvent,
@@ -52,7 +51,6 @@ class MockAPIService: IAPIService {
 
 		// ProfileViewModel - fetchEventDetails
 		if url.absoluteString.contains(APIService.baseURL + "events/")
-			&& !url.absoluteString.contains("events/friendTag/")
 			&& !url.absoluteString.contains("events/feedEvents/")
 		{
 			// Extract event ID from the URL
@@ -131,48 +129,6 @@ class MockAPIService: IAPIService {
 				recommendedFriends: RecommendedFriendUserDTO.mockUsers,
 				friends: FullFriendUserDTO.mockUsers
 			) as! T
-		}
-
-		/// TagsViewModel.swift:
-		if let userIdForUrl = userId {
-			// fetchTags():
-
-			// "friendTags/owner/\(user.id)"
-
-			if url.absoluteString == APIService.baseURL
-				+ "friendTags/owner/\(userIdForUrl)"
-			{
-				return FullFriendTagDTO.mockTags as! T
-			}
-
-			// ChoosingTagViewModel.swift:
-			if url.absoluteString == APIService.baseURL
-				+ "friendTags/addUserToTags/\(userIdForUrl)"
-			{
-				return FullFriendTagDTO.mockTags as! T
-			}
-		}
-
-		/// TaggedPeopleSuggestionsViewModel.swift
-
-		// fetchSuggestedFriends():
-		if url.absoluteString.contains("friendTags/friendsNotAddedToTag/") {
-			// Return some mock suggested friends
-			return BaseUserDTO.mockUsers.prefix(3).map({ $0 }) as! T
-		}
-
-		// fetchTagFriends():
-		if url.absoluteString.contains("friendTags/")
-			&& url.absoluteString.contains("/friends")
-		{
-			// Return mock added friends
-			return BaseUserDTO.mockUsers.prefix(4).map({ $0 }) as! T
-		}
-
-		/// AddFriendToTagsViewModel.swift:
-		if url.absoluteString.contains("friendTags/friendsNotAddedToTag/") {
-			// Extract the tag ID from the URL
-			return BaseUserDTO.mockUsers as! T
 		}
 
 		// EventCardViewModel.swift & EventDescriptionViewModel.swift:

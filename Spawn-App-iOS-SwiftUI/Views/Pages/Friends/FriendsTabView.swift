@@ -18,7 +18,6 @@ struct FriendsTabView: View {
 
 	// for pop-ups:
 	@State private var friendRequestOffset: CGFloat = 1000
-	@State private var chooseTagsOffset: CGFloat = 1000
 	// ------------
 
 	@StateObject private var searchViewModel = SearchViewModel()
