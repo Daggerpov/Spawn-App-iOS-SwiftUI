@@ -35,6 +35,7 @@ struct ProfileMenuView: View {
                 )
             }
         }
+        .background(universalBackgroundColor)
         .onAppear {
             // Simulate a very brief loading state to ensure smooth animation
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -67,6 +68,7 @@ struct ProfileMenuView: View {
             .background(universalBackgroundColor)
             .cornerRadius(12)
         }
+        .background(universalBackgroundColor)
         .redacted(reason: .placeholder)
         .shimmering()
     }
@@ -144,9 +146,11 @@ private struct MenuContent: View {
     var body: some View {
         VStack(spacing: 0) {
             menuItems
+                .background(universalBackgroundColor)
             
             cancelButton
         }
+        .background(universalBackgroundColor)
     }
     
     private var menuItems: some View {
@@ -160,6 +164,7 @@ private struct MenuContent: View {
                     dismiss()
                     showRemoveFriendConfirmation = true
                 }
+                .background(universalBackgroundColor)
                 
                 Divider()
             }
@@ -172,6 +177,7 @@ private struct MenuContent: View {
                 copyProfileURL()
                 dismiss()
             }
+            .background(universalBackgroundColor)
             
             Divider()
             
@@ -183,6 +189,7 @@ private struct MenuContent: View {
                 shareProfile()
                 dismiss()
             }
+            .background(universalBackgroundColor)
             
             Divider()
             
@@ -194,6 +201,7 @@ private struct MenuContent: View {
                 dismiss()
                 showReportDialog = true
             }
+            .background(universalBackgroundColor)
             
             Divider()
             
@@ -205,7 +213,9 @@ private struct MenuContent: View {
                 dismiss()
                 showBlockDialog = true
             }
+            .background(universalBackgroundColor)
         }
+        .background(universalBackgroundColor)
     }
     
     private var cancelButton: some View {

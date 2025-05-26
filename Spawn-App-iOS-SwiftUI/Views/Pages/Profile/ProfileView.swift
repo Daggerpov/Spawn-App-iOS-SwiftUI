@@ -238,7 +238,8 @@ struct ProfileView: View {
 					copyProfileURL: copyProfileURL,
 					shareProfile: shareProfile
 				)
-				.presentationDetents([.height(350)])
+				.background(universalBackgroundColor)
+				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 320 : 260)])
 			}
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
@@ -246,6 +247,7 @@ struct ProfileView: View {
 					showProfileMenu = false
 				}
 			}
+			.background(universalBackgroundColor)
 	}
 
 	private var profileWithOverlay: some View {
