@@ -50,7 +50,7 @@ struct MapView: View {
         let now = Date()
         let calendar = Calendar.current
         
-        return viewModel.events.filter { event in
+        let filtered = viewModel.events.filter { event in
             guard let startTime = event.startTime else { return false }
             
             switch selectedTimeFilter {
@@ -90,6 +90,14 @@ struct MapView: View {
                        (startTime >= startOfDay && startTime < calendar.date(bySettingHour: 4, minute: 0, second: 0, of: startTime)!)
             }
         }
+        
+        print("🗺 DEBUG: Filtered events count: \(filtered.count)")
+        print("📍 DEBUG: Filtered events with locations: \(filtered.filter { $0.location != nil }.count)")
+        filtered.forEach { event in
+            print("📌 DEBUG: Filtered event '\(event.title ?? "Untitled")' location: \(event.location?.latitude ?? 0), \(event.location?.longitude ?? 0)")
+        }
+        
+        return filtered
     }
 
     var user: BaseUserDTO
@@ -107,6 +115,7 @@ struct MapView: View {
 
     var body: some View {
         ZStack {
+            // Base layer - Map and its components
             VStack {
                 ZStack {
                     // Map layer
@@ -114,7 +123,7 @@ struct MapView: View {
                         coordinateRegion: $region,
                         showsUserLocation: true,
                         userTrackingMode: $userTrackingMode,
-                        annotationItems: filteredEvents
+                        annotationItems: filteredEvents.filter { $0.location != nil }
                     ) { event in
                         MapAnnotation(
                             coordinate: CLLocationCoordinate2D(
@@ -123,6 +132,7 @@ struct MapView: View {
                             )
                         ) {
                             Button(action: {
+                                print("🔍 DEBUG: Tapped event pin for '\(event.title ?? "Untitled")'")
                                 eventInPopup = event
                                 colorInPopup = eventColors.randomElement()
                                 showingEventDescriptionPopup = true
@@ -134,81 +144,10 @@ struct MapView: View {
                         }
                     }
                     .ignoresSafeArea()
-                    
-                    // Dimming overlay
-                    if showEventCreationDrawer || showFilterOverlay {
-                        Color.black.opacity(0.5)
-                            .ignoresSafeArea()
-                            .transition(.opacity)
-                            .animation(.easeInOut, value: showEventCreationDrawer || showFilterOverlay)
-                    }
-                    
-                    // Filter button overlay
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 8) {
-                                // Additional filter buttons that appear when overlay is shown
-                                if showFilterOverlay {
-                                    ForEach(Array(TimeFilter.allCases.dropLast()).reversed(), id: \.self) { filter in
-                                        Button(action: {
-                                            withAnimation(.spring()) {
-                                                selectedTimeFilter = filter
-                                                showFilterOverlay = false
-                                            }
-                                        }) {
-                                            HStack {
-                                                Text(filter.rawValue)
-                                                    .font(.onestMedium(size: 16))
-                                                    .foregroundColor(.black)
-                                            }
-                                            .frame(maxWidth: .infinity, alignment: .center)
-                                            .padding(.vertical, 12)
-                                            .padding(.horizontal, 16)
-                                            .background(Color.white)
-                                            .cornerRadius(20)
-                                        }
-                                        .transition(.move(edge: .top).combined(with: .opacity))
-                                    }
-                                }
-                                
-                                // Main filter button that's always visible
-                                Button(action: {
-                                    withAnimation(.spring()) {
-                                        showFilterOverlay.toggle()
-                                    }
-                                }) {
-                                    HStack {
-                                        if selectedTimeFilter == .allActivities {
-                                            Circle()
-                                                .fill(figmaGreen)
-                                                .frame(width: 10, height: 10)
-                                        }
-                                        Text(selectedTimeFilter.rawValue)
-                                            .font(.onestMedium(size: 16))
-                                            .foregroundColor(.black)
-                                    }
-									.frame(maxWidth: .infinity, alignment: .center)
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
-                                    .background(Color.white)
-                                    .cornerRadius(20)
-                                    .shadow(radius: 2)
-                                }
-                            }
-                            .frame(maxWidth: 155)
-                            .padding(.trailing)
-                        }
-                        .padding(.bottom)
-                    }
                 }
             }
             .task {
-                // Fetch data
                 await viewModel.fetchAllData()
-                
-                // Focus on user location or events after data is loaded
                 await MainActor.run {
                     if let userLocation = locationManager.userLocation {
                         region = MKCoordinateRegion(
@@ -221,7 +160,6 @@ struct MapView: View {
                 }
             }
             .onChange(of: locationManager.locationUpdated) { _ in
-                // Only update region if we're still at the default location
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
                    abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
                    abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
@@ -229,7 +167,6 @@ struct MapView: View {
                 }
             }
             .onChange(of: viewModel.events) { _ in
-                // Only adjust for events if we already have user location
                 if locationManager.userLocation != nil {
                     adjustRegionForEvents()
                 }
@@ -245,9 +182,18 @@ struct MapView: View {
                     .presentationDragIndicator(.visible)
                 }
             }
-            
-            // Clear overlay for tap gesture
+
+            // Dimming overlay
+            if showEventCreationDrawer || showFilterOverlay {
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .animation(.easeInOut, value: showEventCreationDrawer || showFilterOverlay)
+            }
+
+            // Filter overlay and buttons
             if showFilterOverlay {
+                // Clear overlay for dismissal
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -255,6 +201,63 @@ struct MapView: View {
                             showFilterOverlay = false
                         }
                     }
+            }
+
+            // Filter buttons - always on top
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        if showFilterOverlay {
+                            ForEach(Array(TimeFilter.allCases.dropLast()).reversed(), id: \.self) { filter in
+                                Button(action: {
+                                    print("Filter selected: \(filter.rawValue)")  // Debug print
+                                    withAnimation(.spring()) {
+                                        selectedTimeFilter = filter
+                                        showFilterOverlay = false
+                                    }
+                                }) {
+                                    HStack {
+                                        Text(filter.rawValue)
+                                            .font(.onestMedium(size: 16))
+                                            .foregroundColor(.black)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .background(Color.white)
+                                    .cornerRadius(20)
+                                }
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                            }
+                        }
+                        
+                        Button(action: {
+                            withAnimation(.spring()) {
+                                showFilterOverlay.toggle()
+                            }
+                        }) {
+                            HStack {
+                                Circle()
+                                    .fill(figmaGreen)
+                                    .frame(width: 10, height: 10)
+                                Text(selectedTimeFilter.rawValue)
+                                    .font(.onestMedium(size: 16))
+                                    .foregroundColor(.black)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .padding(.vertical, 12)
+                            .padding(.horizontal, 16)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                            .shadow(radius: 2)
+                        }
+                    }
+                    .frame(maxWidth: 155)
+                    .padding(.trailing)
+                }
+                .padding(.bottom)
             }
         }
     }
