@@ -159,18 +159,15 @@ struct MapView: View {
                                             }
                                         }) {
                                             HStack {
-//												Spacer()
                                                 Text(filter.rawValue)
                                                     .font(.onestMedium(size: 16))
                                                     .foregroundColor(.black)
-//												Spacer()
                                             }
                                             .frame(maxWidth: .infinity, alignment: .center)
                                             .padding(.vertical, 12)
                                             .padding(.horizontal, 16)
                                             .background(Color.white)
                                             .cornerRadius(20)
-//											.frame(width: 160)
                                         }
                                         .transition(.move(edge: .top).combined(with: .opacity))
                                     }
@@ -201,9 +198,9 @@ struct MapView: View {
                                 }
                             }
                             .frame(maxWidth: 155)
-                            .padding(.trailing, 16)
+                            .padding(.trailing)
                         }
-                        .padding(.bottom, 85)
+                        .padding(.bottom)
                     }
                 }
             }
