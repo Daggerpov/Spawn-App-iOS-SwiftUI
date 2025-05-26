@@ -210,9 +210,32 @@ struct MapView: View {
                     Spacer()
                     VStack(spacing: 8) {
                         if showFilterOverlay {
-                            ForEach(Array(TimeFilter.allCases.dropLast()).reversed(), id: \.self) { filter in
+                            // Show "All Activities" at the top if it's not currently selected
+                            if selectedTimeFilter != .allActivities {
                                 Button(action: {
-                                    print("Filter selected: \(filter.rawValue)")  // Debug print
+                                    print("Filter selected: All Activities")
+                                    withAnimation(.spring()) {
+                                        selectedTimeFilter = .allActivities
+                                        showFilterOverlay = false
+                                    }
+                                }) {
+                                    HStack {
+                                        Text(TimeFilter.allActivities.rawValue)
+                                            .font(.onestMedium(size: 16))
+                                            .foregroundColor(.black)
+                                    }
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .background(Color.white)
+                                    .cornerRadius(20)
+                                }
+                            }
+                            
+                            // Show all other filters except the currently selected one and "All Activities"
+                            ForEach(Array(TimeFilter.allCases.dropLast().filter { $0 != selectedTimeFilter }).reversed(), id: \.self) { filter in
+                                Button(action: {
+                                    print("Filter selected: \(filter.rawValue)")
                                     withAnimation(.spring()) {
                                         selectedTimeFilter = filter
                                         showFilterOverlay = false
