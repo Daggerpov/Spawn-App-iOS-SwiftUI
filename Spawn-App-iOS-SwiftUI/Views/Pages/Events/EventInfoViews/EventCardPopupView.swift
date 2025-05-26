@@ -11,6 +11,20 @@ struct EventCardPopupView: View {
     var event: FullFeedEventDTO
     var color: Color
     var userId: UUID
+    @StateObject private var viewModel: EventDescriptionViewModel
+    @Environment(\.dismiss) private var dismiss
+    
+    init(event: FullFeedEventDTO, color: Color, userId: UUID) {
+        self.event = event
+        self.color = color
+        self.userId = userId
+        _viewModel = StateObject(wrappedValue: EventDescriptionViewModel(
+            apiService: MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService(),
+            event: event,
+            users: event.participantUsers,
+            senderUserId: userId
+        ))
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -21,14 +35,8 @@ struct EventCardPopupView: View {
                     .frame(width: 40, height: 5)
                     .padding(.top, 8)
                 Spacer()
-                Button(action: {/* Expand/Collapse */}) {
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                .padding(.top, 8)
-                Button(action: {/* Menu */}) {
-                    Image(systemName: "ellipsis")
-                        .rotationEffect(.degrees(90))
+                Button(action: { dismiss() }) {
+                    Image(systemName: "xmark")
                         .foregroundColor(.white.opacity(0.7))
                 }
                 .padding(.top, 8)
@@ -38,10 +46,12 @@ struct EventCardPopupView: View {
             
             // Event Title & Time
             VStack(alignment: .leading, spacing: 4) {
-                Text("Title")
-                    .font(.onestSemiBold(size: 26))
-                    .foregroundColor(.white)
-                Text("In X hours • 6 - 7:30pm") // TODO: Format time
+                if let title = event.title {
+                    Text(title)
+                        .font(.onestSemiBold(size: 26))
+                        .foregroundColor(.white)
+                }
+                Text(EventInfoViewModel(event: event, eventInfoType: .time).eventInfoDisplayString)
                     .font(.onestRegular(size: 15))
                     .foregroundColor(.white.opacity(0.85))
             }
@@ -50,8 +60,12 @@ struct EventCardPopupView: View {
             
             // Action Button & Participants
             HStack {
-                Button(action: {/* Spawn In! */}) {
-                    Text("Spawn In!")
+                Button(action: {
+                    Task {
+                        await viewModel.toggleParticipation()
+                    }
+                }) {
+                    Text(viewModel.isParticipating ? "Spawned In!" : "Spawn In!")
                         .font(.onestSemiBold(size: 17))
                         .foregroundColor(color)
                         .padding(.horizontal, 32)
@@ -60,71 +74,121 @@ struct EventCardPopupView: View {
                         .cornerRadius(22)
                 }
                 Spacer()
-                // Participants Avatars (placeholder)
-                HStack(spacing: -10) {
-                    ForEach(0..<3) { i in
-                        Circle().fill(Color.gray).frame(width: 32, height: 32)
+                // Participants Avatars
+                if let participants = event.participantUsers {
+                    HStack(spacing: -10) {
+                        ForEach(participants.prefix(3)) { user in
+                            if let profilePicture = user.profilePicture {
+                                AsyncImage(url: URL(string: profilePicture)) { image in
+                                    image
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 32, height: 32)
+                                        .clipShape(Circle())
+                                } placeholder: {
+                                    Circle().fill(Color.gray).frame(width: 32, height: 32)
+                                }
+                            } else {
+                                Circle().fill(Color.gray).frame(width: 32, height: 32)
+                            }
+                        }
+                        if participants.count > 3 {
+                            Circle()
+                                .fill(Color.white.opacity(0.7))
+                                .frame(width: 32, height: 32)
+                                .overlay(
+                                    Text("+\(participants.count - 3)")
+                                        .font(.onestSemiBold(size: 15))
+                                        .foregroundColor(color)
+                                )
+                        }
                     }
-                    Circle().fill(Color.white.opacity(0.7)).frame(width: 32, height: 32).overlay(
-                        Text("+4").font(.onestSemiBold(size: 15)).foregroundColor(color)
-                    )
                 }
             }
             .padding(.horizontal)
             .padding(.bottom, 8)
             
             // Map Placeholder
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color.white.opacity(0.2))
+            if let location = event.location {
+                MapSnapshotView(
+                    coordinate: CLLocationCoordinate2D(
+                        latitude: location.latitude,
+                        longitude: location.longitude
+                    )
+                )
                 .frame(height: 120)
-                .overlay(Text("[Map goes here]").foregroundColor(.white.opacity(0.7)))
+                .cornerRadius(14)
                 .padding(.horizontal)
                 .padding(.bottom, 8)
+            }
             
             // Location Row
-            HStack {
-                Image(systemName: "mappin.and.ellipse")
-                    .foregroundColor(.white)
-                Text("7386 Name St... • 2km away") // TODO: Use real data
-                    .foregroundColor(.white)
-                    .font(.onestRegular(size: 13))
-                Spacer()
-                Button(action: {/* View on Map */}) {
-                    Text("View on Map")
-                        .font(.onestSemiBold(size: 14))
-                        .foregroundColor(color)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(Color.white)
-                        .cornerRadius(16)
+            if let location = event.location {
+                HStack {
+                    Image(systemName: "mappin.and.ellipse")
+                        .foregroundColor(.white)
+                    Text(location.name)
+                        .foregroundColor(.white)
+                        .font(.onestRegular(size: 13))
+                    Spacer()
+                    Button(action: {
+                        // Open in Maps app
+                        let url = URL(string: "maps://?q=\(location.latitude),\(location.longitude)")
+                        if let url = url, UIApplication.shared.canOpenURL(url) {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        Text("View on Map")
+                            .font(.onestSemiBold(size: 14))
+                            .foregroundColor(color)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 6)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                    }
                 }
+                .padding(.horizontal)
+                .padding(.bottom, 8)
             }
-            .padding(.horizontal)
-            .padding(.bottom, 8)
             
             // Description & Comments
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Circle().fill(Color.gray).frame(width: 28, height: 28)
-                    Text("@haley_wong") // TODO: Use real username
+                    if let profilePicture = event.creatorUser.profilePicture {
+                        AsyncImage(url: URL(string: profilePicture)) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 28, height: 28)
+                                .clipShape(Circle())
+                        } placeholder: {
+                            Circle().fill(Color.gray).frame(width: 28, height: 28)
+                        }
+                    } else {
+                        Circle().fill(Color.gray).frame(width: 28, height: 28)
+                    }
+                    Text("@\(event.creatorUser.username)")
                         .font(.onestMedium(size: 14))
                         .foregroundColor(.white)
                 }
-                Text("Come grab some dinner with us at Chipotle! Might go study at the library afterwards.") // TODO: Use real description
-                    .font(.onestRegular(size: 14))
-                    .foregroundColor(.white.opacity(0.95))
-                Button(action: {/* View all comments */}) {
-                    Text("View all comments")
-                        .font(.onestRegular(size: 13))
-                        .foregroundColor(color)
+                if let note = event.note {
+                    Text(note)
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(.white.opacity(0.95))
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("@daniel_lee I can come after my lecture finishes")
-                        .font(.onestRegular(size: 13))
-                        .foregroundColor(.white.opacity(0.85))
-                    Text("@d_agapov down!")
-                        .font(.onestRegular(size: 13))
-                        .foregroundColor(.white.opacity(0.85))
+                if let chatMessages = event.chatMessages, !chatMessages.isEmpty {
+                    Button(action: {/* View all comments */}) {
+                        Text("View all comments")
+                            .font(.onestRegular(size: 13))
+                            .foregroundColor(color)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(chatMessages.prefix(2)) { message in
+                            Text("@\(message.senderUser.username) \(message.content)")
+                                .font(.onestRegular(size: 13))
+                                .foregroundColor(.white.opacity(0.85))
+                        }
+                    }
                 }
             }
             .padding()
@@ -134,16 +198,85 @@ struct EventCardPopupView: View {
             .padding(.bottom, 8)
             
             // Timestamp
-            Text("Posted 7 hours ago") // TODO: Use real timestamp
-                .font(.onestRegular(size: 13))
-                .foregroundColor(.white.opacity(0.7))
-                .padding(.horizontal)
-                .padding(.bottom, 16)
+            if let createdAt = event.createdAt {
+                Text(FormatterService.shared.formatTimeAgo(from: createdAt))
+                    .font(.onestRegular(size: 13))
+                    .foregroundColor(.white.opacity(0.7))
+                    .padding(.horizontal)
+                    .padding(.bottom, 16)
+            }
         }
         .background(color)
         .cornerRadius(32)
         .padding(.top, 16)
         .padding(.horizontal, 8)
+    }
+}
+
+// MapSnapshotView to show a static map image
+struct MapSnapshotView: View {
+    let coordinate: CLLocationCoordinate2D
+    
+    var body: some View {
+        let region = MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
+        
+        let options = MKMapSnapshotter.Options()
+        options.region = region
+        options.size = CGSize(width: UIScreen.main.bounds.width - 32, height: 120)
+        options.showsBuildings = true
+        
+        return MapSnapshotterView(options: options, coordinate: coordinate)
+    }
+}
+
+struct MapSnapshotterView: View {
+    let options: MKMapSnapshotter.Options
+    let coordinate: CLLocationCoordinate2D
+    @State private var snapshot: UIImage?
+    
+    var body: some View {
+        Group {
+            if let snapshot = snapshot {
+                Image(uiImage: snapshot)
+                    .resizable()
+                    .scaledToFill()
+                    .overlay(
+                        Circle()
+                            .fill(Color.red)
+                            .frame(width: 10, height: 10)
+                    )
+            } else {
+                ProgressView()
+            }
+        }
+        .onAppear {
+            let snapshotter = MKMapSnapshotter(options: options)
+            snapshotter.start { result in
+                switch result {
+                case .success(let snapshot):
+                    let image = UIGraphicsImageRenderer(size: snapshot.image.size).image { _ in
+                        snapshot.image.draw(at: .zero)
+                        
+                        let pinView = UIImage(systemName: "mappin.circle.fill")?
+                            .withTintColor(.red)
+                        let pinPoint = snapshot.point(for: coordinate)
+                        let pinRect = CGRect(
+                            x: pinPoint.x - 8,
+                            y: pinPoint.y - 8,
+                            width: 16,
+                            height: 16
+                        )
+                        pinView?.draw(in: pinRect)
+                    }
+                    self.snapshot = image
+                case .failure(let error):
+                    print("Failed to generate map snapshot: \(error)")
+                }
+            }
+        }
     }
 }
 

@@ -209,13 +209,12 @@ struct MapView: View {
             }
             .sheet(isPresented: $showingEventDescriptionPopup) {
                 if let event = eventInPopup, let color = colorInPopup {
-                    EventDescriptionView(
+                    EventCardPopupView(
                         event: event,
-                        users: event.participantUsers,
                         color: color,
                         userId: user.id
                     )
-                    .presentationDragIndicator(.visible)
+                    .presentationDetents([.medium, .large])
                 }
             }
 
@@ -232,7 +231,7 @@ struct MapView: View {
             if showFilterOverlay {
                 Rectangle()
                     .fill(.clear)
-					.background(.ultraThinMaterial)
+                    .background(.ultraThinMaterial)
                     .ignoresSafeArea()
                     .transition(.opacity)
                     .animation(.easeInOut, value: showFilterOverlay)
