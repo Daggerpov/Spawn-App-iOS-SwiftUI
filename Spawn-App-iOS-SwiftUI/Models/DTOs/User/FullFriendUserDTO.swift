@@ -19,7 +19,6 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var name: String?
 	var bio: String?
 	var email: String
-	var associatedFriendTagsToOwner: [FriendTagDTO]?  // only added property from `User`
 
 	init(
 		id: UUID,
@@ -28,7 +27,6 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		name: String? = nil,
 		bio: String? = nil,
 		email: String,
-		associatedFriendTagsToOwner: [FriendTagDTO]? = nil
 	) {
 		self.id = id
 		self.username = username
@@ -36,7 +34,6 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.name = name
 		self.bio = bio
 		self.email = email
-		self.associatedFriendTagsToOwner = associatedFriendTagsToOwner
 	}
 }
 
@@ -50,20 +47,6 @@ extension FullFriendUserDTO {
 			name: "Daniel Agapov",
 			bio: "This is my bio.",
 			email: "daniel@agapov.com",
-			associatedFriendTagsToOwner: [
-				FriendTagDTO(
-					id: UUID(),
-					displayName: "Close Friends",
-					ownerUserId: UUID(),
-					colorHexCode: eventColorHexCodes[1]
-				),
-				FriendTagDTO(
-					id: UUID(),
-					displayName: "Hobbies",
-					ownerUserId: UUID(),
-					colorHexCode: eventColorHexCodes[2]
-				),
-			]
 		)
 	}()
 
@@ -76,26 +59,6 @@ extension FullFriendUserDTO {
 			name: "Daniel Lee",
 			bio: "This is my bio.",
 			email: "daniel2456@gmail.com",
-			associatedFriendTagsToOwner: [
-				FriendTagDTO(
-					id: UUID(),
-					displayName: "Basketball",
-					ownerUserId: UUID(),
-					colorHexCode: eventColorHexCodes[0]
-				),
-				FriendTagDTO(
-					id: UUID(),
-					displayName: "Close Friends",
-					ownerUserId: UUID(),
-					colorHexCode: eventColorHexCodes[1]
-				),
-				FriendTagDTO(
-					id: UUID(),
-					displayName: "Hobbies",
-					ownerUserId: UUID(),
-					colorHexCode: eventColorHexCodes[2]
-				),
-			]
 		)
 	}()
 

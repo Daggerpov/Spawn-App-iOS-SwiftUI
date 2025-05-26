@@ -23,8 +23,6 @@ struct FeedView: View {
     @State private var creationOffset: CGFloat = 1000
     // --------
     
-    @State private var activeTag: FilterTag? = nil
-
     var user: BaseUserDTO
 
     init(user: BaseUserDTO) {
@@ -44,9 +42,6 @@ struct FeedView: View {
                 VStack {
                     HeaderView(user: user, numEvents: viewModel.events.count).padding(.top, 75)
                     Spacer()
-                    if viewModel.events.count > 0 {
-                        TagsScrollView(activeTag: $activeTag)
-                    }
                     eventsListView
                 }
                 .background(universalBackgroundColor)
@@ -68,11 +63,6 @@ struct FeedView: View {
                 Task {
                     await AppCache.shared.refreshEvents()
                     await viewModel.fetchAllData()
-                }
-            }
-            .onChange(of: self.activeTag) { _ in
-                Task {
-                    await viewModel.fetchEventsForUser()
                 }
             }
             .sheet(isPresented: $showingEventDescriptionPopup) {
@@ -129,10 +119,7 @@ extension FeedView {
                         EventCardView(
                             userId: user.id,
                             event: event,
-                            color: Color(
-                            hex: event
-                                .eventFriendTagColorHexCodeForRequestingUser
-                                ?? eventColorHexCodes[0])
+                            color: event.category.color()
                         )
                         { event, color in
                             eventInPopup = event

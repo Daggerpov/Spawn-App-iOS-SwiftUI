@@ -32,7 +32,6 @@ struct ProfileView: View {
 	@State private var refreshFlag = false
 	@State private var showCalendarPopup: Bool = false
 	@State private var showEventDetails: Bool = false
-	@State private var showTagDialog: Bool = false
 	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
 	@State private var reportReason: String = ""
@@ -213,10 +212,6 @@ struct ProfileView: View {
 			.sheet(isPresented: $showEventDetails) {
 				eventDetailsView
 			}
-			.navigationDestination(isPresented: $showTagDialog) {
-				// Navigate to the new AddFriendToTagsView
-				AddFriendToTagsView(friend: user)
-			}
 			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation)
 		{
 			removeFriendConfirmationAlert
@@ -234,7 +229,6 @@ struct ProfileView: View {
 			.sheet(isPresented: $showProfileMenu) {
 				ProfileMenuView(
 					user: user,
-					showTagDialog: $showTagDialog,
 					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
 					showReportDialog: $showReportDialog,
 					showBlockDialog: $showBlockDialog,
@@ -711,13 +705,7 @@ struct ProfileView: View {
 
 	private func determineEventColor(for event: FullFeedEventDTO) -> Color {
 		// Logic to determine event color based on friend tag or category
-		if let hexCode = event.eventFriendTagColorHexCodeForRequestingUser,
-			!hexCode.isEmpty
-		{
-			return Color(hex: hexCode)
-		} else {
-			return event.category.color()
-		}
+		return event.category.color()
 	}
 
 	// Friend Action Buttons based on friendship status

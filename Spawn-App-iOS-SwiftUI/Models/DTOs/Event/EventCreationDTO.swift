@@ -25,7 +25,6 @@ class EventCreationDTO: Identifiable, Codable {
 
 	// MARK: Relations
 	var creatorUserId: UUID
-	var invitedFriendTagIds: [UUID]?
 	var invitedFriendUserIds: [UUID]?
 
 	init(
@@ -38,7 +37,6 @@ class EventCreationDTO: Identifiable, Codable {
 		icon: String? = nil,
 		category: EventCategory = .general,
 		creatorUserId: UUID,
-		invitedFriendTagIds: [UUID]? = nil,
 		invitedFriendUserIds: [UUID]? = nil
 	) {
 		self.id = id
@@ -50,7 +48,6 @@ class EventCreationDTO: Identifiable, Codable {
 		self.icon = icon
 		self.category = category
 		self.creatorUserId = creatorUserId
-		self.invitedFriendTagIds = invitedFriendTagIds
 		self.invitedFriendUserIds = invitedFriendUserIds
 	}
 }

@@ -9,7 +9,6 @@ import SwiftUI
 
 struct ProfileMenuView: View {
     let user: Nameable
-    @Binding var showTagDialog: Bool
     @Binding var showRemoveFriendConfirmation: Bool
     @Binding var showReportDialog: Bool
     @Binding var showBlockDialog: Bool
@@ -23,28 +22,6 @@ struct ProfileMenuView: View {
         VStack(spacing: 0) {
             // Menu items container
             VStack(spacing: 0) {
-                // Add to Tag option (only visible for friends)
-                if isFriend {
-                    Button(action: {
-                        dismiss()
-                        showTagDialog = true
-                    }) {
-                        HStack {
-                            Image(systemName: "tag")
-                                .foregroundColor(universalAccentColor)
-                            
-                            Text("Add to Tag")
-                                .foregroundColor(universalAccentColor)
-                            
-                            Spacer()
-                        }
-                        .padding(.vertical, 16)
-                        .padding(.horizontal, 16)
-                    }
-                    
-                    Divider()
-                }
-                
                 // Remove as friend (only if they are a friend)
                 if isFriend {
                     Button(action: {
@@ -53,10 +30,10 @@ struct ProfileMenuView: View {
                     }) {
                         HStack {
                             Image(systemName: "person.badge.minus")
-                                .foregroundColor(universalAccentColor)
+                                .foregroundColor(.red)
                             
-                            Text("Remove as friend")
-                                .foregroundColor(universalAccentColor)
+                            Text("Remove Friend")
+                                .foregroundColor(.red)
                             
                             Spacer()
                         }
@@ -169,7 +146,6 @@ struct ProfileMenuView_Previews: PreviewProvider {
     static var previews: some View {
         ProfileMenuView(
             user: BaseUserDTO.danielAgapov,
-            showTagDialog: .constant(false),
             showRemoveFriendConfirmation: .constant(false),
             showReportDialog: .constant(false),
             showBlockDialog: .constant(false),

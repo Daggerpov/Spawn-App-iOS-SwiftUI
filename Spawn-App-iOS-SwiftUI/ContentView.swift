@@ -45,7 +45,7 @@ struct ContentView: View {
                             )!
                         )
                     }
-                FriendsAndTagsView(user: user)
+                FriendsView(user: user)
                     .tag(3)
                     .tabItem {
                         Image(
