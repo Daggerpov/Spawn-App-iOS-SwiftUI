@@ -21,6 +21,7 @@ struct MapView: View {
 
     // Add state for tracking mode
     @State private var userTrackingMode: MapUserTrackingMode = .none
+    @State private var is3DMode: Bool = false
 
     // MARK - Event Description State Vars
     @State private var showingEventDescriptionPopup: Bool = false
@@ -119,31 +120,66 @@ struct MapView: View {
             VStack {
                 ZStack {
                     // Map layer
-                    Map(
-                        coordinateRegion: $region,
-                        showsUserLocation: true,
+                    EventMapViewRepresentable(
+                        region: $region,
+                        is3DMode: $is3DMode,
                         userTrackingMode: $userTrackingMode,
                         annotationItems: filteredEvents.filter { $0.location != nil }
                     ) { event in
-                        MapAnnotation(
-                            coordinate: CLLocationCoordinate2D(
-                                latitude: event.location?.latitude ?? 0,
-                                longitude: event.location?.longitude ?? 0
-                            )
-                        ) {
-                            Button(action: {
-                                print("🔍 DEBUG: Tapped event pin for '\(event.title ?? "Untitled")'")
-                                eventInPopup = event
-                                colorInPopup = eventColors.randomElement()
-                                showingEventDescriptionPopup = true
-                            }) {
-                                Image(systemName: "mappin.circle.fill")
-                                    .font(.system(size: 30))
-                                    .foregroundColor(universalAccentColor)
-                            }
-                        }
+                        eventInPopup = event
+                        colorInPopup = eventColors.randomElement()
+                        showingEventDescriptionPopup = true
                     }
                     .ignoresSafeArea()
+
+                    // Top control buttons
+                    VStack {
+                        HStack {
+                            Spacer()
+                            
+                            // Location button
+                            Button(action: {
+                                if let userLocation = locationManager.userLocation {
+                                    withAnimation(.easeInOut(duration: 0.75)) {
+                                        region = MKCoordinateRegion(
+                                            center: userLocation,
+                                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                        )
+                                    }
+                                }
+                            }) {
+                                Image(systemName: "location.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(universalAccentColor)
+                                    .padding(12)
+                                    .background(Color.white)
+                                    .clipShape(Circle())
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            }
+                            .padding(.trailing, 8)
+                            
+                            // 3D mode toggle button (iOS 17+ only)
+                            if #available(iOS 17.0, *) {
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        is3DMode.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                }
+                                .padding(.trailing, 16)
+                            }
+                        }
+                        .padding(.top, 16)
+                        
+                        Spacer()
+                    }
                 }
             }
             .task {
@@ -323,21 +359,21 @@ struct MapView: View {
 
     private func adjustRegionForEvents() {
         guard !viewModel.events.isEmpty else { return }
-
+        
         let latitudes = viewModel.events.compactMap { $0.location?.latitude }
         let longitudes = viewModel.events.compactMap { $0.location?.longitude }
-
+        
         guard let minLatitude = latitudes.min(),
-            let maxLatitude = latitudes.max(),
-            let minLongitude = longitudes.min(),
-            let maxLongitude = longitudes.max()
+              let maxLatitude = latitudes.max(),
+              let minLongitude = longitudes.min(),
+              let maxLongitude = longitudes.max()
         else { return }
-
+        
         let centerLatitude = (minLatitude + maxLatitude) / 2
         let centerLongitude = (minLongitude + maxLongitude) / 2
         let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
         let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
-
+        
         withAnimation {
             region = MKCoordinateRegion(
                 center: CLLocationCoordinate2D(
@@ -356,6 +392,139 @@ struct MapView: View {
         EventCreationViewModel.reInitialize()
         creationOffset = 1000
         showEventCreationDrawer = false
+    }
+}
+
+// MARK: - EventMapViewRepresentable
+struct EventMapViewRepresentable: UIViewRepresentable {
+    @Binding var region: MKCoordinateRegion
+    @Binding var is3DMode: Bool
+    var userTrackingMode: Binding<MapUserTrackingMode>
+    var annotationItems: [FullFeedEventDTO]
+    var onEventTap: (FullFeedEventDTO) -> Void
+    
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.showsUserLocation = true
+        mapView.delegate = context.coordinator
+        
+        if #available(iOS 17.0, *) {
+            // Configure 3D camera
+            let camera = MKMapCamera(lookingAtCenter: region.center, 
+                                   fromDistance: 1000, // Initial distance in meters
+                                   pitch: 0, // Initial pitch (0 for top-down)
+                                   heading: 0) // Initial heading (0 for north)
+            mapView.camera = camera
+        }
+        
+        return mapView
+    }
+    
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        // Check if this is a significant location change
+        let isLocationChange = mapView.region.center.latitude != region.center.latitude || 
+                             mapView.region.center.longitude != region.center.longitude
+        
+        if #available(iOS 17.0, *) {
+            // Update camera configuration for 3D mode
+            if is3DMode {
+                let camera = mapView.camera
+                camera.pitch = 45 // 45-degree angle for 3D view
+                camera.altitude = 1000 // Height in meters
+                
+                UIView.animate(withDuration: 0.75, delay: 0, 
+                              options: [.curveEaseInOut], 
+                              animations: {
+                    mapView.camera = camera
+                }, completion: nil)
+            } else {
+                let camera = mapView.camera
+                camera.pitch = 0 // 0-degree angle for 2D view
+                
+                UIView.animate(withDuration: 0.75, delay: 0, 
+                              options: [.curveEaseInOut], 
+                              animations: {
+                    mapView.camera = camera
+                }, completion: nil)
+            }
+        }
+        
+        if isLocationChange {
+            // Use UIView animation for a smoother visual effect
+            UIView.animate(withDuration: 0.75, delay: 0, 
+                          options: [.curveEaseInOut], 
+                          animations: {
+                mapView.setRegion(region, animated: false)
+            }, completion: nil)
+        } else {
+            // For minor adjustments, use standard animation
+            mapView.setRegion(region, animated: true)
+        }
+        
+        // Update annotations
+        let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
+        mapView.removeAnnotations(currentAnnotations)
+        
+        let newAnnotations = annotationItems.compactMap { event -> MKPointAnnotation? in
+            guard let location = event.location else { return nil }
+            let annotation = MKPointAnnotation()
+            annotation.coordinate = CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+            annotation.title = event.title
+            return annotation
+        }
+        mapView.addAnnotations(newAnnotations)
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: EventMapViewRepresentable
+        
+        init(_ parent: EventMapViewRepresentable) {
+            self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            // Use async to prevent modifying state during view update
+            DispatchQueue.main.async {
+                self.parent.region = mapView.region
+            }
+        }
+        
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                return nil
+            }
+            
+            let identifier = "EventPin"
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+            
+            if annotationView == nil {
+                annotationView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+                annotationView?.canShowCallout = true
+            } else {
+                annotationView?.annotation = annotation
+            }
+            
+            if let markerView = annotationView as? MKMarkerAnnotationView {
+                markerView.markerTintColor = UIColor(universalAccentColor)
+            }
+            
+            return annotationView
+        }
+        
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            if let annotation = view.annotation,
+               let title = annotation.title,
+               let event = parent.annotationItems.first(where: { $0.title == title }) {
+                parent.onEventTap(event)
+            }
+        }
     }
 }
 

@@ -63,26 +63,34 @@ struct LocationSelectionView: View {
                             }
                         }) {
                             Image(systemName: "location.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(universalAccentColor)
                                 .padding(12)
-                                .background(Circle().fill(Color.white))
-                                .shadow(radius: 2)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                         }
                         .padding(.trailing, 8)
                         
                         // 3D mode toggle button (iOS 17+ only)
                         if #available(iOS 17.0, *) {
                             Button(action: {
-                                is3DMode.toggle()
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    is3DMode.toggle()
+                                }
                             }) {
                                 Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(universalAccentColor)
                                     .padding(12)
-                                    .background(Circle().fill(Color.white))
-                                    .shadow(radius: 2)
+                                    .background(Color.white)
+                                    .clipShape(Circle())
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                             }
                             .padding(.trailing, 16)
                         }
                     }
-                    .padding(.top, 10)
+                    .padding(.top, 16)
                     
                     searchBarView
                         .padding(.horizontal)
