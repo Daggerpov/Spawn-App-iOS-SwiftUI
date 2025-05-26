@@ -69,7 +69,9 @@ struct ProfileView: View {
 	var body: some View {
 		NavigationStack {
 			profileContent
+				.background(universalBackgroundColor.ignoresSafeArea())
 		}
+		.background(universalBackgroundColor)
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
 			case .deleteConfirmation:
@@ -248,11 +250,12 @@ struct ProfileView: View {
 
 	private var profileWithOverlay: some View {
 		ZStack {
-			VStack{
+			universalBackgroundColor.ignoresSafeArea()
+			
+			VStack {
 				profileInnerComponentsView
 					.padding(.horizontal)
 			}
-			.background(universalBackgroundColor)
 			.navigationBarBackButtonHidden()
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
@@ -263,6 +266,7 @@ struct ProfileView: View {
 						}) {
 							Image(systemName: "chevron.left")
 								.foregroundColor(universalAccentColor)
+								.background(universalBackgroundColor)
 						}
 					}
 				}
@@ -274,6 +278,7 @@ struct ProfileView: View {
 							user: user,
 							refreshFlag: $refreshFlag
 						)
+						.background(universalBackgroundColor)
 					}
 				}
 
@@ -285,6 +290,7 @@ struct ProfileView: View {
 							Image(systemName: "gearshape")
 								.foregroundColor(universalAccentColor)
 						}
+						.background(universalBackgroundColor)
 					} else {
 						// Menu button for other user profiles - always show immediately
 						Button(action: {
@@ -293,6 +299,7 @@ struct ProfileView: View {
 							Image(systemName: "ellipsis")
 								.foregroundColor(universalAccentColor)
 						}
+						.background(universalBackgroundColor)
 					}
 				}
 			}
@@ -394,6 +401,7 @@ struct ProfileView: View {
 				.padding(.horizontal, 48)
 				.padding(.bottom, 15)
 		}
+		.background(universalBackgroundColor)
 	}
 
 	// Break down body view components into smaller pieces
@@ -574,7 +582,6 @@ struct ProfileView: View {
 	private var profileMenuOverlay: some View {
 		Group {
 			if showProfileMenu {
-				// Dimmed background when menu is showing
 				Color.black.opacity(0.2)
 					.ignoresSafeArea()
 					.onTapGesture {

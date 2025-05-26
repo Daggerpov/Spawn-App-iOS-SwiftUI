@@ -126,7 +126,7 @@ private struct MenuContainer<Content: View>: View {
                 .cornerRadius(12, corners: [.topLeft, .topRight])
         }
         .fixedSize(horizontal: false, vertical: true)
-        .background(Color.clear)
+        .background(universalBackgroundColor)
     }
 }
 
