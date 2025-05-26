@@ -13,6 +13,7 @@ struct LocationSelectionView: View {
     @State private var pinLocation: CLLocationCoordinate2D?
     @State private var locationName: String = ""
     @StateObject private var locationManager = LocationManager()
+    @State private var is3DMode: Bool = false
     
     // For tracking map interaction
     @State private var isMapMoving = false
@@ -20,7 +21,7 @@ struct LocationSelectionView: View {
     
     // Region for Map - setting a closer zoom level with span 0.005
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // Default to San Francisco
+        center: CLLocationCoordinate2D(latitude: defaultMapLatitude, longitude: defaultMapLongitude), // Default to UBC
         span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
     )
     
@@ -28,7 +29,7 @@ struct LocationSelectionView: View {
         NavigationStack {
             ZStack {
                 // Map view
-                MapViewRepresentable(region: $region, onRegionChange: {
+                MapViewRepresentable(region: $region, is3DMode: $is3DMode, onRegionChange: {
                     updatePinLocation()
                 })
                 .ignoresSafeArea()
@@ -44,6 +45,53 @@ struct LocationSelectionView: View {
                 }
                 
                 VStack {
+                    // Top control buttons
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 8) {
+                            // 3D mode toggle button (iOS 17+ only)
+                            if #available(iOS 17.0, *) {
+                                Button(action: {
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        is3DMode.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                }
+                            }
+                            
+                            // Location button
+                            Button(action: {
+                                if let userLocation = locationManager.userLocation {
+                                    pinLocation = userLocation
+                                    withAnimation(.easeInOut(duration: 0.75)) {
+                                        region = MKCoordinateRegion(
+                                            center: userLocation,
+                                            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
+                                        )
+                                    }
+                                    reverseGeocode(coordinate: userLocation)
+                                }
+                            }) {
+                                Image(systemName: "location.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(universalAccentColor)
+                                    .padding(12)
+                                    .background(Color.white)
+                                    .clipShape(Circle())
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            }
+                        }
+                        .padding(.trailing, 16)
+                    }
+                    .padding(.top, 16)
+                    
                     searchBarView
                         .padding(.horizontal)
                         .padding(.top, 10)
@@ -56,38 +104,6 @@ struct LocationSelectionView: View {
                     }
                     
                     Spacer()
-                    
-                    // Center on user location button
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                if let userLocation = locationManager.userLocation {
-                                    // Update pin location first
-                                    pinLocation = userLocation
-                                    
-                                    // Create a new region centered on user's location with a smoother animation
-                                    withAnimation(.easeInOut(duration: 0.75)) {
-                                        region = MKCoordinateRegion(
-                                            center: userLocation,
-                                            span: MKCoordinateSpan(latitudeDelta: 0.005, longitudeDelta: 0.005)
-                                        )
-                                    }
-                                    
-                                    // Reverse geocode to get location name
-                                    reverseGeocode(coordinate: userLocation)
-                                }
-                            }) {
-                                Image(systemName: "location.fill")
-                                    .padding(12)
-                                    .background(Circle().fill(Color.white))
-                                    .shadow(radius: 2)
-                            }
-                            .padding(.trailing, 16)
-                            .padding(.bottom, 16)
-                        }
-                    }
                     
                     VStack {
                         locationNameInputView
@@ -249,12 +265,23 @@ struct LocationSelectionView: View {
 // Custom UIViewRepresentable for MapKit that handles region changes
 struct MapViewRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
+    @Binding var is3DMode: Bool
     var onRegionChange: () -> Void
     
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.showsUserLocation = true
         mapView.delegate = context.coordinator
+        
+        if #available(iOS 17.0, *) {
+            // Configure 3D camera
+            let camera = MKMapCamera(lookingAtCenter: region.center, 
+                                   fromDistance: 1000, // Initial distance in meters
+                                   pitch: 0, // Initial pitch (0 for top-down)
+                                   heading: 0) // Initial heading (0 for north)
+            mapView.camera = camera
+        }
+        
         return mapView
     }
     
@@ -262,6 +289,30 @@ struct MapViewRepresentable: UIViewRepresentable {
         // Check if this is a significant location change
         let isLocationChange = mapView.region.center.latitude != region.center.latitude || 
                                mapView.region.center.longitude != region.center.longitude
+        
+        if #available(iOS 17.0, *) {
+            // Update camera configuration for 3D mode
+            if is3DMode {
+                let camera = mapView.camera
+                camera.pitch = 45 // 45-degree angle for 3D view
+                camera.altitude = 1000 // Height in meters
+                
+                UIView.animate(withDuration: 0.75, delay: 0, 
+                              options: [.curveEaseInOut], 
+                              animations: {
+                    mapView.camera = camera
+                }, completion: nil)
+            } else {
+                let camera = mapView.camera
+                camera.pitch = 0 // 0-degree angle for 2D view
+                
+                UIView.animate(withDuration: 0.75, delay: 0, 
+                              options: [.curveEaseInOut], 
+                              animations: {
+                    mapView.camera = camera
+                }, completion: nil)
+            }
+        }
         
         if isLocationChange {
             // Use UIView animation for a smoother visual effect

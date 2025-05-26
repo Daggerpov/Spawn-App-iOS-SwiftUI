@@ -84,8 +84,8 @@ class MockAPIService: IAPIService {
 				eventToCache.location = Location(
 					id: UUID(),
 					name: possibleLocations.randomElement() ?? "The Spot",
-					latitude: Double.random(in: 49.2...49.3),
-					longitude: Double.random(in: -123.3 ... -123.1)
+					latitude: Double.random(in: defaultMapLatitude - 0.05...defaultMapLatitude + 0.05),
+					longitude: Double.random(in: defaultMapLongitude - 0.05...defaultMapLongitude + 0.05)
 				)
 
 				// Add to cache so it will be found next time
