@@ -66,7 +66,7 @@ struct MapView: View {
                 return startTime > now && startTime <= oneHourFromNow
                 
             case .afternoon:
-                let startOfDay = calendar.startOfDay(for: startTime)
+					_ = calendar.startOfDay(for: startTime)
                 let noonTime = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: startTime)!
                 let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
                 
@@ -74,7 +74,7 @@ struct MapView: View {
                        calendar.isDate(startTime, inSameDayAs: now)
                 
             case .evening:
-                let startOfDay = calendar.startOfDay(for: startTime)
+					_ = calendar.startOfDay(for: startTime)
                 let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
                 let nightTime = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: startTime)!
                 
@@ -109,6 +109,7 @@ struct MapView: View {
         ZStack {
             VStack {
                 ZStack {
+                    // Map layer
                     Map(
                         coordinateRegion: $region,
                         showsUserLocation: true,
@@ -132,83 +133,79 @@ struct MapView: View {
                             }
                         }
                     }
+                    .ignoresSafeArea()
                     
-                    // Add the filter button overlay
+                    // Dimming overlay
+                    if showEventCreationDrawer || showFilterOverlay {
+                        Color.black.opacity(0.5)
+                            .ignoresSafeArea()
+                            .transition(.opacity)
+                            .animation(.easeInOut, value: showEventCreationDrawer || showFilterOverlay)
+                    }
+                    
+                    // Filter button overlay
                     VStack {
                         Spacer()
                         HStack {
                             Spacer()
-                            Button(action: {
-                                showFilterOverlay = true
-                            }) {
-                                HStack {
-									if selectedTimeFilter == .allActivities {
-										Circle().fill(figmaGreen).frame(width: 10, height: 10)
-									}
-                                    Text(selectedTimeFilter.rawValue)
-                                        .font(.onestMedium(size: 16))
-                                        .foregroundColor(.black)
+                            VStack(spacing: 8) {
+                                // Additional filter buttons that appear when overlay is shown
+                                if showFilterOverlay {
+                                    ForEach(Array(TimeFilter.allCases.dropLast()).reversed(), id: \.self) { filter in
+                                        Button(action: {
+                                            withAnimation(.spring()) {
+                                                selectedTimeFilter = filter
+                                                showFilterOverlay = false
+                                            }
+                                        }) {
+                                            HStack {
+//												Spacer()
+                                                Text(filter.rawValue)
+                                                    .font(.onestMedium(size: 16))
+                                                    .foregroundColor(.black)
+//												Spacer()
+                                            }
+                                            .frame(maxWidth: .infinity, alignment: .center)
+                                            .padding(.vertical, 12)
+                                            .padding(.horizontal, 16)
+                                            .background(Color.white)
+                                            .cornerRadius(20)
+//											.frame(width: 160)
+                                        }
+                                        .transition(.move(edge: .top).combined(with: .opacity))
+                                    }
                                 }
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .background(Color.white)
-                                .cornerRadius(20)
-                                .shadow(radius: 2)
+                                
+                                // Main filter button that's always visible
+                                Button(action: {
+                                    withAnimation(.spring()) {
+                                        showFilterOverlay.toggle()
+                                    }
+                                }) {
+                                    HStack {
+                                        if selectedTimeFilter == .allActivities {
+                                            Circle()
+                                                .fill(figmaGreen)
+                                                .frame(width: 10, height: 10)
+                                        }
+                                        Text(selectedTimeFilter.rawValue)
+                                            .font(.onestMedium(size: 16))
+                                            .foregroundColor(.black)
+                                    }
+									.frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 12)
+                                    .padding(.horizontal, 16)
+                                    .background(Color.white)
+                                    .cornerRadius(20)
+                                    .shadow(radius: 2)
+                                }
                             }
+                            .frame(maxWidth: 155)
                             .padding(.trailing, 16)
                         }
                         .padding(.bottom, 85)
                     }
                 }
-                .ignoresSafeArea()
-                .dimmedBackground(
-                    isActive: showEventCreationDrawer || showFilterOverlay
-                )
-                .overlay(
-                    Group {
-                        if showFilterOverlay {
-                            Color.clear
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    showFilterOverlay = false
-                                }
-                            VStack(spacing: 8) {
-                                ForEach(TimeFilter.allCases, id: \.self) { filter in
-                                    Button(action: {
-                                        selectedTimeFilter = filter
-                                        showFilterOverlay = false
-                                    }) {
-                                        HStack {
-                                            if filter == .allActivities {
-                                                Circle()
-                                                    .fill(figmaGreen)
-                                                    .frame(width: 10, height: 10)
-                                            }
-                                            Text(filter.rawValue)
-                                                .font(.onestMedium(size: 16))
-                                                .foregroundColor(.black)
-                                        }
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .padding(.vertical, 12)
-                                        .padding(.horizontal, 16)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(Color.white)
-                                        )
-                                    }
-                                }
-                            }
-                            .padding()
-                            .background(Color.clear)
-                            .transition(.move(edge: .bottom))
-                            .animation(.easeInOut, value: showFilterOverlay)
-                            .frame(width: 200)
-                            .frame(maxHeight: .infinity, alignment: .bottom)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                            .padding(.horizontal)
-                        }
-                    }
-                )
             }
             .task {
                 // Fetch data
@@ -250,6 +247,17 @@ struct MapView: View {
                     )
                     .presentationDragIndicator(.visible)
                 }
+            }
+            
+            // Clear overlay for tap gesture
+            if showFilterOverlay {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        withAnimation(.spring()) {
+                            showFilterOverlay = false
+                        }
+                    }
             }
         }
     }
