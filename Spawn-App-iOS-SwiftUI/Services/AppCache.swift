@@ -233,13 +233,12 @@ class AppCache: ObservableObject {
                 print("Failed to refresh profile for user \(userId): \(error.localizedDescription)")
             }
         }
-        
+
+		for userId in usersToRemove{
+			otherProfiles.removeValue(forKey: userId)
+		}
+
         await MainActor.run {
-            // Remove profiles that returned 404
-            for userId in usersToRemove {
-                otherProfiles.removeValue(forKey: userId)
-            }
-            
             lastChecked[CacheKeys.otherProfiles] = Date()
             saveToDisk()
         }
