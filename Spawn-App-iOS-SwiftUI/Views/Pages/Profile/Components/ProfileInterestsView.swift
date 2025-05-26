@@ -139,9 +139,8 @@ struct ProfileInterestsView: View {
                 }
             }
         }
-        .frame(height: profileViewModel.userInterests.isEmpty ? 80 : 120)
+        .frame(maxHeight: profileViewModel.userInterests.isEmpty ? 80 : 80)
         .padding(.horizontal)
-        .padding(.top, 5)
     }
 
     private var emptyInterestsView: some View {
@@ -153,36 +152,47 @@ struct ProfileInterestsView: View {
     }
 
     private func interestChip(interest: String) -> some View {
-        Text(interest)
-			.font(.onestSemiBold(size: 12))
-            .padding(.vertical, 8)
-            .padding(.horizontal, 14)
-            .foregroundColor(universalAccentColor)
-			.lineLimit(1)
-            .background(Color.white)
-            .clipShape(Capsule())
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
-            .overlay(
-                isCurrentUserProfile && editingState == .save
-                    ? HStack {
-                        Spacer()
-                        Button(action: {
-                            removeInterest(interest)
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.caption)
-                        }
-                        .offset(x: 5, y: -8)
-                    } : nil
-            )
+		Group{
+			if isCurrentUserProfile && editingState == .save {
+				Text(interest)
+					.font(.onestSemiBold(size: 12))
+					.padding(.vertical, 8)
+					.padding(.horizontal, 14)
+					.foregroundColor(universalAccentColor)
+					.lineLimit(1)
+					.background(Color.white)
+					.clipShape(Capsule())
+					.shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+					.overlay(
+						isCurrentUserProfile && editingState == .save
+						? HStack {
+							Spacer()
+							Button(action: {
+								removeInterest(interest)
+							}) {
+								Image(systemName: "xmark.circle.fill")
+									.foregroundColor(.red)
+									.font(.caption)
+							}
+							.offset(x: 5, y: -8)
+						} : nil
+					)
+			} else {
+				Text(interest)
+					.font(.onestSemiBold(size: 12))
+					.padding(.vertical, 8)
+					.padding(.horizontal, 4)
+					.foregroundColor(universalAccentColor)
+					.lineLimit(1)
+			}
+		}
     }
 }
 
 #Preview {
     ProfileInterestsView(
         user: BaseUserDTO.danielAgapov,
-		profileViewModel: ProfileViewModel(userId: BaseUserDTO.danielAgapov.id),
+		profileViewModel: ProfileViewModel(),
         editingState: .constant(.edit),
         newInterest: .constant(""),
         openSocialMediaLink: { _, _ in },

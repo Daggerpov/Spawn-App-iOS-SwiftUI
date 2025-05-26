@@ -31,8 +31,7 @@ struct ProfileHeaderView: View {
         VStack {
             // Profile Picture
             profilePictureSection
-                .padding(.top, 15)
-            
+
             // Name and Username
             nameAndUsernameView
         }
