@@ -37,6 +37,7 @@ struct EventCreationView: View {
                     .foregroundColor(universalAccentColor)
                 Spacer()
                 Button(action: {
+                    EventCreationViewModel.reInitialize()
                     closeCallback()
                 }) {
                     Image(systemName: "xmark")
@@ -198,6 +199,9 @@ struct EventCreationView: View {
         }
         .background(universalBackgroundColor)
         .padding(.horizontal, 0)
+        .onDisappear {
+            EventCreationViewModel.reInitialize()
+        }
         .onAppear {
             // Initialize selectedEmoji from viewModel if available
             if let icon = viewModel.event.icon {
