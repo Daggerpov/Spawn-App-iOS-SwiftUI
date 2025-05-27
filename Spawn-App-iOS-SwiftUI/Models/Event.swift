@@ -16,6 +16,7 @@ class Event: Identifiable, Codable {
 	var endTime: Date?
 	var location: Location?
 	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
+	var createdAt: Date?
 
 	// MARK: Relations
 	var creatorUser: UserDTO?
@@ -37,7 +38,8 @@ class Event: Identifiable, Codable {
 		participantUsers: [UserDTO]? = nil,
 		invitedUsers: [UserDTO]? = nil,
 		chatMessages: [FullEventChatMessageDTO]? = nil,
-		participationStatus: ParticipationStatus? = nil
+		participationStatus: ParticipationStatus? = nil,
+		createdAt: Date? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -50,6 +52,7 @@ class Event: Identifiable, Codable {
 		self.invitedUsers = invitedUsers
 		self.chatMessages = chatMessages
 		self.participationStatus = participationStatus
+		self.createdAt = createdAt
 	}
 }
 
