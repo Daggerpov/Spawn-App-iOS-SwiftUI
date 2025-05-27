@@ -92,12 +92,6 @@ struct MapView: View {
             }
         }
         
-        print("🗺 DEBUG: Filtered events count: \(filtered.count)")
-        print("📍 DEBUG: Filtered events with locations: \(filtered.filter { $0.location != nil }.count)")
-        filtered.forEach { event in
-            print("📌 DEBUG: Filtered event '\(event.title ?? "Untitled")' location: \(event.location?.latitude ?? 0), \(event.location?.longitude ?? 0)")
-        }
-        
         return filtered
     }
 
@@ -394,7 +388,6 @@ struct MapView: View {
     }
 }
 
-// MARK: - EventMapViewRepresentable
 struct EventMapViewRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var is3DMode: Bool

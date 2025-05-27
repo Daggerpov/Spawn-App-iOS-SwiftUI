@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import CoreLocation
+import MapKit
 
 struct EventCardPopupView: View {
     var event: FullFeedEventDTO
@@ -131,21 +133,6 @@ struct EventCardPopupView: View {
                         .foregroundColor(.white)
                         .font(.onestRegular(size: 13))
                     Spacer()
-                    Button(action: {
-                        // Open in Maps app
-                        let url = URL(string: "maps://?q=\(location.latitude),\(location.longitude)")
-                        if let url = url, UIApplication.shared.canOpenURL(url) {
-                            UIApplication.shared.open(url)
-                        }
-                    }) {
-                        Text("View on Map")
-                            .font(.onestSemiBold(size: 14))
-                            .foregroundColor(color)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 6)
-                            .background(Color.white)
-                            .cornerRadius(16)
-                    }
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 8)
@@ -196,15 +183,15 @@ struct EventCardPopupView: View {
             .cornerRadius(14)
             .padding(.horizontal)
             .padding(.bottom, 8)
-            
+
+			// TODO DANIEL: make real createdAt property on event to show here, in the back-end and in DTOs.
+
             // Timestamp
-            if let createdAt = event.createdAt {
-                Text(FormatterService.shared.formatTimeAgo(from: createdAt))
-                    .font(.onestRegular(size: 13))
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(.horizontal)
-                    .padding(.bottom, 16)
-            }
+			Text(FormatterService.shared.format(Date.now.advanced(by: -3600)))
+                .font(.onestRegular(size: 13))
+                .foregroundColor(.white.opacity(0.7))
+                .padding(.horizontal)
+                .padding(.bottom, 16)
         }
         .background(color)
         .cornerRadius(32)
@@ -254,27 +241,32 @@ struct MapSnapshotterView: View {
         }
         .onAppear {
             let snapshotter = MKMapSnapshotter(options: options)
-            snapshotter.start { result in
-                switch result {
-                case .success(let snapshot):
-                    let image = UIGraphicsImageRenderer(size: snapshot.image.size).image { _ in
-                        snapshot.image.draw(at: .zero)
-                        
-                        let pinView = UIImage(systemName: "mappin.circle.fill")?
-                            .withTintColor(.red)
-                        let pinPoint = snapshot.point(for: coordinate)
-                        let pinRect = CGRect(
-                            x: pinPoint.x - 8,
-                            y: pinPoint.y - 8,
-                            width: 16,
-                            height: 16
-                        )
-                        pinView?.draw(in: pinRect)
-                    }
-                    self.snapshot = image
-                case .failure(let error):
+            snapshotter.start(with: .main) { snapshot, error in
+                if let error = error {
                     print("Failed to generate map snapshot: \(error)")
+                    return
                 }
+                
+                guard let snapshot = snapshot else {
+                    print("No snapshot returned")
+                    return
+                }
+                
+                let image = UIGraphicsImageRenderer(size: snapshot.image.size).image { _ in
+                    snapshot.image.draw(at: .zero)
+                    
+                    let pinView = UIImage(systemName: "mappin.circle.fill")?
+                        .withTintColor(.red)
+                    let pinPoint = snapshot.point(for: coordinate)
+                    let pinRect = CGRect(
+                        x: pinPoint.x - 8,
+                        y: pinPoint.y - 8,
+                        width: 16,
+                        height: 16
+                    )
+                    pinView?.draw(in: pinRect)
+                }
+                self.snapshot = image
             }
         }
     }
