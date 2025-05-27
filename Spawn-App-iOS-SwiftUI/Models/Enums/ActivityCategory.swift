@@ -1,5 +1,5 @@
 //
-//  EventCategory.swift
+//  ActivityCategory.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-02-27.
@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI
 
-enum EventCategory: String, Codable, CaseIterable {
+enum ActivityCategory: String, Codable, CaseIterable {
     case general = "GENERAL"
     case foodAndDrink = "FOOD_AND_DRINK"
     case active = "ACTIVE"
@@ -28,7 +28,7 @@ enum EventCategory: String, Codable, CaseIterable {
         
         // Otherwise try to decode the string value
         let rawValue = try container.decode(String.self)
-        if let value = EventCategory(rawValue: rawValue) {
+        if let value = ActivityCategory(rawValue: rawValue) {
             self = value
         } else {
             // If string doesn't match any case, default to general
@@ -70,4 +70,4 @@ enum EventCategory: String, Codable, CaseIterable {
         case .general: return "star.fill"
         }
     }
-}
+} 
