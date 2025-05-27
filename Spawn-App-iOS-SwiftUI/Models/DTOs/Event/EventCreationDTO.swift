@@ -22,6 +22,7 @@ class EventCreationDTO: Identifiable, Codable {
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
 	var category: EventCategory = .general
+	var createdAt: Date?
 
 	// MARK: Relations
 	var creatorUserId: UUID
@@ -37,7 +38,8 @@ class EventCreationDTO: Identifiable, Codable {
 		icon: String? = nil,
 		category: EventCategory = .general,
 		creatorUserId: UUID,
-		invitedFriendUserIds: [UUID]? = nil
+		invitedFriendUserIds: [UUID]? = nil,
+		createdAt: Date? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -49,5 +51,6 @@ class EventCreationDTO: Identifiable, Codable {
 		self.category = category
 		self.creatorUserId = creatorUserId
 		self.invitedFriendUserIds = invitedFriendUserIds
+		self.createdAt = createdAt
 	}
 }

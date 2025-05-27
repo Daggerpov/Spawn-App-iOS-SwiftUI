@@ -26,7 +26,8 @@ class ProfileEventDTO: FullFeedEventDTO {
         chatMessages: [FullEventChatMessageDTO]? = nil,
         participationStatus: ParticipationStatus? = nil,
         isSelfOwned: Bool? = nil,
-        isPastEvent: Bool = false
+        isPastEvent: Bool = false,
+        createdAt: Date? = nil
     ) {
         self.isPastEvent = isPastEvent
         
@@ -44,7 +45,8 @@ class ProfileEventDTO: FullFeedEventDTO {
             invitedUsers: invitedUsers,
             chatMessages: chatMessages,
             participationStatus: participationStatus,
-            isSelfOwned: isSelfOwned
+            isSelfOwned: isSelfOwned,
+            createdAt: createdAt
         )
     }
     
@@ -84,7 +86,8 @@ class ProfileEventDTO: FullFeedEventDTO {
             chatMessages: fullFeedEventDTO.chatMessages,
             participationStatus: fullFeedEventDTO.participationStatus,
             isSelfOwned: fullFeedEventDTO.isSelfOwned,
-            isPastEvent: isPastEvent
+            isPastEvent: isPastEvent,
+            createdAt: fullFeedEventDTO.createdAt
         )
     }
 } 
