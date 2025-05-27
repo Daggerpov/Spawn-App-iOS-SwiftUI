@@ -242,7 +242,7 @@ extension EventCreationView {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     // Reordering categories to put General last
-                    let sortedCategories = EventCategory.allCases.sorted { cat1, cat2 in
+                    let sortedCategories = ActivityCategory.allCases.sorted { cat1, cat2 in
                         if cat1 == .general { return false }
                         if cat2 == .general { return true }
                         return cat1.displayName < cat2.displayName

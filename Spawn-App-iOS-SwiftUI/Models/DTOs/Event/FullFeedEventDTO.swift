@@ -26,7 +26,7 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
-	var category: EventCategory = .general
+	var category: ActivityCategory = .general
 	var createdAt: Date?
 
 	// MARK: Relations
@@ -47,7 +47,7 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 		location: Location? = nil,
 		note: String? = nil,
 		icon: String? = nil,
-		category: EventCategory = .general,
+		category: ActivityCategory = .general,
 		creatorUser: BaseUserDTO,
 		participantUsers: [BaseUserDTO]? = nil,
 		invitedUsers: [BaseUserDTO]? = nil,

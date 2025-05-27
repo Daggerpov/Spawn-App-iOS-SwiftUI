@@ -70,4 +70,7 @@ enum ActivityCategory: String, Codable, CaseIterable {
         case .general: return "star.fill"
         }
     }
-} 
+}
+
+// Temporary typealias for migration from EventCategory to ActivityCategory
+typealias EventCategory = ActivityCategory

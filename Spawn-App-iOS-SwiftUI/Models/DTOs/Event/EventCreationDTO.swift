@@ -21,7 +21,7 @@ class EventCreationDTO: Identifiable, Codable {
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
-	var category: EventCategory = .general
+	var category: ActivityCategory = .general
 
 	// MARK: Relations
 	var creatorUserId: UUID
@@ -35,7 +35,7 @@ class EventCreationDTO: Identifiable, Codable {
 		location: Location? = nil,
 		note: String? = nil,
 		icon: String? = nil,
-		category: EventCategory = .general,
+		category: ActivityCategory = .general,
 		creatorUserId: UUID,
 		invitedFriendUserIds: [UUID]? = nil
 	) {

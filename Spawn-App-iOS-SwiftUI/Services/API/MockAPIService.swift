@@ -39,6 +39,17 @@ class MockAPIService: IAPIService {
 					FullFeedEventDTO.mockSelfOwnedEvent2,
 				] as! T
 			}
+			
+			// Support for activities endpoint
+			if url.absoluteString == APIService.baseURL
+				+ "activities/feedActivities/\(userIdForUrl)"
+			{
+				return [
+					FullFeedActivityDTO.mockDinnerActivity,
+					FullFeedActivityDTO.mockSelfOwnedActivity,
+					FullFeedActivityDTO.mockSelfOwnedActivity2,
+				] as! T
+			}
 		}
 
 		// fetchFilteredEvents() - FeedViewModel
@@ -222,6 +233,13 @@ class MockAPIService: IAPIService {
 
 		// createEvent():
 		if url.absoluteString == APIService.baseURL + "events" {
+			// do nothing; whatever
+		}
+		
+		/// `ActivityCreationViewModel.swift`:
+
+		// createActivity():
+		if url.absoluteString == APIService.baseURL + "activities" {
 			// do nothing; whatever
 		}
 

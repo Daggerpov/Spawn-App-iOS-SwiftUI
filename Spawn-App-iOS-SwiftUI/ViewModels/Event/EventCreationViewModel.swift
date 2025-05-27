@@ -18,7 +18,7 @@ class EventCreationViewModel: ObservableObject {
 	@Published var creationMessage: String = ""
 
 	@Published var selectedFriends: [FullFriendUserDTO] = []
-	@Published var selectedCategory: EventCategory = .general
+	@Published var selectedCategory: ActivityCategory = .general
 	
 	// Validation properties
 	@Published var isTitleValid: Bool = true

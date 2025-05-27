@@ -7,4 +7,7 @@
 
 enum ActivityInfoType {
 	case time, location
-} 
+}
+
+// Temporary typealias for migration from EventInfoType to ActivityInfoType
+typealias EventInfoType = ActivityInfoType

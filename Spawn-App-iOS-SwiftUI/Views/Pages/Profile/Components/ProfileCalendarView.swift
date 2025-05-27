@@ -318,9 +318,9 @@ struct MiniDayCell: View {
 				Text(icon)
 					.font(.system(size: 10))
 			} else {
-				// Fallback to system icon from the EventCategory enum
-				Image(
-					systemName: activity.eventCategory?.systemIcon()
+				                            // Fallback to system icon from the ActivityCategory enum
+                            Image(
+                                systemName: activity.eventCategory?.systemIcon()
 					?? "star.fill"
 				)
 				.font(.system(size: 10))

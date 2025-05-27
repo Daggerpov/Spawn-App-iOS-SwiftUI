@@ -347,8 +347,8 @@ struct DayCell: View {
                 Text(icon)
                     .font(.system(size: 10))
             } else {
-                // Fallback to system icon from the EventCategory enum
-                Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
+                                        // Fallback to system icon from the ActivityCategory enum
+                        Image(systemName: activity.eventCategory?.systemIcon() ?? "circle.fill")
                     .font(.system(size: 10))
             }
         }

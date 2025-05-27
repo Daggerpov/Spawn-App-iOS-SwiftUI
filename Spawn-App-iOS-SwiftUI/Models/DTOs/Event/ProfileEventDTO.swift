@@ -19,7 +19,7 @@ class ProfileEventDTO: FullFeedEventDTO {
         location: Location? = nil,
         note: String? = nil,
         icon: String? = nil,
-        category: EventCategory = .general,
+        category: ActivityCategory = .general,
         creatorUser: BaseUserDTO,
         participantUsers: [BaseUserDTO]? = nil,
         invitedUsers: [BaseUserDTO]? = nil,
