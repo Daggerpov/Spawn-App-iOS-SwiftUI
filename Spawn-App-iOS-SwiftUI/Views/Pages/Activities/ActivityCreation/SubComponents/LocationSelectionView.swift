@@ -3,7 +3,7 @@ import MapKit
 import CoreLocation
 
 struct LocationSelectionView: View {
-	@EnvironmentObject var viewModel: EventCreationViewModel
+	@EnvironmentObject var viewModel: ActivityCreationViewModel
 	@Environment(\.dismiss) private var dismiss
 
 	@State private var searchText = ""
@@ -419,5 +419,5 @@ extension MKPlacemark {
 #Preview {
 	@Previewable @StateObject var appCache = AppCache.shared
 	LocationSelectionView()
-		.environmentObject(EventCreationViewModel.shared)
+		.environmentObject(ActivityCreationViewModel.shared)
 }

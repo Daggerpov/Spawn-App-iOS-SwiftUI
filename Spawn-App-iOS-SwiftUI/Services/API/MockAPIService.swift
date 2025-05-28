@@ -212,20 +212,13 @@ class MockAPIService: IAPIService {
 			) as! U?
 		}
 
-		/// `EventCreationViewModel.swift`:
-
-		// createEvent():
-		if url.absoluteString == APIService.baseURL + "events" {
-			// do nothing; whatever
-		}
-		
 		/// `ActivityCreationViewModel.swift`:
 
 		// createActivity():
 		if url.absoluteString == APIService.baseURL + "activities" {
 			// do nothing; whatever
 		}
-
+		
 		/// ProfileViewModel.swift:
 
 		// addUserInterest():
@@ -271,7 +264,7 @@ class MockAPIService: IAPIService {
 		if url.absoluteString.contains("events/")
 			&& url.absoluteString.contains("/toggleStatus")
 		{
-			return FullFeedEventDTO.mockDinnerEvent as! U
+			return FullFeedActivityDTO.mockDinnerActivity as! U
 		}
 
 		// FriendRequestViewModel.swift - friendRequestAction():

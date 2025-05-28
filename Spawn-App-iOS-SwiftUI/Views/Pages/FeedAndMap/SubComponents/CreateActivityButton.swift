@@ -1,15 +1,15 @@
 import SwiftUI
 
-struct CreateActivityButton: View {
-    @Binding var showActivityCreationDrawer: Bool
+struct CreateEventButton: View {
+    @Binding var showEventCreationDrawer: Bool
     var body: some View {
         Button(action: {
-            showActivityCreationDrawer = true
+            showEventCreationDrawer = true
         }) {
             HStack {
                 Image(systemName: "plus")
                     .font(.system(size: 20, weight: .bold))
-                Text("Create an Activity")
+                Text("Create an Event")
                     .font(.system(size: 20, weight: .semibold))
             }
             .foregroundColor(.white)
@@ -26,4 +26,4 @@ struct CreateActivityButton: View {
             .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 2)
         }
     }
-} 
+}

@@ -1,5 +1,5 @@
 //
-//  ActivityDescriptionView.swift
+//  EventDescriptionView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/9/24.
@@ -7,19 +7,19 @@
 
 import SwiftUI
 
-struct ActivityDescriptionView: View {
+struct EventDescriptionView: View {
 	@State private var messageText: String = ""
-	@ObservedObject var viewModel: ActivityDescriptionViewModel
+	@ObservedObject var viewModel: EventDescriptionViewModel
 	var color: Color
 
 	init(
-		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
+		event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color,
 		userId: UUID
 	) {
-		self.viewModel = ActivityDescriptionViewModel(
+		self.viewModel = EventDescriptionViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(
-					userId: userId) : APIService(), activity: activity,
+					userId: userId) : APIService(), event: event,
 			users: users,
 			senderUserId: userId
 		)
@@ -30,12 +30,12 @@ struct ActivityDescriptionView: View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 20) {
 				// Title and Information
-				ActivityCardTopRowView(activity: viewModel.activity)
+				EventCardTopRowView(event: viewModel.event)
 				
 				// Username display
 				HStack {
-                    Text(ActivityInfoViewModel(activity: viewModel.activity, activityInfoType: .time)
-                        .activityInfoDisplayString)
+                    Text(EventInfoViewModel(event: viewModel.event, eventInfoType: .time)
+                        .eventInfoDisplayString)
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(.white)
                         .opacity(0.5)
@@ -46,7 +46,7 @@ struct ActivityDescriptionView: View {
 				VStack {
 					HStack {
 						// Note
-						if let note = viewModel.activity.note {
+						if let note = viewModel.event.note {
 							Text("\(note)")
 								.font(.body)
 								.padding(.bottom, 15)
@@ -58,13 +58,13 @@ struct ActivityDescriptionView: View {
 					.frame(maxWidth: .infinity, alignment: .leading)
 
 					HStack(spacing: 10) {
-						ActivityInfoView(
-							activity: viewModel.activity, activityInfoType: .time)
+						EventInfoView(
+							event: viewModel.event, eventInfoType: .time)
 						
 						// Only show location if it exists
-						if viewModel.activity.location?.name != nil && !(viewModel.activity.location?.name.isEmpty ?? true) {
-							ActivityInfoView(
-								activity: viewModel.activity, activityInfoType: .location)
+						if viewModel.event.location?.name != nil && !(viewModel.event.location?.name.isEmpty ?? true) {
+							EventInfoView(
+								event: viewModel.event, eventInfoType: .location)
 						}
 						
 						Spacer()
@@ -72,17 +72,17 @@ struct ActivityDescriptionView: View {
 						// Add participation toggle or edit button
 						Circle()
 							.CircularButton(
-								systemName: viewModel.activity.isSelfOwned == true 
-									? "pencil" // Edit icon for self-owned activities
+								systemName: viewModel.event.isSelfOwned == true 
+									? "pencil" // Edit icon for self-owned events
 									: (viewModel.isParticipating ? "checkmark" : "star.fill"),
 								buttonActionCallback: {
 									Task {
-										if viewModel.activity.isSelfOwned == true {
+										if viewModel.event.isSelfOwned == true {
 											// Handle edit action
-											print("Edit activity")
+											print("Edit event")
 											// TODO: Implement edit functionality
 										} else {
-											// Toggle participation for non-owned activities
+											// Toggle participation for non-owned events
 											await viewModel.toggleParticipation()
 										}
 									}
@@ -92,7 +92,7 @@ struct ActivityDescriptionView: View {
 				}
 				.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
 
-				if let chatMessages = viewModel.activity.chatMessages {
+				if let chatMessages = viewModel.event.chatMessages {
 					Divider()
 						.frame(height: 0.5)
 						.background(Color.black)
@@ -118,13 +118,13 @@ struct ActivityDescriptionView: View {
 	}
 	
 	var usernamesView: some View {
-		let participantCount = (viewModel.activity.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
-		let invitedCount = viewModel.activity.invitedUsers?.count ?? 0
+		let participantCount = (viewModel.event.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
+		let invitedCount = viewModel.event.invitedUsers?.count ?? 0
 		let totalCount = participantCount + invitedCount
 		
-		let displayText = (viewModel.activity.isSelfOwned == true) 
+		let displayText = (viewModel.event.isSelfOwned == true) 
 			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
-			: "@\(viewModel.activity.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(viewModel.event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
 		
 		return Text(displayText)
 			.foregroundColor(.white)
@@ -132,12 +132,12 @@ struct ActivityDescriptionView: View {
 	}
 }
 
-extension ActivityDescriptionView {
+extension EventDescriptionView {
 	var chatMessagesView: some View {
         VStack(spacing: 10) {
             ScrollView(.vertical) {
                 LazyVStack(spacing: 15) {
-                    if let chatMessages = viewModel.activity.chatMessages {
+                    if let chatMessages = viewModel.event.chatMessages {
                         ForEach(chatMessages) { chatMessage in
                             ChatMessageRow(chatMessage: chatMessage)
                         }
@@ -156,7 +156,7 @@ extension ActivityDescriptionView {
 	}
 
 	struct ChatMessageRow: View {
-		let chatMessage: FullActivityChatMessageDTO
+		let chatMessage: FullEventChatMessageDTO
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [
@@ -198,63 +198,74 @@ extension ActivityDescriptionView {
 							.scaledToFit()
 							.frame(width: 15, height: 15)
 							.foregroundColor(universalAccentColor)
-
-						Text("@\(chatMessage.senderUser.username)")
+						Text(chatMessage.senderUser.username)
+							.foregroundColor(universalAccentColor)
+							.bold()
 							.font(.caption)
-							.fontWeight(.semibold)
-							.foregroundColor(.black)
-
-						Spacer()
-
-						Text(
-							abbreviatedTime(
-								from: FormatterService.shared.timeAgo(
-									from: chatMessage.timestamp))
-						)
-						.font(.caption2)
-						.foregroundColor(.gray)
 					}
-
-					Text(chatMessage.message)
+					Text(chatMessage.content)
+						.foregroundColor(universalAccentColor)
 						.font(.caption)
-						.foregroundColor(.black)
-						.multilineTextAlignment(.leading)
 				}
-
 				Spacer()
+				HStack {
+					Text(abbreviatedTime(from: chatMessage.formattedTimestamp))
+						.foregroundColor(.white)
+						.font(.caption)
+					Image(systemName: "heart")  // Logic for liked/unliked can go here later
+				}
 			}
+			.padding(.vertical, 5)
+			.padding(.horizontal, 30)
 		}
 	}
 
 	var chatBar: some View {
 		HStack {
-			TextField("Add a comment...", text: $messageText)
-				.textFieldStyle(RoundedBorderTextFieldStyle())
-				.frame(height: 40)
+			TextField("Add a comment", text: $messageText)
+				.padding(10)
+				.background(Color.white)
+				.cornerRadius(10)
+				.font(.caption)
+				.foregroundColor(universalAccentColor)
 
 			Button(action: {
-				Task {
-					await viewModel.sendMessage(messageText)
-					messageText = ""
+				// Store the current message text in a local constant
+				let currentMessage = messageText
+				
+				// Only try to send if message is not empty
+				if !currentMessage.isEmpty {
+					Task {
+						// Use the stored message text
+						await viewModel.sendMessage(message: currentMessage)
+						
+						// Clear the text field on the main thread after sending
+						await MainActor.run {
+							messageText = ""
+						}
+					}
 				}
 			}) {
 				Image(systemName: "paperplane.fill")
-					.foregroundColor(.blue)
-					.font(.title2)
+					.foregroundColor(Color.black)
 			}
-			.disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+			.padding(.horizontal, 10)
+			.disabled(messageText.isEmpty) // Disable button when text is empty
 		}
-		.padding(.horizontal, 10)
+		.padding(8)
+		.background(Color.white)
+		.cornerRadius(universalRectangleCornerRadius)
+		.padding(.horizontal, 15)
 	}
 }
 
 @available(iOS 17, *)
 #Preview {
-	@Previewable @StateObject var appCache = AppCache.shared
-	ActivityDescriptionView(
-		activity: FullFeedActivityDTO.mockDinnerActivity,
-		users: [BaseUserDTO.danielAgapov],
-		color: .blue,
-		userId: BaseUserDTO.danielAgapov.id
+    @Previewable @StateObject var appCache = AppCache.shared
+	EventDescriptionView(
+		event: FullFeedEventDTO.mockDinnerEvent,
+		users: BaseUserDTO.mockUsers,
+		color: universalAccentColor,
+		userId: UUID()
 	).environmentObject(appCache)
-} 
+}

@@ -1,32 +1,32 @@
 import SwiftUI
 
-struct ActivityCardView: View {
-    @ObservedObject var viewModel: ActivityCardViewModel
-    var activity: FullFeedActivityDTO
+struct EventCardView: View {
+    @ObservedObject var viewModel: EventCardViewModel
+    var event: FullFeedEventDTO
     var color: Color
-    var callback: (FullFeedActivityDTO, Color) -> Void
+    var callback: (FullFeedEventDTO, Color) -> Void
     
     init(
-        userId: UUID, activity: FullFeedActivityDTO, color: Color,
-        callback: @escaping (FullFeedActivityDTO, Color) -> Void
+        userId: UUID, event: FullFeedEventDTO, color: Color,
+        callback: @escaping (FullFeedEventDTO, Color) -> Void
     ) {
-        self.activity = activity
+        self.event = event
         self.color = color
-        self.viewModel = ActivityCardViewModel(
+        self.viewModel = EventCardViewModel(
             apiService: MockAPIService.isMocking
                 ? MockAPIService(userId: userId) : APIService(), userId: userId,
-            activity: activity)
+            event: event)
         self.callback = callback
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Top Row: Title, Participants
-            ActivityCardTopRowView(activity: activity)
+            EventCardTopRowView(event: event)
             // Location Row
-            ActivityLocationView(activity: activity)
+            EventLocationView(event: event)
             // Description Row
-            ActivityCardInfoView(activity: activity)
+            EventCardInfoView(event: event)
         }
         .padding(14)
         .background(
@@ -38,7 +38,7 @@ struct ActivityCardView: View {
             viewModel.fetchIsParticipating()
         }
         .onTapGesture {
-            callback(activity, color)
+            callback(event, color)
         }
     }
-} 
+}

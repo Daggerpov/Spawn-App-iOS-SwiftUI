@@ -10,7 +10,7 @@ import SwiftUI
 struct InviteView: View {
     let user: BaseUserDTO
     @Environment(\.dismiss) private var dismiss
-    @ObservedObject var eventCreationViewModel = EventCreationViewModel.shared
+    @ObservedObject var activityCreationViewModel = ActivityCreationViewModel.shared
     @StateObject private var searchViewModel = SearchViewModel()
     
     // Add view models for friends
@@ -43,7 +43,7 @@ struct InviteView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         // Invited section
-                        if !eventCreationViewModel.selectedFriends.isEmpty {
+                        if !activityCreationViewModel.selectedFriends.isEmpty {
                             invitedFriendsSection
                         }
 
@@ -64,7 +64,7 @@ struct InviteView: View {
                         dismiss()
                     }) {
                         Text(
-                            "Done Inviting (\(eventCreationViewModel.selectedFriends.count) friends)"
+                            "Done Inviting (\(activityCreationViewModel.selectedFriends.count) friends)"
                         )
                         .font(.headline)
                         .foregroundColor(.white)
@@ -114,10 +114,10 @@ struct InviteView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(eventCreationViewModel.selectedFriends) { friend in
+                    ForEach(activityCreationViewModel.selectedFriends) { friend in
                         Button(action: {
-                            if let index = eventCreationViewModel.selectedFriends.firstIndex(where: { $0.id == friend.id }) {
-                                eventCreationViewModel.selectedFriends.remove(at: index)
+                            if let index = activityCreationViewModel.selectedFriends.firstIndex(where: { $0.id == friend.id }) {
+                                activityCreationViewModel.selectedFriends.remove(at: index)
                             }
                         }) {
                             HStack(spacing: 4) {
@@ -203,7 +203,7 @@ struct InviteView: View {
                         ForEach(filteredFriends) { friend in
                             FriendListRow(
                                 friend: friend,
-                                isSelected: eventCreationViewModel.selectedFriends
+                                isSelected: activityCreationViewModel.selectedFriends
                                     .contains(friend)
                             )
                             .onTapGesture {
@@ -217,12 +217,12 @@ struct InviteView: View {
     }
 
     private func toggleFriendSelection(_ friend: FullFriendUserDTO) {
-        if eventCreationViewModel.selectedFriends.contains(friend) {
-            eventCreationViewModel.selectedFriends.removeAll {
+        if activityCreationViewModel.selectedFriends.contains(friend) {
+            activityCreationViewModel.selectedFriends.removeAll {
                 $0.id == friend.id
             }
         } else {
-            eventCreationViewModel.selectedFriends.append(friend)
+            activityCreationViewModel.selectedFriends.append(friend)
         }
     }
 }

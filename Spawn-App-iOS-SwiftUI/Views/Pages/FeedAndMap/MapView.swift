@@ -389,7 +389,7 @@ struct MapView: View {
     }
 
     func closeCreation() {
-        EventCreationViewModel.reInitialize()
+        ActivityCreationViewModel.reInitialize()
         creationOffset = 1000
         showEventCreationDrawer = false
     }

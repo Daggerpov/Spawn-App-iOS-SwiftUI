@@ -1,5 +1,5 @@
 //
-//  EventCreationView.swift
+//  ActivityCreationView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-01-02.
@@ -8,9 +8,9 @@
 import SwiftUI
 import MCEmojiPicker
 
-struct EventCreationView: View {
-    @ObservedObject var viewModel: EventCreationViewModel =
-    EventCreationViewModel.shared
+struct ActivityCreationView: View {
+    @ObservedObject var viewModel: ActivityCreationViewModel =
+    ActivityCreationViewModel.shared
     
     @State private var showFullDatePicker: Bool = false  // Toggles the pop-out calendar
     @State private var showInviteView: Bool = false
@@ -37,7 +37,7 @@ struct EventCreationView: View {
                     .foregroundColor(universalAccentColor)
                 Spacer()
                 Button(action: {
-                    EventCreationViewModel.reInitialize()
+                    ActivityCreationViewModel.reInitialize()
                     closeCallback()
                 }) {
                     Image(systemName: "xmark")
@@ -50,7 +50,7 @@ struct EventCreationView: View {
             // Content
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Icon & Event Title
+                    // Icon & Activity Title
                     HStack () {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Icon*")
@@ -75,19 +75,19 @@ struct EventCreationView: View {
                                 selectedEmojiCategoryTintColor: UIColor(universalAccentColor)
                             )
                             .onChange(of: selectedEmoji) { newEmoji in
-                                viewModel.event.icon = newEmoji
+                                viewModel.activity.icon = newEmoji
                             }
                         }
                         
                         // Title Field
                         VStack(alignment: .leading) {
-                            Text("Event Title*")
+                            Text("Activity Title*")
                                 .font(.subheadline)
                                 .foregroundColor(.gray)
                             
                             TextField("Title", text: Binding(
-                                get: { viewModel.event.title ?? "" },
-                                set: { viewModel.event.title = $0 }
+                                get: { viewModel.activity.title ?? "" },
+                                set: { viewModel.activity.title = $0 }
                             ))
                             .foregroundColor(universalAccentColor)
                             .padding(10)
@@ -137,9 +137,9 @@ struct EventCreationView: View {
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         
-                        TextField("Come join us for this fun event!", text: Binding(
-                            get: { viewModel.event.note ?? "" },
-                            set: { viewModel.event.note = $0 }
+                        TextField("Come join us for this fun activity!", text: Binding(
+                            get: { viewModel.activity.note ?? "" },
+                            set: { viewModel.activity.note = $0 }
                         ))
                         .foregroundColor(universalAccentColor)
                         .padding()
@@ -154,10 +154,10 @@ struct EventCreationView: View {
                     // Create Button
                     Button(action: {
                         Task {
-                            await viewModel.validateEventForm()
+                            await viewModel.validateActivityForm()
                             if viewModel.isFormValid {
-                                await viewModel.createEvent()
-                                EventCreationViewModel.reInitialize()
+                                await viewModel.createActivity()
+                                ActivityCreationViewModel.reInitialize()
                                 closeCallback()
                             } else {
                                 showValidationAlert = true
@@ -200,11 +200,11 @@ struct EventCreationView: View {
         .background(universalBackgroundColor)
         .padding(.horizontal, 0)
         .onDisappear {
-            EventCreationViewModel.reInitialize()
+            ActivityCreationViewModel.reInitialize()
         }
         .onAppear {
             // Initialize selectedEmoji from viewModel if available
-            if let icon = viewModel.event.icon {
+            if let icon = viewModel.activity.icon {
                 selectedEmoji = icon
             }
         }
@@ -231,7 +231,7 @@ struct EventCreationView: View {
     }
 }
 
-extension EventCreationView {
+extension ActivityCreationView {
     var categorySelectionView: some View {
         // Category
         VStack(alignment: .leading, spacing: 8) {
@@ -312,11 +312,11 @@ extension EventCreationView {
                             .frame(height: 44)
                         
                         HStack {
-                            Text(viewModel.event.location?.name.isEmpty ?? true
+                            Text(viewModel.activity.location?.name.isEmpty ?? true
                                  ? "Select location"
-                                 : viewModel.event.location?.name ?? "")
+                                 : viewModel.activity.location?.name ?? "")
                             .foregroundColor(
-                                viewModel.event.location?.name.isEmpty ?? true
+                                viewModel.activity.location?.name.isEmpty ?? true
                                 ? .gray
                                 : universalAccentColor
                             )
@@ -446,10 +446,10 @@ extension EventCreationView {
                         "",
                         selection: Binding(
                             get: {
-                                viewModel.event.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
+                                viewModel.activity.startTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date())
                             },
                             set: { time in
-                                viewModel.event.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                                viewModel.activity.startTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
                             }
                         ),
                         displayedComponents: .hourAndMinute
@@ -474,10 +474,10 @@ extension EventCreationView {
                         "",
                         selection: Binding(
                             get: {
-                                viewModel.event.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
+                                viewModel.activity.endTime ?? viewModel.combineDateAndTime(viewModel.selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
                             },
                             set: { time in
-                                viewModel.event.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
+                                viewModel.activity.endTime = viewModel.combineDateAndTime(viewModel.selectedDate, time: time)
                             }
                         ),
                         displayedComponents: .hourAndMinute
@@ -495,7 +495,7 @@ extension EventCreationView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    EventCreationView(
+    ActivityCreationView(
         creatingUser: .danielAgapov,
         closeCallback: {
         }
