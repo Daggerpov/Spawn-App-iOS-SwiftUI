@@ -50,12 +50,12 @@ struct NotificationSettingsView: View {
                                 updatePreferences()
                             }
                         
-                        Toggle("Event Invites", isOn: $notificationService.eventInvitesEnabled)
+                        Toggle("Activity Invites", isOn: $notificationService.eventInvitesEnabled)
                             .onChange(of: notificationService.eventInvitesEnabled) { _ in
                                 updatePreferences()
                             }
                         
-                        Toggle("Event Updates", isOn: $notificationService.eventUpdatesEnabled)
+                        Toggle("Activity Updates", isOn: $notificationService.eventUpdatesEnabled)
                             .onChange(of: notificationService.eventUpdatesEnabled) { _ in
                                 updatePreferences()
                             }
@@ -74,12 +74,12 @@ struct NotificationSettingsView: View {
                     }
                     .disabled(!notificationService.friendRequestsEnabled)
                     
-                    Button("Test Event Invite Notification") {
+                    Button("Test Activity Invite Notification") {
                         NotificationService.shared.sendTestNotification(type: "eventInvite")
                     }
                     .disabled(!notificationService.eventInvitesEnabled)
                     
-                    Button("Test Event Update Notification") {
+                    Button("Test Activity Update Notification") {
                         NotificationService.shared.sendTestNotification(type: "eventUpdate")
                     }
                     .disabled(!notificationService.eventUpdatesEnabled)
@@ -107,7 +107,7 @@ struct NotificationSettingsView: View {
         .alert(isPresented: $isShowingPermissionAlert) {
             Alert(
                 title: Text("Notification Permissions"),
-                message: Text("Please enable notifications for Spawn in your device settings to receive updates about events and friends."),
+                message: Text("Please enable notifications for Spawn in your device settings to receive updates about activities and friends."),
                 primaryButton: .default(Text("Open Settings"), action: {
                     openSettings()
                 }),

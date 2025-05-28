@@ -29,17 +29,6 @@ class MockAPIService: IAPIService {
 		// fetchEventsForUser():
 
 		if let userIdForUrl = userId {
-			if url.absoluteString == APIService.baseURL
-				+ "events/feedEvents/\(userIdForUrl)"
-			{
-				return [
-					FullFeedEventDTO.mockDinnerEvent,
-					FullFeedEventDTO
-						.mockSelfOwnedEvent,
-					FullFeedEventDTO.mockSelfOwnedEvent2,
-				] as! T
-			}
-			
 			// Support for activities endpoint
 			if url.absoluteString == APIService.baseURL
 				+ "activities/feedActivities/\(userIdForUrl)"
@@ -52,33 +41,27 @@ class MockAPIService: IAPIService {
 			}
 		}
 
-		// fetchFilteredEvents() - FeedViewModel
-		if url.absoluteString.contains("events/") {
-			return [
-				FullFeedEventDTO.mockDinnerEvent,
-				FullFeedEventDTO.mockSelfOwnedEvent,
-			] as! T
-		}
 
-		// ProfileViewModel - fetchEventDetails
-		if url.absoluteString.contains(APIService.baseURL + "events/")
-			&& !url.absoluteString.contains("events/feedEvents/")
+
+		// ProfileViewModel - fetchActivityDetails
+		if url.absoluteString.contains(APIService.baseURL + "activities/")
+			&& !url.absoluteString.contains("activities/feedActivities/")
 		{
-			// Extract event ID from the URL
+			// Extract activity ID from the URL
 			let urlComponents = url.absoluteString.components(separatedBy: "/")
-			if let eventIdString = urlComponents.last,
-				let eventId = UUID(uuidString: eventIdString)
+			if let activityIdString = urlComponents.last,
+				let activityId = UUID(uuidString: activityIdString)
 			{
-				// Check if we're looking for a specific event by ID
-				print("🔍 MOCK: Fetching event details for ID: \(eventId)")
+				// Check if we're looking for a specific activity by ID
+				print("🔍 MOCK: Fetching activity details for ID: \(activityId)")
 
-				// For the mock implementation, set event details based on the eventId in CalendarActivityDTO
-				// First, add this event to the AppCache
-				let eventToCache = FullFeedEventDTO.mockDinnerEvent
-				// Give the mock event the requested ID so it matches
-				eventToCache.id = eventId
+				// For the mock implementation, set activity details based on the activityId in CalendarActivityDTO
+				// First, add this activity to the AppCache
+				let activityToCache = FullFeedActivityDTO.mockDinnerActivity
+				// Give the mock activity the requested ID so it matches
+				activityToCache.id = activityId
 
-				// Add random variety to the mocked event
+				// Add random variety to the mocked activity
 				let possibleTitles = [
 					"Dinner at The Spot", "Study Session", "Workout at Gym",
 					"Coffee Break", "Movie Night", "Game Night", "Beach Day",
@@ -87,12 +70,12 @@ class MockAPIService: IAPIService {
 					"The Spot", "Central Library", "University Gym",
 					"Coffee House", "Cinema", "Game Room", "Beach",
 				]
-				eventToCache.title = possibleTitles.randomElement()
-				eventToCache.category =
-					EventCategory.allCases.randomElement() ?? .general
-				eventToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"]
+				activityToCache.title = possibleTitles.randomElement()
+				activityToCache.category =
+					ActivityCategory.allCases.randomElement() ?? .general
+				activityToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"]
 					.randomElement()
-				eventToCache.location = Location(
+				activityToCache.location = Location(
 					id: UUID(),
 					name: possibleLocations.randomElement() ?? "The Spot",
 					latitude: Double.random(in: defaultMapLatitude - 0.05...defaultMapLatitude + 0.05),
@@ -101,14 +84,14 @@ class MockAPIService: IAPIService {
 
 				// Add to cache so it will be found next time
 				await MainActor.run {
-					AppCache.shared.addOrUpdateEvent(eventToCache)
+					AppCache.shared.addOrUpdateActivity(activityToCache)
 				}
 
-				return eventToCache as! T
+				return activityToCache as! T
 			}
 
 			// Default fallback
-			return FullFeedEventDTO.mockDinnerEvent as! T
+			return FullFeedActivityDTO.mockDinnerActivity as! T
 		}
 
 		/// FriendRequestViewModel.swift:
@@ -176,11 +159,11 @@ class MockAPIService: IAPIService {
 			}
 		}
 
-		// EventCardViewModel.swift & EventDescriptionViewModel.swift:
-		if url.absoluteString.contains("events/")
+		// ActivityCardViewModel.swift & ActivityDescriptionViewModel.swift:
+		if url.absoluteString.contains("activities/")
 			&& url.absoluteString.contains("/participation")
 		{
-			return FullFeedEventDTO.mockDinnerEvent as! T
+			return FullFeedActivityDTO.mockDinnerActivity as! T
 		}
 
 		if T.self == UserDTO.self {
@@ -447,10 +430,10 @@ class MockAPIService: IAPIService {
 					let mockFriends = createMockFriends()
 					updatedItems = try? JSONEncoder().encode(mockFriends)
 
-				case "events":
-					// Return mock events data
-					let mockEvents = createMockEvents()
-					updatedItems = try? JSONEncoder().encode(mockEvents)
+				case "activities":
+					// Return mock activities data
+					let mockActivities = createMockActivities()
+					updatedItems = try? JSONEncoder().encode(mockActivities)
 
 				case "profilePicture":
 					// Return mock profile picture data
@@ -523,9 +506,13 @@ class MockAPIService: IAPIService {
 		}
 	}
 
-	private func createMockEvents() -> [Event] {
-		// Return mock events data
-		return Event.mockEvents
+	private func createMockActivities() -> [FullFeedActivityDTO] {
+		// Return mock activities data
+		return [
+			FullFeedActivityDTO.mockDinnerActivity,
+			FullFeedActivityDTO.mockSelfOwnedActivity,
+			FullFeedActivityDTO.mockSelfOwnedActivity2
+		]
 	}
 
 	private func createMockCalendarActivities(parameters: [String: String]?) -> [CalendarActivityDTO] {
@@ -540,31 +527,31 @@ class MockAPIService: IAPIService {
 		dateComponents.year = year
 		dateComponents.month = month
 
-		// Create mock activities based on mock events
+		// Create mock activities based on mock activities
 		var activities: [CalendarActivityDTO] = []
 
-		// Use the mock events to create calendar activities
-		let mockEvents = [
-			FullFeedEventDTO.mockDinnerEvent,
-			FullFeedEventDTO.mockSelfOwnedEvent,
-			FullFeedEventDTO.mockSelfOwnedEvent2
+		// Use the mock activities to create calendar activities
+		let mockActivities = [
+			FullFeedActivityDTO.mockDinnerActivity,
+			FullFeedActivityDTO.mockSelfOwnedActivity,
+			FullFeedActivityDTO.mockSelfOwnedActivity2
 		]
 
 		// Create activities spread throughout the month
-		for (index, event) in mockEvents.enumerated() {
-			// Create multiple activities per event
+		for (index, activity) in mockActivities.enumerated() {
+			// Create multiple activities per activity
 			for dayOffset in [3, 8, 15, 22] {
 				dateComponents.day = dayOffset + index
 				if let date = calendar.date(from: dateComponents) {
-					let activity = CalendarActivityDTO(
+					let calendarActivity = CalendarActivityDTO(
 						id: UUID(),
 						date: date,
-						eventCategory: event.category,
-						icon: event.icon,
-						colorHexCode: event.category.color().hex,
-						eventId: event.id
+						eventCategory: activity.category,
+						icon: activity.icon,
+						colorHexCode: activity.category.color().hex,
+						eventId: activity.id
 					)
-					activities.append(activity)
+					activities.append(calendarActivity)
 				}
 			}
 		}

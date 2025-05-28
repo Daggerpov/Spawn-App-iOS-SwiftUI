@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HeaderView: View {
 	var user: BaseUserDTO
-	var numEvents: Int
+	var numActivities: Int
 	var body: some View {
 		HStack {
 			Spacer()
@@ -24,7 +24,7 @@ struct HeaderView: View {
 				}
 				.font(.onestBold(size: 32))
 				Spacer().frame(height: 5)
-				eventsInAreaView
+				activitiesInAreaView
 			}
 			.foregroundColor(universalAccentColor)
 			.frame(alignment: .leading)
@@ -37,17 +37,17 @@ struct HeaderView: View {
 }
 
 extension HeaderView {
-	var eventsInAreaView: some View {
+	var activitiesInAreaView: some View {
 		HStack {
-			if numEvents == 0 {
+			if numActivities == 0 {
 				Text("There is ").font(.onestSemiBold(size: 20))
-					+ Text("1 event ").foregroundColor(figmaSoftBlue).font(
+					+ Text("1 activity ").foregroundColor(figmaSoftBlue).font(
 						.onestSemiBold(size: 20)
 					)
 					+ Text("in your area.").font(.onestSemiBold(size: 20))
 			} else {
 				Text("There are ").font(.onestSemiBold(size: 20))
-					+ Text("\(numEvents) events ").foregroundColor(
+					+ Text("\(numActivities) activities ").foregroundColor(
 						figmaSoftBlue
 					).font(.onestSemiBold(size: 20))
 					+ Text("in your area.").font(.onestSemiBold(size: 20))
@@ -60,7 +60,7 @@ extension HeaderView {
 @available(iOS 17, *)
 #Preview {
 	@Previewable @StateObject var appCache = AppCache.shared
-	HeaderView(user: BaseUserDTO.danielAgapov, numEvents: 2).environmentObject(
+	HeaderView(user: BaseUserDTO.danielAgapov, numActivities: 2).environmentObject(
 		appCache
 	)
 }

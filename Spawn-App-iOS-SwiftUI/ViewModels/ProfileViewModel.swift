@@ -15,16 +15,16 @@ class ProfileViewModel: ObservableObject {
     )
     @Published var isLoadingCalendar: Bool = false
     @Published var allCalendarActivities: [CalendarActivityDTO] = []
-    @Published var selectedEvent: FullFeedEventDTO?
-    @Published var isLoadingEvent: Bool = false
+    @Published var selectedActivity: FullFeedActivityDTO?
+    @Published var isLoadingActivity: Bool = false
     
     // New properties for friendship status
     @Published var friendshipStatus: FriendshipStatus = .unknown
     @Published var isLoadingFriendshipStatus: Bool = false
     @Published var pendingFriendRequestId: UUID?
-    @Published var userEvents: [FullFeedEventDTO] = []
-    @Published var profileEvents: [ProfileEventDTO] = []
-    @Published var isLoadingUserEvents: Bool = false
+    @Published var userActivities: [FullFeedActivityDTO] = []
+    @Published var profileActivities: [ProfileActivityDTO] = []
+    @Published var isLoadingUserActivities: Bool = false
     
     private let apiService: IAPIService
     
@@ -378,9 +378,9 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Event Management
+    // MARK: - Activity Management
     
-    func fetchEventDetails(eventId: UUID) async -> FullFeedEventDTO? {
+    func fetchActivityDetails(activityId: UUID) async -> FullFeedActivityDTO? {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             await MainActor.run {
                 self.errorMessage = "User ID not available"
@@ -388,27 +388,27 @@ class ProfileViewModel: ObservableObject {
             return nil
         }
         
-        await MainActor.run { self.isLoadingEvent = true }
+        await MainActor.run { self.isLoadingActivity = true }
         
         do {
-            let url = URL(string: APIService.baseURL + "events/\(eventId)")!
+            let url = URL(string: APIService.baseURL + "activities/\(activityId)")!
             let parameters = ["requestingUserId": userId.uuidString]
             
-            let event: FullFeedEventDTO = try await apiService.fetchData(
+            let activity: FullFeedActivityDTO = try await apiService.fetchData(
                 from: url,
                 parameters: parameters
             )
             
             await MainActor.run {
-                self.selectedEvent = event
-                self.isLoadingEvent = false
+                self.selectedActivity = activity
+                self.isLoadingActivity = false
             }
             
-            return event
+            return activity
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load event: \(error.localizedDescription)"
-                self.isLoadingEvent = false
+                self.errorMessage = "Failed to load activity: \(error.localizedDescription)"
+                self.isLoadingActivity = false
             }
             return nil
         }
@@ -535,30 +535,30 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    // MARK: - User Events
+    // MARK: - User Activities
     
-    func fetchUserUpcomingEvents(userId: UUID) async {
-        await MainActor.run { self.isLoadingUserEvents = true }
+    func fetchUserUpcomingActivities(userId: UUID) async {
+        await MainActor.run { self.isLoadingUserActivities = true }
         
         do {
-            let url = URL(string: APIService.baseURL + "events/user/\(userId)/upcoming")!
-            let events: [FullFeedEventDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+            let url = URL(string: APIService.baseURL + "activities/user/\(userId)/upcoming")!
+            let activities: [FullFeedActivityDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
             
             await MainActor.run {
-                self.userEvents = events
-                self.isLoadingUserEvents = false
+                self.userActivities = activities
+                self.isLoadingUserActivities = false
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load user events: \(error.localizedDescription)"
-                self.userEvents = []
-                self.isLoadingUserEvents = false
+                self.errorMessage = "Failed to load user activities: \(error.localizedDescription)"
+                self.userActivities = []
+                self.isLoadingUserActivities = false
             }
         }
     }
     
-    // New method to fetch profile events (both upcoming and past)
-    func fetchProfileEvents(profileUserId: UUID) async {
+    // New method to fetch profile activities (both upcoming and past)
+    func fetchProfileActivities(profileUserId: UUID) async {
         guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
             await MainActor.run {
                 self.errorMessage = "User ID not available"
@@ -566,37 +566,37 @@ class ProfileViewModel: ObservableObject {
             return
         }
         
-        await MainActor.run { self.isLoadingUserEvents = true }
+        await MainActor.run { self.isLoadingUserActivities = true }
         
         // Check cache first
-        if let cachedEvents = AppCache.shared.profileEvents[profileUserId] {
+        if let cachedActivities = AppCache.shared.profileActivities[profileUserId] {
             await MainActor.run {
-                self.profileEvents = cachedEvents
-                self.isLoadingUserEvents = false
+                self.profileActivities = cachedActivities
+                self.isLoadingUserActivities = false
             }
             return
         }
         
         do {
-            let url = URL(string: APIService.baseURL + "events/profile/\(profileUserId)")!
+            let url = URL(string: APIService.baseURL + "activities/profile/\(profileUserId)")!
             let parameters = ["requestingUserId": requestingUserId.uuidString]
             
-            let events: [ProfileEventDTO] = try await self.apiService.fetchData(
+            let activities: [ProfileActivityDTO] = try await self.apiService.fetchData(
                 from: url,
                 parameters: parameters
             )
             
             await MainActor.run {
-                self.profileEvents = events
-                self.isLoadingUserEvents = false
+                self.profileActivities = activities
+                self.isLoadingUserActivities = false
                 // Update cache
-                AppCache.shared.updateProfileEvents(profileUserId, events)
+                AppCache.shared.updateProfileActivities(profileUserId, activities)
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load profile events: \(error.localizedDescription)"
-                self.profileEvents = []
-                self.isLoadingUserEvents = false
+                self.errorMessage = "Failed to load profile activities: \(error.localizedDescription)"
+                self.profileActivities = []
+                self.isLoadingUserActivities = false
             }
         }
     }
