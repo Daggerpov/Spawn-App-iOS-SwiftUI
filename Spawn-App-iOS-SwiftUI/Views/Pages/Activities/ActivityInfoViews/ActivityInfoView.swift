@@ -17,19 +17,15 @@ struct ActivityInfoView: View {
 
 	var body: some View {
 		HStack {
-			Image(systemName: viewModel.systemImageName)
+			Image(systemName: viewModel.imageSystemName)
 				.foregroundColor(.white)
 				.font(.system(size: 14))
 			
 			VStack(alignment: .leading, spacing: 2) {
-				Text(viewModel.title)
-					.foregroundColor(.white)
-					.font(.caption)
-					.bold()
-				
 				Text(viewModel.activityInfoDisplayString)
 					.foregroundColor(.white)
 					.font(.caption)
+					.bold()
 			}
 			
 			Spacer()

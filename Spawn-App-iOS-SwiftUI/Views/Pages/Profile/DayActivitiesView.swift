@@ -16,13 +16,34 @@ struct DayActivitiesView: View {
         self.onDismiss = onDismiss
         self.onActivitySelected = onActivitySelected
         
-        // Initialize the view model with the date
+        // Initialize the view model with empty activities array for now
+        // The activities will be loaded based on the date
         self._viewModel = StateObject(
             wrappedValue: DayActivitiesViewModel(
-                date: date,
                 apiService: MockAPIService.isMocking 
                     ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
-                    : APIService()
+                    : APIService(),
+                activities: [] // Will be populated in onAppear
+            )
+        )
+    }
+    
+    // Alternative initializer for when we already have activities
+    init(
+        activities: [CalendarActivityDTO],
+        onDismiss: @escaping () -> Void,
+        onActivitySelected: @escaping (CalendarActivityDTO) -> Void
+    ) {
+        self.date = activities.first?.date ?? Date()
+        self.onDismiss = onDismiss
+        self.onActivitySelected = onActivitySelected
+        
+        self._viewModel = StateObject(
+            wrappedValue: DayActivitiesViewModel(
+                apiService: MockAPIService.isMocking 
+                    ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
+                    : APIService(),
+                activities: activities
             )
         )
     }
@@ -31,7 +52,7 @@ struct DayActivitiesView: View {
         VStack {
             // Header
             HStack {
-                Text(DateFormatter.dayMonthYear.string(from: date))
+                Text(viewModel.formatDate(date))
                     .font(.title2)
                     .fontWeight(.semibold)
                 
@@ -43,9 +64,18 @@ struct DayActivitiesView: View {
             }
             .padding()
             
-            if viewModel.isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if viewModel.activities.isEmpty {
+                // Show empty state
+                VStack(spacing: 20) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 60))
+                        .foregroundColor(.gray.opacity(0.6))
+                    
+                    Text("No activities for this day")
+                        .font(.title3)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 activitiesListView
             }
@@ -55,11 +85,6 @@ struct DayActivitiesView: View {
     func getColorForActivity(
         _ activity: CalendarActivityDTO
     ) -> Color {
-        // First, check if this is a self-owned activity
-        if let activity = activity, activity.isSelfOwned == true {
-            return universalAccentColor
-        }
-        
         // If we have a color hex code from the backend, use it
         if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
             return Color(hex: colorHex)
@@ -81,13 +106,13 @@ extension DayActivitiesView {
             LazyVStack(spacing: 15) {
                 ForEach(viewModel.activities, id: \.id) { activity in
                     if let activityId = activity.activityId,
-                       let activity = viewModel.getActivity(for: activityId)
+                       let fullActivity = viewModel.getActivity(for: activityId)
                     {
                         // If activity details are available from the view model
                         ActivityCardView(
                             userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-                            activity: activity,
-                            color: getColorForActivity(activity, activity: activity),
+                            activity: fullActivity,
+                            color: getColorForActivity(activity),
                             callback: { _, _ in
                                 onActivitySelected(activity)
                             }

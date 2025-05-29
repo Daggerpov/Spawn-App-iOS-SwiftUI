@@ -25,13 +25,6 @@ extension Image {
 			lineWidth = 1
 		case .profilePage:
 			imageSize = 150
-		case .mapView:
-			imageSize = 40
-		case .tagFriends:
-			imageSize = 35
-			lineWidth = 0
-        case .choosingFriendTags:
-            imageSize = 80
 		}
 
 		return

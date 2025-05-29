@@ -131,7 +131,7 @@ struct LocationSelectionView: View {
 				}
 
 				// If there's an existing location, show it
-				if let existingLocation = viewModel.event.location,
+				if let existingLocation = viewModel.activity.location,
 				   existingLocation.latitude != 0,
 				   existingLocation.longitude != 0 {
 
@@ -232,16 +232,15 @@ struct LocationSelectionView: View {
 		guard let pinLocation = pinLocation, !locationName.isEmpty else { return }
 
 		let location = Location(
-			id: viewModel.event.location?.id ?? UUID(),
+			id: viewModel.activity.location?.id ?? UUID(),
 			name: locationName,
 			latitude: pinLocation.latitude,
 			longitude: pinLocation.longitude
 		)
 
 		// Use Task to ensure state updates happen outside the view update cycle
-		Task { @MainActor in
-			viewModel.event.location = location
-			await viewModel.validateEventForm()
+		Task {
+			viewModel.activity.location = location
 		}
 	}
 }

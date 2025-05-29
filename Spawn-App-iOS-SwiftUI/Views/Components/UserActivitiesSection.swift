@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct UserActivitiesSection: View {
-    var user: BaseUserDTO
+    var user: Nameable
     @ObservedObject var profileViewModel: ProfileViewModel
     @Binding var showActivityDetails: Bool
     

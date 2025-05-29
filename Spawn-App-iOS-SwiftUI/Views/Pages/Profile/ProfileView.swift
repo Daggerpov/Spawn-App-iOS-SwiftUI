@@ -136,8 +136,7 @@ struct ProfileView: View {
 					// If they're friends, fetch their activities
 					if profileViewModel.friendshipStatus == .friends {
 						await profileViewModel.fetchProfileActivities(
-							profileUserId: user.id,
-							requestingUserId: userAuth.spawnUser?.id ?? UUID()
+							profileUserId: user.id
 						)
 					}
 				}
@@ -164,8 +163,7 @@ struct ProfileView: View {
 			if newStatus == .friends {
 				Task {
 					await profileViewModel.fetchProfileActivities(
-						profileUserId: user.id,
-						requestingUserId: userAuth.spawnUser?.id ?? UUID()
+						profileUserId: user.id
 					)
 				}
 			}
@@ -397,9 +395,24 @@ struct ProfileView: View {
 			userStatsSection
 
 			// Calendar or Activities Section
-			calendarOrActivitiesSection
+			if isCurrentUserProfile {
+				ProfileCalendarView(
+					profileViewModel: profileViewModel,
+					showCalendarPopup: $showCalendarPopup,
+					showActivityDetails: $showActivityDetails
+				)
 				.padding(.horizontal, 48)
 				.padding(.bottom, 15)
+			} else {
+				// User Activities Section for other users (based on friendship status)
+				UserActivitiesSection(
+					user: user,
+					profileViewModel: profileViewModel,
+					showActivityDetails: $showActivityDetails
+				)
+				.padding(.horizontal, 48)
+				.padding(.bottom, 15)
+			}
 		}
 	}
 
@@ -442,25 +455,6 @@ struct ProfileView: View {
 			} else {
 				// Friend action buttons for other users (based on friendship status)
 				friendActionButtons
-			}
-		}
-	}
-
-	private var calendarOrActivitiesSection: some View {
-		Group {
-			if isCurrentUserProfile {
-				ProfileCalendarView(
-					profileViewModel: profileViewModel,
-					showCalendarPopup: $showCalendarPopup,
-					showActivityDetails: $showActivityDetails
-				)
-			} else {
-				// User Activities Section for other users (based on friendship status)
-				UserActivitiesSection(
-					user: user,
-					profileViewModel: profileViewModel,
-					showActivityDetails: $showActivityDetails
-				)
 			}
 		}
 	}
