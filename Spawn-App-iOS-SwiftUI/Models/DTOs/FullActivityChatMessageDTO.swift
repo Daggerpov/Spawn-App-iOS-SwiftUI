@@ -1,5 +1,5 @@
 //
-//  FullEventChatMessageDTO.swift
+//  FullActivityChatMessageDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/6/24.
@@ -7,36 +7,36 @@
 
 import Foundation
 
-class FullEventChatMessageDTO: Identifiable, Codable, Equatable {
+class FullActivityChatMessageDTO: Identifiable, Codable, Equatable {
 	var id: UUID
 	var content: String
 	var timestamp: Date
 	var senderUser: BaseUserDTO
-	var eventId: UUID
-	// do I even need an `event` var here, if each `Event` has a list of chats?
-	// -> it's a (event) 1 <-> many (chat) relationship
+	var activityId: UUID
+	// do I even need an `activity` var here, if each `Activity` has a list of chats?
+	// -> it's a (activity) 1 <-> many (chat) relationship
 	var likedByUsers: [BaseUserDTO]?
-	// tech note: in user's view of event, check if that user is in
+	// tech note: in user's view of activity, check if that user is in
 	// the `ChatMessage`'s `likedBy` array (`[User]`)
 	
-	static func == (lhs: FullEventChatMessageDTO, rhs: FullEventChatMessageDTO) -> Bool {
+	static func == (lhs: FullActivityChatMessageDTO, rhs: FullActivityChatMessageDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
 
 	init(
 		id: UUID, content: String, timestamp: Date, senderUser: BaseUserDTO,
-		eventId: UUID, likedByUsers: [BaseUserDTO]? = nil
+		activityId: UUID, likedByUsers: [BaseUserDTO]? = nil
 	) {
 		self.id = id
 		self.content = content
 		self.timestamp = timestamp
 		self.senderUser = senderUser
-		self.eventId = eventId
+		self.activityId = activityId
 		self.likedByUsers = likedByUsers
 	}
 }
 
-extension FullEventChatMessageDTO {
+extension FullActivityChatMessageDTO {
 	var formattedTimestamp: String {
 		return FormatterService.shared.timeAgo(from: timestamp)
 	}
@@ -47,12 +47,12 @@ extension FullEventChatMessageDTO {
 		formatter.timeStyle = .short
 		return formatter
 	}()
-	static let guysWya: FullEventChatMessageDTO = FullEventChatMessageDTO(
+	static let guysWya: FullActivityChatMessageDTO = FullActivityChatMessageDTO(
 		id: UUID(),
 		content: "yo guys, wya?",
 		timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
 		senderUser: BaseUserDTO.danielAgapov,
-		eventId: Event.mockDinnerEvent.id,
+		activityId: Activity.mockDinnerActivity.id,
 		likedByUsers: [BaseUserDTO.danielAgapov, BaseUserDTO.danielLee]
 	)
-}
+} 

@@ -11,15 +11,15 @@ import Foundation
 class CreateChatMessageDTO: Identifiable, Codable {
 	var content: String
 	var senderUserId: UUID
-	var eventId: UUID
+	var activityId: UUID
 
 	init(
 		content: String, senderUserId: UUID,
-		eventId: UUID
+		activityId: UUID
 	) {
 		self.content = content
 		self.senderUserId = senderUserId
-		self.eventId = eventId
+		self.activityId = activityId
 	}
 }
 

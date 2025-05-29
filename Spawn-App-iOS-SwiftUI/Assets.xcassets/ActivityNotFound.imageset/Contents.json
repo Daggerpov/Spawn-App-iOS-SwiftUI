@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "EventNotFound.png",
+      "filename" : "ActivityNotFound.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "EventNotFound2.png",
+      "filename" : "ActivityNotFound2.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "EventNotFound3.png",
+      "filename" : "ActivityNotFound3.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

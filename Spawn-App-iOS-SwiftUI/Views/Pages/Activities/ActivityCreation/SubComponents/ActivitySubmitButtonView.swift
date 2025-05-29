@@ -1,5 +1,5 @@
 //
-//  EventSubmitButtonView.swift
+//  ActivitySubmitButtonView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Lee on 2025-04-19.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EventSubmitButtonView: View {
+struct ActivitySubmitButtonView: View {
     var backgroundColor: Color
     init(backgroundColor: Color) {
         self.backgroundColor = backgroundColor
@@ -35,5 +35,5 @@ struct EventSubmitButtonView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    EventSubmitButtonView(backgroundColor: universalSecondaryColor).environmentObject(appCache)
+    ActivitySubmitButtonView(backgroundColor: universalSecondaryColor).environmentObject(appCache)
 }

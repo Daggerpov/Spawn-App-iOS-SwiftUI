@@ -1,5 +1,5 @@
 //
-//  EventCreationViewModel.swift
+//  ActivityCreationViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-01-02.
@@ -9,16 +9,16 @@ import Foundation
 import Combine
 
 
-class EventCreationViewModel: ObservableObject {
+class ActivityCreationViewModel: ObservableObject {
 	// semi-singleton, that can only be reset upon calling `reInitialize()`
-	static var shared: EventCreationViewModel = EventCreationViewModel()
+	static var shared: ActivityCreationViewModel = ActivityCreationViewModel()
 
 	@Published var selectedDate: Date = Date()
-	@Published var event: EventCreationDTO
+	@Published var activity: ActivityCreationDTO
 	@Published var creationMessage: String = ""
 
 	@Published var selectedFriends: [FullFriendUserDTO] = []
-	@Published var selectedCategory: EventCategory = .general
+	@Published var selectedCategory: ActivityCategory = .general
 	
 	// Validation properties
 	@Published var isTitleValid: Bool = true
@@ -29,7 +29,7 @@ class EventCreationViewModel: ObservableObject {
 	private var apiService: IAPIService
 	
 	public static func reInitialize() {
-		shared = EventCreationViewModel()
+		shared = ActivityCreationViewModel()
 	}
 
 	// Private initializer to enforce singleton pattern
@@ -42,7 +42,7 @@ class EventCreationViewModel: ObservableObject {
 
 		let defaultStart = Date()
 		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
-		self.event = EventCreationDTO(
+		self.activity = ActivityCreationDTO(
 			id: UUID(),
 			title: "",
 			startTime: defaultStart,
@@ -79,61 +79,61 @@ class EventCreationViewModel: ObservableObject {
 	}
 
 	// Validates all form fields and returns if the form is valid
-	func validateEventForm() async {
+	func validateActivityForm() async {
         // Check title
-        let trimmedTitle = event.title?.trimmingCharacters(in: .whitespaces) ?? ""
+        let trimmedTitle = activity.title?.trimmingCharacters(in: .whitespaces) ?? ""
         await MainActor.run {
             isTitleValid = !trimmedTitle.isEmpty
             // Check if at least one friend is invited
             isInvitesValid = !selectedFriends.isEmpty
             // Check if location is valid
-            isLocationValid = event.location != nil && 
-                             !event.location!.name.trimmingCharacters(in: .whitespaces).isEmpty && 
-                             (event.location!.latitude != 0 || event.location!.longitude != 0)
+            isLocationValid = activity.location != nil && 
+                             !activity.location!.name.trimmingCharacters(in: .whitespaces).isEmpty && 
+                             (activity.location!.latitude != 0 || activity.location!.longitude != 0)
             
             // Update overall form validity
             isFormValid = isTitleValid && isInvitesValid && isLocationValid
         }
 	}
 
-	func createEvent() async {
+	func createActivity() async {
 		// Validate form before proceeding
-		await validateEventForm()
+		await validateActivityForm()
 		guard isFormValid else {
 			await MainActor.run {
-				creationMessage = "Please fix the errors before creating the event."
+				creationMessage = "Please fix the errors before creating the activity."
 			}
 			return
 		}
 		
 		// Ensure times are set if not already provided
-		if event.startTime == nil {
-			event.startTime = combineDateAndTime(selectedDate, time: Date())
+		if activity.startTime == nil {
+			activity.startTime = combineDateAndTime(selectedDate, time: Date())
 		}
-		if event.endTime == nil {
-			event.endTime = combineDateAndTime(
+		if activity.endTime == nil {
+			activity.endTime = combineDateAndTime(
 				selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
 		}
 
 		// Populate invited user IDs from the selected array
-		event.invitedFriendUserIds = selectedFriends.map { $0.id }
+		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
 		
 		// Set the selected category
-		event.category = selectedCategory
+		activity.category = selectedCategory
 
-		if let url = URL(string: APIService.baseURL + "events") {
+		if let url = URL(string: APIService.baseURL + "activities") {
 			do {
 				_ = try await self.apiService.sendData(
-					event, to: url, parameters: nil)
+					activity, to: url, parameters: nil)
                 
-                // Post notification to trigger reload of events in FeedViewModel
+                // Post notification to trigger reload of activities in FeedViewModel
                 await MainActor.run {
-                    NotificationCenter.default.post(name: .eventCreated, object: nil)
+                    NotificationCenter.default.post(name: .activityCreated, object: nil)
                 }
 			} catch {
 				await MainActor.run {
 					creationMessage =
-						"There was an error creating your event. Please try again"
+						"There was an error creating your activity. Please try again"
 				}
 			}
 		}
@@ -154,4 +154,4 @@ class EventCreationViewModel: ObservableObject {
 		combinedComponents.minute = timeComponents.minute
 		return calendar.date(from: combinedComponents) ?? date
 	}
-}
+} 

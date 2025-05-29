@@ -1,5 +1,5 @@
 //
-//  EventCreationDTO.swift
+//  ActivityCreationDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-02-04.
@@ -7,8 +7,8 @@
 
 import Foundation
 
-// Should match `EventCreationDTO`, as written in back-end:
-class EventCreationDTO: Identifiable, Codable {
+// Should match `ActivityCreationDTO`, as written in back-end:
+class ActivityCreationDTO: Identifiable, Codable {
 	var id: UUID
 	var title: String?
 
@@ -21,8 +21,7 @@ class EventCreationDTO: Identifiable, Codable {
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
-	var category: EventCategory = .general
-	var createdAt: Date?
+	var category: ActivityCategory = .general
 
 	// MARK: Relations
 	var creatorUserId: UUID
@@ -36,10 +35,9 @@ class EventCreationDTO: Identifiable, Codable {
 		location: Location? = nil,
 		note: String? = nil,
 		icon: String? = nil,
-		category: EventCategory = .general,
+		category: ActivityCategory = .general,
 		creatorUserId: UUID,
-		invitedFriendUserIds: [UUID]? = nil,
-		createdAt: Date? = nil
+		invitedFriendUserIds: [UUID]? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -51,6 +49,5 @@ class EventCreationDTO: Identifiable, Codable {
 		self.category = category
 		self.creatorUserId = creatorUserId
 		self.invitedFriendUserIds = invitedFriendUserIds
-		self.createdAt = createdAt
 	}
-}
+} 

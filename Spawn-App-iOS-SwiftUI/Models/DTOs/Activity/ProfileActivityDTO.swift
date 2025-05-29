@@ -1,5 +1,5 @@
 //
-//  ProfileEventDTO.swift
+//  ProfileActivityDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-06-15.
@@ -7,8 +7,8 @@
 
 import Foundation
 
-class ProfileEventDTO: FullFeedEventDTO {
-    var isPastEvent: Bool
+class ProfileActivityDTO: FullFeedActivityDTO {
+    var isPastActivity: Bool
     
     // Custom initializer to handle the additional property
     init(
@@ -19,17 +19,17 @@ class ProfileEventDTO: FullFeedEventDTO {
         location: Location? = nil,
         note: String? = nil,
         icon: String? = nil,
-        category: EventCategory = .general,
+        category: ActivityCategory = .general,
         creatorUser: BaseUserDTO,
         participantUsers: [BaseUserDTO]? = nil,
         invitedUsers: [BaseUserDTO]? = nil,
-        chatMessages: [FullEventChatMessageDTO]? = nil,
+        chatMessages: [FullActivityChatMessageDTO]? = nil,
         participationStatus: ParticipationStatus? = nil,
         isSelfOwned: Bool? = nil,
-        isPastEvent: Bool = false,
+        isPastActivity: Bool = false,
         createdAt: Date? = nil
     ) {
-        self.isPastEvent = isPastEvent
+        self.isPastActivity = isPastActivity
         
         super.init(
             id: id,
@@ -53,41 +53,41 @@ class ProfileEventDTO: FullFeedEventDTO {
     // Required for Codable conformance
     required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.isPastEvent = try container.decode(Bool.self, forKey: .isPastEvent)
+        self.isPastActivity = try container.decode(Bool.self, forKey: .isPastActivity)
         try super.init(from: decoder)
     }
     
     // CodingKeys to handle the additional property
     private enum CodingKeys: String, CodingKey {
-        case isPastEvent
+        case isPastActivity
     }
     
     // Encoding method to handle the additional property
     override func encode(to encoder: Encoder) throws {
         try super.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(isPastEvent, forKey: .isPastEvent)
+        try container.encode(isPastActivity, forKey: .isPastActivity)
     }
     
-    // Convert a FullFeedEventDTO to a ProfileEventDTO
-    static func from(fullFeedEventDTO: FullFeedEventDTO, isPastEvent: Bool) -> ProfileEventDTO {
-        return ProfileEventDTO(
-            id: fullFeedEventDTO.id,
-            title: fullFeedEventDTO.title,
-            startTime: fullFeedEventDTO.startTime,
-            endTime: fullFeedEventDTO.endTime,
-            location: fullFeedEventDTO.location,
-            note: fullFeedEventDTO.note,
-            icon: fullFeedEventDTO.icon,
-            category: fullFeedEventDTO.category,
-            creatorUser: fullFeedEventDTO.creatorUser,
-            participantUsers: fullFeedEventDTO.participantUsers,
-            invitedUsers: fullFeedEventDTO.invitedUsers,
-            chatMessages: fullFeedEventDTO.chatMessages,
-            participationStatus: fullFeedEventDTO.participationStatus,
-            isSelfOwned: fullFeedEventDTO.isSelfOwned,
-            isPastEvent: isPastEvent,
-            createdAt: fullFeedEventDTO.createdAt
+    // Convert a FullFeedActivityDTO to a ProfileActivityDTO
+    static func from(fullFeedActivityDTO: FullFeedActivityDTO, isPastActivity: Bool) -> ProfileActivityDTO {
+        return ProfileActivityDTO(
+            id: fullFeedActivityDTO.id,
+            title: fullFeedActivityDTO.title,
+            startTime: fullFeedActivityDTO.startTime,
+            endTime: fullFeedActivityDTO.endTime,
+            location: fullFeedActivityDTO.location,
+            note: fullFeedActivityDTO.note,
+            icon: fullFeedActivityDTO.icon,
+            category: fullFeedActivityDTO.category,
+            creatorUser: fullFeedActivityDTO.creatorUser,
+            participantUsers: fullFeedActivityDTO.participantUsers,
+            invitedUsers: fullFeedActivityDTO.invitedUsers,
+            chatMessages: fullFeedActivityDTO.chatMessages,
+            participationStatus: fullFeedActivityDTO.participationStatus,
+            isSelfOwned: fullFeedActivityDTO.isSelfOwned,
+            isPastActivity: isPastActivity,
+            createdAt: fullFeedActivityDTO.createdAt
         )
     }
 } 

@@ -1,16 +1,14 @@
 //
-//  FullFeedEventDTO.swift
+//  FullFeedActivityDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-02-27.
 //
 
-/// updated to match back-end's `FullFeedEventDTO`, after Shane's PR here: https://github.com/Daggerpov/Spawn-App-Back-End/pull/222/files
-
 import Foundation
 
-class FullFeedEventDTO: Identifiable, Codable, Equatable {
-	static func == (lhs: FullFeedEventDTO, rhs: FullFeedEventDTO) -> Bool {
+class FullFeedActivityDTO: Identifiable, Codable, Equatable {
+	static func == (lhs: FullFeedActivityDTO, rhs: FullFeedActivityDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
 
@@ -21,21 +19,21 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 	var startTime: Date?
 	var endTime: Date?
 	var location: Location?
-	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
+	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in activity
 	/* The icon is stored as a Unicode emoji character string (e.g. "⭐️", "🎉", "🏀").
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
-	var category: EventCategory = .general
+	var category: ActivityCategory = .general
 	var createdAt: Date?
 
 	// MARK: Relations
 	var creatorUser: BaseUserDTO
 
-	// tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
+	// tech note: I'll be able to check if current user is in an activity's partipants to determine which symbol to show in feed
 	var participantUsers: [BaseUserDTO]?
 	var invitedUsers: [BaseUserDTO]?
-	var chatMessages: [FullEventChatMessageDTO]?
+	var chatMessages: [FullActivityChatMessageDTO]?
 	var participationStatus: ParticipationStatus?
 	var isSelfOwned: Bool?
 
@@ -47,11 +45,11 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 		location: Location? = nil,
 		note: String? = nil,
 		icon: String? = nil,
-		category: EventCategory = .general,
+		category: ActivityCategory = .general,
 		creatorUser: BaseUserDTO,
 		participantUsers: [BaseUserDTO]? = nil,
 		invitedUsers: [BaseUserDTO]? = nil,
-		chatMessages: [FullEventChatMessageDTO]? = nil,
+		chatMessages: [FullActivityChatMessageDTO]? = nil,
 		participationStatus: ParticipationStatus? = nil,
 		isSelfOwned: Bool? = nil,
 		createdAt: Date? = nil
@@ -74,7 +72,7 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 	}
 }
 
-extension FullFeedEventDTO {
+extension FullFeedActivityDTO {
 
 	static func dateFromTimeString(_ timeString: String) -> Date? {
 		let dateFormatter = DateFormatter()
@@ -95,7 +93,7 @@ extension FullFeedEventDTO {
 		return nil
 	}
 
-	static let mockDinnerEvent: FullFeedEventDTO = FullFeedEventDTO(
+	static let mockDinnerActivity: FullFeedActivityDTO = FullFeedActivityDTO(
 		id: UUID(),
 		title: "Dinner time!!!!!!",
 		startTime: dateFromTimeString("10:00 PM"),
@@ -112,7 +110,7 @@ extension FullFeedEventDTO {
 			BaseUserDTO.michael,
 		]
 	)
-    static let mockSelfOwnedEvent: FullFeedEventDTO = FullFeedEventDTO(
+    static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
         id: UUID(),
         title: "Dinner time!!!!!!",
         startTime: dateFromTimeString("10:00 PM"),
@@ -130,7 +128,7 @@ extension FullFeedEventDTO {
         ],
         isSelfOwned: true
     )
-    static let mockSelfOwnedEvent2: FullFeedEventDTO = FullFeedEventDTO(
+    static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
         id: UUID(),
         title: "Dinner time!!!!!!",
         startTime: dateFromTimeString("10:00 PM"),
@@ -143,4 +141,4 @@ extension FullFeedEventDTO {
         participantUsers: [],
         isSelfOwned: true
     )
-}
+} 

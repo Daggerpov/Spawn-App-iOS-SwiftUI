@@ -11,8 +11,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
     
     // Notification preference properties
     @Published var friendRequestsEnabled: Bool = true
-    @Published var eventInvitesEnabled: Bool = true
-    @Published var eventUpdatesEnabled: Bool = true
+    @Published var activityInvitesEnabled: Bool = true
+    @Published var activityUpdatesEnabled: Bool = true
     @Published var chatMessagesEnabled: Bool = true
     @Published var isLoadingPreferences: Bool = false
     
@@ -300,10 +300,10 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         switch notificationType {
         case .friendRequest:
             handleFriendRequestNotification(userInfo)
-        case .eventInvite:
-            handleEventInviteNotification(userInfo)
-        case .eventUpdate:
-            handleEventUpdateNotification(userInfo)
+        case .activityInvite:
+            handleActivityInviteNotification(userInfo)
+        case .activityUpdate:
+            handleActivityUpdateNotification(userInfo)
         case .chat:
             handleChatNotification(userInfo)
         case .welcome:
@@ -334,41 +334,41 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         // Navigate to friend requests view (implementation will depend on your navigation setup)
     }
     
-    // Handle event invite notifications
-    private func handleEventInviteNotification(_ userInfo: [AnyHashable: Any]) {
-        print("[PUSH DEBUG] Processing event invite notification with data: \(userInfo)")
+    // Handle activity invite notifications
+    private func handleActivityInviteNotification(_ userInfo: [AnyHashable: Any]) {
+        print("[PUSH DEBUG] Processing activity invite notification with data: \(userInfo)")
         
-        guard let eventId = userInfo["eventId"] as? String,
-              let eventName = userInfo["eventName"] as? String else { 
-            print("[PUSH DEBUG] Error: Missing required fields in event invite notification")
+        guard let activityId = userInfo["activityId"] as? String,
+              let activityName = userInfo["activityName"] as? String else { 
+            print("[PUSH DEBUG] Error: Missing required fields in activity invite notification")
             print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
             return 
         }
         
-        print("[PUSH DEBUG] Invited to event \(eventName), ID: \(eventId)")
-        // Navigate to event details (implementation will depend on your navigation setup)
+        print("[PUSH DEBUG] Invited to activity \(activityName), ID: \(activityId)")
+        // Navigate to activity details (implementation will depend on your navigation setup)
     }
     
-    // Handle event update notifications
-    private func handleEventUpdateNotification(_ userInfo: [AnyHashable: Any]) {
-        print("[PUSH DEBUG] Processing event update notification with data: \(userInfo)")
+    // Handle activity update notifications
+    private func handleActivityUpdateNotification(_ userInfo: [AnyHashable: Any]) {
+        print("[PUSH DEBUG] Processing activity update notification with data: \(userInfo)")
         
-        guard let eventId = userInfo["eventId"] as? String,
+        guard let activityId = userInfo["activityId"] as? String,
               let updateType = userInfo["updateType"] as? String else { 
-            print("[PUSH DEBUG] Error: Missing required fields in event update notification")
+            print("[PUSH DEBUG] Error: Missing required fields in activity update notification")
             print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
             return 
         }
         
-        print("[PUSH DEBUG] Event update (\(updateType)) for event ID: \(eventId)")
-        // Navigate to updated event (implementation will depend on your navigation setup)
+        print("[PUSH DEBUG] Activity update (\(updateType)) for activity ID: \(activityId)")
+        // Navigate to updated activity (implementation will depend on your navigation setup)
     }
     
     // Handle chat message notifications
     private func handleChatNotification(_ userInfo: [AnyHashable: Any]) {
         print("[PUSH DEBUG] Processing chat notification with data: \(userInfo)")
         
-        guard let eventId = userInfo["eventId"] as? String,
+        guard let activityId = userInfo["activityId"] as? String,
               let senderId = userInfo["senderId"] as? String else { 
             print("[PUSH DEBUG] Error: Missing required fields in chat notification")
             print("[PUSH DEBUG] Available keys: \(userInfo.keys)")
@@ -379,9 +379,9 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
+            print("[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
         } else {
-            print("[PUSH DEBUG] New chat message in event \(eventId) from user \(senderId)")
+            print("[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId)")
         }
         // Navigate to chat (implementation will depend on your navigation setup)
     }
@@ -412,28 +412,28 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 print("Test Friend Request - User ID: \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
             }
             
-        case .eventInvite:
-            title = "New Event Invitation"
-            body = "You've been invited to an event!"
-            userInfo = NotificationDataBuilder.eventInvite(
-                eventId: UUID(),
-                eventName: "Fun Hangout"
+        case .activityInvite:
+            title = "New Activity Invitation"
+            body = "You've been invited to an activity!"
+            userInfo = NotificationDataBuilder.activityInvite(
+                activityId: UUID(),
+                activityName: "Fun Hangout"
             )
             
-        case .eventUpdate:
-            title = "Event Updated"
-            body = "An event you're attending has been updated"
-            userInfo = NotificationDataBuilder.eventUpdate(
-                eventId: UUID(),
+        case .activityUpdate:
+            title = "Activity Updated"
+            body = "An activity you're attending has been updated"
+            userInfo = NotificationDataBuilder.activityUpdate(
+                activityId: UUID(),
                 updateType: "time"
             )
             
         case .chat:
             title = "New Message"
-            body = "You have a new message in an event chat"
+            body = "You have a new message in an activity chat"
             let senderId = UUID()
             userInfo = NotificationDataBuilder.chatMessage(
-                eventId: UUID(),
+                activityId: UUID(),
                 senderId: senderId
             )
             
@@ -444,7 +444,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             
         case .welcome:
             title = "Welcome to Spawn!"
-            body = "Thanks for joining. We'll keep you updated on events and friends."
+            body = "Thanks for joining. We'll keep you updated on activities and friends."
             userInfo = NotificationDataBuilder.welcome()
         }
         
@@ -455,16 +455,16 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
     private func loadPreferencesFromUserDefaults() {
         let defaults = UserDefaults.standard
         friendRequestsEnabled = defaults.bool(forKey: "friendRequestsEnabled")
-        eventInvitesEnabled = defaults.bool(forKey: "eventInvitesEnabled")
-        eventUpdatesEnabled = defaults.bool(forKey: "eventUpdatesEnabled")
+        activityInvitesEnabled = defaults.bool(forKey: "activityInvitesEnabled")
+        activityUpdatesEnabled = defaults.bool(forKey: "activityUpdatesEnabled")
         chatMessagesEnabled = defaults.bool(forKey: "chatMessagesEnabled")
     }
     
     private func savePreferencesToUserDefaults() {
         let defaults = UserDefaults.standard
         defaults.set(friendRequestsEnabled, forKey: "friendRequestsEnabled")
-        defaults.set(eventInvitesEnabled, forKey: "eventInvitesEnabled")
-        defaults.set(eventUpdatesEnabled, forKey: "eventUpdatesEnabled")
+        defaults.set(activityInvitesEnabled, forKey: "activityInvitesEnabled")
+        defaults.set(activityUpdatesEnabled, forKey: "activityUpdatesEnabled")
         defaults.set(chatMessagesEnabled, forKey: "chatMessagesEnabled")
     }
     
@@ -500,8 +500,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 
                 // Update local state with fetched preferences
                 friendRequestsEnabled = preferences.friendRequestsEnabled
-                eventInvitesEnabled = preferences.eventInvitesEnabled
-                eventUpdatesEnabled = preferences.eventUpdatesEnabled
+                activityInvitesEnabled = preferences.activityInvitesEnabled
+                activityUpdatesEnabled = preferences.activityUpdatesEnabled
                 chatMessagesEnabled = preferences.chatMessagesEnabled
                 
                 // Save to UserDefaults as fallback
@@ -543,8 +543,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         
         let preferences = NotificationPreferencesDTO(
             friendRequestsEnabled: friendRequestsEnabled,
-            eventInvitesEnabled: eventInvitesEnabled,
-            eventUpdatesEnabled: eventUpdatesEnabled,
+            activityInvitesEnabled: activityInvitesEnabled,
+            activityUpdatesEnabled: activityUpdatesEnabled,
             chatMessagesEnabled: chatMessagesEnabled,
             userId: userId
         )
@@ -613,9 +613,9 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 // When a friend request is accepted, refresh friends
                 await appCache.refreshFriends()
                 
-            case "event-updated":
-                // When an event is updated, refresh events
-                await appCache.refreshEvents()
+            case "activity-updated":
+                // When an activity is updated, refresh activities
+                await appCache.refreshActivities()
                 
             case "friend-request":
                 // When a new friend request is received, refresh friend requests

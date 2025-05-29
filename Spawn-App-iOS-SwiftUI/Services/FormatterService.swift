@@ -29,20 +29,22 @@ class FormatterService {
 		return user.name ?? "No Name"
 	}
 
-	func formatEventTime(event: FullFeedEventDTO) -> String {
+
+	
+	func formatActivityTime(activity: FullFeedActivityDTO) -> String {
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "h:mm a"
 		dateFormatter.timeZone = .current
 
-		if let startTime = event.startTime {
-			if let endTime = event.endTime,
+		if let startTime = activity.startTime {
+			if let endTime = activity.endTime,
 				Calendar.current.isDate(startTime, inSameDayAs: endTime)
 			{
 				return
 					"\(dateFormatter.string(from: startTime)) - \(dateFormatter.string(from: endTime))"
 			}
 			return "Starts at \(dateFormatter.string(from: startTime))"
-		} else if let endTime = event.endTime {
+		} else if let endTime = activity.endTime {
 			return "Ends at \(dateFormatter.string(from: endTime))"
 		} else {
 			return "No Time Available"

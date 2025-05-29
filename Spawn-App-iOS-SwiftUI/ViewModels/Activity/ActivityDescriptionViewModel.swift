@@ -1,5 +1,5 @@
 //
-//  EventDescriptionViewModel.swift
+//  ActivityDescriptionViewModel.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/9/24.
@@ -7,17 +7,17 @@
 
 import Foundation
 
-class EventDescriptionViewModel: ObservableObject {
+class ActivityDescriptionViewModel: ObservableObject {
 	@Published var users: [BaseUserDTO]?
-	var event: FullFeedEventDTO
+	var activity: FullFeedActivityDTO
 	var senderUserId: UUID
 	var apiService: IAPIService
 	var creationMessage: String?
 	@Published var isParticipating: Bool = false
 
-	init(apiService: IAPIService, event: FullFeedEventDTO, users: [BaseUserDTO]? = [], senderUserId: UUID) {
+	init(apiService: IAPIService, activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID) {
 		self.apiService = apiService
-		self.event = event
+		self.activity = activity
 		self.users = users
 		self.senderUserId = senderUserId
 		
@@ -27,7 +27,7 @@ class EventDescriptionViewModel: ObservableObject {
 	
 	func fetchIsParticipating() {
 		// Check if the user is in the participants list
-		if let participants = event.participantUsers {
+		if let participants = activity.participantUsers {
 			isParticipating = participants.contains { $0.id == senderUserId }
 		}
 	}
@@ -37,7 +37,7 @@ class EventDescriptionViewModel: ObservableObject {
 		let newStatus = !isParticipating
 		
 		// Construct URL for participation API
-		if let url = URL(string: APIService.baseURL + "events/\(event.id)/participation") {
+		if let url = URL(string: APIService.baseURL + "activities/\(activity.id)/participation") {
 			do {
 				let parameters = ["status": newStatus ? "PARTICIPATING" : "NOT_PARTICIPATING"]
 				_ = try await self.apiService.sendData(
@@ -67,7 +67,7 @@ class EventDescriptionViewModel: ObservableObject {
 		let chatMessage: CreateChatMessageDTO = CreateChatMessageDTO(
 			content: trimmedMessage,
 			senderUserId: senderUserId,
-			eventId: event.id
+			activityId: activity.id
 		)
 		
 		if let url = URL(string: APIService.baseURL + "chatMessages") {
@@ -75,8 +75,8 @@ class EventDescriptionViewModel: ObservableObject {
 				_ = try await self.apiService.sendData(
 					chatMessage, to: url, parameters: nil)
 				
-				// After successfully sending the message, fetch the updated event data
-				await fetchUpdatedEventData()
+				// After successfully sending the message, fetch the updated activity data
+				await fetchUpdatedActivityData()
 				
 				// Clear any error message
 				await MainActor.run {
@@ -92,20 +92,20 @@ class EventDescriptionViewModel: ObservableObject {
 	}
 
     // this method gets called after a chat message is sent, to update the
-	// chat messages in the event popup view, to include this chat message
-	private func fetchUpdatedEventData() async {
-		if let url = URL(string: APIService.baseURL + "events/\(event.id)") {
+	// chat messages in the activity popup view, to include this chat message
+	private func fetchUpdatedActivityData() async {
+		if let url = URL(string: APIService.baseURL + "activities/\(activity.id)") {
 			do {
-				let updatedEvent: FullFeedEventDTO = try await self.apiService.fetchData(
+				let updatedActivity: FullFeedActivityDTO = try await self.apiService.fetchData(
                     from: url, parameters: ["requestingUserId": senderUserId.uuidString])
 				
-				// Update the event on the main thread
+				// Update the activity on the main thread
 				await MainActor.run {
-					self.event = updatedEvent
+					self.activity = updatedActivity
 				}
 			} catch {
-				print("Error fetching updated event data: \(error)")
+				print("Error fetching updated activity data: \(error)")
 			}
 		}
 	}
-}
+} 

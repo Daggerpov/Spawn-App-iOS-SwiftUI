@@ -1,5 +1,5 @@
 //
-//  Event.swift
+//  Activity.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/4/24.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Event: Identifiable, Codable {
+class Activity: Identifiable, Codable {
 	var id: UUID
 	var title: String?
 
@@ -15,15 +15,16 @@ class Event: Identifiable, Codable {
 	var startTime: Date?
 	var endTime: Date?
 	var location: Location?
-	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in event
+	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in activity
+	var createdAt: Date?
 
 	// MARK: Relations
 	var creatorUser: UserDTO?
 
-	// tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
+	// tech note: I'll be able to check if current user is in an activity's partipants to determine which symbol to show in feed
 	var participantUsers: [UserDTO]?
 	var invitedUsers: [UserDTO]?
-	var chatMessages: [FullEventChatMessageDTO]?
+	var chatMessages: [FullActivityChatMessageDTO]?
 	var participationStatus: ParticipationStatus?
 
 	init(
@@ -36,8 +37,9 @@ class Event: Identifiable, Codable {
 		creatorUser: UserDTO? = UserDTO.danielAgapov,
 		participantUsers: [UserDTO]? = nil,
 		invitedUsers: [UserDTO]? = nil,
-		chatMessages: [FullEventChatMessageDTO]? = nil,
-		participationStatus: ParticipationStatus? = nil
+		chatMessages: [FullActivityChatMessageDTO]? = nil,
+		participationStatus: ParticipationStatus? = nil,
+		createdAt: Date? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -50,10 +52,11 @@ class Event: Identifiable, Codable {
 		self.invitedUsers = invitedUsers
 		self.chatMessages = chatMessages
 		self.participationStatus = participationStatus
+		self.createdAt = createdAt
 	}
 }
 
-extension Event {
+extension Activity {
 
 	static func dateFromTimeString(_ timeString: String) -> Date? {
 		let dateFormatter = DateFormatter()
@@ -74,7 +77,7 @@ extension Event {
 		return nil
 	}
 
-	static let mockDinnerEvent: Event = Event(
+	static let mockDinnerActivity: Activity = Activity(
 		id: UUID(),
 		title: "Dinner time!!!!!!",
 		startTime: dateFromTimeString("10:00 PM"),
@@ -92,9 +95,9 @@ extension Event {
 		]
 	)
 
-	static let mockEvents: [Event] = [
-		mockDinnerEvent,
-		Event(
+	static let mockActivities: [Activity] = [
+		mockDinnerActivity,
+		Activity(
 			id: UUID(),
 			title: "wanna run 5k with me?",
 			startTime: Date(),
@@ -107,23 +110,23 @@ extension Event {
 				UserDTO.danielLee,
 			],
 			chatMessages: [
-				FullEventChatMessageDTO(
+				FullActivityChatMessageDTO(
 					id: UUID(),
 					content: "yo guys, wya?",
 					timestamp: Date().addingTimeInterval(-30),  // 30 seconds ago
 					senderUser: BaseUserDTO.danielAgapov,
-					eventId: mockDinnerEvent.id
+					activityId: mockDinnerActivity.id
 				),
-				FullEventChatMessageDTO(
+				FullActivityChatMessageDTO(
 					id: UUID(),
 					content: "I just saw you",
 					timestamp: Date().addingTimeInterval(-120),  // 2 minutes ago
 					senderUser: BaseUserDTO.danielLee,
-					eventId: mockDinnerEvent.id
+					activityId: mockDinnerActivity.id
 				),
 			]
 		),
-		Event(
+		Activity(
 			id: UUID(),
 			title: "playing basketball!!!",
 			endTime: Date(),
@@ -133,7 +136,7 @@ extension Event {
 			note: "let's play basketball!",
 			creatorUser: UserDTO.danielAgapov
 		),
-		Event(
+		Activity(
 			id: UUID(),
 			title: "Im painting rn lol",
 			startTime: Date(),
@@ -144,7 +147,7 @@ extension Event {
 			creatorUser: UserDTO.shannon,
 			participantUsers: [UserDTO.danielLee]
 		),
-		Event(
+		Activity(
 			id: UUID(),
 			title: "Grabbing Udon",
 			startTime: Date(),
@@ -154,7 +157,7 @@ extension Event {
 				longitude: -123.11026665974741),
 			creatorUser: UserDTO.danielAgapov
 		),
-		Event(
+		Activity(
 			id: UUID(),
 			title: "Calendar Party",
 			startTime: Date(),
@@ -164,7 +167,7 @@ extension Event {
 				longitude: -123.25036565366581),
 			creatorUser: UserDTO.danielLee
 		),
-		Event(
+		Activity(
 			id: UUID(),
 			title: "Gym - Leg Day",
 			startTime: Date(),
@@ -175,4 +178,4 @@ extension Event {
 			creatorUser: UserDTO.michael
 		),
 	]
-}
+} 
