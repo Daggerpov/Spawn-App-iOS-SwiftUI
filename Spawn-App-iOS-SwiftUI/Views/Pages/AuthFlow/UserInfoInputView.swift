@@ -328,7 +328,7 @@ struct UserInfoInputView: View {
 				// Send a welcome notification using the NotificationDataBuilder
 				NotificationService.shared.scheduleLocalNotification(
 					title: "Welcome to Spawn!",
-					body: "Thanks for joining. We'll keep you updated on events and friends.",
+					body: "Thanks for joining. We'll keep you updated on activities and friends.",
 					userInfo: NotificationDataBuilder.welcome()
 				)
 			} else {

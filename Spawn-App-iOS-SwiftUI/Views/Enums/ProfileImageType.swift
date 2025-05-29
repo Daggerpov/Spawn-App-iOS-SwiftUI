@@ -5,7 +5,9 @@
 //  Created by Daniel Agapov on 11/9/24.
 //
 
+import Foundation
+
 enum ProfileImageType {
-	case feedPage, eventParticipants, profilePage, chatMessage, friendsListView,
-		mapView, tagFriends, choosingFriendTags
+	case feedPage, activityParticipants, profilePage, chatMessage, friendsListView,
+		 profilePicture
 }

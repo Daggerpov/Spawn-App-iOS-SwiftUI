@@ -1,5 +1,5 @@
 //
-//  EventCardTopRowView.swift
+//  ActivityCardTopRowView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/11/24.
@@ -7,43 +7,43 @@
 
 import SwiftUI
 
-struct EventCardTopRowView: View {
-	var event: FullFeedEventDTO
+struct ActivityCardTopRowView: View {
+	var activity: FullFeedActivityDTO
 
 	var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                if let title = event.title {
-                    EventCardTitleView(eventTitle: title)
+                if let title = activity.title {
+                    ActivityCardTitleView(activityTitle: title)
                 }
-                EventCardTimeView(event: event)
+                ActivityCardTimeView(activity: activity)
             }
             Spacer()
-            ParticipantsImagesView(event: event)
+            ParticipantsImagesView(activity: activity)
         }
 	}
 }
 
-struct EventCardTitleView: View {
-	var eventTitle: String
+struct ActivityCardTitleView: View {
+	var activityTitle: String
 	var body: some View {
 		// TODO: make this title editable
-        Text(eventTitle)
+        Text(activityTitle)
             .font(.onestBold(size: 24))
             .foregroundColor(.white)
 	}
 }
 
-struct EventCardTimeView: View {
-    @ObservedObject var viewModel: EventInfoViewModel
+struct ActivityCardTimeView: View {
+    @ObservedObject var viewModel: ActivityInfoViewModel
     
-    init(event: FullFeedEventDTO) {
-        self.viewModel = EventInfoViewModel(
-            event: event, eventInfoType: .time)
+    init(activity: FullFeedActivityDTO) {
+        self.viewModel = ActivityInfoViewModel(
+            activity: activity, activityInfoType: .time)
     }
     
     var body: some View {
-        Text(viewModel.eventInfoDisplayString)
+        Text(viewModel.activityInfoDisplayString)
             .font(.onestRegular(size: 14))
             .foregroundColor(.white.opacity(0.85))
     }
@@ -52,5 +52,5 @@ struct EventCardTimeView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	EventCardTopRowView(event: FullFeedEventDTO.mockDinnerEvent).environmentObject(appCache)
+	ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
 }

@@ -1,5 +1,5 @@
 //
-//  EventCardPopupView.swift
+//  ActivityCardPopupView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Shane on 5/18/25.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct EventCardPopupView: View {
-    var event: FullFeedEventDTO
+struct ActivityCardPopupView: View {
+    var activity: FullFeedActivityDTO
     var color: Color
     var userId: UUID
     
@@ -36,7 +36,7 @@ struct EventCardPopupView: View {
             .padding(.horizontal)
             .padding(.bottom, 8)
             
-            // Event Title & Time
+            // Activity Title & Time
             VStack(alignment: .leading, spacing: 4) {
                 Text("Title")
                     .font(.onestSemiBold(size: 26))
@@ -148,13 +148,13 @@ struct EventCardPopupView: View {
 }
 
 #if DEBUG
-struct EventCardPopupView_Previews: PreviewProvider {
+struct ActivityCardPopupView_Previews: PreviewProvider {
     static var previews: some View {
         // Provide mock data for preview
-        let mockEvent = FullFeedEventDTO.mockDinnerEvent // Replace with your mock or sample event
+        let mockActivity = FullFeedActivityDTO.mockDinnerActivity // Replace with your mock or sample activity
         let mockColor = Color(red: 0.48, green: 0.60, blue: 1.0)
         let mockUserId = UUID()
-        EventCardPopupView(event: mockEvent, color: mockColor, userId: mockUserId)
+        ActivityCardPopupView(activity: mockActivity, color: mockColor, userId: mockUserId)
             .background(Color.gray.opacity(0.2))
             .previewLayout(.sizeThatFits)
     }

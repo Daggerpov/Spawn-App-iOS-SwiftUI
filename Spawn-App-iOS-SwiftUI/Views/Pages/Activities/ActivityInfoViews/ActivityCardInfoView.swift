@@ -1,5 +1,5 @@
 //
-//  EventDescriptionView.swift
+//  ActivityCardInfoView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Shane on 5/10/25.
@@ -8,18 +8,18 @@
 
 import SwiftUI
 
-struct EventCardInfoView: View {
-    var event: FullFeedEventDTO
+struct ActivityCardInfoView: View {
+    var activity: FullFeedActivityDTO
     
     var body: some View {
         VStack(alignment: .leading) {
             HStack(spacing: 8) {
-                if let profilePicture = event.creatorUser.profilePicture {
+                if let profilePicture = activity.creatorUser.profilePicture {
                     AsyncImage(url: URL(string: profilePicture)) {
                         image in
                         image
                             .ProfileImageModifier(
-                                imageType: .eventParticipants)
+                                imageType: .activityParticipants)
                     } placeholder: {
                         Circle()
                             .fill(Color.gray)
@@ -31,14 +31,14 @@ struct EventCardInfoView: View {
                         .fill(Color.gray)
                         .frame(width: 24, height: 24)
                 }
-                Text("@\(event.creatorUser.username)")
+                Text("@\(activity.creatorUser.username)")
                     .font(.onestMedium(size: 13))
                     .foregroundColor(.white)
             
                 
                 Spacer()
             }
-            if let description = event.note {
+            if let description = activity.note {
                 HStack {
                     Text(description)
                         .font(.onestRegular(size: 13))

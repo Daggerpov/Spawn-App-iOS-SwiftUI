@@ -105,7 +105,7 @@ extension FeedView {
         ScrollView(.vertical) {
             LazyVStack(spacing: 25) {
                 if viewModel.activities.isEmpty {
-                    Image("EventNotFound")
+                    Image("ActivityNotFound")
                         .resizable()
                         .frame(width: 125, height: 125)
                     Text("No Activities Found").font(.onestSemiBold(size: 32)).foregroundColor(universalAccentColor)

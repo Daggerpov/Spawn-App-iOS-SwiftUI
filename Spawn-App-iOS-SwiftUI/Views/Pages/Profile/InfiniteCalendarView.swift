@@ -2,8 +2,9 @@ import SwiftUI
 
 // Expanded calendar view that shows all months in a year
 struct InfiniteCalendarView: View {
-    @StateObject private var viewModel = InfiniteCalendarViewModel()
-    @EnvironmentObject var appCache: AppCache
+    let activities: [CalendarActivityDTO]
+    let isLoading: Bool
+    let onDismiss: () -> Void
     let onActivitySelected: (CalendarActivityDTO) -> Void
     
     @State private var currentDate = Date()
@@ -46,27 +47,22 @@ struct InfiniteCalendarView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 15)
             
-            CalendarGridView(
-                currentDate: currentDate,
-                activities: viewModel.activities,
-                onActivitySelected: onActivitySelected,
-                onDateSelected: { date in
-                    selectedDate = date
-                    // Directly show day activities without checking cache
-                    if !viewModel.getActivitiesForDate(date).isEmpty {
-                        self.showingDayActivities = true
+            if isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 300)
+            } else {
+                CalendarGridView(
+                    currentDate: currentDate,
+                    activities: activities,
+                    onActivitySelected: onActivitySelected,
+                    onDateSelected: { date in
+                        selectedDate = date
+                        // Show day activities if there are activities for this date
+                        if !getActivitiesForDate(date).isEmpty {
+                            self.showingDayActivities = true
+                        }
                     }
-                }
-            )
-        }
-        .onAppear {
-            Task {
-                await viewModel.loadActivitiesForMonth(currentDate)
-            }
-        }
-        .onChange(of: currentDate) { newDate in
-            Task {
-                await viewModel.loadActivitiesForMonth(newDate)
+                )
             }
         }
         .sheet(isPresented: $showingDayActivities) {
@@ -80,6 +76,12 @@ struct InfiniteCalendarView: View {
                     }
                 )
             }
+        }
+    }
+    
+    private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
+        return activities.filter { activity in
+            Calendar.current.isDate(activity.date, inSameDayAs: date)
         }
     }
 }

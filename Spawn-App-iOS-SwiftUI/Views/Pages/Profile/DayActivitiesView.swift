@@ -53,8 +53,7 @@ struct DayActivitiesView: View {
     }
     
     func getColorForActivity(
-        _ activity: CalendarActivityDTO,
-        activity: FullFeedActivityDTO? = nil
+        _ activity: CalendarActivityDTO
     ) -> Color {
         // First, check if this is a self-owned activity
         if let activity = activity, activity.isSelfOwned == true {

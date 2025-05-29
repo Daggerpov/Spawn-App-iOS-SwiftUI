@@ -31,7 +31,7 @@ struct ProfileView: View {
 	)
 	@State private var refreshFlag = false
 	@State private var showCalendarPopup: Bool = false
-	@State private var showEventDetails: Bool = false
+	@State private var showActivityDetails: Bool = false
 	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
 	@State private var reportReason: String = ""
@@ -133,10 +133,11 @@ struct ProfileView: View {
 					)
 					print("checked friendship status")
 
-					// If they're friends, fetch their events
+					// If they're friends, fetch their activities
 					if profileViewModel.friendshipStatus == .friends {
-						await profileViewModel.fetchProfileEvents(
-							profileUserId: user.id
+						await profileViewModel.fetchProfileActivities(
+							profileUserId: user.id,
+							requestingUserId: userAuth.spawnUser?.id ?? UUID()
 						)
 					}
 				}
@@ -159,11 +160,12 @@ struct ProfileView: View {
 			}
 		}
 		.onChange(of: profileViewModel.friendshipStatus) { newStatus in
-			// Fetch events when friendship status changes to friends
+			// Fetch activities when friendship status changes to friends
 			if newStatus == .friends {
 				Task {
-					await profileViewModel.fetchProfileEvents(
-						profileUserId: user.id
+					await profileViewModel.fetchProfileActivities(
+						profileUserId: user.id,
+						requestingUserId: userAuth.spawnUser?.id ?? UUID()
 					)
 				}
 			}
@@ -211,8 +213,8 @@ struct ProfileView: View {
 					}
 				}
 			}
-			.sheet(isPresented: $showEventDetails) {
-				eventDetailsView
+			.sheet(isPresented: $showActivityDetails) {
+				activityDetailsView
 			}
 			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation)
 		{
@@ -225,7 +227,7 @@ struct ProfileView: View {
 				blockUserAlert
 			} message: {
 				Text(
-					"Blocking this user will remove them from your friends list and they won't be able to see your profile or events."
+					"Blocking this user will remove them from your friends list and they won't be able to see your profile or activities."
 				)
 			}
 			.sheet(isPresented: $showProfileMenu) {
@@ -394,8 +396,8 @@ struct ProfileView: View {
 			// User Stats (only for current user or friends)
 			userStatsSection
 
-			// Calendar or Events Section
-			calendarOrEventsSection
+			// Calendar or Activities Section
+			calendarOrActivitiesSection
 				.padding(.horizontal, 48)
 				.padding(.bottom, 15)
 		}
@@ -444,20 +446,20 @@ struct ProfileView: View {
 		}
 	}
 
-	private var calendarOrEventsSection: some View {
+	private var calendarOrActivitiesSection: some View {
 		Group {
 			if isCurrentUserProfile {
 				ProfileCalendarView(
 					profileViewModel: profileViewModel,
 					showCalendarPopup: $showCalendarPopup,
-					showEventDetails: $showEventDetails
+					showActivityDetails: $showActivityDetails
 				)
 			} else {
-				// User Events Section for other users (based on friendship status)
-				UserEventsSection(
+				// User Activities Section for other users (based on friendship status)
+				UserActivitiesSection(
 					user: user,
 					profileViewModel: profileViewModel,
-					showEventDetails: $showEventDetails
+					showActivityDetails: $showActivityDetails
 				)
 			}
 		}
@@ -482,24 +484,24 @@ struct ProfileView: View {
 			activities: profileViewModel.allCalendarActivities,
 			isLoading: profileViewModel.isLoadingCalendar,
 			onDismiss: { showCalendarPopup = false },
-			onEventSelected: { activity in
-				handleEventSelection(activity)
+			onActivitySelected: { activity in
+				handleActivitySelection(activity)
 			}
 		)
 	}
 
-	private var eventDetailsView: some View {
+	private var activityDetailsView: some View {
 		Group {
-			if let event = profileViewModel.selectedEvent {
-				// Use the same color scheme as EventCardView would
-				let eventColor =
-					event.isSelfOwned == true
-					? universalAccentColor : determineEventColor(for: event)
+			if let activity = profileViewModel.selectedActivity {
+				// Use the same color scheme as ActivityCardView would
+				let activityColor =
+					activity.isSelfOwned == true
+					? universalAccentColor : determineActivityColor(for: activity)
 
-				EventDescriptionView(
-					event: event,
-					users: event.participantUsers,
-					color: eventColor,
+				ActivityDescriptionView(
+					activity: activity,
+					users: activity.participantUsers,
+					color: activityColor,
 					userId: userAuth.spawnUser?.id ?? UUID()
 				)
 				.presentationDetents([.medium, .large])
@@ -684,26 +686,26 @@ struct ProfileView: View {
 		}
 	}
 
-	private func handleEventSelection(_ activity: CalendarActivityDTO) {
+	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
 		// First close the calendar popup
 		showCalendarPopup = false
 
-		// Then fetch and show the event details
+		// Then fetch and show the activity details
 		Task {
-			if let eventId = activity.eventId,
-				await profileViewModel.fetchEventDetails(eventId: eventId)
+			if let activityId = activity.activityId,
+				await profileViewModel.fetchActivityDetails(activityId: activityId)
 					!= nil
 			{
 				await MainActor.run {
-					showEventDetails = true
+					showActivityDetails = true
 				}
 			}
 		}
 	}
 
-	private func determineEventColor(for event: FullFeedEventDTO) -> Color {
-		// Logic to determine event color based on friend tag or category
-		return event.category.color()
+	private func determineActivityColor(for activity: FullFeedActivityDTO) -> Color {
+		// Logic to determine activity color based on friend tag or category
+		return activity.category.color()
 	}
 
 	// Friend Action Buttons based on friendship status

@@ -1,5 +1,5 @@
 //
-//  EventLocation.swift
+//  ActivityLocationView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Shane on 5/10/25.
@@ -7,19 +7,19 @@
 
 import SwiftUI
 
-struct EventLocationView: View {
-    @ObservedObject var viewModel: EventInfoViewModel
+struct ActivityLocationView: View {
+    @ObservedObject var viewModel: ActivityInfoViewModel
 
-    init(event: FullFeedEventDTO) {
-        self.viewModel = EventInfoViewModel(
-            event: event, eventInfoType: .location)
+    init(activity: FullFeedActivityDTO) {
+        self.viewModel = ActivityInfoViewModel(
+            activity: activity, activityInfoType: .location)
     }
     
     var body: some View {
         HStack {
             Image(systemName: "mappin.and.ellipse")
                 .foregroundColor(.white)
-            Text(viewModel.eventInfoDisplayString)
+            Text(viewModel.activityInfoDisplayString)
                 .foregroundColor(.white)
                 .font(.onestRegular(size: 13))
         }

@@ -9,19 +9,19 @@ import Foundation
 import SwiftUI
 
 struct ParticipantsImagesView: View {
-	var event: FullFeedEventDTO
+	var activity: FullFeedActivityDTO
     let maxCount: Int = 2
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
 		var participantsFiltered = participants
 
-		let userCreator: BaseUserDTO = event.creatorUser
+		let userCreator: BaseUserDTO = activity.creatorUser
 		// Remove the creator if already in the list
 		participantsFiltered.removeAll { $0.id == userCreator.id }
 
 		// Prepend the creator to the participants list
 		participantsFiltered.insert(
-			event.creatorUser, at: 0)
+			activity.creatorUser, at: 0)
 
 
 		return participantsFiltered
@@ -30,7 +30,7 @@ struct ParticipantsImagesView: View {
 	var body: some View {
 		HStack(spacing: -8) {
 			//Spacer()
-            let participants: [BaseUserDTO] = participantsCleanup(participants: event.participantUsers ?? [])
+            let participants: [BaseUserDTO] = participantsCleanup(participants: activity.participantUsers ?? [])
 			ForEach(
                 0..<min(maxCount, participants.count),
 				id: \.self
@@ -42,10 +42,10 @@ struct ParticipantsImagesView: View {
 						if let pfpUrl = participant.profilePicture {
                             if MockAPIService.isMocking {
                                 Image(pfpUrl)
-                                    .ProfileImageModifier(imageType: .eventParticipants)
+                                    .ProfileImageModifier(imageType: .activityParticipants)
                             } else {
                                 AsyncImage(url: URL(string: pfpUrl)) { image in
-                                    image.ProfileImageModifier(imageType: .eventParticipants)
+                                    image.ProfileImageModifier(imageType: .activityParticipants)
                                 } placeholder: {
                                     Circle()
                                         .fill(Color.gray)
@@ -60,6 +60,7 @@ struct ParticipantsImagesView: View {
 					}
 				)
 			}
+            
             if participants.count > maxCount {
                 ZStack {
                     Circle()
@@ -78,5 +79,5 @@ struct ParticipantsImagesView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	ParticipantsImagesView(event: FullFeedEventDTO.mockDinnerEvent).environmentObject(appCache)
+	ParticipantsImagesView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
 }

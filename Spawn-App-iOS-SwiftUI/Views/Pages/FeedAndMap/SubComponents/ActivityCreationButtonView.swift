@@ -1,5 +1,5 @@
 //
-//  EventCreationButton.swift
+//  ActivityCreationButtonView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-01-02.
@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct EventCreationButtonView: View {
-    @Binding var showEventCreationDrawer: Bool
+struct ActivityCreationButtonView: View {
+    @Binding var showActivityCreationDrawer: Bool
     var body: some View {
         RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
             .frame(width: 100, height: 45)
@@ -19,7 +19,7 @@ struct EventCreationButtonView: View {
             )
             .overlay(
                 Button(action: {
-                    showEventCreationDrawer = true
+                    showActivityCreationDrawer = true
                 }) {
                     HStack {
                         Spacer()
@@ -41,6 +41,6 @@ struct EventCreationButtonView: View {
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
     @Previewable @State var state: Bool = false
-    EventCreationButtonView(showEventCreationDrawer: $state).environmentObject(
+    ActivityCreationButtonView(showActivityCreationDrawer: $state).environmentObject(
         appCache)
 }
