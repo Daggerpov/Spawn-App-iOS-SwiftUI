@@ -70,6 +70,12 @@ class AppCache: ObservableObject {
             return
         }
         
+        // Don't send validation request if we have no cached items to validate
+        if lastChecked.isEmpty {
+            print("No cached items to validate, skipping cache validation")
+            return
+        }
+        
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
             let result = try await apiService.validateCache(lastChecked)

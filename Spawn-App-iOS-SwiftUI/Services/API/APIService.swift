@@ -905,6 +905,12 @@ class APIService: IAPIService {
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] {
 		resetState()
 		
+		// Don't send validation request if there are no cached items to validate
+		if cachedItems.isEmpty {
+			print("No cached items to validate, returning empty response")
+			return [:]
+		}
+		
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			throw APIError.invalidData
 		}

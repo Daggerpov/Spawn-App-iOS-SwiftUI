@@ -404,6 +404,12 @@ class MockAPIService: IAPIService {
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String:
 		CacheValidationResponse]
 	{
+		// Don't send validation request if there are no cached items to validate
+		if cachedItems.isEmpty {
+			print("MOCK: No cached items to validate, returning empty response")
+			return [:]
+		}
+		
 		// In the mock implementation, we'll pretend everything is fresh except for items
 		// that are older than 30 minutes
 		var result: [String: CacheValidationResponse] = [:]
