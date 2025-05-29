@@ -5,11 +5,11 @@ enum NotificationType: String, Codable {
     /// Friend request notifications
     case friendRequest = "friendRequest"
     
-    /// Event invite notifications
-    case eventInvite = "eventInvite"
+    /// Activity invite notifications
+    case activityInvite = "activityInvite"
     
-    /// Event update notifications
-    case eventUpdate = "eventUpdate"
+    /// Activity update notifications
+    case activityUpdate = "activityUpdate"
     
     /// Chat message notifications
     case chat = "chat"
@@ -29,29 +29,29 @@ struct NotificationDataBuilder {
         ]
     }
     
-    /// Build notification data for an event invite
-    static func eventInvite(eventId: UUID, eventName: String) -> [String: String] {
+    /// Build notification data for an activity invite
+    static func activityInvite(activityId: UUID, activityName: String) -> [String: String] {
         return [
-            "type": NotificationType.eventInvite.rawValue,
-            "eventId": eventId.uuidString,
-            "eventName": eventName
+            "type": NotificationType.activityInvite.rawValue,
+            "activityId": activityId.uuidString,
+            "activityName": activityName
         ]
     }
     
-    /// Build notification data for an event update
-    static func eventUpdate(eventId: UUID, updateType: String) -> [String: String] {
+    /// Build notification data for an activity update
+    static func activityUpdate(activityId: UUID, updateType: String) -> [String: String] {
         return [
-            "type": NotificationType.eventUpdate.rawValue,
-            "eventId": eventId.uuidString,
+            "type": NotificationType.activityUpdate.rawValue,
+            "activityId": activityId.uuidString,
             "updateType": updateType
         ]
     }
     
     /// Build notification data for a chat message
-    static func chatMessage(eventId: UUID, senderId: UUID) -> [String: String] {
+    static func chatMessage(activityId: UUID, senderId: UUID) -> [String: String] {
         return [
             "type": NotificationType.chat.rawValue,
-            "eventId": eventId.uuidString,
+            "activityId": activityId.uuidString,
             "senderId": senderId.uuidString
         ]
     }

@@ -1,51 +1,44 @@
 //
-//  EventInfoView.swift
+//  ActivityInfoView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 11/11/24.
+//  Created by Daniel Agapov on 2024-11-19.
 //
 
 import SwiftUI
 
-struct EventInfoView: View {
-	@ObservedObject var viewModel: EventInfoViewModel
+struct ActivityInfoView: View {
+	@ObservedObject var viewModel: ActivityInfoViewModel
 
-	init(event: FullFeedEventDTO, eventInfoType: EventInfoType) {
-		self.viewModel = EventInfoViewModel(
-			event: event, eventInfoType: eventInfoType)
+	init(activity: FullFeedActivityDTO, activityInfoType: ActivityInfoType) {
+		self.viewModel = ActivityInfoViewModel(
+			activity: activity, activityInfoType: activityInfoType)
 	}
 
 	var body: some View {
 		HStack {
-			HStack(spacing: 5) {
-				Image(systemName: viewModel.imageSystemName)
-					.padding(5)
-					.background(
-						RoundedRectangle(cornerRadius: 30)
-							.fill(Color.white.opacity(0.1))
-					)
+			Image(systemName: viewModel.systemImageName)
+				.foregroundColor(.white)
+				.font(.system(size: 14))
+			
+			VStack(alignment: .leading, spacing: 2) {
+				Text(viewModel.title)
+					.foregroundColor(.white)
+					.font(.caption)
+					.bold()
 				
-				Text(viewModel.eventInfoDisplayString)
-					.lineLimit(1)
-					.fixedSize()
-					.font(.caption2)
-					.padding(.horizontal, 3)
+				Text(viewModel.activityInfoDisplayString)
+					.foregroundColor(.white)
+					.font(.caption)
 			}
-			.padding(.trailing, 10)
-			.overlay {
-				// Background for the text bubble
-				RoundedRectangle(cornerRadius: 30)
-					.fill(Color.white.opacity(0.1))
-					.frame(height: 30)
-			}
-			.fixedSize()
+			
+			Spacer()
 		}
-
 	}
 }
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-	EventInfoView(event: FullFeedEventDTO.mockDinnerEvent, eventInfoType: EventInfoType.location).environmentObject(appCache)
+	@Previewable @StateObject var appCache = AppCache.shared
+	ActivityInfoView(activity: FullFeedActivityDTO.mockDinnerActivity, activityInfoType: ActivityInfoType.location).environmentObject(appCache)
 }

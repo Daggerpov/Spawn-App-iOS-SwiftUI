@@ -23,12 +23,12 @@ struct MapView: View {
     @State private var userTrackingMode: MapUserTrackingMode = .none
     @State private var is3DMode: Bool = false
 
-    // MARK - Event Description State Vars
-    @State private var showingEventDescriptionPopup: Bool = false
-    @State private var eventInPopup: FullFeedEventDTO?
+    // MARK - Activity Description State Vars
+    @State private var showingActivityDescriptionPopup: Bool = false
+    @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
 
-    @State private var showEventCreationDrawer: Bool = false
+    @State private var showActivityCreationDrawer: Bool = false
 
     // for pop-ups:
     @State private var creationOffset: CGFloat = 1000
@@ -46,20 +46,20 @@ struct MapView: View {
         case allActivities = "All Activities"
     }
 
-    // Computed property for filtered events
-    private var filteredEvents: [FullFeedEventDTO] {
+    // Computed property for filtered activities
+    private var filteredActivities: [FullFeedActivityDTO] {
         let now = Date()
         let calendar = Calendar.current
         
-        let filtered = viewModel.events.filter { event in
-            guard let startTime = event.startTime else { return false }
+        let filtered = viewModel.activities.filter { activity in
+            guard let startTime = activity.startTime else { return false }
             
             switch selectedTimeFilter {
             case .allActivities:
                 return true
                 
             case .happeningNow:
-                guard let endTime = event.endTime else { return false }
+                guard let endTime = activity.endTime else { return false }
                 return startTime <= now && endTime >= now
                 
             case .inTheNextHour:
@@ -92,10 +92,10 @@ struct MapView: View {
             }
         }
         
-        print("🗺 DEBUG: Filtered events count: \(filtered.count)")
-        print("📍 DEBUG: Filtered events with locations: \(filtered.filter { $0.location != nil }.count)")
-        filtered.forEach { event in
-            print("📌 DEBUG: Filtered event '\(event.title ?? "Untitled")' location: \(event.location?.latitude ?? 0), \(event.location?.longitude ?? 0)")
+        print("🗺 DEBUG: Filtered activities count: \(filtered.count)")
+        print("📍 DEBUG: Filtered activities with locations: \(filtered.filter { $0.location != nil }.count)")
+        filtered.forEach { activity in
+            print("📌 DEBUG: Filtered activity '\(activity.title ?? "Untitled")' location: \(activity.location?.latitude ?? 0), \(activity.location?.longitude ?? 0)")
         }
         
         return filtered
@@ -120,16 +120,17 @@ struct MapView: View {
             VStack {
                 ZStack {
                     // Map layer
-                    EventMapViewRepresentable(
+                    ActivityMapViewRepresentable(
                         region: $region,
                         is3DMode: $is3DMode,
                         userTrackingMode: $userTrackingMode,
-                        annotationItems: filteredEvents.filter { $0.location != nil }
-                    ) { event in
-                        eventInPopup = event
-                        colorInPopup = eventColors.randomElement()
-                        showingEventDescriptionPopup = true
-                    }
+                        annotationItems: filteredActivities.filter { $0.location != nil },
+                        onActivityTap: { activity in
+                            activityInPopup = activity
+                            colorInPopup = activityColors.randomElement()
+                            showingActivityDescriptionPopup = true
+                        }
+                    )
                     .ignoresSafeArea()
 
                     // Top control buttons
@@ -190,8 +191,8 @@ struct MapView: View {
                             center: userLocation,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                         )
-                    } else if !viewModel.events.isEmpty {
-                        adjustRegionForEvents()
+                    } else if !viewModel.activities.isEmpty {
+                        adjustRegionForActivities()
                     }
                 }
             }
@@ -202,16 +203,16 @@ struct MapView: View {
                     adjustRegionToUserLocation()
                 }
             }
-            .onChange(of: viewModel.events) { _ in
+            .onChange(of: viewModel.activities) { _ in
                 if locationManager.userLocation != nil {
-                    adjustRegionForEvents()
+                    adjustRegionForActivities()
                 }
             }
-            .sheet(isPresented: $showingEventDescriptionPopup) {
-                if let event = eventInPopup, let color = colorInPopup {
-                    EventDescriptionView(
-                        event: event,
-                        users: event.participantUsers,
+            .sheet(isPresented: $showingActivityDescriptionPopup) {
+                if let activity = activityInPopup, let color = colorInPopup {
+                    ActivityDescriptionView(
+                        activity: activity,
+                        users: activity.participantUsers,
                         color: color,
                         userId: user.id
                     )
@@ -220,11 +221,11 @@ struct MapView: View {
             }
 
             // Dimming overlay
-            if showEventCreationDrawer || showFilterOverlay {
+            if showActivityCreationDrawer || showFilterOverlay {
                 Color.black.opacity(0.5)
                     .ignoresSafeArea()
                     .transition(.opacity)
-                    .animation(.easeInOut, value: showEventCreationDrawer || showFilterOverlay)
+                    .animation(.easeInOut, value: showActivityCreationDrawer || showFilterOverlay)
                     .blur(radius: 0) // Ensure overlay itself isn't blurred
             }
 
@@ -343,7 +344,7 @@ struct MapView: View {
         }
     }
 
-    private func adjustRegionForEventsOrUserLocation() {
+    private func adjustRegionForActivitiesOrUserLocation() {
         if let userLocation = locationManager.userLocation {
             // Prioritize user location
             withAnimation {
@@ -352,16 +353,16 @@ struct MapView: View {
                     span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                 )
             }
-        } else if !viewModel.events.isEmpty {
-            adjustRegionForEvents()
+        } else if !viewModel.activities.isEmpty {
+            adjustRegionForActivities()
         }
     }
 
-    private func adjustRegionForEvents() {
-        guard !viewModel.events.isEmpty else { return }
+    private func adjustRegionForActivities() {
+        guard !viewModel.activities.isEmpty else { return }
         
-        let latitudes = viewModel.events.compactMap { $0.location?.latitude }
-        let longitudes = viewModel.events.compactMap { $0.location?.longitude }
+        let latitudes = viewModel.activities.compactMap { $0.location?.latitude }
+        let longitudes = viewModel.activities.compactMap { $0.location?.longitude }
         
         guard let minLatitude = latitudes.min(),
               let maxLatitude = latitudes.max(),
@@ -391,17 +392,17 @@ struct MapView: View {
     func closeCreation() {
         ActivityCreationViewModel.reInitialize()
         creationOffset = 1000
-        showEventCreationDrawer = false
+        showActivityCreationDrawer = false
     }
 }
 
-// MARK: - EventMapViewRepresentable
-struct EventMapViewRepresentable: UIViewRepresentable {
+// MARK: - ActivityMapViewRepresentable
+struct ActivityMapViewRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var is3DMode: Bool
     var userTrackingMode: Binding<MapUserTrackingMode>
-    var annotationItems: [FullFeedEventDTO]
-    var onEventTap: (FullFeedEventDTO) -> Void
+    var annotationItems: [FullFeedActivityDTO]
+    var onActivityTap: (FullFeedActivityDTO) -> Void
     
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
@@ -462,14 +463,14 @@ struct EventMapViewRepresentable: UIViewRepresentable {
         let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
         mapView.removeAnnotations(currentAnnotations)
         
-        let newAnnotations = annotationItems.compactMap { event -> MKPointAnnotation? in
-            guard let location = event.location else { return nil }
+        let newAnnotations = annotationItems.compactMap { activity -> MKPointAnnotation? in
+            guard let location = activity.location else { return nil }
             let annotation = MKPointAnnotation()
             annotation.coordinate = CLLocationCoordinate2D(
                 latitude: location.latitude,
                 longitude: location.longitude
             )
-            annotation.title = event.title
+            annotation.title = activity.title
             return annotation
         }
         mapView.addAnnotations(newAnnotations)
@@ -480,9 +481,9 @@ struct EventMapViewRepresentable: UIViewRepresentable {
     }
     
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: EventMapViewRepresentable
+        var parent: ActivityMapViewRepresentable
         
-        init(_ parent: EventMapViewRepresentable) {
+        init(_ parent: ActivityMapViewRepresentable) {
             self.parent = parent
         }
         
@@ -506,7 +507,7 @@ struct EventMapViewRepresentable: UIViewRepresentable {
                 return nil
             }
             
-            let identifier = "EventPin"
+            let identifier = "ActivityPin"
             var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
             
             if annotationView == nil {
@@ -526,8 +527,8 @@ struct EventMapViewRepresentable: UIViewRepresentable {
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if let annotation = view.annotation,
                let title = annotation.title,
-               let event = parent.annotationItems.first(where: { $0.title == title }) {
-                parent.onEventTap(event)
+               let activity = parent.annotationItems.first(where: { $0.title == title }) {
+                parent.onActivityTap(activity)
             }
         }
     }

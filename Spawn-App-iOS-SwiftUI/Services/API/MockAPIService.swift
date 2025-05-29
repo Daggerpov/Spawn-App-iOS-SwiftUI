@@ -26,7 +26,7 @@ class MockAPIService: IAPIService {
 	{
 		/// FeedViewModel.swift:
 
-		// fetchEventsForUser():
+		// fetchActivitiesForUser():
 
 		if let userIdForUrl = userId {
 			// Support for activities endpoint
@@ -127,7 +127,7 @@ class MockAPIService: IAPIService {
 
 		// Handle calendar activities fetch
 		if url.absoluteString.contains("users/") && url.absoluteString.contains("/calendar") {
-			// Create mock calendar activities based on mock events
+			// Create mock calendar activities based on mock activities
 			let mockActivities = createMockCalendarActivities(parameters: parameters)
 			
 			// If parameters are provided, return activities for that month
@@ -260,8 +260,8 @@ class MockAPIService: IAPIService {
 	) async throws -> U {
 		/// `TagsViewModel.swift`:
 
-		// EventCardViewModel.swift - toggleParticipation():
-		if url.absoluteString.contains("events/")
+		// ActivityCardViewModel.swift - toggleParticipation():
+		if url.absoluteString.contains("activities/")
 			&& url.absoluteString.contains("/toggleStatus")
 		{
 			return FullFeedActivityDTO.mockDinnerActivity as! U
@@ -539,10 +539,10 @@ class MockAPIService: IAPIService {
 					let calendarActivity = CalendarActivityDTO(
 						id: UUID(),
 						date: date,
-						eventCategory: activity.category,
+						activityCategory: activity.category,
 						icon: activity.icon,
 						colorHexCode: activity.category.color().hex,
-						eventId: activity.id
+						activityId: activity.id
 					)
 					activities.append(calendarActivity)
 				}

@@ -4,8 +4,8 @@ import SwiftUI
 struct CalendarActivityDTO: Codable, Identifiable {
     let id: UUID
     let date: Date
-    let eventCategory: ActivityCategory?
+    let activityCategory: ActivityCategory?
     let icon: String?
     let colorHexCode: String?
-    var eventId: UUID?
+    var activityId: UUID?
 } 

@@ -71,6 +71,3 @@ enum ActivityCategory: String, Codable, CaseIterable {
         }
     }
 }
-
-// Temporary typealias for migration from EventCategory to ActivityCategory
-typealias EventCategory = ActivityCategory

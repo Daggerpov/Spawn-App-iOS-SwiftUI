@@ -1,153 +1,139 @@
 import SwiftUI
 
-struct DayEventsView: View {
-    let activities: [CalendarActivityDTO]
+struct DayActivitiesView: View {
+    let date: Date
     let onDismiss: () -> Void
-    let onEventSelected: (CalendarActivityDTO) -> Void
-
-    @StateObject private var viewModel: DayEventsViewModel
-
+    let onActivitySelected: (CalendarActivityDTO) -> Void
+    
+    @StateObject private var viewModel: DayActivitiesViewModel
+    
     init(
-        activities: [CalendarActivityDTO],
+        date: Date,
         onDismiss: @escaping () -> Void,
-        onEventSelected: @escaping (CalendarActivityDTO) -> Void
+        onActivitySelected: @escaping (CalendarActivityDTO) -> Void
     ) {
-        self.activities = activities
+        self.date = date
         self.onDismiss = onDismiss
-        self.onEventSelected = onEventSelected
-
-        // Initialize the view model
-        let apiService: IAPIService =
-            MockAPIService.isMocking
-            ? MockAPIService(
-                userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
-            )
-            : APIService()
-
-        _viewModel = StateObject(
-            wrappedValue: DayEventsViewModel(
-                apiService: apiService,
-                activities: activities
+        self.onActivitySelected = onActivitySelected
+        
+        // Initialize the view model with the date
+        self._viewModel = StateObject(
+            wrappedValue: DayActivitiesViewModel(
+                date: date,
+                apiService: MockAPIService.isMocking 
+                    ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
+                    : APIService()
             )
         )
     }
-
+    
     var body: some View {
-        VStack(spacing: 0) {
+        VStack {
             // Header
             HStack {
-                Group {
-                    if let firstActivity = activities.first {
-                        Text(viewModel.formatDate(firstActivity.date))
-                            .font(.headline)
-                    } else {
-                        Text(viewModel.headerTitle)
-                            .font(.headline)
-                    }
-                }
-                .padding(.leading)
-
+                Text(DateFormatter.dayMonthYear.string(from: date))
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                
                 Spacer()
-
-                Button(action: onDismiss) {
-                    Text("Done")
-                        .foregroundColor(universalAccentColor)
+                
+                Button("Done") {
+                    onDismiss()
                 }
-                .padding(.trailing)
             }
-            .padding(.vertical, 16)
-
-            Divider()
-
-            eventsListView
+            .padding()
+            
+            if viewModel.isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                activitiesListView
+            }
         }
     }
-
-    func getColorForEvent(
+    
+    func getColorForActivity(
         _ activity: CalendarActivityDTO,
-        event: FullFeedEventDTO? = nil
+        activity: FullFeedActivityDTO? = nil
     ) -> Color {
-        // First, check if this is a self-owned event
-        if let event = event, event.isSelfOwned == true {
+        // First, check if this is a self-owned activity
+        if let activity = activity, activity.isSelfOwned == true {
             return universalAccentColor
         }
-
-        // Check if activity has a custom color hex code
-        if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
-            return Color(hex: colorHexCode)
+        
+        // If we have a color hex code from the backend, use it
+        if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
+            return Color(hex: colorHex)
         }
-
-        // Fallback to category color
-        guard let category = activity.eventCategory else {
-            return Color.gray.opacity(0.6)  // Default color for null category
+        
+        // Otherwise, use the category color
+        guard let category = activity.activityCategory else {
+            return .gray
         }
+        
         return category.color()
     }
 }
 
-extension DayEventsView {
-    var eventsListView: some View {
-        // Events list
+extension DayActivitiesView {
+    var activitiesListView: some View {
+        // Activities list
         ScrollView {
-            VStack(spacing: 15) {
-                ForEach(activities) { activity in
-                    if let eventId = activity.eventId,
-                        let event = viewModel.getEvent(for: eventId)
+            LazyVStack(spacing: 15) {
+                ForEach(viewModel.activities, id: \.id) { activity in
+                    if let activityId = activity.activityId,
+                       let activity = viewModel.getActivity(for: activityId)
                     {
-                        // If event details are available from the view model
-                        EventCardView(
-                            userId: UserAuthViewModel.shared.spawnUser?.id
-                                ?? UUID(),
-                            event: event,
-                            color: getColorForEvent(activity, event: event),
+                        // If activity details are available from the view model
+                        ActivityCardView(
+                            userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+                            activity: activity,
+                            color: getColorForActivity(activity, activity: activity),
                             callback: { _, _ in
-                                onEventSelected(activity)
+                                onActivitySelected(activity)
                             }
                         )
-                        .padding(.horizontal)
                     } else {
-                        // Show loading state while fetching event
-                        HStack {
-                            Text("Loading event details...")
-                            if let eventId = activity.eventId,
-                                viewModel.isEventLoading(eventId)
+                        // Show loading state while fetching activity
+                        VStack {
+                            Text("Loading activity details...")
+                            if let activityId = activity.activityId,
+                               viewModel.isActivityLoading(activityId)
                             {
                                 ProgressView()
-                                    .padding(.leading, 5)
+                                    .progressViewStyle(CircularProgressViewStyle())
                             }
                         }
                         .padding()
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(10)
                         .onAppear {
-                            if let eventId = activity.eventId {
+                            if let activityId = activity.activityId {
                                 Task {
-                                    await viewModel.fetchEvent(eventId)
+                                    await viewModel.fetchActivity(activityId)
                                 }
                             }
                         }
                     }
                 }
             }
-            .padding(.vertical)
+            .padding()
         }
-        .background(universalBackgroundColor)
         .onAppear {
             Task {
-                await viewModel.loadEventsIfNeeded()
+                await viewModel.loadActivitiesIfNeeded()
             }
         }
     }
 }
 
-#if DEBUG
-    struct DayEventsView_Previews: PreviewProvider {
-        static var previews: some View {
-            DayEventsView(
-                activities: [
-                    // Sample activities would go here
-                ],
-                onDismiss: {},
-                onEventSelected: { _ in }
-            ).environmentObject(AppCache.shared)
-        }
+@available(iOS 17, *)
+struct DayActivitiesView_Previews: PreviewProvider {
+    static var previews: some View {
+        DayActivitiesView(
+            date: Date(),
+            onDismiss: {},
+            onActivitySelected: { _ in }
+        )
     }
-#endif
+}

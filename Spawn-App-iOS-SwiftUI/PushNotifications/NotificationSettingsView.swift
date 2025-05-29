@@ -50,13 +50,13 @@ struct NotificationSettingsView: View {
                                 updatePreferences()
                             }
                         
-                        Toggle("Activity Invites", isOn: $notificationService.eventInvitesEnabled)
-                            .onChange(of: notificationService.eventInvitesEnabled) { _ in
+                        Toggle("Activity Invites", isOn: $notificationService.activityInvitesEnabled)
+                            .onChange(of: notificationService.activityInvitesEnabled) { _ in
                                 updatePreferences()
                             }
                         
-                        Toggle("Activity Updates", isOn: $notificationService.eventUpdatesEnabled)
-                            .onChange(of: notificationService.eventUpdatesEnabled) { _ in
+                        Toggle("Activity Updates", isOn: $notificationService.activityUpdatesEnabled)
+                            .onChange(of: notificationService.activityUpdatesEnabled) { _ in
                                 updatePreferences()
                             }
                         
@@ -75,14 +75,14 @@ struct NotificationSettingsView: View {
                     .disabled(!notificationService.friendRequestsEnabled)
                     
                     Button("Test Activity Invite Notification") {
-                        NotificationService.shared.sendTestNotification(type: "eventInvite")
+                        NotificationService.shared.sendTestNotification(type: "activityInvite")
                     }
-                    .disabled(!notificationService.eventInvitesEnabled)
+                    .disabled(!notificationService.activityInvitesEnabled)
                     
                     Button("Test Activity Update Notification") {
-                        NotificationService.shared.sendTestNotification(type: "eventUpdate")
+                        NotificationService.shared.sendTestNotification(type: "activityUpdate")
                     }
-                    .disabled(!notificationService.eventUpdatesEnabled)
+                    .disabled(!notificationService.activityUpdatesEnabled)
                     
                     Button("Test Chat Message Notification") {
                         NotificationService.shared.sendTestNotification(type: "chat")

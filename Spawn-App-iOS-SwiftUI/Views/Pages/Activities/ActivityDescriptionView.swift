@@ -1,5 +1,5 @@
 //
-//  EventDescriptionView.swift
+//  ActivityDescriptionView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/9/24.
@@ -7,19 +7,19 @@
 
 import SwiftUI
 
-struct EventDescriptionView: View {
+struct ActivityDescriptionView: View {
 	@State private var messageText: String = ""
-	@ObservedObject var viewModel: EventDescriptionViewModel
+	@ObservedObject var viewModel: ActivityDescriptionViewModel
 	var color: Color
 
 	init(
-		event: FullFeedEventDTO, users: [BaseUserDTO]?, color: Color,
+		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
 		userId: UUID
 	) {
-		self.viewModel = EventDescriptionViewModel(
+		self.viewModel = ActivityDescriptionViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(
-					userId: userId) : APIService(), event: event,
+					userId: userId) : APIService(), activity: activity,
 			users: users,
 			senderUserId: userId
 		)
@@ -30,12 +30,12 @@ struct EventDescriptionView: View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 20) {
 				// Title and Information
-				EventCardTopRowView(event: viewModel.event)
+				ActivityCardTopRowView(activity: viewModel.activity)
 				
 				// Username display
 				HStack {
-                    Text(EventInfoViewModel(event: viewModel.event, eventInfoType: .time)
-                        .eventInfoDisplayString)
+                    Text(ActivityInfoViewModel(activity: viewModel.activity, activityInfoType: .time)
+                        .activityInfoDisplayString)
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(.white)
                         .opacity(0.5)
@@ -46,7 +46,7 @@ struct EventDescriptionView: View {
 				VStack {
 					HStack {
 						// Note
-						if let note = viewModel.event.note {
+						if let note = viewModel.activity.note {
 							Text("\(note)")
 								.font(.body)
 								.padding(.bottom, 15)
@@ -58,13 +58,13 @@ struct EventDescriptionView: View {
 					.frame(maxWidth: .infinity, alignment: .leading)
 
 					HStack(spacing: 10) {
-						EventInfoView(
-							event: viewModel.event, eventInfoType: .time)
+						ActivityInfoView(
+							activity: viewModel.activity, activityInfoType: .time)
 						
 						// Only show location if it exists
-						if viewModel.event.location?.name != nil && !(viewModel.event.location?.name.isEmpty ?? true) {
-							EventInfoView(
-								event: viewModel.event, eventInfoType: .location)
+						if viewModel.activity.location?.name != nil && !(viewModel.activity.location?.name.isEmpty ?? true) {
+							ActivityInfoView(
+								activity: viewModel.activity, activityInfoType: .location)
 						}
 						
 						Spacer()
@@ -72,17 +72,17 @@ struct EventDescriptionView: View {
 						// Add participation toggle or edit button
 						Circle()
 							.CircularButton(
-								systemName: viewModel.event.isSelfOwned == true 
-									? "pencil" // Edit icon for self-owned events
+								systemName: viewModel.activity.isSelfOwned == true 
+									? "pencil" // Edit icon for self-owned activities
 									: (viewModel.isParticipating ? "checkmark" : "star.fill"),
 								buttonActionCallback: {
 									Task {
-										if viewModel.event.isSelfOwned == true {
+										if viewModel.activity.isSelfOwned == true {
 											// Handle edit action
-											print("Edit event")
+											print("Edit activity")
 											// TODO: Implement edit functionality
 										} else {
-											// Toggle participation for non-owned events
+											// Toggle participation for non-owned activities
 											await viewModel.toggleParticipation()
 										}
 									}
@@ -92,7 +92,7 @@ struct EventDescriptionView: View {
 				}
 				.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
 
-				if let chatMessages = viewModel.event.chatMessages {
+				if let chatMessages = viewModel.activity.chatMessages {
 					Divider()
 						.frame(height: 0.5)
 						.background(Color.black)
@@ -118,13 +118,13 @@ struct EventDescriptionView: View {
 	}
 	
 	var usernamesView: some View {
-		let participantCount = (viewModel.event.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
-		let invitedCount = viewModel.event.invitedUsers?.count ?? 0
+		let participantCount = (viewModel.activity.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
+		let invitedCount = viewModel.activity.invitedUsers?.count ?? 0
 		let totalCount = participantCount + invitedCount
 		
-		let displayText = (viewModel.event.isSelfOwned == true) 
+		let displayText = (viewModel.activity.isSelfOwned == true) 
 			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
-			: "@\(viewModel.event.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(viewModel.activity.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
 		
 		return Text(displayText)
 			.foregroundColor(.white)
@@ -132,12 +132,12 @@ struct EventDescriptionView: View {
 	}
 }
 
-extension EventDescriptionView {
+extension ActivityDescriptionView {
 	var chatMessagesView: some View {
         VStack(spacing: 10) {
             ScrollView(.vertical) {
                 LazyVStack(spacing: 15) {
-                    if let chatMessages = viewModel.event.chatMessages {
+                    if let chatMessages = viewModel.activity.chatMessages {
                         ForEach(chatMessages) { chatMessage in
                             ChatMessageRow(chatMessage: chatMessage)
                         }
@@ -156,7 +156,7 @@ extension EventDescriptionView {
 	}
 
 	struct ChatMessageRow: View {
-		let chatMessage: FullEventChatMessageDTO
+		let chatMessage: FullActivityChatMessageDTO
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [
@@ -262,8 +262,8 @@ extension EventDescriptionView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	EventDescriptionView(
-		event: FullFeedEventDTO.mockDinnerEvent,
+	ActivityDescriptionView(
+		activity: FullFeedActivityDTO.mockDinnerActivity,
 		users: BaseUserDTO.mockUsers,
 		color: universalAccentColor,
 		userId: UUID()
