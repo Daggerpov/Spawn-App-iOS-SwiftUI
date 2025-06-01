@@ -92,12 +92,6 @@ struct MapView: View {
             }
         }
         
-        print("🗺 DEBUG: Filtered events count: \(filtered.count)")
-        print("📍 DEBUG: Filtered events with locations: \(filtered.filter { $0.location != nil }.count)")
-        filtered.forEach { event in
-            print("📌 DEBUG: Filtered event '\(event.title ?? "Untitled")' location: \(event.location?.latitude ?? 0), \(event.location?.longitude ?? 0)")
-        }
-        
         return filtered
     }
 
@@ -209,13 +203,12 @@ struct MapView: View {
             }
             .sheet(isPresented: $showingEventDescriptionPopup) {
                 if let event = eventInPopup, let color = colorInPopup {
-                    EventDescriptionView(
+                    EventCardPopupView(
                         event: event,
-                        users: event.participantUsers,
                         color: color,
                         userId: user.id
                     )
-                    .presentationDragIndicator(.visible)
+                    .presentationDetents([.medium, .large])
                 }
             }
 
@@ -232,7 +225,7 @@ struct MapView: View {
             if showFilterOverlay {
                 Rectangle()
                     .fill(.clear)
-					.background(.ultraThinMaterial)
+                    .background(.ultraThinMaterial)
                     .ignoresSafeArea()
                     .transition(.opacity)
                     .animation(.easeInOut, value: showFilterOverlay)
@@ -395,7 +388,6 @@ struct MapView: View {
     }
 }
 
-// MARK: - EventMapViewRepresentable
 struct EventMapViewRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var is3DMode: Bool

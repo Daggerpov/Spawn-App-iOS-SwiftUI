@@ -108,4 +108,8 @@ class FormatterService {
 		// If not a valid phone number format, return original (trimmed)
 		return trimmed
 	}
+
+	func format(_ date: Date) -> String {
+		return timeAgo(from: date)
+	}
 }
