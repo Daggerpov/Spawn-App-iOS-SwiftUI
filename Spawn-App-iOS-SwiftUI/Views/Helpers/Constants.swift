@@ -46,3 +46,13 @@ let eventCardInfoCapsuleOpacity: Double = 0.15
 let eventCardInfoCapsuleColor: Color = Color.black.opacity(eventCardInfoCapsuleOpacity)
 
 let figmaGreen: Color = Color(hex: "30D996")
+
+let figmaBlack400Hex: String = "666060"
+let figmaBlack400: Color = Color(hex: figmaBlack400Hex)
+
+let figmaOrangeHex: String = "FF7270"
+let figmaBittersweetOrange: Color = Color(hex: figmaOrangeHex)
+
+// Default map location (UBC)
+let defaultMapLatitude: Double = 49.26468617023799
+let defaultMapLongitude: Double = -123.25859833051356

@@ -49,27 +49,34 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	var body: some Scene {
 		WindowGroup {
 			Group {
-                if !userAuth.hasCheckedSpawnUserExistence {
+				if userAuth.isLoggedIn && userAuth.spawnUser != nil {
+					// User is logged in and user data exists - go to main content
+					ContentView(user: userAuth.spawnUser!)
+						.onAppear {
+							// Connect the app delegate to the app
+							appDelegate.app = self
+
+							// Initialize and validate the cache
+							Task {
+								await appCache.validateCache()
+							}
+						}
+						.onestFontTheme()
+				} else if !userAuth.hasCheckedSpawnUserExistence {
                     // Show loading screen while auth checks are in progress
                     LoadingView()
                         .onAppear {
                             // Connect the app delegate to the app
                             appDelegate.app = self
-                        }
-                } else if userAuth.isLoggedIn && userAuth.spawnUser != nil {
-                    // User is logged in and user data exists - go to main content
-                    ContentView(user: userAuth.spawnUser!)
-                        .onAppear {
-                            // Connect the app delegate to the app
-                            appDelegate.app = self
                             
-                            // Initialize and validate the cache
-                            Task {
-                                await appCache.validateCache()
+                            // If we're mocking, simulate a login with mock user
+                            if MockAPIService.isMocking {
+                                Task {
+                                    await userAuth.setMockUser()
+                                }
                             }
                         }
-                        .onestFontTheme()
-                } else {
+				} else {
                     // User is not logged in or has no user data - show launch screen with login options
                     LaunchView()
                         .onOpenURL { url in

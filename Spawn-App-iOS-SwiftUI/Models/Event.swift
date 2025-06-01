@@ -22,13 +22,8 @@ class Event: Identifiable, Codable {
 
 	// tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
 	var participantUsers: [UserDTO]?
-
-	// tech note: this will be determined by the `User`'s specified `FriendTag`s on
-	// the event, which will populate this `invited` property with the `FriendTag`s'
-	// `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
 	var invitedUsers: [UserDTO]?
 	var chatMessages: [FullEventChatMessageDTO]?
-	var eventFriendTagColorHexCodeForRequestingUser: String?
 	var participationStatus: ParticipationStatus?
 
 	init(
@@ -42,7 +37,6 @@ class Event: Identifiable, Codable {
 		participantUsers: [UserDTO]? = nil,
 		invitedUsers: [UserDTO]? = nil,
 		chatMessages: [FullEventChatMessageDTO]? = nil,
-		eventFriendTagColorHexCodeForRequestingUser: String? = nil,
 		participationStatus: ParticipationStatus? = nil
 	) {
 		self.id = id
@@ -55,8 +49,6 @@ class Event: Identifiable, Codable {
 		self.participantUsers = participantUsers
 		self.invitedUsers = invitedUsers
 		self.chatMessages = chatMessages
-		self.eventFriendTagColorHexCodeForRequestingUser =
-			eventFriendTagColorHexCodeForRequestingUser
 		self.participationStatus = participationStatus
 	}
 }

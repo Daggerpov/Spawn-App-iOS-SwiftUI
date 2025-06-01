@@ -25,13 +25,16 @@ class DayEventsViewModel: ObservableObject {
         
         // Set the header title when initialized
         updateHeaderTitle()
-        
-        // Subscribe to changes in the app cache events
-        appCache.$events
-            .sink { [weak self] _ in
-                self?.updateCachedEvents()
-            }
-            .store(in: &cancellables)
+
+		if !MockAPIService.isMocking {
+			
+			// Subscribe to changes in the app cache events
+			appCache.$events
+				.sink { [weak self] _ in
+					self?.updateCachedEvents()
+				}
+				.store(in: &cancellables)
+		}
     }
     
     // Format the date for display in the header

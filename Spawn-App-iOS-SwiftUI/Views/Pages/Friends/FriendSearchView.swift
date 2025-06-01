@@ -165,7 +165,7 @@ struct FriendSearchView: View {
                     .padding(.top, 24)
             } else {
                 ForEach(viewModel.filteredFriends) { friend in
-                    FriendRowView(friend: friend)
+					FriendRowView(friend: friend, viewModel: viewModel)
                         .padding(.horizontal, 16)
                 }
             }
@@ -203,7 +203,7 @@ struct FriendSearchView: View {
 struct FriendRowView: View {
     var user: Nameable? = nil
     var friend: FullFriendUserDTO? = nil
-    var viewModel: FriendsTabViewModel? = nil
+    var viewModel: FriendsTabViewModel
     @State private var isAdded: Bool = false
     
     var body: some View {
@@ -212,7 +212,7 @@ struct FriendRowView: View {
             let profilePicture = user?.profilePicture ?? friend?.profilePicture
             
             // Extract the appropriate user object for navigation
-            let userForProfile: Nameable = user ?? friend ?? user as! Nameable
+			let userForProfile: Nameable = user ?? friend ?? user!
             
             // Create NavigationLink around the profile picture
             NavigationLink(destination: ProfileView(user: userForProfile)) {
@@ -270,27 +270,12 @@ struct FriendRowView: View {
             Spacer()
             
             // Different controls depending on the context
-            if let friend = friend, let tags = friend.associatedFriendTagsToOwner, !tags.isEmpty {
-                // Show tag indicators for friends
-                HStack(spacing: 4) {
-                    ForEach(tags.prefix(2)) { tag in
-                        Circle()
-                            .fill(Color(hex: tag.colorHexCode))
-                            .frame(width: 10, height: 10)
-                    }
-                    
-                    if (tags.count > 2) {
-                        Text("+\(tags.count - 2)")
-                            .font(.onestRegular(size: 12))
-                            .foregroundColor(.gray)
-                    }
-                }
-            } else if let user = user, let viewModel = viewModel {
+            if let friend = friend, !isAdded {
                 // Show add button for non-friends
                 Button(action: {
                     isAdded = true
                     Task {
-                        await viewModel.addFriend(friendUserId: user.id)
+                        await viewModel.addFriend(friendUserId: friend.id)
                     }
                 }) {
                     Text(isAdded ? "Request Sent" : "Add +")

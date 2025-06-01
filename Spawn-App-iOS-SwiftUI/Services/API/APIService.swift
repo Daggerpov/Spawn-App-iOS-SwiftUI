@@ -580,7 +580,6 @@ class APIService: IAPIService {
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
-			print("ℹ️ Auth header not needed for whitelisted endpoint: \(url.absoluteString)")
 			return
 		}
 		

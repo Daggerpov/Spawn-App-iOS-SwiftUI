@@ -1,19 +1,14 @@
 //
-//  FriendsAndTagsView.swift
+//  FriendsView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 11/24/24.
+//  Created by Daniel Agapov on 2025-05-24.
 //
 
 import SwiftUI
 
-struct FriendsAndTagsView: View {
+struct FriendsView: View {
     let user: BaseUserDTO
-
-    // for add friend to tag drawer:
-    @State private var showAddFriendToTagButtonPressedView: Bool = false
-    @State private var selectedFriendTagId: UUID? = nil
-    @State private var tagsViewModel: TagsViewModel? = nil
 
     init(user: BaseUserDTO) {
         self.user = user
@@ -26,13 +21,11 @@ struct FriendsAndTagsView: View {
                     HStack {
                         Spacer()
                         FriendRequestNavButtonView
-                        FriendTagNavButtonView
                         Spacer()
                     }
                     .padding(.horizontal)
 
                     FriendsTabView(user: user)
-
                 }
                 .padding()
                 .background(universalBackgroundColor)
@@ -72,7 +65,6 @@ struct BaseFriendNavButtonView: View {
             .foregroundColor(.white)
             .padding(.leading, 8)
             .padding(.vertical, 8)
-            // TODO DANIEL A: insert logic here to get from view model the num of friend requests, like in Figma
             Image(iconImageName)
                 .resizable()
                 .frame(width: 50, height: 50)
@@ -82,7 +74,7 @@ struct BaseFriendNavButtonView: View {
     }
 }
 
-extension FriendsAndTagsView {
+extension FriendsView {
     var FriendRequestNavButtonView: some View {
         NavigationLink(destination: {
             FriendRequestsView(userId: user.id)
@@ -94,29 +86,10 @@ extension FriendsAndTagsView {
             )
         }
     }
-
-    var FriendTagNavButtonView: some View {
-        NavigationLink(destination: {
-            TagsTabView(
-                userId: user.id,
-                addFriendToTagButtonPressedCallback: {
-                    friendTagId in
-                    selectedFriendTagId = friendTagId
-                    showAddFriendToTagButtonPressedView = true
-                }
-            )
-        }) {
-            BaseFriendNavButtonView(
-                iconImageName: "friend_tag_icon",
-                topText: "Friend Tags",
-                bottomText: "Create or Edit"
-            )
-        }
-    }
 }
 
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    FriendsAndTagsView(user: .danielAgapov).environmentObject(appCache)
+    FriendsView(user: .danielAgapov).environmentObject(appCache)
 }

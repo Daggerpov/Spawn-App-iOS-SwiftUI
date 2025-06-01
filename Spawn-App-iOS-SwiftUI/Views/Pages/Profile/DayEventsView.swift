@@ -72,14 +72,6 @@ struct DayEventsView: View {
             return universalAccentColor
         }
 
-        // Check if the event has a friend tag color
-        if let event = event,
-            let hexCode = event.eventFriendTagColorHexCodeForRequestingUser,
-            !hexCode.isEmpty
-        {
-            return Color(hex: hexCode)
-        }
-
         // Check if activity has a custom color hex code
         if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
             return Color(hex: colorHexCode)

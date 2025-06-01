@@ -12,21 +12,18 @@ struct FriendsTabView: View {
 	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
-	@State var showingChooseTagsPopup: Bool = false
 	@State private var friendInPopUp: BaseUserDTO?
 	@State private var friendRequestIdInPopup: UUID?
-    @State private var mutualFriendCountInPopup: Int?
+	@State private var mutualFriendCountInPopup: Int?
 
 	// for pop-ups:
 	@State private var friendRequestOffset: CGFloat = 1000
-	@State private var chooseTagsOffset: CGFloat = 1000
 	// ------------
 
 	@StateObject private var searchViewModel = SearchViewModel()
 
 	init(user: BaseUserDTO) {
 		self.user = user
-		// Initialize the StateObject with proper wrapping to avoid warning
 		let vm = FriendsTabViewModel(
 			userId: user.id,
 			apiService: MockAPIService.isMocking
@@ -57,7 +54,7 @@ struct FriendsTabView: View {
 			.onAppear {
 				Task {
 					await viewModel.fetchAllData()
-                    viewModel.connectSearchViewModel(searchViewModel)
+					viewModel.connectSearchViewModel(searchViewModel)
 				}
 			}
             .refreshable {
@@ -303,28 +300,6 @@ struct RecommendedFriendView: View {
         .padding(.vertical, 12)
         .cornerRadius(16)
         .foregroundColor(universalAccentColor)
-    }
-}
-
-// Move FriendTagsForFriendView out of FriendsTabView
-struct FriendTagsForFriendView: View {
-    var friend: FullFriendUserDTO
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(friend.associatedFriendTagsToOwner?.prefix(3) ?? []) { friendTag in
-                if !friendTag.isEveryone {
-                    Text(friendTag.displayName)
-                        .font(.onestMedium(size: 12))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color(hex: friendTag.colorHexCode))
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                        .lineLimit(1)
-                }
-            }
-        }
-        .padding(.top, 8)
     }
 }
 

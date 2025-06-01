@@ -61,7 +61,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
         // Attempt quick login
         Task {
             print("Attempting a quick login with stored tokens")
-            await quickSignIn()
+            if MockAPIService.isMocking {
+                await setMockUser()
+            } else {
+                await quickSignIn()
+            }
+            await MainActor.run {
+                self.hasCheckedSpawnUserExistence = true
+            }
         }
 	}
 
@@ -72,7 +79,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.externalUserId = nil
 		self.idToken = nil
 		self.isLoggedIn = false
-		self.hasCheckedSpawnUserExistence = false
 		self.spawnUser = nil
 
 		self.name = nil
@@ -289,7 +295,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 							
 					await MainActor.run {
 						self.spawnUser = fetchedSpawnUser
-                        print("user id: \(fetchedSpawnUser.id)")
 						self.shouldNavigateToUserInfoInputView = false
 						self.isFormValid = true
 						self.setShouldNavigateToFeedView()
@@ -671,9 +676,21 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.shouldNavigateToUserInfoInputView = false
             }
         }
-        await MainActor.run {
-            self.hasCheckedSpawnUserExistence = true
-        }
+    }
+
+    @MainActor
+    func setMockUser() async {
+        // Set mock user details
+        self.name = "Daniel Agapov"
+        self.email = "daniel.agapov@gmail.com"
+        self.isLoggedIn = true
+        self.externalUserId = "mock_user_id"
+        self.authProvider = .google
+        self.idToken = "mock_id_token"
+        
+        // Set the mock user directly
+        self.spawnUser = BaseUserDTO.danielAgapov
+        self.hasCheckedSpawnUserExistence = true
     }
 }
 

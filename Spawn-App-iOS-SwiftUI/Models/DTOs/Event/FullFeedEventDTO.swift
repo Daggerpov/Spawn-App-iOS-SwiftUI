@@ -27,19 +27,15 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
 	var category: EventCategory = .general
+	var createdAt: Date?
 
 	// MARK: Relations
 	var creatorUser: BaseUserDTO
 
 	// tech note: I'll be able to check if current user is in an event's partipants to determine which symbol to show in feed
 	var participantUsers: [BaseUserDTO]?
-
-	// tech note: this will be determined by the `User`'s specified `FriendTag`s on
-	// the event, which will populate this `invited` property with the `FriendTag`s'
-	// `friends` property (`[User]`), which all have a `baseUser` (`User`) property.
 	var invitedUsers: [BaseUserDTO]?
 	var chatMessages: [FullEventChatMessageDTO]?
-	var eventFriendTagColorHexCodeForRequestingUser: String?
 	var participationStatus: ParticipationStatus?
 	var isSelfOwned: Bool?
 
@@ -56,9 +52,9 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 		participantUsers: [BaseUserDTO]? = nil,
 		invitedUsers: [BaseUserDTO]? = nil,
 		chatMessages: [FullEventChatMessageDTO]? = nil,
-		eventFriendTagColorHexCodeForRequestingUser: String? = nil,
 		participationStatus: ParticipationStatus? = nil,
-		isSelfOwned: Bool? = nil
+		isSelfOwned: Bool? = nil,
+		createdAt: Date? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -72,10 +68,9 @@ class FullFeedEventDTO: Identifiable, Codable, Equatable {
 		self.participantUsers = participantUsers
 		self.invitedUsers = invitedUsers
 		self.chatMessages = chatMessages
-		self.eventFriendTagColorHexCodeForRequestingUser =
-		eventFriendTagColorHexCodeForRequestingUser
 		self.participationStatus = participationStatus
 		self.isSelfOwned = isSelfOwned
+		self.createdAt = createdAt
 	}
 }
 

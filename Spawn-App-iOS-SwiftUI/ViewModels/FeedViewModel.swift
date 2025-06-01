@@ -10,7 +10,6 @@ import Combine
 
 class FeedViewModel: ObservableObject {
     @Published var events: [FullFeedEventDTO] = []
-    @Published var tags: [FullFriendTagDTO] = []
 
     var apiService: IAPIService
     var userId: UUID
@@ -22,30 +21,31 @@ class FeedViewModel: ObservableObject {
         self.userId = userId
         self.appCache = AppCache.shared
         
-        // Subscribe to AppCache events updates
-        appCache.$events
-            .sink { [weak self] cachedEvents in
-                if !cachedEvents.isEmpty {
-                    // Only use cache if this is the "Everyone" view (no active tag filter)
-                    // Convert Event to FullFeedEventDTO - this is a simplified conversion
-                    let feedEvents = cachedEvents.map { event -> FullFeedEventDTO in
-                        return FullFeedEventDTO(
-                            id: event.id,
-                            title: event.title,
-                            startTime: event.startTime,
-                            endTime: event.endTime,
-                            location: event.location,
-                            note: event.note,
-                            creatorUser: event.creatorUser,
-                            participantUsers: event.participantUsers,
-                            chatMessages: nil,
-                            eventFriendTagColorHexCodeForRequestingUser: nil
-                        )
+        // Only subscribe to AppCache if not mocking
+        if !MockAPIService.isMocking {
+            // Subscribe to AppCache events updates
+            appCache.$events
+                .sink { [weak self] cachedEvents in
+                    if !cachedEvents.isEmpty {
+                        // Convert Event to FullFeedEventDTO - this is a simplified conversion
+                        let feedEvents = cachedEvents.map { event -> FullFeedEventDTO in
+                            return FullFeedEventDTO(
+                                id: event.id,
+                                title: event.title,
+                                startTime: event.startTime,
+                                endTime: event.endTime,
+                                location: event.location,
+                                note: event.note,
+                                creatorUser: event.creatorUser,
+                                participantUsers: event.participantUsers,
+                                chatMessages: nil
+                            )
+                        }
+                        self?.events = feedEvents
                     }
-                    self?.events = feedEvents
                 }
-            }
-            .store(in: &cancellables)
+                .store(in: &cancellables)
+        }
             
         // Register for event creation notifications
         NotificationCenter.default.publisher(for: .eventCreated)
@@ -59,7 +59,6 @@ class FeedViewModel: ObservableObject {
 
     func fetchAllData() async {
         await fetchEventsForUser()
-        await fetchTagsForUser()
     }
 
     func fetchEventsForUser() async {
@@ -76,8 +75,7 @@ class FeedViewModel: ObservableObject {
                     note: event.note,
                     creatorUser: event.creatorUser,
                     participantUsers: event.participantUsers,
-                    chatMessages: nil,
-                    eventFriendTagColorHexCodeForRequestingUser: nil
+                    chatMessages: nil
                 )
             }
             
@@ -91,33 +89,10 @@ class FeedViewModel: ObservableObject {
         await fetchEventsFromAPI()
     }
     
-    private func fetchFilteredEvents(for tagId: UUID) async {
-        // Full path: /api/v1/events/friendTag/{friendTagFilterId}
-        guard let url = URL(string: APIService.baseURL + "events/friendTag/\(tagId)") else {
-            print("Failed to construct URL for filtered events")
-            return
-        }
-        
-        do {
-            let fetchedEvents: [FullFeedEventDTO] = try await self.apiService.fetchData(
-                from: url, parameters: nil
-            )
-
-            // Ensure updating on the main thread
-            await MainActor.run {
-                self.events = fetchedEvents
-            }
-        } catch {
-            await MainActor.run {
-                self.events = []
-            }
-        }
-    }
-    
     private func fetchEventsFromAPI() async {
         // Path: /api/v1/events/feedEvents/{requestingUserId}
         guard let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId)") else {
-            print("Failed to construct URL for events")
+            print("❌ DEBUG: Failed to construct URL for events")
             return
         }
 
@@ -125,6 +100,14 @@ class FeedViewModel: ObservableObject {
             let fetchedEvents: [FullFeedEventDTO] = try await self.apiService.fetchData(
                 from: url, parameters: nil
             )
+            
+            print("✅ DEBUG: Successfully fetched \(fetchedEvents.count) events")
+            print("📍 DEBUG: Events with locations: \(fetchedEvents.filter { $0.location != nil }.count)")
+            
+            // Print location details for debugging
+            fetchedEvents.forEach { event in
+                print("🗺 DEBUG: Event '\(event.title ?? "Untitled")' location: \(event.location?.latitude ?? 0), \(event.location?.longitude ?? 0)")
+            }
 
             // Convert FullFeedEventDTO to Event for caching
             let eventsForCache = fetchedEvents.map { event -> FullFeedEventDTO in
@@ -137,40 +120,20 @@ class FeedViewModel: ObservableObject {
                     note: event.note,
                     creatorUser: event.creatorUser,
                     participantUsers: event.participantUsers,
-                    chatMessages: nil,
-                    eventFriendTagColorHexCodeForRequestingUser: nil
+                    chatMessages: nil
                 )
             }
             
             // Update the cache and view model
             await MainActor.run {
                 self.events = fetchedEvents
+                print("📱 DEBUG: Updated ViewModel with \(self.events.count) events")
                 self.appCache.updateEvents(eventsForCache)
             }
         } catch {
+            print("❌ DEBUG: Error fetching events: \(error)")
             await MainActor.run {
                 self.events = []
-            }
-        }
-    }
-
-    func fetchTagsForUser() async {
-        // /api/v1/friendTags/owner/{ownerId}?full=full
-        if let url = URL(
-            string: APIService.baseURL + "friendTags/owner/\(userId)"
-        ) {
-            do {
-                let fetchedTags: [FullFriendTagDTO] = try await self.apiService
-                    .fetchData(from: url, parameters: nil)
-
-                // Ensure updating on the main thread
-                await MainActor.run {
-                    self.tags = fetchedTags
-                }
-            } catch {
-                await MainActor.run {
-                    self.tags = []
-                }
             }
         }
     }

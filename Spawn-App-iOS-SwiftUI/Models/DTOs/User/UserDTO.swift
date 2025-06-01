@@ -18,7 +18,6 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 	var profilePicture: String?
 	var name: String?
 	var bio: String?
-	var friendTagIds: [UUID]?
 	var email: String
 
 	init(
@@ -28,7 +27,6 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 		profilePicture: String? = nil,
 		name: String? = nil,
 		bio: String? = nil,
-		friendTagIds: [UUID]? = nil,
 		email: String
 	) {
 		self.id = id
@@ -37,7 +35,6 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.profilePicture = profilePicture
 		self.name = name
 		self.bio = bio
-		self.friendTagIds = friendTagIds
 		self.email = email
 	}
 }
@@ -53,7 +50,6 @@ extension UserDTO {
 			profilePicture: "Daniel_Agapov_pfp",
 			name: "Daniel Agapov",
 			bio: "This is my bio.",
-			friendTagIds: [UUID(), UUID()],
 			email: "daniel@agapov.com"
 		)
 	}()
@@ -67,7 +63,6 @@ extension UserDTO {
 			profilePicture: "Daniel_Lee_pfp",
 			name: "Daniel Lee",
 			bio: "This is my bio.",
-			friendTagIds: [UUID(), UUID()],
 			email: "daniel2456@gmail.com"
 		)
 	}()

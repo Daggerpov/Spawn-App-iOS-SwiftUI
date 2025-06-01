@@ -46,16 +46,12 @@ struct ProfileInterestsView: View {
     private var interestsSectionHeader: some View {
         HStack {
             Text("Interests + Hobbies")
-                .font(.headline)
+				.font(.onestBold(size: 14))
                 .foregroundColor(.white)
-                .padding(.vertical, 10)
-                .padding(.horizontal, 16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(universalTertiaryColor, lineWidth: 1)
-                )
-                .background(universalTertiaryColor)
-                .clipShape(Capsule())
+                .padding(.vertical, 8)
+                .padding(.horizontal, 12)
+                .background(figmaBittersweetOrange)
+                .cornerRadius(12)
 
             Spacer()
 
@@ -113,7 +109,7 @@ struct ProfileInterestsView: View {
         ZStack(alignment: .topLeading) {
             // Background for interests section
             RoundedRectangle(cornerRadius: 15)
-                .stroke(Color.red.opacity(0.7), lineWidth: 1)
+                .stroke(figmaBittersweetOrange, lineWidth: 1)
                 .background(Color.white.opacity(0.5).cornerRadius(15))
 
             if profileViewModel.userInterests.isEmpty {
@@ -127,11 +123,11 @@ struct ProfileInterestsView: View {
                             columns: [
                                 GridItem(
                                     .adaptive(minimum: 80, maximum: 150),
-                                    spacing: 8
+                                    spacing: 4
                                 )
                             ],
                             alignment: .leading,
-                            spacing: 8
+                            spacing: 4
                         ) {
                             ForEach(profileViewModel.userInterests, id: \.self)
                             { interest in
@@ -143,9 +139,8 @@ struct ProfileInterestsView: View {
                 }
             }
         }
-        .frame(height: profileViewModel.userInterests.isEmpty ? 100 : 140)
+        .frame(maxHeight: profileViewModel.userInterests.isEmpty ? 80 : 80)
         .padding(.horizontal)
-        .padding(.top, 5)
     }
 
     private var emptyInterestsView: some View {
@@ -157,35 +152,47 @@ struct ProfileInterestsView: View {
     }
 
     private func interestChip(interest: String) -> some View {
-        Text(interest)
-            .font(.subheadline)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 14)
-            .foregroundColor(universalAccentColor)
-            .background(Color.white)
-            .clipShape(Capsule())
-            .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
-            .overlay(
-                isCurrentUserProfile && editingState == .save
-                    ? HStack {
-                        Spacer()
-                        Button(action: {
-                            removeInterest(interest)
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.red)
-                                .font(.caption)
-                        }
-                        .offset(x: 5, y: -8)
-                    } : nil
-            )
+		Group{
+			if isCurrentUserProfile && editingState == .save {
+				Text(interest)
+					.font(.onestSemiBold(size: 12))
+					.padding(.vertical, 8)
+					.padding(.horizontal, 14)
+					.foregroundColor(universalAccentColor)
+					.lineLimit(1)
+					.background(Color.white)
+					.clipShape(Capsule())
+					.shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+					.overlay(
+						isCurrentUserProfile && editingState == .save
+						? HStack {
+							Spacer()
+							Button(action: {
+								removeInterest(interest)
+							}) {
+								Image(systemName: "xmark.circle.fill")
+									.foregroundColor(.red)
+									.font(.caption)
+							}
+							.offset(x: 5, y: -8)
+						} : nil
+					)
+			} else {
+				Text(interest)
+					.font(.onestSemiBold(size: 12))
+					.padding(.vertical, 8)
+					.padding(.horizontal, 4)
+					.foregroundColor(universalAccentColor)
+					.lineLimit(1)
+			}
+		}
     }
 }
 
 #Preview {
     ProfileInterestsView(
         user: BaseUserDTO.danielAgapov,
-        profileViewModel: ProfileViewModel(userId: UUID()),
+		profileViewModel: ProfileViewModel(),
         editingState: .constant(.edit),
         newInterest: .constant(""),
         openSocialMediaLink: { _, _ in },

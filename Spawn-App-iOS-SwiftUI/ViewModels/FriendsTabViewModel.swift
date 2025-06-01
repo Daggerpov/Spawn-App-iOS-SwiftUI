@@ -34,18 +34,21 @@ class FriendsTabViewModel: ObservableObject {
 		self.userId = userId
 		self.apiService = apiService
         self.appCache = AppCache.shared
-        
-        // Subscribe to AppCache friends updates
-        appCache.$friends
-            .sink { [weak self] cachedFriends in
-                if !cachedFriends.isEmpty {
-                    self?.friends = cachedFriends
-                    if !(self?.isSearching ?? false) {
-                        self?.filteredFriends = cachedFriends
-                    }
-                }
-            }
-            .store(in: &cancellables)
+
+		if !MockAPIService.isMocking {
+			
+			// Subscribe to AppCache friends updates
+			appCache.$friends
+				.sink { [weak self] cachedFriends in
+					if !cachedFriends.isEmpty {
+						self?.friends = cachedFriends
+						if !(self?.isSearching ?? false) {
+							self?.filteredFriends = cachedFriends
+						}
+					}
+				}
+				.store(in: &cancellables)
+		}
 	}
     
     // Call this method to connect the search view model to this view model
