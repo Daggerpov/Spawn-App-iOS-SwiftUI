@@ -2,8 +2,7 @@ import SwiftUI
 
 struct ShareSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject var viewModel: ActivityCreationViewModel
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Handle
@@ -72,7 +71,7 @@ struct ShareSheet: View {
     }
     
     private func shareViaSystem() {
-        let activity = viewModel.activity
+		let activity = ActivityCreationViewModel.shared.activity
         let activityURL = generateShareURL(for: activity)
         let activityVC = UIActivityViewController(
             activityItems: [activityURL],
@@ -88,14 +87,14 @@ struct ShareSheet: View {
     }
     
     private func copyLink() {
-        let activity = viewModel.activity
+        let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
         UIPasteboard.general.string = url.absoluteString
         // Show a toast or feedback that the link was copied
     }
     
     private func shareViaWhatsApp() {
-        let activity = viewModel.activity
+        let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
         let whatsappURL = URL(string: "whatsapp://send?text=\(url.absoluteString)")!
         
@@ -105,7 +104,7 @@ struct ShareSheet: View {
     }
     
     private func shareViaIMessage() {
-        let activity = viewModel.activity
+        let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
         let smsURL = URL(string: "sms:&body=\(url.absoluteString)")!
         
@@ -172,4 +171,9 @@ struct ShareOption: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-} 
+}
+
+@available(iOS 17.0, *)
+#Preview {
+    ShareSheet()
+}

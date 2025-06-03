@@ -257,4 +257,14 @@ extension DateFormatter {
         formatter.dateFormat = "MMMM yyyy"
         return formatter
     }()
+}
+
+@available(iOS 17.0, *)
+#Preview {
+    InfiniteCalendarView(
+        activities: [],
+        isLoading: false,
+        onDismiss: {},
+        onActivitySelected: { _ in }
+    )
 } 

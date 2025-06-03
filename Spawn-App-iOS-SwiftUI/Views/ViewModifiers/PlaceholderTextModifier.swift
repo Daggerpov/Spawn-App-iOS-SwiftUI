@@ -34,3 +34,21 @@ extension View {
 		self.modifier(PlaceholderTextModifier(color: color, text: text))
 	}
 }
+
+@available(iOS 17.0, *)
+#Preview {
+	@Previewable @State var text = ""
+	
+	VStack(spacing: 20) {
+		TextField("", text: $text)
+			.placeholderColor(color: .blue, text: "Enter your text here")
+			.padding()
+			.border(Color.gray)
+		
+		TextField("", text: $text)
+			.placeholderColor(color: .red, text: "Red placeholder text")
+			.padding()
+			.border(Color.gray)
+	}
+	.padding()
+}

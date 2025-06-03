@@ -72,6 +72,13 @@ struct ActivityDateTimeView: View {
                                         .foregroundColor(selectedHour == 11 ? .black : Color.gray.opacity(0.5))
                                 }
                                 .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { selectedHour = 12 }) {
+                                    Text("12")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedHour == 12 ? .black : Color.gray.opacity(0.3))
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                             
                             // Minute column
@@ -94,6 +101,13 @@ struct ActivityDateTimeView: View {
                                     .font(.system(size: 32, weight: .regular))
                                     .foregroundColor(.black)
                                 
+                                Button(action: { selectedMinute = 30 }) {
+                                    Text("30")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedMinute == 30 ? .black : Color.gray.opacity(0.7))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
                                 Button(action: { selectedMinute = 45 }) {
                                     Text("45")
                                         .font(.system(size: 24, weight: .light))
@@ -103,7 +117,7 @@ struct ActivityDateTimeView: View {
                             }
                             
                             // AM/PM column
-                            VStack(spacing: 4) {
+                            VStack(spacing: 20) {
                                 Button(action: { isAM = true }) {
                                     Text("AM")
                                         .font(.system(size: 24, weight: .light))

@@ -54,3 +54,10 @@ struct ActivityCardInfoView: View {
         .cornerRadius(10)
     }
 }
+
+@available(iOS 17.0, *)
+#Preview {
+    ActivityCardInfoView(activity: FullFeedActivityDTO.mockDinnerActivity)
+        .padding()
+        .background(Color.blue)
+}

@@ -192,3 +192,8 @@ struct ChangePasswordView: View {
     }
 }
 
+@available(iOS 17.0, *)
+#Preview {
+    ChangePasswordView()
+}
+
