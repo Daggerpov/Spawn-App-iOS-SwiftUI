@@ -15,6 +15,13 @@ struct ActivityCreationView: View {
     @State private var currentStep: ActivityCreationStep = .activityType
     @State private var selectedDuration: ActivityDuration = .indefinite
     @State private var showLocationPicker = false
+    @State private var showShareSheet = false
+    
+    // Time selection state
+    @State private var selectedHour: Int = 9
+    @State private var selectedMinute: Int = 30
+    @State private var isAM: Bool = true
+    @State private var activityTitle: String = ""
     
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
@@ -35,6 +42,9 @@ struct ActivityCreationView: View {
                     .animation(.easeInOut, value: currentStep)
             }
             .background(Color(.systemBackground))
+            .sheet(isPresented: $showShareSheet) {
+                ShareSheet()
+            }
         }
     }
     
@@ -84,206 +94,32 @@ struct ActivityCreationView: View {
     private var content: some View {
         switch currentStep {
         case .activityType:
-            activityTypeView
-        case .dateTime:
-            dateTimeView
-        case .location:
-            locationView
-        case .confirmation:
-            confirmationView
-        }
-    }
-    
-    private var activityTypeView: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("What are you up to?")
-                .font(.title2)
-                .fontWeight(.bold)
-                .padding(.horizontal)
-            
-            ScrollView {
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 16) {
-                    ForEach(ActivityType.allCases, id: \.self) { type in
-                        ActivityTypeCard(type: type, selectedType: $viewModel.selectedType)
-                    }
-                }
-                .padding()
-            }
-            
-            Button(action: {
+            ActivityTypeView(selectedType: $viewModel.selectedType) {
                 currentStep = .dateTime
-            }) {
-                Text("Next Step")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(universalSecondaryColor)
-                    .cornerRadius(12)
             }
-            .padding()
-            .disabled(viewModel.selectedType == nil)
-            .opacity(viewModel.selectedType == nil ? 0.6 : 1)
-        }
-    }
-    
-    private var dateTimeView: some View {
-        VStack(spacing: 20) {
-            // Date Picker
-            DatePicker(
-                "Select Date",
-                selection: $viewModel.selectedDate,
-                displayedComponents: [.date, .hourAndMinute]
-            )
-            .datePickerStyle(.graphical)
-            .padding()
-            
-            // Duration Selection
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Activity Duration")
-                    .font(.headline)
-                    .padding(.horizontal)
-                
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(ActivityDuration.allCases, id: \.self) { duration in
-                            Button(action: { selectedDuration = duration }) {
-                                Text(duration.title)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 20)
-                                            .fill(selectedDuration == duration ? universalSecondaryColor : Color.gray.opacity(0.1))
-                                    )
-                                    .foregroundColor(selectedDuration == duration ? .white : .primary)
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-            }
-            
-            Spacer()
-            
-            Button(action: {
+        case .dateTime:
+            ActivityDateTimeView(
+                selectedHour: $selectedHour,
+                selectedMinute: $selectedMinute,
+                isAM: $isAM,
+                activityTitle: $activityTitle,
+                selectedDuration: $selectedDuration
+            ) {
                 currentStep = .location
-            }) {
-                Text("Next Step")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(universalSecondaryColor)
-                    .cornerRadius(12)
             }
-            .padding()
-        }
-    }
-    
-    private var locationView: some View {
-        VStack(spacing: 20) {
-            TextField("Where at?", text: .constant(""))
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            
-            // Current Location
-            Button(action: {
-                // Handle current location selection
-            }) {
-                HStack {
-                    Image(systemName: "location.fill")
-                    Text("Current Location")
-                    Spacer()
-                    Text("5934 University Blvd")
-                        .foregroundColor(.gray)
-                }
-                .padding()
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(12)
-            }
-            .foregroundColor(.primary)
-            
-            List {
-                ForEach(["UBC Sauder School of Business", "AMS Student Nest", "Starbucks Coffee", "Thunderbird Park"], id: \.self) { location in
-                    Button(action: {
-                        // Handle location selection
-                    }) {
-                        HStack {
-                            Text(location)
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                        }
-                    }
-                    .foregroundColor(.primary)
-                }
-            }
-            .listStyle(PlainListStyle())
-            
-            Button(action: {
+        case .location:
+            ActivityCreationLocationView {
                 currentStep = .confirmation
-            }) {
-                Text("Next Step")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(universalSecondaryColor)
-                    .cornerRadius(12)
             }
-            .padding()
-        }
-    }
-    
-    private var confirmationView: some View {
-        VStack(spacing: 24) {
-            Image(systemName: "checkmark.circle.fill")
-                .resizable()
-                .frame(width: 60, height: 60)
-                .foregroundColor(.green)
-            
-            Text("Success!")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Text("You've spawned in and \"Morning Stroll\" is now live for your friends.")
-                .multilineTextAlignment(.center)
-                .foregroundColor(.gray)
-            
-            Button(action: {
-                // Handle share action
-            }) {
-                HStack {
-                    Image(systemName: "square.and.arrow.up")
-                    Text("Share with your network")
+        case .confirmation:
+            ActivityConfirmationView(
+                showShareSheet: $showShareSheet,
+                onClose: {
+                    ActivityCreationViewModel.reInitialize()
+                    closeCallback()
                 }
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(
-                    LinearGradient(
-                        gradient: Gradient(colors: [Color.blue, Color.purple]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(12)
-            }
-            
-            Button(action: {
-                ActivityCreationViewModel.reInitialize()
-                closeCallback()
-            }) {
-                Text("Return to Home")
-                    .font(.headline)
-                    .foregroundColor(.primary)
-            }
+            )
         }
-        .padding()
     }
 }
 
@@ -355,40 +191,6 @@ enum ActivityDuration: CaseIterable {
         case .oneHour: return "1 hour"
         case .thirtyMinutes: return "30 mins"
         }
-    }
-}
-
-struct ActivityTypeCard: View {
-    let type: ActivityType
-    @Binding var selectedType: ActivityType?
-    
-    var body: some View {
-        Button(action: { selectedType = type }) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(type.icon)
-                        .font(.title)
-                    Spacer()
-                    Text("\(type.peopleCount) people")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                
-                Text(type.rawValue)
-                    .font(.headline)
-            }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(selectedType == type ? universalSecondaryColor.opacity(0.1) : Color.gray.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(selectedType == type ? universalSecondaryColor : Color.clear, lineWidth: 2)
-                    )
-            )
-        }
-        .foregroundColor(.primary)
     }
 }
 
