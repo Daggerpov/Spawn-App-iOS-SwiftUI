@@ -8,150 +8,44 @@ struct ActivityDateTimeView: View {
     @Binding var selectedDuration: ActivityDuration
     let onNext: () -> Void
     
-    // Time picker state
-    @State private var selectedDay: Int = 0 // 0 = Today, 1 = Tomorrow
-    @State private var todayHour: Int = 9
-    @State private var todayMinute: Int = 30
-    @State private var todayIsAM: Bool = true
-    @State private var tomorrowHour: Int = 10
-    @State private var tomorrowMinute: Int = 45
-    @State private var tomorrowIsAM: Bool = false
+    // Native date picker state
+    @State private var selectedDate: Date = Date()
     
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 24) {
-                    // Time Picker Section
-                    VStack(spacing: 0) {
-                        // Number columns
-                        HStack(spacing: 0) {
-                            Spacer()
-                            
-                            // Hour column
-                            VStack(spacing: 8) {
-                                ForEach([6, 7, 8, 9, 10, 11, 12], id: \.self) { hour in
-                                    Text("\(hour)")
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(
-                                            (selectedDay == 0 && todayHour == hour) || 
-                                            (selectedDay == 1 && tomorrowHour == hour) 
-                                            ? universalAccentColor : figmaBlack300
-                                        )
-                                        .onTapGesture {
-                                            if selectedDay == 0 {
-                                                todayHour = hour
-                                                selectedHour = hour
-                                            } else {
-                                                tomorrowHour = hour
-                                            }
-                                        }
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            // Minute column
-                            VStack(spacing: 8) {
-                                ForEach([0, 15, 30, 45], id: \.self) { minute in
-                                    Text(String(format: "%02d", minute))
-                                        .font(.system(size: 24, weight: .bold))
-                                        .foregroundColor(
-                                            (selectedDay == 0 && todayMinute == minute) || 
-                                            (selectedDay == 1 && tomorrowMinute == minute) 
-                                            ? universalAccentColor : figmaBlack300
-                                        )
-                                        .onTapGesture {
-                                            if selectedDay == 0 {
-                                                todayMinute = minute
-                                                selectedMinute = minute
-                                            } else {
-                                                tomorrowMinute = minute
-                                            }
-                                        }
-                                }
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(.vertical, 20)
-                        
-                        // Day selection with time display
-                        VStack(spacing: 12) {
-                            // Today row
-                            HStack {
-                                Button(action: {
-                                    selectedDay = 0
-                                    selectedHour = todayHour
-                                    selectedMinute = todayMinute
-                                    isAM = todayIsAM
-                                }) {
-                                    HStack {
-                                        Text("Today")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 0 ? universalAccentColor : figmaBlack300)
-                                        
-                                        Spacer()
-                                        
-                                        Text("\(todayHour)")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 0 ? universalAccentColor : figmaBlack300)
-                                        
-                                        Text(String(format: "%02d", todayMinute))
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 0 ? universalAccentColor : figmaBlack300)
-                                        
-                                        Text(todayIsAM ? "AM" : "PM")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 0 ? universalAccentColor : figmaBlack300)
-                                    }
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(selectedDay == 0 ? universalPassiveColor.opacity(0.3) : Color.clear)
-                            )
-                            
-                            // Tomorrow row
-                            HStack {
-                                Button(action: {
-                                    selectedDay = 1
-                                    selectedHour = tomorrowHour
-                                    selectedMinute = tomorrowMinute
-                                    isAM = tomorrowIsAM
-                                }) {
-                                    HStack {
-                                        Text("Tomorrow")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 1 ? universalAccentColor : figmaBlack300)
-                                        
-                                        Spacer()
-                                        
-                                        Text("\(tomorrowHour)")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 1 ? universalAccentColor : figmaBlack300)
-                                        
-                                        Text(String(format: "%02d", tomorrowMinute))
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 1 ? universalAccentColor : figmaBlack300)
-                                        
-                                        Text(tomorrowIsAM ? "AM" : "PM")
-                                            .font(.system(size: 20, weight: .bold))
-                                            .foregroundColor(selectedDay == 1 ? universalAccentColor : figmaBlack300)
-                                    }
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 8)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(selectedDay == 1 ? universalPassiveColor.opacity(0.3) : Color.clear)
-                            )
-                        }
+                    // Native Time Picker Section
+                    VStack(spacing: 16) {
+                        DatePicker(
+                            "",
+                            selection: $selectedDate,
+                            displayedComponents: [.hourAndMinute]
+                        )
+                        .datePickerStyle(.wheel)
                         .padding(.horizontal, 20)
+                        .onChange(of: selectedDate) { newValue in
+                            let calendar = Calendar.current
+                            let hour = calendar.component(.hour, from: newValue)
+                            let minute = calendar.component(.minute, from: newValue)
+                            
+                            // Convert to 12-hour format
+                            if hour == 0 {
+                                selectedHour = 12
+                                isAM = true
+                            } else if hour < 12 {
+                                selectedHour = hour
+                                isAM = true
+                            } else if hour == 12 {
+                                selectedHour = 12
+                                isAM = false
+                            } else {
+                                selectedHour = hour - 12
+                                isAM = false
+                            }
+                            
+                            selectedMinute = minute
+                        }
                     }
                     
                     // Title Section
@@ -184,7 +78,7 @@ struct ActivityDateTimeView: View {
                             Spacer()
                         }
                         
-                        // Duration buttons
+                        // Duration buttons - horizontal layout
                         HStack(spacing: 8) {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
                                 Button(action: { selectedDuration = duration }) {
@@ -228,10 +122,21 @@ struct ActivityDateTimeView: View {
         }
         .background(universalBackgroundColor)
         .onAppear {
-            // Initialize with today's selection
-            selectedHour = todayHour
-            selectedMinute = todayMinute
-            isAM = todayIsAM
+            // Initialize selectedDate with current time
+            let calendar = Calendar.current
+            let now = Date()
+            
+            // Set the date picker to the current bound values if they exist
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
+            
+            // Convert 12-hour to 24-hour format
+            let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+            dateComponents.hour = hour24
+            dateComponents.minute = selectedMinute
+            
+            if let initialDate = calendar.date(from: dateComponents) {
+                selectedDate = initialDate
+            }
         }
     }
 }
