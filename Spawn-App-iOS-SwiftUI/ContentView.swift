@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     var user: BaseUserDTO
-    @State private var showEventCreationDrawer: Bool = false
+    @State private var showActivityCreationDrawer: Bool = false
     @State private var selectedTab: Int = 0
 
     var body: some View {
@@ -74,7 +74,7 @@ struct ContentView: View {
                         let previousTab = selectedTab
                         // Return to previous tab (but avoid returning to the create tab itself)
                         selectedTab = previousTab == 2 ? 0 : previousTab
-                        showEventCreationDrawer = true
+                        showActivityCreationDrawer = true
                     }
                 }
             }
@@ -87,11 +87,11 @@ struct ContentView: View {
                 UITabBar.appearance().unselectedItemTintColor = UIColor.black
             }
         }
-        .sheet(isPresented: $showEventCreationDrawer) {
-            EventCreationView(
+        .sheet(isPresented: $showActivityCreationDrawer) {
+            ActivityCreationView(
                 creatingUser: user,
                 closeCallback: {
-                    showEventCreationDrawer = false
+                    showActivityCreationDrawer = false
                 }
             )
             .presentationDragIndicator(.visible)

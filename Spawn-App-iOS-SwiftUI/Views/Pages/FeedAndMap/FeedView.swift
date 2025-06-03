@@ -13,11 +13,11 @@ struct FeedView: View {
 
     @Namespace private var animation: Namespace.ID
 
-    @State private var showingEventDescriptionPopup: Bool = false
-    @State private var eventInPopup: FullFeedEventDTO?
+    @State private var showingActivityDescriptionPopup: Bool = false
+    @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
 
-    @State private var showEventCreationDrawer: Bool = false
+    @State private var showActivityCreationDrawer: Bool = false
 
     // for popups:
     @State private var creationOffset: CGFloat = 1000
@@ -40,14 +40,14 @@ struct FeedView: View {
         ZStack {
             NavigationStack {
                 VStack {
-                    HeaderView(user: user, numEvents: viewModel.events.count).padding(.top, 75)
+                    HeaderView(user: user, numActivities: viewModel.activities.count).padding(.top, 75)
                     Spacer()
-                    eventsListView
+                    activitiesListView
                 }
                 .background(universalBackgroundColor)
                 .ignoresSafeArea(.container, edges: .top)
                 .dimmedBackground(
-                    isActive: showEventCreationDrawer
+                    isActive: showActivityCreationDrawer
                 )
             }
             .background(universalBackgroundColor)
@@ -61,26 +61,26 @@ struct FeedView: View {
             }
             .refreshable {
                 Task {
-                    await AppCache.shared.refreshEvents()
+                    await AppCache.shared.refreshActivities()
                     await viewModel.fetchAllData()
                 }
             }
-            .sheet(isPresented: $showingEventDescriptionPopup) {
-                if let event = eventInPopup, let color = colorInPopup {
-                    EventDescriptionView(
-                        event: event,
-                        users: event.participantUsers,
+            .sheet(isPresented: $showingActivityDescriptionPopup) {
+                if let activity = activityInPopup, let color = colorInPopup {
+                    ActivityDescriptionView(
+                        activity: activity,
+                        users: activity.participantUsers,
                         color: color,
                         userId: user.id
                     )
                     .presentationDragIndicator(.visible)
                 }
             }
-            .sheet(isPresented: $showEventCreationDrawer) {
-                EventCreationView(
+            .sheet(isPresented: $showActivityCreationDrawer) {
+                ActivityCreationView(
                     creatingUser: user,
                     closeCallback: {
-                        showEventCreationDrawer = false
+                        showActivityCreationDrawer = false
                     }
                 )
                 .presentationDragIndicator(.visible)
@@ -89,9 +89,9 @@ struct FeedView: View {
     }
 
     func closeCreation() {
-        EventCreationViewModel.reInitialize()
+        ActivityCreationViewModel.reInitialize()
         creationOffset = 1000
-        showEventCreationDrawer = false
+        showActivityCreationDrawer = false
     }
 }
 
@@ -101,30 +101,30 @@ struct FeedView: View {
 }
 
 extension FeedView {
-    var eventsListView: some View {
+    var activitiesListView: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: 25) {
-                if viewModel.events.isEmpty {
-                    Image("EventNotFound")
+                if viewModel.activities.isEmpty {
+                    Image("ActivityNotFound")
                         .resizable()
                         .frame(width: 125, height: 125)
-                    Text("No Events Found").font(.onestSemiBold(size: 32)).foregroundColor(universalAccentColor)
-                    Text("We couldn't find any events nearby.\nStart one yourself and be spontaneous!")
+                    Text("No Activities Found").font(.onestSemiBold(size: 32)).foregroundColor(universalAccentColor)
+                    Text("We couldn't find any activities nearby.\nStart one yourself and be spontaneous!")
                         .font(.onestRegular(size: 16))
                         .multilineTextAlignment(.center)
                         .foregroundColor(figmaBlack300)
-                    CreateEventButton(showEventCreationDrawer: $showEventCreationDrawer)
+                    CreateActivityButton(showActivityCreationDrawer: $showActivityCreationDrawer)
                 } else {
-                    ForEach(viewModel.events) { event in
-                        EventCardView(
+                    ForEach(viewModel.activities) { activity in
+                        ActivityCardView(
                             userId: user.id,
-                            event: event,
-                            color: event.category.color()
+                            activity: activity,
+                            color: activity.category.color()
                         )
-                        { event, color in
-                            eventInPopup = event
+                        { activity, color in
+                            activityInPopup = activity
                             colorInPopup = color
-                            showingEventDescriptionPopup = true
+                            showingActivityDescriptionPopup = true
                         }
                     }
                 }

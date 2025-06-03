@@ -9,7 +9,7 @@ import Foundation
 import Combine
 
 class FeedViewModel: ObservableObject {
-    @Published var events: [FullFeedEventDTO] = []
+    @Published var activities: [FullFeedActivityDTO] = []
 
     var apiService: IAPIService
     var userId: UUID
@@ -23,117 +23,73 @@ class FeedViewModel: ObservableObject {
         
         // Only subscribe to AppCache if not mocking
         if !MockAPIService.isMocking {
-            // Subscribe to AppCache events updates
-            appCache.$events
-                .sink { [weak self] cachedEvents in
-                    if !cachedEvents.isEmpty {
-                        // Convert Event to FullFeedEventDTO - this is a simplified conversion
-                        let feedEvents = cachedEvents.map { event -> FullFeedEventDTO in
-                            return FullFeedEventDTO(
-                                id: event.id,
-                                title: event.title,
-                                startTime: event.startTime,
-                                endTime: event.endTime,
-                                location: event.location,
-                                note: event.note,
-                                creatorUser: event.creatorUser,
-                                participantUsers: event.participantUsers,
-                                chatMessages: nil
-                            )
-                        }
-                        self?.events = feedEvents
+            // Subscribe to AppCache activities updates
+            appCache.$activities
+                .sink { [weak self] cachedActivities in
+                    if !cachedActivities.isEmpty {
+                        self?.activities = cachedActivities
                     }
                 }
                 .store(in: &cancellables)
         }
             
-        // Register for event creation notifications
-        NotificationCenter.default.publisher(for: .eventCreated)
+        // Register for activity creation notifications
+        NotificationCenter.default.publisher(for: .activityCreated)
             .sink { [weak self] _ in
                 Task {
-                    await self?.fetchEventsForUser()
+                    await self?.fetchActivitiesForUser()
                 }
             }
             .store(in: &cancellables)
     }
 
     func fetchAllData() async {
-        await fetchEventsForUser()
+        await fetchActivitiesForUser()
     }
 
-    func fetchEventsForUser() async {
-        // Check the cache first for unfiltered events
-        if !appCache.events.isEmpty {
-            // Convert Event to FullFeedEventDTO
-            let feedEvents = appCache.events.map { event -> FullFeedEventDTO in
-                return FullFeedEventDTO(
-                    id: event.id,
-                    title: event.title,
-                    startTime: event.startTime,
-                    endTime: event.endTime,
-                    location: event.location,
-                    note: event.note,
-                    creatorUser: event.creatorUser,
-                    participantUsers: event.participantUsers,
-                    chatMessages: nil
-                )
-            }
-            
+    func fetchActivitiesForUser() async {
+        // Check the cache first for unfiltered activities
+        if !appCache.activities.isEmpty {
             await MainActor.run {
-                self.events = feedEvents
+                self.activities = appCache.activities
             }
             return
         }
         
         // If not in cache, fetch from API
-        await fetchEventsFromAPI()
+        await fetchActivitiesFromAPI()
     }
     
-    private func fetchEventsFromAPI() async {
-        // Path: /api/v1/events/feedEvents/{requestingUserId}
-        guard let url = URL(string: APIService.baseURL + "events/feedEvents/\(userId)") else {
-            print("❌ DEBUG: Failed to construct URL for events")
+    private func fetchActivitiesFromAPI() async {
+        // Path: /api/v1/activities/feedActivities/{requestingUserId}
+        guard let url = URL(string: APIService.baseURL + "activities/feedActivities/\(userId)") else {
+            print("❌ DEBUG: Failed to construct URL for activities")
             return
         }
 
         do {
-            let fetchedEvents: [FullFeedEventDTO] = try await self.apiService.fetchData(
+            let fetchedActivities: [FullFeedActivityDTO] = try await self.apiService.fetchData(
                 from: url, parameters: nil
             )
             
-            print("✅ DEBUG: Successfully fetched \(fetchedEvents.count) events")
-            print("📍 DEBUG: Events with locations: \(fetchedEvents.filter { $0.location != nil }.count)")
+            print("✅ DEBUG: Successfully fetched \(fetchedActivities.count) activities")
+            print("📍 DEBUG: Activities with locations: \(fetchedActivities.filter { $0.location != nil }.count)")
             
             // Print location details for debugging
-            fetchedEvents.forEach { event in
-                print("🗺 DEBUG: Event '\(event.title ?? "Untitled")' location: \(event.location?.latitude ?? 0), \(event.location?.longitude ?? 0)")
-            }
-
-            // Convert FullFeedEventDTO to Event for caching
-            let eventsForCache = fetchedEvents.map { event -> FullFeedEventDTO in
-                return FullFeedEventDTO(
-                    id: event.id,
-                    title: event.title,
-                    startTime: event.startTime,
-                    endTime: event.endTime,
-                    location: event.location,
-                    note: event.note,
-                    creatorUser: event.creatorUser,
-                    participantUsers: event.participantUsers,
-                    chatMessages: nil
-                )
+            fetchedActivities.forEach { activity in
+                print("🗺 DEBUG: Activity '\(activity.title ?? "Untitled")' location: \(activity.location?.latitude ?? 0), \(activity.location?.longitude ?? 0)")
             }
             
             // Update the cache and view model
             await MainActor.run {
-                self.events = fetchedEvents
-                print("📱 DEBUG: Updated ViewModel with \(self.events.count) events")
-                self.appCache.updateEvents(eventsForCache)
+                self.activities = fetchedActivities
+                print("📱 DEBUG: Updated ViewModel with \(self.activities.count) activities")
+                self.appCache.updateActivities(fetchedActivities)
             }
         } catch {
-            print("❌ DEBUG: Error fetching events: \(error)")
+            print("❌ DEBUG: Error fetching activities: \(error)")
             await MainActor.run {
-                self.events = []
+                self.activities = []
             }
         }
     }
