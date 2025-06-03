@@ -110,6 +110,41 @@
       "name": "APIService Usage",
       "pattern": "\\.(swift)$",
       "rule": "Always use the APIService methods for network calls. Never implement direct URL session calls in ViewModels"
+    },
+    {
+      "name": "App Color Usage - Universal Colors",
+      "pattern": "\\.(swift)$",
+      "rule": "ALWAYS use app-defined colors from Constants.swift instead of SwiftUI's default colors. Use universalBackgroundColor instead of .white, universalAccentColor instead of .black or .primary, universalSecondaryColor instead of .accentColor. Never use Color.primary, Color.secondary, .white, .black directly."
+    },
+    {
+      "name": "App Color Usage - Figma Colors",
+      "pattern": "\\.(swift)$",
+      "rule": "For UI elements that match the Figma design, ALWAYS use the figma-prefixed colors (figmaBlue, figmaSoftBlue, figmaBlack300, figmaBlack400, figmaGreen, figmaBittersweetOrange) instead of creating custom colors or using SwiftUI defaults."
+    },
+    {
+      "name": "App Color Usage - Backgrounds",
+      "pattern": "\\.(swift)$",
+      "rule": "For backgrounds, use universalBackgroundColor for main backgrounds, authPageBackgroundColor for auth screens. Never use Color.white, .background, or system background colors directly."
+    },
+    {
+      "name": "App Color Usage - Text Colors",
+      "pattern": "\\.(swift)$",
+      "rule": "For text colors, use universalAccentColor for primary text, figmaBlack300 for secondary text, universalPlaceHolderTextColor for placeholder text. Avoid .primary, .secondary, or .foregroundColor without specifying the exact color."
+    },
+    {
+      "name": "App Color Usage - Interactive Elements",
+      "pattern": "\\.(swift)$",
+      "rule": "For buttons and interactive elements, use figmaBlue for primary actions, figmaSoftBlue for secondary actions, universalPassiveColor for disabled states. Never use system accent colors or .tint without explicit color definition."
+    },
+    {
+      "name": "App Color Usage - Activity Colors",
+      "pattern": "\\.(swift)$",
+      "rule": "For activity-related UI, use the predefined activityColors array or activityColorHexCodes. Each activity should have consistent color usage across all screens."
+    },
+    {
+      "name": "Color Constants Import",
+      "pattern": "\\.(swift)$",
+      "rule": "All color constants are defined in Views/Helpers/Constants.swift. Import this file or ensure colors are accessible when creating new views. Never hardcode hex values directly in views."
     }
   ]
 } 
