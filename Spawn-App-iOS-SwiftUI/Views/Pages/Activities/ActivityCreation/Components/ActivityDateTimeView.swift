@@ -34,50 +34,89 @@ struct ActivityDateTimeView: View {
                         HStack(spacing: 30) {
                             // Hour column
                             VStack(spacing: 4) {
-                                Text("6")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.3))
-                                Text("7")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.5))
-                                Text("8")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.7))
+                                Button(action: { selectedHour = 6 }) {
+                                    Text("6")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedHour == 6 ? .black : Color.gray.opacity(0.3))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { selectedHour = 7 }) {
+                                    Text("7")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedHour == 7 ? .black : Color.gray.opacity(0.5))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { selectedHour = 8 }) {
+                                    Text("8")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedHour == 8 ? .black : Color.gray.opacity(0.7))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
                                 Text("\(selectedHour)")
                                     .font(.system(size: 32, weight: .regular))
                                     .foregroundColor(.black)
-                                Text("10")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.7))
-                                Text("11")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.5))
+                                
+                                Button(action: { selectedHour = 10 }) {
+                                    Text("10")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedHour == 10 ? .black : Color.gray.opacity(0.7))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { selectedHour = 11 }) {
+                                    Text("11")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedHour == 11 ? .black : Color.gray.opacity(0.5))
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                             
                             // Minute column
                             VStack(spacing: 4) {
-                                Text("00")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.3))
-                                Text("15")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.7))
-                                Text("\(selectedMinute)")
+                                Button(action: { selectedMinute = 0 }) {
+                                    Text("00")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedMinute == 0 ? .black : Color.gray.opacity(0.3))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { selectedMinute = 15 }) {
+                                    Text("15")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedMinute == 15 ? .black : Color.gray.opacity(0.7))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Text(String(format: "%02d", selectedMinute))
                                     .font(.system(size: 32, weight: .regular))
                                     .foregroundColor(.black)
-                                Text("45")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.7))
+                                
+                                Button(action: { selectedMinute = 45 }) {
+                                    Text("45")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedMinute == 45 ? .black : Color.gray.opacity(0.7))
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                             
                             // AM/PM column
                             VStack(spacing: 4) {
-                                Text("AM")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(isAM ? .black : Color.gray.opacity(0.3))
-                                Text("PM")
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundColor(!isAM ? .black : Color.gray.opacity(0.3))
+                                Button(action: { isAM = true }) {
+                                    Text("AM")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(isAM ? .black : Color.gray.opacity(0.3))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { isAM = false }) {
+                                    Text("PM")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(!isAM ? .black : Color.gray.opacity(0.3))
+                                }
+                                .buttonStyle(PlainButtonStyle())
                             }
                         }
                         .frame(height: 160) // Reduced from 280 to 160
