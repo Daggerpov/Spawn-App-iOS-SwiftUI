@@ -165,9 +165,10 @@ struct LocationPickerView: View {
                 // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass")
-                        .foregroundColor(.gray)
+                        .foregroundColor(figmaBlack300)
                     
                     TextField("Where at?", text: $searchText)
+                        .foregroundColor(universalAccentColor)
                         .onChange(of: searchText) { _ in
                             searchLocations()
                         }
@@ -188,10 +189,10 @@ struct LocationPickerView: View {
                                     .foregroundColor(.blue)
                                 VStack(alignment: .leading) {
                                     Text("Current Location")
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor)
                                     Text("5934 University Blvd, Vancouver, BC V6T 1G2")
                                         .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(figmaBlack300)
                                 }
                                 Spacer()
                             }
@@ -211,13 +212,13 @@ struct LocationPickerView: View {
                         }) {
                             HStack {
                                 Image(systemName: "mappin.circle")
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(figmaBlack300)
                                 VStack(alignment: .leading) {
                                     Text(location.0)
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor)
                                     Text(location.1)
                                         .font(.caption)
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(figmaBlack300)
                                 }
                                 Spacer()
                             }
@@ -231,9 +232,9 @@ struct LocationPickerView: View {
                     }) {
                         HStack {
                             Image(systemName: "map")
-                                .foregroundColor(.gray)
+                                .foregroundColor(figmaBlack300)
                             Text("Set Location on Map")
-                                .foregroundColor(.black)
+                                .foregroundColor(universalAccentColor)
                             Spacer()
                         }
                         .padding(.vertical, 4)
@@ -245,9 +246,9 @@ struct LocationPickerView: View {
                     }) {
                         HStack {
                             Image(systemName: "star")
-                                .foregroundColor(.gray)
+                                .foregroundColor(figmaBlack300)
                             Text("Saved Locations")
-                                .foregroundColor(.black)
+                                .foregroundColor(universalAccentColor)
                             Spacer()
                         }
                         .padding(.vertical, 4)
@@ -260,14 +261,14 @@ struct LocationPickerView: View {
                         }) {
                             HStack {
                                 Image(systemName: "mappin.circle")
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(figmaBlack300)
                                 VStack(alignment: .leading) {
                                     Text(item.name ?? "Unknown Location")
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor)
                                     if let address = item.placemark.formattedAddress() {
                                         Text(address)
                                             .font(.caption)
-                                            .foregroundColor(.gray)
+                                            .foregroundColor(figmaBlack300)
                                     }
                                 }
                                 Spacer()

@@ -28,75 +28,71 @@ struct ActivityDateTimeView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 32) {
-                    // Custom Time Display Section
+                    // Compact Time Display Section
                     VStack(spacing: 16) {
-                        // Time numbers display
-                        HStack(spacing: 40) {
+                        // Compact time picker - inline with Today/Tomorrow
+                        HStack(spacing: 30) {
                             // Hour column
-                            VStack(spacing: 8) {
+                            VStack(spacing: 4) {
                                 Text("6")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.3))
                                 Text("7")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.5))
                                 Text("8")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.7))
                                 Text("\(selectedHour)")
-                                    .font(.system(size: 40, weight: .regular))
+                                    .font(.system(size: 32, weight: .regular))
                                     .foregroundColor(.black)
                                 Text("10")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.7))
                                 Text("11")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.5))
-                                Text("12")
-                                    .font(.system(size: 32, weight: .light))
-                                    .foregroundColor(Color.gray.opacity(0.3))
                             }
                             
                             // Minute column
-                            VStack(spacing: 8) {
+                            VStack(spacing: 4) {
                                 Text("00")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.3))
                                 Text("15")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.7))
                                 Text("\(selectedMinute)")
-                                    .font(.system(size: 40, weight: .regular))
+                                    .font(.system(size: 32, weight: .regular))
                                     .foregroundColor(.black)
                                 Text("45")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(Color.gray.opacity(0.7))
                             }
                             
                             // AM/PM column
-                            VStack(spacing: 8) {
+                            VStack(spacing: 4) {
                                 Text("AM")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(isAM ? .black : Color.gray.opacity(0.3))
                                 Text("PM")
-                                    .font(.system(size: 32, weight: .light))
+                                    .font(.system(size: 24, weight: .light))
                                     .foregroundColor(!isAM ? .black : Color.gray.opacity(0.3))
                             }
                         }
-                        .frame(height: 280)
+                        .frame(height: 160) // Reduced from 280 to 160
                         
-                        // Today/Tomorrow section
-                        HStack(spacing: 60) {
+                        // Today/Tomorrow section - moved to be inline and more compact
+                        HStack(spacing: 40) {
                             ForEach(DayOption.allCases, id: \.self) { day in
                                 Button(action: { selectedDay = day }) {
                                     Text(day.title)
-                                        .font(.system(size: 18, weight: .medium))
+                                        .font(.system(size: 16, weight: .medium))
                                         .foregroundColor(selectedDay == day ? .black : Color.gray.opacity(0.5))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                             }
                         }
-                        .padding(.top, 16)
                     }
                     .padding(.horizontal, 20)
                     
@@ -134,7 +130,7 @@ struct ActivityDateTimeView: View {
                             Spacer()
                         }
                         
-                        // Duration buttons - horizontal layout
+                        // Duration buttons - horizontal layout matching Figma
                         HStack(spacing: 12) {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
                                 Button(action: { selectedDuration = duration }) {

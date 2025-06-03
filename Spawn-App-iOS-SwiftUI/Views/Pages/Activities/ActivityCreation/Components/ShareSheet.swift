@@ -13,29 +13,39 @@ struct ShareSheet: View {
                 .padding(.vertical, 8)
             
             Text("Share this Spawn")
-                .font(.headline)
-                .foregroundColor(universalAccentColor)
-                .padding(.vertical, 16)
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .padding(.top, 16)
+                .padding(.bottom, 32)
             
             // Share options grid
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 20) {
-                ShareOption(icon: "square.and.arrow.up", label: "Share via", action: {
-                    shareViaSystem()
-                })
+            HStack(spacing: 40) {
+                ShareOption(
+                    icon: "square.and.arrow.up", 
+                    label: "Share via",
+                    backgroundColor: Color.gray.opacity(0.15),
+                    iconColor: .primary,
+                    action: {
+                        shareViaSystem()
+                    }
+                )
                 
-                ShareOption(icon: "link", label: "Copy Link", action: {
-                    copyLink()
-                })
+                ShareOption(
+                    icon: "link", 
+                    label: "Copy Link",
+                    backgroundColor: Color.gray.opacity(0.15),
+                    iconColor: .primary,
+                    action: {
+                        copyLink()
+                    }
+                )
                 
                 ShareOption(
                     imageName: "whatsapp",
                     label: "WhatsApp",
-                    tintColor: Color.green,
+                    backgroundColor: Color.green,
+                    iconColor: .white,
                     action: {
                         shareViaWhatsApp()
                     }
@@ -44,7 +54,8 @@ struct ShareSheet: View {
                 ShareOption(
                     imageName: "imessage",
                     label: "iMessage",
-                    tintColor: Color.green,
+                    backgroundColor: Color.green,
+                    iconColor: .white,
                     action: {
                         shareViaIMessage()
                     }
@@ -55,8 +66,8 @@ struct ShareSheet: View {
             
             Spacer()
         }
-        .background(universalBackgroundColor)
-        .presentationDetents([.height(200)])
+        .background(Color(.systemBackground))
+        .presentationDetents([.height(250)])
         .presentationDragIndicator(.visible)
     }
     
@@ -113,46 +124,52 @@ struct ShareOption: View {
     let icon: String?
     let imageName: String?
     let label: String
-    let tintColor: Color?
+    let backgroundColor: Color
+    let iconColor: Color
     let action: () -> Void
     
     init(
         icon: String? = nil,
         imageName: String? = nil,
         label: String,
-        tintColor: Color? = nil,
+        backgroundColor: Color,
+        iconColor: Color,
         action: @escaping () -> Void
     ) {
         self.icon = icon
         self.imageName = imageName
         self.label = label
-        self.tintColor = tintColor
+        self.backgroundColor = backgroundColor
+        self.iconColor = iconColor
         self.action = action
     }
     
     var body: some View {
         Button(action: action) {
-            VStack {
+            VStack(spacing: 12) {
                 Circle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 50, height: 50)
+                    .fill(backgroundColor)
+                    .frame(width: 64, height: 64)
                     .overlay {
                         if let systemIcon = icon {
                             Image(systemName: systemIcon)
-                                .foregroundColor(universalAccentColor)
+                                .font(.system(size: 24, weight: .medium))
+                                .foregroundColor(iconColor)
                         } else if let imageName = imageName {
                             Image(imageName)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 24, height: 24)
-                                .foregroundColor(tintColor ?? universalAccentColor)
+                                .frame(width: 32, height: 32)
+                                .foregroundColor(iconColor)
                         }
                     }
                 
                 Text(label)
-                    .font(.caption)
-                    .foregroundColor(universalAccentColor)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
             }
         }
+        .buttonStyle(PlainButtonStyle())
     }
 } 
