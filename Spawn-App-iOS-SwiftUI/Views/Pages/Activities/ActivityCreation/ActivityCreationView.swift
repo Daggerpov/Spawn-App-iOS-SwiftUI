@@ -41,7 +41,7 @@ struct ActivityCreationView: View {
                 content
                     .animation(.easeInOut, value: currentStep)
             }
-            .background(Color(.systemBackground))
+            .background(universalBackgroundColor)
             .sheet(isPresented: $showShareSheet) {
                 ShareSheet()
             }

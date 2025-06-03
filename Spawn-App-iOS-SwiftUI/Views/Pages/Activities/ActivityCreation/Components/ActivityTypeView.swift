@@ -9,6 +9,7 @@ struct ActivityTypeView: View {
             Text("What are you up to?")
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(universalAccentColor)
                 .padding(.horizontal)
             
             ScrollView {
@@ -36,6 +37,7 @@ struct ActivityTypeView: View {
             .disabled(selectedType == nil)
             .opacity(selectedType == nil ? 0.6 : 1)
         }
+        .background(universalBackgroundColor)
     }
 }
 
@@ -52,11 +54,12 @@ struct ActivityTypeCard: View {
                     Spacer()
                     Text("\(type.peopleCount) people")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(figmaBlack300)
                 }
                 
                 Text(type.rawValue)
                     .font(.headline)
+                    .foregroundColor(universalAccentColor)
             }
             .padding()
             .frame(maxWidth: .infinity)
@@ -69,6 +72,19 @@ struct ActivityTypeCard: View {
                     )
             )
         }
-        .foregroundColor(.primary)
     }
+}
+
+@available(iOS 17, *)
+#Preview {
+    @Previewable @State var selectedType: ActivityType? = .foodAndDrink
+    @Previewable @StateObject var appCache = AppCache.shared
+    
+    ActivityTypeView(
+        selectedType: $selectedType,
+        onNext: {
+            print("Next step tapped")
+        }
+    )
+    .environmentObject(appCache)
 } 

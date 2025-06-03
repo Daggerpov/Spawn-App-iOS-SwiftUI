@@ -14,6 +14,7 @@ struct ShareSheet: View {
             
             Text("Share this Spawn")
                 .font(.headline)
+                .foregroundColor(universalAccentColor)
                 .padding(.vertical, 16)
             
             // Share options grid
@@ -54,7 +55,7 @@ struct ShareSheet: View {
             
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor)
         .presentationDetents([.height(200)])
         .presentationDragIndicator(.visible)
     }

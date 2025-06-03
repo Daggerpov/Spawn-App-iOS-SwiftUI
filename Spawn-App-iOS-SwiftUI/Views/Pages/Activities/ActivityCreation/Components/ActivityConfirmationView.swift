@@ -14,10 +14,11 @@ struct ActivityConfirmationView: View {
             Text("Success!")
                 .font(.title)
                 .fontWeight(.bold)
+                .foregroundColor(universalAccentColor)
             
             Text("You've spawned in and \"Morning Stroll\" is now live for your friends.")
                 .multilineTextAlignment(.center)
-                .foregroundColor(.gray)
+                .foregroundColor(figmaBlack300)
             
             Button(action: {
                 showShareSheet = true
@@ -43,9 +44,24 @@ struct ActivityConfirmationView: View {
             Button(action: onClose) {
                 Text("Return to Home")
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundColor(universalAccentColor)
             }
         }
         .padding()
+        .background(universalBackgroundColor)
     }
+}
+
+@available(iOS 17, *)
+#Preview {
+    @Previewable @State var showShareSheet: Bool = false
+    @Previewable @StateObject var appCache = AppCache.shared
+    
+    ActivityConfirmationView(
+        showShareSheet: $showShareSheet,
+        onClose: {
+            print("Close tapped")
+        }
+    )
+    .environmentObject(appCache)
 } 

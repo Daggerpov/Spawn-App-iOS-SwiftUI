@@ -8,6 +8,7 @@ struct ActivityCreationLocationView: View {
         VStack(spacing: 20) {
             TextField("Where at?", text: $searchText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
+                .foregroundColor(universalAccentColor)
                 .padding()
             
             // Current Location
@@ -16,16 +17,17 @@ struct ActivityCreationLocationView: View {
             }) {
                 HStack {
                     Image(systemName: "location.fill")
+                        .foregroundColor(universalSecondaryColor)
                     Text("Current Location")
+                        .foregroundColor(universalAccentColor)
                     Spacer()
                     Text("5934 University Blvd")
-                        .foregroundColor(.gray)
+                        .foregroundColor(figmaBlack300)
                 }
                 .padding()
-                .background(Color.gray.opacity(0.1))
+                .background(universalPassiveColor.opacity(0.3))
                 .cornerRadius(12)
             }
-            .foregroundColor(.primary)
             
             List {
                 ForEach(["UBC Sauder School of Business", "AMS Student Nest", "Starbucks Coffee", "Thunderbird Park"], id: \.self) { location in
@@ -34,12 +36,12 @@ struct ActivityCreationLocationView: View {
                     }) {
                         HStack {
                             Text(location)
+                                .foregroundColor(universalAccentColor)
                             Spacer()
                             Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
+                                .foregroundColor(figmaBlack300)
                         }
                     }
-                    .foregroundColor(.primary)
                 }
             }
             .listStyle(PlainListStyle())
@@ -55,5 +57,18 @@ struct ActivityCreationLocationView: View {
             }
             .padding()
         }
+        .background(universalBackgroundColor)
     }
+}
+
+@available(iOS 17, *)
+#Preview {
+    @Previewable @StateObject var appCache = AppCache.shared
+    
+    ActivityCreationLocationView(
+        onNext: {
+            print("Next step tapped")
+        }
+    )
+    .environmentObject(appCache)
 } 
