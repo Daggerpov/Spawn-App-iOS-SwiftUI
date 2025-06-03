@@ -139,19 +139,19 @@ struct ShareOption: View {
                     .overlay {
                         if let systemIcon = icon {
                             Image(systemName: systemIcon)
-                                .foregroundColor(.primary)
+                                .foregroundColor(universalAccentColor)
                         } else if let imageName = imageName {
                             Image(imageName)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 24, height: 24)
-                                .foregroundColor(tintColor ?? .primary)
+                                .foregroundColor(tintColor ?? universalAccentColor)
                         }
                     }
                 
                 Text(label)
                     .font(.caption)
-                    .foregroundColor(.primary)
+                    .foregroundColor(universalAccentColor)
             }
         }
     }

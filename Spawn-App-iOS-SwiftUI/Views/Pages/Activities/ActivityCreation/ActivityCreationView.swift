@@ -60,7 +60,7 @@ struct ActivityCreationView: View {
                 }
             }) {
                 Image(systemName: "chevron.left")
-                    .foregroundColor(.primary)
+                    .foregroundColor(universalAccentColor)
                     .imageScale(.large)
             }
             .padding()
@@ -69,6 +69,7 @@ struct ActivityCreationView: View {
             
             Text(currentStep.title)
                 .font(.headline)
+                .foregroundColor(universalAccentColor)
             
             Spacer()
             
@@ -78,7 +79,7 @@ struct ActivityCreationView: View {
                     closeCallback()
                 }) {
                     Image(systemName: "xmark")
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor)
                         .imageScale(.large)
                 }
                 .padding()
