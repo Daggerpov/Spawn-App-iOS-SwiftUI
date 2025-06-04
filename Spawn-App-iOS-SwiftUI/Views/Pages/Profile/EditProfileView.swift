@@ -518,4 +518,17 @@ extension View {
             self
         }
     }
+}
+
+@available(iOS 17.0, *)
+#Preview {
+    @Previewable @StateObject var profileViewModel = ProfileViewModel(
+		userId: BaseUserDTO.danielAgapov.id,
+        apiService: MockAPIService(userId: BaseUserDTO.danielAgapov.id)
+    )
+
+    EditProfileView(
+        userId: BaseUserDTO.danielAgapov.id,
+        profileViewModel: profileViewModel
+    )
 } 

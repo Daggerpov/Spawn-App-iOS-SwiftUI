@@ -27,3 +27,11 @@ struct CreateActivityButton: View {
         }
     }
 }
+
+@available(iOS 17.0, *)
+#Preview {
+    @Previewable @State var showActivityCreationDrawer = false
+    
+    CreateActivityButton(showActivityCreationDrawer: $showActivityCreationDrawer)
+        .padding()
+}

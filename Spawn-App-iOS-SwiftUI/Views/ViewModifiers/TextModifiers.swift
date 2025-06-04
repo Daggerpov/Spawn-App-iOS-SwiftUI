@@ -74,4 +74,38 @@ extension View {
     func onestSmallText() -> some View {
         self.modifier(SmallTextModifier())
     }
+}
+
+@available(iOS 17.0, *)
+#Preview {
+    VStack(alignment: .leading, spacing: 16) {
+        Text("Headline Text")
+            .onestHeadline()
+            .foregroundColor(.primary)
+        
+        Text("Subheadline Text")
+            .onestSubheadline()
+            .foregroundColor(.primary)
+        
+        Text("Semibold Text (16pt)")
+            .onestSemibold()
+            .foregroundColor(.primary)
+        
+        Text("Semibold Text (20pt)")
+            .onestSemibold(size: 20)
+            .foregroundColor(.primary)
+        
+        Text("Body Text")
+            .onestBody()
+            .foregroundColor(.primary)
+        
+        Text("Caption Text")
+            .onestCaption()
+            .foregroundColor(.secondary)
+        
+        Text("Small Text")
+            .onestSmallText()
+            .foregroundColor(.secondary)
+    }
+    .padding()
 } 

@@ -61,3 +61,30 @@ struct CircularButtonStyling: ViewModifier {
 			)
 	}
 }
+
+@available(iOS 17.0, *)
+#Preview {
+	VStack(spacing: 20) {
+		// Default circular button
+		Circle()
+			.CircularButton(
+				systemName: "plus",
+				buttonActionCallback: {},
+				width: 17.5,
+				height: 17.5,
+				frameSize: 40
+			)
+		
+		// Map style circular button
+		Circle()
+			.CircularButton(
+				systemName: "location",
+				buttonActionCallback: {},
+				width: 17.5,
+				height: 17.5,
+				frameSize: 40,
+				source: "map"
+			)
+	}
+	.padding()
+}

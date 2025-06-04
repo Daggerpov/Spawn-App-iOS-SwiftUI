@@ -42,3 +42,14 @@ struct ActivityCardView: View {
         }
     }
 }
+
+@available(iOS 17.0, *)
+#Preview {
+    ActivityCardView(
+        userId: BaseUserDTO.danielAgapov.id,
+        activity: FullFeedActivityDTO.mockDinnerActivity,
+        color: .blue
+    ) { activity, color in
+        // Preview callback - no action needed
+    }
+}

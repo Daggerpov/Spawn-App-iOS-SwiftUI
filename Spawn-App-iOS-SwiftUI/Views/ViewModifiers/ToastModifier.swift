@@ -45,4 +45,25 @@ extension View {
     func toast(isShowing: Binding<Bool>, message: String, duration: Double = 2.0) -> some View {
         self.modifier(ToastModifier(isShowing: isShowing, message: message, duration: duration))
     }
+}
+
+@available(iOS 17.0, *)
+#Preview {
+    @Previewable @State var showToast = false
+    
+    VStack(spacing: 20) {
+        Button("Show Toast") {
+            withAnimation {
+                showToast = true
+            }
+        }
+        .padding()
+        .background(Color.blue)
+        .foregroundColor(.white)
+        .cornerRadius(8)
+        
+        Text("This is the main content")
+            .padding()
+    }
+    .toast(isShowing: $showToast, message: "This is a toast message!", duration: 3.0)
 } 
