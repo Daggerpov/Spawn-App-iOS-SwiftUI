@@ -14,7 +14,7 @@ struct ShareSheet: View {
             Text("Share this Spawn")
                 .font(.title2)
                 .fontWeight(.semibold)
-                .foregroundColor(.primary)
+                .foregroundColor(universalAccentColor)
                 .padding(.top, 16)
                 .padding(.bottom, 32)
             
@@ -24,7 +24,7 @@ struct ShareSheet: View {
                     icon: "square.and.arrow.up", 
                     label: "Share via",
                     backgroundColor: Color.gray.opacity(0.15),
-                    iconColor: .primary,
+                    iconColor: universalAccentColor,
                     action: {
                         shareViaSystem()
                     }
@@ -34,7 +34,7 @@ struct ShareSheet: View {
                     icon: "link", 
                     label: "Copy Link",
                     backgroundColor: Color.gray.opacity(0.15),
-                    iconColor: .primary,
+                    iconColor: universalAccentColor,
                     action: {
                         copyLink()
                     }
@@ -65,24 +65,42 @@ struct ShareSheet: View {
             
             Spacer()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
         .presentationDetents([.height(250)])
         .presentationDragIndicator(.visible)
     }
     
     private func shareViaSystem() {
-		let activity = ActivityCreationViewModel.shared.activity
+        let activity = ActivityCreationViewModel.shared.activity
         let activityURL = generateShareURL(for: activity)
+        
+        // Create the text to share
+        let shareText = "Join me for \"\(activity.title)\"! \(activityURL.absoluteString)"
+        
         let activityVC = UIActivityViewController(
-            activityItems: [activityURL],
+            activityItems: [shareText],
             applicationActivities: nil
         )
         
+        // Get the current window and present the share sheet
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first,
-           let rootVC = window.rootViewController {
-            activityVC.popoverPresentationController?.sourceView = rootVC.view
-            rootVC.present(activityVC, animated: true)
+           let window = windowScene.windows.first {
+            
+            // Find the top-most view controller
+            var topController = window.rootViewController
+            while let presentedViewController = topController?.presentedViewController {
+                topController = presentedViewController
+            }
+            
+            // Configure for iPad
+            if let popover = activityVC.popoverPresentationController {
+                popover.sourceView = topController?.view
+                popover.sourceRect = CGRect(x: window.bounds.midX, y: window.bounds.midY, width: 0, height: 0)
+                popover.permittedArrowDirections = []
+            }
+            
+            topController?.present(activityVC, animated: true)
         }
     }
     
@@ -90,7 +108,13 @@ struct ShareSheet: View {
         let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
         UIPasteboard.general.string = url.absoluteString
+        
+        // Provide haptic feedback
+        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+        impactGenerator.impactOccurred()
+        
         // Show a toast or feedback that the link was copied
+        // You might want to add a toast notification here
     }
     
     private func shareViaWhatsApp() {
@@ -114,8 +138,8 @@ struct ShareSheet: View {
     }
     
     private func generateShareURL(for activity: ActivityCreationDTO) -> URL {
-        // Replace this with your actual deep link URL generation
-        return URL(string: "https://spawn.app/activity/\(activity.id.uuidString)")!
+        // Use the centralized Constants for share URL generation
+        return ServiceConstants.generateActivityShareURL(for: activity.id)
     }
 }
 
@@ -157,6 +181,7 @@ struct ShareOption: View {
                         } else if let imageName = imageName {
                             Image(imageName)
                                 .resizable()
+                                .renderingMode(.template)
                                 .scaledToFit()
                                 .frame(width: 32, height: 32)
                                 .foregroundColor(iconColor)
@@ -165,7 +190,7 @@ struct ShareOption: View {
                 
                 Text(label)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
+                    .foregroundColor(universalAccentColor)
                     .multilineTextAlignment(.center)
             }
         }
