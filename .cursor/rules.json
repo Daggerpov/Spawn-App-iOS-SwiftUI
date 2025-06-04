@@ -112,6 +112,11 @@
       "rule": "Always use the APIService methods for network calls. Never implement direct URL session calls in ViewModels"
     },
     {
+      "name": "Singleton Pattern Usage",
+      "pattern": "\\.(swift)$",
+      "rule": "ALWAYS use AppCache.shared directly instead of creating @ObservedObject or @StateObject properties. Never use '@ObservedObject private var appCache = AppCache.shared' or similar patterns. Access AppCache.shared directly in code. For UserAuthViewModel, use UserAuthViewModel.shared directly as well."
+    },
+    {
       "name": "App Color Usage - Universal Colors",
       "pattern": "\\.(swift)$",
       "rule": "ALWAYS use app-defined colors from Constants.swift instead of SwiftUI's default colors. Use universalBackgroundColor instead of .white, universalAccentColor instead of .black or .primary, universalSecondaryColor instead of .accentColor. Never use Color.primary, Color.secondary, .white, .black directly."
