@@ -119,6 +119,11 @@ struct ActivityCreationView: View {
                 if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
                     viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
                 }
+                currentStep = .preConfirmation
+            }
+        case .preConfirmation:
+            ActivityPreConfirmationView {
+                // After creating the activity, move to the success confirmation
                 currentStep = .confirmation
             }
         case .confirmation:
@@ -139,6 +144,7 @@ enum ActivityCreationStep {
     case activityType
     case dateTime
     case location
+    case preConfirmation
     case confirmation
     
     var title: String {
@@ -146,7 +152,8 @@ enum ActivityCreationStep {
         case .activityType: return "What are you up to?"
         case .dateTime: return "Activity Details"
         case .location: return "Choose Location"
-        case .confirmation: return "Confirm"
+        case .preConfirmation: return "Confirm"
+        case .confirmation: return "Success!"
         }
     }
     
@@ -155,7 +162,8 @@ enum ActivityCreationStep {
         case .activityType: return .activityType
         case .dateTime: return .activityType
         case .location: return .dateTime
-        case .confirmation: return .location
+        case .preConfirmation: return .location
+        case .confirmation: return .preConfirmation
         }
     }
 }
