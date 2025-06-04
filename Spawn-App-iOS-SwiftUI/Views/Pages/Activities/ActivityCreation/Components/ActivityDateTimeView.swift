@@ -15,8 +15,25 @@ struct ActivityDateTimeView: View {
     @State private var selectedDate: Date = Date()
     @State private var selectedDay: DayOption = .today
     
+    // Tomorrow's date state
+    @State private var tomorrowDate: Date = Date()
+    
     // Validation state
     @State private var showTitleError: Bool = false
+    
+    // Computed properties for today and tomorrow dates
+    private var todayDate: Date {
+        let calendar = Calendar.current
+        let now = Date()
+        let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+        
+        var components = calendar.dateComponents([.year, .month, .day], from: now)
+        components.hour = hour24
+        components.minute = selectedMinute
+        components.second = 0
+        
+        return calendar.date(from: components) ?? now
+    }
     
     enum DayOption: CaseIterable {
         case today
@@ -34,138 +51,105 @@ struct ActivityDateTimeView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 32) {
-                    // Compact Time Display Section
-                    VStack(spacing: 16) {
-                        // Compact time picker - inline with Today/Tomorrow
-                        HStack(spacing: 30) {
-                            // Hour column
-                            VStack(spacing: 4) {
-                                Button(action: { updateHour(6) }) {
-                                    Text("6")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedHour == 6 ? .black : Color.gray.opacity(0.3))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateHour(7) }) {
-                                    Text("7")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedHour == 7 ? .black : Color.gray.opacity(0.5))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateHour(8) }) {
-                                    Text("8")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedHour == 8 ? .black : Color.gray.opacity(0.7))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateHour(9) }) {
-                                    Text("9")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedHour == 9 ? .black : Color.gray.opacity(0.7))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Text("\(selectedHour)")
-                                    .font(.system(size: 32, weight: .regular))
-                                    .foregroundColor(.black)
-                                
-                                Button(action: { updateHour(10) }) {
-                                    Text("10")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedHour == 10 ? .black : Color.gray.opacity(0.7))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateHour(11) }) {
-                                    Text("11")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedHour == 11 ? .black : Color.gray.opacity(0.5))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateHour(12) }) {
-                                    Text("12")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedHour == 12 ? .black : Color.gray.opacity(0.3))
-                                }
-                                .buttonStyle(PlainButtonStyle())
+                    // Time Selection Section - Using Native DatePickers
+                    VStack(spacing: 24) {
+                        // Today row - selected option
+                        HStack {
+                            // Today/Tomorrow selector
+                            Button(action: { updateDay(.today) }) {
+                                Text("Today")
+                                    .font(.system(size: 16, weight: selectedDay == .today ? .medium : .regular))
+                                    .foregroundColor(selectedDay == .today ? .black : Color.gray.opacity(0.5))
+                                    .frame(width: 80, alignment: .leading)
                             }
+                            .buttonStyle(PlainButtonStyle())
                             
-                            // Minute column
-                            VStack(spacing: 4) {
-                                Button(action: { updateMinute(0) }) {
-                                    Text("00")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedMinute == 0 ? .black : Color.gray.opacity(0.3))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateMinute(15) }) {
-                                    Text("15")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedMinute == 15 ? .black : Color.gray.opacity(0.7))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Text(String(format: "%02d", selectedMinute))
-                                    .font(.system(size: 32, weight: .regular))
-                                    .foregroundColor(.black)
-                                
-                                Button(action: { updateMinute(30) }) {
-                                    Text("30")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedMinute == 30 ? .black : Color.gray.opacity(0.7))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateMinute(45) }) {
-                                    Text("45")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(selectedMinute == 45 ? .black : Color.gray.opacity(0.7))
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                            }
+                            Spacer()
                             
-                            // AM/PM column
-                            VStack(spacing: 20) {
-                                Button(action: { updateAMPM(true) }) {
-                                    Text("AM")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(isAM ? .black : Color.gray.opacity(0.3))
+                            // Native DatePicker for Today
+                            if selectedDay == .today {
+                                DatePicker("", selection: Binding(
+                                    get: { todayDate },
+                                    set: { newDate in
+                                        updateFromDate(newDate, isToday: true)
+                                    }
+                                ))
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                                .scaleEffect(1.0)
+                            } else {
+                                // Show static time when not selected
+                                HStack(spacing: 20) {
+                                    Text("\(selectedHour)")
+                                        .font(.system(size: 32, weight: .regular))
+                                        .foregroundColor(Color.gray.opacity(0.3))
+                                    
+                                    Text(String(format: "%02d", selectedMinute))
+                                        .font(.system(size: 32, weight: .regular))
+                                        .foregroundColor(Color.gray.opacity(0.3))
+                                    
+                                    Text(isAM ? "AM" : "PM")
+                                        .font(.system(size: 16, weight: .regular))
+                                        .foregroundColor(Color.gray.opacity(0.3))
                                 }
-                                .buttonStyle(PlainButtonStyle())
-                                
-                                Button(action: { updateAMPM(false) }) {
-                                    Text("PM")
-                                        .font(.system(size: 24, weight: .light))
-                                        .foregroundColor(!isAM ? .black : Color.gray.opacity(0.3))
-                                }
-                                .buttonStyle(PlainButtonStyle())
                             }
                         }
-                        .frame(height: 160) // Reduced from 280 to 160
+                        .padding(.horizontal, 20)
                         
-                        // Today/Tomorrow section - moved to be inline and more compact
-                        HStack(spacing: 40) {
-                            ForEach(DayOption.allCases, id: \.self) { day in
-                                Button(action: { updateDay(day) }) {
-                                    Text(day.title)
-                                        .font(.system(size: 16, weight: .medium))
-                                        .foregroundColor(selectedDay == day ? .black : Color.gray.opacity(0.5))
+                        // Tomorrow row - alternative option
+                        HStack {
+                            // Today/Tomorrow selector
+                            Button(action: { updateDay(.tomorrow) }) {
+                                Text("Tomorrow")
+                                    .font(.system(size: 16, weight: selectedDay == .tomorrow ? .medium : .regular))
+                                    .foregroundColor(selectedDay == .tomorrow ? .black : Color.gray.opacity(0.5))
+                                    .frame(width: 80, alignment: .leading)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            Spacer()
+                            
+                            // Native DatePicker for Tomorrow
+                            if selectedDay == .tomorrow {
+                                DatePicker("", selection: $tomorrowDate)
+                                    .datePickerStyle(.compact)
+                                    .labelsHidden()
+                                    .scaleEffect(1.0)
+                                    .onChange(of: tomorrowDate) { newDate in
+                                        updateFromDate(newDate, isToday: false)
+                                    }
+                            } else {
+                                // Show static time when not selected
+                                HStack(spacing: 20) {
+                                    let calendar = Calendar.current
+                                    let components = calendar.dateComponents([.hour, .minute], from: tomorrowDate)
+                                    let hour24 = components.hour ?? 10
+                                    let minute = components.minute ?? 45
+                                    let displayHour = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24)
+                                    let isAMDisplay = hour24 < 12
+                                    
+                                    Text("\(displayHour)")
+                                        .font(.system(size: selectedDay == .tomorrow ? 32 : 16, weight: .regular))
+                                        .foregroundColor(Color.gray.opacity(0.3))
+                                    
+                                    Text(String(format: "%02d", minute))
+                                        .font(.system(size: selectedDay == .tomorrow ? 32 : 16, weight: .regular))
+                                        .foregroundColor(Color.gray.opacity(0.3))
+                                    
+                                    Text(isAMDisplay ? "AM" : "PM")
+                                        .font(.system(size: 16, weight: .regular))
+                                        .foregroundColor(Color.gray.opacity(0.3))
                                 }
-                                .buttonStyle(PlainButtonStyle())
                             }
                         }
+                        .padding(.horizontal, 20)
                     }
                     .padding(.horizontal, 20)
                     
                     // Title Section
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("Title *")
+                            Text("Title")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(showTitleError ? .red : Color.gray)
                             Spacer()
@@ -279,23 +263,28 @@ struct ActivityDateTimeView: View {
     
     // MARK: - Helper Methods
     
-    private func updateHour(_ hour: Int) {
-        selectedHour = hour
-        updateSelectedDate()
-    }
-    
-    private func updateMinute(_ minute: Int) {
-        selectedMinute = minute
-        updateSelectedDate()
-    }
-    
-    private func updateAMPM(_ isAMValue: Bool) {
-        isAM = isAMValue
-        updateSelectedDate()
-    }
-    
     private func updateDay(_ day: DayOption) {
         selectedDay = day
+        updateSelectedDate()
+    }
+    
+    private func updateFromDate(_ date: Date, isToday: Bool) {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.hour, .minute], from: date)
+        
+        let hour24 = components.hour ?? 0
+        let minute = components.minute ?? 0
+        
+        // Convert to 12-hour format
+        let displayHour = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24)
+        let isAMValue = hour24 < 12
+        
+        if isToday {
+            selectedHour = displayHour
+            selectedMinute = minute
+            isAM = isAMValue
+        }
+        
         updateSelectedDate()
     }
     
@@ -312,36 +301,59 @@ struct ActivityDateTimeView: View {
             baseDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
         }
         
-        // Convert 12-hour to 24-hour format
-        let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
-        
-        // Create date components with the selected time
-        var dateComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
-        dateComponents.hour = hour24
-        dateComponents.minute = selectedMinute
-        dateComponents.second = 0
-        
-        if let newDate = calendar.date(from: dateComponents) {
-            selectedDate = newDate
-            viewModel.selectedDate = newDate
+        // Use the appropriate time based on selected day
+        let finalDate: Date
+        switch selectedDay {
+        case .today:
+            // Convert 12-hour to 24-hour format
+            let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+            
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+            dateComponents.hour = hour24
+            dateComponents.minute = selectedMinute
+            dateComponents.second = 0
+            
+            finalDate = calendar.date(from: dateComponents) ?? baseDate
+        case .tomorrow:
+            finalDate = tomorrowDate
+            
+            // Update binding values to match tomorrow's selection
+            let components = calendar.dateComponents([.hour, .minute], from: tomorrowDate)
+            let hour24 = components.hour ?? 10
+            let minute = components.minute ?? 45
+            
+            selectedHour = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24)
+            selectedMinute = minute
+            isAM = hour24 < 12
         }
+        
+        selectedDate = finalDate
+        viewModel.selectedDate = finalDate
     }
     
     private func initializeDateAndTime() {
         let calendar = Calendar.current
         let now = Date()
         
-        // Set the date picker to the current bound values if they exist
-        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
-        
-        // Convert 12-hour to 24-hour format
+        // Initialize today's date
         let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
-        dateComponents.hour = hour24
-        dateComponents.minute = selectedMinute
+        var todayComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        todayComponents.hour = hour24
+        todayComponents.minute = selectedMinute
         
-        if let initialDate = calendar.date(from: dateComponents) {
+        if let initialDate = calendar.date(from: todayComponents) {
             selectedDate = initialDate
             viewModel.selectedDate = initialDate
+        }
+        
+        // Initialize tomorrow's date (default to 10:45 PM)
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) ?? now
+        var tomorrowComponents = calendar.dateComponents([.year, .month, .day], from: tomorrow)
+        tomorrowComponents.hour = 22 // 10 PM in 24-hour format
+        tomorrowComponents.minute = 45
+        
+        if let tomorrowInitialDate = calendar.date(from: tomorrowComponents) {
+            tomorrowDate = tomorrowInitialDate
         }
         
         // Set initial duration in view model
