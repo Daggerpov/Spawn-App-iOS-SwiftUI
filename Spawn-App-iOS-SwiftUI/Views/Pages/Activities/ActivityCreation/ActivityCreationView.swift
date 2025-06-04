@@ -17,10 +17,10 @@ struct ActivityCreationView: View {
     @State private var showLocationPicker = false
     @State private var showShareSheet = false
     
-    // Time selection state
-    @State private var selectedHour: Int = 9
-    @State private var selectedMinute: Int = 30
-    @State private var isAM: Bool = true
+    // Time selection state - now initialized with calculated default values
+    @State private var selectedHour: Int
+    @State private var selectedMinute: Int
+    @State private var isAM: Bool
     @State private var activityTitle: String = ""
     
     var creatingUser: BaseUserDTO
@@ -29,78 +29,62 @@ struct ActivityCreationView: View {
     init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void) {
         self.creatingUser = creatingUser
         self.closeCallback = closeCallback
+        
+        // Calculate the next 15-minute interval after current time
+        let nextInterval = Self.calculateNextFifteenMinuteInterval()
+        self._selectedHour = State(initialValue: nextInterval.hour)
+        self._selectedMinute = State(initialValue: nextInterval.minute)
+        self._isAM = State(initialValue: nextInterval.isAM)
+    }
+    
+    // Helper function to calculate the next 15-minute interval
+    static func calculateNextFifteenMinuteInterval() -> (hour: Int, minute: Int, isAM: Bool) {
+        let now = Date()
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: now)
+        let currentMinute = calendar.component(.minute, from: now)
+        
+        // Calculate next 15-minute interval
+        let nextMinute: Int
+        var nextHour = currentHour
+        
+        if currentMinute < 15 {
+            nextMinute = 15
+        } else if currentMinute < 30 {
+            nextMinute = 30
+        } else if currentMinute < 45 {
+            nextMinute = 45
+        } else {
+            nextMinute = 0
+            nextHour += 1
+            if nextHour >= 24 {
+                nextHour = 0
+            }
+        }
+        
+        // Convert to 12-hour format
+        let isAM = nextHour < 12
+        let displayHour = nextHour == 0 ? 12 : (nextHour > 12 ? nextHour - 12 : nextHour)
+        
+        return (hour: displayHour, minute: nextMinute, isAM: isAM)
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Header
-                header
-                
-                // Content
-                content
-                    .animation(.easeInOut, value: currentStep)
-            }
-            .background(universalBackgroundColor)
-            .sheet(isPresented: $showShareSheet) {
-                ShareSheet()
-            }
-            .onAppear {
-                // Initialize activityTitle from view model if it exists
-                if let title = viewModel.activity.title, !title.isEmpty {
-                    activityTitle = title
-                }
+        VStack(spacing: 0) {
+            // Content
+            content
+                .animation(.easeInOut, value: currentStep)
+        }
+        .background(universalBackgroundColor)
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet()
+        }
+        .onAppear {
+            // Initialize activityTitle from view model if it exists
+            if let title = viewModel.activity.title, !title.isEmpty {
+                activityTitle = title
             }
         }
-    }
-    
-    private var header: some View {
-        HStack {
-            Button(action: {
-                switch currentStep {
-                case .activityType:
-                    ActivityCreationViewModel.reInitialize()
-                    closeCallback()
-                case .location:
-                    // When going back from location to dateTime, sync the title
-                    if let title = viewModel.activity.title, !title.isEmpty {
-                        activityTitle = title
-                    }
-                    currentStep = currentStep.previous()
-                default:
-                    currentStep = currentStep.previous()
-                }
-            }) {
-                Image(systemName: "chevron.left")
-                    .foregroundColor(universalAccentColor)
-                    .imageScale(.large)
-            }
-            .padding()
-            
-            Spacer()
-            
-            Text(currentStep.title)
-                .font(.headline)
-                .foregroundColor(universalAccentColor)
-            
-            Spacer()
-            
-            if currentStep == .activityType {
-                Button(action: {
-                    ActivityCreationViewModel.reInitialize()
-                    closeCallback()
-                }) {
-                    Image(systemName: "xmark")
-                        .foregroundColor(universalAccentColor)
-                        .imageScale(.large)
-                }
-                .padding()
-            } else {
-                // Empty view to maintain spacing
-                Color.clear.frame(width: 44, height: 44)
-            }
-        }
-        .padding(.horizontal)
     }
     
     @ViewBuilder
