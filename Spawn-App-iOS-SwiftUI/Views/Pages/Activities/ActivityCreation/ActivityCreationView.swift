@@ -25,10 +25,12 @@ struct ActivityCreationView: View {
     
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
+    @Binding var selectedTab: Int
     
-    init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void) {
+    init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void, selectedTab: Binding<Int>) {
         self.creatingUser = creatingUser
         self.closeCallback = closeCallback
+        self._selectedTab = selectedTab
         
         // Calculate the next 15-minute interval after current time
         let nextInterval = Self.calculateNextFifteenMinuteInterval()
@@ -83,6 +85,24 @@ struct ActivityCreationView: View {
             // Initialize activityTitle from view model if it exists
             if let title = viewModel.activity.title, !title.isEmpty {
                 activityTitle = title
+            }
+        }
+        .onChange(of: selectedTab) { newTab in
+            // Reset to beginning if activities tab is selected and we're at confirmation
+            if newTab == 2 && currentStep == .confirmation {
+                currentStep = .activityType
+                ActivityCreationViewModel.reInitialize()
+                // Reset other state variables as well
+                activityTitle = ""
+                selectedDuration = .indefinite
+                showLocationPicker = false
+                showShareSheet = false
+                
+                // Reset time to next interval
+                let nextInterval = Self.calculateNextFifteenMinuteInterval()
+                selectedHour = nextInterval.hour
+                selectedMinute = nextInterval.minute
+                isAM = nextInterval.isAM
             }
         }
     }
@@ -231,6 +251,7 @@ enum ActivityDuration: CaseIterable {
     ActivityCreationView(
         creatingUser: .danielAgapov,
         closeCallback: {
-        }
+        },
+        selectedTab: .constant(0)
     ).environmentObject(appCache)
 }

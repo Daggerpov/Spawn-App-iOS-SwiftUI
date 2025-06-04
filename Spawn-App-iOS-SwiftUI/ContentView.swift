@@ -38,7 +38,8 @@ struct ContentView: View {
 				closeCallback: {
 					// Navigate back to home tab when closing
 					selectedTab = 0
-				}
+				},
+				selectedTab: $selectedTab
 			)
 			.tag(2)
 			.tabItem {
