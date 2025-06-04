@@ -53,8 +53,44 @@ class ActivityCreationViewModel: ObservableObject {
 			location: nil,
 			icon: "⭐️",
 			category: .general,
-			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+			invitedFriendUserIds: []
 		)
+		
+		// Automatically populate friends when initializing
+		loadAllFriendsAsSelected()
+	}
+	
+	// Load all friends and automatically select them for invitation
+	private func loadAllFriendsAsSelected() {
+		// Check if we have cached friends
+		if !AppCache.shared.friends.isEmpty {
+			selectedFriends = AppCache.shared.friends
+		} else {
+			// If no cached friends, fetch them
+			Task {
+				await fetchAndSelectAllFriends()
+			}
+		}
+	}
+	
+	// Fetch all friends from API and select them
+	private func fetchAndSelectAllFriends() async {
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+		
+		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)") {
+			do {
+				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+				
+				await MainActor.run {
+					self.selectedFriends = fetchedFriends
+					// Update the app cache as well
+					AppCache.shared.updateFriends(fetchedFriends)
+				}
+			} catch {
+				print("Error fetching friends for auto-invite: \(error.localizedDescription)")
+			}
+		}
 	}
 	
 	// Helper function to format the date for display
@@ -134,6 +170,9 @@ class ActivityCreationViewModel: ObservableObject {
 		// Update activity with final details
 		updateActivityType()
 		updateActivityDuration()
+		
+		// Populate the invited friend user IDs from selected friends
+		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
 		
 		if let url = URL(string: APIService.baseURL + "activities") {
 			do {
