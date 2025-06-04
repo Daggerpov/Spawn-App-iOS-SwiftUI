@@ -198,6 +198,7 @@ struct LocationPickerView: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     
                     // Predefined locations
@@ -224,6 +225,7 @@ struct LocationPickerView: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                     
                     // Set Location on Map option
@@ -239,6 +241,7 @@ struct LocationPickerView: View {
                         }
                         .padding(.vertical, 4)
                     }
+                    .buttonStyle(PlainButtonStyle())
                     
                     // Saved Locations option
                     Button(action: {
@@ -253,6 +256,7 @@ struct LocationPickerView: View {
                         }
                         .padding(.vertical, 4)
                     }
+                    .buttonStyle(PlainButtonStyle())
                     
                     // Search results
                     ForEach(searchResults, id: \.self) { item in
@@ -275,6 +279,7 @@ struct LocationPickerView: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .listStyle(PlainListStyle())

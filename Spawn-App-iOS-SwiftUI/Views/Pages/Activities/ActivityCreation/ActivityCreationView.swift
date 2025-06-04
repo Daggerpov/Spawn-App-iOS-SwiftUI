@@ -45,6 +45,12 @@ struct ActivityCreationView: View {
             .sheet(isPresented: $showShareSheet) {
                 ShareSheet()
             }
+            .onAppear {
+                // Initialize activityTitle from view model if it exists
+                if let title = viewModel.activity.title, !title.isEmpty {
+                    activityTitle = title
+                }
+            }
         }
     }
     
@@ -55,6 +61,12 @@ struct ActivityCreationView: View {
                 case .activityType:
                     ActivityCreationViewModel.reInitialize()
                     closeCallback()
+                case .location:
+                    // When going back from location to dateTime, sync the title
+                    if let title = viewModel.activity.title, !title.isEmpty {
+                        activityTitle = title
+                    }
+                    currentStep = currentStep.previous()
                 default:
                     currentStep = currentStep.previous()
                 }
@@ -106,10 +118,23 @@ struct ActivityCreationView: View {
                 activityTitle: $activityTitle,
                 selectedDuration: $selectedDuration
             ) {
+                // Sync the activity title with the view model before proceeding
+                viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
+                
+                // Validate the title is not empty
+                if viewModel.activity.title?.isEmpty ?? true {
+                    // Show error or prevent progression
+                    return
+                }
+                
                 currentStep = .location
             }
         case .location:
             ActivityCreationLocationView {
+                // Ensure title is still synced when moving from location to confirmation
+                if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
+                    viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
+                }
                 currentStep = .confirmation
             }
         case .confirmation:

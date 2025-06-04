@@ -75,25 +75,21 @@ struct ShareSheet: View {
         let activity = ActivityCreationViewModel.shared.activity
         let activityURL = generateShareURL(for: activity)
         
-        // Create the text to share
-        let shareText = "Join me for \"\(activity.title)\"! \(activityURL.absoluteString)"
-        
+		let shareText = "Join me for \"\(activity.title ?? "an activity")\"! \(activityURL.absoluteString)"
+
         let activityVC = UIActivityViewController(
             activityItems: [shareText],
             applicationActivities: nil
         )
         
-        // Get the current window and present the share sheet
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first {
             
-            // Find the top-most view controller
             var topController = window.rootViewController
             while let presentedViewController = topController?.presentedViewController {
                 topController = presentedViewController
             }
             
-            // Configure for iPad
             if let popover = activityVC.popoverPresentationController {
                 popover.sourceView = topController?.view
                 popover.sourceRect = CGRect(x: window.bounds.midX, y: window.bounds.midY, width: 0, height: 0)

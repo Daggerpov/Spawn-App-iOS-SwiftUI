@@ -8,9 +8,15 @@ struct ActivityDateTimeView: View {
     @Binding var selectedDuration: ActivityDuration
     let onNext: () -> Void
     
+    // Access to the view model to update selectedDate
+    @ObservedObject private var viewModel = ActivityCreationViewModel.shared
+    
     // Native date picker state
     @State private var selectedDate: Date = Date()
     @State private var selectedDay: DayOption = .today
+    
+    // Validation state
+    @State private var showTitleError: Bool = false
     
     enum DayOption: CaseIterable {
         case today
@@ -34,24 +40,31 @@ struct ActivityDateTimeView: View {
                         HStack(spacing: 30) {
                             // Hour column
                             VStack(spacing: 4) {
-                                Button(action: { selectedHour = 6 }) {
+                                Button(action: { updateHour(6) }) {
                                     Text("6")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedHour == 6 ? .black : Color.gray.opacity(0.3))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                Button(action: { selectedHour = 7 }) {
+                                Button(action: { updateHour(7) }) {
                                     Text("7")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedHour == 7 ? .black : Color.gray.opacity(0.5))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                Button(action: { selectedHour = 8 }) {
+                                Button(action: { updateHour(8) }) {
                                     Text("8")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedHour == 8 ? .black : Color.gray.opacity(0.7))
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Button(action: { updateHour(9) }) {
+                                    Text("9")
+                                        .font(.system(size: 24, weight: .light))
+                                        .foregroundColor(selectedHour == 9 ? .black : Color.gray.opacity(0.7))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
@@ -59,21 +72,21 @@ struct ActivityDateTimeView: View {
                                     .font(.system(size: 32, weight: .regular))
                                     .foregroundColor(.black)
                                 
-                                Button(action: { selectedHour = 10 }) {
+                                Button(action: { updateHour(10) }) {
                                     Text("10")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedHour == 10 ? .black : Color.gray.opacity(0.7))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                Button(action: { selectedHour = 11 }) {
+                                Button(action: { updateHour(11) }) {
                                     Text("11")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedHour == 11 ? .black : Color.gray.opacity(0.5))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                Button(action: { selectedHour = 12 }) {
+                                Button(action: { updateHour(12) }) {
                                     Text("12")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedHour == 12 ? .black : Color.gray.opacity(0.3))
@@ -83,14 +96,14 @@ struct ActivityDateTimeView: View {
                             
                             // Minute column
                             VStack(spacing: 4) {
-                                Button(action: { selectedMinute = 0 }) {
+                                Button(action: { updateMinute(0) }) {
                                     Text("00")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedMinute == 0 ? .black : Color.gray.opacity(0.3))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                Button(action: { selectedMinute = 15 }) {
+                                Button(action: { updateMinute(15) }) {
                                     Text("15")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedMinute == 15 ? .black : Color.gray.opacity(0.7))
@@ -101,14 +114,14 @@ struct ActivityDateTimeView: View {
                                     .font(.system(size: 32, weight: .regular))
                                     .foregroundColor(.black)
                                 
-                                Button(action: { selectedMinute = 30 }) {
+                                Button(action: { updateMinute(30) }) {
                                     Text("30")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedMinute == 30 ? .black : Color.gray.opacity(0.7))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                Button(action: { selectedMinute = 45 }) {
+                                Button(action: { updateMinute(45) }) {
                                     Text("45")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(selectedMinute == 45 ? .black : Color.gray.opacity(0.7))
@@ -118,14 +131,14 @@ struct ActivityDateTimeView: View {
                             
                             // AM/PM column
                             VStack(spacing: 20) {
-                                Button(action: { isAM = true }) {
+                                Button(action: { updateAMPM(true) }) {
                                     Text("AM")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(isAM ? .black : Color.gray.opacity(0.3))
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                Button(action: { isAM = false }) {
+                                Button(action: { updateAMPM(false) }) {
                                     Text("PM")
                                         .font(.system(size: 24, weight: .light))
                                         .foregroundColor(!isAM ? .black : Color.gray.opacity(0.3))
@@ -138,7 +151,7 @@ struct ActivityDateTimeView: View {
                         // Today/Tomorrow section - moved to be inline and more compact
                         HStack(spacing: 40) {
                             ForEach(DayOption.allCases, id: \.self) { day in
-                                Button(action: { selectedDay = day }) {
+                                Button(action: { updateDay(day) }) {
                                     Text(day.title)
                                         .font(.system(size: 16, weight: .medium))
                                         .foregroundColor(selectedDay == day ? .black : Color.gray.opacity(0.5))
@@ -152,9 +165,9 @@ struct ActivityDateTimeView: View {
                     // Title Section
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
-                            Text("Title")
+                            Text("Title *")
                                 .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(Color.gray)
+                                .foregroundColor(showTitleError ? .red : Color.gray)
                             Spacer()
                         }
                         
@@ -165,12 +178,26 @@ struct ActivityDateTimeView: View {
                             .padding(.vertical, 14)
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    .stroke(showTitleError ? .red : Color.gray.opacity(0.3), lineWidth: 1)
                                     .background(
                                         RoundedRectangle(cornerRadius: 12)
                                             .fill(Color.white)
                                     )
                             )
+                            .onChange(of: activityTitle) { newValue in
+                                // Update the activity title in the view model
+                                viewModel.activity.title = newValue.isEmpty ? nil : newValue
+                                // Hide error when user starts typing
+                                if !newValue.trimmingCharacters(in: .whitespaces).isEmpty {
+                                    showTitleError = false
+                                }
+                            }
+                        
+                        if showTitleError {
+                            Text("Activity title is required")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
                     }
                     .padding(.horizontal, 20)
                     
@@ -186,7 +213,10 @@ struct ActivityDateTimeView: View {
                         // Duration buttons - horizontal layout matching Figma
                         HStack(spacing: 12) {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
-                                Button(action: { selectedDuration = duration }) {
+                                Button(action: { 
+                                    selectedDuration = duration
+                                    viewModel.selectedDuration = duration
+                                }) {
                                     Text(duration.title)
                                         .font(Font.custom("Onest", size: 16).weight(.bold))
                                         .foregroundColor(selectedDuration == duration ? figmaSoftBlue : Color.gray)
@@ -218,7 +248,14 @@ struct ActivityDateTimeView: View {
             
             // Next Step Button
             VStack {
-                Button(action: onNext) {
+                Button(action: {
+                    let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+                    if trimmedTitle.isEmpty {
+                        showTitleError = true
+                        return
+                    }
+                    onNext()
+                }) {
                     HStack(alignment: .center, spacing: 8) {
                         Text("Next Step")
                             .font(.system(size: 16, weight: .semibold))
@@ -236,21 +273,83 @@ struct ActivityDateTimeView: View {
         }
         .background(universalBackgroundColor)
         .onAppear {
-            // Initialize selectedDate with current time
-            let calendar = Calendar.current
-            let now = Date()
-            
-            // Set the date picker to the current bound values if they exist
-            var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
-            
-            // Convert 12-hour to 24-hour format
-            let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
-            dateComponents.hour = hour24
-            dateComponents.minute = selectedMinute
-            
-            if let initialDate = calendar.date(from: dateComponents) {
-                selectedDate = initialDate
-            }
+            initializeDateAndTime()
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func updateHour(_ hour: Int) {
+        selectedHour = hour
+        updateSelectedDate()
+    }
+    
+    private func updateMinute(_ minute: Int) {
+        selectedMinute = minute
+        updateSelectedDate()
+    }
+    
+    private func updateAMPM(_ isAMValue: Bool) {
+        isAM = isAMValue
+        updateSelectedDate()
+    }
+    
+    private func updateDay(_ day: DayOption) {
+        selectedDay = day
+        updateSelectedDate()
+    }
+    
+    private func updateSelectedDate() {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Get the base date (today or tomorrow)
+        let baseDate: Date
+        switch selectedDay {
+        case .today:
+            baseDate = now
+        case .tomorrow:
+            baseDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
+        }
+        
+        // Convert 12-hour to 24-hour format
+        let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+        
+        // Create date components with the selected time
+        var dateComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+        dateComponents.hour = hour24
+        dateComponents.minute = selectedMinute
+        dateComponents.second = 0
+        
+        if let newDate = calendar.date(from: dateComponents) {
+            selectedDate = newDate
+            viewModel.selectedDate = newDate
+        }
+    }
+    
+    private func initializeDateAndTime() {
+        let calendar = Calendar.current
+        let now = Date()
+        
+        // Set the date picker to the current bound values if they exist
+        var dateComponents = calendar.dateComponents([.year, .month, .day], from: now)
+        
+        // Convert 12-hour to 24-hour format
+        let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+        dateComponents.hour = hour24
+        dateComponents.minute = selectedMinute
+        
+        if let initialDate = calendar.date(from: dateComponents) {
+            selectedDate = initialDate
+            viewModel.selectedDate = initialDate
+        }
+        
+        // Set initial duration in view model
+        viewModel.selectedDuration = selectedDuration
+        
+        // Set initial title if not empty
+        if !activityTitle.isEmpty {
+            viewModel.activity.title = activityTitle
         }
     }
 }
