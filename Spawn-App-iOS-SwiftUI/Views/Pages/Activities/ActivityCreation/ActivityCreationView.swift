@@ -111,11 +111,24 @@ struct ActivityCreationView: View {
                     return
                 }
                 
+                // Sync selectedDate and selectedDuration with viewModel
+                let calendar = Calendar.current
+                let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+                var components = calendar.dateComponents([.year, .month, .day], from: Date())
+                components.hour = hour24
+                components.minute = selectedMinute
+                components.second = 0
+                
+                if let newDate = calendar.date(from: components) {
+                    viewModel.selectedDate = newDate
+                }
+                viewModel.selectedDuration = selectedDuration
+                
                 currentStep = .location
             }
         case .location:
             ActivityCreationLocationView {
-                // Ensure title is still synced when moving from location to confirmation
+                // Ensure title is still synced when moving from location to preConfirmation
                 if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
                     viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
                 }
@@ -123,7 +136,7 @@ struct ActivityCreationView: View {
             }
         case .preConfirmation:
             ActivityPreConfirmationView {
-                // After creating the activity, move to the success confirmation
+                // Create the activity and move to confirmation
                 currentStep = .confirmation
             }
         case .confirmation:

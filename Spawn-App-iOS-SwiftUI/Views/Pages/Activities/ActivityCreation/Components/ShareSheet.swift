@@ -116,7 +116,7 @@ struct ShareSheet: View {
     private func shareViaWhatsApp() {
         let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
-        let shareText = "Join me for \"\(activity.title)\"! \(url.absoluteString)"
+        let shareText = "Join me for \"\(activity.title ?? "an activity")\"! \(url.absoluteString)"
         
         if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
            let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)") {
@@ -133,7 +133,7 @@ struct ShareSheet: View {
     private func shareViaIMessage() {
         let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
-        let shareText = "Join me for \"\(activity.title)\"! \(url.absoluteString)"
+        let shareText = "Join me for \"\(activity.title ?? "an activity")\"! \(url.absoluteString)"
         
         if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
            let smsURL = URL(string: "sms:&body=\(encodedText)") {

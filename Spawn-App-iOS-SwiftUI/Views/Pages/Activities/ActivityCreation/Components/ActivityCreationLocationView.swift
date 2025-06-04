@@ -3,6 +3,7 @@ import MapKit
 import CoreLocation
 
 struct ActivityCreationLocationView: View {
+    @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
     @StateObject private var locationManager = LocationManager()
     @State private var region = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 49.2827, longitude: -123.1207), // Default to Vancouver
@@ -112,7 +113,17 @@ struct ActivityCreationLocationView: View {
                         }
                         
                         // Confirm button
-                        Button(action: onNext) {
+                        Button(action: {
+                            // Set the location in the view model based on current pin position
+                            let location = Location(
+                                id: UUID(),
+                                name: searchText.isEmpty ? "Pacific Spirit Park" : searchText,
+                                latitude: region.center.latitude,
+                                longitude: region.center.longitude
+                            )
+                            viewModel.setLocation(location)
+                            onNext()
+                        }) {
                             Text("Confirm Location")
                                 .font(.headline)
                                 .foregroundColor(.white)
@@ -135,8 +146,8 @@ struct ActivityCreationLocationView: View {
         }
         .background(universalBackgroundColor)
         .sheet(isPresented: $showingLocationPicker) {
-            LocationPickerView(onLocationSelected: { location in
-                searchText = location
+            LocationPickerView(onLocationSelected: { locationName in
+                searchText = locationName
                 showingLocationPicker = false
             })
         }

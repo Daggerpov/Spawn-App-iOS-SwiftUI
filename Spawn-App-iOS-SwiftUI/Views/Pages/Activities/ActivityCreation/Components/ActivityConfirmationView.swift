@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ActivityConfirmationView: View {
+    @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
     @Binding var showShareSheet: Bool
     let onClose: () -> Void
     
@@ -16,7 +17,7 @@ struct ActivityConfirmationView: View {
                 .fontWeight(.bold)
                 .foregroundColor(universalAccentColor)
             
-            Text("You've spawned in and \"Morning Stroll\" is now live for your friends.")
+            Text("You've spawned in and \"\(activityTitle)\" is now live for your friends.")
                 .multilineTextAlignment(.center)
                 .foregroundColor(figmaBlack300)
             
@@ -49,6 +50,10 @@ struct ActivityConfirmationView: View {
         }
         .padding()
         .background(universalBackgroundColor)
+    }
+    
+    private var activityTitle: String {
+        return viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedType?.rawValue ?? "Activity")
     }
 }
 

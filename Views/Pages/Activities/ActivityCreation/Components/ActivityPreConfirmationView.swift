@@ -38,7 +38,7 @@ struct ActivityPreConfirmationView: View {
                 
                 // Activity title and location
                 VStack(spacing: 8) {
-                    Text(viewModel.activity.title.isEmpty ? (viewModel.selectedType?.rawValue ?? "Morning Stroll") : viewModel.activity.title)
+                    Text(viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedType?.rawValue ?? "Morning Stroll"))
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(universalAccentColor)
