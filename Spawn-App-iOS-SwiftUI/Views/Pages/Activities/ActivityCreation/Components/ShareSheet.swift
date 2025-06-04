@@ -120,20 +120,34 @@ struct ShareSheet: View {
     private func shareViaWhatsApp() {
         let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
-        let whatsappURL = URL(string: "whatsapp://send?text=\(url.absoluteString)")!
+        let shareText = "Join me for \"\(activity.title)\"! \(url.absoluteString)"
         
-        if UIApplication.shared.canOpenURL(whatsappURL) {
-            UIApplication.shared.open(whatsappURL)
+        if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+           let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)") {
+            
+            if UIApplication.shared.canOpenURL(whatsappURL) {
+                UIApplication.shared.open(whatsappURL)
+            } else {
+                // WhatsApp not installed, fallback to share sheet
+                shareViaSystem()
+            }
         }
     }
     
     private func shareViaIMessage() {
         let activity = ActivityCreationViewModel.shared.activity
         let url = generateShareURL(for: activity)
-        let smsURL = URL(string: "sms:&body=\(url.absoluteString)")!
+        let shareText = "Join me for \"\(activity.title)\"! \(url.absoluteString)"
         
-        if UIApplication.shared.canOpenURL(smsURL) {
-            UIApplication.shared.open(smsURL)
+        if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+           let smsURL = URL(string: "sms:&body=\(encodedText)") {
+            
+            if UIApplication.shared.canOpenURL(smsURL) {
+                UIApplication.shared.open(smsURL)
+            } else {
+                // Messages not available, fallback to share sheet
+                shareViaSystem()
+            }
         }
     }
     
