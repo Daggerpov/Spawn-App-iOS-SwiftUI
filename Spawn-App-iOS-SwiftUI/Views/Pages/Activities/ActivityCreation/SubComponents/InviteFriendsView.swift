@@ -14,7 +14,6 @@ struct InviteFriendsView: View {
 	
 	// Add view models for friends
 	@StateObject private var friendsViewModel: FriendsTabViewModel
-	@ObservedObject private var appCache = AppCache.shared
 
 	let user: BaseUserDTO
 
@@ -52,14 +51,25 @@ struct InviteFriendsView: View {
 		.onAppear {
 			friendsViewModel.connectSearchViewModel(searchViewModel)
 			
-			if appCache.friends.isEmpty {
+			if AppCache.shared.friends.isEmpty {
 				Task {
 					await friendsViewModel.fetchAllData()
+					// After fetching friends, automatically select them all if not already selected
+					await MainActor.run {
+						if activityCreationViewModel.selectedFriends.isEmpty {
+							activityCreationViewModel.selectedFriends = friendsViewModel.friends
+						}
+					}
 				}
 			} else {
 				// Use cached friends data
-				friendsViewModel.friends = appCache.friends
-				friendsViewModel.filteredFriends = appCache.friends
+				friendsViewModel.friends = AppCache.shared.friends
+				friendsViewModel.filteredFriends = AppCache.shared.friends
+				
+				// Automatically select all friends if not already selected
+				if activityCreationViewModel.selectedFriends.isEmpty {
+					activityCreationViewModel.selectedFriends = AppCache.shared.friends
+				}
 			}
 		}
 	}
@@ -159,10 +169,7 @@ struct InviteFriendsView: View {
 				$0.id == friend.id
 			}
 		} else {
-			activityCreationViewModel.selectedFriends.append(friend)  // Add to selected friends
-		}
-		activityCreationViewModel.selectedFriends.removeAll {
-			$0.id == friend.id
+			activityCreationViewModel.selectedFriends.append(friend)
 		}
 	}
 }
@@ -245,6 +252,5 @@ struct IndividualFriendView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-	InviteFriendsView(user: .danielAgapov).environmentObject(appCache)
+	InviteFriendsView(user: .danielAgapov)
 }

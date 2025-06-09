@@ -29,3 +29,10 @@ struct ActivityLocationView: View {
         .cornerRadius(12)
     }
 }
+
+@available(iOS 17.0, *)
+#Preview {
+    ActivityLocationView(activity: FullFeedActivityDTO.mockDinnerActivity)
+        .padding()
+        .background(Color.blue)
+}

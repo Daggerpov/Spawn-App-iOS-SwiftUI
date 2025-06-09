@@ -16,6 +16,9 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var selectedDate: Date = Date()
 	@Published var activity: ActivityCreationDTO
 	@Published var creationMessage: String = ""
+	@Published var selectedType: ActivityType?
+	@Published var selectedDuration: ActivityDuration = .indefinite
+	@Published var selectedLocation: Location?
 
 	@Published var selectedFriends: [FullFriendUserDTO] = []
 	@Published var selectedCategory: ActivityCategory = .general
@@ -47,12 +50,47 @@ class ActivityCreationViewModel: ObservableObject {
 			title: "",
 			startTime: defaultStart,
 			endTime: defaultEnd,
-			location: Location(
-				id: UUID(), name: "", latitude: 0.0, longitude: 0.0),
+			location: nil,
 			icon: "⭐️",
 			category: .general,
-			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+			invitedFriendUserIds: []
 		)
+		
+		// Automatically populate friends when initializing
+		loadAllFriendsAsSelected()
+	}
+	
+	// Load all friends and automatically select them for invitation
+	private func loadAllFriendsAsSelected() {
+		// Check if we have cached friends
+		if !AppCache.shared.friends.isEmpty {
+			selectedFriends = AppCache.shared.friends
+		} else {
+			// If no cached friends, fetch them
+			Task {
+				await fetchAndSelectAllFriends()
+			}
+		}
+	}
+	
+	// Fetch all friends from API and select them
+	private func fetchAndSelectAllFriends() async {
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+		
+		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)") {
+			do {
+				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+				
+				await MainActor.run {
+					self.selectedFriends = fetchedFriends
+					// Update the app cache as well
+					AppCache.shared.updateFriends(fetchedFriends)
+				}
+			} catch {
+				print("Error fetching friends for auto-invite: \(error.localizedDescription)")
+			}
+		}
 	}
 	
 	// Helper function to format the date for display
@@ -96,31 +134,46 @@ class ActivityCreationViewModel: ObservableObject {
         }
 	}
 
-	func createActivity() async {
-		// Validate form before proceeding
-		await validateActivityForm()
-		guard isFormValid else {
-			await MainActor.run {
-				creationMessage = "Please fix the errors before creating the activity."
-			}
-			return
+	func updateActivityDuration() {
+		let startTime = selectedDate
+		let endTime: Date
+		
+		switch selectedDuration {
+		case .indefinite:
+			endTime = Calendar.current.date(byAdding: .hour, value: 24, to: startTime) ?? startTime
+		case .twoHours:
+			endTime = Calendar.current.date(byAdding: .hour, value: 2, to: startTime) ?? startTime
+		case .oneHour:
+			endTime = Calendar.current.date(byAdding: .hour, value: 1, to: startTime) ?? startTime
+		case .thirtyMinutes:
+			endTime = Calendar.current.date(byAdding: .minute, value: 30, to: startTime) ?? startTime
 		}
 		
-		// Ensure times are set if not already provided
-		if activity.startTime == nil {
-			activity.startTime = combineDateAndTime(selectedDate, time: Date())
-		}
-		if activity.endTime == nil {
-			activity.endTime = combineDateAndTime(
-				selectedDate, time: Date().addingTimeInterval(2 * 60 * 60))
-		}
+		activity.startTime = startTime
+		activity.endTime = endTime
+	}
+	
+	func updateActivityType() {
+		guard let type = selectedType else { return }
+		
+		activity.title = type.rawValue
+		activity.icon = type.icon
+		activity.category = type.toActivityCategory()
+	}
+	
+	func setLocation(_ location: Location) {
+		selectedLocation = location
+		activity.location = location
+	}
 
-		// Populate invited user IDs from the selected array
+	func createActivity() async {
+		// Update activity with final details
+		updateActivityType()
+		updateActivityDuration()
+		
+		// Populate the invited friend user IDs from selected friends
 		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
 		
-		// Set the selected category
-		activity.category = selectedCategory
-
 		if let url = URL(string: APIService.baseURL + "activities") {
 			do {
 				_ = try await self.apiService.sendData(
@@ -138,20 +191,23 @@ class ActivityCreationViewModel: ObservableObject {
 			}
 		}
 	}
+}
 
-	// Helper function to combine a date and a time into a single Date
-	func combineDateAndTime(_ date: Date, time: Date) -> Date {
-		let calendar = Calendar.current
-		let dateComponents = calendar.dateComponents(
-			[.year, .month, .day], from: date)
-		let timeComponents = calendar.dateComponents(
-			[.hour, .minute], from: time)
-		var combinedComponents = DateComponents()
-		combinedComponents.year = dateComponents.year
-		combinedComponents.month = dateComponents.month
-		combinedComponents.day = dateComponents.day
-		combinedComponents.hour = timeComponents.hour
-		combinedComponents.minute = timeComponents.minute
-		return calendar.date(from: combinedComponents) ?? date
+// MARK: - Helper Extensions
+
+extension ActivityType {
+	func toActivityCategory() -> ActivityCategory {
+		switch self {
+		case .foodAndDrink:
+			return .foodAndDrink
+		case .active:
+			return .active
+		case .grind:
+			return .grind
+		case .chill:
+			return .chill
+		case .general:
+			return .general
+		}
 	}
 } 

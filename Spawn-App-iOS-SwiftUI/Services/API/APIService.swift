@@ -20,8 +20,7 @@ extension Optional: OptionalProtocol {
 }
 
 class APIService: IAPIService {
-	static var baseURL: String =
-		"https://spawn-app-back-end-production.up.railway.app/api/v1/"
+	static var baseURL: String = ServiceConstants.URLs.apiBase
 
 	var errorMessage: String?  // TODO: currently not being accessed; maybe use in alert to user
 	var errorStatusCode: Int?  // if 404 -> just populate empty array, that's fine
