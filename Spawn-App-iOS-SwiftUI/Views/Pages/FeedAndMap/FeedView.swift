@@ -40,7 +40,7 @@ struct FeedView: View {
         ZStack {
             NavigationStack {
                 VStack {
-                    HeaderView(user: user, numActivities: viewModel.activities.count).padding(.top, 75)
+                    HeaderView(user: user).padding(.top, 75)
                     Spacer()
                     activitiesListView
                 }

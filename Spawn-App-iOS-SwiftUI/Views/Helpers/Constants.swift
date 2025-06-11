@@ -47,6 +47,9 @@ let figmaBlack400: Color = Color(hex: figmaBlack400Hex)
 let figmaOrangeHex: String = "FF7270"
 let figmaBittersweetOrange: Color = Color(hex: figmaOrangeHex)
 
+let figmaGreyHex: String = "#F6F6F6"
+let figmaGrey: Color = Color(hex: figmaGreyHex)
+
 // Default map location (UBC)
 let defaultMapLatitude: Double = 49.26468617023799
 let defaultMapLongitude: Double = -123.25859833051356

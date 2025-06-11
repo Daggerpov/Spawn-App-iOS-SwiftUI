@@ -11,6 +11,8 @@ import SwiftUI
 struct ParticipantsImagesView: View {
 	var activity: FullFeedActivityDTO
     let maxCount: Int = 2
+    let width: CGFloat = 28
+    let height: CGFloat = 28
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
 		var participantsFiltered = participants
@@ -49,13 +51,13 @@ struct ParticipantsImagesView: View {
                                 } placeholder: {
                                     Circle()
                                         .fill(Color.gray)
-                                        .frame(width: 24, height: 24)
+                                        .frame(width: width, height: height)
                                 }
                             }
 						} else {
 							Circle()
 								.fill(Color.gray)
-								.frame(width: 24, height: 24)
+								.frame(width: width, height: height)
 						}
 					}
 				)
@@ -65,7 +67,7 @@ struct ParticipantsImagesView: View {
                 ZStack {
                     Circle()
                         .fill(Color.white)
-                        .frame(width: 24, height: 24)
+                        .frame(width: width, height: height)
                     Text("+\(participants.count - maxCount)")
                         .font(.onestSemiBold(size: 12))
                         .foregroundColor(figmaSoftBlue)
