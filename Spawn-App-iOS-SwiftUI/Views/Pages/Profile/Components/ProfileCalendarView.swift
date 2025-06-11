@@ -12,7 +12,7 @@ struct ProfileCalendarView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
 
 	@Binding var showCalendarPopup: Bool
-	@Binding var showEventDetails: Bool
+	@Binding var showActivityDetails: Bool
 
 	@State private var currentMonth = Calendar.current.component(
 		.month,
@@ -80,16 +80,16 @@ struct ProfileCalendarView: View {
 		.onAppear {
 			fetchCalendarData()
 		}
-		.sheet(isPresented: $showEventDetails) {
-			if let event = profileViewModel.selectedEvent {
-				// Use the same color scheme as EventCardView would
-				let eventColor = event.isSelfOwned == true ?
-				universalAccentColor : determineEventColor(for: event)
+		.sheet(isPresented: $showActivityDetails) {
+			if let activity = profileViewModel.selectedActivity {
+				// Use the same color scheme as ActivityCardView would
+				let activityColor = activity.isSelfOwned == true ?
+				universalAccentColor : determineActivityColor(for: activity)
 
-				EventDescriptionView(
-					event: event,
-					users: event.participantUsers,
-					color: eventColor,
+				ActivityDescriptionView(
+					activity: activity,
+					users: activity.participantUsers,
+					color: activityColor,
 					userId: userAuth.spawnUser?.id ?? UUID()
 				)
 				.presentationDetents([.medium, .large])
@@ -100,44 +100,44 @@ struct ProfileCalendarView: View {
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
 		if activities.count == 1 {
 			// If only one activity, directly open it
-			handleEventSelection(activities[0])
+			handleActivitySelection(activities[0])
 		} else if activities.count > 1 {
-			// If multiple activities, show day's events in a sheet
+			// If multiple activities, show day's activities in a sheet
 			Task {
 				await profileViewModel.fetchAllCalendarActivities()
 				await MainActor.run {
-					showDayEvents(activities: activities)
+					showDayActivities(activities: activities)
 				}
 			}
 		}
 	}
 
-	private func handleEventSelection(_ activity: CalendarActivityDTO) {
+	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
 		// First close the calendar popup
 		showCalendarPopup = false
 
-		// Then fetch and show the event details
+		// Then fetch and show the activity details
 		Task {
-			if let eventId = activity.eventId,
-			   let _ = await profileViewModel.fetchEventDetails(eventId: eventId) {
+			if let activityId = activity.activityId,
+			   let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
 				await MainActor.run {
-					showEventDetails = true
+					showActivityDetails = true
 				}
 			}
 		}
 	}
 
-	private func showDayEvents(activities: [CalendarActivityDTO]) {
-		// Present a sheet with EventCardViews for each activity
+	private func showDayActivities(activities: [CalendarActivityDTO]) {
+		// Present a sheet with ActivityCardViews for each activity
 		let sheet = UIViewController()
-		let hostingController = UIHostingController(rootView: DayEventsView(
+		let hostingController = UIHostingController(rootView: DayActivitiesView(
 			activities: activities,
 			onDismiss: {
 				sheet.dismiss(animated: true)
 			},
-			onEventSelected: { activity in
+			onActivitySelected: { activity in
 				sheet.dismiss(animated: true) {
-					self.handleEventSelection(activity)
+					self.handleActivitySelection(activity)
 				}
 			}
 		))
@@ -188,9 +188,9 @@ struct ProfileCalendarView: View {
 		return []
 	}
 
-	private func determineEventColor(for event: FullFeedEventDTO) -> Color {
-		// Use event category color
-		return event.category.color()
+	private func determineActivityColor(for activity: FullFeedActivityDTO) -> Color {
+		// Use activity category color
+		return activity.category.color()
 	}
 
 	private var weekDays: [String] {
@@ -225,79 +225,41 @@ struct ProfileCalendarView: View {
 // Helper struct for the mini day cell in the profile view
 struct MiniDayCell: View {
 	let activities: [CalendarActivityDTO]
-
-	private var gradientColors: [Color] {
-		// Get up to 3 unique colors from activities
-		let colors = activities.prefix(3).compactMap { activity -> Color? in
-			if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
-				return Color(hex: colorHex)
-			} else if let category = activity.eventCategory {
-				return category.color()
-			}
-			return nil
-		}
-
-		// If no colors found, return default gray
-		if colors.isEmpty {
-			return [Color.gray.opacity(0.5)]
-		}
-
-		// If only one color, use it with different opacity
-		if colors.count == 1 {
-			return [colors[0].opacity(0.7), colors[0].opacity(0.9)]
-		}
-
-		return colors
-	}
-
+	
 	var body: some View {
 		ZStack {
-			// Gradient background
 			RoundedRectangle(cornerRadius: 6)
-				.fill(
-					LinearGradient(
-						gradient: Gradient(colors: gradientColors),
-						startPoint: .topLeading,
-						endPoint: .bottomTrailing
-					)
-				)
+				.fill(Color.gray.opacity(0.3))
 				.frame(height: 32)
-				.shadow(radius: 2)
-
-			if activities.count <= 4 {
-				// Show up to 4 icons in a grid
-				let columns = [
-					GridItem(.flexible(), spacing: 1),
-					GridItem(.flexible(), spacing: 1),
-				]
-
-				LazyVGrid(columns: columns, spacing: 1) {
-					ForEach(activities.prefix(4), id: \.id) { activity in
+			
+			if activities.count == 1 {
+				// Single activity - show its icon and color
+				let activity = activities[0]
+				RoundedRectangle(cornerRadius: 6)
+					.fill(activityColor(for: activity))
+					.frame(height: 32)
+					.overlay(
 						activityIcon(for: activity)
 							.foregroundColor(.white)
-							.font(.system(size: 10))
-					}
-				}
-			} else {
-				// Show 2 icons + overflow indicator
-				HStack {
-					ForEach(0..<2, id: \.self) { index in
-						if index < activities.count {
-							activityIcon(for: activities[index])
-								.foregroundColor(.white)
-								.font(.system(size: 10))
-						}
-					}
-
-					Text("+\(activities.count - 2)")
-						.font(.system(size: 10))
-						.foregroundColor(.white)
-						.fontWeight(.bold)
-				}
+					)
+			} else if activities.count > 1 {
+				// Multiple activities - show count and mixed colors
+				RoundedRectangle(cornerRadius: 6)
+					.fill(LinearGradient(
+						gradient: Gradient(colors: activities.prefix(3).map { activityColor(for: $0) }),
+						startPoint: .leading,
+						endPoint: .trailing
+					))
+					.frame(height: 32)
+					.overlay(
+						Text("\(activities.count)")
+							.font(.system(size: 10, weight: .bold))
+							.foregroundColor(.white)
+					)
 			}
 		}
 	}
-
+	
 	private func activityColor(for activity: CalendarActivityDTO) -> Color {
 		// First check if activity has a custom color hex code
 		if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
@@ -305,7 +267,7 @@ struct MiniDayCell: View {
 		}
 
 		// Fallback to category color
-		guard let category = activity.eventCategory else {
+		guard let category = activity.activityCategory else {
 			return Color.gray.opacity(0.6)  // Default color for null category
 		}
 		return category.color()
@@ -318,9 +280,9 @@ struct MiniDayCell: View {
 				Text(icon)
 					.font(.system(size: 10))
 			} else {
-				// Fallback to system icon from the EventCategory enum
+				// Fallback to system icon from the ActivityCategory enum
 				Image(
-					systemName: activity.eventCategory?.systemIcon()
+					systemName: activity.activityCategory?.systemIcon()
 					?? "star.fill"
 				)
 				.font(.system(size: 10))
@@ -333,6 +295,6 @@ struct MiniDayCell: View {
 	ProfileCalendarView(
 		profileViewModel: ProfileViewModel(userId: UUID()),
 		showCalendarPopup: .constant(false),
-		showEventDetails: .constant(false)
+		showActivityDetails: .constant(false)
 	)
 }

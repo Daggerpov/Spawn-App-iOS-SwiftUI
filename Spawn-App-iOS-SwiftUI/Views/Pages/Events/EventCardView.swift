@@ -1,30 +1,30 @@
 import SwiftUI
 
 struct EventCardView: View {
-    @ObservedObject var viewModel: EventCardViewModel
-    var event: FullFeedEventDTO
+    @ObservedObject var viewModel: ActivityCardViewModel
+    var activity: FullFeedActivityDTO
     var color: Color
-    var callback: (FullFeedEventDTO, Color) -> Void
+    var callback: (FullFeedActivityDTO, Color) -> Void
     
     init(
-        userId: UUID, event: FullFeedEventDTO, color: Color,
-        callback: @escaping (FullFeedEventDTO, Color) -> Void
+        userId: UUID, activity: FullFeedActivityDTO, color: Color,
+        callback: @escaping (FullFeedActivityDTO, Color) -> Void
     ) {
-        self.event = event
+        self.activity = activity
         self.color = color
-        self.viewModel = EventCardViewModel(
+        self.viewModel = ActivityCardViewModel(
             apiService: MockAPIService.isMocking
                 ? MockAPIService(userId: userId) : APIService(), userId: userId,
-            event: event)
+            activity: activity)
         self.callback = callback
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Top Row: Title, Participants
-            EventCardTopRowView(event: event)
+            EventCardTopRowView(activity: activity)
             // Location Row
-            EventLocationView(event: event)
+            EventLocationView(activity: activity)
             // Description Row
             //EventCardInfoView(event: event)
         }
@@ -38,7 +38,7 @@ struct EventCardView: View {
             viewModel.fetchIsParticipating()
         }
         .onTapGesture {
-            callback(event, color)
+            callback(activity, color)
         }
     }
 }
@@ -47,7 +47,7 @@ struct EventCardView: View {
     let mockUserId: UUID = UUID()
     EventCardView(
         userId: mockUserId,
-        event: .mockDinnerEvent,
+        activity: .mockDinnerActivity,
         color: figmaSoftBlue
     ) { event, color in
         print("Event tapped: \(event.title ?? "Untitled")")

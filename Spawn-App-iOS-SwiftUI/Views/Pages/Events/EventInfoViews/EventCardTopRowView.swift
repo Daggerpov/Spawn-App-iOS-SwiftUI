@@ -8,26 +8,26 @@
 import SwiftUI
 
 struct EventCardTopRowView: View {
-	var event: FullFeedEventDTO
+	var activity: FullFeedActivityDTO
     let subtitleFontSize: CGFloat = 14
     let subtitleColor: Color = .white.opacity(0.85)
     let viewModel: ActivityInfoViewModel
     
-    init(event: FullFeedEventDTO) {
-        self.event = event
-        self.viewModel = ActivityInfoViewModel(activity: event)
+    init(activity: FullFeedActivityDTO) {
+        self.activity = activity
+        self.viewModel = ActivityInfoViewModel(activity: activity)
     }
 
 	var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                if let title = event.title {
+                if let title = activity.title {
                     EventCardTitleView(eventTitle: title)
                 }
                 eventSubtitleView
             }
             Spacer()
-            ParticipantsImagesView(event: event)
+            ParticipantsImagesView(activity: activity)
         }
 	}
     
@@ -49,7 +49,7 @@ extension EventCardTopRowView {
         Text("By ")
             .font(.onestRegular(size: subtitleFontSize))
             .foregroundColor(subtitleColor) +
-        Text(event.creatorUser.name ?? event.creatorUser.username)
+        Text(activity.creatorUser.name ?? activity.creatorUser.username)
             .font(.onestSemiBold(size: subtitleFontSize))
             .foregroundColor(subtitleColor) +
         Text(" • \(viewModel.getDisplayString(activityInfoType: .time))")
@@ -63,5 +63,5 @@ extension EventCardTopRowView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	EventCardTopRowView(event: FullFeedEventDTO.mockDinnerEvent).environmentObject(appCache)
+    EventCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
 }

@@ -10,7 +10,7 @@ struct ActivityFeedView: View {
     var user: BaseUserDTO
     @StateObject var viewModel: FeedViewModel
     @State private var showingEventDescriptionPopup: Bool = false
-    @State private var eventInPopup: FullFeedEventDTO?
+    @State private var eventInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
     
     var body: some View {
@@ -63,8 +63,8 @@ extension ActivityFeedView {
     var activityListView: some View {
         ScrollView(.vertical) {
             LazyVStack(spacing: 18) {
-                if viewModel.events.isEmpty {
-                    Image("EventNotFound")
+                if viewModel.activities.isEmpty {
+                    Image("ActivityNotFound")
                         .resizable()
                         .frame(width: 125, height: 125)
                     Text("No Events Found").font(.onestSemiBold(size: 32)).foregroundColor(universalAccentColor)
@@ -73,8 +73,8 @@ extension ActivityFeedView {
                         .multilineTextAlignment(.center)
                         .foregroundColor(figmaBlack300)
                 } else {
-                    ForEach(viewModel.events) { activity in
-                        EventCardView(userId: user.id, event: activity, color: figmaBlue) { event, color in
+                    ForEach(viewModel.activities) { activity in
+                        EventCardView(userId: user.id, activity: activity, color: figmaBlue) { event, color in
                                 eventInPopup = event
                                 colorInPopup = color
                                 showingEventDescriptionPopup = true

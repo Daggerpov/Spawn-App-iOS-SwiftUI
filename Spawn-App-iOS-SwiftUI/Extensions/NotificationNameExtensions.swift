@@ -7,6 +7,6 @@ extension Notification.Name {
     // Notification sent when user logs out
     static let userDidLogout = Notification.Name("userDidLogout")
     
-    // Notification for event creation
-    static let eventCreated = Notification.Name("eventCreated")
+    // Notification for activity creation
+    static let activityCreated = Notification.Name("activityCreated")
 }

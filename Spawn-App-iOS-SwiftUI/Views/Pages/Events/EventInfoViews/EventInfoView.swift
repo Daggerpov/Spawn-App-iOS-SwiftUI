@@ -10,7 +10,7 @@ import SwiftUI
 struct EventInfoView: View {
 	@ObservedObject var viewModel: ActivityInfoViewModel
 
-	init(event: FullFeedEventDTO, eventInfoType: ActivityInfoType) {
+	init(event: FullFeedActivityDTO, eventInfoType: ActivityInfoType) {
 		self.viewModel = ActivityInfoViewModel(
             activity: event)
 	}
@@ -47,5 +47,5 @@ struct EventInfoView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	EventInfoView(event: FullFeedEventDTO.mockDinnerEvent, eventInfoType: ActivityInfoType.location).environmentObject(appCache)
+    EventInfoView(event: FullFeedActivityDTO.mockDinnerActivity, eventInfoType: ActivityInfoType.location).environmentObject(appCache)
 }

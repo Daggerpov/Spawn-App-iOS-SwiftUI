@@ -19,19 +19,12 @@ extension Image {
 		case .friendsListView:
 			imageSize = 50
 			lineWidth = 0
-		case .eventParticipants, .chatMessage:
+		case .activityParticipants, .chatMessage:
 			imageSize = 25
 			strokeColor = .white
 			lineWidth = 1
 		case .profilePage:
 			imageSize = 150
-		case .mapView:
-			imageSize = 40
-		case .tagFriends:
-			imageSize = 35
-			lineWidth = 0
-        case .choosingFriendTags:
-            imageSize = 80
 		}
 
 		return

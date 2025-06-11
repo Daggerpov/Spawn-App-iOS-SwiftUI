@@ -13,9 +13,9 @@ struct EventLocationView: View {
     let capsuleColor: Color = Color.black.opacity(0.18)
     let font: Font = .onestSemiBold(size: fontSize)
 
-    init(event: FullFeedEventDTO) {
+    init(activity: FullFeedActivityDTO) {
         self.viewModel = ActivityInfoViewModel(
-            activity: event)
+            activity: activity)
     }
     
     var body: some View {

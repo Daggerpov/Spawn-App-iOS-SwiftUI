@@ -20,8 +20,7 @@ extension Optional: OptionalProtocol {
 }
 
 class APIService: IAPIService {
-	static var baseURL: String =
-		"https://spawn-app-back-end-production.up.railway.app/api/v1/"
+	static var baseURL: String = ServiceConstants.URLs.apiBase
 
 	var errorMessage: String?  // TODO: currently not being accessed; maybe use in alert to user
 	var errorStatusCode: Int?  // if 404 -> just populate empty array, that's fine
@@ -904,6 +903,12 @@ class APIService: IAPIService {
 
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] {
 		resetState()
+		
+		// Don't send validation request if there are no cached items to validate
+		if cachedItems.isEmpty {
+			print("No cached items to validate, returning empty response")
+			return [:]
+		}
 		
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			throw APIError.invalidData
