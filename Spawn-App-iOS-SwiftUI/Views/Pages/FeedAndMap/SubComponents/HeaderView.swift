@@ -9,7 +9,6 @@ import SwiftUI
 
 struct HeaderView: View {
 	var user: BaseUserDTO
-	var numEvents: Int
 	var body: some View {
 		HStack {
 			Spacer()
@@ -24,7 +23,6 @@ struct HeaderView: View {
 				}
 				.font(.onestBold(size: 32))
 				Spacer().frame(height: 5)
-				eventsInAreaView
 			}
 			.foregroundColor(universalAccentColor)
 			.frame(alignment: .leading)
@@ -36,31 +34,31 @@ struct HeaderView: View {
 	}
 }
 
-extension HeaderView {
-	var eventsInAreaView: some View {
-		HStack {
-			if numEvents == 0 {
-				Text("There is ").font(.onestSemiBold(size: 20))
-					+ Text("1 event ").foregroundColor(figmaSoftBlue).font(
-						.onestSemiBold(size: 20)
-					)
-					+ Text("in your area.").font(.onestSemiBold(size: 20))
-			} else {
-				Text("There are ").font(.onestSemiBold(size: 20))
-					+ Text("\(numEvents) events ").foregroundColor(
-						figmaSoftBlue
-					).font(.onestSemiBold(size: 20))
-					+ Text("in your area.").font(.onestSemiBold(size: 20))
-			}
-			Spacer()
-		}
-	}
-}
+//extension HeaderView {
+//	var eventsInAreaView: some View {
+//		HStack {
+//			if numEvents == 0 {
+//				Text("There is ").font(.onestSemiBold(size: 20))
+//					+ Text("1 event ").foregroundColor(figmaSoftBlue).font(
+//						.onestSemiBold(size: 20)
+//					)
+//					+ Text("in your area.").font(.onestSemiBold(size: 20))
+//			} else {
+//				Text("There are ").font(.onestSemiBold(size: 20))
+//					+ Text("\(numEvents) events ").foregroundColor(
+//						figmaSoftBlue
+//					).font(.onestSemiBold(size: 20))
+//					+ Text("in your area.").font(.onestSemiBold(size: 20))
+//			}
+//			Spacer()
+//		}
+//	}
+//}
 
 @available(iOS 17, *)
 #Preview {
 	@Previewable @StateObject var appCache = AppCache.shared
-	HeaderView(user: BaseUserDTO.danielAgapov, numEvents: 2).environmentObject(
+	HeaderView(user: BaseUserDTO.danielAgapov).environmentObject(
 		appCache
 	)
 }

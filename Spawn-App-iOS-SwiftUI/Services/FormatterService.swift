@@ -108,4 +108,23 @@ class FormatterService {
 		// If not a valid phone number format, return original (trimmed)
 		return trimmed
 	}
+    
+    
+    func timeUntil(_ date: Date?) -> String {
+        guard let date = date else { return "" }
+        let interval = date.timeIntervalSinceNow
+        if interval <= 0 { return "Started" }
+        let hours = Int(interval) / 3600
+        let minutes = (Int(interval) % 3600) / 60
+        if hours > 0 {
+            return "\(hours) hour\(hours > 1 ? "s" : "")"
+        } else {
+            return "\(minutes) min\(minutes > 1 ? "s" : "")"
+        }
+    }
+    
+    func distanceString() -> String {
+        // TODO: Replace with real distance calculation if available
+        return "2km"
+    }
 }

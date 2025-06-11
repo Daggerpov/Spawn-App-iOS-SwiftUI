@@ -26,12 +26,12 @@ struct EventCardView: View {
             // Location Row
             EventLocationView(event: event)
             // Description Row
-            EventCardInfoView(event: event)
+            //EventCardInfoView(event: event)
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 14)
-                .fill(Color(red: 0.48, green: 0.60, blue: 1.0))
+                .fill(color)
         )
         .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
         .onAppear {
@@ -40,5 +40,16 @@ struct EventCardView: View {
         .onTapGesture {
             callback(event, color)
         }
+    }
+}
+
+#Preview {
+    let mockUserId: UUID = UUID()
+    EventCardView(
+        userId: mockUserId,
+        event: .mockDinnerEvent,
+        color: figmaSoftBlue
+    ) { event, color in
+        print("Event tapped: \(event.title ?? "Untitled")")
     }
 }

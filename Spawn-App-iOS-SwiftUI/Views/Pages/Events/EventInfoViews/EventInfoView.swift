@@ -8,24 +8,24 @@
 import SwiftUI
 
 struct EventInfoView: View {
-	@ObservedObject var viewModel: EventInfoViewModel
+	@ObservedObject var viewModel: ActivityInfoViewModel
 
-	init(event: FullFeedEventDTO, eventInfoType: EventInfoType) {
-		self.viewModel = EventInfoViewModel(
-			event: event, eventInfoType: eventInfoType)
+	init(event: FullFeedEventDTO, eventInfoType: ActivityInfoType) {
+		self.viewModel = ActivityInfoViewModel(
+            activity: event)
 	}
 
 	var body: some View {
 		HStack {
 			HStack(spacing: 5) {
-				Image(systemName: viewModel.imageSystemName)
-					.padding(5)
-					.background(
-						RoundedRectangle(cornerRadius: 30)
-							.fill(Color.white.opacity(0.1))
-					)
+//				Image(systemName: viewModel.imageSystemName)
+//					.padding(5)
+//					.background(
+//						RoundedRectangle(cornerRadius: 30)
+//							.fill(Color.white.opacity(0.1))
+//					)
 				
-				Text(viewModel.eventInfoDisplayString)
+                Text(viewModel.getDisplayString(activityInfoType: .location))
 					.lineLimit(1)
 					.fixedSize()
 					.font(.caption2)
@@ -47,5 +47,5 @@ struct EventInfoView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	EventInfoView(event: FullFeedEventDTO.mockDinnerEvent, eventInfoType: EventInfoType.location).environmentObject(appCache)
+	EventInfoView(event: FullFeedEventDTO.mockDinnerEvent, eventInfoType: ActivityInfoType.location).environmentObject(appCache)
 }

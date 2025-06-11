@@ -9,6 +9,14 @@ import SwiftUI
 
 struct EventCardTopRowView: View {
 	var event: FullFeedEventDTO
+    let subtitleFontSize: CGFloat = 14
+    let subtitleColor: Color = .white.opacity(0.85)
+    let viewModel: ActivityInfoViewModel
+    
+    init(event: FullFeedEventDTO) {
+        self.event = event
+        self.viewModel = ActivityInfoViewModel(activity: event)
+    }
 
 	var body: some View {
         HStack(alignment: .top) {
@@ -16,12 +24,14 @@ struct EventCardTopRowView: View {
                 if let title = event.title {
                     EventCardTitleView(eventTitle: title)
                 }
-                EventCardTimeView(event: event)
+                eventSubtitleView
             }
             Spacer()
             ParticipantsImagesView(event: event)
         }
 	}
+    
+    
 }
 
 struct EventCardTitleView: View {
@@ -34,20 +44,21 @@ struct EventCardTitleView: View {
 	}
 }
 
-struct EventCardTimeView: View {
-    @ObservedObject var viewModel: EventInfoViewModel
-    
-    init(event: FullFeedEventDTO) {
-        self.viewModel = EventInfoViewModel(
-            event: event, eventInfoType: .time)
-    }
-    
-    var body: some View {
-        Text(viewModel.eventInfoDisplayString)
-            .font(.onestRegular(size: 14))
-            .foregroundColor(.white.opacity(0.85))
+extension EventCardTopRowView {
+    var eventSubtitleView: some View {
+        Text("By ")
+            .font(.onestRegular(size: subtitleFontSize))
+            .foregroundColor(subtitleColor) +
+        Text(event.creatorUser.name ?? event.creatorUser.username)
+            .font(.onestSemiBold(size: subtitleFontSize))
+            .foregroundColor(subtitleColor) +
+        Text(" • \(viewModel.getDisplayString(activityInfoType: .time))")
+            .font(.onestRegular(size: subtitleFontSize))
+            .foregroundColor(subtitleColor)
     }
 }
+
+
 
 @available(iOS 17, *)
 #Preview {

@@ -34,8 +34,7 @@ struct EventDescriptionView: View {
 				
 				// Username display
 				HStack {
-                    Text(EventInfoViewModel(event: viewModel.event, eventInfoType: .time)
-                        .eventInfoDisplayString)
+                    Text(ActivityInfoViewModel(activity: viewModel.event).getDisplayString(activityInfoType: .time))
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(.white)
                         .opacity(0.5)
