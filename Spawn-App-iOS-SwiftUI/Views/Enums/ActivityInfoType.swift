@@ -6,5 +6,5 @@
 //
 
 enum ActivityInfoType {
-	case time, location
+	case time, location, distance
 }

@@ -1,5 +1,5 @@
 //
-//  ActivityCardTopRowView.swift
+//  EventCardTopRowView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/11/24.
@@ -9,48 +9,59 @@ import SwiftUI
 
 struct ActivityCardTopRowView: View {
 	var activity: FullFeedActivityDTO
+    let subtitleFontSize: CGFloat = 14
+    let subtitleColor: Color = .white.opacity(0.85)
+    let viewModel: ActivityInfoViewModel
+    
+    init(activity: FullFeedActivityDTO) {
+        self.activity = activity
+        self.viewModel = ActivityInfoViewModel(activity: activity)
+    }
 
 	var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 if let title = activity.title {
-                    ActivityCardTitleView(activityTitle: title)
+                    EventCardTitleView(eventTitle: title)
                 }
-                ActivityCardTimeView(activity: activity)
+                eventSubtitleView
             }
             Spacer()
             ParticipantsImagesView(activity: activity)
         }
 	}
+    
+    
 }
 
-struct ActivityCardTitleView: View {
-	var activityTitle: String
+struct EventCardTitleView: View {
+	var eventTitle: String
 	var body: some View {
 		// TODO: make this title editable
-        Text(activityTitle)
+        Text(eventTitle)
             .font(.onestBold(size: 24))
             .foregroundColor(.white)
 	}
 }
 
-struct ActivityCardTimeView: View {
-    @ObservedObject var viewModel: ActivityInfoViewModel
-    
-    init(activity: FullFeedActivityDTO) {
-        self.viewModel = ActivityInfoViewModel(
-            activity: activity, activityInfoType: .time)
-    }
-    
-    var body: some View {
-        Text(viewModel.activityInfoDisplayString)
-            .font(.onestRegular(size: 14))
-            .foregroundColor(.white.opacity(0.85))
+extension ActivityCardTopRowView {
+    var eventSubtitleView: some View {
+        Text("By ")
+            .font(.onestRegular(size: subtitleFontSize))
+            .foregroundColor(subtitleColor) +
+        Text(activity.creatorUser.name ?? activity.creatorUser.username)
+            .font(.onestSemiBold(size: subtitleFontSize))
+            .foregroundColor(subtitleColor) +
+        Text(" • \(viewModel.getDisplayString(activityInfoType: .time))")
+            .font(.onestRegular(size: subtitleFontSize))
+            .foregroundColor(subtitleColor)
     }
 }
+
+
 
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-	ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
+    ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
 }

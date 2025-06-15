@@ -1,5 +1,5 @@
 //
-//  ActivityLocationView.swift
+//  EventLocation.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Shane on 5/10/25.
@@ -9,30 +9,30 @@ import SwiftUI
 
 struct ActivityLocationView: View {
     @ObservedObject var viewModel: ActivityInfoViewModel
+    static let fontSize: CGFloat = 14
+    let capsuleColor: Color = Color.black.opacity(0.18)
+    let font: Font = .onestSemiBold(size: fontSize)
 
     init(activity: FullFeedActivityDTO) {
         self.viewModel = ActivityInfoViewModel(
-            activity: activity, activityInfoType: .location)
+            activity: activity)
     }
     
     var body: some View {
         HStack {
-            Image(systemName: "mappin.and.ellipse")
+            Text(Image(systemName: "mappin.and.ellipse"))
                 .foregroundColor(.white)
-            Text(viewModel.activityInfoDisplayString)
+                .font(.onestSemiBold(size: ActivityLocationView.fontSize-2))
+            Text(viewModel.getDisplayString(activityInfoType: .location))
                 .foregroundColor(.white)
-                .font(.onestRegular(size: 13))
+                .font(font) +
+            Text(" • \(viewModel.getDisplayString(activityInfoType: .distance))")
+                .foregroundColor(.white)
+                .font(font)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 3)
-        .background(Color.white.opacity(0.18))
-        .cornerRadius(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(capsuleColor)
+        .cornerRadius(100)
     }
-}
-
-@available(iOS 17.0, *)
-#Preview {
-    ActivityLocationView(activity: FullFeedActivityDTO.mockDinnerActivity)
-        .padding()
-        .background(Color.blue)
 }
