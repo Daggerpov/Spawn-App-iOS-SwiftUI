@@ -20,6 +20,7 @@ struct ActivityFeedView: View {
             HeaderView(user: user)
                 .padding(.horizontal, 12)
                 .padding(.bottom, 14)
+                .padding(.top, 12)
             // Spawn In! row
             HStack {
                 Text("Spawn In!")
