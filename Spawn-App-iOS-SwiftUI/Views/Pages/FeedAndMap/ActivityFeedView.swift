@@ -29,7 +29,8 @@ struct ActivityFeedView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
             // Activity Types row
-            activityTypeListView.padding(.bottom, 16)
+            activityTypeListView
+                .padding(.bottom, 19)
             // Activities in Your Area row
             HStack {
                 Text("See What's Happening!")
@@ -38,8 +39,8 @@ struct ActivityFeedView: View {
                 Spacer()
                 seeAllButton
             }
-            .padding(.horizontal)
-            .padding(.bottom, 10)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
             // Activities
             activityListView
         }
