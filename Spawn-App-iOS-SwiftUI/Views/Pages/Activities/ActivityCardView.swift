@@ -28,8 +28,6 @@ struct ActivityCardView: View {
                 ActivityCardTopRowView(activity: activity)
                 // Location Row
                 ActivityLocationView(activity: activity)
-                // Description Row
-                //EventCardInfoView(event: event)
             }
             .padding(14)
             .background(

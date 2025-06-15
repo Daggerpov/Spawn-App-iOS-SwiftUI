@@ -14,29 +14,32 @@ struct ActivityFeedView: View {
     @State private var colorInPopup: Color?
     
     var body: some View {
-        HeaderView(user: user)
-        
-        VStack {
+        VStack(alignment: .leading, spacing: 0) {
+            HeaderView(user: user)
+                .padding(.horizontal, 12)
+                .padding(.bottom, 14)
             // Spawn In! row
             HStack {
                 Text("Spawn In!")
-                    .font(.onestSemiBold(size: 14))
+                    .font(.onestSemiBold(size: 16))
                     .foregroundColor(figmaBlack400)
                 Spacer()
                 seeAllButton
             }
-            .padding(.horizontal)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
             // Activity Types row
-            activityTypeListView
+            activityTypeListView.padding(.bottom, 16)
             // Activities in Your Area row
             HStack {
                 Text("See What's Happening!")
-                    .font(.onestSemiBold(size: 14))
+                    .font(.onestSemiBold(size: 16))
                     .foregroundColor(figmaBlack400)
                 Spacer()
                 seeAllButton
             }
             .padding(.horizontal)
+            .padding(.bottom, 10)
             // Activities
             activityListView
         }
@@ -53,7 +56,7 @@ struct ActivityFeedView: View {
     var seeAllButton: some View {
         NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .allFriends)) { // TODO: change destination
             Text("See All")
-                .font(.onestRegular(size: 14))
+                .font(.onestRegular(size: 13))
                 .foregroundColor(universalSecondaryColor)
         }
     }
@@ -62,15 +65,18 @@ struct ActivityFeedView: View {
 extension ActivityFeedView {
     var activityTypeListView: some View {
         HStack {
-            
+            ForEach(viewModel.activityTypes) { activityType in
+                ActivityTypeCardView(activityType: activityType)
+            }
         }
+        .padding(.horizontal)
     }
 }
 
 extension ActivityFeedView {
     var activityListView: some View {
         ScrollView(.vertical) {
-            LazyVStack(spacing: 18) {
+            LazyVStack(spacing: 14) {
                 if viewModel.activities.isEmpty {
                     Image("ActivityNotFound")
                         .resizable()
@@ -94,7 +100,7 @@ extension ActivityFeedView {
             }
         }
         .scrollIndicators(.hidden)
-        .padding()
+        .padding(.horizontal)
     }
 }
 

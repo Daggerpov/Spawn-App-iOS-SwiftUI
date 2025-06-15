@@ -40,6 +40,17 @@ class MockAPIService: IAPIService {
 				] as! T
 			}
 		}
+        
+        if let userIdForUrl = userId {
+            if url.absoluteString == APIService.baseURL + "activity-type/\(userIdForUrl)" {
+                return [
+                    ActivityTypeDTO.mockChillActivityType,
+                    ActivityTypeDTO.mockFoodActivityType,
+                    ActivityTypeDTO.mockActiveActivityType,
+                    ActivityTypeDTO.mockStudyActivityType
+                ] as! T
+            }
+        }
 
 
 

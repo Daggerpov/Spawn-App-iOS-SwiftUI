@@ -10,6 +10,7 @@ import Combine
 
 class FeedViewModel: ObservableObject {
     @Published var activities: [FullFeedActivityDTO] = []
+    @Published var activityTypes: [ActivityTypeDTO] = []
 
     var apiService: IAPIService
     var userId: UUID
@@ -45,6 +46,7 @@ class FeedViewModel: ObservableObject {
 
     func fetchAllData() async {
         await fetchActivitiesForUser()
+        await fetchActivityTypesForUser()
     }
 
     func fetchActivitiesForUser() async {
@@ -58,6 +60,11 @@ class FeedViewModel: ObservableObject {
         
         // If not in cache, fetch from API
         await fetchActivitiesFromAPI()
+    }
+    
+    func fetchActivityTypesForUser() async {
+        // TODO: implement cache stuff
+        await fetchActivityTypesFromAPI()
     }
     
     private func fetchActivitiesFromAPI() async {
@@ -90,6 +97,35 @@ class FeedViewModel: ObservableObject {
             print("❌ DEBUG: Error fetching activities: \(error)")
             await MainActor.run {
                 self.activities = []
+            }
+        }
+    }
+    
+    private func fetchActivityTypesFromAPI() async {
+        // Path: /api/v1/activity-type/{requestingUserId}
+        guard let url = URL(string: APIService.baseURL + "activity-type/\(userId)") else {
+            print("❌ DEBUG: Failed to construct URL for activity types")
+            return
+        }
+
+        do {
+            let fetchedActivityTypes: [ActivityTypeDTO] = try await self.apiService.fetchData(
+                from: url, parameters: nil
+            )
+            
+            print("✅ DEBUG: Successfully fetched \(fetchedActivityTypes.count) activities")
+            
+            
+            // Update the cache and view model
+            await MainActor.run {
+                self.activityTypes = fetchedActivityTypes
+                print("📱 DEBUG: Updated ViewModel with \(self.activityTypes.count) activity types")
+                // TODO: add cache stuff
+            }
+        } catch {
+            print("❌ DEBUG: Error fetching activity types: \(error)")
+            await MainActor.run {
+                self.activityTypes = []
             }
         }
     }
