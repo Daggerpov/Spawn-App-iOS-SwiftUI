@@ -12,6 +12,8 @@ struct ActivityFeedView: View {
     @State private var showingEventDescriptionPopup: Bool = false
     @State private var eventInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
+    private let horizontalSubHeadingPadding: CGFloat = 21
+    private let bottomSubHeadingPadding: CGFloat = 14
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -26,8 +28,8 @@ struct ActivityFeedView: View {
                 Spacer()
                 seeAllButton
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 12)
+            .padding(.horizontal, horizontalSubHeadingPadding)
+            .padding(.bottom, bottomSubHeadingPadding)
             // Activity Types row
             activityTypeListView
                 .padding(.bottom, 19)
@@ -39,8 +41,8 @@ struct ActivityFeedView: View {
                 Spacer()
                 seeAllButton
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 12)
+            .padding(.horizontal, horizontalSubHeadingPadding)
+            .padding(.bottom, bottomSubHeadingPadding)
             // Activities
             activityListView
         }
@@ -70,7 +72,7 @@ extension ActivityFeedView {
                 ActivityTypeCardView(activityType: activityType)
             }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, 20)
     }
 }
 
