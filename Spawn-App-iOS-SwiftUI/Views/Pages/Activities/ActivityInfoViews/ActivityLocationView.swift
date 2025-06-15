@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EventLocationView: View {
+struct ActivityLocationView: View {
     @ObservedObject var viewModel: ActivityInfoViewModel
     static let fontSize: CGFloat = 14
     let capsuleColor: Color = Color.black.opacity(0.18)
@@ -22,7 +22,7 @@ struct EventLocationView: View {
         HStack {
             Text(Image(systemName: "mappin.and.ellipse"))
                 .foregroundColor(.white)
-                .font(.onestSemiBold(size: EventLocationView.fontSize-2))
+                .font(.onestSemiBold(size: ActivityLocationView.fontSize-2))
             Text(viewModel.getDisplayString(activityInfoType: .location))
                 .foregroundColor(.white)
                 .font(font) +

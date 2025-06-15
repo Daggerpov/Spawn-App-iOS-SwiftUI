@@ -129,4 +129,5 @@ class FormatterService {
         // TODO: Replace with real distance calculation if available
         return "2km"
     }
+    
 }

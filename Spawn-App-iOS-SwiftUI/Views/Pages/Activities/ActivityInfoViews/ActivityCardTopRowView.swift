@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EventCardTopRowView: View {
+struct ActivityCardTopRowView: View {
 	var activity: FullFeedActivityDTO
     let subtitleFontSize: CGFloat = 14
     let subtitleColor: Color = .white.opacity(0.85)
@@ -44,7 +44,7 @@ struct EventCardTitleView: View {
 	}
 }
 
-extension EventCardTopRowView {
+extension ActivityCardTopRowView {
     var eventSubtitleView: some View {
         Text("By ")
             .font(.onestRegular(size: subtitleFontSize))
@@ -63,5 +63,5 @@ extension EventCardTopRowView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    EventCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
+    ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
 }

@@ -40,6 +40,14 @@ struct ActivityFeedView: View {
             // Activities
             activityListView
         }
+        .onAppear {
+            Task {
+                if !MockAPIService.isMocking {
+                    await AppCache.shared.validateCache()
+                }
+                await viewModel.fetchAllData()
+            }
+        }
     }
     
     var seeAllButton: some View {
@@ -67,19 +75,20 @@ extension ActivityFeedView {
                     Image("ActivityNotFound")
                         .resizable()
                         .frame(width: 125, height: 125)
-                    Text("No Events Found").font(.onestSemiBold(size: 32)).foregroundColor(universalAccentColor)
+                    Text("No Events Found")
+                        .font(.onestSemiBold(size:32))
+                        .foregroundColor(universalAccentColor)
                     Text("We couldn't find any events nearby.\nStart one yourself and be spontaneous!")
                         .font(.onestRegular(size: 16))
                         .multilineTextAlignment(.center)
                         .foregroundColor(figmaBlack300)
                 } else {
                     ForEach(viewModel.activities) { activity in
-                        EventCardView(userId: user.id, activity: activity, color: figmaBlue) { event, color in
+                        ActivityCardView(userId: user.id, activity: activity, color: figmaBlue) { event, color in
                                 eventInPopup = event
                                 colorInPopup = color
                                 showingEventDescriptionPopup = true
                             }
-                        
                     }
                 }
             }
@@ -90,7 +99,7 @@ extension ActivityFeedView {
 }
 
 #Preview {
-    let mockUserId: UUID = UUID()
+    let mockUserId: UUID = BaseUserDTO.danielAgapov.id
     ActivityFeedView(
         user: .danielAgapov,
         viewModel: FeedViewModel(
