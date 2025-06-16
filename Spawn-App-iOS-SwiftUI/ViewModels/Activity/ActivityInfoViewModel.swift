@@ -8,18 +8,32 @@
 import Foundation
 
 class ActivityInfoViewModel: ObservableObject {
-	@Published var activityInfoDisplayString: String
-	@Published var imageSystemName: String
+    private var locationDisplayString: String
+    private var distanceDisplayString: String?
+    private var timeDisplayString: String
+    var activity: FullFeedActivityDTO
 
-	init(activity: FullFeedActivityDTO, activityInfoType: ActivityInfoType) {
-		switch activityInfoType {
-		case .location:
-			imageSystemName = "map"
-			self.activityInfoDisplayString = activity.location?.name ?? "No Location"
-		case .time:
-			imageSystemName = "clock"
-			self.activityInfoDisplayString = FormatterService.shared
-				.formatActivityTime(activity: activity)
-		}
+	init(activity: FullFeedActivityDTO) {
+        self.activity = activity
+        locationDisplayString = activity.location?.name ?? "No Location"
+        timeDisplayString = FormatterService.shared.formatActivityTime(activity: activity)
 	}
-} 
+    
+    func getDisplayString(activityInfoType: ActivityInfoType) -> String {
+        switch activityInfoType {
+            case .location:
+                return locationDisplayString
+            case .time:
+                return timeDisplayString
+            case .distance:
+                guard let distanceDisplayString = self.distanceDisplayString else {
+                    self.distanceDisplayString = FormatterService.shared.distanceString()
+                    return self.distanceDisplayString!
+                }
+                return distanceDisplayString
+            
+        }
+    }
+    
+    
+}
