@@ -9,50 +9,73 @@ import SwiftUI
 struct ActivityFeedView: View {
     var user: BaseUserDTO
     @StateObject var viewModel: FeedViewModel
-    @State private var showingEventDescriptionPopup: Bool = false
-    @State private var eventInPopup: FullFeedActivityDTO?
+    @State private var showingActivityPopup: Bool = false
+    @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
     private let horizontalSubHeadingPadding: CGFloat = 21
     private let bottomSubHeadingPadding: CGFloat = 14
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HeaderView(user: user)
-                .padding(.horizontal, 12)
-                .padding(.bottom, 14)
-                .padding(.top, 12)
-            // Spawn In! row
-            HStack {
-                Text("Spawn In!")
-                    .font(.onestSemiBold(size: 16))
-                    .foregroundColor(figmaBlack400)
-                Spacer()
-                seeAllButton
-            }
-            .padding(.horizontal, horizontalSubHeadingPadding)
-            .padding(.bottom, bottomSubHeadingPadding)
-            // Activity Types row
-            activityTypeListView
-                .padding(.bottom, 19)
-            // Activities in Your Area row
-            HStack {
-                Text("See What's Happening!")
-                    .font(.onestSemiBold(size: 16))
-                    .foregroundColor(figmaBlack400)
-                Spacer()
-                seeAllButton
-            }
-            .padding(.horizontal, horizontalSubHeadingPadding)
-            .padding(.bottom, bottomSubHeadingPadding)
-            // Activities
-            activityListView
-        }
-        .onAppear {
-            Task {
-                if !MockAPIService.isMocking {
-                    await AppCache.shared.validateCache()
+        ZStack {
+            VStack(alignment: .leading, spacing: 0) {
+                HeaderView(user: user)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 14)
+                    .padding(.top, 12)
+                // Spawn In! row
+                HStack {
+                    Text("Spawn In!")
+                        .font(.onestSemiBold(size: 16))
+                        .foregroundColor(figmaBlack400)
+                    Spacer()
+                    seeAllButton
                 }
-                await viewModel.fetchAllData()
+                .padding(.horizontal, horizontalSubHeadingPadding)
+                .padding(.bottom, bottomSubHeadingPadding)
+                // Activity Types row
+                activityTypeListView
+                    .padding(.bottom, 19)
+                // Activities in Your Area row
+                HStack {
+                    Text("See What's Happening!")
+                        .font(.onestSemiBold(size: 16))
+                        .foregroundColor(figmaBlack400)
+                    Spacer()
+                    seeAllButton
+                }
+                .padding(.horizontal, horizontalSubHeadingPadding)
+                .padding(.bottom, bottomSubHeadingPadding)
+                // Activities
+                activityListView
+            }
+            .onAppear {
+                Task {
+                    if !MockAPIService.isMocking {
+                        await AppCache.shared.validateCache()
+                    }
+                    await viewModel.fetchAllData()
+                }
+            }
+        }
+        .overlay(
+            // Custom popup overlay
+            Group {
+                if showingActivityPopup, let popupActivity = activityInPopup, let color = colorInPopup {
+                    ActivityPopupDrawer(
+                        activity: popupActivity,
+                        activityColor: color,
+                        isPresented: $showingActivityPopup
+                    )
+                }
+            }
+        )
+        .onChange(of: showingActivityPopup) { isShowing in
+            if !isShowing {
+                // Clean up when popup is dismissed
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    activityInPopup = nil
+                    colorInPopup = nil
+                }
             }
         }
     }
@@ -94,10 +117,10 @@ extension ActivityFeedView {
                         .foregroundColor(figmaBlack300)
                 } else {
                     ForEach(viewModel.activities) { activity in
-                        ActivityCardView(userId: user.id, activity: activity, color: figmaBlue) { event, color in
-                                eventInPopup = event
+                        ActivityCardView(userId: user.id, activity: activity, color: figmaBlue) { activity, color in
+                                activityInPopup = activity
                                 colorInPopup = color
-                                showingEventDescriptionPopup = true
+                                showingActivityPopup = true
                             }
                     }
                 }

@@ -8,16 +8,17 @@ import SwiftUI
 import MapKit
 
 struct ActivityCardPopupView: View {
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
-        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-    )
-    private var viewModel: ActivityInfoViewModel
-    var activity: FullFeedActivityDTO
     
-    init(activity: FullFeedActivityDTO) {
+    private var viewModel: ActivityInfoViewModel
+    private var mapViewModel: MapViewModel
+    var activity: FullFeedActivityDTO
+    var activityColor: Color
+    
+    init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity)
+        mapViewModel = MapViewModel(activity: activity)
+        self.activityColor = activityColor
     }
     
     var body: some View {
@@ -33,11 +34,11 @@ struct ActivityCardPopupView: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Header with arrow and title
                 HStack {
-                    Button(action: {}) {
-                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                    }
+//                    Button(action: {}) {
+//                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+//                            .font(.title2)
+//                            .foregroundColor(.white)
+//                    }
                     
                     Spacer()
                 }
@@ -61,15 +62,34 @@ struct ActivityCardPopupView: View {
             }
             .padding(.horizontal, 20)
         }
-        .background(figmaSoftBlue)
+        .background(activityColor.opacity(0.97))
         .cornerRadius(20)
         .shadow(radius: 20)
     }
 }
 
-struct MapPin: Identifiable {
+struct MapHelper: Identifiable {
+    var lat: Double
+    var lon: Double
     let id = UUID()
-    let coordinate = CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)
+    let coordinate: CLLocationCoordinate2D
+    @State private var region: MKCoordinateRegion
+    
+    init(activity: FullFeedActivityDTO) {
+        if let location = activity.location {
+            lat = location.latitude
+            lon = location.longitude
+        } else { // TODO: something more robust
+            lat = 0
+            lon = 0
+        }
+        coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
+    }
+    
 }
 
 extension ActivityCardPopupView {
@@ -106,13 +126,11 @@ extension ActivityCardPopupView {
     }
     
     var map: some View {
-        Map(coordinateRegion: $region, annotationItems: [MapPin()]) { pin in
+        Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
             MapAnnotation(coordinate: pin.coordinate) {
-                Image(systemName: "mappin.circle.fill")
+                Image(systemName: "mappin")
                     .font(.title)
                     .foregroundColor(.red)
-                    .background(Color.white)
-                    .clipShape(Circle())
             }
         }
         .frame(height: 175)
@@ -201,7 +219,7 @@ extension ActivityCardPopupView {
 
 struct ActivityCardPopupView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity)
-            .preferredColorScheme(.dark)
+        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue)
+            .preferredColorScheme(.light)
     }
 }
