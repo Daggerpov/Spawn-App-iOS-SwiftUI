@@ -11,13 +11,16 @@ struct ActivityCardPopupView: View {
     
     private var viewModel: ActivityInfoViewModel
     private var mapViewModel: MapViewModel
+    @ObservedObject private var cardViewModel: ActivityCardViewModel
     var activity: FullFeedActivityDTO
     var activityColor: Color
+    
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity)
         mapViewModel = MapViewModel(activity: activity)
+        self.cardViewModel = ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity)
         self.activityColor = activityColor
     }
     
@@ -47,7 +50,7 @@ struct ActivityCardPopupView: View {
                 titleAndTime
                 
                 // Spawn In button and attendees
-                spawnInRow
+                ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
                 
                 // Map view
                 map
@@ -65,6 +68,7 @@ struct ActivityCardPopupView: View {
         .background(activityColor.opacity(0.97))
         .cornerRadius(20)
         .shadow(radius: 20)
+        .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
     }
 }
 
@@ -214,6 +218,52 @@ extension ActivityCardPopupView {
         .padding(.horizontal, 18)
         .background(Color.black.opacity(0.2))
         .cornerRadius(12)
+    }
+}
+
+struct ParticipationButtonView: View {
+    private var activity: FullFeedActivityDTO
+    @ObservedObject private var cardViewModel: ActivityCardViewModel
+    
+    init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel) {
+        self.activity = activity
+        self.cardViewModel = cardViewModel
+    }
+    private var participationText: String {
+            cardViewModel.isParticipating ? "Going" : "Spawn In!"
+    }
+    
+    private var participationColor: Color {
+        cardViewModel.isParticipating ? figmaGreen : figmaSoftBlue
+    }
+    
+    private var participationIcon: String {
+        cardViewModel.isParticipating ? "checkmark.circle" : "star.circle"
+    }
+    
+    var body: some View {
+        HStack {
+            Button(action: {
+                Task {
+                    await cardViewModel.toggleParticipation()
+                }
+            }) {
+                HStack {
+                    Image(systemName: participationIcon)
+                        .foregroundColor(participationColor)
+                        .fontWeight(.bold)
+                    Text(participationText)
+                        .font(.onestMedium(size: 18))
+                        .foregroundColor(participationColor)
+                }
+                .padding(.horizontal, 30)
+                .padding(.vertical, 10)
+                .background(Color.white)
+                .cornerRadius(12)
+            }
+            Spacer()
+            ParticipantsImagesView(activity: activity)
+        }
     }
 }
 
