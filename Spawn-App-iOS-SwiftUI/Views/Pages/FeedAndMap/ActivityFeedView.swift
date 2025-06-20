@@ -15,6 +15,11 @@ struct ActivityFeedView: View {
     private let horizontalSubHeadingPadding: CGFloat = 21
     private let bottomSubHeadingPadding: CGFloat = 14
     
+    init(user: BaseUserDTO) {
+        self.user = user
+        self._viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService(), userId: user.id))
+    }
+    
     var body: some View {
         ZStack {
             VStack(alignment: .leading, spacing: 0) {
@@ -28,7 +33,7 @@ struct ActivityFeedView: View {
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
-                    seeAllButton
+                    seeAllActivityTypesButton
                 }
                 .padding(.horizontal, horizontalSubHeadingPadding)
                 .padding(.bottom, bottomSubHeadingPadding)
@@ -41,7 +46,7 @@ struct ActivityFeedView: View {
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
-                    seeAllButton
+                    seeAllActivityTypesButton
                 }
                 .padding(.horizontal, horizontalSubHeadingPadding)
                 .padding(.bottom, bottomSubHeadingPadding)
@@ -80,7 +85,7 @@ struct ActivityFeedView: View {
         }
     }
     
-    var seeAllButton: some View {
+    var seeAllActivityTypesButton: some View {
         NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .allFriends)) { // TODO: change destination
             Text("See All")
                 .font(.onestRegular(size: 13))
@@ -128,16 +133,27 @@ extension ActivityFeedView {
         }
         .scrollIndicators(.hidden)
         .padding(.horizontal)
+        .refreshable {
+            Task {
+                await AppCache.shared.refreshActivities()
+                await viewModel.fetchAllData()
+            }
+        }
     }
 }
 
+//struct SeeAllButtonView: View {
+//    var destination: () -> View
+//    var body: some View {
+//        NavigationLink(destinati) { // TODO: change destination
+//            Text("See All")
+//                .font(.onestRegular(size: 13))
+//                .foregroundColor(universalSecondaryColor)
+//        }
+//    }
+//}
+
 #Preview {
     let mockUserId: UUID = BaseUserDTO.danielAgapov.id
-    ActivityFeedView(
-        user: .danielAgapov,
-        viewModel: FeedViewModel(
-            apiService: MockAPIService(userId: mockUserId),
-            userId: mockUserId
-        )
-    )
+    ActivityFeedView(user: .danielAgapov)
 }

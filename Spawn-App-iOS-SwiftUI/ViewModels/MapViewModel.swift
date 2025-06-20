@@ -12,6 +12,7 @@ class MapViewModel: Identifiable {
     var lon: Double
     let id = UUID()
     let coordinate: CLLocationCoordinate2D
+    let mapItem: MKMapItem
     @State var region: MKCoordinateRegion
     
     init(activity: FullFeedActivityDTO) {
@@ -27,5 +28,6 @@ class MapViewModel: Identifiable {
             center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         )
+        mapItem = MKMapItem(placemark: .init(coordinate: coordinate))
     }
 }

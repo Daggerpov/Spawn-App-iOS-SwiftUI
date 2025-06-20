@@ -37,12 +37,6 @@ struct ActivityCardPopupView: View {
             VStack(alignment: .leading, spacing: 16) {
                 // Header with arrow and title
                 HStack {
-//                    Button(action: {}) {
-//                        Image(systemName: "arrow.up.left.and.arrow.down.right")
-//                            .font(.title2)
-//                            .foregroundColor(.white)
-//                    }
-                    
                     Spacer()
                 }
                 
@@ -59,8 +53,7 @@ struct ActivityCardPopupView: View {
                 directionRow
                 
                 // Chat section
-                chatroom
-                
+                ChatroomView(chats: activity.chatMessages ?? [])
                 Spacer(minLength: 20)
             }
             .padding(.horizontal, 20)
@@ -161,7 +154,7 @@ extension ActivityCardPopupView {
             
             Spacer()
             
-            Button(action: {}) {
+            Button(action: {mapViewModel.mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault])}) {
                 HStack {
                     Image(systemName: "arrow.trianglehead.turn.up.right.diamond")
                         .fontWeight(.bold)
@@ -178,44 +171,6 @@ extension ActivityCardPopupView {
             .padding(.vertical, 10)
             .padding(.trailing, 9)
         }
-        .background(Color.black.opacity(0.2))
-        .cornerRadius(12)
-    }
-    
-    var chatroom: some View {
-        HStack {
-            HStack {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(.white)
-                            .font(.system(size: 16))
-                    )
-                
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 30, height: 30)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .foregroundColor(.white)
-                            .font(.system(size: 12))
-                    )
-                    .offset(x: -15)
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Chatroom")
-                    .foregroundColor(.white)
-                    .font(.onestMedium(size: 18))
-                Text("Haley: Come grab dinner with us...")
-                    .foregroundColor(.white.opacity(0.8))
-                    .font(.onestRegular(size: 15))
-            }
-        }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 18)
         .background(Color.black.opacity(0.2))
         .cornerRadius(12)
     }
@@ -263,6 +218,63 @@ struct ParticipationButtonView: View {
             }
             Spacer()
             ParticipantsImagesView(activity: activity)
+        }
+    }
+}
+
+struct ChatroomView: View {
+    var chats: [FullActivityChatMessageDTO]
+    
+    var body: some View {
+        HStack {
+            if chats.isEmpty {
+                Image("EmptyDottedCircle")
+            } else {
+                profilePictures
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Chatroom")
+                    .foregroundColor(.white)
+                    .font(.onestMedium(size: 18))
+                if chats.isEmpty {
+                    Text("Be the first to send a message!")
+                        .foregroundColor(.white.opacity(0.8))
+                        .font(.onestRegular(size: 15))
+                } else {
+                    Text(chats[0].content)
+                        .foregroundColor(.white.opacity(0.8))
+                        .font(.onestRegular(size: 15))
+                }
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 18)
+        .padding(.trailing, 47)
+        .background(Color.black.opacity(0.2))
+        .cornerRadius(12)
+    }
+    
+    var profilePictures: some View {
+        HStack {
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 40, height: 40)
+                .overlay(
+                    Image(systemName: "person.fill")
+                        .foregroundColor(.white)
+                        .font(.system(size: 16))
+                )
+            
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(width: 30, height: 30)
+                .overlay(
+                    Image(systemName: "person.fill")
+                        .foregroundColor(.white)
+                        .font(.system(size: 12))
+                )
+                .offset(x: -15)
         }
     }
 }

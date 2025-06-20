@@ -13,7 +13,7 @@ struct ContentView: View {
 
 	var body: some View {
 		TabView(selection: $selectedTab) {
-			FeedView(user: user)
+            ActivityFeedView(user: user)
 				.tag(0)
 				.tabItem {
 					Image(
