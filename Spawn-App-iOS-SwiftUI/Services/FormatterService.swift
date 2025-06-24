@@ -73,6 +73,18 @@ class FormatterService {
 			return days == 1 ? "1 day ago" : "\(days) days ago"
 		}
 	}
+    
+    func atTime(at date: Date) -> String {
+        let daysAgo = Int(floor(date.timeIntervalSinceNow))
+        
+        if daysAgo < 1 {
+            return date.formatted(date: .omitted, time: .shortened)
+        } else {
+            let dateFormat = DateFormatter()
+            dateFormat.dateFormat = "d/M"
+            return dateFormat.string(from: date)
+        }
+    }
 
 	// Format Instagram link to ensure proper storage format
 	func formatInstagramLink(_ link: String) -> String {
@@ -110,4 +122,24 @@ class FormatterService {
 		// If not a valid phone number format, return original (trimmed)
 		return trimmed
 	}
+    
+    
+    func timeUntil(_ date: Date?) -> String {
+        guard let date = date else { return "" }
+        let interval = date.timeIntervalSinceNow
+        if interval <= 0 { return "Started" }
+        let hours = Int(interval) / 3600
+        let minutes = (Int(interval) % 3600) / 60
+        if hours > 0 {
+            return "\(hours) hour\(hours > 1 ? "s" : "")"
+        } else {
+            return "\(minutes) min\(minutes > 1 ? "s" : "")"
+        }
+    }
+    
+    func distanceString() -> String {
+        // TODO: Replace with real distance calculation if available
+        return "2km"
+    }
+    
 }

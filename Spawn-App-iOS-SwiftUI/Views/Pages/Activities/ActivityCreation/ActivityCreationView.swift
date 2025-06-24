@@ -25,9 +25,9 @@ struct ActivityCreationView: View {
     
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
-    @Binding var selectedTab: Int
+    @Binding var selectedTab: TabType
     
-    init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void, selectedTab: Binding<Int>) {
+    init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void, selectedTab: Binding<TabType>) {
         self.creatingUser = creatingUser
         self.closeCallback = closeCallback
         self._selectedTab = selectedTab
@@ -89,7 +89,7 @@ struct ActivityCreationView: View {
         }
         .onChange(of: selectedTab) { newTab in
             // Reset to beginning if activities tab is selected and we're at confirmation
-            if newTab == 2 && currentStep == .confirmation {
+            if newTab == TabType.creation && currentStep == .confirmation {
                 currentStep = .activityType
                 ActivityCreationViewModel.reInitialize()
                 // Reset other state variables as well
@@ -252,6 +252,6 @@ enum ActivityDuration: CaseIterable {
         creatingUser: .danielAgapov,
         closeCallback: {
         },
-        selectedTab: .constant(0)
+        selectedTab: .constant(TabType.creation)
     ).environmentObject(appCache)
 }

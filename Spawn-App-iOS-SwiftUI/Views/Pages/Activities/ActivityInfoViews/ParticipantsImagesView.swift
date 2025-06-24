@@ -11,6 +11,8 @@ import SwiftUI
 struct ParticipantsImagesView: View {
 	var activity: FullFeedActivityDTO
     let maxCount: Int = 2
+    let width: CGFloat = 28
+    let height: CGFloat = 28
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
 		var participantsFiltered = participants
@@ -36,36 +38,14 @@ struct ParticipantsImagesView: View {
 				id: \.self
 			) { participantIndex in
                 let participant: BaseUserDTO = participants[participantIndex]
-				NavigationLink(
-					destination: ProfileView(user: participant),
-					label: {
-						if let pfpUrl = participant.profilePicture {
-                            if MockAPIService.isMocking {
-                                Image(pfpUrl)
-                                    .ProfileImageModifier(imageType: .activityParticipants)
-                            } else {
-                                AsyncImage(url: URL(string: pfpUrl)) { image in
-                                    image.ProfileImageModifier(imageType: .activityParticipants)
-                                } placeholder: {
-                                    Circle()
-                                        .fill(Color.gray)
-                                        .frame(width: 24, height: 24)
-                                }
-                            }
-						} else {
-							Circle()
-								.fill(Color.gray)
-								.frame(width: 24, height: 24)
-						}
-					}
-				)
+				ProfilePictureView(user: participant)
 			}
             
             if participants.count > maxCount {
                 ZStack {
                     Circle()
                         .fill(Color.white)
-                        .frame(width: 24, height: 24)
+                        .frame(width: width, height: height)
                     Text("+\(participants.count - maxCount)")
                         .font(.onestSemiBold(size: 12))
                         .foregroundColor(figmaSoftBlue)

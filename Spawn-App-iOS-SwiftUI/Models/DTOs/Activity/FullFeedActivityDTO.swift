@@ -7,7 +7,7 @@
 
 import Foundation
 
-class FullFeedActivityDTO: Identifiable, Codable, Equatable {
+class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	static func == (lhs: FullFeedActivityDTO, rhs: FullFeedActivityDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
@@ -126,6 +126,7 @@ extension FullFeedActivityDTO {
             BaseUserDTO.jennifer,
             BaseUserDTO.michael,
         ],
+        chatMessages: [.mockChat4, .mockChat1, .mockChat2, .mockChat3],
         isSelfOwned: true
     )
     static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(

@@ -12,17 +12,17 @@ struct ActivityInfoView: View {
 
 	init(activity: FullFeedActivityDTO, activityInfoType: ActivityInfoType) {
 		self.viewModel = ActivityInfoViewModel(
-			activity: activity, activityInfoType: activityInfoType)
+			activity: activity)
 	}
 
 	var body: some View {
 		HStack {
-			Image(systemName: viewModel.imageSystemName)
-				.foregroundColor(.white)
-				.font(.system(size: 14))
+//			Image(systemName: viewModel.imageSystemName)
+//				.foregroundColor(.white)
+//				.font(.system(size: 14))
 			
 			VStack(alignment: .leading, spacing: 2) {
-				Text(viewModel.activityInfoDisplayString)
+                Text(viewModel.getDisplayString(activityInfoType: .location))
 					.foregroundColor(.white)
 					.font(.caption)
 					.bold()

@@ -13,6 +13,7 @@
 		AAEC10142DC08AB30089C05A /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10132DC08AB30089C05A /* FirebaseInAppMessaging-Beta */; };
 		AAEC10162DC08AB30089C05A /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10152DC08AB30089C05A /* FirebaseMessaging */; };
 		AAEC10182DC08D4C0089C05A /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10172DC08D4C0089C05A /* FirebaseCore */; };
+		AAF7D33C2DF946C0004AD771 /* FullFeedEventDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF7D33B2DF946C0004AD771 /* FullFeedEventDTO.swift */; };
 		DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DC0171582D43507E003BF3DB /* GoogleSignIn */; };
 		DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DC01715A2D43507E003BF3DB /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
@@ -38,6 +39,7 @@
 		65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUI.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		65D5036E2CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		65D503782CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUIUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAF7D33B2DF946C0004AD771 /* FullFeedEventDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullFeedEventDTO.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -111,6 +113,7 @@
 				65D503712CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests */,
 				65D5037B2CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests */,
 				65D5035A2CD86EB300923A01 /* Products */,
+				AAF7D33B2DF946C0004AD771 /* FullFeedEventDTO.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -284,6 +287,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AAF7D33C2DF946C0004AD771 /* FullFeedEventDTO.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,0 +1,90 @@
+//
+//  ActivityStatusViewModel.swift
+//  Spawn-App-iOS-SwiftUI
+//
+//  Created by Shane on 6/14/25.
+//
+import Foundation
+
+class ActivityStatusViewModel: ObservableObject {
+    @Published var status: ActivityStatus = .laterToday
+    private var timer: Timer?
+    private let activityStartTime: Date
+    private let activityDuration: TimeInterval // in seconds
+    private var refresh: Double = -1
+    private var previousRefresh: Double?
+    
+    init(activity: FullFeedActivityDTO) {
+        if let activityStart: Date = activity.startTime {
+            self.activityStartTime = activityStart
+        } else {
+            // TODO: why is activityStartTime optional? Should always exist, no?
+            self.activityStartTime = Date()
+        }
+        if let activityEnd: Date = activity.endTime {
+            self.activityDuration = activityEnd.timeIntervalSince(activityStartTime)
+        } else {
+            self.activityDuration = TimeInterval.greatestFiniteMagnitude
+        }
+        updateStatus()
+        startTimer()
+    }
+    
+    deinit {
+        timer?.invalidate()
+    }
+    
+    private func startTimer() {
+        // Update every minute
+        guard refresh > 0 else {return}
+        timer = Timer.scheduledTimer(withTimeInterval: refresh, repeats: true) { [weak self] _ in
+            self?.updateStatus()
+        }
+    }
+    
+    private func updateStatus() {
+        let now = Date()
+        let timeUntilStart: TimeInterval = activityStartTime.timeIntervalSince(now)
+        let timeAfterStart: TimeInterval = now.timeIntervalSince(activityStartTime)
+        
+        if timeAfterStart >= 0 && timeAfterStart <= activityDuration {
+            // Activity is currently happening
+            status = .happeningNow
+            refresh = activityDuration - timeAfterStart
+        } else if timeUntilStart > 0 {
+            let hoursUntilStart: Double = timeUntilStart / 3600
+            
+            if hoursUntilStart < 1 {
+                let minutesUntilStart: Int = max(1, Int(round(timeUntilStart / 60)))
+                status = .inMinutes(minutesUntilStart)
+                refresh = 60
+            } else if hoursUntilStart <= 3 { // Show specific hours if within 3 hours
+                let roundedHours = max(1, Int(round(hoursUntilStart)))
+                status = .inHours(roundedHours)
+                let floorHoursUntilInSeconds = floor(hoursUntilStart) * 3600 * -1
+                let nextUpdateDate = activityStartTime.advanced(by: floorHoursUntilInSeconds)
+                refresh = max(5, nextUpdateDate.timeIntervalSinceNow) // Defensive check
+            } else {
+                status = .laterToday
+                let hoursUntil3HoursAway = hoursUntilStart - 3
+                refresh = hoursUntil3HoursAway * 3600
+            }
+        } else {
+            // Activity has already ended
+            status = .past
+            refresh = -1
+        }
+        if let prev = previousRefresh, refresh == prev {
+            return // No need to restart timer
+        }
+        if previousRefresh == nil {
+            previousRefresh = refresh
+            return
+        }
+        if refresh != previousRefresh {
+            timer?.invalidate()
+            previousRefresh = refresh
+            startTimer()
+        }
+    }
+}
