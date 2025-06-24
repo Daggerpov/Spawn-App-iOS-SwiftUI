@@ -55,6 +55,8 @@ let figmaLightGrey: Color = Color(hex: figmaLightGreyHex)
 
 let figmaGreyGradientColors: [Color] = [Color(hex: "#F0F0F0"), Color(hex: "#F1F1F1"), Color(hex: "#F2F2F2"), Color(hex: "#F3F3F3"), Color(hex: "#F4F4F4"), Color(hex: "#F5F5F5")]
 
+let figmaTransparentWhite: Color = Color.white.opacity(0.8)
+
 // Default map location (UBC)
 let defaultMapLatitude: Double = 49.26468617023799
 let defaultMapLongitude: Double = -123.25859833051356

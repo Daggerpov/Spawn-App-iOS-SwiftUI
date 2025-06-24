@@ -9,12 +9,12 @@ import SwiftUI
 
 struct ContentView: View {
 	var user: BaseUserDTO
-	@State private var selectedTab: Int = 0
+    @State private var selectedTab: TabType = .home
 
 	var body: some View {
 		TabView(selection: $selectedTab) {
-            ActivityFeedView(user: user)
-				.tag(0)
+            ActivityFeedView(user: user, selectedTab: $selectedTab)
+                .tag(TabType.home)
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
@@ -24,7 +24,7 @@ struct ContentView: View {
 					)
 				}
 			MapView(user: user)
-				.tag(1)
+                .tag(TabType.map)
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
@@ -37,11 +37,11 @@ struct ContentView: View {
 				creatingUser: user,
 				closeCallback: {
 					// Navigate back to home tab when closing
-					selectedTab = 0
+                    selectedTab = .home
 				},
 				selectedTab: $selectedTab
 			)
-			.tag(2)
+            .tag(TabType.creation)
 			.tabItem {
 				Image(
 					uiImage: resizeImage(
@@ -51,7 +51,7 @@ struct ContentView: View {
 				)
 			}
 			FriendsView(user: user)
-				.tag(3)
+                .tag(TabType.friends)
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
@@ -61,7 +61,7 @@ struct ContentView: View {
 					)
 				}
 			ProfileView(user: user)
-				.tag(4)
+                .tag(TabType.profile)
 				.tabItem {
 					Image(
 						uiImage: resizeImage(

@@ -12,12 +12,14 @@ struct ActivityFeedView: View {
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
+    @Binding private var selectedTab: TabType
     private let horizontalSubHeadingPadding: CGFloat = 21
     private let bottomSubHeadingPadding: CGFloat = 14
     
-    init(user: BaseUserDTO) {
+    init(user: BaseUserDTO, selectedTab: Binding<TabType>) {
         self.user = user
         self._viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService(), userId: user.id))
+        self._selectedTab = selectedTab
     }
     
     var body: some View {
@@ -86,11 +88,19 @@ struct ActivityFeedView: View {
     }
     
     var seeAllActivityTypesButton: some View {
-        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .allFriends)) { // TODO: change destination
-            Text("See All")
-                .font(.onestRegular(size: 13))
-                .foregroundColor(universalSecondaryColor)
+        Button(action: {selectedTab = TabType.creation}) {
+            seeAllText
         }
+    }
+    var seeAllActivitiesButton: some View {
+        Button(action: {selectedTab = TabType.creation}) { // TODO: change destination
+            seeAllText
+        }
+    }
+    var seeAllText: some View {
+        Text("See All")
+            .font(.onestRegular(size: 13))
+            .foregroundColor(universalSecondaryColor)
     }
 }
 
@@ -153,7 +163,12 @@ extension ActivityFeedView {
 //    }
 //}
 
+@available(iOS 17, *)
 #Preview {
+    @Previewable @State var tab = TabType.home
     let mockUserId: UUID = BaseUserDTO.danielAgapov.id
-    ActivityFeedView(user: .danielAgapov)
+    NavigationView {
+        ActivityFeedView(user: .danielAgapov, selectedTab: $tab)
+    }
+    
 }

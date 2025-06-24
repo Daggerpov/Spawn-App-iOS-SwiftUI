@@ -8,7 +8,6 @@ import SwiftUI
 import MapKit
 
 struct ActivityCardPopupView: View {
-    
     private var viewModel: ActivityInfoViewModel
     private var mapViewModel: MapViewModel
     @ObservedObject private var cardViewModel: ActivityCardViewModel
@@ -25,43 +24,46 @@ struct ActivityCardPopupView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Handle bar
-            RoundedRectangle(cornerRadius: 2.5)
-                .fill(Color.white.opacity(0.8))
-                .frame(width: 40, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
-            
-            // Main card content
-            VStack(alignment: .leading, spacing: 16) {
-                // Header with arrow and title
-                HStack {
-                    Spacer()
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Handle bar
+                RoundedRectangle(cornerRadius: 2.5)
+                    .fill(Color.white.opacity(0.8))
+                    .frame(width: 40, height: 5)
+                    .padding(.top, 8)
+                    .padding(.bottom, 16)
+                
+                // Main card content
+                VStack(alignment: .leading, spacing: 16) {
+                    // Header with arrow and title
+                    HStack {
+                        Spacer()
+                    }
+                    
+                    // Event title and time
+                    titleAndTime
+                    
+                    // Spawn In button and attendees
+                    ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
+                    
+                    // Map view
+                    map
+                    
+                    // Location details
+                    directionRow
+                    
+                    // Chat section
+                    //ChatroomView(activity: activity, backgroundColor: activityColor)
+                    ChatroomButtonView(activity: activity, activityColor: activityColor)
+                    Spacer(minLength: 20)
                 }
-                
-                // Event title and time
-                titleAndTime
-                
-                // Spawn In button and attendees
-                ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
-                
-                // Map view
-                map
-                
-                // Location details
-                directionRow
-                
-                // Chat section
-                ChatroomView(chats: activity.chatMessages ?? [])
-                Spacer(minLength: 20)
+                .padding(.horizontal, 20)
             }
-            .padding(.horizontal, 20)
+            .background(activityColor.opacity(0.97))
+            .cornerRadius(20)
+            .shadow(radius: 20)
+            .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
         }
-        .background(activityColor.opacity(0.97))
-        .cornerRadius(20)
-        .shadow(radius: 20)
-        .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
     }
 }
 
@@ -222,37 +224,50 @@ struct ParticipationButtonView: View {
     }
 }
 
-struct ChatroomView: View {
-    var chats: [FullActivityChatMessageDTO]
+struct ChatroomButtonView: View {
+    var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
+    var activity: FullFeedActivityDTO
+    let activityColor: Color
+    @ObservedObject var viewModel: ChatViewModel
+    
+    init(activity: FullFeedActivityDTO, activityColor: Color) {
+        self.activity = activity
+        self.activityColor = activityColor
+        viewModel = ChatViewModel(senderUserId: user.id, activity: activity)
+    }
+    
     
     var body: some View {
-        HStack {
-            if chats.isEmpty {
-                Image("EmptyDottedCircle")
-            } else {
-                profilePictures
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Chatroom")
-                    .foregroundColor(.white)
-                    .font(.onestMedium(size: 18))
-                if chats.isEmpty {
-                    Text("Be the first to send a message!")
-                        .foregroundColor(.white.opacity(0.8))
-                        .font(.onestRegular(size: 15))
+        NavigationLink(destination: ChatroomView(activity: activity, backgroundColor: activityColor)) {
+            HStack {
+                if viewModel.chats.isEmpty {
+                    Image("EmptyDottedCircle")
                 } else {
-                    Text(chats[0].content)
-                        .foregroundColor(.white.opacity(0.8))
-                        .font(.onestRegular(size: 15))
+                    profilePictures
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Chatroom")
+                        .foregroundColor(.white)
+                        .font(.onestMedium(size: 18))
+                    if viewModel.chats.isEmpty {
+                        Text("Be the first to send a message!")
+                            .foregroundColor(.white.opacity(0.8))
+                            .font(.onestRegular(size: 15))
+                    } else {
+                        let sender = viewModel.chats[0].senderUser
+                        Text((sender == user ? "You:" : sender.name ?? sender.username) + " " + viewModel.chats[0].content)
+                            .foregroundColor(.white.opacity(0.8))
+                            .font(.onestRegular(size: 15))
+                    }
                 }
             }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 18)
+            .padding(.trailing, 47)
+            .background(Color.black.opacity(0.2))
+            .cornerRadius(12)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 18)
-        .padding(.trailing, 47)
-        .background(Color.black.opacity(0.2))
-        .cornerRadius(12)
     }
     
     var profilePictures: some View {

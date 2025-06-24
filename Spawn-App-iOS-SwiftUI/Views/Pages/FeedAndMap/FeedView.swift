@@ -82,7 +82,7 @@ struct FeedView: View {
                     closeCallback: {
                         showActivityCreationDrawer = false
                     },
-                    selectedTab: .constant(0)
+                    selectedTab: .constant(TabType.home)
                 )
                 .presentationDragIndicator(.visible)
             }

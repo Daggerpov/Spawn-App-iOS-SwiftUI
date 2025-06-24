@@ -73,6 +73,18 @@ class FormatterService {
 			return days == 1 ? "1 day ago" : "\(days) days ago"
 		}
 	}
+    
+    func atTime(at date: Date) -> String {
+        let daysAgo = Int(floor(date.timeIntervalSinceNow))
+        
+        if daysAgo < 1 {
+            return date.formatted(date: .omitted, time: .shortened)
+        } else {
+            let dateFormat = DateFormatter()
+            dateFormat.dateFormat = "d/M"
+            return dateFormat.string(from: date)
+        }
+    }
 
 	// Format Instagram link to ensure proper storage format
 	func formatInstagramLink(_ link: String) -> String {

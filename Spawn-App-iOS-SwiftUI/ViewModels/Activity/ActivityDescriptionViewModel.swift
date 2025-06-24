@@ -93,7 +93,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 
     // this method gets called after a chat message is sent, to update the
 	// chat messages in the activity popup view, to include this chat message
-	private func fetchUpdatedActivityData() async {
+	public func fetchUpdatedActivityData() async {
 		if let url = URL(string: APIService.baseURL + "activities/\(activity.id)") {
 			do {
 				let updatedActivity: FullFeedActivityDTO = try await self.apiService.fetchData(

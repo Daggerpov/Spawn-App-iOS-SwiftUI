@@ -38,29 +38,7 @@ struct ParticipantsImagesView: View {
 				id: \.self
 			) { participantIndex in
                 let participant: BaseUserDTO = participants[participantIndex]
-				NavigationLink(
-					destination: ProfileView(user: participant),
-					label: {
-						if let pfpUrl = participant.profilePicture {
-                            if MockAPIService.isMocking {
-                                Image(pfpUrl)
-                                    .ProfileImageModifier(imageType: .activityParticipants)
-                            } else {
-                                AsyncImage(url: URL(string: pfpUrl)) { image in
-                                    image.ProfileImageModifier(imageType: .activityParticipants)
-                                } placeholder: {
-                                    Circle()
-                                        .fill(Color.gray)
-                                        .frame(width: width, height: height)
-                                }
-                            }
-						} else {
-							Circle()
-								.fill(Color.gray)
-								.frame(width: width, height: height)
-						}
-					}
-				)
+				ProfilePictureView(user: participant)
 			}
             
             if participants.count > maxCount {

@@ -14,8 +14,6 @@ class ActivityCardViewModel: ObservableObject {
 	var activity: FullFeedActivityDTO
     
     
-    
-    
 	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO) {
 		self.apiService = apiService
 		self.userId = userId

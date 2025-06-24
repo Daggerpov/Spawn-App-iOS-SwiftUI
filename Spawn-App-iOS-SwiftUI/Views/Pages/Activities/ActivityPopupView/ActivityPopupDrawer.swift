@@ -20,7 +20,7 @@ struct ActivityPopupDrawer: View {
     }
     
     private var halfScreenOffset: CGFloat {
-        screenHeight * 0.28
+        screenHeight * 0.20
     }
     
     private var currentOffset: CGFloat {
