@@ -49,6 +49,17 @@ struct ActivityDateTimeView: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            // Back button at the top
+            HStack {
+                ActivityBackButton {
+                    // Handle back navigation
+                    // This will be handled by the parent view
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            
             ScrollView {
                 VStack(spacing: 32) {
                     // Time Selection Section - Using Native DatePickers
@@ -231,29 +242,16 @@ struct ActivityDateTimeView: View {
             }
             
             // Next Step Button
-            VStack {
-                Button(action: {
-                    let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
-                    if trimmedTitle.isEmpty {
-                        showTitleError = true
-                        return
-                    }
-                    onNext()
-                }) {
-                    HStack(alignment: .center, spacing: 8) {
-                        Text("Next Step")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    .padding(16)
-                    .frame(width: 375, height: 56, alignment: .center)
-                    .background(Color(red: 0.42, green: 0.51, blue: 0.98))
-                    .cornerRadius(16)
+            ActivityNextStepButton(
+                isEnabled: !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty
+            ) {
+                let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+                if trimmedTitle.isEmpty {
+                    showTitleError = true
+                    return
                 }
-                .buttonStyle(PlainButtonStyle())
+                onNext()
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 34)
         }
         .background(universalBackgroundColor)
         .onAppear {
