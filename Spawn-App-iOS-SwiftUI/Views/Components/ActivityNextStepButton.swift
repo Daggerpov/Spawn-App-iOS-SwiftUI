@@ -16,17 +16,18 @@ struct ActivityNextStepButton: View {
             Button(action: action) {
                 HStack(alignment: .center, spacing: 8) {
                     Text(title)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.onestSemiBold(size: 16))
                         .foregroundColor(.white)
                 }
-                .padding(16)
+                .padding(.vertical, 18)
+                .padding(.horizontal, 16)
                 .frame(maxWidth: .infinity, minHeight: 56)
-                .background(isEnabled ? universalSecondaryColor : Color.gray)
+                .background(isEnabled ? figmaSoftBlue : figmaLightGrey)
                 .cornerRadius(16)
             }
             .buttonStyle(PlainButtonStyle())
             .disabled(!isEnabled)
-            .opacity(isEnabled ? 1.0 : 0.6)
+            .opacity(isEnabled ? 1.0 : 0.8)
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 34)

@@ -5,11 +5,11 @@ struct StepIndicatorView: View {
     let totalSteps: Int
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 12) {
             ForEach(1...totalSteps, id: \.self) { step in
                 Circle()
-                    .fill(step <= currentStep ? figmaGreen : Color.gray.opacity(0.3))
-                    .frame(width: 8, height: 8)
+                    .fill(step <= currentStep ? figmaSoftBlue : figmaLightGrey)
+                    .frame(width: 12, height: 12)
             }
         }
     }
