@@ -166,7 +166,6 @@ extension ActivityFeedView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @State var tab = TabType.home
-    let mockUserId: UUID = BaseUserDTO.danielAgapov.id
     NavigationView {
         ActivityFeedView(user: .danielAgapov, selectedTab: $tab)
     }

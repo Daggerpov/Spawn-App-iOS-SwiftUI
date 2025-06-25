@@ -123,6 +123,10 @@ struct ActivityCreationLocationView: View {
                             }
                         }
                         
+                        // Step indicators
+                        StepIndicatorView(currentStep: 2, totalSteps: 3)
+                            .padding(.bottom, 16)
+                        
                         // Confirm button
                         ActivityNextStepButton(
                             title: "Confirm Location"

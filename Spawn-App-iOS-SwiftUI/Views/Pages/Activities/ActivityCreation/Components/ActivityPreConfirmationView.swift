@@ -6,7 +6,7 @@ struct ActivityPreConfirmationView: View {
     let onBack: (() -> Void)?
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 0) {
             // Back button at the top (if provided)
             if let onBack = onBack {
                 HStack {
@@ -17,12 +17,13 @@ struct ActivityPreConfirmationView: View {
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 16)
+                .padding(.bottom, 24)
             }
             
             Spacer()
             
             // Activity card
-            VStack(spacing: 16) {
+            VStack(spacing: 20) {
                 // Activity icon and details
                 VStack(spacing: 12) {
                     // Icon in gray background circle
@@ -47,8 +48,6 @@ struct ActivityPreConfirmationView: View {
                     }
                 }
                 
-                Spacer().frame(height: 20)
-                
                 // Activity title and location
                 VStack(spacing: 8) {
                     Text(viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedType?.rawValue ?? "Morning Stroll"))
@@ -72,15 +71,19 @@ struct ActivityPreConfirmationView: View {
                     .foregroundColor(figmaBlack300)
                 }
             }
-            .padding(.vertical, 32)
-            .padding(.horizontal, 24)
+            .padding(.vertical, 40)
+            .padding(.horizontal, 32)
             .background(
                 RoundedRectangle(cornerRadius: 20)
                     .fill(figmaGrey)
             )
-            .padding(.horizontal, 40)
+            .padding(.horizontal, 20)
             
             Spacer()
+            
+            // Step indicators
+            StepIndicatorView(currentStep: 3, totalSteps: 3)
+                .padding(.bottom, 16)
             
             // Create Activity button
             ActivityNextStepButton(
