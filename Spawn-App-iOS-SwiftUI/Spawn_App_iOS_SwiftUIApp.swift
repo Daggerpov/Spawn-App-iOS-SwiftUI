@@ -16,33 +16,28 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@StateObject var appCache = AppCache.shared
     
     init() {
-        // Register custom fonts
-        Font.registerFonts()
+        // Set default appearance for common UI controls using system fonts
+        // Custom fonts will be applied through SwiftUI modifiers
+        let systemFont = UIFont.systemFont(ofSize: 16)
+        let systemBold = UIFont.boldSystemFont(ofSize: 16)
         
-        // Create font instances for our custom fonts
-        let regularFont = UIFont(name: "Onest-Regular", size: 16)!
-        let mediumFont = UIFont(name: "Onest-Medium", size: 16)!
-        let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16)!
-        let boldFont = UIFont(name: "Onest-Bold", size: 16)!
+        UILabel.appearance().font = systemFont
+        UITextField.appearance().font = systemFont
+        UITextView.appearance().font = systemFont
+        UIButton.appearance().titleLabel?.font = systemBold
         
-        // Set default appearance for common UI controls
-        UILabel.appearance().font = regularFont
-        UITextField.appearance().font = regularFont
-        UITextView.appearance().font = regularFont
-        UIButton.appearance().titleLabel?.font = semiboldFont
-        
-        // Set specific fonts for navigation bars, etc.
+        // Set fonts for navigation bars
         UINavigationBar.appearance().titleTextAttributes = [
-            .font: boldFont.withSize(18)
+            .font: systemBold.withSize(18)
         ]
         
         UINavigationBar.appearance().largeTitleTextAttributes = [
-            .font: boldFont.withSize(34)
+            .font: systemBold.withSize(34)
         ]
         
         // Customize tab bar appearance
         UITabBarItem.appearance().setTitleTextAttributes([
-            .font: mediumFont.withSize(12)
+            .font: systemFont.withSize(12)
         ], for: .normal)
     }
 
