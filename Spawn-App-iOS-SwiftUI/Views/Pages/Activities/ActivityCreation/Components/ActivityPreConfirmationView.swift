@@ -27,7 +27,7 @@ struct ActivityPreConfirmationView: View {
                 VStack(spacing: 12) {
                     // Icon in gray background circle
                     Circle()
-                        .fill(Color.gray.opacity(0.1))
+                        .fill(figmaLightGrey)
                         .frame(width: 80, height: 80)
                         .overlay {
                             Text(viewModel.selectedType?.icon ?? "⭐️")
@@ -43,7 +43,7 @@ struct ActivityPreConfirmationView: View {
                         
                         Text("\(viewModel.selectedType?.peopleCount ?? 14) people")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(figmaBlack300)
                     }
                 }
                 
@@ -69,14 +69,14 @@ struct ActivityPreConfirmationView: View {
                         Text(formatTime(viewModel.selectedDate))
                     }
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(figmaBlack300)
                 }
             }
             .padding(.vertical, 32)
             .padding(.horizontal, 24)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.gray.opacity(0.05))
+                    .fill(figmaGrey)
             )
             .padding(.horizontal, 40)
             
