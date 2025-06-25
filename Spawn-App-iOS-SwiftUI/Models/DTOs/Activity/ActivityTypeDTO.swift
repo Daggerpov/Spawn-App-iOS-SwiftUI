@@ -25,10 +25,15 @@ class ActivityTypeDTO: Identifiable, Codable {
     }
 }
 
-// DTO for updating pin status
-struct ActivityTypePinUpdateDTO: Codable {
-    let activityTypeId: UUID
-    let isPinned: Bool
+// DTO for batch updating activity types
+struct BatchActivityTypeUpdateDTO: Codable {
+    let updatedActivityTypes: [ActivityTypeDTO]
+    let deletedActivityTypeIds: [UUID]
+    
+    init(updatedActivityTypes: [ActivityTypeDTO] = [], deletedActivityTypeIds: [UUID] = []) {
+        self.updatedActivityTypes = updatedActivityTypes
+        self.deletedActivityTypeIds = deletedActivityTypeIds
+    }
 }
 
 extension ActivityTypeDTO {
