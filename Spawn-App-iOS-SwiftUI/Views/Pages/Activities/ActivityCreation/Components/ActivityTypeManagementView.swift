@@ -1,70 +1,72 @@
 import SwiftUI
 
 struct ActivityTypeManagementView: View {
-    let activityType: ActivityType
+    let activityTypeDTO: ActivityTypeDTO
     @Environment(\.dismiss) private var dismiss
     @State private var showingOptions = false
     @State private var showingManagePeople = false
+    @State private var isLoading = false
+    @State private var errorMessage: String?
     
-    // For testing empty state - in real app this would come from a data source
-    let forceEmptyState: Bool
+    // Backend integration
+    private let apiService: IAPIService
+    private let userId: UUID
     
-    init(activityType: ActivityType, forceEmptyState: Bool = false) {
-        self.activityType = activityType
-        self.forceEmptyState = forceEmptyState
-    }
-    
-    private var effectivePeopleCount: Int {
-        return forceEmptyState ? 0 : activityType.peopleCount
+    init(activityTypeDTO: ActivityTypeDTO) {
+        self.activityTypeDTO = activityTypeDTO
+        self.userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+        
+        // Initialize API service based on mocking state
+        self.apiService = MockAPIService.isMocking 
+            ? MockAPIService(userId: userId) 
+            : APIService()
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(universalAccentColor)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Manage Type - \(activityType.rawValue)")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
                         .foregroundColor(universalAccentColor)
-                    
-                    Spacer()
-                    
-                    Button(action: { showingOptions = true }) {
-                        Image(systemName: "ellipsis")
-                            .font(.title2)
-                            .foregroundColor(universalAccentColor)
-                    }
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 12)
-                .background(universalBackgroundColor)
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Activity Type Card
-                        activityTypeCard
-                        
-                        // People Section
-                        peopleSection
-                    }
-                    .padding()
+                Spacer()
+                
+                Text("Manage Type - \(activityTypeDTO.title)")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(universalAccentColor)
+                
+                Spacer()
+                
+                Button(action: { showingOptions = true }) {
+                    Image(systemName: "ellipsis")
+                        .font(.title2)
+                        .foregroundColor(universalAccentColor)
                 }
-                .background(universalBackgroundColor)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 12)
+            .background(universalBackgroundColor)
+            
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Activity Type Card
+                    activityTypeCard
+                    
+                    // People Section
+                    peopleSection
+                }
+                .padding()
             }
             .background(universalBackgroundColor)
-            .navigationBarHidden(true)
         }
+        .background(universalBackgroundColor)
+        .navigationBarHidden(true)
         .sheet(isPresented: $showingManagePeople) {
-            ManagePeopleView(activityType: activityType)
+            ManagePeopleView(activityTypeDTO: activityTypeDTO)
         }
         .actionSheet(isPresented: $showingOptions) {
             ActionSheet(
@@ -74,9 +76,9 @@ struct ActivityTypeManagementView: View {
                         showingManagePeople = true
                     },
                     .destructive(Text("Delete Activity Type")) {
-                        // Handle delete activity type action
-                        // This would typically show a confirmation dialog
-                        // and then delete the activity type from the data source
+                        Task {
+                            await deleteActivityType()
+                        }
                     },
                     .cancel()
                 ]
@@ -91,10 +93,10 @@ struct ActivityTypeManagementView: View {
                 .frame(height: 120)
             
             VStack(spacing: 8) {
-                Text(activityType.icon)
+                Text(activityTypeDTO.icon)
                     .font(.system(size: 48))
                 
-                Text(activityType.rawValue)
+                Text(activityTypeDTO.title)
                     .font(.title2)
                     .fontWeight(.semibold)
                     .foregroundColor(universalAccentColor)
@@ -123,7 +125,7 @@ struct ActivityTypeManagementView: View {
     
     private var peopleSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            if effectivePeopleCount == 0 {
+            if activityTypeDTO.associatedFriends.isEmpty {
                 // Empty state
                 VStack(spacing: 24) {
                     Spacer()
@@ -165,7 +167,7 @@ struct ActivityTypeManagementView: View {
             } else {
                 // People exist - show the list
                 HStack {
-                    Text("People (\(effectivePeopleCount))")
+                    Text("People (\(activityTypeDTO.associatedFriends.count))")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(universalAccentColor)
@@ -183,23 +185,58 @@ struct ActivityTypeManagementView: View {
                 
                 // People List
                 LazyVStack(spacing: 12) {
-                    ForEach(0..<min(effectivePeopleCount, 10), id: \.self) { index in
-                        PersonRowView(person: samplePeople[index % samplePeople.count])
+                    ForEach(activityTypeDTO.associatedFriends, id: \.id) { friend in
+                        PersonRowView(friend: friend, activityTypeDTO: activityTypeDTO)
                     }
                 }
+            }
+        }
+    }
+    
+    private func deleteActivityType() async {
+        await MainActor.run {
+            isLoading = true
+            errorMessage = nil
+        }
+        
+        do {
+            let endpoint = "activity-type/\(activityTypeDTO.id)/user/\(userId)"
+            guard let url = URL(string: APIService.baseURL + endpoint) else {
+                await MainActor.run {
+                    isLoading = false
+                    errorMessage = "Invalid URL"
+                }
+                return
+            }
+            
+            // Define EmptyObject for delete request
+            struct EmptyObject: Encodable {}
+            
+            try await apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
+            
+            await MainActor.run {
+                isLoading = false
+                dismiss()
+            }
+        } catch {
+            await MainActor.run {
+                isLoading = false
+                errorMessage = "Failed to delete activity type"
+                print("❌ Error deleting activity type: \(error)")
             }
         }
     }
 }
 
 struct PersonRowView: View {
-    let person: SamplePerson
+    let friend: BaseUserDTO
+    let activityTypeDTO: ActivityTypeDTO
     @State private var showingPersonOptions = false
     
     var body: some View {
         HStack(spacing: 12) {
             // Profile Image
-            AsyncImage(url: URL(string: person.imageUrl)) { image in
+            AsyncImage(url: URL(string: friend.profilePicture ?? "")) { image in
                 image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -212,12 +249,12 @@ struct PersonRowView: View {
             
             // Name and Username
             VStack(alignment: .leading, spacing: 2) {
-                Text(person.name)
+				Text(FormatterService.shared.formatName(user: friend))
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(universalAccentColor)
                 
-                Text("@\(person.username)")
+                Text("@\(friend.username)")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
@@ -234,7 +271,7 @@ struct PersonRowView: View {
         .padding(.horizontal)
         .actionSheet(isPresented: $showingPersonOptions) {
             ActionSheet(
-                title: Text(person.name),
+				title: Text(FormatterService.shared.formatName(user: friend)),
                 buttons: [
                     .default(Text("View Profile")) {
                         // Handle view profile
@@ -253,13 +290,13 @@ struct PersonRowView: View {
 }
 
 struct ManagePeopleView: View {
-    let activityType: ActivityType
+    let activityTypeDTO: ActivityTypeDTO
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
             VStack {
-                Text("Manage People for \(activityType.rawValue)")
+                Text("Manage People for \(activityTypeDTO.title)")
                     .font(.title2)
                     .padding()
                 
@@ -280,30 +317,10 @@ struct ManagePeopleView: View {
     }
 }
 
-// Sample data for demonstration
-struct SamplePerson {
-    let name: String
-    let username: String
-    let imageUrl: String
-}
-
-let samplePeople: [SamplePerson] = [
-    SamplePerson(name: "First Last", username: "example_user", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "Jane Smith", username: "jane_smith", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "John Doe", username: "john_doe", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "Alice Johnson", username: "alice_j", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "Bob Wilson", username: "bob_wilson", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "Sarah Davis", username: "sarah_d", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "Mike Brown", username: "mike_brown", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "Emily Garcia", username: "emily_g", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "David Miller", username: "david_m", imageUrl: "https://via.placeholder.com/40"),
-    SamplePerson(name: "Lisa Anderson", username: "lisa_a", imageUrl: "https://via.placeholder.com/40")
-]
-
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
     
-    ActivityTypeManagementView(activityType: .chill, forceEmptyState: true)
+    ActivityTypeManagementView(activityTypeDTO: ActivityTypeDTO.mockChillActivityType)
         .environmentObject(appCache)
 } 
