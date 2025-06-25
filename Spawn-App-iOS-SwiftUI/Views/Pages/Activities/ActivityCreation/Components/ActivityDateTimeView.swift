@@ -15,6 +15,11 @@ struct ActivityDateTimeView: View {
     // State for day selection
     @State private var selectedDay: DayOption = .today
     
+    // State for tomorrow's default time
+    @State private var tomorrowHour: Int = 10
+    @State private var tomorrowMinute: Int = 45
+    @State private var tomorrowIsAM: Bool = false
+    
     // Validation state
     @State private var showTitleError: Bool = false
     
@@ -66,51 +71,90 @@ struct ActivityDateTimeView: View {
                     .padding(.horizontal, 20)
                     
                     // Time Picker Section
-                    VStack(spacing: 32) {
+                    VStack(spacing: 0) {
                         // Today row
-                        HStack {
-                            Button(action: { selectedDay = .today }) {
-                                Text("Today")
-                                    .font(.body)
-                                    .fontWeight(selectedDay == .today ? .medium : .regular)
-                                    .foregroundColor(selectedDay == .today ? universalAccentColor : figmaBlack300)
-                                    .frame(width: 80, alignment: .leading)
+                        VStack(spacing: 0) {
+                            HStack(spacing: 0) {
+                                Button(action: { 
+                                    selectedDay = .today
+                                    updateSelectedDate()
+                                }) {
+                                    Text("Today")
+                                        .font(.system(size: 16, weight: selectedDay == .today ? .semibold : .medium))
+                                        .foregroundColor(selectedDay == .today ? universalAccentColor : figmaBlack300)
+                                        .frame(width: 80, alignment: .leading)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Spacer()
+                                
+                                // Time display/picker for today
+                                if selectedDay == .today {
+                                    activeDayTimePicker(
+                                        hour: $selectedHour,
+                                        minute: $selectedMinute,
+                                        isAM: $isAM
+                                    )
+                                } else {
+                                    inactiveDayTimeDisplay(
+                                        hour: selectedHour,
+                                        minute: selectedMinute,
+                                        isAM: isAM
+                                    )
+                                }
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            Spacer()
-                            
-                            // Time picker for today
-                            if selectedDay == .today {
-                                customTimePicker
-                            } else {
-                                inactiveTimeDisplay
-                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(selectedDay == .today ? figmaSoftBlue.opacity(0.05) : Color.clear)
+                            )
                         }
-                        .padding(.horizontal, 20)
                         
                         // Tomorrow row
-                        HStack {
-                            Button(action: { selectedDay = .tomorrow }) {
-                                Text("Tomorrow")
-                                    .font(.body)
-                                    .fontWeight(selectedDay == .tomorrow ? .medium : .regular)
-                                    .foregroundColor(selectedDay == .tomorrow ? universalAccentColor : figmaBlack300)
-                                    .frame(width: 80, alignment: .leading)
+                        VStack(spacing: 0) {
+                            HStack(spacing: 0) {
+                                Button(action: { 
+                                    selectedDay = .tomorrow
+                                    // Update the current bindings to tomorrow's values
+                                    selectedHour = tomorrowHour
+                                    selectedMinute = tomorrowMinute
+                                    isAM = tomorrowIsAM
+                                    updateSelectedDate()
+                                }) {
+                                    Text("Tomorrow")
+                                        .font(.system(size: 16, weight: selectedDay == .tomorrow ? .semibold : .medium))
+                                        .foregroundColor(selectedDay == .tomorrow ? universalAccentColor : figmaBlack300)
+                                        .frame(width: 80, alignment: .leading)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                
+                                Spacer()
+                                
+                                // Time display/picker for tomorrow
+                                if selectedDay == .tomorrow {
+                                    activeDayTimePicker(
+                                        hour: $selectedHour,
+                                        minute: $selectedMinute,
+                                        isAM: $isAM
+                                    )
+                                } else {
+                                    inactiveDayTimeDisplay(
+                                        hour: tomorrowHour,
+                                        minute: tomorrowMinute,
+                                        isAM: tomorrowIsAM
+                                    )
+                                }
                             }
-                            .buttonStyle(PlainButtonStyle())
-                            
-                            Spacer()
-                            
-                            // Time picker for tomorrow
-                            if selectedDay == .tomorrow {
-                                customTimePicker
-                            } else {
-                                inactiveTimeDisplay
-                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(selectedDay == .tomorrow ? figmaSoftBlue.opacity(0.05) : Color.clear)
+                            )
                         }
-                        .padding(.horizontal, 20)
                     }
+                    .padding(.horizontal, 20)
                     
                     // Title Section
                     VStack(alignment: .leading, spacing: 12) {
@@ -196,6 +240,10 @@ struct ActivityDateTimeView: View {
                 .padding(.bottom, 40)
             }
             
+            // Step indicators
+            StepIndicatorView(currentStep: 1, totalSteps: 3)
+                .padding(.bottom, 16)
+            
             // Next Step Button
             ActivityNextStepButton(
                 title: "Next Step (Location)",
@@ -218,63 +266,90 @@ struct ActivityDateTimeView: View {
     
     // MARK: - Custom Views
     
-    private var customTimePicker: some View {
-        HStack(spacing: 20) {
+    @ViewBuilder
+    private func activeDayTimePicker(hour: Binding<Int>, minute: Binding<Int>, isAM: Binding<Bool>) -> some View {
+        HStack(spacing: 12) {
             // Hour picker
-            Picker("Hour", selection: $selectedHour) {
-                ForEach(hours, id: \.self) { hour in
-                    Text("\(hour)")
-                        .font(.system(size: 32, weight: .regular))
-                        .tag(hour)
+            Picker("Hour", selection: hour) {
+                ForEach(hours, id: \.self) { h in
+                    Text("\(h)")
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundColor(universalAccentColor)
+                        .tag(h)
                 }
             }
             .pickerStyle(.wheel)
-            .frame(width: 60, height: 120)
+            .frame(width: 50, height: 100)
             .clipped()
+            .scaleEffect(0.8)
             
             // Minute picker
-            Picker("Minute", selection: $selectedMinute) {
-                ForEach(minutes, id: \.self) { minute in
-                    Text(String(format: "%02d", minute))
-                        .font(.system(size: 32, weight: .regular))
-                        .tag(minute)
+            Picker("Minute", selection: minute) {
+                ForEach(minutes, id: \.self) { m in
+                    Text(String(format: "%02d", m))
+                        .font(.system(size: 28, weight: .medium))
+                        .foregroundColor(universalAccentColor)
+                        .tag(m)
                 }
             }
             .pickerStyle(.wheel)
-            .frame(width: 80, height: 120)
+            .frame(width: 60, height: 100)
             .clipped()
+            .scaleEffect(0.8)
             
             // AM/PM picker
-            Picker("AM/PM", selection: $isAM) {
+            Picker("AM/PM", selection: isAM) {
                 Text("AM")
-                    .font(.system(size: 18, weight: .regular))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(universalAccentColor)
                     .tag(true)
                 Text("PM")
-                    .font(.system(size: 18, weight: .regular))
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(universalAccentColor)
                     .tag(false)
             }
             .pickerStyle(.wheel)
-            .frame(width: 60, height: 120)
+            .frame(width: 50, height: 100)
             .clipped()
+            .scaleEffect(0.8)
         }
-        .onChange(of: selectedHour) { _ in updateSelectedDate() }
-        .onChange(of: selectedMinute) { _ in updateSelectedDate() }
-        .onChange(of: isAM) { _ in updateSelectedDate() }
+        .onChange(of: hour.wrappedValue) { _ in 
+            if selectedDay == .tomorrow {
+                tomorrowHour = hour.wrappedValue
+            }
+            updateSelectedDate() 
+        }
+        .onChange(of: minute.wrappedValue) { _ in 
+            if selectedDay == .tomorrow {
+                tomorrowMinute = minute.wrappedValue
+            }
+            updateSelectedDate() 
+        }
+        .onChange(of: isAM.wrappedValue) { _ in 
+            if selectedDay == .tomorrow {
+                tomorrowIsAM = isAM.wrappedValue
+            }
+            updateSelectedDate() 
+        }
     }
     
-    private var inactiveTimeDisplay: some View {
-        HStack(spacing: 20) {
-            Text("\(selectedHour)")
-                .font(.system(size: 32, weight: .regular))
-                .foregroundColor(figmaBlack300.opacity(0.5))
+    @ViewBuilder
+    private func inactiveDayTimeDisplay(hour: Int, minute: Int, isAM: Bool) -> some View {
+        HStack(spacing: 12) {
+            Text("\(hour)")
+                .font(.system(size: 28, weight: .medium))
+                .foregroundColor(figmaBlack300.opacity(0.4))
+                .frame(width: 40)
             
-            Text(String(format: "%02d", selectedMinute))
-                .font(.system(size: 32, weight: .regular))
-                .foregroundColor(figmaBlack300.opacity(0.5))
+            Text(String(format: "%02d", minute))
+                .font(.system(size: 28, weight: .medium))
+                .foregroundColor(figmaBlack300.opacity(0.4))
+                .frame(width: 48)
             
             Text(isAM ? "AM" : "PM")
-                .font(.system(size: 18, weight: .regular))
-                .foregroundColor(figmaBlack300.opacity(0.5))
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(figmaBlack300.opacity(0.4))
+                .frame(width: 40)
         }
     }
     
