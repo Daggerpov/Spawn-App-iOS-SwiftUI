@@ -5,21 +5,16 @@ struct ActivityTypeManagementView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingOptions = false
     @State private var showingManagePeople = false
-    @State private var isLoading = false
-    @State private var errorMessage: String?
     
-    // Backend integration
-    private let apiService: IAPIService
-    private let userId: UUID
+    // Use the ActivityTypeViewModel for managing activity types
+    @StateObject private var viewModel: ActivityTypeViewModel
     
     init(activityTypeDTO: ActivityTypeDTO) {
         self.activityTypeDTO = activityTypeDTO
-        self.userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
         
-        // Initialize API service based on mocking state
-        self.apiService = MockAPIService.isMocking 
-            ? MockAPIService(userId: userId) 
-            : APIService()
+        // Initialize the view model with userId
+        let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+        self._viewModel = StateObject(wrappedValue: ActivityTypeViewModel(userId: userId))
     }
     
     var body: some View {
@@ -62,6 +57,13 @@ struct ActivityTypeManagementView: View {
                 .padding()
             }
             .background(universalBackgroundColor)
+            
+            // Loading overlay
+            if viewModel.isLoading {
+                ProgressView("Deleting...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.3))
+            }
         }
         .background(universalBackgroundColor)
         .navigationBarHidden(true)
@@ -77,12 +79,25 @@ struct ActivityTypeManagementView: View {
                     },
                     .destructive(Text("Delete Activity Type")) {
                         Task {
-                            await deleteActivityType()
+                            await viewModel.deleteActivityType(activityTypeDTO)
+                            // Dismiss the view after successful deletion
+                            if viewModel.errorMessage == nil {
+                                dismiss()
+                            }
                         }
                     },
                     .cancel()
                 ]
             )
+        }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.clearError()
+            }
+        } message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+            }
         }
     }
     
@@ -189,40 +204,6 @@ struct ActivityTypeManagementView: View {
                         PersonRowView(friend: friend, activityTypeDTO: activityTypeDTO)
                     }
                 }
-            }
-        }
-    }
-    
-    private func deleteActivityType() async {
-        await MainActor.run {
-            isLoading = true
-            errorMessage = nil
-        }
-        
-        do {
-            let endpoint = "activity-type/\(activityTypeDTO.id)/user/\(userId)"
-            guard let url = URL(string: APIService.baseURL + endpoint) else {
-                await MainActor.run {
-                    isLoading = false
-                    errorMessage = "Invalid URL"
-                }
-                return
-            }
-            
-            // Define EmptyObject for delete request
-            struct EmptyObject: Encodable {}
-            
-            try await apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
-            
-            await MainActor.run {
-                isLoading = false
-                dismiss()
-            }
-        } catch {
-            await MainActor.run {
-                isLoading = false
-                errorMessage = "Failed to delete activity type"
-                print("❌ Error deleting activity type: \(error)")
             }
         }
     }

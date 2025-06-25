@@ -87,7 +87,7 @@ struct ActivityPreConfirmationView: View {
             
             // Create Activity button
             ActivityNextStepButton(
-                title: "Create Activity"
+                title: "Looks good to me!"
             ) {
                 Task {
                     await viewModel.createActivity()
