@@ -3,9 +3,22 @@ import SwiftUI
 struct ActivityPreConfirmationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
     let onCreateActivity: () -> Void
+    let onBack: (() -> Void)?
     
     var body: some View {
         VStack(spacing: 24) {
+            // Back button at the top (if provided)
+            if let onBack = onBack {
+                HStack {
+                    ActivityBackButton {
+                        onBack()
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+            }
+            
             Spacer()
             
             // Activity card
@@ -70,30 +83,16 @@ struct ActivityPreConfirmationView: View {
             Spacer()
             
             // Create Activity button
-            Button(action: {
+            ActivityNextStepButton(
+                title: "Create Activity"
+            ) {
                 Task {
                     await viewModel.createActivity()
                     await MainActor.run {
                         onCreateActivity()
                     }
                 }
-            }) {
-                Text("Create Activity")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.blue, Color.purple]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(12)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 32)
         }
         .background(universalBackgroundColor)
     }
@@ -109,8 +108,13 @@ struct ActivityPreConfirmationView: View {
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
     
-    ActivityPreConfirmationView {
-        print("Create activity tapped")
-    }
+    ActivityPreConfirmationView(
+        onCreateActivity: {
+            print("Create activity tapped")
+        },
+        onBack: {
+            print("Back tapped")
+        }
+    )
     .environmentObject(appCache)
 } 

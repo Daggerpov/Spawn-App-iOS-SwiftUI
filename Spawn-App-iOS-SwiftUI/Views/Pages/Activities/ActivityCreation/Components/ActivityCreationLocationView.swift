@@ -14,6 +14,7 @@ struct ActivityCreationLocationView: View {
     @State private var showingLocationPicker = false
     
     let onNext: () -> Void
+    let onBack: (() -> Void)?
     
     var body: some View {
         ZStack {
@@ -44,7 +45,7 @@ struct ActivityCreationLocationView: View {
             VStack {
                 HStack {
                     Button(action: {
-                        // Handle back action
+                        onBack?()
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
@@ -113,7 +114,9 @@ struct ActivityCreationLocationView: View {
                         }
                         
                         // Confirm button
-                        Button(action: {
+                        ActivityNextStepButton(
+                            title: "Confirm Location"
+                        ) {
                             // Set the location in the view model based on current pin position
                             let location = Location(
                                 id: UUID(),
@@ -123,14 +126,6 @@ struct ActivityCreationLocationView: View {
                             )
                             viewModel.setLocation(location)
                             onNext()
-                        }) {
-                            Text("Confirm Location")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(universalSecondaryColor)
-                                .cornerRadius(12)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -351,6 +346,9 @@ extension MKPlacemark {
     ActivityCreationLocationView(
         onNext: {
             print("Next step tapped")
+        },
+        onBack: {
+            print("Back tapped")
         }
     )
     .environmentObject(appCache)

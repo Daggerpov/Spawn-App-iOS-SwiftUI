@@ -305,9 +305,6 @@ let samplePeople: [SamplePerson] = [
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
     
-    // Create a custom activity type for testing empty state
-    let emptyActivityType = ActivityType.general
-    
-    ActivityTypeManagementView(activityType: emptyActivityType)
+    ActivityTypeManagementView(activityType: .chill, forceEmptyState: true)
         .environmentObject(appCache)
 } 
