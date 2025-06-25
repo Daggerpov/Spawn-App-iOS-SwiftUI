@@ -202,6 +202,12 @@ class MockAPIService: IAPIService {
 				return ["Hiking", "Photography", "Cooking", "Travel", "Music"] as! T
 			}
 		}
+		
+		// Activity type pinning - fetch pinned activity types
+		if url.absoluteString.contains("activity-type/pinned/") {
+			// Return mock pinned activity type IDs
+			return [ActivityTypeDTO.mockFoodActivityType.id] as! T
+		}
 
 		throw APIError.invalidData
 	}
@@ -301,6 +307,14 @@ class MockAPIService: IAPIService {
 						? "https://www.instagram.com/\(socialMediaDTO.instagramUsername!)"
 						: nil
 				) as! U
+			}
+		}
+		
+		// Activity type pinning - toggle pin status
+		if url.absoluteString.contains("activity-type/pin/") {
+			if let pinUpdateDTO = object as? ActivityTypePinUpdateDTO {
+				print("🔍 MOCK: Toggling pin status for activity type \(pinUpdateDTO.activityTypeId) to \(pinUpdateDTO.isPinned)")
+				return EmptyResponse() as! U
 			}
 		}
 
