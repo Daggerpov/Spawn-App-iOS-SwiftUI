@@ -6,6 +6,18 @@ struct ActivityTypeManagementView: View {
     @State private var showingOptions = false
     @State private var showingManagePeople = false
     
+    // For testing empty state - in real app this would come from a data source
+    let forceEmptyState: Bool
+    
+    init(activityType: ActivityType, forceEmptyState: Bool = false) {
+        self.activityType = activityType
+        self.forceEmptyState = forceEmptyState
+    }
+    
+    private var effectivePeopleCount: Int {
+        return forceEmptyState ? 0 : activityType.peopleCount
+    }
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -112,27 +124,69 @@ struct ActivityTypeManagementView: View {
     
     private var peopleSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("People (\(activityType.peopleCount))")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(universalAccentColor)
-                
-                Spacer()
-                
-                Button(action: { showingManagePeople = true }) {
-                    Text("Manage People")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.blue)
+            if effectivePeopleCount == 0 {
+                // Empty state
+                VStack(spacing: 24) {
+                    Spacer()
+                        .frame(height: 60)
+                    
+                    VStack(spacing: 16) {
+                        Text("No people yet!")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(universalAccentColor)
+                        
+                        Text("You haven't added placed friends under this tag yet. Tap below to get started!")
+                            .font(.body)
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                    }
+                    
+                    Button(action: { showingManagePeople = true }) {
+                        HStack {
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .medium))
+                            Text("Add friends")
+                                .font(.system(size: 18, weight: .medium))
+                        }
+                        .foregroundColor(.green)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
+                                .foregroundColor(.green)
+                        )
+                    }
+                    
+                    Spacer()
                 }
-            }
-            .padding(.horizontal)
-            
-            // People List
-            LazyVStack(spacing: 12) {
-                ForEach(0..<min(activityType.peopleCount, 10), id: \.self) { index in
-                    PersonRowView(person: samplePeople[index % samplePeople.count])
+                .frame(maxWidth: .infinity)
+            } else {
+                // People exist - show the list
+                HStack {
+                    Text("People (\(effectivePeopleCount))")
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(universalAccentColor)
+                    
+                    Spacer()
+                    
+                    Button(action: { showingManagePeople = true }) {
+                        Text("Manage People")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
+                    }
+                }
+                .padding(.horizontal)
+                
+                // People List
+                LazyVStack(spacing: 12) {
+                    ForEach(0..<min(effectivePeopleCount, 10), id: \.self) { index in
+                        PersonRowView(person: samplePeople[index % samplePeople.count])
+                    }
                 }
             }
         }
@@ -251,6 +305,9 @@ let samplePeople: [SamplePerson] = [
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
     
-    ActivityTypeManagementView(activityType: .chill)
+    // Create a custom activity type for testing empty state
+    let emptyActivityType = ActivityType.general
+    
+    ActivityTypeManagementView(activityType: emptyActivityType)
         .environmentObject(appCache)
 } 
