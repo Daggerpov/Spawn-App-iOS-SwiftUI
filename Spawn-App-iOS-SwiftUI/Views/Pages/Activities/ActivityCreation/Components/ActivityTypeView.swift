@@ -4,6 +4,9 @@ struct ActivityTypeView: View {
     @Binding var selectedType: ActivityType?
     let onNext: () -> Void
     
+    // State to track pinned activity types
+    @State private var pinnedTypes: Set<ActivityType> = []
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("What are you up to?")
@@ -18,7 +21,26 @@ struct ActivityTypeView: View {
                     GridItem(.flexible())
                 ], spacing: 16) {
                     ForEach(ActivityType.allCases, id: \.self) { type in
-                        ActivityTypeCard(type: type, selectedType: $selectedType)
+                        ActivityTypeCard(
+                            type: type, 
+                            selectedType: $selectedType,
+                            isPinned: pinnedTypes.contains(type),
+                            onPin: {
+                                if pinnedTypes.contains(type) {
+                                    pinnedTypes.remove(type)
+                                } else {
+                                    pinnedTypes.insert(type)
+                                }
+                            },
+                            onManage: {
+                                // Handle manage action
+                                print("Manage \(type.rawValue)")
+                            },
+                            onDelete: {
+                                // Handle delete action
+                                print("Delete \(type.rawValue)")
+                            }
+                        )
                     }
                 }
                 .padding()
@@ -44,33 +66,68 @@ struct ActivityTypeView: View {
 struct ActivityTypeCard: View {
     let type: ActivityType
     @Binding var selectedType: ActivityType?
+    let isPinned: Bool
+    let onPin: () -> Void
+    let onManage: () -> Void
+    let onDelete: () -> Void
     
     var body: some View {
         Button(action: { selectedType = type }) {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text(type.icon)
-                        .font(.title)
-                    Spacer()
-                    Text("\(type.peopleCount) people")
-                        .font(.caption)
-                        .foregroundColor(figmaBlack300)
+            ZStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(type.icon)
+                            .font(.title)
+                        Spacer()
+                        Text("\(type.peopleCount) people")
+                            .font(.caption)
+                            .foregroundColor(figmaBlack300)
+                    }
+                    
+                    Text(type.rawValue)
+                        .font(.headline)
+                        .foregroundColor(universalAccentColor)
                 }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(selectedType == type ? universalSecondaryColor.opacity(0.1) : Color.gray.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(selectedType == type ? universalSecondaryColor : Color.clear, lineWidth: 2)
+                        )
+                )
                 
-                Text(type.rawValue)
-                    .font(.headline)
-                    .foregroundColor(universalAccentColor)
+                // Pin icon overlay
+                if isPinned {
+                    VStack {
+                        HStack {
+                            Image(systemName: "pin.fill")
+                                .foregroundColor(.red)
+                                .font(.system(size: 12))
+                                .rotationEffect(.degrees(45))
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .padding(8)
+                }
             }
-            .padding()
-            .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(selectedType == type ? universalSecondaryColor.opacity(0.1) : Color.gray.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(selectedType == type ? universalSecondaryColor : Color.clear, lineWidth: 2)
-                    )
-            )
+        }
+        .contextMenu {
+            Button(action: onPin) {
+                Label(isPinned ? "Unpin Type" : "Pin Type", systemImage: "pin")
+            }
+            
+            Button(action: onManage) {
+                Label("Manage Type", systemImage: "slider.horizontal.3")
+            }
+            
+            Button(action: onDelete) {
+                Label("Delete Type", systemImage: "trash")
+            }
+            .foregroundColor(.red)
         }
     }
 }
