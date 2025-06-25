@@ -70,14 +70,13 @@ struct ActivityTypeManagementView: View {
             ActionSheet(
                 title: Text("Options"),
                 buttons: [
-                    .default(Text("Edit Type")) {
-                        // Handle edit type action
+                    .default(Text("Manage People")) {
+                        showingManagePeople = true
                     },
-                    .default(Text("Reset People")) {
-                        // Handle reset people action
-                    },
-                    .destructive(Text("Delete Type")) {
-                        // Handle delete type action
+                    .destructive(Text("Delete Activity Type")) {
+                        // Handle delete activity type action
+                        // This would typically show a confirmation dialog
+                        // and then delete the activity type from the data source
                     },
                     .cancel()
                 ]
