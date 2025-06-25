@@ -6,6 +6,9 @@ struct ActivityTypeView: View {
     
     // State to track pinned activity types
     @State private var pinnedTypes: Set<ActivityType> = []
+    // State for managing activity type
+    @State private var showingManageType = false
+    @State private var typeToManage: ActivityType? = nil
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -33,8 +36,8 @@ struct ActivityTypeView: View {
                                 }
                             },
                             onManage: {
-                                // Handle manage action
-                                print("Manage \(type.rawValue)")
+                                typeToManage = type
+                                showingManageType = true
                             },
                             onDelete: {
                                 // Handle delete action
@@ -60,6 +63,11 @@ struct ActivityTypeView: View {
             .opacity(selectedType == nil ? 0.6 : 1)
         }
         .background(universalBackgroundColor)
+        .sheet(isPresented: $showingManageType) {
+            if let typeToManage = typeToManage {
+                ActivityTypeManagementView(activityType: typeToManage)
+            }
+        }
     }
 }
 
