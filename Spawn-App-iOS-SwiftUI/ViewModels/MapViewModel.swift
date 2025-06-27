@@ -7,7 +7,7 @@
 import MapKit
 import SwiftUI
 
-class MapViewModel: Identifiable {
+class MapViewModel: Identifiable, ObservableObject {
     var lat: Double
     var lon: Double
     let id = UUID()

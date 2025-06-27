@@ -11,13 +11,14 @@ struct ChatroomView: View {
     var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
     var activity: FullFeedActivityDTO
     var backgroundColor: Color
-    @ObservedObject var viewModel: ChatViewModel
+    @StateObject var viewModel: ChatViewModel
     @Environment(\.dismiss) private var dismiss
     
     init(activity: FullFeedActivityDTO, backgroundColor: Color) {
         self.activity = activity
         self.backgroundColor = backgroundColor
-        self.viewModel = ChatViewModel(senderUserId: user.id, activity: activity)
+        let userId = user.id
+        self._viewModel = StateObject(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
     }
     
     var body: some View {

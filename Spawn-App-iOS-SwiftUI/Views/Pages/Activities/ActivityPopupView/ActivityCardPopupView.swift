@@ -9,8 +9,8 @@ import MapKit
 
 struct ActivityCardPopupView: View {
     private var viewModel: ActivityInfoViewModel
-    private var mapViewModel: MapViewModel
-    @ObservedObject private var cardViewModel: ActivityCardViewModel
+    @StateObject private var mapViewModel: MapViewModel
+    @StateObject private var cardViewModel: ActivityCardViewModel
     var activity: FullFeedActivityDTO
     var activityColor: Color
     
@@ -18,8 +18,8 @@ struct ActivityCardPopupView: View {
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity)
-        mapViewModel = MapViewModel(activity: activity)
-        self.cardViewModel = ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity)
+        _mapViewModel = StateObject(wrappedValue: MapViewModel(activity: activity))
+        self._cardViewModel = StateObject(wrappedValue: ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity))
         self.activityColor = activityColor
     }
     
@@ -53,7 +53,6 @@ struct ActivityCardPopupView: View {
                     directionRow
                     
                     // Chat section
-                    //ChatroomView(activity: activity, backgroundColor: activityColor)
                     ChatroomButtonView(activity: activity, activityColor: activityColor)
                     Spacer(minLength: 20)
                 }
@@ -64,6 +63,18 @@ struct ActivityCardPopupView: View {
             .shadow(radius: 20)
             .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
         }
+    }
+    
+    var map: some View {
+        Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
+            MapAnnotation(coordinate: pin.coordinate) {
+                Image(systemName: "mappin")
+                    .font(.title)
+                    .foregroundColor(.red)
+            }
+        }
+        .frame(height: 175)
+        .cornerRadius(12)
     }
 }
 
@@ -122,18 +133,6 @@ extension ActivityCardPopupView {
             Spacer()
             ParticipantsImagesView(activity: activity)
         }
-    }
-    
-    var map: some View {
-        Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
-            MapAnnotation(coordinate: pin.coordinate) {
-                Image(systemName: "mappin")
-                    .font(.title)
-                    .foregroundColor(.red)
-            }
-        }
-        .frame(height: 175)
-        .cornerRadius(12)
     }
     
     var directionRow: some View {
