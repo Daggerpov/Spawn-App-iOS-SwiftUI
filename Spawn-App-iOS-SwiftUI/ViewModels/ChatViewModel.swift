@@ -45,21 +45,36 @@ class ChatViewModel: ObservableObject {
                 
                 // After successfully sending the message, fetch the updated activity data
                 guard let newChatMessage = response else {
-                    print("Error: No chat received API after creating chat message")
+                    print("Error: No chat received from API after creating chat message")
                     creationMessage = "Error sending message"
                     return
                 }
                 
-                chats.append(newChatMessage)
-                
-                // Clear any error message
                 await MainActor.run {
+                    chats.append(newChatMessage)
                     creationMessage = nil
                 }
             } catch {
                 print("Error sending message: \(error)")
                 await MainActor.run {
                     creationMessage = "There was an error sending your chat message. Please try again"
+                }
+            }
+        }
+    }
+    
+    func refreshChat() async {
+        if let url = URL(string: APIService.baseURL + "activities/" + activityId.uuidString + "/chats") {
+            do {
+                let chats: [FullActivityChatMessageDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+                await MainActor.run {
+                    self.chats = chats
+                }
+              
+            } catch {
+                print("Error refreshing chats: \(error)")
+                await MainActor.run {
+                    creationMessage = "There was an error refreshing the chatroom. Please try again"
                 }
             }
         }

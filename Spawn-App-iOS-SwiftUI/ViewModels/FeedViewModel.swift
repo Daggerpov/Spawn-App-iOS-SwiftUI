@@ -102,8 +102,8 @@ class FeedViewModel: ObservableObject {
     }
     
     private func fetchActivityTypesFromAPI() async {
-        // Path: /api/v1/activity-type/{requestingUserId}
-        guard let url = URL(string: APIService.baseURL + "activity-type/\(userId)") else {
+        // Path: /api/v1/{requestingUserId}/activity-type
+        guard let url = URL(string: APIService.baseURL + "\(userId)/activity-type") else {
             print("❌ DEBUG: Failed to construct URL for activity types")
             return
         }

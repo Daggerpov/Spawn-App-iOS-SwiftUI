@@ -47,17 +47,23 @@ struct ChatroomView: View {
                         .font(.title2)
                 }
                 .padding(.horizontal, 20)
-                .padding(.top, 10)
+                .padding(.top, 14)
                 
                 // Messages list
                 ScrollView {
                     LazyVStack(spacing: 16) {
                         ForEach(viewModel.chats, id: \.id) { message in
                             ChatMessageView(message: message, isFromCurrentUser: message.senderUser == UserAuthViewModel.shared.spawnUser)
+                                .transition(.move(edge: .bottom))
                         }
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 20)
+                }
+                .refreshable {
+                    Task {
+                        await viewModel.refreshChat()
+                    }
                 }
                 
                 Spacer()
@@ -76,6 +82,7 @@ struct ChatroomView: View {
                     }
                     .background(Color.white)
                     .cornerRadius(25)
+                    .padding(.bottom, 6)
                     
                     // Send button
                     Button(action: {
@@ -95,6 +102,7 @@ struct ChatroomView: View {
                 .padding(.horizontal, 16)
             }
         }
+        .navigationBarBackButtonHidden(true)
     }
 }
 
