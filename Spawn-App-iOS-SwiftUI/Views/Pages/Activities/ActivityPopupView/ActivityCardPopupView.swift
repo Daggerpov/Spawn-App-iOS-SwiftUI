@@ -108,7 +108,7 @@ extension ActivityCardPopupView {
             Text(activity.title ?? (activity.creatorUser.name ?? activity.creatorUser.username) + "'s activity")
                 .font(.onestSemiBold(size: 32))
                 .foregroundColor(.white)
-            Text("In 2 hours • " + viewModel.getDisplayString(activityInfoType: .time))
+            Text(FormatterService.shared.timeUntil(activity.startTime) + " • " + viewModel.getDisplayString(activityInfoType: .time))
                 .font(.onestSemiBold(size: 15))
                 .foregroundColor(.white.opacity(0.9))
         }
