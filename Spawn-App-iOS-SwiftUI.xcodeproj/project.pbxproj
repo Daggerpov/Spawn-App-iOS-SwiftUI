@@ -13,7 +13,6 @@
 		AAEC10142DC08AB30089C05A /* FirebaseInAppMessaging-Beta in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10132DC08AB30089C05A /* FirebaseInAppMessaging-Beta */; };
 		AAEC10162DC08AB30089C05A /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10152DC08AB30089C05A /* FirebaseMessaging */; };
 		AAEC10182DC08D4C0089C05A /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10172DC08D4C0089C05A /* FirebaseCore */; };
-		AAF7D33C2DF946C0004AD771 /* FullFeedEventDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAF7D33B2DF946C0004AD771 /* FullFeedEventDTO.swift */; };
 		DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DC0171582D43507E003BF3DB /* GoogleSignIn */; };
 		DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DC01715A2D43507E003BF3DB /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
@@ -39,7 +38,6 @@
 		65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUI.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		65D5036E2CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		65D503782CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Spawn-App-iOS-SwiftUIUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AAF7D33B2DF946C0004AD771 /* FullFeedEventDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullFeedEventDTO.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -113,7 +111,6 @@
 				65D503712CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests */,
 				65D5037B2CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests */,
 				65D5035A2CD86EB300923A01 /* Products */,
-				AAF7D33B2DF946C0004AD771 /* FullFeedEventDTO.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -214,7 +211,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1610;
-				LastUpgradeCheck = 1630;
+				LastUpgradeCheck = 1610;
 				TargetAttributes = {
 					65D503582CD86EB300923A01 = {
 						CreatedOnToolsVersion = 16.1;
@@ -287,7 +284,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AAF7D33C2DF946C0004AD771 /* FullFeedEventDTO.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -355,13 +351,12 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -381,10 +376,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_COMPILATION_MODE = singlefile;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -452,10 +444,10 @@
 				CODE_SIGN_ENTITLEMENTS = "Spawn-App-iOS-SwiftUI/Spawn-App-iOS-SwiftUI.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Spawn-App-iOS-SwiftUI/Preview Content\"";
 				DEVELOPMENT_TEAM = GUW483PXY6;
 				ENABLE_PREVIEWS = YES;
+				GENERATE_DSYM_FILE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Spawn-App-iOS-SwiftUI/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Spawn;
@@ -488,7 +480,6 @@
 				CODE_SIGN_ENTITLEMENTS = "Spawn-App-iOS-SwiftUI/Spawn-App-iOS-SwiftUI.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"Spawn-App-iOS-SwiftUI/Preview Content\"";
 				DEVELOPMENT_TEAM = GUW483PXY6;
 				ENABLE_PREVIEWS = YES;
@@ -646,8 +637,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/benedom/SwiftyCrop";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.0.0;
+				branch = master;
+				kind = branch;
 			};
 		};
 		AAEC10122DC08AB30089C05A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {

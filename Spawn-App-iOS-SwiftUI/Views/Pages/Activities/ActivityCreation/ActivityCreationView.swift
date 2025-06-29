@@ -111,54 +111,71 @@ struct ActivityCreationView: View {
     private var content: some View {
         switch currentStep {
         case .activityType:
-            ActivityTypeView(selectedType: $viewModel.selectedType) {
-                currentStep = .dateTime
-            }
+            ActivityTypeView(
+                selectedType: $viewModel.selectedType,
+                onNext: {
+                    currentStep = .dateTime
+                }
+            )
         case .dateTime:
             ActivityDateTimeView(
                 selectedHour: $selectedHour,
                 selectedMinute: $selectedMinute,
                 isAM: $isAM,
                 activityTitle: $activityTitle,
-                selectedDuration: $selectedDuration
-            ) {
-                // Sync the activity title with the view model before proceeding
-                viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
-                
-                // Validate the title is not empty
-                if viewModel.activity.title?.isEmpty ?? true {
-                    // Show error or prevent progression
-                    return
-                }
-                
-                // Sync selectedDate and selectedDuration with viewModel
-                let calendar = Calendar.current
-                let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
-                var components = calendar.dateComponents([.year, .month, .day], from: Date())
-                components.hour = hour24
-                components.minute = selectedMinute
-                components.second = 0
-                
-                if let newDate = calendar.date(from: components) {
-                    viewModel.selectedDate = newDate
-                }
-                viewModel.selectedDuration = selectedDuration
-                
-                currentStep = .location
-            }
-        case .location:
-            ActivityCreationLocationView {
-                // Ensure title is still synced when moving from location to preConfirmation
-                if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
+                selectedDuration: $selectedDuration,
+                onNext: {
+                    // Sync the activity title with the view model before proceeding
                     viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
+                    
+                    // Validate the title is not empty
+                    if viewModel.activity.title?.isEmpty ?? true {
+                        // Show error or prevent progression
+                        return
+                    }
+                    
+                    // Sync selectedDate and selectedDuration with viewModel
+                    let calendar = Calendar.current
+                    let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+                    var components = calendar.dateComponents([.year, .month, .day], from: Date())
+                    components.hour = hour24
+                    components.minute = selectedMinute
+                    components.second = 0
+                    
+                    if let newDate = calendar.date(from: components) {
+                        viewModel.selectedDate = newDate
+                    }
+                    viewModel.selectedDuration = selectedDuration
+                    
+                    currentStep = .location
+                },
+                onBack: {
+                    currentStep = currentStep.previous()
                 }
-                currentStep = .preConfirmation
-            }
+            )
+        case .location:
+            ActivityCreationLocationView(
+                onNext: {
+                    // Ensure title is still synced when moving from location to preConfirmation
+                    if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
+                        viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
+                    }
+                    currentStep = .preConfirmation
+                },
+                onBack: {
+                    currentStep = currentStep.previous()
+                }
+            )
         case .preConfirmation:
-            ActivityPreConfirmationView {
-                // Create the activity and move to confirmation
-                currentStep = .confirmation
-            }
+            ActivityPreConfirmationView(
+                onCreateActivity: {
+                    // Create the activity and move to confirmation
+                    currentStep = .confirmation
+                },
+                onBack: {
+                    currentStep = currentStep.previous()
+                }
+            )
         case .confirmation:
             ActivityConfirmationView(
                 showShareSheet: $showShareSheet,

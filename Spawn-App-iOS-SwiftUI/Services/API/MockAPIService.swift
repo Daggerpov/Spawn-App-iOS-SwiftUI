@@ -10,7 +10,7 @@ import SwiftUI // just for UIImage for `createUser()`
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = true
+	static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
 	var errorStatusCode: Int? = nil
@@ -202,6 +202,8 @@ class MockAPIService: IAPIService {
 				return ["Hiking", "Photography", "Cooking", "Travel", "Music"] as! T
 			}
 		}
+		
+
 
 		throw APIError.invalidData
 	}
@@ -301,6 +303,14 @@ class MockAPIService: IAPIService {
 						? "https://www.instagram.com/\(socialMediaDTO.instagramUsername!)"
 						: nil
 				) as! U
+			}
+		}
+		
+		// Activity type batch update (including pin updates)
+		if url.absoluteString.contains("activity-type/") && !url.absoluteString.contains("pin") {
+			if let batchUpdateDTO = object as? BatchActivityTypeUpdateDTO {
+				print("🔍 MOCK: Batch updating activity types with \(batchUpdateDTO.updatedActivityTypes.count) updates and \(batchUpdateDTO.deletedActivityTypeIds.count) deletions")
+				return batchUpdateDTO as! U
 			}
 		}
 
