@@ -9,17 +9,17 @@ import MapKit
 
 struct ActivityCardPopupView: View {
     private var viewModel: ActivityInfoViewModel
-    private var mapViewModel: MapViewModel
-    @ObservedObject private var cardViewModel: ActivityCardViewModel
-    var activity: FullFeedActivityDTO
+    @StateObject private var mapViewModel: MapViewModel
+    @StateObject private var cardViewModel: ActivityCardViewModel
+    @ObservedObject var activity: FullFeedActivityDTO
     var activityColor: Color
     
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity)
-        mapViewModel = MapViewModel(activity: activity)
-        self.cardViewModel = ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity)
+        _mapViewModel = StateObject(wrappedValue: MapViewModel(activity: activity))
+        self._cardViewModel = StateObject(wrappedValue: ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity))
         self.activityColor = activityColor
     }
     
@@ -47,13 +47,20 @@ struct ActivityCardPopupView: View {
                     ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
                     
                     // Map view
-                    map
+                    Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
+                        MapAnnotation(coordinate: pin.coordinate) {
+                            Image(systemName: "mappin")
+                                .font(.title)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .frame(height: 175)
+                    .cornerRadius(12)
                     
                     // Location details
                     directionRow
                     
                     // Chat section
-                    //ChatroomView(activity: activity, backgroundColor: activityColor)
                     ChatroomButtonView(activity: activity, activityColor: activityColor)
                     Spacer(minLength: 20)
                 }
@@ -97,7 +104,7 @@ extension ActivityCardPopupView {
             Text(activity.title ?? (activity.creatorUser.name ?? activity.creatorUser.username) + "'s activity")
                 .font(.onestSemiBold(size: 32))
                 .foregroundColor(.white)
-            Text("In 2 hours • " + viewModel.getDisplayString(activityInfoType: .time))
+            Text(FormatterService.shared.timeUntil(activity.startTime) + " • " + viewModel.getDisplayString(activityInfoType: .time))
                 .font(.onestSemiBold(size: 15))
                 .foregroundColor(.white.opacity(0.9))
         }
@@ -122,18 +129,6 @@ extension ActivityCardPopupView {
             Spacer()
             ParticipantsImagesView(activity: activity)
         }
-    }
-    
-    var map: some View {
-        Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
-            MapAnnotation(coordinate: pin.coordinate) {
-                Image(systemName: "mappin")
-                    .font(.title)
-                    .foregroundColor(.red)
-            }
-        }
-        .frame(height: 175)
-        .cornerRadius(12)
     }
     
     var directionRow: some View {
@@ -179,7 +174,7 @@ extension ActivityCardPopupView {
 }
 
 struct ParticipationButtonView: View {
-    private var activity: FullFeedActivityDTO
+    @ObservedObject private var activity: FullFeedActivityDTO
     @ObservedObject private var cardViewModel: ActivityCardViewModel
     
     init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel) {
@@ -226,8 +221,8 @@ struct ParticipationButtonView: View {
 
 struct ChatroomButtonView: View {
     var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
-    var activity: FullFeedActivityDTO
     let activityColor: Color
+    @ObservedObject var activity: FullFeedActivityDTO
     @ObservedObject var viewModel: ChatViewModel
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ActivityCardView: View {
     @ObservedObject var viewModel: ActivityCardViewModel
-    var activity: FullFeedActivityDTO
+    @ObservedObject var activity: FullFeedActivityDTO
     var color: Color
     var callback: (FullFeedActivityDTO, Color) -> Void
     

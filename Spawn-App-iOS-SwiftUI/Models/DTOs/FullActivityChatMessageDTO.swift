@@ -82,4 +82,6 @@ extension FullActivityChatMessageDTO {
         activityId: Activity.mockDinnerActivity.id,
         likedByUsers: [BaseUserDTO.haley, BaseUserDTO.danielLee, BaseUserDTO.danielAgapov]
     )
+    
+    static let mockChatroom: [FullActivityChatMessageDTO] = [.mockChat4, .mockChat1, .mockChat2, .mockChat3]
 }

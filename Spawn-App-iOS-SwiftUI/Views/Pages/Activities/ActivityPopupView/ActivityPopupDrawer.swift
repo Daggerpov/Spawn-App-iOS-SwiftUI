@@ -7,13 +7,14 @@
 import SwiftUI
 
 struct ActivityPopupDrawer: View {
-    let activity: FullFeedActivityDTO
+    @ObservedObject var activity: FullFeedActivityDTO
     let activityColor: Color
     @Binding var isPresented: Bool
     
     @State private var dragOffset: CGFloat = 0
     @State private var isExpanded: Bool = false
     @State private var isDragging: Bool = false
+    @State private var animationOffset: CGFloat = 0
     
     private var screenHeight: CGFloat {
         UIScreen.main.bounds.height
@@ -27,7 +28,7 @@ struct ActivityPopupDrawer: View {
         if isExpanded {
             return dragOffset
         } else {
-            return halfScreenOffset + dragOffset
+            return halfScreenOffset + dragOffset + animationOffset
         }
     }
     
@@ -51,6 +52,7 @@ struct ActivityPopupDrawer: View {
                         guard isPresented else { return }
                         dismissPopup()
                     }
+                    .opacity(0.65)
             // Popup content
             VStack(spacing: 0) {
                 ActivityCardPopupView(activity: activity, activityColor: activityColor)
@@ -74,12 +76,15 @@ struct ActivityPopupDrawer: View {
         }
         .transition(.move(edge: .bottom))
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0)) {
-                // Popup slides up from bottom on appear
+            // Start with popup off-screen
+            animationOffset = screenHeight
+            // Animate to final position
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0)) {
+                animationOffset = 0
             }
         }
         .allowsHitTesting(isPresented)
-        .background(Color.clear.blur(radius: 8))
+        //.background(Color.clear.blur(radius: 1).opacity(0.1))
         .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
     }
     
@@ -91,7 +96,7 @@ struct ActivityPopupDrawer: View {
             let distanceThreshold: CGFloat = 80
             let velocityThreshold: CGFloat = 400
             
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8, blendDuration: 0)) {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
                 if dragDistance > distanceThreshold || velocity > velocityThreshold {
                     // Dragging down
                     dismissPopup()
@@ -108,12 +113,20 @@ struct ActivityPopupDrawer: View {
             }
     }
     private func dismissPopup() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
+            animationOffset = screenHeight
+        }
+        dragOffset = 0
+        isExpanded = false
+        isDragging = false
+        
+        // Delay the actual dismissal to allow animation to complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
             dragOffset = 0
             isExpanded = false
             isDragging = false
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8, blendDuration: 0)) {
-                isPresented = false
-            }
+            isPresented = false
+        }
     }
 }
 

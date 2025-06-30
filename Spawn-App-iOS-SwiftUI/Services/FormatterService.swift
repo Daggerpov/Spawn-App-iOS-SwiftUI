@@ -127,13 +127,13 @@ class FormatterService {
     func timeUntil(_ date: Date?) -> String {
         guard let date = date else { return "" }
         let interval = date.timeIntervalSinceNow
-        if interval <= 0 { return "Started" }
+        if interval <= 0 { return "Happening Now" }
         let hours = Int(interval) / 3600
         let minutes = (Int(interval) % 3600) / 60
         if hours > 0 {
-            return "\(hours) hour\(hours > 1 ? "s" : "")"
+            return "In \(hours) hour\(hours > 1 ? "s" : "")"
         } else {
-            return "\(minutes) min\(minutes > 1 ? "s" : "")"
+            return "In \(minutes) min\(minutes > 1 ? "s" : "")"
         }
     }
     

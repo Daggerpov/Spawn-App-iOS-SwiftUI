@@ -152,17 +152,6 @@ extension ActivityFeedView {
     }
 }
 
-//struct SeeAllButtonView: View {
-//    var destination: () -> View
-//    var body: some View {
-//        NavigationLink(destinati) { // TODO: change destination
-//            Text("See All")
-//                .font(.onestRegular(size: 13))
-//                .foregroundColor(universalSecondaryColor)
-//        }
-//    }
-//}
-
 @available(iOS 17, *)
 #Preview {
     @Previewable @State var tab = TabType.home

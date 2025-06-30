@@ -6,12 +6,13 @@
 //
 
 import Foundation
+import SwiftUI
 
 class ActivityInfoViewModel: ObservableObject {
     private var locationDisplayString: String
     private var distanceDisplayString: String?
     private var timeDisplayString: String
-    var activity: FullFeedActivityDTO
+    @ObservedObject var activity: FullFeedActivityDTO
 
 	init(activity: FullFeedActivityDTO) {
         self.activity = activity
