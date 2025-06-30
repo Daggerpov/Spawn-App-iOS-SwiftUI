@@ -11,7 +11,7 @@ struct ActivityCardPopupView: View {
     private var viewModel: ActivityInfoViewModel
     @StateObject private var mapViewModel: MapViewModel
     @StateObject private var cardViewModel: ActivityCardViewModel
-    var activity: FullFeedActivityDTO
+    @ObservedObject var activity: FullFeedActivityDTO
     var activityColor: Color
     
     
@@ -47,7 +47,15 @@ struct ActivityCardPopupView: View {
                     ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
                     
                     // Map view
-                    map
+                    Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
+                        MapAnnotation(coordinate: pin.coordinate) {
+                            Image(systemName: "mappin")
+                                .font(.title)
+                                .foregroundColor(.red)
+                        }
+                    }
+                    .frame(height: 175)
+                    .cornerRadius(12)
                     
                     // Location details
                     directionRow
@@ -63,18 +71,6 @@ struct ActivityCardPopupView: View {
             .shadow(radius: 20)
             .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
         }
-    }
-    
-    var map: some View {
-        Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
-            MapAnnotation(coordinate: pin.coordinate) {
-                Image(systemName: "mappin")
-                    .font(.title)
-                    .foregroundColor(.red)
-            }
-        }
-        .frame(height: 175)
-        .cornerRadius(12)
     }
 }
 
@@ -178,7 +174,7 @@ extension ActivityCardPopupView {
 }
 
 struct ParticipationButtonView: View {
-    private var activity: FullFeedActivityDTO
+    @ObservedObject private var activity: FullFeedActivityDTO
     @ObservedObject private var cardViewModel: ActivityCardViewModel
     
     init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel) {
@@ -225,8 +221,8 @@ struct ParticipationButtonView: View {
 
 struct ChatroomButtonView: View {
     var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
-    var activity: FullFeedActivityDTO
     let activityColor: Color
+    @ObservedObject var activity: FullFeedActivityDTO
     @ObservedObject var viewModel: ChatViewModel
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {

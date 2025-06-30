@@ -18,7 +18,6 @@ class ActivityStatusViewModel: ObservableObject {
         if let activityStart: Date = activity.startTime {
             self.activityStartTime = activityStart
         } else {
-            // TODO: why is activityStartTime optional? Should always exist, no?
             self.activityStartTime = Date()
         }
         if let activityEnd: Date = activity.endTime {
@@ -46,6 +45,11 @@ class ActivityStatusViewModel: ObservableObject {
         let now = Date()
         let timeUntilStart: TimeInterval = activityStartTime.timeIntervalSince(now)
         let timeAfterStart: TimeInterval = now.timeIntervalSince(activityStartTime)
+        let todayComponents = Calendar.current.dateComponents([.day], from: now)
+        let today = todayComponents.day ?? 1
+        let hourOfToday = todayComponents.hour ?? 1
+        let activityDay = Calendar.current.dateComponents([.day], from: activityStartTime).day ?? 1
+       
         
         if timeAfterStart >= 0 && timeAfterStart <= activityDuration {
             // Activity is currently happening
@@ -64,7 +68,14 @@ class ActivityStatusViewModel: ObservableObject {
                 let floorHoursUntilInSeconds = floor(hoursUntilStart) * 3600 * -1
                 let nextUpdateDate = activityStartTime.advanced(by: floorHoursUntilInSeconds)
                 refresh = max(5, nextUpdateDate.timeIntervalSinceNow) // Defensive check
-            } else {
+            } else if today != activityDay && hoursUntilStart <= 24 {
+                status = .inDays(1)
+                let hoursUntilMidnight = 24 - hourOfToday
+                let secondsUntilMidnight = Double(hoursUntilMidnight * 3600 * -1)
+                let nextUpdateDate = activityStartTime.advanced(by: secondsUntilMidnight)
+                refresh = max(5, nextUpdateDate.timeIntervalSinceNow)
+            }
+            else {
                 status = .laterToday
                 let hoursUntil3HoursAway = hoursUntilStart - 3
                 refresh = hoursUntil3HoursAway * 3600

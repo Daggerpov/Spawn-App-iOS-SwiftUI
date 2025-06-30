@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct ActivityPopupDrawer: View {
-    let activity: FullFeedActivityDTO
+    @ObservedObject var activity: FullFeedActivityDTO
     let activityColor: Color
     @Binding var isPresented: Bool
     

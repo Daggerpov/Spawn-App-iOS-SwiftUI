@@ -18,7 +18,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	// MARK: Info
 	var startTime: Date?
 	var endTime: Date?
-	var location: Location?
+    var location: Location?
 	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in activity
 	/* The icon is stored as a Unicode emoji character string (e.g. "⭐️", "🎉", "🏀").
 	   This is the literal emoji character, not a shortcode or description.
@@ -33,8 +33,8 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	// tech note: I'll be able to check if current user is in an activity's partipants to determine which symbol to show in feed
 	var participantUsers: [BaseUserDTO]?
 	var invitedUsers: [BaseUserDTO]?
-	var chatMessages: [FullActivityChatMessageDTO]?
-	var participationStatus: ParticipationStatus?
+	@Published var chatMessages: [FullActivityChatMessageDTO]?
+	@Published var participationStatus: ParticipationStatus?
 	var isSelfOwned: Bool?
 
 	init(
@@ -70,6 +70,59 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		self.isSelfOwned = isSelfOwned
 		self.createdAt = createdAt
 	}
+    
+    // CodingKeys for all properties (including @Published ones)
+    enum CodingKeys: String, CodingKey {
+        case id, title, startTime, endTime, location, note, icon, category
+        case createdAt, creatorUser, invitedUsers
+        case participantUsers, chatMessages, participationStatus, isSelfOwned
+    }
+    
+    // Custom decoder
+    required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
+        endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
+        location = try container.decodeIfPresent(Location.self, forKey: .location)
+        note = try container.decodeIfPresent(String.self, forKey: .note)
+        icon = try container.decodeIfPresent(String.self, forKey: .icon)
+        category = try container.decodeIfPresent(ActivityCategory.self, forKey: .category) ?? .general
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
+        creatorUser = try container.decode(BaseUserDTO.self, forKey: .creatorUser)
+        invitedUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .invitedUsers)
+        
+        // Decode @Published properties to their underlying values
+        participantUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .participantUsers)
+        chatMessages = try container.decodeIfPresent([FullActivityChatMessageDTO].self, forKey: .chatMessages)
+        participationStatus = try container.decodeIfPresent(ParticipationStatus.self, forKey: .participationStatus)
+        isSelfOwned = try container.decodeIfPresent(Bool.self, forKey: .isSelfOwned)
+    }
+    
+    // Custom encoder
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(title, forKey: .title)
+        try container.encodeIfPresent(startTime, forKey: .startTime)
+        try container.encodeIfPresent(endTime, forKey: .endTime)
+        try container.encodeIfPresent(location, forKey: .location)
+        try container.encodeIfPresent(note, forKey: .note)
+        try container.encodeIfPresent(icon, forKey: .icon)
+        try container.encode(category, forKey: .category)
+        try container.encodeIfPresent(createdAt, forKey: .createdAt)
+        try container.encode(creatorUser, forKey: .creatorUser)
+        try container.encodeIfPresent(invitedUsers, forKey: .invitedUsers)
+        
+        // Encode @Published properties
+        try container.encodeIfPresent(participantUsers, forKey: .participantUsers)
+        try container.encodeIfPresent(chatMessages, forKey: .chatMessages)
+        try container.encodeIfPresent(participationStatus, forKey: .participationStatus)
+        try container.encodeIfPresent(isSelfOwned, forKey: .isSelfOwned)
+    }
 }
 
 extension FullFeedActivityDTO {

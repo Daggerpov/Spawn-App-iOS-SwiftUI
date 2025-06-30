@@ -9,7 +9,7 @@ import SwiftUI
 struct ChatroomView: View {
     @State private var messageText = ""
     var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
-    var activity: FullFeedActivityDTO
+    @ObservedObject var activity: FullFeedActivityDTO
     var backgroundColor: Color
     @StateObject var viewModel: ChatViewModel
     @Environment(\.dismiss) private var dismiss

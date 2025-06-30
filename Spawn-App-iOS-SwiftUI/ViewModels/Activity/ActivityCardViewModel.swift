@@ -11,7 +11,7 @@ class ActivityCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	var apiService: IAPIService
 	var userId: UUID
-	var activity: FullFeedActivityDTO
+	 var activity: FullFeedActivityDTO
     
     
 	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO) {
