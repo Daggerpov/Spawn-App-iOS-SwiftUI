@@ -10,30 +10,34 @@ struct ProfilePictureView: View {
     let user: BaseUserDTO
     let width: CGFloat = 28
     let height: CGFloat = 28
+    @State var showProfile = false
     
     var body: some View {
-        NavigationLink(
-            destination: ProfileView(user: user),
-            label: {
-                if let pfpUrl = user.profilePicture {
-                    if MockAPIService.isMocking {
-                        Image(pfpUrl)
-                            .ProfileImageModifier(imageType: .activityParticipants)
-                    } else {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image.ProfileImageModifier(imageType: .activityParticipants)
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: width, height: height)
-                        }
-                    }
+        VStack {
+            if let pfpUrl = user.profilePicture {
+                if MockAPIService.isMocking {
+                    Image(pfpUrl)
+                        .ProfileImageModifier(imageType: .activityParticipants)
                 } else {
-                    Circle()
-                        .fill(Color.gray)
-                        .frame(width: width, height: height)
+                    AsyncImage(url: URL(string: pfpUrl)) { image in
+                        image.ProfileImageModifier(imageType: .activityParticipants)
+                    } placeholder: {
+                        Circle()
+                            .fill(Color.gray)
+                            .frame(width: width, height: height)
+                    }
                 }
+            } else {
+                Circle()
+                    .fill(Color.gray)
+                    .frame(width: width, height: height)
             }
-        )
+        }
+        .onTapGesture {
+            showProfile = true
+        }
+        .fullScreenCover(isPresented: $showProfile) {
+            ProfileView(user: user)
+        }
     }
 }
