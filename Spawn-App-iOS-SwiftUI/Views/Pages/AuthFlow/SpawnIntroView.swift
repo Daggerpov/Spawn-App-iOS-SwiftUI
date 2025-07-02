@@ -24,12 +24,12 @@ struct SpawnIntroView: View {
             description: "Know what your friends are up to—so you can jump in or start something new."
         ),
         OnboardingPage(
-            imageName: "circle.fill",
+            imageName: "Group 6815",
             title: "Set the Vibe",
             description: "Quick-start your plans with activity presets — or make one \nthat fits you."
         ),
         OnboardingPage(
-            imageName: "triangle.fill",
+            imageName: "Group 6816",
             title: "What’s Happening Near You",
             description: "Easily spot nearby hangouts, meetups, or last-minute plans worth joining."
         )

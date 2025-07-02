@@ -24,9 +24,16 @@ struct OnboardingButtonCoreView: View {
                 .padding(.horizontal, 22)
             Spacer()
         }
-        .background(figmaIndigo)
-        .cornerRadius(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(figmaIndigo)
+        )
         .padding(.horizontal, 22)
         .padding(.vertical, 32)
+        .frame(maxWidth: .infinity)
     }
+}
+
+#Preview {
+    OnboardingButtonCoreView("Sign in with username or email")
 }
