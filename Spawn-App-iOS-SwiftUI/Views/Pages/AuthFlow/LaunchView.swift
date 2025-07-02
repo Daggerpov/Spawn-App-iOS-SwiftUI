@@ -13,7 +13,7 @@ import UserNotifications // Add this import for notifications
 
 struct LaunchView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var dismiss 
 
 	var body: some View {
 		NavigationStack {

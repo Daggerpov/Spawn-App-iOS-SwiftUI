@@ -10,7 +10,7 @@ import SwiftUI // just for UIImage for `createUser()`
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-    static var isMocking: Bool = true
+    static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
 	var errorStatusCode: Int? = nil
