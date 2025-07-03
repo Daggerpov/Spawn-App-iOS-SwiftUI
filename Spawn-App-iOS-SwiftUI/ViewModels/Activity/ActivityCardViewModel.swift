@@ -11,7 +11,7 @@ class ActivityCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	var apiService: IAPIService
 	var userId: UUID
-	var activity: FullFeedActivityDTO
+    var activity: FullFeedActivityDTO
     
     
 	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO) {
@@ -31,6 +31,10 @@ class ActivityCardViewModel: ObservableObject {
 
 	/// Toggles the user's participation status in the activity
 	public func toggleParticipation() async {
+        if userId == activity.creatorUser.id {
+            // Don't allow the creator to revoke participation in their event
+            return
+        }
 		let urlString =
 			"\(APIService.baseURL)activities/\(activity.id)/toggleStatus/\(userId)"
 		guard let url = URL(string: urlString) else {
