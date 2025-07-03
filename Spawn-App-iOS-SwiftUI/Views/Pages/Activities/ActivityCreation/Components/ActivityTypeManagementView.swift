@@ -78,12 +78,10 @@ struct ActivityTypeManagementView: View {
                         showingManagePeople = true
                     },
                     .destructive(Text("Delete Activity Type")) {
-                        Task {
-                            await viewModel.deleteActivityType(activityTypeDTO)
-                            // Dismiss the view after successful deletion
-                            if viewModel.errorMessage == nil {
-                                dismiss()
-                            }
+                        viewModel.deleteActivityType(activityTypeDTO)
+                        // Dismiss the view after successful deletion
+                        if viewModel.errorMessage == nil {
+                            dismiss()
                         }
                     },
                     .cancel()

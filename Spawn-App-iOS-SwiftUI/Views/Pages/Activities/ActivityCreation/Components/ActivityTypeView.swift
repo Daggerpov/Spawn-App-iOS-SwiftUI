@@ -33,10 +33,10 @@ struct ActivityTypeView: View {
             Spacer()
             
             ActivityNextStepButton(
-                onNext: onNext,
-                isDisabled: selectedType == nil
+                title: "Next Step",
+                isEnabled: selectedType != nil,
+                action: onNext
             )
-            .padding(.horizontal)
         }
         .onAppear {
             Task {
@@ -99,14 +99,10 @@ struct ActivityTypeView: View {
                         activityTypeDTO: activityTypeDTO,
                         selectedType: $selectedType,
                         onPin: {
-                            Task {
-                                await viewModel.togglePin(for: activityTypeDTO)
-                            }
+                            viewModel.togglePin(for: activityTypeDTO)
                         },
                         onDelete: {
-                            Task {
-                                await viewModel.deleteActivityType(activityTypeDTO)
-                            }
+                            viewModel.deleteActivityType(activityTypeDTO)
                         }
                     )
                 }

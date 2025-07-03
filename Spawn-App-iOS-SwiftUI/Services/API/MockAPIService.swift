@@ -42,7 +42,7 @@ class MockAPIService: IAPIService {
 		}
         
         if let userIdForUrl = userId {
-            if url.absoluteString == APIService.baseURL + "activity-type/\(userIdForUrl)" {
+            if url.absoluteString == APIService.baseURL + "(userIdForUrl)/activity-types" {
                 return [
                     ActivityTypeDTO.mockChillActivityType,
                     ActivityTypeDTO.mockFoodActivityType,
@@ -307,10 +307,36 @@ class MockAPIService: IAPIService {
 		}
 		
 		// Activity type batch update (including pin updates)
-		if url.absoluteString.contains("activity-type/") && !url.absoluteString.contains("pin") {
+		if url.absoluteString.contains("activity-types") && !url.absoluteString.contains("pin") {
 			if let batchUpdateDTO = object as? BatchActivityTypeUpdateDTO {
 				print("🔍 MOCK: Batch updating activity types with \(batchUpdateDTO.updatedActivityTypes.count) updates and \(batchUpdateDTO.deletedActivityTypeIds.count) deletions")
-				return batchUpdateDTO as! U
+				
+				// Simulate the backend behavior: return ALL user's activity types after the update
+				// Start with the mock activity types and apply the changes
+				var allActivityTypes = [
+					ActivityTypeDTO.mockChillActivityType,
+					ActivityTypeDTO.mockFoodActivityType,
+					ActivityTypeDTO.mockActiveActivityType,
+					ActivityTypeDTO.mockStudyActivityType
+				]
+				
+				// Remove deleted activity types
+				allActivityTypes.removeAll { activityType in
+					batchUpdateDTO.deletedActivityTypeIds.contains(activityType.id)
+				}
+				
+				// Update or add the updated activity types
+				for updatedType in batchUpdateDTO.updatedActivityTypes {
+					if let existingIndex = allActivityTypes.firstIndex(where: { $0.id == updatedType.id }) {
+						// Update existing activity type
+						allActivityTypes[existingIndex] = updatedType
+					} else {
+						// Add new activity type
+						allActivityTypes.append(updatedType)
+					}
+				}
+				
+				return allActivityTypes as! U
 			}
 		}
 

@@ -38,7 +38,7 @@ struct BatchActivityTypeUpdateDTO: Codable {
 
 extension ActivityTypeDTO {
     static var mockChillActivityType: ActivityTypeDTO = ActivityTypeDTO(
-        id: UUID(),title: "Chill", icon: "🛋️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.jennifer], orderNum: 0, isPinned: false
+        id: UUID(), title: "Chill", icon: "🛋️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.jennifer], orderNum: 0, isPinned: false
     )
     static var mockFoodActivityType: ActivityTypeDTO = ActivityTypeDTO(id: UUID(), title: "Food", icon: "🍽️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.michael, BaseUserDTO.haley], orderNum: 1, isPinned: true)
     static var mockActiveActivityType: ActivityTypeDTO = ActivityTypeDTO(id: UUID(), title: "Active", icon: "🏃", associatedFriends: [BaseUserDTO.haley, BaseUserDTO.shannon, BaseUserDTO.michael, BaseUserDTO.danielLee], orderNum: 2, isPinned: false)
