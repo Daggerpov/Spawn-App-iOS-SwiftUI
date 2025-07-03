@@ -137,15 +137,15 @@ class ActivityTypeViewModel: ObservableObject {
                 deletedActivityTypeIds: Array(deletedActivityTypeIds)
             )
             
-            let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
+            let updatedActivityTypesReturned: [ActivityTypeDTO] = try await apiService.updateData(
                 batchUpdateDTO,
                 to: url,
                 parameters: nil
             )
             
             // Update local state with the returned activity types from server
-            self.activityTypes = updatedActivityTypes
-            self.originalActivityTypes = updatedActivityTypes.map { ActivityTypeDTO(
+            self.activityTypes = updatedActivityTypesReturned
+            self.originalActivityTypes = updatedActivityTypesReturned.map { ActivityTypeDTO(
                 id: $0.id,
                 title: $0.title,
                 icon: $0.icon,
@@ -156,7 +156,7 @@ class ActivityTypeViewModel: ObservableObject {
             self.deletedActivityTypeIds.removeAll()
             self.hasUnsavedChanges = false
             
-            print("✅ Successfully saved batch changes: \(updatedActivityTypes.count) total activity types returned")
+            print("✅ Successfully saved batch changes: \(updatedActivityTypesReturned.count) total activity types returned")
             
         } catch {
             print("❌ Error saving batch changes: \(error)")
