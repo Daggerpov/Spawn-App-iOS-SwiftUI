@@ -9,11 +9,45 @@ import SwiftUI
 
 let universalRectangleCornerRadius: CGFloat = 20
 let universalNewRectangleCornerRadius: CGFloat = 8
-let activityColorHexCodes: [String] = ["#00A676", "#FF7620", "#06AED5", "#FE5E6E"]
+
+// activity colors
+let activityRedHexCode: String = "#FD4E4C"
+let activityYellowHexCode: String = "#FBCD29"
+let activityIndigoHexCode: String = "#536AEE"
+let activityGreenHexCode: String = "#1AB979"
+let activityPinkHexCode: String = "#ED64A6"
+let activityTealHexCode: String = "#38B2AC"
+let activityBlueHexCode: String = "#1E86E8"
+let activityPurpleHexCode: String = "#713DE5"
+let activityIndigoDarkHexCode: String = "#242CBB"
+
+let activityColorHexCodes: [String] = [
+	activityRedHexCode, activityYellowHexCode, activityIndigoHexCode,
+	activityGreenHexCode, activityPinkHexCode, activityTealHexCode,
+	activityBlueHexCode, activityPurpleHexCode, activityIndigoDarkHexCode
+]
 let activityColors = activityColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
 }
 let universalBackgroundColor: Color = Color(hex: "#FFFFFF")
+
+// Function to deterministically assign colors to activities based on their ID
+func getActivityColor(for activityId: UUID) -> Color {
+	// Convert UUID to a consistent integer for indexing
+	let uuidString = activityId.uuidString
+	let hash = uuidString.hashValue
+	let index = abs(hash) % activityColors.count
+	print(index)
+	return activityColors[index]
+}
+
+// Function to get the hex code for an activity color
+func getActivityColorHex(for activityId: UUID) -> String {
+	let uuidString = activityId.uuidString
+	let hash = uuidString.hashValue
+	let index = abs(hash) % activityColorHexCodes.count
+	return activityColorHexCodes[index]
+}
 let universalSecondaryColorHexCode: String = "#8693FF"
 let universalSecondaryColor: Color = Color(
     hex: universalSecondaryColorHexCode

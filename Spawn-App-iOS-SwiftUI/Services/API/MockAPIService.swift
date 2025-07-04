@@ -594,7 +594,7 @@ class MockAPIService: IAPIService {
 						date: date,
 						activityCategory: activity.category,
 						icon: activity.icon,
-						colorHexCode: activity.category.color().hex,
+						colorHexCode: getActivityColorHex(for: activity.id),
 						activityId: activity.id
 					)
 					activities.append(calendarActivity)
