@@ -82,29 +82,7 @@ struct SettingsView: View {
                         }
                         
                         #if DEBUG
-                        Divider()
-                            .padding(.horizontal)
-                        
-                        NavigationLink(destination: AppearanceSettingsView()) {
-                            HStack {
-                                Image(systemName: "paintbrush")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(universalAccentColor)
-                                    .frame(width: 24, height: 24)
-                                
-                                Text("Theme Test (Debug)")
-                                    .font(.body)
-                                    .foregroundColor(universalAccentColor)
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 14))
-                                    .foregroundColor(.gray)
-                            }
-                            .padding(.horizontal)
-                            .frame(height: 44)
-                        }
+                        // Debug options can be added here
                         #endif
                     }
                     
@@ -174,12 +152,6 @@ struct SettingsView: View {
                     SettingsSection(title: "Socials") {
                         SettingsRow(icon: "instagram", isSystemIcon: false, title: "Instagram", showDisclosure: true, externalLink: true) {
                             if let url = URL(string: "https://instagram.com/spawnapp") {
-                                UIApplication.shared.open(url)
-                            }
-                        }
-                        
-                        SettingsRow(icon: "tiktok", isSystemIcon: false, title: "TikTok", showDisclosure: true, externalLink: true) {
-                            if let url = URL(string: "https://tiktok.com/@spawnapp") {
                                 UIApplication.shared.open(url)
                             }
                         }
