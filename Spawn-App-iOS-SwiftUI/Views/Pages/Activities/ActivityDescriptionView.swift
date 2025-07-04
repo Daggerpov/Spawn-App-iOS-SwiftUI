@@ -223,7 +223,7 @@ extension ActivityDescriptionView {
 		HStack {
 			TextField("Add a comment", text: $messageText)
 				.padding(10)
-				.background(Color.white)
+				.background(universalBackgroundColor)
 				.cornerRadius(10)
 				.font(.caption)
 				.foregroundColor(universalAccentColor)
@@ -252,7 +252,7 @@ extension ActivityDescriptionView {
 			.disabled(messageText.isEmpty) // Disable button when text is empty
 		}
 		.padding(8)
-		.background(Color.white)
+		.background(universalBackgroundColor)
 		.cornerRadius(universalRectangleCornerRadius)
 		.padding(.horizontal, 15)
 	}

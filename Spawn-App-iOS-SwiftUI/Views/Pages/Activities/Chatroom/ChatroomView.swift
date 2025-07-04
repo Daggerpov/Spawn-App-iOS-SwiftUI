@@ -74,7 +74,7 @@ struct ChatroomView: View {
                             .padding(.vertical, 12)
                             .font(.onestRegular(size: 16))
                     }
-                    .background(Color.white)
+                    .background(universalBackgroundColor)
                     .cornerRadius(25)
                     
                     // Send button

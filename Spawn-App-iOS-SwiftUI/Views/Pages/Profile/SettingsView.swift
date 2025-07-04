@@ -85,7 +85,7 @@ struct SettingsView: View {
                         Divider()
                             .padding(.horizontal)
                         
-                        NavigationLink(destination: ThemeTestView()) {
+                        NavigationLink(destination: AppearanceSettingsView()) {
                             HStack {
                                 Image(systemName: "paintbrush")
                                     .font(.system(size: 18))
