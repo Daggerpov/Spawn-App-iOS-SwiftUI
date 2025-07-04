@@ -121,126 +121,90 @@ struct ThemePreviewCard: View {
     let themeService: ThemeService
     let environmentScheme: ColorScheme
     
-    private var backgroundColor: Color {
-        switch previewScheme {
-        case .light:
-            return Color(hex: "#FFFFFF")
-        case .dark:
-            return Color(hex: "#000000")
-        @unknown default:
-            return Color(hex: "#FFFFFF")
-        }
-    }
-    
-    private var textColor: Color {
-        switch previewScheme {
-        case .light:
-            return Color(hex: "#1D1D1D")
-        case .dark:
-            return Color(hex: "#FFFFFF")
-        @unknown default:
-            return Color(hex: "#1D1D1D")
-        }
-    }
-    
-    private var secondaryTextColor: Color {
-        switch previewScheme {
-        case .light:
-            return Color(hex: "#8E8484")
-        case .dark:
-            return Color(hex: "#A8A8A8")
-        @unknown default:
-            return Color(hex: "#8E8484")
-        }
+    private var mockUserId: UUID {
+        UUID()
     }
     
     var body: some View {
-        VStack(spacing: 12) {
-            // First activity card
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Coffee & Study")
-                            .font(.onestMedium(size: 16))
-                            .foregroundColor(textColor)
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: "location")
-                                .font(.system(size: 10))
-                                .foregroundColor(secondaryTextColor)
-                            
-                            Text("AMS Student Nest")
-                                .font(.onestRegular(size: 12))
-                                .foregroundColor(secondaryTextColor)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // Participant images
-                    HStack(spacing: -6) {
-                        Circle()
-                            .fill(figmaSoftBlue)
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Text("J")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white)
-                            )
-                        
-                        Circle()
-                            .fill(activityGreenHexCode.isEmpty ? .green : Color(hex: activityGreenHexCode))
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Text("A")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white)
-                            )
-                    }
-                }
-                
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Today")
-                            .font(.onestRegular(size: 10))
-                            .foregroundColor(secondaryTextColor)
-                        
-                        Text("2:00 PM")
-                            .font(.onestMedium(size: 12))
-                            .foregroundColor(textColor)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Participants")
-                            .font(.onestRegular(size: 10))
-                            .foregroundColor(secondaryTextColor)
-                        
-                        Text("2/6")
-                            .font(.onestMedium(size: 12))
-                            .foregroundColor(textColor)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("Duration")
-                            .font(.onestRegular(size: 10))
-                            .foregroundColor(secondaryTextColor)
-                        
-                        Text("2 hours")
-                            .font(.onestMedium(size: 12))
-                            .foregroundColor(textColor)
-                    }
-                }
+        // Create a mock activity with different data for study theme
+        let mockActivity = FullFeedActivityDTO(
+            id: UUID(),
+            title: "Coffee & Study",
+            startTime: Calendar.current.date(bySettingHour: 14, minute: 0, second: 0, of: Date()),
+            endTime: Calendar.current.date(bySettingHour: 16, minute: 0, second: 0, of: Date()),
+            location: Location(
+                id: UUID(),
+                name: "AMS Student Nest",
+                latitude: 49.2672, longitude: -123.2500
+            ),
+            note: "Let's study together!",
+            icon: "📚",
+			category: .grind,
+            creatorUser: BaseUserDTO.jennifer,
+            participantUsers: [
+                BaseUserDTO.jennifer,
+                BaseUserDTO.danielLee
+            ]
+        )
+        
+        // Use the actual ActivityCardView but in a non-interactive wrapper
+        NonInteractiveActivityCardView(
+            userId: mockUserId,
+            activity: mockActivity,
+            color: figmaSoftBlue,
+            previewScheme: previewScheme
+        )
+    }
+}
+
+// MARK: - Non-Interactive Activity Card Wrapper
+struct NonInteractiveActivityCardView: View {
+    @ObservedObject var viewModel: ActivityCardViewModel
+    var activity: FullFeedActivityDTO
+    var color: Color
+    let previewScheme: ColorScheme
+    
+    init(
+        userId: UUID,
+        activity: FullFeedActivityDTO,
+        color: Color,
+        previewScheme: ColorScheme
+    ) {
+        self.activity = activity
+        self.color = color
+        self.previewScheme = previewScheme
+        self.viewModel = ActivityCardViewModel(
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: userId) : APIService(),
+            userId: userId,
+            activity: activity
+        )
+    }
+    
+    var body: some View {
+        // Force the color scheme for the preview
+        ZStack(alignment: .bottomTrailing) {
+            VStack(alignment: .leading, spacing: 16) {
+                // Top Row: Title, Participants
+                ActivityCardTopRowView(activity: activity)
+                // Location Row
+                ActivityLocationView(activity: activity)
             }
-            .padding(16)
-            .background(backgroundColor)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(color)
             )
+            .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
+            .onAppear {
+                viewModel.fetchIsParticipating()
+            }
+            // Remove onTapGesture to make it non-interactive
+            
+            // Time Status Badge
+            ActivityStatusView(activity: activity)
         }
+        .preferredColorScheme(previewScheme)
     }
 }
 
