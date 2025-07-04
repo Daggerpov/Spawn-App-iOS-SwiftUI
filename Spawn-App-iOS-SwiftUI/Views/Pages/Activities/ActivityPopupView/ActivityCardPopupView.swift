@@ -297,6 +297,6 @@ struct ChatroomButtonView: View {
 struct ActivityCardPopupView_Previews: PreviewProvider {
     static var previews: some View {
         ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue)
-            .preferredColorScheme(.light)
+            
     }
 }

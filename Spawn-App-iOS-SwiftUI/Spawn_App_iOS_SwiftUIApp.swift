@@ -14,6 +14,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@UIApplicationDelegateAdaptor private var appDelegate: CustomAppDelegate
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var appCache = AppCache.shared
+	@StateObject var themeService = ThemeService.shared
     
     init() {
         // Register custom fonts
@@ -89,6 +90,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
                         .onestFontTheme()
                 }
             }
+            .preferredColorScheme(themeService.colorScheme.colorScheme)
 		}
 	}
 }

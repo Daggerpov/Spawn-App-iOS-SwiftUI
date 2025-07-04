@@ -39,7 +39,7 @@ struct ChangePasswordView: View {
                 
                 Text("Change Password")
                     .font(.headline)
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor)
                 
                 Spacer()
                 

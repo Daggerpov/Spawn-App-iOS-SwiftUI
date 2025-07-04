@@ -29,7 +29,6 @@ let activityColorHexCodes: [String] = [
 let activityColors = activityColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
 }
-let universalBackgroundColor: Color = Color(hex: "#FFFFFF")
 
 // Function to deterministically assign colors to activities based on their ID
 func getActivityColor(for activityId: UUID) -> Color {
@@ -48,19 +47,54 @@ func getActivityColorHex(for activityId: UUID) -> String {
 	let index = abs(hash) % activityColorHexCodes.count
 	return activityColorHexCodes[index]
 }
+
+// MARK: - Dynamic Colors (Theme-aware)
+@available(iOS 14.0, *)
+var universalBackgroundColor: Color {
+    Color(UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return UIColor(Color(hex: "#000000"))
+        default:
+            return UIColor(Color(hex: "#FFFFFF"))
+        }
+    })
+}
+
+@available(iOS 14.0, *)
+var universalAccentColor: Color {
+    Color(UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return UIColor(Color(hex: "#FFFFFF"))
+        default:
+            return UIColor(Color(hex: "#1D1D1D"))
+        }
+    })
+}
+
+@available(iOS 14.0, *)
+var universalPlaceHolderTextColor: Color {
+    Color(UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return UIColor(Color(hex: "#6B6B6B"))
+        default:
+            return UIColor(Color(hex: "#B0AFAF"))
+        }
+    })
+}
+
+// MARK: - Static Colors (Theme-independent)
 let universalSecondaryColorHexCode: String = "#8693FF"
 let universalSecondaryColor: Color = Color(
     hex: universalSecondaryColorHexCode
 )
 let universalTertiaryColor: Color = Color(red: 1, green: 0.45, blue: 0.44)
 let universalAccentColorHexCode: String = "#1D1D1D"
-let universalAccentColor: Color = Color(
-	hex: universalAccentColorHexCode
-)
 let universalPassiveColorHex: String = "#DADADA"
 let universalPassiveColor: Color = Color(hex: universalPassiveColorHex)
 let profilePicPlusButtonColor: Color = Color(hex: "#8693FF")
-let universalPlaceHolderTextColor: Color = Color(hex: "#B0AFAF")
 let authPageBackgroundColor: Color = Color(hex: "#8693FF")
 
 // Colors from the Figma design

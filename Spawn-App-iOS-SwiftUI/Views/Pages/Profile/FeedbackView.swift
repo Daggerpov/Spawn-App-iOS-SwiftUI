@@ -272,7 +272,7 @@ struct FeedbackView: View {
             }
             .navigationBarBackButtonHidden()
             .background(universalBackgroundColor.ignoresSafeArea())
-            .toolbarColorScheme(.light, for: .navigationBar)
+            
             .toolbarBackground(universalBackgroundColor, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
