@@ -72,12 +72,28 @@ struct ContentView: View {
 				}
 		}
 		.onAppear {
-			// TODO DANIEL A: when implementing dark/light theme, look at Quote Droplet's
-			// code for how to do that here
-			UITabBar
-				.appearance().backgroundColor = UIColor.white
-				.withAlphaComponent(0.9)
-			UITabBar.appearance().unselectedItemTintColor = UIColor.black
+			// Configure tab bar appearance for theme compatibility
+			let appearance = UITabBarAppearance()
+			appearance.configureWithOpaqueBackground()
+			appearance.backgroundColor = UIColor { traitCollection in
+				switch traitCollection.userInterfaceStyle {
+				case .dark:
+					return UIColor.systemBackground.withAlphaComponent(0.9)
+				default:
+					return UIColor.systemBackground.withAlphaComponent(0.9)
+				}
+			}
+			
+			UITabBar.appearance().standardAppearance = appearance
+			UITabBar.appearance().scrollEdgeAppearance = appearance
+			UITabBar.appearance().unselectedItemTintColor = UIColor { traitCollection in
+				switch traitCollection.userInterfaceStyle {
+				case .dark:
+					return UIColor.label
+				default:
+					return UIColor.label
+				}
+			}
 		}
 	}
 }

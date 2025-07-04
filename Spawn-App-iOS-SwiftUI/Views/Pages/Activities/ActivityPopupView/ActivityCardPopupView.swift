@@ -28,7 +28,7 @@ struct ActivityCardPopupView: View {
             VStack(spacing: 0) {
                 // Handle bar
                 RoundedRectangle(cornerRadius: 2.5)
-                    .fill(Color.white.opacity(0.8))
+                                            .fill(universalBackgroundColor.opacity(0.8))
                     .frame(width: 40, height: 5)
                     .padding(.top, 8)
                     .padding(.bottom, 16)
@@ -156,7 +156,22 @@ extension ActivityCardPopupView {
             
             Spacer()
             
-            Button(action: {mapViewModel.mapItem.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault])}) {
+            Button(action: {
+                // Create source map item from user's current location
+                let sourceMapItem = MKMapItem.forCurrentLocation()
+                
+                // Create destination map item from activity location
+                let destinationMapItem = mapViewModel.mapItem
+                
+                // Open Maps with directions from current location to activity location
+                MKMapItem.openMaps(
+                    with: [sourceMapItem, destinationMapItem],
+                    launchOptions: [
+                        MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault,
+                        MKLaunchOptionsShowsTrafficKey: true
+                    ]
+                )
+            }) {
                 HStack {
                     Image(systemName: "arrow.trianglehead.turn.up.right.diamond")
                         .fontWeight(.bold)

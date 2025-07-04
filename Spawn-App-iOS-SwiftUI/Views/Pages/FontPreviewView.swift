@@ -121,7 +121,7 @@ struct FontPreviewView: View {
             }
             .padding()
         }
-        .background(Color.white)
+                    .background(universalBackgroundColor)
     }
     
     private func sectionTitle(_ title: String) -> some View {

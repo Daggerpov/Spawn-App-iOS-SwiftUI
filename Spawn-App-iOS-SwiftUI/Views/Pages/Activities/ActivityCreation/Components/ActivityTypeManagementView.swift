@@ -125,7 +125,7 @@ struct ActivityTypeManagementView: View {
                         Image(systemName: "pencil.circle.fill")
                             .font(.title2)
                             .foregroundColor(.gray)
-                            .background(Color.white)
+                            .background(universalBackgroundColor)
                             .clipShape(Circle())
                     }
                 }

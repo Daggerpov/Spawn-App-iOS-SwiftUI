@@ -270,7 +270,7 @@ struct MapView: View {
                                     HStack {
                                         Text(TimeFilter.allActivities.rawValue)
                                             .font(.onestMedium(size: 16))
-                                            .foregroundColor(.black)
+                                            .foregroundColor(universalAccentColor)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 12)
@@ -292,7 +292,7 @@ struct MapView: View {
                                     HStack {
                                         Text(filter.rawValue)
                                             .font(.onestMedium(size: 16))
-                                            .foregroundColor(.black)
+                                            .foregroundColor(universalAccentColor)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 12)
@@ -315,7 +315,7 @@ struct MapView: View {
                                     .frame(width: 10, height: 10)
                                 Text(selectedTimeFilter.rawValue)
                                     .font(.onestMedium(size: 16))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                             }
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 12)

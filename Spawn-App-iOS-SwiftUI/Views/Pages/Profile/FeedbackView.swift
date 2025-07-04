@@ -50,7 +50,7 @@ struct MessageInputView: View {
                 TextEditor(text: $message)
                     .foregroundColor(universalAccentColor)
                     .scrollContentBackground(.hidden)
-                    .background(Color.white)
+                    .background(universalBackgroundColor)
                     .frame(minHeight: 100)
                     .padding(12)
                     .background(

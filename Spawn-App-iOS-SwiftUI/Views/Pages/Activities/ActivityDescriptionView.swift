@@ -101,7 +101,7 @@ struct ActivityDescriptionView: View {
 						Text(
 							"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
 						)
-						.foregroundColor(.black)
+						                                .foregroundColor(universalAccentColor)
 						.opacity(0.7)
 						.font(.caption)
 					}

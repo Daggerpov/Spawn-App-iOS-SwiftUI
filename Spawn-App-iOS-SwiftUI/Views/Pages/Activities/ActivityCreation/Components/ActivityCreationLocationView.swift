@@ -49,8 +49,8 @@ struct ActivityCreationLocationView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
-                            .foregroundColor(.black)
-                            .background(Circle().fill(Color.white).frame(width: 32, height: 32))
+                            .foregroundColor(universalAccentColor)
+                            .background(Circle().fill(universalBackgroundColor).frame(width: 32, height: 32))
                     }
                     
                     Spacer()
@@ -66,10 +66,10 @@ struct ActivityCreationLocationView: View {
                     }) {
                         Text("3D")
                             .font(.caption)
-                            .foregroundColor(.black)
+                            .foregroundColor(universalAccentColor)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(Color.white.opacity(0.9))
+                            .background(universalBackgroundColor.opacity(0.9))
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                 }
@@ -147,7 +147,7 @@ struct ActivityCreationLocationView: View {
                 .padding(.top, 16)
                 .padding(.bottom, 32)
                 .background(
-                    Color.white
+                    universalBackgroundColor
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .shadow(radius: 10)
                 )
