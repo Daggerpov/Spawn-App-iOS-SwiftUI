@@ -1,5 +1,5 @@
 //
-//  EventCardTopRowView.swift
+//  ActivityCardTopRowView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/11/24.
@@ -22,9 +22,9 @@ struct ActivityCardTopRowView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 if let title = activity.title {
-                    EventCardTitleView(eventTitle: title)
+                    ActivityCardTitleView(activityTitle: title)
                 }
-                eventSubtitleView
+                activitySubtitleView
             }
             Spacer()
             ParticipantsImagesView(activity: activity)
@@ -34,18 +34,18 @@ struct ActivityCardTopRowView: View {
     
 }
 
-struct EventCardTitleView: View {
-	var eventTitle: String
+struct ActivityCardTitleView: View {
+	var activityTitle: String
 	var body: some View {
 		// TODO: make this title editable
-        Text(eventTitle)
+        Text(activityTitle)
             .font(.onestBold(size: 24))
             .foregroundColor(.white)
 	}
 }
 
 extension ActivityCardTopRowView {
-    var eventSubtitleView: some View {
+    var activitySubtitleView: some View {
         Text("By ")
             .font(.onestRegular(size: subtitleFontSize))
             .foregroundColor(subtitleColor) +

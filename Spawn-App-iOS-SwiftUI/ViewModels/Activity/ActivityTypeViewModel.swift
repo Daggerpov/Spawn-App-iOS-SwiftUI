@@ -61,7 +61,7 @@ class ActivityTypeViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let endpoint = "api/v1/\(userId)/activity-types"
+            let endpoint = "\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 errorMessage = "Invalid URL"
                 return
@@ -106,7 +106,7 @@ class ActivityTypeViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let endpoint = "api/v1/\(userId)/activity-types"
+            let endpoint = "\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 print("❌ Error: Invalid URL for batch update")
                 errorMessage = "Invalid URL"
