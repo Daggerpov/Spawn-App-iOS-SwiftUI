@@ -62,7 +62,7 @@ struct AppearanceSettingsView: View {
                                 .padding(.horizontal)
                                 .frame(height: 44)
                             }
-                            .buttonStyle(PlainButtonStyle())
+                            .buttonStyle(BorderlessButtonStyle())
                             
                             // Add divider between items except for the last one
                             if scheme != AppColorScheme.allCases.last {
@@ -75,14 +75,29 @@ struct AppearanceSettingsView: View {
                     // Preview section
                     SettingsSection(title: "Preview") {
                         VStack(spacing: 16) {
-                            // Single preview that changes based on selected theme
+                            // Light mode preview (top)
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(getPreviewTitle())
+                                Text("Light")
                                     .font(.caption)
                                     .foregroundColor(.gray)
                                 
                                 ThemePreviewCard(
-                                    previewScheme: getPreviewScheme(),
+                                    previewScheme: .light,
+                                    themeService: themeService,
+                                    environmentScheme: colorScheme
+                                )
+                            }
+                            .padding(.horizontal)
+                            .padding(.vertical, 12)
+                            
+                            // Dark mode preview (bottom)
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Dark")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                
+                                ThemePreviewCard(
+                                    previewScheme: .dark,
                                     themeService: themeService,
                                     environmentScheme: colorScheme
                                 )
@@ -97,29 +112,6 @@ struct AppearanceSettingsView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-    }
-    
-    // MARK: - Helper Functions
-    private func getPreviewTitle() -> String {
-        switch themeService.colorScheme {
-        case .system:
-            return colorScheme == .dark ? "Dark" : "Light"
-        case .light:
-            return "Light"
-        case .dark:
-            return "Dark"
-        }
-    }
-    
-    private func getPreviewScheme() -> ColorScheme {
-        switch themeService.colorScheme {
-        case .system:
-            return colorScheme
-        case .light:
-            return .light
-        case .dark:
-            return .dark
-        }
     }
 }
 
@@ -236,100 +228,6 @@ struct ThemePreviewCard: View {
                             .foregroundColor(secondaryTextColor)
                         
                         Text("2 hours")
-                            .font(.onestMedium(size: 12))
-                            .foregroundColor(textColor)
-                    }
-                }
-            }
-            .padding(16)
-            .background(backgroundColor)
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-            )
-            
-            // Second activity card
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Basketball Game")
-                            .font(.onestMedium(size: 16))
-                            .foregroundColor(textColor)
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: "location")
-                                .font(.system(size: 10))
-                                .foregroundColor(secondaryTextColor)
-                            
-                            Text("Thunderbird Gym")
-                                .font(.onestRegular(size: 12))
-                                .foregroundColor(secondaryTextColor)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // Participant images
-                    HStack(spacing: -6) {
-                        Circle()
-                            .fill(Color(hex: activityRedHexCode))
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Text("M")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white)
-                            )
-                        
-                        Circle()
-                            .fill(Color(hex: activityBlueHexCode))
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Text("K")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white)
-                            )
-                        
-                        Circle()
-                            .fill(Color(hex: activityPurpleHexCode))
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Text("S")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundColor(.white)
-                            )
-                    }
-                }
-                
-                HStack(spacing: 16) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Tomorrow")
-                            .font(.onestRegular(size: 10))
-                            .foregroundColor(secondaryTextColor)
-                        
-                        Text("6:00 PM")
-                            .font(.onestMedium(size: 12))
-                            .foregroundColor(textColor)
-                    }
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Participants")
-                            .font(.onestRegular(size: 10))
-                            .foregroundColor(secondaryTextColor)
-                        
-                        Text("4/8")
-                            .font(.onestMedium(size: 12))
-                            .foregroundColor(textColor)
-                    }
-                    
-                    Spacer()
-                    
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("Duration")
-                            .font(.onestRegular(size: 10))
-                            .foregroundColor(secondaryTextColor)
-                        
-                        Text("1.5 hours")
                             .font(.onestMedium(size: 12))
                             .foregroundColor(textColor)
                     }
