@@ -139,17 +139,16 @@ struct ThemePreviewCard: View {
             ),
             note: "Let's study together!",
             icon: "📚",
-			category: .grind,
-            creatorUser: BaseUserDTO.jennifer,
+            category: .grind,
+            creatorUser: BaseUserDTO.danielAgapov,
             participantUsers: [
-                BaseUserDTO.jennifer,
+                BaseUserDTO.danielAgapov,
                 BaseUserDTO.danielLee
             ]
         )
         
-        // Use the actual ActivityCardView but in a non-interactive wrapper
-        NonInteractiveActivityCardView(
-            userId: mockUserId,
+        // Use the popup-style preview
+        ActivityPopupPreviewView(
             activity: mockActivity,
             color: figmaSoftBlue,
             previewScheme: previewScheme
@@ -157,54 +156,105 @@ struct ThemePreviewCard: View {
     }
 }
 
-// MARK: - Non-Interactive Activity Card Wrapper
-struct NonInteractiveActivityCardView: View {
-    @ObservedObject var viewModel: ActivityCardViewModel
-    var activity: FullFeedActivityDTO
-    var color: Color
+// MARK: - Activity Popup Preview (Top Portion Only)
+struct ActivityPopupPreviewView: View {
+    let activity: FullFeedActivityDTO
+    let color: Color
     let previewScheme: ColorScheme
+    @ObservedObject private var cardViewModel: ActivityCardViewModel
     
-    init(
-        userId: UUID,
-        activity: FullFeedActivityDTO,
-        color: Color,
-        previewScheme: ColorScheme
-    ) {
+    init(activity: FullFeedActivityDTO, color: Color, previewScheme: ColorScheme) {
         self.activity = activity
         self.color = color
         self.previewScheme = previewScheme
-        self.viewModel = ActivityCardViewModel(
-            apiService: MockAPIService.isMocking
-                ? MockAPIService(userId: userId) : APIService(),
-            userId: userId,
+        self.cardViewModel = ActivityCardViewModel(
+            apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(),
+            userId: UUID(),
             activity: activity
         )
     }
     
-    var body: some View {
-        // Force the color scheme for the preview
-        ZStack(alignment: .bottomTrailing) {
-            VStack(alignment: .leading, spacing: 16) {
-                // Top Row: Title, Participants
-                ActivityCardTopRowView(activity: activity)
-                // Location Row
-                ActivityLocationView(activity: activity)
-            }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(color)
-            )
-            .shadow(color: Color.black.opacity(0.10), radius: 8, x: 0, y: 4)
-            .onAppear {
-                viewModel.fetchIsParticipating()
-            }
-            // Remove onTapGesture to make it non-interactive
-            
-            // Time Status Badge
-            ActivityStatusView(activity: activity)
+    private var buttonBackgroundColor: Color {
+        switch previewScheme {
+        case .light:
+            return Color.white
+        case .dark:
+            return Color.black
+        @unknown default:
+            return Color.white
         }
-        .preferredColorScheme(previewScheme)
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Handle bar
+            RoundedRectangle(cornerRadius: 2.5)
+                .fill(Color.white.opacity(0.8))
+                .frame(width: 40, height: 5)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+            
+            // Main card content (top portion only)
+            VStack(alignment: .leading, spacing: 16) {
+                // Event title and time
+                titleAndTime
+                
+                // Spawn In button and attendees
+                participationButtonView
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 20)
+        }
+        .background(color.opacity(0.97))
+        .cornerRadius(20)
+        .shadow(radius: 10)
+        .colorScheme(previewScheme) // Force the color scheme for the entire preview
+    }
+    
+    private var titleAndTime: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(activity.title ?? (activity.creatorUser.name ?? activity.creatorUser.username) + "'s activity")
+                .font(.onestSemiBold(size: 32))
+                .foregroundColor(.white)
+            Text("In 2 hours • " + getTimeDisplayString())
+                .font(.onestSemiBold(size: 15))
+                .foregroundColor(.white.opacity(0.9))
+        }
+    }
+    
+    private var participationButtonView: some View {
+        HStack {
+            Button(action: {
+                // Non-interactive for preview
+            }) {
+                HStack {
+                    Image(systemName: "star.circle")
+                        .foregroundColor(figmaSoftBlue)
+                        .fontWeight(.bold)
+                    Text("Spawn In!")
+                        .font(.onestMedium(size: 18))
+                        .foregroundColor(figmaSoftBlue)
+                }
+                .padding(.horizontal, 30)
+                .padding(.vertical, 10)
+                .background(buttonBackgroundColor)
+                .cornerRadius(12)
+            }
+            .disabled(true) // Make it non-interactive
+            
+            Spacer()
+            
+            // Use the actual ParticipantsImagesView component
+            ParticipantsImagesView(activity: activity)
+        }
+    }
+    
+    private func getTimeDisplayString() -> String {
+        guard let startTime = activity.startTime else { return "Time TBD" }
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: startTime)
     }
 }
 
