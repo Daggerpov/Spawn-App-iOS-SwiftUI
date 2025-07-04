@@ -49,6 +49,48 @@ func getActivityColorHex(for activityId: UUID) -> String {
 }
 
 // MARK: - Dynamic Colors (Theme-aware)
+// These are reactive functions that need to be called within an ObservedObject context
+
+func universalBackgroundColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
+    let currentScheme = themeService.colorScheme
+    
+    switch currentScheme {
+    case .light:
+        return Color(hex: "#FFFFFF")
+    case .dark:
+        return Color(hex: "#000000")
+    case .system:
+        return environment == .dark ? Color(hex: "#000000") : Color(hex: "#FFFFFF")
+    }
+}
+
+func universalAccentColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
+    let currentScheme = themeService.colorScheme
+    
+    switch currentScheme {
+    case .light:
+        return Color(hex: "#1D1D1D")
+    case .dark:
+        return Color(hex: "#FFFFFF")
+    case .system:
+        return environment == .dark ? Color(hex: "#FFFFFF") : Color(hex: "#1D1D1D")
+    }
+}
+
+func universalPlaceHolderTextColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
+    let currentScheme = themeService.colorScheme
+    
+    switch currentScheme {
+    case .light:
+        return Color(hex: "#B0AFAF")
+    case .dark:
+        return Color(hex: "#6B6B6B")
+    case .system:
+        return environment == .dark ? Color(hex: "#6B6B6B") : Color(hex: "#B0AFAF")
+    }
+}
+
+// Legacy computed properties for backwards compatibility (will use system theme only)
 @available(iOS 14.0, *)
 var universalBackgroundColor: Color {
     Color(UIColor { traitCollection in
