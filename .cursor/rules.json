@@ -150,6 +150,11 @@
       "name": "Color Constants Import",
       "pattern": "\\.(swift)$",
       "rule": "All color constants are defined in Views/Helpers/Constants.swift. Import this file or ensure colors are accessible when creating new views. Never hardcode hex values directly in views."
+    },
+    {
+      "name": "Debug Statements",
+      "pattern": "\\.(swift)$",
+      "rule": "NEVER add debug statements (print, NSLog, debugPrint, etc.) unless explicitly instructed by the user. Debug statements clutter the console, impact performance, and should only be added when actively debugging a specific issue. Remove debug statements after debugging is complete. Focus on clean, readable code without debug output."
     }
   ],
   "terminal_safety": {

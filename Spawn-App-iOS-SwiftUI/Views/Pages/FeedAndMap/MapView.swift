@@ -92,9 +92,6 @@ struct MapView: View {
             }
         }
         
-        print("🗺 DEBUG: Filtered activities count: \(filtered.count)")
-        print("📍 DEBUG: Filtered activities with locations: \(filtered.filter { $0.location != nil }.count)")
-
         return filtered
     }
 

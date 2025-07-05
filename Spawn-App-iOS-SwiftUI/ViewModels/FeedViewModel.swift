@@ -33,7 +33,6 @@ class FeedViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newActivityTypes in
                 self?.activityTypes = newActivityTypes
-                print("🔄 FeedViewModel: Activity types updated with \(newActivityTypes.count) items")
             }
             .store(in: &cancellables)
         

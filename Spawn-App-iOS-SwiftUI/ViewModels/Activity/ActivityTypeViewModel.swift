@@ -53,7 +53,6 @@ class ActivityTypeViewModel: ObservableObject {
                             isPinned: $0.isPinned
                         )}
                         self?.hasUnsavedChanges = false
-                        print("🔄 ActivityTypeViewModel: Activity types updated from cache with \(cachedActivityTypes.count) items")
                     }
                 }
                 .store(in: &cancellables)

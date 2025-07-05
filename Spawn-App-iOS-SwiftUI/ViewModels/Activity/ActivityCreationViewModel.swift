@@ -35,27 +35,18 @@ class ActivityCreationViewModel: ObservableObject {
 	private var apiService: IAPIService
 	
 	public static func reInitialize() {
-		print("🔄 ActivityCreationViewModel.reInitialize() called")
-		let oldSelectedType = shared.selectedType?.rawValue
 		shared.resetToDefaults()
-		print("🔄 ActivityCreationViewModel reinitialized. Old selectedType: \(oldSelectedType ?? "nil"), New selectedType: \(shared.selectedType?.rawValue ?? "nil")")
 	}
 	
 	// Method to pre-select an activity type (e.g., when coming from feed view)
 	public static func initializeWithSelectedType(_ activityType: ActivityType?) {
-		print("🎯 ActivityCreationViewModel.initializeWithSelectedType(\(activityType?.rawValue ?? "nil")) called")
-		let oldSelectedType = shared.selectedType?.rawValue
-		
 		// Instead of creating a new instance, reset the existing one and set the type
 		shared.resetToDefaults()
 		shared.selectedType = activityType
-		
-		print("🎯 ActivityCreationViewModel updated with selectedType: \(shared.selectedType?.rawValue ?? "nil") (was: \(oldSelectedType ?? "nil"))")
 	}
 	
 	// Helper method to reset the current instance to defaults
 	private func resetToDefaults() {
-		print("🔄 ActivityCreationViewModel.resetToDefaults() called")
 		
 		// Reset all properties to their default values
 		selectedDate = Date()
@@ -92,9 +83,7 @@ class ActivityCreationViewModel: ObservableObject {
 	
 	// Force reset method for debugging
 	public static func forceReset() {
-		print("💥 ActivityCreationViewModel.forceReset() called")
 		shared.selectedType = nil
-		print("💥 ActivityCreationViewModel selectedType forcibly set to nil")
 	}
 
 	// Private initializer to enforce singleton pattern

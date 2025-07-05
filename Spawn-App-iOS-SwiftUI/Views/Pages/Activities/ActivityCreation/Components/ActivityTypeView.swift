@@ -42,17 +42,6 @@ struct ActivityTypeView: View {
             Task {
                 await viewModel.fetchActivityTypes()
             }
-            
-            // Debug: Log current selection state
-            print("🔍 ActivityTypeView appeared. Current selectedType: \(selectedType?.rawValue ?? "nil")")
-            print("🔍 Available activity types: \(viewModel.activityTypes.map { $0.title })")
-            print("🔍 Pinned activity types: \(viewModel.activityTypes.filter { $0.isPinned }.map { $0.title })")
-            
-            // Ensure no auto-selection happens - explicitly clear any unwanted selection
-            // Only keep selection if it was intentionally set (e.g., from feed view)
-            if selectedType != nil {
-                print("🔍 ActivityTypeView has existing selection: \(selectedType?.rawValue ?? "nil")")
-            }
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -152,7 +141,6 @@ struct ActivityTypeCard: View {
         default:
             // For unmapped types, return nil to make them unselectable
             // This prevents conflicts in selection logic
-            print("⚠️ ActivityTypeCard: '\(activityTypeDTO.title)' cannot be mapped to ActivityType - making unselectable")
             return nil
         }
     }
@@ -163,14 +151,6 @@ struct ActivityTypeCard: View {
         }
         
         let selected = selectedType == activityType
-        
-        // Debug logging
-        if selected {
-            print("🟡 ActivityTypeCard '\(activityTypeDTO.title)' is SELECTED. selectedType: \(selectedType?.rawValue ?? "nil"), activityType: \(activityType.rawValue)")
-        } else if activityTypeDTO.isPinned {
-            print("📌 ActivityTypeCard '\(activityTypeDTO.title)' is PINNED but not selected. selectedType: \(selectedType?.rawValue ?? "nil"), activityType: \(activityType.rawValue)")
-        }
-        
         return selected
     }
     
@@ -227,10 +207,7 @@ struct ActivityTypeCard: View {
     var body: some View {
         Button(action: { 
             if let type = activityType {
-                print("🔘 ActivityTypeCard '\(activityTypeDTO.title)' button tapped. Setting selectedType to: \(type.rawValue)")
                 selectedType = type
-            } else {
-                print("❌ ActivityTypeCard '\(activityTypeDTO.title)' button tapped but activityType is nil - ignoring")
             }
         }) {
             ZStack {

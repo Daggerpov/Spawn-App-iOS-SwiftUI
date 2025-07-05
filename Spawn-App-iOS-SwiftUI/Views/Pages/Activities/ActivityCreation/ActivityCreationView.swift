@@ -82,8 +82,6 @@ struct ActivityCreationView: View {
             ShareSheet()
         }
         .onAppear {
-            print("🔍 ActivityCreationView onAppear - currentStep: \(currentStep), selectedType: \(viewModel.selectedType?.rawValue ?? "nil")")
-            
             // Initialize activityTitle from view model if it exists
             if let title = viewModel.activity.title, !title.isEmpty {
                 activityTitle = title
@@ -91,21 +89,15 @@ struct ActivityCreationView: View {
             
             // If we're starting fresh (no pre-selected type), ensure absolutely clean state
             if currentStep == .activityType && viewModel.selectedType == nil {
-                print("🧹 Forcing clean state - no pre-selection detected")
                 // First try force reset
                 ActivityCreationViewModel.forceReset()
                 // Then full reinitialization to be absolutely sure
                 ActivityCreationViewModel.reInitialize()
-            } else if viewModel.selectedType != nil {
-                print("✅ Pre-selected type detected: \(viewModel.selectedType!.rawValue)")
             }
         }
         .onChange(of: selectedTab) { newTab in
-            print("🔄 ActivityCreationView.onChange(selectedTab): \(newTab), currentStep: \(currentStep), viewModel.selectedType: \(viewModel.selectedType?.rawValue ?? "nil")")
-            
             // Reset to beginning if activities tab is selected and we're at confirmation
             if newTab == TabType.creation && currentStep == .confirmation {
-                print("🔄 Resetting from confirmation step")
                 currentStep = .activityType
                 ActivityCreationViewModel.reInitialize()
                 // Reset other state variables as well
@@ -122,14 +114,10 @@ struct ActivityCreationView: View {
             }
             // Also reset when navigating to creation tab from other tabs (not from confirmation)
             else if newTab == TabType.creation && currentStep != .confirmation {
-                print("🔄 Navigating to creation tab, preserving pre-selection if exists")
                 currentStep = .activityType
                 // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
                 if viewModel.selectedType == nil {
-                    print("🔄 No pre-selection found, reinitializing")
                     ActivityCreationViewModel.reInitialize()
-                } else {
-                    print("🔄 Pre-selection found: \(viewModel.selectedType!.rawValue), preserving it")
                 }
                 // Reset other state variables
                 if let title = viewModel.activity.title, !title.isEmpty {
