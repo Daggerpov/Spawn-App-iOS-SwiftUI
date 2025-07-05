@@ -84,15 +84,7 @@ class ActivityTypeViewModel: ObservableObject {
             self.deletedActivityTypeIds.removeAll()
             self.hasUnsavedChanges = false
             
-            print("✅ Successfully fetched \(fetchedTypes.count) activity types")
-            print("🔍 Activity Types fetched:")
-            for (index, type) in fetchedTypes.enumerated() {
-                print("   \(index + 1). \(type.title) - isPinned: \(type.isPinned)")
-            }
-            print("🔍 Sorted Activity Types:")
-            for (index, type) in sortedActivityTypes.enumerated() {
-                print("   \(index + 1). \(type.title) - isPinned: \(type.isPinned)")
-            }
+
             
         } catch {
             self.errorMessage = "Failed to load activity types"

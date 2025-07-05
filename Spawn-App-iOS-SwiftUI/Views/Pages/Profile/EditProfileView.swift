@@ -345,6 +345,7 @@ struct InterestsSection: View {
     let maxInterests: Int
     @Binding var showAlert: Bool
     @Binding var alertMessage: String
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -357,6 +358,7 @@ struct InterestsSection: View {
                 .padding()
                 .foregroundColor(universalAccentColor)
                 .cornerRadius(10)
+                .focused($isTextFieldFocused)
                 .onSubmit {
                     addInterest()
                 }
@@ -401,13 +403,17 @@ struct InterestsSection: View {
         // Don't add duplicates
         if !profileViewModel.userInterests.contains(interest) {
             Task {
-                await profileViewModel.addUserInterest(userId: userId, interest: interest)
+                let success = await profileViewModel.addUserInterest(userId: userId, interest: interest)
                 await MainActor.run {
-                    newInterest = ""
+                    if success {
+                        newInterest = ""
+                        isTextFieldFocused = false // Dismiss keyboard
+                    }
                 }
             }
         } else {
             newInterest = ""
+            isTextFieldFocused = false // Dismiss keyboard
         }
     }
     

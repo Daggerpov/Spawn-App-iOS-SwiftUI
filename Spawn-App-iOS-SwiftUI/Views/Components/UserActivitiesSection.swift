@@ -57,7 +57,6 @@ struct UserActivitiesSection: View {
                         .foregroundColor(universalSecondaryColor)
                 }
             }
-            .padding(.horizontal)
             
             if profileViewModel.isLoadingUserActivities {
                 HStack {
@@ -89,7 +88,6 @@ struct UserActivitiesSection: View {
                             .frame(width: 280)
                         }
                     }
-                    .padding(.horizontal)
                 }
             }
         }
@@ -122,7 +120,6 @@ struct UserActivitiesSection: View {
                         .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
                         .foregroundColor(.gray.opacity(0.4))
                 )
-                .padding(.horizontal, 16)
             }
         }
     }

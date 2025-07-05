@@ -139,20 +139,21 @@ struct ActivityTypeCard: View {
         
         // If no exact match, try fuzzy matching for common cases
         switch activityTypeDTO.title.lowercased() {
-        case "food", "food & drink", "food and drink":
+        case "food":
             return .foodAndDrink
-        case "active", "exercise", "workout", "sports":
+        case "active":
             return .active
-        case "grind", "work", "study", "studying":
+        case "study":
             return .grind
-        case "chill", "relax", "hang out", "hangout":
+        case "chill":
             return .chill
-        case "general", "other", "misc":
+        case "general":
             return .general
         default:
-            // For any unmapped types, use general as fallback
-            print("⚠️ ActivityTypeCard: Mapping '\(activityTypeDTO.title)' to general ActivityType")
-            return .general
+            // For unmapped types, return nil to make them unselectable
+            // This prevents conflicts in selection logic
+            print("⚠️ ActivityTypeCard: '\(activityTypeDTO.title)' cannot be mapped to ActivityType - making unselectable")
+            return nil
         }
     }
     
@@ -175,6 +176,11 @@ struct ActivityTypeCard: View {
     
     // Adaptive background color
     private var adaptiveBackgroundColor: Color {
+        // If unmapped, show as disabled
+        if activityType == nil {
+            return Color.gray.opacity(0.02)
+        }
+        
         if isSelected {
             return universalSecondaryColor.opacity(0.1)
         } else {
@@ -203,6 +209,11 @@ struct ActivityTypeCard: View {
     
     // Adaptive text color for title
     private var adaptiveTitleColor: Color {
+        // If unmapped, show as disabled
+        if activityType == nil {
+            return Color.gray.opacity(0.5)
+        }
+        
         switch colorScheme {
         case .dark:
             return Color.white
@@ -219,7 +230,7 @@ struct ActivityTypeCard: View {
                 print("🔘 ActivityTypeCard '\(activityTypeDTO.title)' button tapped. Setting selectedType to: \(type.rawValue)")
                 selectedType = type
             } else {
-                print("❌ ActivityTypeCard '\(activityTypeDTO.title)' button tapped but activityType is nil")
+                print("❌ ActivityTypeCard '\(activityTypeDTO.title)' button tapped but activityType is nil - ignoring")
             }
         }) {
             ZStack {
@@ -264,6 +275,8 @@ struct ActivityTypeCard: View {
                 }
             }
         }
+        .disabled(activityType == nil)
+        .opacity(activityType == nil ? 0.6 : 1.0)
         .contextMenu {
             Button(action: onPin) {
                 Label(activityTypeDTO.isPinned ? "Unpin Type" : "Pin Type", systemImage: "pin")

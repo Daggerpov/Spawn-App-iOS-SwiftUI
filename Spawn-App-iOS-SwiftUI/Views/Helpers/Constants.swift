@@ -36,7 +36,6 @@ func getActivityColor(for activityId: UUID) -> Color {
 	let uuidString = activityId.uuidString
 	let hash = uuidString.hashValue
 	let index = abs(hash) % activityColors.count
-	print(index)
 	return activityColors[index]
 }
 

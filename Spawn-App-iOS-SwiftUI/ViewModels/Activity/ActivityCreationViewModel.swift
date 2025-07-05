@@ -55,8 +55,6 @@ class ActivityCreationViewModel: ObservableObject {
 
 	// Private initializer to enforce singleton pattern
 	private init() {
-		print("🏗️ ActivityCreationViewModel private init() called")
-		
 		self.apiService =
 			MockAPIService.isMocking
 			? MockAPIService(
@@ -79,7 +77,6 @@ class ActivityCreationViewModel: ObservableObject {
 		
 		// Ensure selectedType starts as nil by default (no auto-selection)
 		self.selectedType = nil
-		print("🏗️ ActivityCreationViewModel init completed. selectedType: \(self.selectedType?.rawValue ?? "nil")")
 		
 		// Automatically populate friends when initializing
 		loadAllFriendsAsSelected()

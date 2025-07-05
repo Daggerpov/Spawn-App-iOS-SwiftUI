@@ -103,19 +103,26 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    func addUserInterest(userId: UUID, interest: String) async {
+    func addUserInterest(userId: UUID, interest: String) async -> Bool {
+        // Update local state immediately for better UX
+        await MainActor.run {
+            self.userInterests.append(interest)
+        }
+        
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
             _ = try await self.apiService.sendData(interest, to: url, parameters: nil)
             
-            // Refresh interests after adding
-            await fetchUserInterests(userId: userId)
-            // Also refresh the cache
+            // Update cache after successful API call
             await AppCache.shared.refreshProfileInterests(userId)
+            return true
         } catch {
+            // Revert local state if API call fails
             await MainActor.run {
+                self.userInterests.removeAll { $0 == interest }
                 self.errorMessage = "Failed to add interest: \(error.localizedDescription)"
             }
+            return false
         }
     }
     
@@ -350,7 +357,10 @@ class ProfileViewModel: ObservableObject {
     
     // Interest management methods
     func removeUserInterest(userId: UUID, interest: String) async {
-        await MainActor.run { self.isLoadingInterests = true }
+        // Update local state immediately for better UX
+        await MainActor.run {
+            self.userInterests.removeAll { $0 == interest }
+        }
         
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(interest)")!
@@ -360,20 +370,13 @@ class ProfileViewModel: ObservableObject {
                 object: EmptyObject()
             )
             
-            // Update local state immediately after successful deletion
-            await MainActor.run {
-                self.userInterests.removeAll { $0 == interest }
-                self.isLoadingInterests = false
-            }
-            
-            // Refresh interests from server to ensure consistency
-            await fetchUserInterests(userId: userId)
-            // Also refresh the cache
+            // Update cache after successful API call
             await AppCache.shared.refreshProfileInterests(userId)
         } catch {
+            // Revert local state if API call fails
             await MainActor.run {
+                self.userInterests.append(interest)
                 self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
-                self.isLoadingInterests = false
             }
         }
     }
@@ -436,7 +439,6 @@ class ProfileViewModel: ObservableObject {
 			)
 
             if isFriend {
-				print("user is friends with this user whose profile they've clicked on.")
                 await MainActor.run {
                     self.friendshipStatus = .friends
                     self.isLoadingFriendshipStatus = false
