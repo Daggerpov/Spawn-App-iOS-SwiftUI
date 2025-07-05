@@ -292,6 +292,38 @@ class FriendsTabViewModel: ObservableObject {
         }
 	}
 
+    func removeFriend(friendUserId: UUID) async {
+        await MainActor.run {
+            isLoading = true
+        }
+        
+        var requestSucceeded = false
+        
+        // API endpoint for removing friend: /api/v1/users/friends/{userId}/{friendId}
+        if let url = URL(string: APIService.baseURL + "users/friends/\(userId)/\(friendUserId)") {
+            do {
+                _ = try await self.apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
+                requestSucceeded = true
+            } catch {
+                print("Error removing friend: \(error.localizedDescription)")
+            }
+        }
+        
+        if requestSucceeded {
+            // Remove from local arrays and refresh data
+            await MainActor.run {
+                self.friends.removeAll { $0.id == friendUserId }
+                self.filteredFriends.removeAll { $0.id == friendUserId }
+                // Update cache
+                self.appCache.updateFriends(self.friends)
+            }
+        }
+        
+        await MainActor.run {
+            isLoading = false
+        }
+    }
+
     @MainActor
     func fetchRecentlySpawnedWith() async {
         isLoading = true
