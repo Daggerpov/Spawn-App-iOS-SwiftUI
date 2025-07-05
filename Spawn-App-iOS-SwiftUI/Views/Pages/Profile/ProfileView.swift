@@ -67,8 +67,10 @@ struct ProfileView: View {
 	}
 
 	var body: some View {
-		profileContent
-			.background(universalBackgroundColor.ignoresSafeArea())
+		NavigationStack {
+			profileContent
+				.background(universalBackgroundColor.ignoresSafeArea())
+		}
 		.background(universalBackgroundColor)
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
@@ -129,6 +131,7 @@ struct ProfileView: View {
 						currentUserId: currentUserId,
 						profileUserId: user.id
 					)
+					print("checked friendship status")
 
 					// If they're friends, fetch their activities
 					if profileViewModel.friendshipStatus == .friends {
@@ -255,7 +258,7 @@ struct ProfileView: View {
 				profileInnerComponentsView
 					.padding(.horizontal)
 			}
-			.navigationBarBackButtonHidden(true)
+			.navigationBarBackButtonHidden(false)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .navigationBarLeading) {
@@ -263,18 +266,20 @@ struct ProfileView: View {
 						Button(action: {
 							presentationMode.wrappedValue.dismiss()
 						}) {
-							HStack(spacing: 4) {
-								Image(systemName: "chevron.left")
-								Text("Back")
-							}
-							.foregroundColor(universalAccentColor)
+							Image(systemName: "chevron.left")
+								.foregroundColor(universalAccentColor)
 						}
 					}
 				}
 
 				ToolbarItem(placement: .principal) {
-					// Don't show ProfileNameView for other users' profiles
-					EmptyView()
+					// Only show the ProfileNameView if it's not the current user's profile
+					if !isCurrentUserProfile {
+						ProfileNameView(
+							user: user,
+							refreshFlag: $refreshFlag
+						)
+					}
 				}
 
 				// Add appropriate trailing button based on user profile type
@@ -347,7 +352,7 @@ struct ProfileView: View {
 					.padding(.vertical, 10)
 					.padding(.horizontal, 20)
 					.frame(maxWidth: 200)
-					.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
+					.background(universalAccentColor)
 					.cornerRadius(12)
 				}
 				.disabled(profileViewModel.friendshipStatus == .requestSent)
@@ -396,7 +401,7 @@ struct ProfileView: View {
 					showCalendarPopup: $showCalendarPopup,
 					showActivityDetails: $showActivityDetails
 				)
-				.padding(.horizontal, 16)
+				.padding(.horizontal, 48)
 				.padding(.bottom, 15)
 			} else {
 				// User Activities Section for other users (based on friendship status)
@@ -405,7 +410,7 @@ struct ProfileView: View {
 					profileViewModel: profileViewModel,
 					showActivityDetails: $showActivityDetails
 				)
-				.padding(.horizontal, 16)
+				.padding(.horizontal, 48)
 				.padding(.bottom, 15)
 			}
 		}
@@ -583,14 +588,12 @@ struct ProfileView: View {
 		guard !newInterest.isEmpty else { return }
 
 		Task {
-			let success = await profileViewModel.addUserInterest(
+			await profileViewModel.addUserInterest(
 				userId: user.id,
 				interest: newInterest
 			)
 			await MainActor.run {
-				if success {
-					newInterest = ""
-				}
+				newInterest = ""
 			}
 		}
 	}
@@ -699,8 +702,26 @@ struct ProfileView: View {
 		Group {
 			switch profileViewModel.friendshipStatus {
 			case .none:
-				// No buttons for users who are not friends
-				EmptyView()
+				// Share Profile button (same as for friends)
+				Button(action: {
+					shareProfile()
+				}) {
+					HStack {
+						Image(systemName: "square.and.arrow.up")
+						Text("Share Profile")
+							.bold()
+					}
+					.font(.caption)
+					.foregroundColor(universalSecondaryColor)
+					.padding(.vertical, 24)
+					.padding(.horizontal, 8)
+					.frame(height: 32)
+					.frame(maxWidth: .infinity)
+					.overlay(
+						RoundedRectangle(cornerRadius: 12)
+							.stroke(universalSecondaryColor, lineWidth: 1)
+					)
+				}
 
 			case .requestSent:
 				// Request Sent (disabled button)
@@ -777,8 +798,26 @@ struct ProfileView: View {
 				}
 
 			case .friends:
-				// No share button for friends either
-				EmptyView()
+				// Share Profile button (same as in the original view)
+				Button(action: {
+					shareProfile()
+				}) {
+					HStack {
+						Image(systemName: "square.and.arrow.up")
+						Text("Share Profile")
+							.bold()
+					}
+					.font(.caption)
+					.foregroundColor(universalSecondaryColor)
+					.padding(.vertical, 24)
+					.padding(.horizontal, 8)
+					.frame(height: 32)
+					.frame(maxWidth: .infinity)
+					.overlay(
+						RoundedRectangle(cornerRadius: 12)
+							.stroke(universalSecondaryColor, lineWidth: 1)
+					)
+				}
 
 			default:
 				EmptyView()
