@@ -18,7 +18,7 @@ struct ContentView: View {
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "house")!,
+							UIImage(named: "home_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
@@ -28,7 +28,7 @@ struct ContentView: View {
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "location.circle")!,
+							UIImage(named: "map_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
@@ -45,7 +45,7 @@ struct ContentView: View {
 			.tabItem {
 				Image(
 					uiImage: resizeImage(
-						UIImage(named: "activities_icon")!,
+						UIImage(named: "activities_nav_icon")!,
 						targetSize: CGSize(width: 30, height: 27)
 					)!
 				)
@@ -55,7 +55,7 @@ struct ContentView: View {
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "list.bullet")!,
+							UIImage(named: "friends_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
@@ -65,7 +65,7 @@ struct ContentView: View {
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "person.circle")!,
+							UIImage(named: "profile_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
