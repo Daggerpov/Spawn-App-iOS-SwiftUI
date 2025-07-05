@@ -139,10 +139,6 @@ struct SettingsView: View {
                             }
                         }
                         
-                        SettingsRow(icon: "bubble.left", title: "Contact us", showDisclosure: true) {
-                            // Navigate to contact
-                        }
-                        
                         SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: true) {
                             // Navigate to rate app
                         }
