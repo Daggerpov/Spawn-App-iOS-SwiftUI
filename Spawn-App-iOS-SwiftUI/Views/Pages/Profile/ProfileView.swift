@@ -394,9 +394,7 @@ struct ProfileView: View {
 								if editingState == .edit {
 									editingState = .save
 								} else {
-									Task{
-										await saveProfile()
-									}
+									saveProfile()
 								}
 							}) {
 								HStack(spacing: 8) {
@@ -680,11 +678,7 @@ struct ProfileView: View {
 								)
 						}
 						
-						Button(action: {
-							Task {
-								await saveProfile()
-							}
-						}) {
+						Button(action: saveProfile) {
 							Text("Save Changes")
 								.font(.onestSemiBold(size: 14))
 								.foregroundColor(.white)
