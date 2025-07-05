@@ -24,7 +24,7 @@ struct FriendRequestsView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title3)
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                 }
                 
                 Spacer()
@@ -153,7 +153,7 @@ struct FriendRequestItemView: View {
                     Text("Remove")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                         .padding(.vertical, 8)
                         .padding(.horizontal, 16)
                         .background(

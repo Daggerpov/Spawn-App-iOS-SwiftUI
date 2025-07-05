@@ -43,10 +43,10 @@ struct CircularButtonStyling: ViewModifier {
 		content
 			.frame(width: frameSize, height: frameSize)
 			.foregroundColor(
-				source == "map" ? universalBackgroundColor : Color.white
+				source == "map" ? universalBackgroundColor : universalBackgroundColor
 			)
 			.background(
-				source == "map" ? universalBackgroundColor : Color.white
+				source == "map" ? universalBackgroundColor : universalBackgroundColor
 			)
 			.clipShape(Circle())
 			.overlay(

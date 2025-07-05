@@ -120,7 +120,7 @@ extension FeedView {
                         ActivityCardView(
                             userId: user.id,
                             activity: activity,
-                            color: activity.category.color()
+                            color: getActivityColor(for: activity.id)
                         )
                         { activity, color in
                             activityInPopup = activity

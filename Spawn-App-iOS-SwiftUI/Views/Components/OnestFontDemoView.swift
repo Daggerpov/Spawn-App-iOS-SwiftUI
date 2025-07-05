@@ -32,7 +32,7 @@ struct OnestFontDemoView: View {
                 
                 Text("Semi")
                     .onestSemibold(size: 14)
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor)
             }
         }
         .padding()

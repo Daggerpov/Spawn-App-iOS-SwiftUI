@@ -9,24 +9,134 @@ import SwiftUI
 
 let universalRectangleCornerRadius: CGFloat = 20
 let universalNewRectangleCornerRadius: CGFloat = 8
-let activityColorHexCodes: [String] = ["#00A676", "#FF7620", "#06AED5", "#FE5E6E"]
+
+// activity colors
+let activityRedHexCode: String = "#FD4E4C"
+let activityYellowHexCode: String = "#FBCD29"
+let activityIndigoHexCode: String = "#536AEE"
+let activityGreenHexCode: String = "#1AB979"
+let activityPinkHexCode: String = "#ED64A6"
+let activityTealHexCode: String = "#38B2AC"
+let activityBlueHexCode: String = "#1E86E8"
+let activityPurpleHexCode: String = "#713DE5"
+let activityIndigoDarkHexCode: String = "#242CBB"
+
+let activityColorHexCodes: [String] = [
+	activityRedHexCode, activityYellowHexCode, activityIndigoHexCode,
+	activityGreenHexCode, activityPinkHexCode, activityTealHexCode,
+	activityBlueHexCode, activityPurpleHexCode, activityIndigoDarkHexCode
+]
 let activityColors = activityColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
 }
-let universalBackgroundColor: Color = Color(hex: "#FFFFFF")
+
+// Function to deterministically assign colors to activities based on their ID
+func getActivityColor(for activityId: UUID) -> Color {
+	// Convert UUID to a consistent integer for indexing
+	let uuidString = activityId.uuidString
+	let hash = uuidString.hashValue
+	let index = abs(hash) % activityColors.count
+	print(index)
+	return activityColors[index]
+}
+
+// Function to get the hex code for an activity color
+func getActivityColorHex(for activityId: UUID) -> String {
+	let uuidString = activityId.uuidString
+	let hash = uuidString.hashValue
+	let index = abs(hash) % activityColorHexCodes.count
+	return activityColorHexCodes[index]
+}
+
+// MARK: - Dynamic Colors (Theme-aware)
+// These are reactive functions that need to be called within an ObservedObject context
+
+func universalBackgroundColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
+    let currentScheme = themeService.colorScheme
+    
+    switch currentScheme {
+    case .light:
+        return Color(hex: "#FFFFFF")
+    case .dark:
+        return Color(hex: "#000000")
+    case .system:
+        return environment == .dark ? Color(hex: "#000000") : Color(hex: "#FFFFFF")
+    }
+}
+
+func universalAccentColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
+    let currentScheme = themeService.colorScheme
+    
+    switch currentScheme {
+    case .light:
+        return Color(hex: "#1D1D1D")
+    case .dark:
+        return Color(hex: "#FFFFFF")
+    case .system:
+        return environment == .dark ? Color(hex: "#FFFFFF") : Color(hex: "#1D1D1D")
+    }
+}
+
+func universalPlaceHolderTextColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
+    let currentScheme = themeService.colorScheme
+    
+    switch currentScheme {
+    case .light:
+        return Color(hex: "#B0AFAF")
+    case .dark:
+        return Color(hex: "#6B6B6B")
+    case .system:
+        return environment == .dark ? Color(hex: "#6B6B6B") : Color(hex: "#B0AFAF")
+    }
+}
+
+// Legacy computed properties for backwards compatibility (will use system theme only)
+@available(iOS 14.0, *)
+var universalBackgroundColor: Color {
+    Color(UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return UIColor(Color(hex: "#000000"))
+        default:
+            return UIColor(Color(hex: "#FFFFFF"))
+        }
+    })
+}
+
+@available(iOS 14.0, *)
+var universalAccentColor: Color {
+    Color(UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return UIColor(Color(hex: "#FFFFFF"))
+        default:
+            return UIColor(Color(hex: "#1D1D1D"))
+        }
+    })
+}
+
+@available(iOS 14.0, *)
+var universalPlaceHolderTextColor: Color {
+    Color(UIColor { traitCollection in
+        switch traitCollection.userInterfaceStyle {
+        case .dark:
+            return UIColor(Color(hex: "#6B6B6B"))
+        default:
+            return UIColor(Color(hex: "#B0AFAF"))
+        }
+    })
+}
+
+// MARK: - Static Colors (Theme-independent)
 let universalSecondaryColorHexCode: String = "#8693FF"
 let universalSecondaryColor: Color = Color(
     hex: universalSecondaryColorHexCode
 )
 let universalTertiaryColor: Color = Color(red: 1, green: 0.45, blue: 0.44)
 let universalAccentColorHexCode: String = "#1D1D1D"
-let universalAccentColor: Color = Color(
-	hex: universalAccentColorHexCode
-)
 let universalPassiveColorHex: String = "#DADADA"
 let universalPassiveColor: Color = Color(hex: universalPassiveColorHex)
 let profilePicPlusButtonColor: Color = Color(hex: "#8693FF")
-let universalPlaceHolderTextColor: Color = Color(hex: "#B0AFAF")
 let authPageBackgroundColor: Color = Color(hex: "#8693FF")
 
 // Colors from the Figma design

@@ -20,7 +20,7 @@ struct SettingsView: View {
                 
                 Text("Settings & Preferences")
                     .font(.headline)
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor)
                 
                 Spacer()
                 
@@ -40,12 +40,12 @@ struct SettingsView: View {
                             HStack {
                                 Image(systemName: "person.circle")
                                     .font(.system(size: 18))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                                     .frame(width: 24, height: 24)
                                 
                                 Text("Account")
                                     .font(.body)
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                                 
                                 Spacer()
                                 
@@ -58,18 +58,46 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Appearance
+                    SettingsSection(title: "Appearance") {
+                        NavigationLink(destination: AppearanceSettingsView()) {
+                            HStack {
+                                Image(systemName: "paintpalette")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(universalAccentColor)
+                                    .frame(width: 24, height: 24)
+                                
+                                Text("Color Scheme")
+                                    .font(.body)
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.horizontal)
+                            .frame(height: 44)
+                        }
+                        
+                        #if DEBUG
+                        // Debug options can be added here
+                        #endif
+                    }
+                    
                     // Notifications
                     SettingsSection(title: "Notifications") {
                         NavigationLink(destination: NotificationSettingsView()) {
                             HStack {
                                 Image(systemName: "bell.fill")
                                     .font(.system(size: 18))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                                     .frame(width: 24, height: 24)
                                 
                                 Text("Push Notifications")
                                     .font(.body)
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                                 
                                 Spacer()
                                 
@@ -89,12 +117,12 @@ struct SettingsView: View {
                                 HStack {
                                     Image(systemName: "message")
                                         .font(.system(size: 18))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor)
                                         .frame(width: 24, height: 24)
                                     
                                     Text("Send us feedback")
                                         .font(.body)
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor)
                                     
                                     Spacer()
                                     
@@ -127,12 +155,6 @@ struct SettingsView: View {
                                 UIApplication.shared.open(url)
                             }
                         }
-                        
-                        SettingsRow(icon: "tiktok", isSystemIcon: false, title: "TikTok", showDisclosure: true, externalLink: true) {
-                            if let url = URL(string: "https://tiktok.com/@spawnapp") {
-                                UIApplication.shared.open(url)
-                            }
-                        }
                     }
                     
                     // Authentication
@@ -143,10 +165,10 @@ struct SettingsView: View {
                             HStack {
                                 Text("Log Out")
                                     .font(.body)
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                                 Spacer()
                                 Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                             }
                             .padding(.horizontal)
                             .frame(height: 44)
@@ -216,7 +238,7 @@ struct SettingsSection<Content: View>: View {
             VStack(spacing: 1) {
                 content
             }
-            .background(Color.white.opacity(0.5))
+            .background(Color.secondary.opacity(0.1))
             .cornerRadius(10)
         }
     }
@@ -237,7 +259,7 @@ struct SettingsRow: View {
                 if isSystemIcon {
                     Image(systemName: icon)
                         .font(.system(size: 18))
-                        .foregroundColor(.black)
+                        .foregroundColor(universalAccentColor)
                         .frame(width: 24, height: 24)
                 } else {
                     Image(icon)
@@ -248,7 +270,7 @@ struct SettingsRow: View {
                 
                 Text(title)
                     .font(.body)
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor)
                 
                 Spacer()
                 

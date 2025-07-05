@@ -367,9 +367,9 @@ struct InputFieldView: View {
 
 			TextField(placeholder, text: $text)
 				.padding()
-				.background(.white)
+				.background(universalBackgroundColor)
 				.cornerRadius(universalRectangleCornerRadius)
-				.foregroundColor(.black)
+				                                .foregroundColor(universalAccentColor)
 				.autocapitalization(.none)
 				.autocorrectionDisabled(true)
 				.overlay(

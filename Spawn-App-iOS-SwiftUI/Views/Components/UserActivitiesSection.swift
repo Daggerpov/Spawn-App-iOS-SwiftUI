@@ -67,7 +67,7 @@ struct UserActivitiesSection: View {
                             ActivityCardView(
                                 userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                                 activity: activity,
-                                color: activity.isSelfOwned == true ? universalAccentColor : determineActivityColor(for: activity),
+                                color: activity.isSelfOwned == true ? universalAccentColor : getActivityColor(for: activity.id),
                                 callback: { selectedActivity, color in
                                     profileViewModel.selectedActivity = selectedActivity
                                     showActivityDetails = true
@@ -108,10 +108,6 @@ struct UserActivitiesSection: View {
                 .padding(.horizontal)
             }
         }
-    }
-    
-    private func determineActivityColor(for activity: FullFeedActivityDTO) -> Color {
-        return activity.category.color()
     }
 }
 

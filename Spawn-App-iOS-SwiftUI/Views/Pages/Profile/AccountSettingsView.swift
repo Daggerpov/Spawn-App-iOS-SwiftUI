@@ -21,7 +21,7 @@ struct AccountSettingsView: View {
                 
                 Text("Account Settings")
                     .font(.headline)
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor)
                 
                 Spacer()
                 
@@ -43,12 +43,12 @@ struct AccountSettingsView: View {
                                 HStack {
                                     Image(systemName: "lock.circle")
                                         .font(.system(size: 18))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor)
                                         .frame(width: 24, height: 24)
                                     
                                     Text("Change Password")
                                         .font(.body)
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor)
                                     
                                     Spacer()
                                     

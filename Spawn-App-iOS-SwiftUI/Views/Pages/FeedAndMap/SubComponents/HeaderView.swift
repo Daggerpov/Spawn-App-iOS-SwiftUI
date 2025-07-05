@@ -20,6 +20,8 @@ struct HeaderView: View {
 					Text(
 						"Hey \(user.name?.components(separatedBy: " ")[0] ?? user.username)! 👋"
 					)
+					.font(.onestBold(size: 32))
+					.foregroundColor(.white)
 					Spacer()
 				}
 				.font(.onestBold(size: 32))
@@ -30,7 +32,6 @@ struct HeaderView: View {
 			Spacer()
 			Spacer()
 		}
-//		.padding(.horizontal)
 		.padding(.vertical, 2)
 	}
 }

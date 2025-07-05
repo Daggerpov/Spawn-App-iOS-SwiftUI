@@ -35,7 +35,7 @@ struct EventInfoView: View {
 			.overlay {
 				// Background for the text bubble
 				RoundedRectangle(cornerRadius: 30)
-					.fill(Color.white.opacity(0.1))
+					                            .fill(universalBackgroundColor.opacity(0.1))
 					.frame(height: 30)
 			}
 			.fixedSize()

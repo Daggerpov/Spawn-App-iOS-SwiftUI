@@ -84,7 +84,7 @@ struct ProfileCalendarView: View {
 			if let activity = profileViewModel.selectedActivity {
 				// Use the same color scheme as ActivityCardView would
 				let activityColor = activity.isSelfOwned == true ?
-				universalAccentColor : determineActivityColor(for: activity)
+				universalAccentColor : getActivityColor(for: activity.id)
 
 				ActivityDescriptionView(
 					activity: activity,
@@ -188,11 +188,6 @@ struct ProfileCalendarView: View {
 		return []
 	}
 
-	private func determineActivityColor(for activity: FullFeedActivityDTO) -> Color {
-		// Use activity category color
-		return activity.category.color()
-	}
-
 	private var weekDays: [String] {
 		["S", "M", "T", "W", "T", "F", "S"]
 	}
@@ -266,11 +261,11 @@ struct MiniDayCell: View {
 			return Color(hex: colorHexCode)
 		}
 
-		// Fallback to category color
-		guard let category = activity.activityCategory else {
-			return Color.gray.opacity(0.6)  // Default color for null category
+		// Fallback to activity color based on ID
+		guard let activityId = activity.activityId else {
+			return Color.gray.opacity(0.6)  // Default color for null activity ID
 		}
-		return category.color()
+		return getActivityColor(for: activityId)
 	}
 
 	private func activityIcon(for activity: CalendarActivityDTO) -> some View {
