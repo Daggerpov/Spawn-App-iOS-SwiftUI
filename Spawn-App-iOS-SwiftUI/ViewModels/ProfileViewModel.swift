@@ -3,6 +3,7 @@ import SwiftUI
 class ProfileViewModel: ObservableObject {
     @Published var userStats: UserStatsDTO?
     @Published var userInterests: [String] = []
+    @Published var originalUserInterests: [String] = [] // Backup for cancel functionality
     @Published var userSocialMedia: UserSocialMediaDTO?
     @Published var userProfileInfo: UserProfileInfoDTO?
     @Published var isLoadingStats: Bool = false
@@ -396,6 +397,18 @@ class ProfileViewModel: ObservableObject {
             return range.count
         }
         return 30  // Default fallback
+    }
+    
+    // MARK: - Interest Management
+    
+    // Save original interests state when entering edit mode
+    func saveOriginalInterests() {
+        originalUserInterests = userInterests
+    }
+    
+    // Restore original interests state when canceling edit mode
+    func restoreOriginalInterests() {
+        userInterests = originalUserInterests
     }
     
     // Interest management methods

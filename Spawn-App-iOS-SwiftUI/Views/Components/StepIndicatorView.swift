@@ -7,9 +7,9 @@ struct StepIndicatorView: View {
     var body: some View {
         HStack(spacing: 8) {
             ForEach(1...totalSteps, id: \.self) { step in
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(step <= currentStep ? Color.green : Color.gray.opacity(0.3))
-                    .frame(width: step <= currentStep ? 24 : 16, height: 6)
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(step <= currentStep ? figmaGreen : Color.gray.opacity(0.3))
+                    .frame(width: 32, height: 8)
                     .animation(.easeInOut(duration: 0.3), value: currentStep)
             }
         }
@@ -23,4 +23,5 @@ struct StepIndicatorView: View {
         StepIndicatorView(currentStep: 3, totalSteps: 3)
     }
     .padding()
+    .background(Color(red: 0.12, green: 0.12, blue: 0.12))
 } 

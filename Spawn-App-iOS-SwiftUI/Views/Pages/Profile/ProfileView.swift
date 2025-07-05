@@ -75,6 +75,17 @@ struct ProfileView: View {
 			.background(universalBackgroundColor)
 		}
 		.navigationViewStyle(StackNavigationViewStyle())
+		.onChange(of: editingState) { newState in
+			switch newState {
+			case .save:
+				// Save original interests when entering edit mode
+				profileViewModel.saveOriginalInterests()
+			case .edit:
+				// This handles the case where editingState transitions back to .edit
+				// The cancel button should handle the restoration manually
+				break
+			}
+		}
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
 			case .deleteConfirmation:
@@ -448,6 +459,7 @@ struct ProfileView: View {
 				openSocialMediaLink: openSocialMediaLink,
 				removeInterest: removeInterest
 			)
+			.padding(.top, -8)
 			.padding(.bottom, 8)
 
 			// User Stats (only for current user or friends)
@@ -951,6 +963,10 @@ extension ProfileView {
 						instagramLink = socialMedia.instagramLink ?? ""
 					}
 				}
+				
+				// Restore original interests
+				profileViewModel.restoreOriginalInterests()
+				
 				editingState = .edit
 			}) {
 				Text("Cancel")

@@ -53,6 +53,8 @@ struct EditProfileView: View {
                 HStack {
                     // Cancel Button
                     Button("Cancel") {
+                        // Restore original interests
+                        profileViewModel.restoreOriginalInterests()
                         presentationMode.wrappedValue.dismiss()
                     }
                     .font(.system(size: 16, weight: .medium))
@@ -144,6 +146,9 @@ struct EditProfileView: View {
         }
         .accentColor(universalAccentColor)
         .onAppear {
+            // Save original interests for cancel functionality
+            profileViewModel.saveOriginalInterests()
+            
             // Update text fields with current social media data if available
             // This handles the case where data loads after view initialization
             if let socialMedia = profileViewModel.userSocialMedia {
@@ -351,8 +356,6 @@ struct PersonalInfoSection: View {
         .padding(.horizontal)
     }
 }
-
-
 
 // MARK: - Interests Section
 struct InterestsSection: View {

@@ -29,6 +29,9 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var isLocationValid: Bool = true
 	@Published var isFormValid: Bool = false
 	
+	// Loading state
+	@Published var isCreatingActivity: Bool = false
+	
 	private var apiService: IAPIService
 	
 	public static func reInitialize() {
@@ -66,6 +69,7 @@ class ActivityCreationViewModel: ObservableObject {
 		isInvitesValid = true
 		isLocationValid = true
 		isFormValid = false
+		isCreatingActivity = false
 		
 		// Reset the activity DTO
 		let defaultStart = Date()
@@ -228,6 +232,11 @@ class ActivityCreationViewModel: ObservableObject {
 	}
 
 	func createActivity() async {
+		// Set loading state to true
+		await MainActor.run {
+			isCreatingActivity = true
+		}
+		
 		// Update activity with final details
 		updateActivityType()
 		updateActivityDuration()
@@ -250,6 +259,11 @@ class ActivityCreationViewModel: ObservableObject {
 						"There was an error creating your activity. Please try again"
 				}
 			}
+		}
+		
+		// Set loading state to false when done
+		await MainActor.run {
+			isCreatingActivity = false
 		}
 	}
 }
