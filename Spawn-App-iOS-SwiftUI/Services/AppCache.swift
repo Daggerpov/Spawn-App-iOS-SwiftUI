@@ -196,6 +196,11 @@ class AppCache: ObservableObject {
     func updateActivities(_ newActivities: [FullFeedActivityDTO]) {
         activities = newActivities
         lastChecked[CacheKeys.activities] = Date()
+        
+        // Pre-assign colors for even distribution
+        let activityIds = newActivities.map { $0.id }
+        ActivityColorService.shared.assignColorsForActivities(activityIds)
+        
         saveToDisk()
     }
     
@@ -228,6 +233,10 @@ class AppCache: ObservableObject {
         } else {
             activities.append(activity)
         }
+        
+        // Ensure color is assigned for the activity
+        ActivityColorService.shared.assignColorsForActivities([activity.id])
+        
         lastChecked[CacheKeys.activities] = Date()
         saveToDisk()
     }
@@ -392,6 +401,11 @@ class AppCache: ObservableObject {
     
     func updateProfileActivities(_ userId: UUID, _ activities: [ProfileActivityDTO]) {
         profileActivities[userId] = activities
+        
+        // Pre-assign colors for even distribution
+        let activityIds = activities.map { $0.id }
+        ActivityColorService.shared.assignColorsForActivities(activityIds)
+        
         lastChecked[CacheKeys.profileActivities] = Date()
         saveToDisk()
     }

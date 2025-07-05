@@ -46,6 +46,8 @@ struct ProfileView: View {
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
+	// For the back button
+	@State private var showBackButton: Bool = false
 
 
 	// Check if this is the current user's profile
@@ -152,7 +154,10 @@ struct ProfileView: View {
 					}
 				}
 
-
+				// Determine if back button should be shown based on navigation
+				if !isCurrentUserProfile {
+					showBackButton = true
+				}
 			}
 		}
 		.onChange(of: userAuth.spawnUser) { newUser in
@@ -287,6 +292,20 @@ struct ProfileView: View {
 			.navigationBarBackButtonHidden(true)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
+				ToolbarItem(placement: .navigationBarLeading) {
+					if showBackButton {
+						Button(action: {
+							presentationMode.wrappedValue.dismiss()
+						}) {
+							HStack(spacing: 4) {
+								Image(systemName: "chevron.left")
+								Text("Back")
+							}
+							.foregroundColor(universalAccentColor)
+						}
+					}
+				}
+
 				ToolbarItem(placement: .principal) {
 					// Header text removed for other users' profiles
 					EmptyView()

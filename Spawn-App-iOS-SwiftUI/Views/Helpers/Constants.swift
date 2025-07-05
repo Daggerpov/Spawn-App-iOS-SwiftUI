@@ -30,21 +30,14 @@ let activityColors = activityColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
 }
 
-// Function to deterministically assign colors to activities based on their ID
+// Function to get evenly distributed colors for activities with caching
 func getActivityColor(for activityId: UUID) -> Color {
-	// Convert UUID to a consistent integer for indexing
-	let uuidString = activityId.uuidString
-	let hash = uuidString.hashValue
-	let index = abs(hash) % activityColors.count
-	return activityColors[index]
+	return ActivityColorService.shared.getColorForActivity(activityId)
 }
 
 // Function to get the hex code for an activity color
 func getActivityColorHex(for activityId: UUID) -> String {
-	let uuidString = activityId.uuidString
-	let hash = uuidString.hashValue
-	let index = abs(hash) % activityColorHexCodes.count
-	return activityColorHexCodes[index]
+	return ActivityColorService.shared.getColorHexForActivity(activityId)
 }
 
 // MARK: - Dynamic Colors (Theme-aware)
