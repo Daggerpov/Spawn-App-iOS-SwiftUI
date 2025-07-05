@@ -260,8 +260,8 @@ class APIService: IAPIService {
 				description: "The HTTP request has failed.")
 		}
 
-		// 200 means success || 201 means created, which is also fine for a POST request
-		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201
+		// 200 means success || 201 means created || 204 means no content (successful operation with no response body)
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204
 		else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
@@ -275,6 +275,16 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
+		}
+
+		// Handle 204 No Content response
+		if httpResponse.statusCode == 204 {
+			// For 204 responses, return an EmptyResponse if that's what's expected
+			if U.self == EmptyResponse.self {
+				return EmptyResponse() as? U
+			}
+			// For optional types, return nil
+			return nil
 		}
 
 		if !data.isEmpty {
@@ -336,7 +346,7 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: message)
 		}
 
-		guard httpResponse.statusCode == 200 else {
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 204 else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
 				let newAccessToken: String = try await handleRefreshToken()
@@ -350,6 +360,16 @@ class APIService: IAPIService {
 			print(message)
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
+		}
+
+		// Handle 204 No Content response
+		if httpResponse.statusCode == 204 {
+			// For 204 responses, return an EmptyResponse if that's what's expected
+			if R.self == EmptyResponse.self {
+				return EmptyResponse() as! R
+			}
+			// This shouldn't happen for updateData since it should always return a decoded object
+			throw APIError.invalidData
 		}
 
 		// Decode the response into the expected type `R`
