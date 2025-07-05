@@ -76,6 +76,7 @@ struct ContentView: View {
 					Text("Profile")
 				}
 		}
+		.tint(universalSecondaryColor) // Set the tint color for selected tabs to purple
 		.onAppear {
 			// Configure tab bar appearance for theme compatibility
 			let appearance = UITabBarAppearance()
@@ -88,6 +89,9 @@ struct ContentView: View {
 					return UIColor.systemBackground.withAlphaComponent(0.9)
 				}
 			}
+			
+			// Set the selected tab color to purple
+			appearance.selectedTextColor = UIColor(universalSecondaryColor)
 			
 			UITabBar.appearance().standardAppearance = appearance
 			UITabBar.appearance().scrollEdgeAppearance = appearance
