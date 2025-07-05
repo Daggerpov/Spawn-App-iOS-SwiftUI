@@ -218,6 +218,7 @@ struct ActivityTypeSelectionCard: View {
     let activityType: ActivityTypeDTO
     let isSelected: Bool
     let onTap: () -> Void
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         Button(action: onTap) {
@@ -225,13 +226,13 @@ struct ActivityTypeSelectionCard: View {
                 // Icon
                 Text(activityType.icon)
                     .font(.onestBold(size: 34))
-                    .foregroundColor(.white)
+                    .foregroundColor(colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07))
                 
                 VStack(spacing: 2) {
                     // Title
                     Text(activityType.title)
                         .font(.onestSemiBold(size: 16))
-                        .foregroundColor(.white)
+                        .foregroundColor(colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07))
                     
                     // People count
                     Text("\(activityType.associatedFriends.count) people")
@@ -243,11 +244,13 @@ struct ActivityTypeSelectionCard: View {
             .frame(width: 111, height: 111)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? universalSecondaryColor : Color(red: 0.24, green: 0.23, blue: 0.23))
+                    .fill(colorScheme == .dark ? 
+                          Color(red: 0.24, green: 0.23, blue: 0.23) : 
+                          Color(red: 0.95, green: 0.93, blue: 0.93))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? .white : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? (colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07)) : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(PlainButtonStyle())
