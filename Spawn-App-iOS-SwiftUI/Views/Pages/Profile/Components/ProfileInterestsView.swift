@@ -50,7 +50,7 @@ struct ProfileInterestsView: View {
                 .foregroundColor(.white)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
-                .background(universalAccentColor)
+                .background(figmaBittersweetOrange)
                 .cornerRadius(12)
 
             Spacer()
@@ -109,7 +109,7 @@ struct ProfileInterestsView: View {
         ZStack(alignment: .topLeading) {
             // Background for interests section
             RoundedRectangle(cornerRadius: 15)
-                .stroke(universalAccentColor, lineWidth: 1)
+                .stroke(figmaBittersweetOrange, lineWidth: 1)
                 .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
 
             if profileViewModel.userInterests.isEmpty {
@@ -158,13 +158,13 @@ struct ProfileInterestsView: View {
 					.font(.onestSemiBold(size: 12))
 					.padding(.vertical, 8)
 					.padding(.horizontal, 14)
-					.foregroundColor(universalAccentColor)
+					.foregroundColor(figmaBittersweetOrange)
 					.lineLimit(1)
 					.background(universalBackgroundColor)
 					.clipShape(Capsule())
 					.overlay(
 						RoundedRectangle(cornerRadius: 20)
-							.stroke(universalAccentColor, lineWidth: 1)
+							.stroke(figmaBittersweetOrange, lineWidth: 1)
 					)
 					.shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
 					.overlay(
@@ -186,13 +186,13 @@ struct ProfileInterestsView: View {
 					.font(.onestSemiBold(size: 12))
 					.padding(.vertical, 8)
 					.padding(.horizontal, 12)
-					.foregroundColor(universalAccentColor)
+					.foregroundColor(figmaBittersweetOrange)
 					.lineLimit(1)
 					.background(universalBackgroundColor)
 					.clipShape(Capsule())
 					.overlay(
 						RoundedRectangle(cornerRadius: 20)
-							.stroke(universalAccentColor, lineWidth: 1)
+							.stroke(figmaBittersweetOrange, lineWidth: 1)
 					)
 			}
 		}

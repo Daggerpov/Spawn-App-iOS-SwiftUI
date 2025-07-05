@@ -37,15 +37,17 @@ struct ProfileActionButtonsView: View {
                     }
                     .bold()
                     .font(.caption)
-                    .foregroundColor(figmaSoftBlue)
+                    .foregroundColor(universalAccentColor)
                     .frame(height: 30)
                     .frame(width: 128)
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(universalAccentColor, lineWidth: 1)
+                    )
                 }
                 .navigationBarBackButtonHidden(true)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(figmaSoftBlue, lineWidth: 1)
-                )
             }
 
             Button(action: {
@@ -58,12 +60,14 @@ struct ProfileActionButtonsView: View {
                 }
                 .bold()
                 .font(.caption)
-                .foregroundColor(figmaSoftBlue)
+                .foregroundColor(universalAccentColor)
                 .frame(height: 30)
                 .frame(width: 128)
+                .background(Color.white)
+                .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(figmaSoftBlue, lineWidth: 1)
+                        .stroke(universalAccentColor, lineWidth: 1)
                 )
             }
         }
