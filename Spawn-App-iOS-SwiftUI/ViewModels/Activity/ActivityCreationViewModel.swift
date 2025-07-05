@@ -32,11 +32,31 @@ class ActivityCreationViewModel: ObservableObject {
 	private var apiService: IAPIService
 	
 	public static func reInitialize() {
+		print("🔄 ActivityCreationViewModel.reInitialize() called")
+		let oldSelectedType = shared.selectedType?.rawValue
 		shared = ActivityCreationViewModel()
+		print("🔄 ActivityCreationViewModel reinitialized. Old selectedType: \(oldSelectedType ?? "nil"), New selectedType: \(shared.selectedType?.rawValue ?? "nil")")
+	}
+	
+	// Method to pre-select an activity type (e.g., when coming from feed view)
+	public static func initializeWithSelectedType(_ activityType: ActivityType?) {
+		print("🎯 ActivityCreationViewModel.initializeWithSelectedType(\(activityType?.rawValue ?? "nil")) called")
+		shared = ActivityCreationViewModel()
+		shared.selectedType = activityType
+		print("🎯 ActivityCreationViewModel initialized with selectedType: \(shared.selectedType?.rawValue ?? "nil")")
+	}
+	
+	// Force reset method for debugging
+	public static func forceReset() {
+		print("💥 ActivityCreationViewModel.forceReset() called")
+		shared.selectedType = nil
+		print("💥 ActivityCreationViewModel selectedType forcibly set to nil")
 	}
 
 	// Private initializer to enforce singleton pattern
 	private init() {
+		print("🏗️ ActivityCreationViewModel private init() called")
+		
 		self.apiService =
 			MockAPIService.isMocking
 			? MockAPIService(
@@ -56,6 +76,10 @@ class ActivityCreationViewModel: ObservableObject {
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
 			invitedFriendUserIds: []
 		)
+		
+		// Ensure selectedType starts as nil by default (no auto-selection)
+		self.selectedType = nil
+		print("🏗️ ActivityCreationViewModel init completed. selectedType: \(self.selectedType?.rawValue ?? "nil")")
 		
 		// Automatically populate friends when initializing
 		loadAllFriendsAsSelected()

@@ -10,12 +10,24 @@ import SwiftUI
 struct ActivityLocationView: View {
     @ObservedObject var viewModel: ActivityInfoViewModel
     static let fontSize: CGFloat = 14
-    let capsuleColor: Color = Color.black.opacity(0.18)
     let font: Font = .onestSemiBold(size: fontSize)
+    @Environment(\.colorScheme) private var colorScheme
 
     init(activity: FullFeedActivityDTO) {
         self.viewModel = ActivityInfoViewModel(
             activity: activity)
+    }
+    
+    // Theme-aware capsule background color
+    private var capsuleColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.15)
+        case .light:
+            return Color.black.opacity(0.18)
+        @unknown default:
+            return Color.black.opacity(0.18)
+        }
     }
     
     var body: some View {

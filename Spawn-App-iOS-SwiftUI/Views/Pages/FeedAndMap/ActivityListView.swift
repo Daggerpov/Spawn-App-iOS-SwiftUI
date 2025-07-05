@@ -30,11 +30,12 @@ struct ActivityListView: View {
                         .foregroundColor(figmaBlack300)
                 } else {
                     ForEach(0..<min(bound, viewModel.activities.count), id: \.self) { activityIndex in
-                        ActivityCardView(userId: user.id, activity: viewModel.activities[activityIndex], color: figmaBlue, callback: callback)
+                        ActivityCardView(userId: user.id, activity: viewModel.activities[activityIndex], color: getActivityColor(for: viewModel.activities[activityIndex].id), callback: callback)
                     }
                 }
             }
         }
+        .background(universalBackgroundColor)
         .padding(.horizontal)
         .refreshable {
             Task {

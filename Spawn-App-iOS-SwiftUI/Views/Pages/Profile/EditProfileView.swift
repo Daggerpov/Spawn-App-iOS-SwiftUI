@@ -48,60 +48,88 @@ struct EditProfileView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    // Profile picture section
-                    ProfileImageSection(
-                        selectedImage: $selectedImage,
-                        showImagePicker: $showImagePicker,
-                        isImageLoading: $isImageLoading
-                    )
-                    
-                    // Name and username fields
-                    PersonalInfoSection(
-                        name: $name,
-                        username: $username
-                    )
-                    
-                    // Interests section
-                    InterestsSection(
-                        profileViewModel: profileViewModel,
-                        userId: userId,
-                        newInterest: $newInterest,
-                        maxInterests: maxInterests,
-                        showAlert: $showAlert,
-                        alertMessage: $alertMessage
-                    )
-                    
-                    // Third party apps section
-                    SocialMediaSection(
-                        whatsappLink: $whatsappLink,
-                        instagramLink: $instagramLink
-                    )
-                    
-                    Spacer()
-                }
-            }
-            .background(universalBackgroundColor)
-            .navigationTitle("Edit Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+            VStack(spacing: 0) {
+                // Custom Header with Cancel and Save buttons
+                HStack {
+                    // Cancel Button
                     Button("Cancel") {
                         presentationMode.wrappedValue.dismiss()
                     }
-                    .foregroundColor(.red)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(figmaBittersweetOrange)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(figmaBittersweetOrange, lineWidth: 1)
+                    )
+                    
+                    Spacer()
+                    
+                    // Title
+                    Text("Edit Profile")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(universalAccentColor)
+                    
+                    Spacer()
+                    
+                    // Save Button
                     Button("Save") {
                         saveProfile()
                     }
-                    .foregroundColor(universalAccentColor)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(isSaving ? .gray : .white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isSaving ? Color.gray.opacity(0.3) : figmaSoftBlue)
+                    )
                     .disabled(isSaving)
-                    .opacity(isSaving ? 0.5 : 1.0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+                .background(universalBackgroundColor)
+                
+                // Content
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        // Profile picture section
+                        ProfileImageSection(
+                            selectedImage: $selectedImage,
+                            showImagePicker: $showImagePicker,
+                            isImageLoading: $isImageLoading
+                        )
+                        
+                        // Name and username fields
+                        PersonalInfoSection(
+                            name: $name,
+                            username: $username
+                        )
+                        
+                        // Interests section
+                        InterestsSection(
+                            profileViewModel: profileViewModel,
+                            userId: userId,
+                            newInterest: $newInterest,
+                            maxInterests: maxInterests,
+                            showAlert: $showAlert,
+                            alertMessage: $alertMessage
+                        )
+                        
+                        // Third party apps section
+                        SocialMediaSection(
+                            whatsappLink: $whatsappLink,
+                            instagramLink: $instagramLink
+                        )
+                        
+                        Spacer()
+                    }
                 }
             }
+            .background(universalBackgroundColor)
+            .navigationBarHidden(true)
             .sheet(isPresented: $showImagePicker) {
                 SwiftUIImagePicker(selectedImage: $selectedImage)
                     .ignoresSafeArea()

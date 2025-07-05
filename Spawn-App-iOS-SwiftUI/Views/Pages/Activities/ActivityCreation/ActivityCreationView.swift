@@ -82,9 +82,20 @@ struct ActivityCreationView: View {
             ShareSheet()
         }
         .onAppear {
+            print("🔍 ActivityCreationView onAppear - currentStep: \(currentStep), selectedType: \(viewModel.selectedType?.rawValue ?? "nil")")
+            
             // Initialize activityTitle from view model if it exists
             if let title = viewModel.activity.title, !title.isEmpty {
                 activityTitle = title
+            }
+            
+            // If we're starting fresh (no pre-selected type), ensure absolutely clean state
+            if currentStep == .activityType && viewModel.selectedType == nil {
+                print("🧹 Forcing clean state - no pre-selection detected")
+                // First try force reset
+                ActivityCreationViewModel.forceReset()
+                // Then full reinitialization to be absolutely sure
+                ActivityCreationViewModel.reInitialize()
             }
         }
         .onChange(of: selectedTab) { newTab in
@@ -94,6 +105,29 @@ struct ActivityCreationView: View {
                 ActivityCreationViewModel.reInitialize()
                 // Reset other state variables as well
                 activityTitle = ""
+                selectedDuration = .indefinite
+                showLocationPicker = false
+                showShareSheet = false
+                
+                // Reset time to next interval
+                let nextInterval = Self.calculateNextFifteenMinuteInterval()
+                selectedHour = nextInterval.hour
+                selectedMinute = nextInterval.minute
+                isAM = nextInterval.isAM
+            }
+            // Also reset when navigating to creation tab from other tabs (not from confirmation)
+            else if newTab == TabType.creation && currentStep != .confirmation {
+                currentStep = .activityType
+                // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
+                if viewModel.selectedType == nil {
+                    ActivityCreationViewModel.reInitialize()
+                }
+                // Reset other state variables
+                if let title = viewModel.activity.title, !title.isEmpty {
+                    activityTitle = title
+                } else {
+                    activityTitle = ""
+                }
                 selectedDuration = .indefinite
                 showLocationPicker = false
                 showShareSheet = false

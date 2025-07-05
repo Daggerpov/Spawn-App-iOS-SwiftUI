@@ -26,6 +26,10 @@ struct ActivityFeedView: View {
     
     var body: some View {
         ZStack {
+            // Background color
+            universalBackgroundColor
+                .ignoresSafeArea()
+            
             VStack(alignment: .leading, spacing: 0) {
                 HeaderView(user: user)
                     .padding(.horizontal, 12)
@@ -95,7 +99,11 @@ struct ActivityFeedView: View {
     }
     
     var seeAllActivityTypesButton: some View {
-        Button(action: {selectedTab = TabType.creation}) {
+        Button(action: {
+            // Reset activity creation view model to ensure no pre-selection
+            ActivityCreationViewModel.reInitialize()
+            selectedTab = TabType.creation
+        }) {
             seeAllText
         }
     }
@@ -120,12 +128,19 @@ struct ActivityFeedView: View {
 
 extension ActivityFeedView {
     var activityTypeListView: some View {
-        HStack {
-            ForEach(viewModel.activityTypes) { activityType in
-                ActivityTypeCardView(activityType: activityType)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                // Show only first 4 activity types and make them tappable to pre-select
+                ForEach(Array(viewModel.activityTypes.prefix(4)), id: \.id) { activityType in
+                    ActivityTypeCardView(activityType: activityType) { selectedActivityType in
+                        // Pre-select the activity type and navigate to creation
+                        ActivityCreationViewModel.initializeWithSelectedType(selectedActivityType)
+                        selectedTab = TabType.creation
+                    }
+                }
             }
+            .padding(.horizontal, 20)
         }
-        .padding(.horizontal, 20)
     }
 }
 

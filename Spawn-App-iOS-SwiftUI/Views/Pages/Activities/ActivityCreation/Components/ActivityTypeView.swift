@@ -42,6 +42,11 @@ struct ActivityTypeView: View {
             Task {
                 await viewModel.fetchActivityTypes()
             }
+            
+            // Debug: Log current selection state
+            print("🔍 ActivityTypeView appeared. Current selectedType: \(selectedType?.rawValue ?? "nil")")
+            print("🔍 Available activity types: \(viewModel.activityTypes.map { $0.title })")
+            print("🔍 Pinned activity types: \(viewModel.activityTypes.filter { $0.isPinned }.map { $0.title })")
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -124,7 +129,12 @@ struct ActivityTypeCard: View {
     }
     
     private var isSelected: Bool {
-        selectedType == activityType
+        let selected = selectedType == activityType
+        // Debug logging
+        if selected {
+            print("🟡 ActivityTypeCard '\(activityTypeDTO.title)' is SELECTED. selectedType: \(selectedType?.rawValue ?? "nil"), activityType: \(activityType?.rawValue ?? "nil")")
+        }
+        return selected
     }
     
     var body: some View {
@@ -194,7 +204,7 @@ struct ActivityTypeCard: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @State var selectedType: ActivityType? = .foodAndDrink
+    @Previewable @State var selectedType: ActivityType? = nil
     @Previewable @StateObject var appCache = AppCache.shared
     
     NavigationView {
