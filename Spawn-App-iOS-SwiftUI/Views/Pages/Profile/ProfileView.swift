@@ -31,6 +31,7 @@ struct ProfileView: View {
 	)
 	@State private var refreshFlag = false
 	@State private var showCalendarPopup: Bool = false
+	@State private var navigateToCalendar: Bool = false
 	@State private var showActivityDetails: Bool = false
 	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
@@ -67,9 +68,12 @@ struct ProfileView: View {
 	}
 
 	var body: some View {
-		profileContent
-			.background(universalBackgroundColor.ignoresSafeArea())
-		.background(universalBackgroundColor)
+		NavigationView {
+			profileContent
+				.background(universalBackgroundColor.ignoresSafeArea())
+			.background(universalBackgroundColor)
+		}
+		.navigationViewStyle(StackNavigationViewStyle())
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
 			case .deleteConfirmation:
@@ -183,9 +187,6 @@ struct ProfileView: View {
 	// Main content broken into a separate computed property to reduce complexity
 	private var profileContent: some View {
 		profileWithOverlay
-			.sheet(isPresented: $showCalendarPopup) {
-				calendarPopupView
-			}
 			.sheet(isPresented: $showImagePicker) {
 				if selectedImage != nil {
 					isImageLoading = true
@@ -236,7 +237,7 @@ struct ProfileView: View {
 					shareProfile: shareProfile
 				)
 				.background(universalBackgroundColor)
-				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 370 : 320)])
+				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 410 : 320)])
 			}
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
@@ -443,13 +444,25 @@ struct ProfileView: View {
 
 			// Calendar or Activities Section
 			if isCurrentUserProfile {
-				ProfileCalendarView(
-					profileViewModel: profileViewModel,
-					showCalendarPopup: $showCalendarPopup,
-					showActivityDetails: $showActivityDetails
-				)
-				.padding(.horizontal, 16)
-				.padding(.bottom, 15)
+				VStack(spacing: 0) {
+					ProfileCalendarView(
+						profileViewModel: profileViewModel,
+						showCalendarPopup: $showCalendarPopup,
+						showActivityDetails: $showActivityDetails,
+						navigateToCalendar: $navigateToCalendar
+					)
+					.padding(.horizontal, 16)
+					.padding(.bottom, 15)
+					
+					// Hidden NavigationLink for calendar
+					NavigationLink(
+						destination: calendarFullScreenView,
+						isActive: $navigateToCalendar
+					) {
+						EmptyView()
+					}
+					.hidden()
+				}
 			} else {
 				// User Activities Section for other users (based on friendship status)
 				UserActivitiesSection(
@@ -525,6 +538,17 @@ struct ProfileView: View {
 			activities: profileViewModel.allCalendarActivities,
 			isLoading: profileViewModel.isLoadingCalendar,
 			onDismiss: { showCalendarPopup = false },
+			onActivitySelected: { activity in
+				handleActivitySelection(activity)
+			}
+		)
+	}
+
+	private var calendarFullScreenView: some View {
+		InfiniteCalendarView(
+			activities: profileViewModel.allCalendarActivities,
+			isLoading: profileViewModel.isLoadingCalendar,
+			onDismiss: { navigateToCalendar = false },
 			onActivitySelected: { activity in
 				handleActivitySelection(activity)
 			}
