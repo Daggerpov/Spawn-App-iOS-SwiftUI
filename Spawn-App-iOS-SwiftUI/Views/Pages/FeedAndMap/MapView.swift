@@ -94,10 +94,7 @@ struct MapView: View {
         
         print("🗺 DEBUG: Filtered activities count: \(filtered.count)")
         print("📍 DEBUG: Filtered activities with locations: \(filtered.filter { $0.location != nil }.count)")
-        filtered.forEach { activity in
-            print("📌 DEBUG: Filtered activity '\(activity.title ?? "Untitled")' location: \(activity.location?.latitude ?? 0), \(activity.location?.longitude ?? 0)")
-        }
-        
+
         return filtered
     }
 

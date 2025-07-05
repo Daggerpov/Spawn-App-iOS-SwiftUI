@@ -140,6 +140,25 @@ class FriendsTabViewModel: ObservableObject {
         }
     }
 
+    // Remove friend from recommended list after adding
+    @MainActor
+    func removeFromRecommended(friendId: UUID) {
+        recommendedFriends.removeAll { $0.id == friendId }
+        filteredRecommendedFriends.removeAll { $0.id == friendId }
+    }
+    
+    // Remove user from recently spawned with list after adding
+    @MainActor
+    func removeFromRecentlySpawnedWith(userId: UUID) {
+        recentlySpawnedWith.removeAll { $0.user.id == userId }
+    }
+    
+    // Remove user from search results after adding
+    @MainActor
+    func removeFromSearchResults(userId: UUID) {
+        searchResults.removeAll { $0.id == userId }
+    }
+
 	func fetchAllData() async {
         await MainActor.run {
             isLoading = true

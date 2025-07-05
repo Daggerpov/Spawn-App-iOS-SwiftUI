@@ -270,23 +270,49 @@ struct FriendRowView: View {
             Spacer()
             
             // Different controls depending on the context
-            if let friend = friend, !isAdded {
-                // Show add button for non-friends
+            if (friend != nil || user != nil) && !isAdded {
+                // Show add button for non-friends or users
                 Button(action: {
-                    isAdded = true
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        isAdded = true
+                    }
                     Task {
-                        await viewModel.addFriend(friendUserId: friend.id)
+                        let targetUserId = friend?.id ?? user?.id ?? UUID()
+                        await viewModel.addFriend(friendUserId: targetUserId)
+                        // Add delay before removing the item
+                        try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+                        if friend != nil {
+                            await viewModel.removeFromSearchResults(userId: targetUserId)
+                        } else if user != nil {
+                            await viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
+                        }
                     }
                 }) {
-                    Text(isAdded ? "Request Sent" : "Add +")
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(isAdded ? Color.gray : universalSecondaryColor)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(isAdded ? Color.gray : universalSecondaryColor, lineWidth: 1)
-                        )
+                    HStack(spacing: 6) {
+                        if isAdded {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .transition(.scale.combined(with: .opacity))
+                        } else {
+                            Text("Add +")
+                                .font(.onestRegular(size: 14))
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .foregroundColor(isAdded ? .white : universalSecondaryColor)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isAdded ? universalAccentColor : Color.clear)
+                            .animation(.easeInOut(duration: 0.3), value: isAdded)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isAdded ? universalAccentColor : universalSecondaryColor, lineWidth: 1)
+                            .animation(.easeInOut(duration: 0.3), value: isAdded)
+                    )
                 }
                 .disabled(isAdded)
             }
