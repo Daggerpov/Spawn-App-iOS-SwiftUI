@@ -59,142 +59,155 @@ struct ActivityDateTimeView: View {
                     // Header Section
                     VStack(spacing: 12) {
                         Text("What time?")
-                            .font(.onestSemiBold(size: 28))
-                            .foregroundColor(universalAccentColor)
+                            .font(.custom("Onest", size: 20).weight(.semibold))
+                            .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
                         
                         Text("Set a time for your \"\(viewModel.selectedType?.rawValue ?? "Activity")\" Activity")
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(figmaBlack300)
+                            .font(.custom("Onest", size: 16).weight(.medium))
+                            .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 32)
                     
-                    // Time Picker Section - Improved Layout with more spacing
+                    // Time Picker Section - Updated to match Figma design
                     VStack(spacing: 24) {
-                        HStack(spacing: 8) {
-                            // Day picker (Today/Tomorrow)
-                            Picker("Day", selection: $selectedDay) {
-                                ForEach(DayOption.allCases, id: \.self) { day in
-                                    Text(day.title)
-                                        .font(.onestRegular(size: 28.75))
-                                        .foregroundColor(universalAccentColor)
-                                        .tag(day)
-                                }
-                            }
-                            .pickerStyle(.wheel)
-                            .frame(width: 100)
-                            .clipped()
-                            .onChange(of: selectedDay) { _ in
-                                if selectedDay == .tomorrow {
-                                    selectedHour = tomorrowHour
-                                    selectedMinute = tomorrowMinute
-                                    isAM = tomorrowIsAM
-                                }
-                                updateSelectedDate()
-                            }
-                            
-                            // Visual separator
+                        ZStack {
+                            // Background
                             Rectangle()
-                                .fill(figmaLightGrey)
-                                .frame(width: 1, height: 80)
+                                .fill(.white)
+                                .frame(height: 265)
+                                .cornerRadius(12)
                             
-                            // Hour picker
-                            Picker("Hour", selection: $selectedHour) {
-                                ForEach(hours, id: \.self) { h in
-                                    Text("\(h)")
-                                        .font(.onestRegular(size: 28.75))
-                                        .foregroundColor(universalAccentColor)
-                                        .tag(h)
-                                }
-                            }
-                            .pickerStyle(.wheel)
-                            .frame(width: 50)
-                            .clipped()
-                            .onChange(of: selectedHour) { _ in
-                                if selectedDay == .tomorrow {
-                                    tomorrowHour = selectedHour
-                                }
-                                updateSelectedDate()
+                            // Horizontal separator lines
+                            VStack(spacing: 0) {
+                                Rectangle()
+                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                    .frame(height: 0.31)
+                                    .offset(y: -18.25)
+                                Rectangle()
+                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                    .frame(height: 0.31)
+                                    .offset(y: 20.5)
                             }
                             
-                            // Minute picker
-                            Picker("Minute", selection: $selectedMinute) {
-                                ForEach(minutes, id: \.self) { m in
-                                    Text(String(format: "%02d", m))
-                                        .font(.onestRegular(size: 28.75))
-                                        .foregroundColor(universalAccentColor)
-                                        .tag(m)
+                            // Picker content
+                            HStack(spacing: 33.75) {
+                                // Day picker (Today/Tomorrow)
+                                Picker("Day", selection: $selectedDay) {
+                                    ForEach(DayOption.allCases, id: \.self) { day in
+                                        Text(day.title)
+                                            .font(.custom("Onest", size: 28.75))
+                                            .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                            .tag(day)
+                                    }
+                                }
+                                .pickerStyle(.wheel)
+                                .frame(width: 100)
+                                .clipped()
+                                .onChange(of: selectedDay) { _ in
+                                    if selectedDay == .tomorrow {
+                                        selectedHour = tomorrowHour
+                                        selectedMinute = tomorrowMinute
+                                        isAM = tomorrowIsAM
+                                    }
+                                    updateSelectedDate()
+                                }
+                                
+                                // Hour picker
+                                Picker("Hour", selection: $selectedHour) {
+                                    ForEach(hours, id: \.self) { h in
+                                        Text("\(h)")
+                                            .font(.custom("Onest", size: 28.75))
+                                            .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                            .tag(h)
+                                    }
+                                }
+                                .pickerStyle(.wheel)
+                                .frame(width: 50)
+                                .clipped()
+                                .onChange(of: selectedHour) { _ in
+                                    if selectedDay == .tomorrow {
+                                        tomorrowHour = selectedHour
+                                    }
+                                    updateSelectedDate()
+                                }
+                                
+                                // Minute picker
+                                Picker("Minute", selection: $selectedMinute) {
+                                    ForEach(minutes, id: \.self) { m in
+                                        Text(String(format: "%02d", m))
+                                            .font(.custom("Onest", size: 28.75))
+                                            .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                            .tag(m)
+                                    }
+                                }
+                                .pickerStyle(.wheel)
+                                .frame(width: 60)
+                                .clipped()
+                                .onChange(of: selectedMinute) { _ in
+                                    if selectedDay == .tomorrow {
+                                        tomorrowMinute = selectedMinute
+                                    }
+                                    updateSelectedDate()
+                                }
+                                
+                                // AM/PM picker
+                                Picker("AM/PM", selection: $isAM) {
+                                    Text("AM")
+                                        .font(.custom("Onest", size: 28.75))
+                                        .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                        .tag(true)
+                                    Text("PM")
+                                        .font(.custom("Onest", size: 28.75))
+                                        .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                        .tag(false)
+                                }
+                                .pickerStyle(.wheel)
+                                .frame(width: 60)
+                                .clipped()
+                                .onChange(of: isAM) { _ in
+                                    if selectedDay == .tomorrow {
+                                        tomorrowIsAM = isAM
+                                    }
+                                    updateSelectedDate()
                                 }
                             }
-                            .pickerStyle(.wheel)
-                            .frame(width: 60)
-                            .clipped()
-                            .onChange(of: selectedMinute) { _ in
-                                if selectedDay == .tomorrow {
-                                    tomorrowMinute = selectedMinute
-                                }
-                                updateSelectedDate()
-                            }
-                            
-                            // AM/PM picker
-                            Picker("AM/PM", selection: $isAM) {
-                                Text("AM")
-                                    .font(.onestRegular(size: 28.75))
-                                    .foregroundColor(universalAccentColor)
-                                    .tag(true)
-                                Text("PM")
-                                    .font(.onestRegular(size: 28.75))
-                                    .foregroundColor(universalAccentColor)
-                                    .tag(false)
-                            }
-                            .pickerStyle(.wheel)
-                            .frame(width: 60)
-                            .clipped()
-                            .onChange(of: isAM) { _ in
-                                if selectedDay == .tomorrow {
-                                    tomorrowIsAM = isAM
-                                }
-                                updateSelectedDate()
-                            }
+                            .offset(x: 4, y: 1.13)
                         }
-                        .frame(height: 120)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(figmaGrey.opacity(0.5))
-                        )
+                        .frame(height: 265)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 40)
                     .padding(.bottom, 40)
                     
                     // Title Section
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Title")
-                                .font(.onestMedium(size: 16))
-                                .foregroundColor(showTitleError ? .red : figmaBlack300)
+                                .font(.custom("Onest", size: 16))
+                                .foregroundColor(showTitleError ? .red : Color(red: 0.15, green: 0.14, blue: 0.14))
                             
                             if showTitleError {
                                 Text("*")
-                                    .font(.onestMedium(size: 16))
+                                    .font(.custom("Onest", size: 16))
                                     .foregroundColor(.red)
                             }
                             Spacer()
                         }
                         
                         TextField("Enter Activity Title", text: $activityTitle)
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(universalAccentColor)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 16)
+                            .font(.custom("Onest", size: 16))
+                            .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+                            .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(universalBackgroundColor)
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(.white)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(showTitleError ? .red : figmaLightGrey, lineWidth: 1.5)
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .inset(by: 0.5)
+                                            .stroke(showTitleError ? .red : Color(red: 0.52, green: 0.49, blue: 0.49), lineWidth: 0.5)
                                     )
                             )
                             .onChange(of: activityTitle) { newValue in
@@ -208,38 +221,43 @@ struct ActivityDateTimeView: View {
                         
                         if showTitleError {
                             Text("Activity title is required")
-                                .font(.onestRegular(size: 12))
+                                .font(.custom("Onest", size: 12))
                                 .foregroundColor(.red)
                         }
                     }
                     .padding(.horizontal, 20)
                     
                     // Activity Duration Section
-                    VStack(alignment: .leading, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Text("Activity Duration")
-                                .font(.onestMedium(size: 16))
-                                .foregroundColor(figmaBlack300)
+                                .font(.custom("Onest", size: 16).weight(.medium))
+                                .foregroundColor(Color(red: 0.15, green: 0.14, blue: 0.14))
                             Spacer()
                         }
                         
-                        // Duration buttons - horizontal layout with better styling
-                        HStack(spacing: 12) {
+                        // Duration buttons - horizontal layout with Figma styling
+                        HStack(spacing: 8) {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
                                 Button(action: { 
                                     selectedDuration = duration
                                     viewModel.selectedDuration = duration
                                 }) {
                                     Text(duration.title)
-                                        .font(.onestMedium(size: 16))
-                                        .foregroundColor(selectedDuration == duration ? .white : figmaBlack300)
-                                        .padding(.horizontal, 18)
-                                        .padding(.vertical, 12)
+                                        .font(.custom("Onest", size: 16).weight(selectedDuration == duration ? .bold : .medium))
+                                        .foregroundColor(selectedDuration == duration ? 
+                                                       Color(red: 0.33, green: 0.42, blue: 0.93) : 
+                                                       Color(red: 0.52, green: 0.49, blue: 0.49))
+                                        .padding(12)
                                         .background(
-                                            RoundedRectangle(cornerRadius: 24)
-                                                .fill(selectedDuration == duration ? 
-                                                     figmaSoftBlue : 
-                                                     figmaLightGrey)
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(.clear)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 12)
+                                                        .inset(by: selectedDuration == duration ? 1 : 0.5)
+                                                        .stroke(Color(red: 0.33, green: 0.42, blue: 0.93), 
+                                                               lineWidth: selectedDuration == duration ? 1 : 0.5)
+                                                )
                                         )
                                 }
                                 .buttonStyle(PlainButtonStyle())
@@ -255,14 +273,21 @@ struct ActivityDateTimeView: View {
             Spacer()
             
             // Step indicators
-            StepIndicatorView(currentStep: 1, totalSteps: 3)
-                .padding(.bottom, 20)
+            HStack(spacing: 8) {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(red: 0.27, green: 0.87, blue: 0.63))
+                    .frame(width: 32, height: 8)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(red: 0.88, green: 0.85, blue: 0.85))
+                    .frame(width: 32, height: 8)
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(red: 0.88, green: 0.85, blue: 0.85))
+                    .frame(width: 32, height: 8)
+            }
+            .padding(.bottom, 20)
             
             // Next Step Button
-            ActivityNextStepButton(
-                title: "Next Step (Location)",
-                isEnabled: true
-            ) {
+            Button(action: {
                 let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                 if trimmedTitle.isEmpty {
                     showTitleError = true
@@ -271,7 +296,19 @@ struct ActivityDateTimeView: View {
                 showTitleError = false
                 updateSelectedDate()
                 onNext()
+            }) {
+                HStack(spacing: 8) {
+                    Text("Next Step (Location)")
+                        .font(.custom("Onest", size: 20).weight(.semibold))
+                        .foregroundColor(.white)
+                }
+                .padding(16)
+                .frame(width: 375, height: 56)
+                .background(Color(red: 0.42, green: 0.51, blue: 0.98))
+                .cornerRadius(16)
             }
+            .buttonStyle(PlainButtonStyle())
+            .padding(.horizontal, 20)
         }
         .background(universalBackgroundColor)
         .onAppear {
