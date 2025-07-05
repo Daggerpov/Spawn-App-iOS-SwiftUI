@@ -45,6 +45,9 @@ struct ProfileView: View {
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
+	// For the back button
+	@State private var showBackButton: Bool = false
+
 	// Check if this is the current user's profile
 	private var isCurrentUserProfile: Bool {
 		if MockAPIService.isMocking {
@@ -64,120 +67,128 @@ struct ProfileView: View {
 	}
 
 	var body: some View {
-		profileContent
-			.background(universalBackgroundColor.ignoresSafeArea())
-			.accentColor(universalAccentColor)
-			.toast(
-				isShowing: $showNotification,
-				message: notificationMessage,
-				duration: 3.0
-			)
-			.alert(item: $userAuth.activeAlert) { alertType in
-				switch alertType {
-				case .deleteConfirmation:
-					return Alert(
-						title: Text("Delete Account"),
-						message: Text(
-							"Are you sure you want to delete your account? This action cannot be undone."
-						),
-						primaryButton: .destructive(Text("Delete")) {
-							Task {
-								await userAuth.deleteAccount()
-							}
-						},
-						secondaryButton: .cancel()
-					)
-				case .deleteSuccess:
-					return Alert(
-						title: Text("Account Deleted"),
-						message: Text(
-							"Your account has been successfully deleted."
-						),
-						dismissButton: .default(Text("OK")) {
-							userAuth.signOut()
+		NavigationStack {
+			profileContent
+				.background(universalBackgroundColor.ignoresSafeArea())
+		}
+		.background(universalBackgroundColor)
+		.alert(item: $userAuth.activeAlert) { alertType in
+			switch alertType {
+			case .deleteConfirmation:
+				return Alert(
+					title: Text("Delete Account"),
+					message: Text(
+						"Are you sure you want to delete your account? This action cannot be undone."
+					),
+					primaryButton: .destructive(Text("Delete")) {
+						Task {
+							await userAuth.deleteAccount()
 						}
-					)
-				case .deleteError:
-					return Alert(
-						title: Text("Error"),
-						message: Text(
-							"Failed to delete your account. Please try again later."
-						),
-						dismissButton: .default(Text("OK"))
-					)
-				}
-			}
-			.onAppear {
-				// Update local state from userAuth.spawnUser when view appears
-				refreshUserData()
-
-				// Load profile data
-				Task {
-					await profileViewModel.loadAllProfileData(userId: user.id)
-
-					// Initialize social media links
-					if let socialMedia = profileViewModel.userSocialMedia {
-						await MainActor.run {
-							whatsappLink = socialMedia.whatsappLink ?? ""
-							instagramLink = socialMedia.instagramLink ?? ""
-						}
+					},
+					secondaryButton: .cancel()
+				)
+			case .deleteSuccess:
+				return Alert(
+					title: Text("Account Deleted"),
+					message: Text(
+						"Your account has been successfully deleted."
+					),
+					dismissButton: .default(Text("OK")) {
+						userAuth.signOut()
 					}
+				)
+			case .deleteError:
+				return Alert(
+					title: Text("Error"),
+					message: Text(
+						"Failed to delete your account. Please try again later."
+					),
+					dismissButton: .default(Text("OK"))
+				)
+			}
+		}
+		.onAppear {
+			// Update local state from userAuth.spawnUser when view appears
+			refreshUserData()
 
-					// Check friendship status if not viewing own profile
-					if !isCurrentUserProfile,
-						let currentUserId = userAuth.spawnUser?.id
-					{
-						await profileViewModel.checkFriendshipStatus(
-							currentUserId: currentUserId,
-							profileUserId: user.id
-						)
-						print("checked friendship status")
+			// Load profile data
+			Task {
+				await profileViewModel.loadAllProfileData(userId: user.id)
 
-						// If they're friends, fetch their activities
-						if profileViewModel.friendshipStatus == .friends {
-							await profileViewModel.fetchProfileActivities(
-								profileUserId: user.id
-							)
-						}
+				// Initialize social media links
+				if let socialMedia = profileViewModel.userSocialMedia {
+					await MainActor.run {
+						whatsappLink = socialMedia.whatsappLink ?? ""
+						instagramLink = socialMedia.instagramLink ?? ""
 					}
 				}
-			}
-			.onChange(of: userAuth.spawnUser) { newUser in
-				// Update local state whenever spawnUser changes
-				refreshUserData()
-			}
-			.onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
-				// Update local state when social media changes
-				if let socialMedia = newSocialMedia {
-					whatsappLink = socialMedia.whatsappLink ?? ""
-					instagramLink = socialMedia.instagramLink ?? ""
-				}
-			}
-			.onChange(of: profileViewModel.friendshipStatus) { newStatus in
-				// Fetch activities when friendship status changes to friends
-				if newStatus == .friends {
-					Task {
+
+				// Check friendship status if not viewing own profile
+				if !isCurrentUserProfile,
+					let currentUserId = userAuth.spawnUser?.id
+				{
+					await profileViewModel.checkFriendshipStatus(
+						currentUserId: currentUserId,
+						profileUserId: user.id
+					)
+					print("checked friendship status")
+
+					// If they're friends, fetch their activities
+					if profileViewModel.friendshipStatus == .friends {
 						await profileViewModel.fetchProfileActivities(
 							profileUserId: user.id
 						)
 					}
 				}
+
+				// Determine if back button should be shown based on navigation
+				if !isCurrentUserProfile {
+					showBackButton = true
+				}
 			}
-			// Add a timer to periodically refresh data
-			.onReceive(
-				Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
-			) { _ in
-				refreshUserData()
-				refreshFlag.toggle()  // Force the view to update
+		}
+		.onChange(of: userAuth.spawnUser) { newUser in
+			// Update local state whenever spawnUser changes
+			refreshUserData()
+		}
+		.onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
+			// Update local state when social media changes
+			if let socialMedia = newSocialMedia {
+				whatsappLink = socialMedia.whatsappLink ?? ""
+				instagramLink = socialMedia.instagramLink ?? ""
 			}
+		}
+		.onChange(of: profileViewModel.friendshipStatus) { newStatus in
+			// Fetch activities when friendship status changes to friends
+			if newStatus == .friends {
+				Task {
+					await profileViewModel.fetchProfileActivities(
+						profileUserId: user.id
+					)
+				}
+			}
+		}
+		// Add a timer to periodically refresh data
+		.onReceive(
+			Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
+		) { _ in
+			refreshUserData()
+			refreshFlag.toggle()  // Force the view to update
+		}
+		.accentColor(universalAccentColor)
+		.toast(
+			isShowing: $showNotification,
+			message: notificationMessage,
+			duration: 3.0
+		)
 	}
 
 	// Main content broken into a separate computed property to reduce complexity
 	private var profileContent: some View {
 		profileWithOverlay
-					.fullScreenCover(isPresented: $showCalendarPopup) {
-			calendarPopupView
-		}
+			.sheet(isPresented: $showCalendarPopup) {
+				calendarPopupView
+			}
 			.sheet(isPresented: $showImagePicker) {
 				if selectedImage != nil {
 					isImageLoading = true
@@ -247,10 +258,22 @@ struct ProfileView: View {
 				profileInnerComponentsView
 					.padding(.horizontal)
 			}
+			.navigationBarBackButtonHidden(false)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				// Only show principal toolbar item if it's not the current user's profile
+				ToolbarItem(placement: .navigationBarLeading) {
+					if showBackButton {
+						Button(action: {
+							presentationMode.wrappedValue.dismiss()
+						}) {
+							Image(systemName: "chevron.left")
+								.foregroundColor(universalAccentColor)
+						}
+					}
+				}
+
 				ToolbarItem(placement: .principal) {
+					// Only show the ProfileNameView if it's not the current user's profile
 					if !isCurrentUserProfile {
 						ProfileNameView(
 							user: user,
@@ -268,7 +291,7 @@ struct ProfileView: View {
 								.foregroundColor(universalAccentColor)
 						}
 					} else {
-						// Menu button for other user profiles
+						// Menu button for other user profiles - always show immediately
 						Button(action: {
 							showProfileMenu = true
 						}) {
@@ -337,16 +360,9 @@ struct ProfileView: View {
 			}
 
 			// Profile Action Buttons
-			if isCurrentUserProfile {
-				profileActionButtons
-					.padding(.horizontal, 25)
-					.padding(.bottom, 4)
-			} else {
-				// Friend action buttons for other users (based on friendship status)
-				friendActionButtons
-					.padding(.horizontal, 25)
-					.padding(.bottom, 4)
-			}
+			profileActionButtonsSection
+				.padding(.horizontal, 25)
+				.padding(.bottom, 4)
 
 			// Edit Save Cancel buttons (only when editing)
 			if isCurrentUserProfile && editingState == .save {
@@ -385,7 +401,7 @@ struct ProfileView: View {
 					showCalendarPopup: $showCalendarPopup,
 					showActivityDetails: $showActivityDetails
 				)
-				.padding(.horizontal, 16)
+				.padding(.horizontal, 48)
 				.padding(.bottom, 15)
 			} else {
 				// User Activities Section for other users (based on friendship status)
@@ -394,7 +410,7 @@ struct ProfileView: View {
 					profileViewModel: profileViewModel,
 					showActivityDetails: $showActivityDetails
 				)
-				.padding(.horizontal, 16)
+				.padding(.horizontal, 48)
 				.padding(.bottom, 15)
 			}
 		}
@@ -428,50 +444,17 @@ struct ProfileView: View {
 		}
 	}
 
-	private var profileActionButtons: some View {
-		HStack(spacing: 12) {
+	private var profileActionButtonsSection: some View {
+		Group {
 			if isCurrentUserProfile {
-				NavigationLink(
-					destination: EditProfileView(
-						userId: user.id,
-						profileViewModel: profileViewModel
-					)
-				) {
-					HStack {
-						Image(systemName: "pencil")
-						Text("Edit Profile")
-							.bold()
-					}
-					.font(.system(size: 16))
-					.foregroundColor(universalAccentColor)
-					.padding(.vertical, 10)
-					.padding(.horizontal, 20)
-					.frame(maxWidth: .infinity)
-					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalAccentColor, lineWidth: 1)
-					)
-				}
-				.navigationBarBackButtonHidden(true)
-			}
-
-			Button(action: {
-				shareProfile()
-			}) {
-				HStack {
-					Image(systemName: "square.and.arrow.up")
-					Text("Share Profile")
-						.bold()
-				}
-				.font(.system(size: 16))
-				.foregroundColor(universalAccentColor)
-				.padding(.vertical, 10)
-				.padding(.horizontal, 20)
-				.frame(maxWidth: .infinity)
-				.overlay(
-					RoundedRectangle(cornerRadius: 12)
-						.stroke(universalAccentColor, lineWidth: 1)
+				// Original action buttons for current user
+				ProfileActionButtonsView(
+					user: user,
+					shareProfile: shareProfile
 				)
+			} else {
+				// Friend action buttons for other users (based on friendship status)
+				friendActionButtons
 			}
 		}
 	}
@@ -728,14 +711,15 @@ struct ProfileView: View {
 						Text("Share Profile")
 							.bold()
 					}
-					.font(.system(size: 16))
-					.foregroundColor(universalAccentColor)
-					.padding(.vertical, 10)
-					.padding(.horizontal, 20)
-					.frame(maxWidth: 200)
+					.font(.caption)
+					.foregroundColor(universalSecondaryColor)
+					.padding(.vertical, 24)
+					.padding(.horizontal, 8)
+					.frame(height: 32)
+					.frame(maxWidth: .infinity)
 					.overlay(
 						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalAccentColor, lineWidth: 1)
+							.stroke(universalSecondaryColor, lineWidth: 1)
 					)
 				}
 
@@ -746,17 +730,14 @@ struct ProfileView: View {
 					Text("Request Sent")
 						.bold()
 				}
-				.font(.system(size: 16))
-				.foregroundColor(.gray)
-				.padding(.vertical, 10)
-				.padding(.horizontal, 20)
-				.frame(maxWidth: 200)
-				.background(Color.gray.opacity(0.2))
+				.font(.caption)
+				.foregroundColor(Color.gray)
+				.padding(.vertical, 24)
+				.padding(.horizontal, 8)
+				.frame(height: 32)
+				.frame(maxWidth: .infinity)
+				.background(Color.gray.opacity(0.3))
 				.cornerRadius(12)
-				.overlay(
-					RoundedRectangle(cornerRadius: 12)
-						.stroke(Color.gray.opacity(0.5), lineWidth: 1)
-				)
 
 			case .requestReceived:
 				// Accept/Deny buttons
@@ -777,10 +758,11 @@ struct ProfileView: View {
 							Text("Accept Request")
 								.bold()
 						}
-						.font(.system(size: 16))
+						.font(.caption)
 						.foregroundColor(.white)
-						.padding(.vertical, 10)
-						.padding(.horizontal, 20)
+						.padding(.vertical, 24)
+						.padding(.horizontal, 8)
+						.frame(height: 32)
 						.frame(maxWidth: .infinity)
 						.background(universalAccentColor)
 						.cornerRadius(12)
@@ -802,10 +784,11 @@ struct ProfileView: View {
 							Text("Deny")
 								.bold()
 						}
-						.font(.system(size: 16))
+						.font(.caption)
 						.foregroundColor(universalAccentColor)
-						.padding(.vertical, 10)
-						.padding(.horizontal, 20)
+						.padding(.vertical, 24)
+						.padding(.horizontal, 8)
+						.frame(height: 32)
 						.frame(maxWidth: .infinity)
 						.overlay(
 							RoundedRectangle(cornerRadius: 12)
@@ -824,14 +807,15 @@ struct ProfileView: View {
 						Text("Share Profile")
 							.bold()
 					}
-					.font(.system(size: 16))
-					.foregroundColor(universalAccentColor)
-					.padding(.vertical, 10)
-					.padding(.horizontal, 20)
-					.frame(maxWidth: 200)
+					.font(.caption)
+					.foregroundColor(universalSecondaryColor)
+					.padding(.vertical, 24)
+					.padding(.horizontal, 8)
+					.frame(height: 32)
+					.frame(maxWidth: .infinity)
 					.overlay(
 						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalAccentColor, lineWidth: 1)
+							.stroke(universalSecondaryColor, lineWidth: 1)
 					)
 				}
 
@@ -841,6 +825,59 @@ struct ProfileView: View {
 		}
 	}
 
+}
+
+// MARK: - Profile Action Buttons
+extension ProfileView {
+	private var profileActionButtons: some View {
+		HStack(spacing: 12) {
+			if isCurrentUserProfile {
+				NavigationLink(
+					destination: EditProfileView(
+						userId: user.id,
+						profileViewModel: profileViewModel
+					)
+				) {
+					HStack {
+						Image(systemName: "pencil")
+						Text("Edit Profile")
+							.bold()
+					}
+					.font(.caption)
+					.foregroundColor(universalSecondaryColor)
+					.padding(.vertical, 24)
+					.padding(.horizontal, 8)
+					.frame(height: 32)
+					.frame(maxWidth: .infinity)
+				}
+				.navigationBarBackButtonHidden(true)
+				.overlay(
+					RoundedRectangle(cornerRadius: 12)
+						.stroke(universalSecondaryColor, lineWidth: 1)
+				)
+			}
+
+			Button(action: {
+				shareProfile()
+			}) {
+				HStack {
+					Image(systemName: "square.and.arrow.up")
+					Text("Share Profile")
+						.bold()
+				}
+				.font(.caption)
+				.foregroundColor(universalSecondaryColor)
+				.padding(.vertical, 24)
+				.padding(.horizontal, 8)
+				.frame(height: 32)
+				.frame(maxWidth: .infinity)
+				.overlay(
+					RoundedRectangle(cornerRadius: 12)
+						.stroke(universalSecondaryColor, lineWidth: 1)
+				)
+			}
+		}
+	}
 }
 
 // MARK: - Profile Edit Buttons
