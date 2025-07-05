@@ -10,6 +10,7 @@ import SwiftUI
 struct ProfileActionButtonsView: View {
     let user: Nameable
     @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var profileViewModel: ProfileViewModel
     let shareProfile: () -> Void
     @Environment(\.colorScheme) var colorScheme
     
@@ -33,7 +34,7 @@ struct ProfileActionButtonsView: View {
                 NavigationLink(
                     destination: EditProfileView(
                         userId: user.id,
-                        profileViewModel: ProfileViewModel(userId: user.id)
+                        profileViewModel: profileViewModel
                     )
                 ) {
                     HStack(spacing: 8) {
@@ -86,6 +87,7 @@ struct ProfileActionButtonsView: View {
 #Preview {
     ProfileActionButtonsView(
 		user: BaseUserDTO.danielAgapov,
+        profileViewModel: ProfileViewModel(userId: UUID()),
         shareProfile: {}
     )
 } 

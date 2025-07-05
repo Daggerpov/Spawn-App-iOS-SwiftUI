@@ -26,7 +26,11 @@ struct ProfileInterestsView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .top) {
+        VStack(alignment: .leading, spacing: 0) {
+            // Interests section header
+            interestsSectionHeader
+                .padding(.leading, 6)
+            
             // Interests content
             Group {
                 if profileViewModel.isLoadingInterests {
@@ -35,11 +39,7 @@ struct ProfileInterestsView: View {
                     interestsContentView
                 }
             }
-            .padding(.top, 24)  // Add padding to push content below the header
-
-            // Position the header to be centered on the top border
-            interestsSectionHeader
-                .padding(.leading, 6)
+            .padding(.top, -12)  // Slight overlap to position content nicely with header
         }
     }
 
@@ -115,8 +115,8 @@ struct ProfileInterestsView: View {
             if profileViewModel.userInterests.isEmpty {
                 emptyInterestsView
             } else {
-                // Interests as chips with flexible flow layout
-                FlowLayout(alignment: .leading, spacing: 8) {
+                // Interests as chips with simple layout
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                     ForEach(profileViewModel.userInterests, id: \.self) { interest in
                         interestChip(interest: interest)
                     }

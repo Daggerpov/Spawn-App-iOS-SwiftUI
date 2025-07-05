@@ -521,6 +521,7 @@ struct ProfileView: View {
 				// Original action buttons for current user
 				ProfileActionButtonsView(
 					user: user,
+					profileViewModel: profileViewModel,
 					shareProfile: shareProfile
 				)
 			} else {
@@ -548,6 +549,7 @@ struct ProfileView: View {
 		InfiniteCalendarView(
 			activities: profileViewModel.allCalendarActivities,
 			isLoading: profileViewModel.isLoadingCalendar,
+			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
 			onDismiss: { showCalendarPopup = false },
 			onActivitySelected: { activity in
 				handleActivitySelection(activity)
@@ -559,6 +561,7 @@ struct ProfileView: View {
 		InfiniteCalendarView(
 			activities: profileViewModel.allCalendarActivities,
 			isLoading: profileViewModel.isLoadingCalendar,
+			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
 			onDismiss: { navigateToCalendar = false },
 			onActivitySelected: { activity in
 				handleActivitySelection(activity)

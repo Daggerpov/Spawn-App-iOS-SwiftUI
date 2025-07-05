@@ -151,5 +151,47 @@
       "pattern": "\\.(swift)$",
       "rule": "All color constants are defined in Views/Helpers/Constants.swift. Import this file or ensure colors are accessible when creating new views. Never hardcode hex values directly in views."
     }
-  ]
+  ],
+  "terminal_safety": {
+    "file_deletion": {
+      "forbidden_commands": [
+        "sudo rm -rf",
+        "rm -rf ~/Library",
+        "rm -rf /Library",
+        "rm -rf /System"
+      ],
+      "rules": [
+        "NEVER suggest 'sudo rm -rf' commands involving system directories or user library folders",
+        "NEVER suggest deleting entire DerivedData directories without explicit user confirmation",
+        "ALWAYS use specific file paths rather than wildcards when deleting",
+        "PREFER less destructive alternatives like 'xcodebuild clean' over manual deletion"
+      ]
+    },
+    "sudo_usage": {
+      "rules": [
+        "AVOID suggesting sudo commands unless absolutely necessary",
+        "ALWAYS explain why sudo is needed and what the command does",
+        "PREFER user-level solutions over system-level changes"
+      ]
+    },
+    "build_issues": {
+      "preferred_order": [
+        "Try 'xcodebuild clean' first",
+        "Suggest restarting Xcode or simulator second",
+        "Manual file deletion only as last resort with user confirmation"
+      ]
+    },
+    "swiftui_best_practices": {
+      "real_time_updates": [
+        "ALWAYS ensure UI updates happen on MainActor",
+        "ALWAYS call objectWillChange.send() after data mutations",
+        "PREFER @ObservedObject over @StateObject for passed view models"
+      ],
+      "component_organization": [
+        "AVOID duplicate layout components across files",
+        "PREFER shared components in dedicated files",
+        "ENSURE proper state management for reactive UIs"
+      ]
+    }
+  }
 } 

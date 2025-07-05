@@ -143,6 +143,21 @@ struct EditProfileView: View {
             }
         }
         .accentColor(universalAccentColor)
+        .onAppear {
+            // Update text fields with current social media data if available
+            // This handles the case where data loads after view initialization
+            if let socialMedia = profileViewModel.userSocialMedia {
+                whatsappLink = socialMedia.whatsappNumber ?? ""
+                instagramLink = socialMedia.instagramUsername ?? ""
+            }
+        }
+        .onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
+            // Update text fields whenever social media data changes
+            if let socialMedia = newSocialMedia {
+                whatsappLink = socialMedia.whatsappNumber ?? ""
+                instagramLink = socialMedia.instagramUsername ?? ""
+            }
+        }
     }
     
     private func saveProfile() {
@@ -363,57 +378,63 @@ struct FlowLayout: Layout {
             subview.place(at: result.offsets[index], proposal: ProposedViewSize(result.sizes[index]))
         }
     }
-}
-
-struct FlowResult {
-    var bounds = CGSize.zero
-    var offsets: [CGPoint] = []
-    var sizes: [CGSize] = []
     
-    init(in bounds: CGSize, subviews: Subviews, alignment: Alignment, spacing: CGFloat) {
-        var origin = CGPoint.zero
-        var lineHeight: CGFloat = 0
-        var lineOffsets: [CGPoint] = []
-        var lineSizes: [CGSize] = []
+    struct FlowResult {
+        var bounds = CGSize.zero
+        var offsets: [CGPoint] = []
+        var sizes: [CGSize] = []
         
-        for subview in subviews {
-            let size = subview.sizeThatFits(ProposedViewSize(bounds))
+        init(in bounds: CGSize, subviews: Subviews, alignment: Alignment, spacing: CGFloat) {
+            var origin = CGPoint.zero
+            var lineHeight: CGFloat = 0
+            var lineOffsets: [CGPoint] = []
+            var lineSizes: [CGSize] = []
             
-            if origin.x + size.width > bounds.width && !lineOffsets.isEmpty {
-                // Start a new line
-                alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
-                origin.x = 0
-                origin.y += lineHeight + spacing
-                lineHeight = 0
-                lineOffsets.removeAll()
-                lineSizes.removeAll()
+            for subview in subviews {
+                let size = subview.sizeThatFits(ProposedViewSize(bounds))
+                
+                if origin.x + size.width > bounds.width && !lineOffsets.isEmpty {
+                    // Start a new line
+                    alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
+                    origin.x = 0
+                    origin.y += lineHeight + spacing
+                    lineHeight = 0
+                    lineOffsets.removeAll()
+                    lineSizes.removeAll()
+                }
+                
+                lineOffsets.append(origin)
+                lineSizes.append(size)
+                lineHeight = max(lineHeight, size.height)
+                
+                origin.x += size.width + spacing
             }
             
-            lineOffsets.append(origin)
-            lineSizes.append(size)
-            lineHeight = max(lineHeight, size.height)
+            // Align the last line
+            alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
             
-            origin.x += size.width + spacing
+            self.bounds = CGSize(
+                width: bounds.width,
+                height: origin.y + lineHeight
+            )
         }
         
-        // Align the last line
-        alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
-        
-        self.bounds = CGSize(
-            width: bounds.width,
-            height: origin.y + lineHeight
-        )
-    }
-    
-    private func alignLine(lineOffsets: inout [CGPoint], lineSizes: inout [CGSize], lineHeight: CGFloat, bounds: CGSize, alignment: Alignment) {
-        for (index, offset) in lineOffsets.enumerated() {
-            let size = lineSizes[index]
-            let alignedOffset = CGPoint(
-                x: offset.x,
-                y: offset.y + (lineHeight - size.height) / 2
-            )
-            offsets.append(alignedOffset)
-            sizes.append(size)
+        private mutating func alignLine(
+            lineOffsets: inout [CGPoint],
+            lineSizes: inout [CGSize],
+            lineHeight: CGFloat,
+            bounds: CGSize,
+            alignment: Alignment
+        ) {
+            for (index, offset) in lineOffsets.enumerated() {
+                let size = lineSizes[index]
+                let alignedOffset = CGPoint(
+                    x: offset.x,
+                    y: offset.y + (lineHeight - size.height) / 2
+                )
+                offsets.append(alignedOffset)
+                sizes.append(size)
+            }
         }
     }
 }
