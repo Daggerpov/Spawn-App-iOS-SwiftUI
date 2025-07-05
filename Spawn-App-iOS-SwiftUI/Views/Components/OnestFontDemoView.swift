@@ -31,7 +31,7 @@ struct OnestFontDemoView: View {
                     .foregroundColor(.gray)
                 
                 Text("Semi")
-                    .onestSemibold(size: 14)
+                    .onestSemiBold(size: 14)
                     .foregroundColor(universalAccentColor)
             }
         }

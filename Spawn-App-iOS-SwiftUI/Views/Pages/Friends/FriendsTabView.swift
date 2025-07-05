@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
+	@StateObject var userAuth = UserAuthViewModel.shared
 	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
@@ -21,6 +22,15 @@ struct FriendsTabView: View {
 	// ------------
 
 	@StateObject private var searchViewModel = SearchViewModel()
+
+	// Profile menu state variables
+	@State private var showProfileMenu: Bool = false
+	@State private var showRemoveFriendConfirmation: Bool = false
+	@State private var showReportDialog: Bool = false
+	@State private var showBlockDialog: Bool = false
+	@State private var showAddToActivityType: Bool = false
+	@State private var selectedFriend: FullFriendUserDTO?
+	@State private var blockReason: String = ""
 
 	init(user: BaseUserDTO) {
 		self.user = user
@@ -64,6 +74,72 @@ struct FriendsTabView: View {
                     await viewModel.fetchAllData()
                 }
             }
+			.sheet(isPresented: $showProfileMenu) {
+				if let selectedFriend = selectedFriend {
+					ProfileMenuView(
+						user: selectedFriend,
+						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+						showReportDialog: $showReportDialog,
+						showBlockDialog: $showBlockDialog,
+						showAddToActivityType: $showAddToActivityType,
+						isFriend: true,
+						copyProfileURL: { copyProfileURL(for: selectedFriend) },
+						shareProfile: { shareProfile(for: selectedFriend) }
+					)
+					.background(universalBackgroundColor)
+					.presentationDetents([.height(364)])
+				}
+			}
+			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
+				Button("Cancel", role: .cancel) {}
+				Button("Remove", role: .destructive) {
+					if let friendToRemove = selectedFriend {
+						Task {
+							await viewModel.removeFriend(friendUserId: friendToRemove.id)
+						}
+					}
+				}
+			} message: {
+				Text("Are you sure you want to remove this friend?")
+			}
+					.sheet(isPresented: $showReportDialog) {
+			ReportUserDrawer(
+				user: selectedFriend ?? BaseUserDTO.danielAgapov,
+				onReport: { reportType, description in
+					// Handle report user action
+					// TODO: Implement report functionality
+				}
+			)
+			.presentationDetents([.medium, .large])
+			.presentationDragIndicator(.visible)
+		}
+			.alert("Block User", isPresented: $showBlockDialog) {
+				TextField("Reason for blocking", text: $blockReason)
+				Button("Cancel", role: .cancel) {
+					blockReason = ""
+				}
+				Button("Block", role: .destructive) {
+					if let friendToBlock = selectedFriend,
+					   let currentUserId = UserAuthViewModel.shared.spawnUser?.id,
+					   !blockReason.isEmpty {
+						Task {
+							await blockUser(blockerId: currentUserId, blockedId: friendToBlock.id, reason: blockReason)
+							blockReason = ""
+						}
+					}
+				}
+			} message: {
+				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
+			}
+			.background(
+				NavigationLink(
+					destination: selectedFriend != nil ? AddToActivityTypeView(user: selectedFriend!) : nil,
+					isActive: $showAddToActivityType
+				) {
+					EmptyView()
+				}
+				.hidden()
+			)
 		}
 	}
     
@@ -77,6 +153,14 @@ struct FriendsTabView: View {
     
     var showAllRecentlySpawnedButton: some View {
         NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recentlySpawnedWith)) {
+            Text("Show All")
+                .font(.onestRegular(size: 14))
+                .foregroundColor(universalSecondaryColor)
+        }
+    }
+    
+    var showAllRecommendedButton: some View {
+        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recommendedFriends)) {
             Text("Show All")
                 .font(.onestRegular(size: 14))
                 .foregroundColor(universalSecondaryColor)
@@ -108,6 +192,7 @@ struct FriendsTabView: View {
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
+                    showAllRecommendedButton
                 }
 
 				ScrollView(showsIndicators: false) {
@@ -153,18 +238,13 @@ struct FriendsTabView: View {
                                     } else {
                                         NavigationLink(destination: ProfileView(user: friend)) {
                                             if let pfpUrl = friend.profilePicture {
-                                                AsyncImage(url: URL(string: pfpUrl)) {
-                                                    image in
-                                                    image
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 50, height: 50)
-                                                        .clipShape(Circle())
-                                                        .transition(.opacity.animation(.easeInOut))
-                                                } placeholder: {
-                                                    ProgressView()
-                                                        .frame(width: 50, height: 50)
-                                                }
+                                                CachedProfileImageFlexible(
+                                                    userId: friend.id,
+                                                    url: URL(string: pfpUrl),
+                                                    width: 50,
+                                                    height: 50
+                                                )
+                                                .transition(.opacity.animation(.easeInOut))
                                             } else {
                                                 Image(systemName: "person.circle.fill")
                                                     .resizable()
@@ -182,6 +262,10 @@ struct FriendsTabView: View {
                                                 .font(.onestMedium(size: 16))
                                                 .foregroundColor(universalAccentColor)
                                                 .lineLimit(1)
+                                            Text("@\(friend.username)")
+                                                .font(.onestRegular(size: 12))
+                                                .foregroundColor(Color.gray)
+                                                .lineLimit(1)
                                         }
                                         .padding(.horizontal, 8)
                                     }
@@ -190,7 +274,8 @@ struct FriendsTabView: View {
                                     Spacer()
                                     
                                     Button(action: {
-                                        // Handle more options
+                                        selectedFriend = friend
+                                        showProfileMenu = true
                                     }) {
                                         Image(systemName: "ellipsis")
                                             .foregroundColor(
@@ -216,7 +301,46 @@ struct FriendsTabView: View {
 		.padding(.horizontal, 16)
 	}
 
+	// Helper methods for profile actions
+	private func copyProfileURL(for user: Nameable) {
+		let profileURL = "https://spawn.com/profile/\(user.username)"
+		UIPasteboard.general.string = profileURL
+		
+		// Show a brief toast or notification that the URL was copied
+		// You might want to add a toast notification here
+	}
 	
+	private func shareProfile(for user: Nameable) {
+		let profileURL = "https://spawn.com/profile/\(user.username)"
+		let activityViewController = UIActivityViewController(
+			activityItems: [profileURL],
+			applicationActivities: nil
+		)
+		
+		// Present the share sheet
+		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+		   let window = windowScene.windows.first {
+			window.rootViewController?.present(activityViewController, animated: true, completion: nil)
+		}
+	}
+	
+	// Block user functionality
+	private func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
+		do {
+			let reportingService = UserReportingService()
+			try await reportingService.blockUser(
+				blockerId: blockerId,
+				blockedId: blockedId,
+				reason: reason
+			)
+			
+			// Refresh friends cache to remove the blocked user from friends list
+			await AppCache.shared.refreshFriends()
+			
+		} catch {
+			print("Failed to block user: \(error.localizedDescription)")
+		}
+	}
 }
 
 // Move RecommendedFriendView out of FriendsTabView
@@ -241,17 +365,12 @@ struct RecommendedFriendView: View {
             } else {
                 NavigationLink(destination: ProfileView(user: friend)) {
                     if let pfpUrl = friend.profilePicture {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
-                        }
+                        CachedProfileImageFlexible(
+                            userId: friend.id,
+                            url: URL(string: pfpUrl),
+                            width: 50,
+                            height: 50
+                        )
                     } else {
                         Circle()
                             .fill(.white)
@@ -265,6 +384,15 @@ struct RecommendedFriendView: View {
                     Text(FormatterService.shared.formatName(user: friend))
                         .font(.onestBold(size: 14))
                         .foregroundColor(universalAccentColor)
+                    Text("@\(friend.username)")
+                        .font(.onestRegular(size: 12))
+                        .foregroundColor(Color.gray)
+                    // Show mutual friends count if available
+                    if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
+                        Text("\(mutualCount) mutual friend\(mutualCount == 1 ? "" : "s")")
+                            .font(.onestRegular(size: 12))
+                            .foregroundColor(Color.gray)
+                    }
                 }
                 .padding(.leading, 8)
             }
@@ -273,29 +401,44 @@ struct RecommendedFriendView: View {
             Spacer()
 
             Button(action: {
-                isAdded = true
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    isAdded = true
+                }
                 Task {
                     await viewModel.addFriend(friendUserId: friend.id)
+                    // Add delay before removing the item
+                    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+                    await viewModel.removeFromRecommended(friendId: friend.id)
                 }
             }) {
-
-                Text("Add +")
-                    .font(.onestMedium(size: 14))
-                    .padding(12)
-                    .background(
-                        Rectangle()
-                            .foregroundColor(.clear)
-                            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
-                            .cornerRadius(15)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .inset(by: 0.75)
-                                    .stroke(.gray)
-                            )
-                    )
-                    .foregroundColor(.gray)
+                HStack(spacing: 6) {
+                    if isAdded {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Text("Add +")
+                            .font(.onestMedium(size: 14))
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .foregroundColor(isAdded ? .white : .gray)
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isAdded ? universalAccentColor : Color.clear)
+                        .animation(.easeInOut(duration: 0.3), value: isAdded)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
+                        .animation(.easeInOut(duration: 0.3), value: isAdded)
+                )
+                .frame(minHeight: 46, maxHeight: 46)
             }
             .buttonStyle(PlainButtonStyle())
+            .disabled(isAdded)
         }
         .padding(.vertical, 12)
         .cornerRadius(16)
@@ -324,17 +467,12 @@ struct RecentlySpawnedView: View {
             } else {
                 NavigationLink(destination: ProfileView(user: recentUser.user)) {
                     if let pfpUrl = recentUser.user.profilePicture {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
-                        }
+                        CachedProfileImageFlexible(
+                            userId: recentUser.user.id,
+                            url: URL(string: pfpUrl),
+                            width: 50,
+                            height: 50
+                        )
                     } else {
                         Circle()
                             .fill(.white)
@@ -348,6 +486,9 @@ struct RecentlySpawnedView: View {
                     Text(FormatterService.shared.formatName(user: recentUser.user))
                         .font(.onestBold(size: 14))
                         .foregroundColor(universalAccentColor)
+                    Text("@\(recentUser.user.username)")
+                        .font(.onestRegular(size: 12))
+                        .foregroundColor(Color.gray)
                 }
                 .padding(.leading, 8)
             }
@@ -356,28 +497,44 @@ struct RecentlySpawnedView: View {
             Spacer()
 
             Button(action: {
-                isAdded = true
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    isAdded = true
+                }
                 Task {
                     await viewModel.addFriend(friendUserId: recentUser.user.id)
+                    // Add delay before removing the item
+                    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+                    await viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
                 }
             }) {
-                Text("Add +")
-                    .font(.onestMedium(size: 14))
-                    .padding(12)
-                    .background(
-                        Rectangle()
-                            .foregroundColor(.clear)
-                            .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
-                            .cornerRadius(15)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .inset(by: 0.75)
-                                    .stroke(.gray)
-                            )
-                    )
-                    .foregroundColor(.gray)
+                HStack(spacing: 6) {
+                    if isAdded {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Text("Add +")
+                            .font(.onestMedium(size: 14))
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .foregroundColor(isAdded ? .white : .gray)
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isAdded ? universalAccentColor : Color.clear)
+                        .animation(.easeInOut(duration: 0.3), value: isAdded)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
+                        .animation(.easeInOut(duration: 0.3), value: isAdded)
+                )
+                .frame(minHeight: 46, maxHeight: 46)
             }
             .buttonStyle(PlainButtonStyle())
+            .disabled(isAdded)
         }
     }
 }

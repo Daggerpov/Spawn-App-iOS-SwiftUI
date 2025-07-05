@@ -102,13 +102,11 @@ struct FriendRequestItemView: View {
                 }
             } else {
                 if let pfpUrl = friendRequest.senderUser.profilePicture {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image.ProfileImageModifier(imageType: .friendsListView)
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: 50, height: 50)
-                    }
+                    CachedProfileImage(
+                        userId: friendRequest.senderUser.id,
+                        url: URL(string: pfpUrl),
+                        imageType: .friendsListView
+                    )
                 } else {
                     Circle()
                         .fill(Color.gray)

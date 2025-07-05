@@ -26,6 +26,7 @@ Example:
 {
   "friends": "2025-04-01T10:00:00Z",
   "events": "2025-04-01T10:10:00Z",
+  "activityTypes": "2025-04-01T10:15:00Z",
   "notifications": "2025-04-01T10:05:00Z"
 }
 ```
@@ -54,6 +55,10 @@ Example:
   },
   "events": {
     "invalidate": true
+  },
+  "activityTypes": {
+    "invalidate": true,
+    "updatedItems": [...] // Optional array of activity type objects
   }
 }
 ```

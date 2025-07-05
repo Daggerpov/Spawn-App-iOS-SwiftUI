@@ -3,10 +3,13 @@ import SwiftUI
 class ProfileViewModel: ObservableObject {
     @Published var userStats: UserStatsDTO?
     @Published var userInterests: [String] = []
+    @Published var originalUserInterests: [String] = [] // Backup for cancel functionality
     @Published var userSocialMedia: UserSocialMediaDTO?
+    @Published var userProfileInfo: UserProfileInfoDTO?
     @Published var isLoadingStats: Bool = false
     @Published var isLoadingInterests: Bool = false
     @Published var isLoadingSocialMedia: Bool = false
+    @Published var isLoadingProfileInfo: Bool = false
     @Published var showDrawer: Bool = false
     @Published var errorMessage: String?
     @Published var calendarActivities: [[CalendarActivityDTO?]] = Array(
@@ -19,7 +22,7 @@ class ProfileViewModel: ObservableObject {
     @Published var isLoadingActivity: Bool = false
     
     // New properties for friendship status
-    @Published var friendshipStatus: FriendshipStatus = .unknown
+	@Published var friendshipStatus: FriendshipStatus = MockAPIService.isMocking ? .friends : .unknown
     @Published var isLoadingFriendshipStatus: Bool = false
     @Published var pendingFriendRequestId: UUID?
     @Published var userActivities: [FullFeedActivityDTO] = []
@@ -103,19 +106,47 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    func addUserInterest(userId: UUID, interest: String) async {
+    func addUserInterest(userId: UUID, interest: String) async -> Bool {
+        // Update local state immediately for better UX
+        await MainActor.run {
+            self.userInterests.append(interest)
+        }
+        
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
-            _ = try await self.apiService.sendData(interest, to: url, parameters: nil)
             
-            // Refresh interests after adding
-            await fetchUserInterests(userId: userId)
-            // Also refresh the cache
+            // Send interest as raw string data instead of JSON-encoded
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = interest.data(using: .utf8)
+            
+            // Add authorization header
+            if let accessTokenData = KeychainService.shared.load(key: "accessToken"),
+               let accessToken = String(data: accessTokenData, encoding: .utf8) {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NSError(domain: "HTTPError", code: 0, userInfo: [NSLocalizedDescriptionKey: "HTTP request failed"])
+            }
+            
+            guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                throw NSError(domain: "HTTPError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Invalid status code: \(httpResponse.statusCode)"])
+            }
+            
+            // Update cache after successful API call
             await AppCache.shared.refreshProfileInterests(userId)
+            return true
         } catch {
+            // Revert local state if API call fails
             await MainActor.run {
+                self.userInterests.removeAll { $0 == interest }
                 self.errorMessage = "Failed to add interest: \(error.localizedDescription)"
             }
+            return false
         }
     }
     
@@ -179,10 +210,30 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    func fetchUserProfileInfo(userId: UUID) async {
+        await MainActor.run { self.isLoadingProfileInfo = true }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/profile-info")!
+            let profileInfo: UserProfileInfoDTO = try await self.apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                self.userProfileInfo = profileInfo
+                self.isLoadingProfileInfo = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load profile info: \(error.localizedDescription)"
+                self.isLoadingProfileInfo = false
+            }
+        }
+    }
+    
     func loadAllProfileData(userId: UUID) async {
         await fetchUserStats(userId: userId)
         await fetchUserInterests(userId: userId)
         await fetchUserSocialMedia(userId: userId)
+        await fetchUserProfileInfo(userId: userId)
     }
     
     func fetchCalendarActivities(month: Int, year: Int) async {
@@ -217,6 +268,10 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.calendarActivities = grid
                 self.isLoadingCalendar = false
+                
+                // Pre-assign colors for calendar activities
+                let activityIds = activities.compactMap { $0.activityId }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
         } catch {
             await MainActor.run {
@@ -248,6 +303,10 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.allCalendarActivities = activities
                 self.isLoadingCalendar = false
+                
+                // Pre-assign colors for calendar activities
+                let activityIds = activities.compactMap { $0.activityId }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
         } catch {
             await MainActor.run {
@@ -348,32 +407,52 @@ class ProfileViewModel: ObservableObject {
         return 30  // Default fallback
     }
     
+    // MARK: - Interest Management
+    
+    // Save original interests state when entering edit mode
+    func saveOriginalInterests() {
+        originalUserInterests = userInterests
+    }
+    
+    // Restore original interests state when canceling edit mode
+    func restoreOriginalInterests() {
+        userInterests = originalUserInterests
+    }
+    
     // Interest management methods
     func removeUserInterest(userId: UUID, interest: String) async {
-        await MainActor.run { self.isLoadingInterests = true }
+        // Update local state immediately for better UX
+        await MainActor.run {
+            self.userInterests.removeAll { $0 == interest }
+        }
         
         do {
-            let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(interest)")!
+            // URL encode the interest name to handle spaces and special characters
+            guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+                throw NSError(domain: "EncodingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to encode interest name"])
+            }
+            
+            let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(encodedInterest)")!
+            print("Attempting to delete interest at URL: \(url)")
+            
             let _ = try await apiService.deleteData(
                 from: url,
                 parameters: nil,
                 object: EmptyObject()
             )
             
-            // Update local state immediately after successful deletion
-            await MainActor.run {
-                self.userInterests.removeAll { $0 == interest }
-                self.isLoadingInterests = false
-            }
+            print("Successfully deleted interest: \(interest)")
             
-            // Refresh interests from server to ensure consistency
-            await fetchUserInterests(userId: userId)
-            // Also refresh the cache
-            await AppCache.shared.refreshProfileInterests(userId)
+            // Update cache after successful API call - commented out for now
+            // await AppCache.shared.refreshProfileInterests(userId)
         } catch {
+            // Add debug information
+            print("Failed to remove interest '\(interest)': \(error.localizedDescription)")
+            
+            // Don't revert local state for now - let the user see immediate feedback
+            // We'll handle the UI optimistically
             await MainActor.run {
                 self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
-                self.isLoadingInterests = false
             }
         }
     }
@@ -436,7 +515,6 @@ class ProfileViewModel: ObservableObject {
 			)
 
             if isFriend {
-				print("user is friends with this user whose profile they've clicked on.")
                 await MainActor.run {
                     self.friendshipStatus = .friends
                     self.isLoadingFriendshipStatus = false
@@ -562,6 +640,10 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.userActivities = activities
                 self.isLoadingUserActivities = false
+                
+                // Pre-assign colors for user activities
+                let activityIds = activities.map { $0.id }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
         } catch {
             await MainActor.run {
@@ -643,21 +725,14 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    func reportUser(reporterId: UUID, reportedId: UUID, reason: String) async {
+    func reportUser(reporterUserId: UUID, reportedUserId: UUID, reportType: ReportType, description: String) async {
         do {
-            let url = URL(string: APIService.baseURL + "user-reports")!
-            let reportDTO = UserReportCreationDTO(
-                id: UUID(),
-                reporterUserId: reporterId,
-                reportedUserId: reportedId,
-                reason: reason
-            )
-            
-            // Discard the return value
-            _ = try await self.apiService.sendData(
-                reportDTO,
-                to: url,
-                parameters: nil
+            let reportingService = UserReportingService(apiService: self.apiService)
+            try await reportingService.reportUser(
+                reporterUserId: reporterUserId,
+                reportedUserId: reportedUserId,
+                reportType: reportType,
+                description: description
             )
             
             await MainActor.run {
@@ -670,31 +745,77 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    /// Legacy method for backward compatibility
+    /// - Deprecated: Use reportUser(reporterUserId:reportedUserId:reportType:description:) instead
+    @available(*, deprecated, message: "Use reportUser(reporterUserId:reportedUserId:reportType:description:) instead")
+    func reportUser(reporter: UserDTO, reportedUser: UserDTO, reportType: ReportType, description: String) async {
+        await reportUser(
+            reporterUserId: reporter.id,
+            reportedUserId: reportedUser.id,
+            reportType: reportType,
+            description: description
+        )
+    }
+    
     func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
         do {
-            let url = URL(string: APIService.baseURL + "blocked-users/block")!
-            let blockDTO = BlockedUserCreationDTO(
-                id: UUID(),
+            let reportingService = UserReportingService(apiService: self.apiService)
+            try await reportingService.blockUser(
                 blockerId: blockerId,
                 blockedId: blockedId,
                 reason: reason
-            )
-            
-            // Discard the return value
-            _ = try await self.apiService.sendData(
-                blockDTO,
-                to: url,
-                parameters: nil
             )
             
             await MainActor.run {
                 self.friendshipStatus = .blocked
                 self.errorMessage = nil
             }
+            
+            // Refresh friends cache to remove the blocked user from friends list
+            await AppCache.shared.refreshFriends()
+            
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to block user: \(error.localizedDescription)"
             }
+        }
+    }
+    
+    func unblockUser(blockerId: UUID, blockedId: UUID) async {
+        do {
+            let reportingService = UserReportingService(apiService: self.apiService)
+            try await reportingService.unblockUser(
+                blockerId: blockerId,
+                blockedId: blockedId
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .none
+                self.errorMessage = nil
+            }
+            
+            // Refresh friends cache for consistency
+            await AppCache.shared.refreshFriends()
+            
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to unblock user: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func checkIfUserBlocked(blockerId: UUID, blockedId: UUID) async -> Bool {
+        do {
+            let reportingService = UserReportingService(apiService: self.apiService)
+            return try await reportingService.isUserBlocked(
+                blockerId: blockerId,
+                blockedId: blockedId
+            )
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to check block status: \(error.localizedDescription)"
+            }
+            return false
         }
     }
 }
@@ -708,22 +829,5 @@ enum FriendshipStatus {
     case requestReceived // Profile user sent request to current user
     case themself       // It's the current user's own profile
     case blocked        // User is blocked
-}
-
-
-
-// DTOs for user reporting and blocking
-struct UserReportCreationDTO: Codable {
-    let id: UUID
-    let reporterUserId: UUID
-    let reportedUserId: UUID
-    let reason: String
-}
-
-struct BlockedUserCreationDTO: Codable {
-    let id: UUID
-    let blockerId: UUID
-    let blockedId: UUID
-    let reason: String
 }
 

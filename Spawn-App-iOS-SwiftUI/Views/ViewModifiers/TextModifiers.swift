@@ -59,7 +59,7 @@ extension View {
         self.modifier(SubheadlineModifier())
     }
     
-    func onestSemibold(size: CGFloat = 16) -> some View {
+    func onestSemiBold(size: CGFloat = 16) -> some View {
         self.modifier(SemiboldTextModifier(size: size))
     }
     
@@ -88,11 +88,11 @@ extension View {
             .foregroundColor(.primary)
         
         Text("Semibold Text (16pt)")
-            .onestSemibold()
+            .onestSemiBold()
             .foregroundColor(.primary)
         
         Text("Semibold Text (20pt)")
-            .onestSemibold(size: 20)
+            .onestSemiBold(size: 20)
             .foregroundColor(.primary)
         
         Text("Body Text")

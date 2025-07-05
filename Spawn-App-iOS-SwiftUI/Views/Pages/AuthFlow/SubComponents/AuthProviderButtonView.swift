@@ -33,7 +33,7 @@ struct AuthProviderButtonView: View {
 		.padding()
 		.frame(maxWidth: .infinity)
 		.cornerRadius(8)
-		                    .foregroundColor(universalAccentColor)
+		.foregroundColor(Color(hex: "#1D1D1D"))
 		.background(
 			RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
 				.fill(.white)

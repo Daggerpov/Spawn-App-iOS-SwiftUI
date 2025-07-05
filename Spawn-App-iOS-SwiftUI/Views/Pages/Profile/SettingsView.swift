@@ -110,6 +110,51 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Privacy & Safety
+                    SettingsSection(title: "Privacy & Safety") {
+                        NavigationLink(destination: BlockedUsersView()) {
+                            HStack {
+                                Image(systemName: "person.crop.circle.badge.xmark")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(universalAccentColor)
+                                    .frame(width: 24, height: 24)
+                                
+                                Text("Blocked Users")
+                                    .font(.body)
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.horizontal)
+                            .frame(height: 44)
+                        }
+                        
+                        NavigationLink(destination: MyReportsView()) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(universalAccentColor)
+                                    .frame(width: 24, height: 24)
+                                
+                                Text("My Reports")
+                                    .font(.body)
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.horizontal)
+                            .frame(height: 44)
+                        }
+                    }
+                    
                     // Contact Us
                     SettingsSection(title: "Contact Us") {
                         if let userId = userAuth.spawnUser?.id, let email = userAuth.spawnUser?.email {
@@ -139,11 +184,7 @@ struct SettingsView: View {
                             }
                         }
                         
-                        SettingsRow(icon: "bubble.left", title: "Contact us", showDisclosure: true) {
-                            // Navigate to contact
-                        }
-                        
-                        SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: true) {
+                        SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
                             // Navigate to rate app
                         }
                     }
@@ -157,23 +198,7 @@ struct SettingsView: View {
                         }
                     }
                     
-                    // Authentication
-                    SettingsSection(title: "Authentication") {
-                        Button(action: {
-                            userAuth.signOut()
-                        }) {
-                            HStack {
-                                Text("Log Out")
-                                    .font(.body)
-                                    .foregroundColor(universalAccentColor)
-                                Spacer()
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .foregroundColor(universalAccentColor)
-                            }
-                            .padding(.horizontal)
-                            .frame(height: 44)
-                        }
-                    }
+
                 }
                 .padding(.horizontal)
             }

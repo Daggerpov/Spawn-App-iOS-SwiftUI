@@ -13,6 +13,14 @@ struct ParticipantsImagesView: View {
     let maxCount: Int = 2
     let width: CGFloat = 28
     let height: CGFloat = 28
+    
+    // Optional binding to control tab selection for current user navigation
+    @Binding var selectedTab: TabType?
+    
+    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
+        self.activity = activity
+        self._selectedTab = selectedTab
+    }
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
 		var participantsFiltered = participants
@@ -38,7 +46,7 @@ struct ParticipantsImagesView: View {
 				id: \.self
 			) { participantIndex in
                 let participant: BaseUserDTO = participants[participantIndex]
-				ProfilePictureView(user: participant)
+				ProfilePictureView(user: participant, selectedTab: $selectedTab)
 			}
             
             if participants.count > maxCount {

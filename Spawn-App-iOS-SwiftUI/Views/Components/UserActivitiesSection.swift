@@ -4,12 +4,29 @@ struct UserActivitiesSection: View {
     var user: Nameable
     @ObservedObject var profileViewModel: ProfileViewModel
     @Binding var showActivityDetails: Bool
+    @State private var showFriendActivities: Bool = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            friendActivitiesSection
+            // Only show activities section if they are friends
+            if profileViewModel.friendshipStatus == .friends {
+                friendActivitiesSection
+            }
             
             addToSeeActivitiesSection
+            
+            // Hidden NavigationLink for friend activities
+            NavigationLink(
+                destination: FriendActivitiesListView(
+                    user: user,
+                    profileViewModel: profileViewModel,
+                    showActivityDetails: $showActivityDetails
+                ),
+                isActive: $showFriendActivities
+            ) {
+                EmptyView()
+            }
+            .hidden()
         }
     }
     
@@ -44,10 +61,19 @@ struct UserActivitiesSection: View {
     // User Activities Section for friend profiles
     private var friendActivitiesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Activities by \(FormatterService.shared.formatFirstName(user: user))")
-                .font(.onestSemiBold(size: 16))
-                .foregroundColor(.primary)
-                .padding(.horizontal)
+            HStack {
+                Text("Activities by \(FormatterService.shared.formatFirstName(user: user))")
+                    .font(.onestSemiBold(size: 16))
+                    .foregroundColor(.primary)
+                Spacer()
+                Button(action: {
+                    showFriendActivities = true
+                }) {
+                    Text("Show All")
+                        .font(.onestMedium(size: 14))
+                        .foregroundColor(universalSecondaryColor)
+                }
+            }
             
             if profileViewModel.isLoadingUserActivities {
                 HStack {
@@ -56,14 +82,17 @@ struct UserActivitiesSection: View {
                     Spacer()
                 }
             } else if profileViewModel.profileActivities.isEmpty {
-                Text("No activities")
-                    .font(.onestRegular(size: 14))
-                    .foregroundColor(.gray)
-                    .padding(.horizontal)
+                HStack {
+                    Spacer()
+                    Text("No activities")
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(.gray)
+                    Spacer()
+                }
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(sortedActivities) { activity in
+                        ForEach(Array(sortedActivities.prefix(2))) { activity in
                             ActivityCardView(
                                 userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                                 activity: activity,
@@ -76,18 +105,7 @@ struct UserActivitiesSection: View {
                             .frame(width: 280)
                         }
                     }
-                    .padding(.horizontal)
                 }
-            }
-            
-            // Navigate to all activities by this user
-            Button(action: {
-                // TODO: Navigate to full activities list
-            }) {
-                Text("See all activities")
-                    .font(.onestMedium(size: 14))
-                    .foregroundColor(universalAccentColor)
-                    .padding(.horizontal)
             }
         }
     }
@@ -96,16 +114,29 @@ struct UserActivitiesSection: View {
     private var addToSeeActivitiesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             if profileViewModel.friendshipStatus != .friends {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Add \(FormatterService.shared.formatFirstName(user: user)) to see their activities")
+                VStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    Text("Add \(FormatterService.shared.formatFirstName(user: user)) to see their upcoming spawns!")
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(.primary)
+                        .multilineTextAlignment(.center)
                     
                     Text("Connect with them to discover what they're up to!")
                         .font(.onestRegular(size: 14))
                         .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
                 }
-                .padding(.horizontal)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
+                        .foregroundColor(.gray.opacity(0.4))
+                )
             }
         }
     }

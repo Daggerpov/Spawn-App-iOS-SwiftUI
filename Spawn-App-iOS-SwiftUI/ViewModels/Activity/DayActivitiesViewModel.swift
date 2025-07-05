@@ -89,7 +89,6 @@ class DayActivitiesViewModel: ObservableObject {
                     
                     // Also update app cache for compatibility with other parts of the app
                     appCache.addOrUpdateActivity(activity)
-                    
                 }
             }
         } catch {

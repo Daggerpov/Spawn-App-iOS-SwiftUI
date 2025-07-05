@@ -4,6 +4,7 @@ struct AccountSettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject var userAuth = UserAuthViewModel.shared
     @State private var showDeleteConfirmation = false
+    @State private var showLogoutConfirmation = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -62,20 +63,44 @@ struct AccountSettingsView: View {
                         }
                     }
                     
+                    // Account Actions section
+                    SettingsSection(title: "Account Actions") {
+                        Button(action: {
+                            showLogoutConfirmation = true
+                        }) {
+                            HStack {
+                                Image(systemName: "arrow.right.square")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(universalAccentColor)
+                                    .frame(width: 24, height: 24)
+                                
+                                Text("Log Out")
+                                    .font(.body)
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Spacer()
+                            }
+                            .padding(.horizontal)
+                            .frame(height: 44)
+                        }
+                    }
+                    
                     // Permanent Actions section
                     SettingsSection(title: "Permanent Actions") {
                         Button(action: {
                             showDeleteConfirmation = true
                         }) {
                             HStack {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.red)
+                                    .frame(width: 24, height: 24)
+                                
                                 Text("Delete Account")
                                     .font(.body)
                                     .foregroundColor(.red)
                                 
                                 Spacer()
-                                
-                                Image(systemName: "trash")
-                                    .foregroundColor(.red)
                             }
                             .padding(.horizontal)
                             .frame(height: 44)
@@ -87,21 +112,26 @@ struct AccountSettingsView: View {
         }
         .background(universalBackgroundColor)
         .navigationBarHidden(true)
-        .alert(isPresented: $showDeleteConfirmation) {
-            Alert(
-                title: Text("Delete Account"),
-                message: Text("Are you sure you want to delete your account? This action cannot be undone."),
-                primaryButton: .destructive(Text("Delete")) {
-                    Task {
-                        await userAuth.deleteAccount()
-                    }
-                },
-                secondaryButton: .cancel()
-            )
+        .alert("Delete Account", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task {
+                    await userAuth.deleteAccount()
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete your account? This action cannot be undone.")
+        }
+        .alert("Log Out", isPresented: $showLogoutConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Log Out", role: .destructive) {
+                userAuth.signOut()
+            }
+        } message: {
+            Text("Are you sure you want to log out of your account?")
         }
     }
 }
-
 
 @available(iOS 17, *)
 #Preview {

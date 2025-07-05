@@ -32,35 +32,18 @@ struct UserInfoInputView: View {
 					.scaledToFill()
 					.frame(width: 150, height: 150)
 					.clipShape(Circle())
-			} else if userAuth.isLoggedIn, let pfpUrl = userAuth.profilePicUrl {
-				AsyncImage(url: URL(string: pfpUrl)) { image in
-					image
-						.ProfileImageModifier(imageType: .profilePage)
-				} placeholder: {
-					Circle()
-						.fill(Color.gray)
-						.frame(width: 150, height: 150)
-						.overlay(
-							ProgressView()
-								.progressViewStyle(CircularProgressViewStyle(tint: .white))
-						)
-				}
-			} else if let defaultPfpUrl = userAuth.defaultPfpUrlString {
-				AsyncImage(url: URL(string: defaultPfpUrl)) { image in
-					image
-						.ProfileImageModifier(imageType: .profilePage)
-				} placeholder: {
-					Circle()
-						.fill(.gray)
-						.frame(width: 150, height: 150)
-						.overlay(
-							Image(systemName: "person.fill")
-								.resizable()
-								.scaledToFit()
-								.frame(width: 60, height: 60)
-								.foregroundColor(.white.opacity(0.7))
-						)
-				}
+			} else if userAuth.isLoggedIn, let pfpUrl = userAuth.profilePicUrl, let userId = userAuth.spawnUser?.id {
+				CachedProfileImage(
+					userId: userId,
+					url: URL(string: pfpUrl),
+					imageType: .profilePage
+				)
+			} else if let defaultPfpUrl = userAuth.defaultPfpUrlString, let userId = userAuth.spawnUser?.id {
+				CachedProfileImage(
+					userId: userId,
+					url: URL(string: defaultPfpUrl),
+					imageType: .profilePage
+				)
 			} else {
 				Circle()
 					.fill(.gray)

@@ -10,7 +10,9 @@ import SwiftUI
 struct ProfileActionButtonsView: View {
     let user: Nameable
     @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var profileViewModel: ProfileViewModel
     let shareProfile: () -> Void
+    @Environment(\.colorScheme) var colorScheme
     
     // Check if this is the current user's profile
     var isCurrentUserProfile: Bool {
@@ -21,13 +23,18 @@ struct ProfileActionButtonsView: View {
         return currentUser.id == user.id
     }
     
+    // Adaptive background color - white in light mode, dark gray in dark mode
+    private var buttonBackgroundColor: Color {
+        .white
+    }
+    
     var body: some View {
         HStack(spacing: 8) {
             if isCurrentUserProfile {
                 NavigationLink(
                     destination: EditProfileView(
                         userId: user.id,
-                        profileViewModel: ProfileViewModel(userId: user.id)
+                        profileViewModel: profileViewModel
                     )
                 ) {
                     HStack(spacing: 8) {
@@ -37,34 +44,41 @@ struct ProfileActionButtonsView: View {
                     }
                     .bold()
                     .font(.caption)
-                    .foregroundColor(figmaSoftBlue)
+                    .foregroundColor(universalSecondaryColor)
                     .frame(height: 30)
                     .frame(width: 128)
+                    .background(buttonBackgroundColor)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(universalSecondaryColor, lineWidth: 2)
+                    )
                 }
                 .navigationBarBackButtonHidden(true)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(figmaSoftBlue, lineWidth: 1)
-                )
             }
 
-            Button(action: {
-                shareProfile()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "square.and.arrow.up")
-                    Text("Share Profile")
-						.font(.onestSemiBold(size: 12))
+            // Share Profile button removed for other users - only show for current user
+            if isCurrentUserProfile {
+                Button(action: {
+                    shareProfile()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share Profile")
+							.font(.onestSemiBold(size: 12))
+                    }
+                    .bold()
+                    .font(.caption)
+                    .foregroundColor(universalSecondaryColor)
+                    .frame(height: 30)
+                    .frame(width: 128)
+                    .background(buttonBackgroundColor)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(universalSecondaryColor, lineWidth: 2)
+                    )
                 }
-                .bold()
-                .font(.caption)
-                .foregroundColor(figmaSoftBlue)
-                .frame(height: 30)
-                .frame(width: 128)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(figmaSoftBlue, lineWidth: 1)
-                )
             }
         }
     }
@@ -73,6 +87,7 @@ struct ProfileActionButtonsView: View {
 #Preview {
     ProfileActionButtonsView(
 		user: BaseUserDTO.danielAgapov,
+        profileViewModel: ProfileViewModel(userId: UUID()),
         shareProfile: {}
     )
 } 

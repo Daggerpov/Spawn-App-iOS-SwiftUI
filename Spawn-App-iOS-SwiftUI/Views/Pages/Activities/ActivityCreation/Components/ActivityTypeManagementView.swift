@@ -3,6 +3,7 @@ import SwiftUI
 struct ActivityTypeManagementView: View {
     let activityTypeDTO: ActivityTypeDTO
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showingOptions = false
     @State private var showingManagePeople = false
     
@@ -15,6 +16,18 @@ struct ActivityTypeManagementView: View {
         // Initialize the view model with userId
         let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
         self._viewModel = StateObject(wrappedValue: ActivityTypeViewModel(userId: userId))
+    }
+    
+    // Adaptive background color for activity type card
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.08)
+        case .light:
+            return Color.gray.opacity(0.1)
+        @unknown default:
+            return Color.gray.opacity(0.1)
+        }
     }
     
     var body: some View {
@@ -102,7 +115,7 @@ struct ActivityTypeManagementView: View {
     private var activityTypeCard: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.gray.opacity(0.1))
+                .fill(adaptiveCardBackgroundColor)
                 .frame(height: 120)
             
             VStack(spacing: 8) {
