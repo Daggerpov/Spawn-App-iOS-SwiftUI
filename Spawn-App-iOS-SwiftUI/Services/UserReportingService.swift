@@ -56,6 +56,16 @@ class UserReportingService {
         }
     }
     
+    /// Get full blocked user details
+    /// - Parameter blockerId: ID of the user whose blocked list to retrieve
+    /// - Returns: Array of full BlockedUserDTO objects with user details
+    func getFullBlockedUsers(blockerId: UUID) async throws -> [BlockedUserDTO] {
+        let url = URL(string: APIService.baseURL + "blocked-users/\(blockerId)")!
+        let parameters = ["returnOnlyIds": "false"]
+        
+        return try await apiService.fetchData(from: url, parameters: parameters)
+    }
+    
     /// Check if a user is blocked
     /// - Parameters:
     ///   - blockerId: ID of the user who might be blocking
@@ -93,7 +103,11 @@ class UserReportingService {
             description: description
         )
         
-        let _: EmptyResponse? = try await apiService.sendData(reportDTO, to: url, parameters: nil)
+        let parameters = [
+            "reporterId": reporterId.uuidString
+        ]
+        
+        let _: EmptyResponse? = try await apiService.sendData(reportDTO, to: url, parameters: parameters)
     }
     
     /// Get reports made by a user

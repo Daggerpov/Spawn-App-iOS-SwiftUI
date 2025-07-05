@@ -184,7 +184,7 @@ struct SettingsView: View {
                             }
                         }
                         
-                        SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: true) {
+                        SettingsRow(icon: "star", title: "Rate Spawn", showDisclosure: false) {
                             // Navigate to rate app
                         }
                     }
@@ -198,23 +198,7 @@ struct SettingsView: View {
                         }
                     }
                     
-                    // Authentication
-                    SettingsSection(title: "Authentication") {
-                        Button(action: {
-                            userAuth.signOut()
-                        }) {
-                            HStack {
-                                Text("Log Out")
-                                    .font(.body)
-                                    .foregroundColor(universalAccentColor)
-                                Spacer()
-                                Image(systemName: "rectangle.portrait.and.arrow.right")
-                                    .foregroundColor(universalAccentColor)
-                            }
-                            .padding(.horizontal)
-                            .frame(height: 44)
-                        }
-                    }
+
                 }
                 .padding(.horizontal)
             }

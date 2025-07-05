@@ -268,6 +268,10 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.calendarActivities = grid
                 self.isLoadingCalendar = false
+                
+                // Pre-assign colors for calendar activities
+                let activityIds = activities.compactMap { $0.activityId }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
         } catch {
             await MainActor.run {
@@ -299,6 +303,10 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.allCalendarActivities = activities
                 self.isLoadingCalendar = false
+                
+                // Pre-assign colors for calendar activities
+                let activityIds = activities.compactMap { $0.activityId }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
         } catch {
             await MainActor.run {
@@ -632,6 +640,10 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.userActivities = activities
                 self.isLoadingUserActivities = false
+                
+                // Pre-assign colors for user activities
+                let activityIds = activities.map { $0.id }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
         } catch {
             await MainActor.run {

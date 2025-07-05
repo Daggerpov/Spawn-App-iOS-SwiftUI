@@ -18,22 +18,8 @@ class BlockedUsersViewModel: ObservableObject {
         errorMessage = nil
         
         do {
-            // Get blocked user IDs first
-            let blockedUserIds = try await reportingService.getBlockedUsers(blockerId: userId, returnOnlyIds: true)
-            
-            // For now, we'll create mock BlockedUserDTO objects since we only have IDs
-            // In a real implementation, you'd fetch user details for each ID
-            let blockedUserDTOs = blockedUserIds.map { blockedId in
-                BlockedUserDTO(
-                    id: UUID(),
-                    blockerId: userId,
-                    blockedId: blockedId,
-                    blockerUsername: "", // Would be populated from API
-                    blockedUsername: "User \(blockedId.uuidString.prefix(8))", // Placeholder
-                    reason: "User blocked" // Would be populated from API
-                )
-            }
-            
+            // Get full blocked user details instead of just IDs
+            let blockedUserDTOs: [BlockedUserDTO] = try await reportingService.getFullBlockedUsers(blockerId: userId)
             blockedUsers = blockedUserDTOs
         } catch {
             errorMessage = "Failed to load blocked users: \(error.localizedDescription)"

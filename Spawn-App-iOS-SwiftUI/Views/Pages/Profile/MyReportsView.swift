@@ -28,8 +28,12 @@ struct MyReportsView: View {
     }
     
     private var cancelButton: some View {
-        Button("Done") {
+        Button(action: {
             presentationMode.wrappedValue.dismiss()
+        }) {
+            Image(systemName: "chevron.left")
+                .foregroundColor(universalAccentColor)
+                .font(.title3)
         }
     }
     
