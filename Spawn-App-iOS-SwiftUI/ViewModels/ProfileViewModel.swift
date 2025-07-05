@@ -4,9 +4,11 @@ class ProfileViewModel: ObservableObject {
     @Published var userStats: UserStatsDTO?
     @Published var userInterests: [String] = []
     @Published var userSocialMedia: UserSocialMediaDTO?
+    @Published var userProfileInfo: UserProfileInfoDTO?
     @Published var isLoadingStats: Bool = false
     @Published var isLoadingInterests: Bool = false
     @Published var isLoadingSocialMedia: Bool = false
+    @Published var isLoadingProfileInfo: Bool = false
     @Published var showDrawer: Bool = false
     @Published var errorMessage: String?
     @Published var calendarActivities: [[CalendarActivityDTO?]] = Array(
@@ -111,7 +113,28 @@ class ProfileViewModel: ObservableObject {
         
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
-            _ = try await self.apiService.sendData(interest, to: url, parameters: nil)
+            
+            // Send interest as raw string data instead of JSON-encoded
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = interest.data(using: .utf8)
+            
+            // Add authorization header
+            if let accessTokenData = KeychainService.shared.load(key: "accessToken"),
+               let accessToken = String(data: accessTokenData, encoding: .utf8) {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+            
+            let (_, response) = try await URLSession.shared.data(for: request)
+            
+            guard let httpResponse = response as? HTTPURLResponse else {
+                throw NSError(domain: "HTTPError", code: 0, userInfo: [NSLocalizedDescriptionKey: "HTTP request failed"])
+            }
+            
+            guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
+                throw NSError(domain: "HTTPError", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Invalid status code: \(httpResponse.statusCode)"])
+            }
             
             // Update cache after successful API call
             await AppCache.shared.refreshProfileInterests(userId)
@@ -190,6 +213,7 @@ class ProfileViewModel: ObservableObject {
         await fetchUserStats(userId: userId)
         await fetchUserInterests(userId: userId)
         await fetchUserSocialMedia(userId: userId)
+        await fetchUserProfileInfo(userId: userId)
     }
     
     func fetchCalendarActivities(month: Int, year: Int) async {

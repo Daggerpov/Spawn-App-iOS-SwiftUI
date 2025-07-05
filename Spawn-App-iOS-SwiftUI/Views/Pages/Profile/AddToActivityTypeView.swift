@@ -20,11 +20,27 @@ struct AddToActivityTypeView: View {
                             // Profile section with glow effect
                             profileSection
                             
-                            // Activity type grid
-                            activityTypeGrid
-                            
-                            // Spacer to push save button to bottom
-                            Spacer(minLength: 100)
+                                                // Activity type grid or loading state
+                    if viewModel.isLoading {
+                        ProgressView("Loading activity types...")
+                            .font(.onestRegular(size: 16))
+                            .foregroundColor(universalAccentColor)
+                            .padding()
+                    } else {
+                        activityTypeGrid
+                    }
+                    
+                    // Error message display
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .font(.onestRegular(size: 14))
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    
+                    // Spacer to push save button to bottom
+                    Spacer(minLength: 100)
                         }
                         .padding(.horizontal, 16)
                         .padding(.top, 20)
@@ -165,7 +181,7 @@ struct AddToActivityTypeView: View {
                 await saveSelectedActivityTypes()
             }
         }) {
-            Text("Save")
+            Text(viewModel.isLoading ? "Saving..." : "Save")
                 .font(.onestBold(size: 16))
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
@@ -173,8 +189,8 @@ struct AddToActivityTypeView: View {
                 .background(universalSecondaryColor)
                 .cornerRadius(16)
         }
-        .disabled(selectedActivityTypes.isEmpty)
-        .opacity(selectedActivityTypes.isEmpty ? 0.6 : 1.0)
+        .disabled(selectedActivityTypes.isEmpty || viewModel.isLoading)
+        .opacity(selectedActivityTypes.isEmpty || viewModel.isLoading ? 0.6 : 1.0)
     }
     
     private func toggleSelection(for activityType: ActivityTypeDTO) {
@@ -186,10 +202,14 @@ struct AddToActivityTypeView: View {
     }
     
     private func saveSelectedActivityTypes() async {
-        // This would typically make an API call to save the user's activity type associations
-        // For now, we'll just dismiss the view
+        let success = await viewModel.addUserToActivityTypes(user, selectedActivityTypeIds: selectedActivityTypes)
+        
         await MainActor.run {
-            presentationMode.wrappedValue.dismiss()
+            if success {
+                presentationMode.wrappedValue.dismiss()
+            }
+            // If not successful, the error message will be shown in the UI
+            // The viewModel.errorMessage will be displayed to the user
         }
     }
 }
@@ -240,6 +260,15 @@ class AddToActivityTypeViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
+    private let apiService: IAPIService
+    private let userId: UUID
+    
+    init(userId: UUID? = nil) {
+        self.userId = userId ?? UserAuthViewModel.shared.spawnUser?.id ?? UUID()
+        self.apiService = MockAPIService.isMocking
+            ? MockAPIService(userId: self.userId) : APIService()
+    }
+    
     func loadActivityTypes() async {
         await MainActor.run {
             isLoading = true
@@ -247,29 +276,119 @@ class AddToActivityTypeViewModel: ObservableObject {
         }
         
         do {
-            // In a real app, this would fetch from an API
-            // For now, we'll use mock data with predefined activity types
-            let mockTypes = [
-                ActivityTypeDTO(id: UUID(), title: "Run", icon: "🏃‍♂️", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(3)), orderNum: 0),
-                ActivityTypeDTO(id: UUID(), title: "Cook", icon: "🧑‍🍳", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(5)), orderNum: 1),
-                ActivityTypeDTO(id: UUID(), title: "Gaming", icon: "🎮", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(4)), orderNum: 2),
-                ActivityTypeDTO(id: UUID(), title: "Work", icon: "💻", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(6)), orderNum: 3),
-                ActivityTypeDTO(id: UUID(), title: "Study", icon: "📖", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(2)), orderNum: 4),
-                ActivityTypeDTO(id: UUID(), title: "Basketball", icon: "🏀", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(7)), orderNum: 5),
-                ActivityTypeDTO(id: UUID(), title: "Dance", icon: "🕺", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(3)), orderNum: 6),
-                ActivityTypeDTO(id: UUID(), title: "Hike", icon: "🏔️", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(5)), orderNum: 7),
-                ActivityTypeDTO(id: UUID(), title: "Food", icon: "🍣", associatedFriends: Array(BaseUserDTO.mockUsers.prefix(4)), orderNum: 8)
-            ]
+            // Fetch activity types from the API
+            let endpoint = "\(userId)/activity-types"
+            guard let url = URL(string: APIService.baseURL + endpoint) else {
+                await MainActor.run {
+                    self.errorMessage = "Invalid URL"
+                    self.isLoading = false
+                }
+                return
+            }
+            
+            let fetchedTypes: [ActivityTypeDTO] = try await apiService.fetchData(
+                from: url,
+                parameters: nil
+            )
             
             await MainActor.run {
-                self.activityTypes = mockTypes
+                self.activityTypes = fetchedTypes
                 self.isLoading = false
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = error.localizedDescription
+                self.errorMessage = "Failed to load activity types: \(error.localizedDescription)"
                 self.isLoading = false
             }
+        }
+    }
+    
+    func addUserToActivityTypes(_ userToAdd: Nameable, selectedActivityTypeIds: Set<UUID>) async -> Bool {
+        await MainActor.run {
+            isLoading = true
+            errorMessage = nil
+        }
+        
+        defer {
+            Task {
+                await MainActor.run {
+                    isLoading = false
+                }
+            }
+        }
+        
+        do {
+            // Create updated activity types with the user added
+            var updatedTypes: [ActivityTypeDTO] = []
+            
+            for activityType in activityTypes {
+                if selectedActivityTypeIds.contains(activityType.id) {
+                    // Convert Nameable to BaseUserDTO
+                    let userDTO: BaseUserDTO
+                    if let baseUser = userToAdd as? BaseUserDTO {
+                        userDTO = baseUser
+                    } else {
+                        // Create a BaseUserDTO from the Nameable properties
+                        // For users that aren't BaseUserDTO, we'll use default values for missing properties
+                        userDTO = BaseUserDTO(
+                            id: userToAdd.id,
+                            username: userToAdd.username,
+                            profilePicture: userToAdd.profilePicture,
+                            name: userToAdd.name,
+                            bio: nil, // Default value since it's not part of Nameable
+                            email: "" // Default value since it's not part of Nameable
+                        )
+                    }
+
+                    // Add user to associated friends if not already present
+                    if !activityType.associatedFriends.contains(where: { $0.id == userDTO.id }) {
+                        let updatedActivityType = ActivityTypeDTO(
+                            id: activityType.id,
+                            title: activityType.title,
+                            icon: activityType.icon,
+                            associatedFriends: activityType.associatedFriends + [userDTO],
+                            orderNum: activityType.orderNum,
+                            isPinned: activityType.isPinned
+                        )
+                        updatedTypes.append(updatedActivityType)
+                    }
+                }
+            }
+            
+            if !updatedTypes.isEmpty {
+                // Use batch update to save the changes
+                let endpoint = "\(userId)/activity-types"
+                guard let url = URL(string: APIService.baseURL + endpoint) else {
+                    await MainActor.run {
+                        self.errorMessage = "Invalid URL"
+                    }
+                    return false
+                }
+                
+                let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+                    updatedActivityTypes: updatedTypes,
+                    deletedActivityTypeIds: []
+                )
+                
+                let updatedActivityTypesReturned: [ActivityTypeDTO] = try await apiService.updateData(
+                    batchUpdateDTO,
+                    to: url,
+                    parameters: nil
+                )
+                
+                await MainActor.run {
+                    self.activityTypes = updatedActivityTypesReturned
+                }
+                
+                return true
+            }
+            
+            return true
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to save activity types: \(error.localizedDescription)"
+            }
+            return false
         }
     }
 }
