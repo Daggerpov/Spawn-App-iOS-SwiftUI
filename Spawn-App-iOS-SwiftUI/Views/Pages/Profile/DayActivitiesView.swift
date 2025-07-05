@@ -90,12 +90,12 @@ struct DayActivitiesView: View {
             return Color(hex: colorHex)
         }
         
-        // Otherwise, use the category color
-        guard let category = activity.activityCategory else {
+        // Otherwise, use the activity color based on ID
+        guard let activityId = activity.activityId else {
             return .gray
         }
         
-        return category.color()
+        return getActivityColor(for: activityId)
     }
 }
 

@@ -206,9 +206,9 @@ struct CalendarDayView: View {
             
             if activities.count == 1 {
                 // Single activity - show as a colored circle
-                if let category = activities[0].activityCategory {
+                if let activityId = activities[0].activityId {
                     Circle()
-                        .fill(category.color())
+                        .fill(getActivityColor(for: activityId))
                         .frame(width: 8, height: 8)
                 }
             } else if activities.count > 1 {
@@ -216,7 +216,7 @@ struct CalendarDayView: View {
                 HStack(spacing: 2) {
                     ForEach(activities.prefix(3), id: \.id) { activity in
                         Circle()
-                            .fill(activity.activityCategory?.color() ?? .gray)
+                            .fill(activity.activityId != nil ? getActivityColor(for: activity.activityId!) : .gray)
                             .frame(width: 4, height: 4)
                     }
                     if activities.count > 3 {

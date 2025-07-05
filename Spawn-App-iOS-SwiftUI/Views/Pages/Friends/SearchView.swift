@@ -42,7 +42,6 @@ struct SearchView: View {
                 )
         )
         .foregroundColor(universalAccentColor)
-        .colorScheme(.light)
 	}
 }
 

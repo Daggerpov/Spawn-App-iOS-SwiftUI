@@ -25,7 +25,7 @@ struct ActivityTypeCardView: View {
                     .font(.system(size: 26))
                 Text(activityType.title)
                     .font(.onestRegular(size: 13))
-                    .foregroundColor(.black)
+                                                .foregroundColor(universalAccentColor)
             }
         }
         .frame(width: 85, height: 113)

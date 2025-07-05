@@ -490,7 +490,7 @@ struct ProfileView: View {
 				// Use the same color scheme as ActivityCardView would
 				let activityColor =
 					activity.isSelfOwned == true
-					? universalAccentColor : determineActivityColor(for: activity)
+					? universalAccentColor : getActivityColor(for: activity.id)
 
 				ActivityDescriptionView(
 					activity: activity,
@@ -695,11 +695,6 @@ struct ProfileView: View {
 				}
 			}
 		}
-	}
-
-	private func determineActivityColor(for activity: FullFeedActivityDTO) -> Color {
-		// Logic to determine activity color based on friend tag or category
-		return activity.category.color()
 	}
 
 	// Friend Action Buttons based on friendship status

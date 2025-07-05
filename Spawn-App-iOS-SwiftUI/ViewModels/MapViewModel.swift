@@ -29,5 +29,6 @@ class MapViewModel: Identifiable, ObservableObject {
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         )
         mapItem = MKMapItem(placemark: .init(coordinate: coordinate))
+        mapItem.name = activity.location?.name ?? "Activity Location"
     }
 }

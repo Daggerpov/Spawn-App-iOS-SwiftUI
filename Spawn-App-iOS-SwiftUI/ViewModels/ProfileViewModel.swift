@@ -445,17 +445,32 @@ class ProfileViewModel: ObservableObject {
             }
             
             // If not friends, check for pending friend requests
-            let pendingRequestUrl = URL(string: APIService.baseURL + "friend-requests/pending-between/\(currentUserId)/\(profileUserId)")!
-            let pendingRequest: PendingFriendRequestDTO? = try await self.apiService.fetchData(from: pendingRequestUrl, parameters: nil)
+            // Check if current user has received a friend request from the profile user
+            let incomingRequestsUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(currentUserId)")!
+            let incomingRequests: [FetchFriendRequestDTO] = try await self.apiService.fetchData(from: incomingRequestsUrl, parameters: nil)
+            
+            // Check if any incoming request is from the profile user
+            let requestFromProfileUser = incomingRequests.first { $0.senderUser.id == profileUserId }
+            
+            if let requestFromProfileUser = requestFromProfileUser {
+                await MainActor.run {
+                    self.friendshipStatus = .requestReceived
+                    self.pendingFriendRequestId = requestFromProfileUser.id
+                    self.isLoadingFriendshipStatus = false
+                }
+                return
+            }
+            
+            // Check if profile user has received a friend request from current user
+            let profileUserIncomingUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(profileUserId)")!
+            let profileUserIncomingRequests: [FetchFriendRequestDTO] = try await self.apiService.fetchData(from: profileUserIncomingUrl, parameters: nil)
+            
+            // Check if any incoming request to profile user is from current user
+            let requestToProfileUser = profileUserIncomingRequests.first { $0.senderUser.id == currentUserId }
             
             await MainActor.run {
-                if let pendingRequest = pendingRequest {
-                    if pendingRequest.senderId == currentUserId {
-                        self.friendshipStatus = .requestSent
-                    } else {
-                        self.friendshipStatus = .requestReceived
-                        self.pendingFriendRequestId = pendingRequest.id
-                    }
+                if requestToProfileUser != nil {
+                    self.friendshipStatus = .requestSent
                 } else {
                     self.friendshipStatus = .none
                 }
@@ -695,11 +710,7 @@ enum FriendshipStatus {
     case blocked        // User is blocked
 }
 
-struct PendingFriendRequestDTO: Codable, Identifiable {
-    let id: UUID
-    let senderId: UUID
-    let receiverId: UUID
-}
+
 
 // DTOs for user reporting and blocking
 struct UserReportCreationDTO: Codable {

@@ -51,7 +51,7 @@ struct SearchBarButtonView: View {
                         .stroke(.gray)
                 )
         )
-        .colorScheme(.light)
+
     }
 }
 

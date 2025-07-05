@@ -149,7 +149,7 @@ struct MapView: View {
                                             .font(.system(size: 18))
                                             .foregroundColor(universalAccentColor)
                                             .padding(12)
-                                            .background(Color.white)
+                                            .background(universalBackgroundColor)
                                             .clipShape(Circle())
                                             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                                     }
@@ -170,7 +170,7 @@ struct MapView: View {
                                         .font(.system(size: 18))
                                         .foregroundColor(universalAccentColor)
                                         .padding(12)
-                                        .background(Color.white)
+                                        .background(universalBackgroundColor)
                                         .clipShape(Circle())
                                         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                                 }
@@ -270,12 +270,12 @@ struct MapView: View {
                                     HStack {
                                         Text(TimeFilter.allActivities.rawValue)
                                             .font(.onestMedium(size: 16))
-                                            .foregroundColor(.black)
+                                            .foregroundColor(universalAccentColor)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 12)
                                     .padding(.horizontal, 16)
-                                    .background(Color.white)
+                                    .background(universalBackgroundColor)
                                     .cornerRadius(20)
                                 }
                             }
@@ -292,12 +292,12 @@ struct MapView: View {
                                     HStack {
                                         Text(filter.rawValue)
                                             .font(.onestMedium(size: 16))
-                                            .foregroundColor(.black)
+                                            .foregroundColor(universalAccentColor)
                                     }
                                     .frame(maxWidth: .infinity, alignment: .center)
                                     .padding(.vertical, 12)
                                     .padding(.horizontal, 16)
-                                    .background(Color.white)
+                                    .background(universalBackgroundColor)
                                     .cornerRadius(20)
                                 }
                                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -315,12 +315,12 @@ struct MapView: View {
                                     .frame(width: 10, height: 10)
                                 Text(selectedTimeFilter.rawValue)
                                     .font(.onestMedium(size: 16))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(universalAccentColor)
                             }
                             .frame(maxWidth: .infinity, alignment: .center)
                             .padding(.vertical, 12)
                             .padding(.horizontal, 16)
-                            .background(Color.white)
+                            .background(universalBackgroundColor)
                             .cornerRadius(20)
                             .shadow(radius: 2)
                         }

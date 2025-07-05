@@ -21,7 +21,6 @@ struct SearchBarView: View {
             TextField(placeholder, text: $searchText)
                 .font(.onestRegular(size: 16))
                 .foregroundColor(universalAccentColor)
-                .colorScheme(.light)
                 .onChange(of: searchText) { newValue in
                     isSearching = !newValue.isEmpty
                 }
@@ -52,7 +51,6 @@ struct SearchBarView: View {
                 )
         )
         .foregroundColor(universalAccentColor)
-        .colorScheme(.light)
     }
 }
 

@@ -110,7 +110,7 @@ struct ProfileInterestsView: View {
             // Background for interests section
             RoundedRectangle(cornerRadius: 15)
                 .stroke(figmaBittersweetOrange, lineWidth: 1)
-                .background(Color.white.opacity(0.5).cornerRadius(15))
+                .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
 
             if profileViewModel.userInterests.isEmpty {
                 emptyInterestsView
@@ -160,7 +160,7 @@ struct ProfileInterestsView: View {
 					.padding(.horizontal, 14)
 					.foregroundColor(universalAccentColor)
 					.lineLimit(1)
-					.background(Color.white)
+					                .background(universalBackgroundColor)
 					.clipShape(Capsule())
 					.shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
 					.overlay(

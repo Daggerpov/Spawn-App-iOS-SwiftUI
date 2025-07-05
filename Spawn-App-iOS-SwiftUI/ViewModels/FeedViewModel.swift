@@ -10,7 +10,9 @@ import Combine
 
 class FeedViewModel: ObservableObject {
     @Published var activities: [FullFeedActivityDTO] = []
-    @Published var activityTypes: [ActivityTypeDTO] = []
+    
+    // Use the ActivityTypeViewModel for managing activity types
+    @Published var activityTypeViewModel: ActivityTypeViewModel
 
     var apiService: IAPIService
     var userId: UUID
@@ -21,6 +23,9 @@ class FeedViewModel: ObservableObject {
         self.apiService = apiService
         self.userId = userId
         self.appCache = AppCache.shared
+        
+        // Initialize the activity type view model
+        self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, apiService: apiService)
         
         // Only subscribe to AppCache if not mocking
         if !MockAPIService.isMocking {
@@ -46,7 +51,7 @@ class FeedViewModel: ObservableObject {
 
     func fetchAllData() async {
         await fetchActivitiesForUser()
-        await fetchActivityTypesForUser()
+        await activityTypeViewModel.fetchActivityTypes()
     }
 
     func fetchActivitiesForUser() async {
@@ -62,9 +67,9 @@ class FeedViewModel: ObservableObject {
         await fetchActivitiesFromAPI()
     }
     
-    func fetchActivityTypesForUser() async {
-        // TODO: implement cache stuff
-        await fetchActivityTypesFromAPI()
+    /// Access to activity types through the view model
+    var activityTypes: [ActivityTypeDTO] {
+        return activityTypeViewModel.activityTypes
     }
     
     private func fetchActivitiesFromAPI() async {
@@ -97,35 +102,6 @@ class FeedViewModel: ObservableObject {
             print("❌ DEBUG: Error fetching activities: \(error)")
             await MainActor.run {
                 self.activities = []
-            }
-        }
-    }
-    
-    private func fetchActivityTypesFromAPI() async {
-        // Path: /api/v1/{requestingUserId}/activity-type
-        guard let url = URL(string: APIService.baseURL + "\(userId)/activity-type") else {
-            print("❌ DEBUG: Failed to construct URL for activity types")
-            return
-        }
-
-        do {
-            let fetchedActivityTypes: [ActivityTypeDTO] = try await self.apiService.fetchData(
-                from: url, parameters: nil
-            )
-            
-            print("✅ DEBUG: Successfully fetched \(fetchedActivityTypes.count) activities")
-            
-            
-            // Update the cache and view model
-            await MainActor.run {
-                self.activityTypes = fetchedActivityTypes
-                print("📱 DEBUG: Updated ViewModel with \(self.activityTypes.count) activity types")
-                // TODO: add cache stuff
-            }
-        } catch {
-            print("❌ DEBUG: Error fetching activity types: \(error)")
-            await MainActor.run {
-                self.activityTypes = []
             }
         }
     }

@@ -10,6 +10,7 @@ import SwiftUI // just for UIImage for `createUser()`
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
+	static var isMocking: Bool = false
     static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
@@ -41,8 +42,8 @@ class MockAPIService: IAPIService {
 			}
 		}
         
-        if let userIdForUrl = userId {
-            if url.absoluteString == APIService.baseURL + "activity-type/\(userIdForUrl)" {
+        if userId != nil {
+            if url.absoluteString == APIService.baseURL + "(userIdForUrl)/activity-types" {
                 return [
                     ActivityTypeDTO.mockChillActivityType,
                     ActivityTypeDTO.mockFoodActivityType,
@@ -206,6 +207,8 @@ class MockAPIService: IAPIService {
 				return ["Hiking", "Photography", "Cooking", "Travel", "Music"] as! T
 			}
 		}
+		
+
 
 		throw APIError.invalidData
 	}
@@ -305,6 +308,40 @@ class MockAPIService: IAPIService {
 						? "https://www.instagram.com/\(socialMediaDTO.instagramUsername!)"
 						: nil
 				) as! U
+			}
+		}
+		
+		// Activity type batch update (including pin updates)
+		if url.absoluteString.contains("activity-types") && !url.absoluteString.contains("pin") {
+			if let batchUpdateDTO = object as? BatchActivityTypeUpdateDTO {
+				print("🔍 MOCK: Batch updating activity types with \(batchUpdateDTO.updatedActivityTypes.count) updates and \(batchUpdateDTO.deletedActivityTypeIds.count) deletions")
+				
+				// Simulate the backend behavior: return ALL user's activity types after the update
+				// Start with the mock activity types and apply the changes
+				var allActivityTypes = [
+					ActivityTypeDTO.mockChillActivityType,
+					ActivityTypeDTO.mockFoodActivityType,
+					ActivityTypeDTO.mockActiveActivityType,
+					ActivityTypeDTO.mockStudyActivityType
+				]
+				
+				// Remove deleted activity types
+				allActivityTypes.removeAll { activityType in
+					batchUpdateDTO.deletedActivityTypeIds.contains(activityType.id)
+				}
+				
+				// Update or add the updated activity types
+				for updatedType in batchUpdateDTO.updatedActivityTypes {
+					if let existingIndex = allActivityTypes.firstIndex(where: { $0.id == updatedType.id }) {
+						// Update existing activity type
+						allActivityTypes[existingIndex] = updatedType
+					} else {
+						// Add new activity type
+						allActivityTypes.append(updatedType)
+					}
+				}
+				
+				return allActivityTypes as! U
 			}
 		}
 
@@ -562,7 +599,7 @@ class MockAPIService: IAPIService {
 						date: date,
 						activityCategory: activity.category,
 						icon: activity.icon,
-						colorHexCode: activity.category.color().hex,
+						colorHexCode: getActivityColorHex(for: activity.id),
 						activityId: activity.id
 					)
 					activities.append(calendarActivity)
