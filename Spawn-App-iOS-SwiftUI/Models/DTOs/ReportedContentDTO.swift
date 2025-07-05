@@ -91,9 +91,9 @@ enum ReportType: String, Codable, CaseIterable {
         case .harassment:
             return "Harassment"
         case .violence:
-            return "Violence"
+            return "Violence, hate or exploitation"
         case .nudity:
-            return "Nudity"
+            return "Nudity or sexual content"
         case .bullying:
             return "Bullying"
         }
