@@ -4,6 +4,7 @@ import SwiftUI
 struct InfiniteCalendarView: View {
     let activities: [CalendarActivityDTO]
     let isLoading: Bool
+    let userCreationDate: Date?
     let onDismiss: () -> Void
     let onActivitySelected: (CalendarActivityDTO) -> Void
     
@@ -14,14 +15,33 @@ struct InfiniteCalendarView: View {
     private let calendar = Calendar.current
     private let today = Date()
     
-    // Generate months for infinite scrolling - place current month in the middle
+    // Calculate the earliest date to show in the calendar
+    private var earliestDate: Date {
+        guard let userCreationDate = userCreationDate else {
+            // If no user creation date, go back 2 years as default
+            return calendar.date(byAdding: .year, value: -2, to: today) ?? today
+        }
+        return userCreationDate
+    }
+    
+    // Generate months for infinite scrolling - respecting user creation date
     private var monthsData: [MonthData] {
         var months: [MonthData] = []
         
-        // Go back 2 years and forward 1 year, but put current month at index 24 (center)
-        for i in -24...12 {
+        // Calculate how many months back we can go from today to the earliest date
+        let monthsFromEarliestToToday = calendar.dateComponents([.month], from: earliestDate, to: today).month ?? 0
+        let maxMonthsBack = max(0, monthsFromEarliestToToday) // Ensure we don't go negative
+        
+        // Go back to the earliest date and forward 1 year
+        let startIndex = -maxMonthsBack
+        let endIndex = 12
+        
+        for i in startIndex...endIndex {
             if let date = calendar.date(byAdding: .month, value: i, to: today) {
-                months.append(MonthData(date: date, activities: activitiesForMonth(date)))
+                // Only include dates that are not before the user's creation date
+                if date >= earliestDate {
+                    months.append(MonthData(date: date, activities: activitiesForMonth(date)))
+                }
             }
         }
         
@@ -330,6 +350,7 @@ extension DateFormatter {
     InfiniteCalendarView(
         activities: [],
         isLoading: false,
+        userCreationDate: nil,
         onDismiss: {},
         onActivitySelected: { _ in }
     )

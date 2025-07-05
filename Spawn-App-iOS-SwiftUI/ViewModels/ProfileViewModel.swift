@@ -209,6 +209,25 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    func fetchUserProfileInfo(userId: UUID) async {
+        await MainActor.run { self.isLoadingProfileInfo = true }
+        
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(userId)/profile-info")!
+            let profileInfo: UserProfileInfoDTO = try await self.apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                self.userProfileInfo = profileInfo
+                self.isLoadingProfileInfo = false
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to load profile info: \(error.localizedDescription)"
+                self.isLoadingProfileInfo = false
+            }
+        }
+    }
+    
     func loadAllProfileData(userId: UUID) async {
         await fetchUserStats(userId: userId)
         await fetchUserInterests(userId: userId)
