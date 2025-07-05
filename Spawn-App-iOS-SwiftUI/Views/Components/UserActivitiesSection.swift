@@ -4,6 +4,7 @@ struct UserActivitiesSection: View {
     var user: Nameable
     @ObservedObject var profileViewModel: ProfileViewModel
     @Binding var showActivityDetails: Bool
+    @State private var showFriendActivities: Bool = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -13,6 +14,19 @@ struct UserActivitiesSection: View {
             }
             
             addToSeeActivitiesSection
+            
+            // Hidden NavigationLink for friend activities
+            NavigationLink(
+                destination: FriendActivitiesListView(
+                    user: user,
+                    profileViewModel: profileViewModel,
+                    showActivityDetails: $showActivityDetails
+                ),
+                isActive: $showFriendActivities
+            ) {
+                EmptyView()
+            }
+            .hidden()
         }
     }
     
@@ -53,7 +67,7 @@ struct UserActivitiesSection: View {
                     .foregroundColor(.primary)
                 Spacer()
                 Button(action: {
-                    // TODO: Navigate to full activities list
+                    showFriendActivities = true
                 }) {
                     Text("Show All")
                         .font(.onestMedium(size: 14))
@@ -78,7 +92,7 @@ struct UserActivitiesSection: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(sortedActivities) { activity in
+                        ForEach(Array(sortedActivities.prefix(2))) { activity in
                             ActivityCardView(
                                 userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                                 activity: activity,
