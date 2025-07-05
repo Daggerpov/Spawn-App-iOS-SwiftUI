@@ -48,8 +48,12 @@ struct BlockedUsersView: View {
     }
     
     private var cancelButton: some View {
-        Button("Done") {
+        Button(action: {
             presentationMode.wrappedValue.dismiss()
+        }) {
+            Image(systemName: "chevron.left")
+                .foregroundColor(universalAccentColor)
+                .font(.title3)
         }
     }
     
@@ -158,21 +162,32 @@ struct BlockedUserRow: View {
     
     var body: some View {
         HStack {
-            // User Avatar (placeholder)
-            Circle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Text(String(blockedUser.blockedUsername.prefix(1).uppercased()))
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.gray)
-                )
+            // User Avatar
+            AsyncImage(url: URL(string: blockedUser.blockedProfilePicture ?? "")) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Circle()
+                    .fill(Color.gray.opacity(0.3))
+                    .overlay(
+                        Text(String(blockedUser.blockedName.prefix(1).uppercased()))
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.gray)
+                    )
+            }
+            .frame(width: 50, height: 50)
+            .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(blockedUser.blockedUsername)
+                Text(blockedUser.blockedName)
                     .font(.headline)
                     .foregroundColor(.primary)
+                
+                Text("@\(blockedUser.blockedUsername)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 
                 if !blockedUser.reason.isEmpty {
                     Text("Reason: \(blockedUser.reason)")
