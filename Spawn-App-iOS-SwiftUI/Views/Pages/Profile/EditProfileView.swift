@@ -338,7 +338,6 @@ struct PersonalInfoSection: View {
 }
 
 // MARK: - FlowLayout for flexible wrapping
-@available(iOS 16.0, *)
 struct FlowLayout: Layout {
     var alignment: Alignment = .center
     var spacing: CGFloat = 10
@@ -366,13 +365,12 @@ struct FlowLayout: Layout {
     }
 }
 
-@available(iOS 16.0, *)
 struct FlowResult {
     var bounds = CGSize.zero
     var offsets: [CGPoint] = []
     var sizes: [CGSize] = []
     
-    init(in bounds: CGSize, subviews: Layout.Subviews, alignment: Alignment, spacing: CGFloat) {
+    init(in bounds: CGSize, subviews: Subviews, alignment: Alignment, spacing: CGFloat) {
         var origin = CGPoint.zero
         var lineHeight: CGFloat = 0
         var lineOffsets: [CGPoint] = []
@@ -407,7 +405,7 @@ struct FlowResult {
         )
     }
     
-    private mutating func alignLine(lineOffsets: inout [CGPoint], lineSizes: inout [CGSize], lineHeight: CGFloat, bounds: CGSize, alignment: Alignment) {
+    private func alignLine(lineOffsets: inout [CGPoint], lineSizes: inout [CGSize], lineHeight: CGFloat, bounds: CGSize, alignment: Alignment) {
         for (index, offset) in lineOffsets.enumerated() {
             let size = lineSizes[index]
             let alignedOffset = CGPoint(
@@ -469,26 +467,15 @@ struct InterestsSection: View {
             
             // Existing interests as chips
             if !profileViewModel.userInterests.isEmpty {
-                // Use flexible flow layout for interests on iOS 16+, fallback to LazyVGrid
-                if #available(iOS 16.0, *) {
-                    FlowLayout(alignment: .leading, spacing: 8) {
-                        ForEach(profileViewModel.userInterests, id: \.self) { interest in
-                            InterestChipView(interest: interest) {
-                                removeInterest(interest)
-                            }
+                // Use flexible flow layout for interests
+                FlowLayout(alignment: .leading, spacing: 8) {
+                    ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                        InterestChipView(interest: interest) {
+                            removeInterest(interest)
                         }
                     }
-                    .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
-                } else {
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 8) {
-                        ForEach(profileViewModel.userInterests, id: \.self) { interest in
-                            InterestChipView(interest: interest) {
-                                removeInterest(interest)
-                            }
-                        }
-                    }
-                    .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
                 }
+                .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
         .frame(width: 364) // Match Figma width

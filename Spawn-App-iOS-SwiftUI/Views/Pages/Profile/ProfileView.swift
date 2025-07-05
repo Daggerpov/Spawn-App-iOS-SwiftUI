@@ -315,402 +315,175 @@ struct ProfileView: View {
 	}
 
 	private var profileInnerComponentsView: some View {
-		ScrollView {
-			VStack(alignment: .center, spacing: 0) {
-				// Profile Header (Profile Picture + Name)
-				VStack(spacing: 16) {
-					// Profile Picture
-					ZStack {
-						Circle()
-							.fill(Color.gray.opacity(0.3))
-							.frame(width: 128, height: 128)
-						
-						if let selectedImage = selectedImage {
-							Image(uiImage: selectedImage)
-								.resizable()
-								.aspectRatio(contentMode: .fill)
-								.frame(width: 128, height: 128)
-								.clipShape(Circle())
-						} else {
-							// Default profile image or placeholder
-							Circle()
-								.fill(LinearGradient(
-									gradient: Gradient(colors: [Color.blue.opacity(0.6), Color.purple.opacity(0.6)]),
-									startPoint: .topLeading,
-									endPoint: .bottomTrailing
-								))
-								.frame(width: 128, height: 128)
-						}
-						
-						// Edit button overlay for current user
-						if isCurrentUserProfile && editingState == .save {
-							Button(action: {
-								showImagePicker = true
-							}) {
-								Image(systemName: "camera.fill")
-									.font(.system(size: 16))
-									.foregroundColor(.white)
-									.frame(width: 32, height: 32)
-									.background(universalAccentColor)
-									.clipShape(Circle())
-							}
-							.offset(x: 45, y: 45)
-						}
-					}
-					
-					// Name and username
-					VStack(spacing: 4) {
-						if editingState == .save && isCurrentUserProfile {
-							TextField("Full Name", text: $name)
-								.font(.onestBold(size: 24))
-								.foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
-								.multilineTextAlignment(.center)
-								.textFieldStyle(RoundedBorderTextFieldStyle())
-								.frame(maxWidth: 200)
-						} else {
-							Text(name.isEmpty ? user.name ?? "Unknown" : name)
-								.font(.onestBold(size: 24))
-								.foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
-						}
-						
-						if editingState == .save && isCurrentUserProfile {
-							TextField("Username", text: $username)
-								.font(.onestRegular(size: 16))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-								.multilineTextAlignment(.center)
-								.textFieldStyle(RoundedBorderTextFieldStyle())
-								.frame(maxWidth: 200)
-						} else {
-							Text("@\(username)")
-								.font(.onestRegular(size: 16))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-						}
-					}
-					
-					// Action buttons (Edit Profile / Share Profile)
-					if isCurrentUserProfile {
-						HStack(spacing: 8) {
-							Button(action: {
-								if editingState == .edit {
-									editingState = .save
-								} else {
-									saveProfile()
-								}
-							}) {
-								HStack(spacing: 8) {
-									Image(systemName: editingState == .edit ? "pencil" : "checkmark")
-										.font(.system(size: 12, weight: .bold))
-										.foregroundColor(universalAccentColor)
-									Text(editingState == .edit ? "Edit Profile" : "Save")
-										.font(.onestSemiBold(size: 12))
-										.foregroundColor(universalAccentColor)
-								}
-								.padding(.horizontal, 16)
-								.padding(.vertical, 8)
-								.background(.white)
-								.cornerRadius(12)
-								.overlay(
-									RoundedRectangle(cornerRadius: 12)
-										.stroke(universalAccentColor, lineWidth: 0.5)
-								)
-							}
-							.frame(width: 128)
-							
-							Button(action: shareProfile) {
-								HStack(spacing: 8) {
-									Image(systemName: "square.and.arrow.up")
-										.font(.system(size: 12, weight: .bold))
-										.foregroundColor(universalAccentColor)
-									Text("Share Profile")
-										.font(.onestSemiBold(size: 12))
-										.foregroundColor(universalAccentColor)
-								}
-								.padding(.horizontal, 16)
-								.padding(.vertical, 8)
-								.background(.white)
-								.cornerRadius(12)
-								.overlay(
-									RoundedRectangle(cornerRadius: 12)
-										.stroke(universalAccentColor, lineWidth: 0.5)
-								)
-							}
-							.frame(width: 128)
-						}
-					}
-				}
-				.padding(.top, 20)
-				
-				// Friendship badge and buttons for other users
-				friendshipBadge
-				
-				// Friend Request Buttons (for incoming requests)
-				if !isCurrentUserProfile && profileViewModel.friendshipStatus == .requestReceived {
-					HStack(spacing: 12) {
-						Button(action: {
-							if let requestId = profileViewModel.pendingFriendRequestId {
-								Task {
-									await profileViewModel.acceptFriendRequest(requestId: requestId)
-								}
-							}
-						}) {
-							HStack {
-								Image(systemName: "checkmark")
-								Text("Accept Request")
-									.bold()
-							}
-							.font(.system(size: 16))
-							.foregroundColor(.white)
-							.padding(.vertical, 10)
-							.padding(.horizontal, 20)
-							.frame(maxWidth: .infinity)
-							.background(universalAccentColor)
-							.cornerRadius(12)
-						}
+		VStack(alignment: .center, spacing: 10) {
+			// Profile Header (Profile Picture + Name)
+			ProfileHeaderView(
+				user: user,
+				selectedImage: $selectedImage,
+				showImagePicker: $showImagePicker,
+				isImageLoading: $isImageLoading,
+				refreshFlag: $refreshFlag,
+				editingState: $editingState
+			)
 
-						Button(action: {
-							if let requestId = profileViewModel.pendingFriendRequestId {
-								Task {
-									await profileViewModel.declineFriendRequest(requestId: requestId)
-								}
-							}
-						}) {
-							HStack {
-								Image(systemName: "xmark")
-								Text("Deny")
-									.bold()
-							}
-							.font(.system(size: 16))
-							.foregroundColor(universalAccentColor)
-							.padding(.vertical, 10)
-							.padding(.horizontal, 20)
-							.frame(maxWidth: .infinity)
-							.background(Color.clear)
-							.overlay(
-								RoundedRectangle(cornerRadius: 12)
-									.stroke(universalAccentColor, lineWidth: 2)
-							)
-						}
-					}
-					.padding(.horizontal, 20)
-					.padding(.vertical, 10)
-				}
+			// Friendship badge (for other users' profiles)
+			friendshipBadge
 
-				// Add Friend Button for non-friends
-				if !isCurrentUserProfile && 
-					(profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent)
-				{
+			// Friend Request Buttons (for incoming requests)
+			if !isCurrentUserProfile && profileViewModel.friendshipStatus == .requestReceived {
+				HStack(spacing: 12) {
 					Button(action: {
-						if profileViewModel.friendshipStatus == .none, 
-						   let currentUserId = userAuth.spawnUser?.id {
+						if let requestId = profileViewModel.pendingFriendRequestId {
 							Task {
-								await profileViewModel.sendFriendRequest(
-									fromUserId: currentUserId,
-									toUserId: user.id
-								)
+								await profileViewModel.acceptFriendRequest(requestId: requestId)
 							}
 						}
 					}) {
 						HStack {
-							if profileViewModel.friendshipStatus == .none {
-								Image(systemName: "person.badge.plus")
-								Text("Add Friend")
-									.bold()
-							} else {
-								Text("Friend Request Sent")
-									.bold()
-							}
+							Image(systemName: "checkmark")
+							Text("Accept Request")
+								.bold()
 						}
 						.font(.system(size: 16))
 						.foregroundColor(.white)
 						.padding(.vertical, 10)
 						.padding(.horizontal, 20)
-						.frame(maxWidth: 200)
-						.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
+						.frame(maxWidth: .infinity)
+						.background(universalAccentColor)
 						.cornerRadius(12)
 					}
-					.disabled(profileViewModel.friendshipStatus == .requestSent)
-					.padding(.vertical, 10)
-				}
-				
-				// Stats Section
-				HStack(spacing: 48) {
-					VStack(spacing: 8) {
-						HStack(spacing: 4) {
-							Image(systemName: "link")
-								.font(.system(size: 20))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-							Text("49")
-								.font(.system(size: 20))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-						}
-						Text("People\nmet")
-							.font(.onestRegular(size: 12))
-							.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-							.multilineTextAlignment(.center)
-					}
-					
-					VStack(spacing: 8) {
-						HStack(spacing: 4) {
-							Image(systemName: "star")
-								.font(.system(size: 20))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-							Text("4")
-								.font(.system(size: 20))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-						}
-						Text("Spawns\nmade")
-							.font(.onestRegular(size: 12))
-							.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-							.multilineTextAlignment(.center)
-					}
-					
-					VStack(spacing: 8) {
-						HStack(spacing: 4) {
-							Image(systemName: "calendar")
-								.font(.system(size: 20))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-							Text("16")
-								.font(.system(size: 20))
-								.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-						}
-						Text("Spawns\njoined")
-							.font(.onestRegular(size: 12))
-							.foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
-							.multilineTextAlignment(.center)
-					}
-				}
-				.padding(.vertical, 24)
-				
-				// Interests Section
-				VStack(spacing: 0) {
-					// Interests Header with Social Media Icons
-					HStack {
-						// Interests header badge
-						HStack {
-							Text("Interests + Hobbies")
-								.font(.onestBold(size: 14))
-								.foregroundColor(.white)
-								.padding(.vertical, 8)
-								.padding(.horizontal, 12)
-								.background(Color(red: 1, green: 0.45, blue: 0.44))
-								.cornerRadius(12)
-						}
-						
-						Spacer()
-						
-						// Social media icons
-						if !profileViewModel.isLoadingSocialMedia {
-							HStack(spacing: 10) {
-								if let whatsappLink = profileViewModel.userSocialMedia?.whatsappLink, !whatsappLink.isEmpty {
-									Image("whatsapp")
-										.resizable()
-										.scaledToFit()
-										.frame(width: 36, height: 36)
-										.rotationEffect(.degrees(-8))
-										.shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1)
-										.onTapGesture {
-											openSocialMediaLink(
-												platform: "WhatsApp",
-												link: whatsappLink
-											)
-										}
-								}
 
-								if let instagramLink = profileViewModel.userSocialMedia?.instagramLink, !instagramLink.isEmpty {
-									Image("instagram")
-										.resizable()
-										.scaledToFit()
-										.frame(width: 36, height: 36)
-										.rotationEffect(.degrees(8))
-										.shadow(color: Color.black.opacity(0.25), radius: 4, x: 0, y: 1)
-										.onTapGesture {
-											openSocialMediaLink(
-												platform: "Instagram",
-												link: instagramLink
-											)
-										}
-								}
+					Button(action: {
+						if let requestId = profileViewModel.pendingFriendRequestId {
+							Task {
+								await profileViewModel.declineFriendRequest(requestId: requestId)
 							}
 						}
-					}
-					.padding(.horizontal, 16)
-					.padding(.bottom, 8)
-					
-					// Interests Container
-					if profileViewModel.isLoadingInterests {
-						ProgressView()
-							.frame(maxWidth: .infinity, alignment: .center)
-							.padding()
-					} else if profileViewModel.userInterests.isEmpty {
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(Color(red: 1, green: 0.45, blue: 0.44), lineWidth: 0.5)
-							.frame(height: 100)
-							.overlay(
-								Text("No interests added yet")
-									.font(.onestRegular(size: 14))
-									.foregroundColor(.gray)
-							)
-							.padding(.horizontal, 16)
-					} else {
-						// Interests Tags
-						InterestsTagsView(interests: profileViewModel.userInterests)
-							.padding(.horizontal, 16)
+					}) {
+						HStack {
+							Image(systemName: "xmark")
+							Text("Deny")
+								.bold()
+						}
+						.font(.system(size: 16))
+						.foregroundColor(universalAccentColor)
+						.padding(.vertical, 10)
+						.padding(.horizontal, 20)
+						.frame(maxWidth: .infinity)
+						.background(Color.clear)
+						.overlay(
+							RoundedRectangle(cornerRadius: 12)
+								.stroke(universalAccentColor, lineWidth: 2)
+						)
 					}
 				}
-				
-				// Edit Save Cancel buttons (only when editing)
-				if isCurrentUserProfile && editingState == .save {
-					HStack(spacing: 16) {
-						Button(action: {
-							editingState = .edit
-							// Reset to original values
-							refreshUserData()
-						}) {
-							Text("Cancel")
-								.font(.onestSemiBold(size: 14))
-								.foregroundColor(.red)
-								.padding(.vertical, 10)
-								.padding(.horizontal, 24)
-								.background(Color.clear)
-								.overlay(
-									RoundedRectangle(cornerRadius: 12)
-										.stroke(Color.red, lineWidth: 1)
-								)
-						}
-						
-						Button(action: saveProfile) {
-							Text("Save Changes")
-								.font(.onestSemiBold(size: 14))
-								.foregroundColor(.white)
-								.padding(.vertical, 10)
-								.padding(.horizontal, 24)
-								.background(universalAccentColor)
-								.cornerRadius(12)
-						}
-					}
-					.padding(.top, 16)
-				}
-				
-				// Calendar/Activity Grid Section
-				VStack(spacing: 16) {
-					// Calendar weekday headers
-					HStack(spacing: 4.57) {
-						ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
-							Text(day)
-								.font(.onestMedium(size: 9.14))
-								.foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
-								.frame(maxWidth: .infinity)
-						}
-					}
-					.padding(.horizontal, 16)
-					
-					// Activity Calendar Grid
-					ActivityCalendarGrid()
-						.padding(.horizontal, 16)
-				}
-				.padding(.top, 24)
+				.padding(.horizontal, 20)
+				.padding(.vertical, 10)
 			}
-			.padding(.bottom, 100) // Add bottom padding for tab bar
+
+			// Add Friend Button for non-friends or showing Friend Request Sent
+			if !isCurrentUserProfile && 
+				(profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent)
+			{
+				Button(action: {
+					if profileViewModel.friendshipStatus == .none, 
+					   let currentUserId = userAuth.spawnUser?.id {
+						Task {
+							await profileViewModel.sendFriendRequest(
+								fromUserId: currentUserId,
+								toUserId: user.id
+							)
+						}
+					}
+				}) {
+					HStack {
+						if profileViewModel.friendshipStatus == .none {
+							Image(systemName: "person.badge.plus")
+							Text("Add Friend")
+								.bold()
+						} else {
+							Text("Friend Request Sent")
+								.bold()
+						}
+					}
+					.font(.system(size: 16))
+					.foregroundColor(.white)
+					.padding(.vertical, 10)
+					.padding(.horizontal, 20)
+					.frame(maxWidth: 200)
+					.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
+					.cornerRadius(12)
+				}
+				.disabled(profileViewModel.friendshipStatus == .requestSent)
+				.padding(.vertical, 10)
+			}
+
+			// Profile Action Buttons
+			profileActionButtonsSection
+				.padding(.horizontal, 25)
+				.padding(.bottom, 4)
+
+			// Edit Save Cancel buttons (only when editing)
+			if isCurrentUserProfile && editingState == .save {
+				ProfileEditButtonsView(
+					user: user,
+					profileViewModel: profileViewModel,
+					editingState: $editingState,
+					username: $username,
+					name: $name,
+					selectedImage: $selectedImage,
+					whatsappLink: $whatsappLink,
+					instagramLink: $instagramLink,
+					isImageLoading: $isImageLoading,
+					saveProfile: saveProfile
+				)
+			}
+
+			// Interests Section with Social Media Icons
+			ProfileInterestsView(
+				user: user,
+				profileViewModel: profileViewModel,
+				editingState: $editingState,
+				newInterest: $newInterest,
+				openSocialMediaLink: openSocialMediaLink,
+				removeInterest: removeInterest
+			)
+			.padding(.bottom, 8)
+
+			// User Stats (only for current user or friends)
+			userStatsSection
+
+			// Calendar or Activities Section
+			if isCurrentUserProfile {
+				VStack(spacing: 0) {
+					ProfileCalendarView(
+						profileViewModel: profileViewModel,
+						showCalendarPopup: $showCalendarPopup,
+						showActivityDetails: $showActivityDetails,
+						navigateToCalendar: $navigateToCalendar
+					)
+					.padding(.horizontal, 16)
+					.padding(.bottom, 15)
+					
+					// Hidden NavigationLink for calendar
+					NavigationLink(
+						destination: calendarFullScreenView,
+						isActive: $navigateToCalendar
+					) {
+						EmptyView()
+					}
+					.hidden()
+				}
+			} else {
+				// User Activities Section for other users (based on friendship status)
+				UserActivitiesSection(
+					user: user,
+					profileViewModel: profileViewModel,
+					showActivityDetails: $showActivityDetails
+				)
+				.padding(.horizontal, 16)
+				.padding(.bottom, 15)
+			}
 		}
 	}
 
@@ -742,11 +515,39 @@ struct ProfileView: View {
 		}
 	}
 
+	private var profileActionButtonsSection: some View {
+		Group {
+			if isCurrentUserProfile {
+				// Original action buttons for current user
+				ProfileActionButtonsView(
+					user: user,
+					shareProfile: shareProfile
+				)
+			} else {
+				// Friend action buttons for other users (based on friendship status)
+				friendActionButtons
+			}
+		}
+	}
+
+	private var userStatsSection: some View {
+		Group {
+			if isCurrentUserProfile
+				|| profileViewModel.friendshipStatus == .friends
+			{
+				ProfileStatsView(
+					profileViewModel: profileViewModel
+				)
+			} else {
+				EmptyView()
+			}
+		}
+	}
+
 	private var calendarPopupView: some View {
 		InfiniteCalendarView(
 			activities: profileViewModel.allCalendarActivities,
 			isLoading: profileViewModel.isLoadingCalendar,
-			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
 			onDismiss: { showCalendarPopup = false },
 			onActivitySelected: { activity in
 				handleActivitySelection(activity)
@@ -758,7 +559,6 @@ struct ProfileView: View {
 		InfiniteCalendarView(
 			activities: profileViewModel.allCalendarActivities,
 			isLoading: profileViewModel.isLoadingCalendar,
-			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
 			onDismiss: { navigateToCalendar = false },
 			onActivitySelected: { activity in
 				handleActivitySelection(activity)
