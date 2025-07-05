@@ -134,8 +134,14 @@ extension ActivityFeedView {
                 ActivityTypeCardView(activityType: activityType) { selectedActivityType in
                     // Pre-select the activity type and navigate to creation
                     print("🎯 ActivityFeedView: Activity type '\(selectedActivityType.rawValue)' selected")
-                    ActivityCreationViewModel.initializeWithSelectedType(selectedActivityType)
+                    
+                    // First set the tab to trigger the view change
                     selectedTab = TabType.creation
+                    
+                    // Then set the pre-selection with a small delay to ensure the tab change happens first
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        ActivityCreationViewModel.initializeWithSelectedType(selectedActivityType)
+                    }
                 }
             }
         }

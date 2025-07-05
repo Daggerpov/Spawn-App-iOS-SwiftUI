@@ -101,8 +101,11 @@ struct ActivityCreationView: View {
             }
         }
         .onChange(of: selectedTab) { newTab in
+            print("🔄 ActivityCreationView.onChange(selectedTab): \(newTab), currentStep: \(currentStep), viewModel.selectedType: \(viewModel.selectedType?.rawValue ?? "nil")")
+            
             // Reset to beginning if activities tab is selected and we're at confirmation
             if newTab == TabType.creation && currentStep == .confirmation {
+                print("🔄 Resetting from confirmation step")
                 currentStep = .activityType
                 ActivityCreationViewModel.reInitialize()
                 // Reset other state variables as well
@@ -119,10 +122,14 @@ struct ActivityCreationView: View {
             }
             // Also reset when navigating to creation tab from other tabs (not from confirmation)
             else if newTab == TabType.creation && currentStep != .confirmation {
+                print("🔄 Navigating to creation tab, preserving pre-selection if exists")
                 currentStep = .activityType
                 // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
                 if viewModel.selectedType == nil {
+                    print("🔄 No pre-selection found, reinitializing")
                     ActivityCreationViewModel.reInitialize()
+                } else {
+                    print("🔄 Pre-selection found: \(viewModel.selectedType!.rawValue), preserving it")
                 }
                 // Reset other state variables
                 if let title = viewModel.activity.title, !title.isEmpty {

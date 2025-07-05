@@ -34,16 +34,56 @@ class ActivityCreationViewModel: ObservableObject {
 	public static func reInitialize() {
 		print("🔄 ActivityCreationViewModel.reInitialize() called")
 		let oldSelectedType = shared.selectedType?.rawValue
-		shared = ActivityCreationViewModel()
+		shared.resetToDefaults()
 		print("🔄 ActivityCreationViewModel reinitialized. Old selectedType: \(oldSelectedType ?? "nil"), New selectedType: \(shared.selectedType?.rawValue ?? "nil")")
 	}
 	
 	// Method to pre-select an activity type (e.g., when coming from feed view)
 	public static func initializeWithSelectedType(_ activityType: ActivityType?) {
 		print("🎯 ActivityCreationViewModel.initializeWithSelectedType(\(activityType?.rawValue ?? "nil")) called")
-		shared = ActivityCreationViewModel()
+		let oldSelectedType = shared.selectedType?.rawValue
+		
+		// Instead of creating a new instance, reset the existing one and set the type
+		shared.resetToDefaults()
 		shared.selectedType = activityType
-		print("🎯 ActivityCreationViewModel initialized with selectedType: \(shared.selectedType?.rawValue ?? "nil")")
+		
+		print("🎯 ActivityCreationViewModel updated with selectedType: \(shared.selectedType?.rawValue ?? "nil") (was: \(oldSelectedType ?? "nil"))")
+	}
+	
+	// Helper method to reset the current instance to defaults
+	private func resetToDefaults() {
+		print("🔄 ActivityCreationViewModel.resetToDefaults() called")
+		
+		// Reset all properties to their default values
+		selectedDate = Date()
+		creationMessage = ""
+		selectedType = nil
+		selectedDuration = .indefinite
+		selectedLocation = nil
+		selectedFriends = []
+		selectedCategory = .general
+		isTitleValid = true
+		isInvitesValid = true
+		isLocationValid = true
+		isFormValid = false
+		
+		// Reset the activity DTO
+		let defaultStart = Date()
+		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
+		activity = ActivityCreationDTO(
+			id: UUID(),
+			title: "",
+			startTime: defaultStart,
+			endTime: defaultEnd,
+			location: nil,
+			icon: "⭐️",
+			category: .general,
+			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+			invitedFriendUserIds: []
+		)
+		
+		// Reload friends
+		loadAllFriendsAsSelected()
 	}
 	
 	// Force reset method for debugging
