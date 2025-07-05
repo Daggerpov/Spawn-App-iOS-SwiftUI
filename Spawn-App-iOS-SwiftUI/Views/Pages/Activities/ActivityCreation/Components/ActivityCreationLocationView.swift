@@ -12,6 +12,8 @@ struct ActivityCreationLocationView: View {
     @State private var searchText: String = "6133 University Blvd, Vancouver"
     @State private var isDragging = false
     @State private var showingLocationPicker = false
+    @State private var dragOffset: CGFloat = 0
+    @State private var isExpanded = false
     
     let onNext: () -> Void
     let onBack: (() -> Void)?
@@ -83,15 +85,17 @@ struct ActivityCreationLocationView: View {
             VStack {
                 Spacer()
                 
-                VStack(spacing: 16) {
+                VStack(spacing: 0) {
                     // Handle bar
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.gray.opacity(0.3))
-                        .frame(width: 40, height: 4)
+                    RoundedRectangle(cornerRadius: 2.5)
+                        .fill(Color.gray.opacity(0.4))
+                        .frame(width: 40, height: 5)
+                        .padding(.top, 12)
+                        .padding(.bottom, 20)
                     
-                    VStack(spacing: 20) {
+                    VStack(spacing: 16) {
                         // Title and instruction
-                        VStack(spacing: 8) {
+                        VStack(spacing: 6) {
                             Text("Set Location")
                                 .font(.title2)
                                 .fontWeight(.semibold)
@@ -125,7 +129,7 @@ struct ActivityCreationLocationView: View {
                         
                         // Step indicators
                         StepIndicatorView(currentStep: 2, totalSteps: 3)
-                            .padding(.bottom, 16)
+                            .padding(.bottom, 8)
                         
                         // Confirm button
                         ActivityNextStepButton(
@@ -144,12 +148,43 @@ struct ActivityCreationLocationView: View {
                     }
                     .padding(.horizontal, 20)
                 }
-                .padding(.top, 16)
-                .padding(.bottom, 32)
                 .background(
                     universalBackgroundColor
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                        .shadow(radius: 10)
+                        .clipShape(
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 20,
+                                bottomLeadingRadius: 0,
+                                bottomTrailingRadius: 0,
+                                topTrailingRadius: 20
+                            )
+                        )
+                        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
+                )
+                .offset(y: dragOffset)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            let translation = value.translation.height
+                            if translation < 0 {
+                                // Dragging up
+                                dragOffset = translation * 0.3
+                            } else {
+                                // Dragging down
+                                dragOffset = translation * 0.1
+                            }
+                        }
+                        .onEnded { value in
+                            let translation = value.translation.height
+                            let velocity = value.velocity.height
+
+                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                if translation < -100 || velocity < -500 {
+                                    // Dragged up enough or fast enough - show location picker
+                                    showingLocationPicker = true
+                                }
+                                dragOffset = 0
+                            }
+                        }
                 )
             }
         }
