@@ -9,9 +9,15 @@ import SwiftUI
 
 struct FriendsView: View {
     let user: BaseUserDTO
+    @StateObject private var viewModel: FriendsTabViewModel
 
     init(user: BaseUserDTO) {
         self.user = user
+        let vm = FriendsTabViewModel(
+            userId: user.id,
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: user.id) : APIService())
+        self._viewModel = StateObject(wrappedValue: vm)
     }
 
     var body: some View {
@@ -30,6 +36,11 @@ struct FriendsView: View {
                 .padding()
                 .background(universalBackgroundColor)
                 .navigationBarHidden(true)
+            }
+        }
+        .onAppear {
+            Task {
+                await viewModel.fetchIncomingFriendRequests()
             }
         }
     }
@@ -84,16 +95,20 @@ extension FriendsView {
                     Text("Friend Requests")
                         .font(Font.custom("Onest", size: 17).weight(.semibold))
                         .foregroundColor(.white)
-                    VStack(spacing: 10) {
-                        Text("5")
-                            .font(Font.custom("Onest", size: 12).weight(.semibold))
-                            .lineSpacing(14.40)
-                            .foregroundColor(.white)
+                    
+                    // Only show red indicator if there are friend requests
+                    if viewModel.incomingFriendRequests.count > 0 {
+                        VStack(spacing: 10) {
+                            Text("\(viewModel.incomingFriendRequests.count)")
+                                .font(Font.custom("Onest", size: 12).weight(.semibold))
+                                .lineSpacing(14.40)
+                                .foregroundColor(.white)
+                        }
+                        .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
+                        .frame(width: 20, height: 20)
+                        .background(Color(red: 1, green: 0.45, blue: 0.44))
+                        .cornerRadius(16)
                     }
-                    .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
-                    .frame(width: 20, height: 20)
-                    .background(Color(red: 1, green: 0.45, blue: 0.44))
-                    .cornerRadius(16)
                 }
                 
                 Spacer()

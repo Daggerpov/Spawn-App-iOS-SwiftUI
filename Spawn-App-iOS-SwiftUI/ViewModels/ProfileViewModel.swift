@@ -22,7 +22,7 @@ class ProfileViewModel: ObservableObject {
     @Published var isLoadingActivity: Bool = false
     
     // New properties for friendship status
-    @Published var friendshipStatus: FriendshipStatus = .unknown
+	@Published var friendshipStatus: FriendshipStatus = MockAPIService.isMocking ? .friends : .unknown
     @Published var isLoadingFriendshipStatus: Bool = false
     @Published var pendingFriendRequestId: UUID?
     @Published var userActivities: [FullFeedActivityDTO] = []

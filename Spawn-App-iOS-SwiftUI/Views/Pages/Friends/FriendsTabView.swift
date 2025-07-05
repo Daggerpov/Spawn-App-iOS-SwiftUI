@@ -22,6 +22,14 @@ struct FriendsTabView: View {
 
 	@StateObject private var searchViewModel = SearchViewModel()
 
+	// Profile menu state variables
+	@State private var showProfileMenu: Bool = false
+	@State private var showRemoveFriendConfirmation: Bool = false
+	@State private var showReportDialog: Bool = false
+	@State private var showBlockDialog: Bool = false
+	@State private var showAddToActivityType: Bool = false
+	@State private var selectedFriend: FullFriendUserDTO?
+
 	init(user: BaseUserDTO) {
 		self.user = user
 		let vm = FriendsTabViewModel(
@@ -64,6 +72,59 @@ struct FriendsTabView: View {
                     await viewModel.fetchAllData()
                 }
             }
+			.sheet(isPresented: $showProfileMenu) {
+				if let selectedFriend = selectedFriend {
+					ProfileMenuView(
+						user: selectedFriend,
+						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+						showReportDialog: $showReportDialog,
+						showBlockDialog: $showBlockDialog,
+						showAddToActivityType: $showAddToActivityType,
+						isFriend: true,
+						copyProfileURL: { copyProfileURL(for: selectedFriend) },
+						shareProfile: { shareProfile(for: selectedFriend) }
+					)
+					.background(universalBackgroundColor)
+					.presentationDetents([.height(410)])
+				}
+			}
+			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
+				Button("Cancel", role: .cancel) {}
+				Button("Remove", role: .destructive) {
+					if let friendToRemove = selectedFriend {
+						Task {
+							await viewModel.removeFriend(friendUserId: friendToRemove.id)
+						}
+					}
+				}
+			} message: {
+				Text("Are you sure you want to remove this friend?")
+			}
+			.alert("Report User", isPresented: $showReportDialog) {
+				Button("Cancel", role: .cancel) {}
+				Button("Report", role: .destructive) {
+					// Handle report user action
+				}
+			} message: {
+				Text("Report this user for inappropriate behavior?")
+			}
+			.alert("Block User", isPresented: $showBlockDialog) {
+				Button("Cancel", role: .cancel) {}
+				Button("Block", role: .destructive) {
+					// Handle block user action
+				}
+			} message: {
+				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
+			}
+			.background(
+				NavigationLink(
+					destination: selectedFriend != nil ? AddToActivityTypeView(user: selectedFriend!) : nil,
+					isActive: $showAddToActivityType
+				) {
+					EmptyView()
+				}
+				.hidden()
+			)
 		}
 	}
     
@@ -203,7 +264,8 @@ struct FriendsTabView: View {
                                     Spacer()
                                     
                                     Button(action: {
-                                        // Handle more options
+                                        selectedFriend = friend
+                                        showProfileMenu = true
                                     }) {
                                         Image(systemName: "ellipsis")
                                             .foregroundColor(
@@ -229,6 +291,28 @@ struct FriendsTabView: View {
 		.padding(.horizontal, 16)
 	}
 
+	// Helper methods for profile actions
+	private func copyProfileURL(for user: Nameable) {
+		let profileURL = "https://spawn.com/profile/\(user.username)"
+		UIPasteboard.general.string = profileURL
+		
+		// Show a brief toast or notification that the URL was copied
+		// You might want to add a toast notification here
+	}
+	
+	private func shareProfile(for user: Nameable) {
+		let profileURL = "https://spawn.com/profile/\(user.username)"
+		let activityViewController = UIActivityViewController(
+			activityItems: [profileURL],
+			applicationActivities: nil
+		)
+		
+		// Present the share sheet
+		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+		   let window = windowScene.windows.first {
+			window.rootViewController?.present(activityViewController, animated: true, completion: nil)
+		}
+	}
 	
 }
 

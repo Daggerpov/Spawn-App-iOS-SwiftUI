@@ -246,13 +246,15 @@ struct FriendRowView: View {
     @State private var showBlockDialog: Bool = false
     @State private var showAddToActivityType: Bool = false
     
+    // Computed property for the user object
+    private var userForProfile: Nameable {
+        return user ?? friend ?? recommendedFriend ?? user!
+    }
+    
     var body: some View {
         HStack {
             // Profile picture - works with either user, friend, or recommendedFriend
             let profilePicture = user?.profilePicture ?? friend?.profilePicture ?? recommendedFriend?.profilePicture
-            
-            // Extract the appropriate user object for navigation
-			let userForProfile: Nameable = user ?? friend ?? recommendedFriend ?? user!
             
             // Create NavigationLink around the profile picture
             NavigationLink(destination: ProfileView(user: userForProfile)) {
