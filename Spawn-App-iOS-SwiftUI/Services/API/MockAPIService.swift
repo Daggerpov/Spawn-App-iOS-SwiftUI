@@ -10,7 +10,7 @@ import SwiftUI // just for UIImage for `createUser()`
 
 class MockAPIService: IAPIService {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = true
+	static var isMocking: Bool = false
 
 	var errorMessage: String? = nil
 	var errorStatusCode: Int? = nil
@@ -563,6 +563,11 @@ class MockAPIService: IAPIService {
 					let mockActivities = createMockActivities()
 					updatedItems = try? JSONEncoder().encode(mockActivities)
 
+				case "activityTypes":
+					// Return mock activity types data
+					let mockActivityTypes = createMockActivityTypes()
+					updatedItems = try? JSONEncoder().encode(mockActivityTypes)
+
 				case "profilePicture":
 					// Return mock profile picture data
 					if let userId = userId
@@ -640,6 +645,16 @@ class MockAPIService: IAPIService {
 			FullFeedActivityDTO.mockDinnerActivity,
 			FullFeedActivityDTO.mockSelfOwnedActivity,
 			FullFeedActivityDTO.mockSelfOwnedActivity2
+		]
+	}
+
+	private func createMockActivityTypes() -> [ActivityTypeDTO] {
+		// Return mock activity types data
+		return [
+			ActivityTypeDTO.mockChillActivityType,
+			ActivityTypeDTO.mockFoodActivityType,
+			ActivityTypeDTO.mockActiveActivityType,
+			ActivityTypeDTO.mockStudyActivityType
 		]
 	}
 

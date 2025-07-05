@@ -713,21 +713,14 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    func reportUser(reporterId: UUID, reportedId: UUID, reason: String) async {
+    func reportUser(reporterId: UUID, reportedId: UUID, reportType: ReportType, description: String) async {
         do {
-            let url = URL(string: APIService.baseURL + "user-reports")!
-            let reportDTO = UserReportCreationDTO(
-                id: UUID(),
-                reporterUserId: reporterId,
+            let reportingService = UserReportingService(apiService: self.apiService)
+            try await reportingService.reportUser(
+                reporterId: reporterId,
                 reportedUserId: reportedId,
-                reason: reason
-            )
-            
-            // Discard the return value
-            _ = try await self.apiService.sendData(
-                reportDTO,
-                to: url,
-                parameters: nil
+                reportType: reportType,
+                description: description
             )
             
             await MainActor.run {
@@ -742,19 +735,11 @@ class ProfileViewModel: ObservableObject {
     
     func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
         do {
-            let url = URL(string: APIService.baseURL + "blocked-users/block")!
-            let blockDTO = BlockedUserCreationDTO(
-                id: UUID(),
+            let reportingService = UserReportingService(apiService: self.apiService)
+            try await reportingService.blockUser(
                 blockerId: blockerId,
                 blockedId: blockedId,
                 reason: reason
-            )
-            
-            // Discard the return value
-            _ = try await self.apiService.sendData(
-                blockDTO,
-                to: url,
-                parameters: nil
             )
             
             await MainActor.run {
@@ -765,6 +750,40 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.errorMessage = "Failed to block user: \(error.localizedDescription)"
             }
+        }
+    }
+    
+    func unblockUser(blockerId: UUID, blockedId: UUID) async {
+        do {
+            let reportingService = UserReportingService(apiService: self.apiService)
+            try await reportingService.unblockUser(
+                blockerId: blockerId,
+                blockedId: blockedId
+            )
+            
+            await MainActor.run {
+                self.friendshipStatus = .none
+                self.errorMessage = nil
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to unblock user: \(error.localizedDescription)"
+            }
+        }
+    }
+    
+    func checkIfUserBlocked(blockerId: UUID, blockedId: UUID) async -> Bool {
+        do {
+            let reportingService = UserReportingService(apiService: self.apiService)
+            return try await reportingService.isUserBlocked(
+                blockerId: blockerId,
+                blockedId: blockedId
+            )
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to check block status: \(error.localizedDescription)"
+            }
+            return false
         }
     }
 }
@@ -778,22 +797,5 @@ enum FriendshipStatus {
     case requestReceived // Profile user sent request to current user
     case themself       // It's the current user's own profile
     case blocked        // User is blocked
-}
-
-
-
-// DTOs for user reporting and blocking
-struct UserReportCreationDTO: Codable {
-    let id: UUID
-    let reporterUserId: UUID
-    let reportedUserId: UUID
-    let reason: String
-}
-
-struct BlockedUserCreationDTO: Codable {
-    let id: UUID
-    let blockerId: UUID
-    let blockedId: UUID
-    let reason: String
 }
 

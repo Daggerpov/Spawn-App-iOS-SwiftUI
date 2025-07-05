@@ -33,10 +33,11 @@ struct ProfileView: View {
 	@State private var showCalendarPopup: Bool = false
 	@State private var navigateToCalendar: Bool = false
 	@State private var showActivityDetails: Bool = false
-	@State private var showReportDialog: Bool = false
-	@State private var showBlockDialog: Bool = false
-	@State private var reportReason: String = ""
-	@State private var blockReason: String = ""
+	    @State private var showReportDialog: Bool = false
+    @State private var showBlockDialog: Bool = false
+    @State private var reportType: ReportType = .harassment
+    @State private var reportDescription: String = ""
+    @State private var blockReason: String = ""
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showProfileMenu: Bool = false
 	@State private var showAddToActivityType: Bool = false
@@ -618,21 +619,30 @@ struct ProfileView: View {
 
 	private var reportUserAlert: some View {
 		Group {
-			TextField("Reason for report", text: $reportReason)
+			Picker("Report Type", selection: $reportType) {
+				ForEach(ReportType.allCases, id: \.self) { type in
+					Text(type.displayName).tag(type)
+				}
+			}
+			.pickerStyle(MenuPickerStyle())
+			
+			TextField("Description (optional)", text: $reportDescription)
+			
 			Button("Cancel", role: .cancel) {
-				reportReason = ""
+				reportDescription = ""
+				reportType = .harassment
 			}
 			Button("Report", role: .destructive) {
-				if let currentUserId = userAuth.spawnUser?.id,
-					!reportReason.isEmpty
-				{
+				if let currentUserId = userAuth.spawnUser?.id {
 					Task {
 						await profileViewModel.reportUser(
 							reporterId: currentUserId,
 							reportedId: user.id,
-							reason: reportReason
+							reportType: reportType,
+							description: reportDescription.isEmpty ? "No description provided" : reportDescription
 						)
-						reportReason = ""
+						reportDescription = ""
+						reportType = .harassment
 
 						// Show success notification
 						notificationMessage = "User reported successfully"

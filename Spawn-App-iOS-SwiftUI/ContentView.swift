@@ -90,9 +90,6 @@ struct ContentView: View {
 				}
 			}
 			
-			// Set the selected tab color to purple
-			appearance.selectedTextColor = UIColor(universalSecondaryColor)
-			
 			UITabBar.appearance().standardAppearance = appearance
 			UITabBar.appearance().scrollEdgeAppearance = appearance
 			UITabBar.appearance().unselectedItemTintColor = UIColor { traitCollection in

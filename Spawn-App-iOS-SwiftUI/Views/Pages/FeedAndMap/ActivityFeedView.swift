@@ -69,7 +69,10 @@ struct ActivityFeedView: View {
                         colorInPopup = color
                         showingActivityPopup = true
                     },
-                    selectedTab: $selectedTab
+                    selectedTab: Binding(
+                        get: { selectedTab },
+                        set: { if let newValue = $0 { selectedTab = newValue } }
+                    )
                 )
             }
             .onAppear {
@@ -181,7 +184,10 @@ extension ActivityFeedView {
                                 colorInPopup = color
                                 showingActivityPopup = true
                             },
-                            selectedTab: $selectedTab
+                            selectedTab: Binding(
+                                get: { selectedTab },
+                                set: { if let newValue = $0 { selectedTab = newValue } }
+                            )
                         )
                     }
                 }
