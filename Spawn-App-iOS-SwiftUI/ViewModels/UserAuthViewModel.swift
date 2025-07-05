@@ -677,6 +677,36 @@ class UserAuthViewModel: NSObject, ObservableObject {
             }
         }
     }
+    
+    // The username argument could be an email as well
+    func signInWithEmailOrUsername(username: String, password: String) async {
+        print("Attempting email/username sign-in")
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/register") {
+                let response: BaseUserDTO? = try await self.apiService.sendData(LoginDTO(username: username, password: password), to: url, parameters: nil)
+                
+                guard let user: BaseUserDTO = response else {
+                    print("Failed to login with email/username")
+                    return
+                }
+                print("Email/username login successful")
+                await MainActor.run {
+                    self.spawnUser = user
+                    self.shouldNavigateToFeedView = true
+                    self.isLoggedIn = true
+                }
+            }
+        } catch {
+            print("Failed to login with email/username")
+            await MainActor.run {
+                self.isLoggedIn = false
+                self.spawnUser = nil
+                self.shouldNavigateToFeedView = false
+                self.shouldNavigateToUserInfoInputView = false
+                self.errorMessage = "Incorrect email/username or password"
+            }
+        }
+    }
 
     @MainActor
     func setMockUser() async {

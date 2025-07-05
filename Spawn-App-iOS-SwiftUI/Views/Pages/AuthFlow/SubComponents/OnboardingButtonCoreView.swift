@@ -9,9 +9,15 @@ import SwiftUI
 
 struct OnboardingButtonCoreView: View {
     let buttonText: String
+    var fill: () -> Color = { return figmaIndigo}
     
     init(_ buttonText: String) {
         self.buttonText = buttonText
+    }
+    
+    init(_ buttonText: String, fill: @escaping () -> Color) {
+        self.buttonText = buttonText
+        self.fill = fill
     }
     
     var body: some View {
@@ -26,7 +32,7 @@ struct OnboardingButtonCoreView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(figmaIndigo)
+                .fill(fill())
         )
         .padding(.horizontal, 22)
         .padding(.vertical, 32)

@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct LoginView: View {
+    @ObservedObject private var viewModel: UserAuthViewModel = UserAuthViewModel.shared
+    
     var body: some View {
         ZStack {
             // Background
@@ -30,13 +32,19 @@ struct LoginView: View {
                 // Login options
                 VStack(spacing: 16) {
                     // Continue with Apple
-                    Button(action: {}) {
+                    Button(action: {
+                        viewModel.signInWithApple()
+                    }) {
                         AuthProviderButtonView(.apple)
                     }
                    
                     
                     // Continue with Google
-                    Button(action: {}) {
+                    Button(action: {
+                        Task {
+                            await viewModel.signInWithGoogle()
+                        }
+                    }) {
                         AuthProviderButtonView(.google)
                     }
                     
