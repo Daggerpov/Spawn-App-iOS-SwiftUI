@@ -54,7 +54,7 @@ struct UserActivitiesSection: View {
                 }) {
                     Text("Show All")
                         .font(.onestMedium(size: 14))
-                        .foregroundColor(universalAccentColor)
+                        .foregroundColor(universalSecondaryColor)
                 }
             }
             .padding(.horizontal)
@@ -99,8 +99,12 @@ struct UserActivitiesSection: View {
     private var addToSeeActivitiesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             if profileViewModel.friendshipStatus != .friends {
-                VStack(alignment: .center, spacing: 8) {
-                    Text("Add \(FormatterService.shared.formatFirstName(user: user)) to see their activities")
+                VStack(alignment: .center, spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 32))
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    Text("Add \(FormatterService.shared.formatFirstName(user: user)) to see their upcoming spawns!")
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(.primary)
                         .multilineTextAlignment(.center)
@@ -111,7 +115,14 @@ struct UserActivitiesSection: View {
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 32)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
+                        .foregroundColor(.gray.opacity(0.4))
+                )
+                .padding(.horizontal, 16)
             }
         }
     }

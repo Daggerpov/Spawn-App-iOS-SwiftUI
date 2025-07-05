@@ -47,6 +47,12 @@ struct ActivityTypeView: View {
             print("🔍 ActivityTypeView appeared. Current selectedType: \(selectedType?.rawValue ?? "nil")")
             print("🔍 Available activity types: \(viewModel.activityTypes.map { $0.title })")
             print("🔍 Pinned activity types: \(viewModel.activityTypes.filter { $0.isPinned }.map { $0.title })")
+            
+            // Ensure no auto-selection happens - explicitly clear any unwanted selection
+            // Only keep selection if it was intentionally set (e.g., from feed view)
+            if selectedType != nil {
+                print("🔍 ActivityTypeView has existing selection: \(selectedType?.rawValue ?? "nil")")
+            }
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -122,25 +128,98 @@ struct ActivityTypeCard: View {
     @Binding var selectedType: ActivityType?
     let onPin: () -> Void
     let onDelete: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     // Convert ActivityTypeDTO to ActivityType for selection comparison
     private var activityType: ActivityType? {
-        ActivityType.allCases.first { $0.rawValue == activityTypeDTO.title }
+        // First try exact match
+        if let exactMatch = ActivityType.allCases.first(where: { $0.rawValue == activityTypeDTO.title }) {
+            return exactMatch
+        }
+        
+        // If no exact match, try fuzzy matching for common cases
+        switch activityTypeDTO.title.lowercased() {
+        case "food", "food & drink", "food and drink":
+            return .foodAndDrink
+        case "active", "exercise", "workout", "sports":
+            return .active
+        case "grind", "work", "study", "studying":
+            return .grind
+        case "chill", "relax", "hang out", "hangout":
+            return .chill
+        case "general", "other", "misc":
+            return .general
+        default:
+            // For any unmapped types, use general as fallback
+            print("⚠️ ActivityTypeCard: Mapping '\(activityTypeDTO.title)' to general ActivityType")
+            return .general
+        }
     }
     
     private var isSelected: Bool {
+        guard let activityType = activityType else {
+            return false
+        }
+        
         let selected = selectedType == activityType
+        
         // Debug logging
         if selected {
-            print("🟡 ActivityTypeCard '\(activityTypeDTO.title)' is SELECTED. selectedType: \(selectedType?.rawValue ?? "nil"), activityType: \(activityType?.rawValue ?? "nil")")
+            print("🟡 ActivityTypeCard '\(activityTypeDTO.title)' is SELECTED. selectedType: \(selectedType?.rawValue ?? "nil"), activityType: \(activityType.rawValue)")
+        } else if activityTypeDTO.isPinned {
+            print("📌 ActivityTypeCard '\(activityTypeDTO.title)' is PINNED but not selected. selectedType: \(selectedType?.rawValue ?? "nil"), activityType: \(activityType.rawValue)")
         }
+        
         return selected
+    }
+    
+    // Adaptive background color
+    private var adaptiveBackgroundColor: Color {
+        if isSelected {
+            return universalSecondaryColor.opacity(0.1)
+        } else {
+            switch colorScheme {
+            case .dark:
+                return Color.white.opacity(0.08)
+            case .light:
+                return Color.gray.opacity(0.05)
+            @unknown default:
+                return Color.gray.opacity(0.05)
+            }
+        }
+    }
+    
+    // Adaptive text color for people count
+    private var adaptiveSecondaryTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.6)
+        case .light:
+            return figmaBlack300
+        @unknown default:
+            return figmaBlack300
+        }
+    }
+    
+    // Adaptive text color for title
+    private var adaptiveTitleColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white
+        case .light:
+            return universalAccentColor
+        @unknown default:
+            return universalAccentColor
+        }
     }
     
     var body: some View {
         Button(action: { 
             if let type = activityType {
+                print("🔘 ActivityTypeCard '\(activityTypeDTO.title)' button tapped. Setting selectedType to: \(type.rawValue)")
                 selectedType = type
+            } else {
+                print("❌ ActivityTypeCard '\(activityTypeDTO.title)' button tapped but activityType is nil")
             }
         }) {
             ZStack {
@@ -151,18 +230,18 @@ struct ActivityTypeCard: View {
                         Spacer()
                         Text("\(activityTypeDTO.associatedFriends.count) people")
                             .font(.caption)
-                            .foregroundColor(figmaBlack300)
+                            .foregroundColor(adaptiveSecondaryTextColor)
                     }
                     
                     Text(activityTypeDTO.title)
                         .font(.headline)
-                        .foregroundColor(universalAccentColor)
+                        .foregroundColor(adaptiveTitleColor)
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(isSelected ? universalSecondaryColor.opacity(0.1) : Color.gray.opacity(0.05))
+                        .fill(adaptiveBackgroundColor)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(isSelected ? universalSecondaryColor : Color.clear, lineWidth: 2)

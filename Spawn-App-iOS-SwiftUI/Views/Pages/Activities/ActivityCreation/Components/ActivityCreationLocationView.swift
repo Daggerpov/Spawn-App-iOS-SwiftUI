@@ -2,6 +2,16 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
+// Extension to make MKCoordinateRegion conform to Equatable
+extension MKCoordinateRegion: Equatable {
+    public static func == (lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
+        return lhs.center.latitude == rhs.center.latitude &&
+               lhs.center.longitude == rhs.center.longitude &&
+               lhs.span.latitudeDelta == rhs.span.latitudeDelta &&
+               lhs.span.longitudeDelta == rhs.span.longitudeDelta
+    }
+}
+
 struct ActivityCreationLocationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
     @StateObject private var locationManager = LocationManager()
@@ -14,6 +24,8 @@ struct ActivityCreationLocationView: View {
     @State private var showingLocationPicker = false
     @State private var dragOffset: CGFloat = 0
     @State private var isExpanded = false
+    @State private var isUpdatingLocation = false
+    @State private var debounceTimer: Timer?
     
     let onNext: () -> Void
     let onBack: (() -> Void)?
@@ -205,6 +217,73 @@ struct ActivityCreationLocationView: View {
                     center: userLocation,
                     span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                 )
+            }
+        }
+        .onChange(of: region) { newRegion in
+            // Update search text when region changes (when user drags map)
+            updateLocationText(for: newRegion.center)
+        }
+    }
+    
+    // Function to update location text based on coordinates
+    private func updateLocationText(for coordinate: CLLocationCoordinate2D) {
+        // Cancel any existing timer
+        debounceTimer?.invalidate()
+        
+        // Create a new timer with a delay to debounce the calls
+        debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
+            performReverseGeocoding(for: coordinate)
+        }
+    }
+    
+    // Function to perform the actual reverse geocoding
+    private func performReverseGeocoding(for coordinate: CLLocationCoordinate2D) {
+        // Prevent multiple simultaneous updates
+        guard !isUpdatingLocation else { return }
+        isUpdatingLocation = true
+        
+        let geocoder = CLGeocoder()
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            DispatchQueue.main.async {
+                defer { isUpdatingLocation = false }
+                
+                if let error = error {
+                    print("Reverse geocoding error: \(error.localizedDescription)")
+                    return
+                }
+                
+                guard let placemark = placemarks?.first else {
+                    print("No placemark found")
+                    return
+                }
+                
+                // Create a formatted address string
+                var addressComponents: [String] = []
+                
+                if let streetNumber = placemark.subThoroughfare {
+                    addressComponents.append(streetNumber)
+                }
+                
+                if let street = placemark.thoroughfare {
+                    addressComponents.append(street)
+                }
+                
+                if let city = placemark.locality {
+                    addressComponents.append(city)
+                }
+                
+                if let state = placemark.administrativeArea {
+                    addressComponents.append(state)
+                }
+                
+                let formattedAddress = addressComponents.joined(separator: ", ")
+                
+                // Update search text if we have a valid address
+                if !formattedAddress.isEmpty {
+                    searchText = formattedAddress
+                }
             }
         }
     }
