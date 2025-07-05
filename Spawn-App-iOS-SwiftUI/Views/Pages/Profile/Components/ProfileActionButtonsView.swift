@@ -56,25 +56,28 @@ struct ProfileActionButtonsView: View {
                 .navigationBarBackButtonHidden(true)
             }
 
-            Button(action: {
-                shareProfile()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "square.and.arrow.up")
-                    Text("Share Profile")
-						.font(.onestSemiBold(size: 12))
+            // Share Profile button removed for other users - only show for current user
+            if isCurrentUserProfile {
+                Button(action: {
+                    shareProfile()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share Profile")
+							.font(.onestSemiBold(size: 12))
+                    }
+                    .bold()
+                    .font(.caption)
+                    .foregroundColor(universalSecondaryColor)
+                    .frame(height: 30)
+                    .frame(width: 128)
+                    .background(buttonBackgroundColor)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(universalSecondaryColor, lineWidth: 2)
+                    )
                 }
-                .bold()
-                .font(.caption)
-                .foregroundColor(universalSecondaryColor)
-                .frame(height: 30)
-                .frame(width: 128)
-                .background(buttonBackgroundColor)
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(universalSecondaryColor, lineWidth: 2)
-                )
             }
         }
     }

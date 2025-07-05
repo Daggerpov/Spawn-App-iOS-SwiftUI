@@ -105,11 +105,11 @@ struct ActivityTypeCardView: View {
                             )
                     )
                 
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Text(activityType.icon)
-                        .font(.system(size: 26))
+                        .font(.system(size: 22))
                     Text(activityType.title)
-                        .font(.onestRegular(size: 13))
+                        .font(.onestRegular(size: 12))
                         .foregroundColor(adaptiveTextColor)
                 }
             }
@@ -117,7 +117,7 @@ struct ActivityTypeCardView: View {
         .buttonStyle(PlainButtonStyle())
         .disabled(mappedActivityType == nil)
         .opacity(mappedActivityType == nil ? 0.6 : 1.0)
-        .frame(width: 85, height: 113)
+        .frame(width: 75, height: 100)
     }
 }
 

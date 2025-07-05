@@ -96,6 +96,8 @@ struct ActivityCreationView: View {
                 ActivityCreationViewModel.forceReset()
                 // Then full reinitialization to be absolutely sure
                 ActivityCreationViewModel.reInitialize()
+            } else if viewModel.selectedType != nil {
+                print("✅ Pre-selected type detected: \(viewModel.selectedType!.rawValue)")
             }
         }
         .onChange(of: selectedTab) { newTab in

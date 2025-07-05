@@ -273,13 +273,8 @@ struct ProfileView: View {
 				}
 
 				ToolbarItem(placement: .principal) {
-					// Only show the ProfileNameView if it's not the current user's profile
-					if !isCurrentUserProfile {
-						ProfileNameView(
-							user: user,
-							refreshFlag: $refreshFlag
-						)
-					}
+					// Header text removed for other users' profiles
+					EmptyView()
 				}
 
 				// Add appropriate trailing button based on user profile type
@@ -704,26 +699,8 @@ struct ProfileView: View {
 		Group {
 			switch profileViewModel.friendshipStatus {
 			case .none:
-				// Share Profile button (same as for friends)
-				Button(action: {
-					shareProfile()
-				}) {
-					HStack {
-						Image(systemName: "square.and.arrow.up")
-						Text("Share Profile")
-							.bold()
-					}
-					.font(.caption)
-					.foregroundColor(universalSecondaryColor)
-					.padding(.vertical, 24)
-					.padding(.horizontal, 8)
-					.frame(height: 32)
-					.frame(maxWidth: .infinity)
-					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalSecondaryColor, lineWidth: 1)
-					)
-				}
+				// Share Profile button removed for other users
+				EmptyView()
 
 			case .requestSent:
 				// Request Sent (disabled button)
@@ -800,26 +777,8 @@ struct ProfileView: View {
 				}
 
 			case .friends:
-				// Share Profile button (same as in the original view)
-				Button(action: {
-					shareProfile()
-				}) {
-					HStack {
-						Image(systemName: "square.and.arrow.up")
-						Text("Share Profile")
-							.bold()
-					}
-					.font(.caption)
-					.foregroundColor(universalSecondaryColor)
-					.padding(.vertical, 24)
-					.padding(.horizontal, 8)
-					.frame(height: 32)
-					.frame(maxWidth: .infinity)
-					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalSecondaryColor, lineWidth: 1)
-					)
-				}
+				// Share Profile button removed for other users
+				EmptyView()
 
 			default:
 				EmptyView()
