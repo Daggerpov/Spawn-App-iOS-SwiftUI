@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MyReportsView: View {
     @StateObject private var viewModel = MyReportsViewModel()
-    @EnvironmentObject var userAuth: UserAuthViewModel
+    @StateObject var userAuth = UserAuthViewModel.shared
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
@@ -35,16 +35,16 @@ struct MyReportsView: View {
     
     private var emptyStateView: some View {
         VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle")
+            Image(systemName: "checkmark.shield")
                 .font(.system(size: 50))
-                .foregroundColor(.gray)
+                .foregroundColor(.green)
             
-            Text("No Reports")
+            Text("All Good!")
                 .font(.title2)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
             
-            Text("Reports you make will appear here. Thank you for helping keep our community safe.")
+            Text("Looks like you haven't found anything to report...yet. Thank you for helping keep our community safe.")
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -180,5 +180,4 @@ struct ReportRow: View {
 
 #Preview {
     MyReportsView()
-        .environmentObject(UserAuthViewModel.shared)
 } 

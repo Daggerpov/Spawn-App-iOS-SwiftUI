@@ -2,7 +2,7 @@ import SwiftUI
 
 struct BlockedUsersView: View {
     @StateObject private var viewModel = BlockedUsersViewModel()
-    @EnvironmentObject var userAuth: UserAuthViewModel
+    @StateObject var userAuth = UserAuthViewModel.shared
     @Environment(\.presentationMode) var presentationMode
     @State private var showUnblockConfirmation = false
     @State private var userToUnblock: BlockedUserDTO?
@@ -202,5 +202,5 @@ struct BlockedUserRow: View {
 
 #Preview {
     BlockedUsersView()
-        .environmentObject(UserAuthViewModel.shared)
+
 } 
