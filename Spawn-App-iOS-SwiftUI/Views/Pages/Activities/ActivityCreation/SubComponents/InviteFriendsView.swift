@@ -94,17 +94,12 @@ struct InviteFriendsView: View {
 								if let profilePicUrl = friend.profilePicture,
 									let url = URL(string: profilePicUrl)
 								{
-									AsyncImage(url: url) { image in
-										image
-											.resizable()
-											.scaledToFill()
-											.frame(width: 30, height: 30)
-											.clipShape(Circle())
-									} placeholder: {
-										Circle()
-											.fill(Color.gray)
-											.frame(width: 30, height: 30)
-									}
+																	CachedProfileImageFlexible(
+									userId: friend.id,
+									url: url,
+									width: 30,
+									height: 30
+								)
 								} else {
 									Circle()
 										.fill(Color.gray)
@@ -203,18 +198,12 @@ struct IndividualFriendView: View {
 		}) {
 			HStack {
 				if let pfpUrl = friend.profilePicture {
-					AsyncImage(url: URL(string: pfpUrl)) {
-						image in
-						image
-							.resizable()
-							.scaledToFill()
-							.frame(width: 60, height: 60)
-							.clipShape(Circle())
-					} placeholder: {
-						Circle()
-							.fill(Color.gray)
-							.frame(width: 60, height: 60)
-					}
+					CachedProfileImageFlexible(
+						userId: friend.id,
+						url: URL(string: pfpUrl),
+						width: 60,
+						height: 60
+					)
 				} else {
 					Circle()
 						.fill(.gray)

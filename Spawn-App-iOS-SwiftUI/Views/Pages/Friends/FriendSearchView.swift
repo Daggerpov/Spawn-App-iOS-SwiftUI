@@ -128,7 +128,14 @@ struct FriendSearchView: View {
                     case .recentlySpawnedWith:
                         await viewModel.fetchRecentlySpawnedWith()
                     case .recommendedFriends:
-                        await viewModel.fetchRecommendedFriends()
+                        // Use cached data if available, otherwise fetch
+                        if !AppCache.shared.recommendedFriends.isEmpty {
+                            await MainActor.run {
+                                viewModel.recommendedFriends = AppCache.shared.recommendedFriends
+                            }
+                        } else {
+                            await viewModel.fetchRecommendedFriends()
+                        }
                     }
                     
                     viewModel.connectSearchViewModel(searchViewModel)
@@ -276,17 +283,12 @@ struct FriendRowView: View {
                             .frame(width: 50, height: 50)
                             .clipShape(Circle())
                     } else {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
-                        }
+                        CachedProfileImageFlexible(
+                            userId: userForProfile.id,
+                            url: URL(string: pfpUrl),
+                            width: 50,
+                            height: 50
+                        )
                     }
                 } else {
                     Circle()

@@ -170,6 +170,11 @@ class AppCache: ObservableObject {
         friends = newFriends
         lastChecked[CacheKeys.friends] = Date()
         saveToDisk()
+        
+        // Preload profile pictures for friends
+        Task {
+            await preloadProfilePictures(for: newFriends)
+        }
     }
     
     func refreshFriends() async {
@@ -202,6 +207,11 @@ class AppCache: ObservableObject {
         ActivityColorService.shared.assignColorsForActivities(activityIds)
         
         saveToDisk()
+        
+        // Preload profile pictures for activity creators and participants
+        Task {
+            await preloadProfilePicturesForActivities(newActivities)
+        }
     }
     
     func refreshActivities() async {
@@ -333,6 +343,11 @@ class AppCache: ObservableObject {
         recommendedFriends = newRecommendedFriends
         lastChecked[CacheKeys.recommendedFriends] = Date()
         saveToDisk()
+        
+        // Preload profile pictures for recommended friends
+        Task {
+            await preloadProfilePictures(for: newRecommendedFriends)
+        }
     }
     
     func refreshRecommendedFriends() async {
@@ -358,6 +373,11 @@ class AppCache: ObservableObject {
         friendRequests = newFriendRequests
         lastChecked[CacheKeys.friendRequests] = Date()
         saveToDisk()
+        
+        // Preload profile pictures for friend request senders
+        Task {
+            await preloadProfilePicturesForFriendRequests(newFriendRequests)
+        }
     }
     
     func refreshFriendRequests() async {
@@ -408,6 +428,82 @@ class AppCache: ObservableObject {
         
         lastChecked[CacheKeys.profileActivities] = Date()
         saveToDisk()
+    }
+    
+    // MARK: - Profile Picture Caching
+    
+    /// Preload profile pictures for a collection of users
+    private func preloadProfilePictures<T: Nameable>(for users: [T]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        for user in users {
+            guard let profilePictureUrl = user.profilePicture else { continue }
+            
+            // Only download if not already cached
+            if profilePictureCache.getCachedImage(for: user.id) == nil {
+                _ = await profilePictureCache.downloadAndCacheImage(from: profilePictureUrl, for: user.id)
+            }
+        }
+    }
+    
+    /// Preload profile pictures for activity creators and participants
+    private func preloadProfilePicturesForActivities(_ activities: [FullFeedActivityDTO]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        for activity in activities {
+            // Preload creator profile picture
+            if let creatorPicture = activity.creatorUser.profilePicture {
+                if profilePictureCache.getCachedImage(for: activity.creatorUser.id) == nil {
+                    _ = await profilePictureCache.downloadAndCacheImage(from: creatorPicture, for: activity.creatorUser.id)
+                }
+            }
+            
+            // Preload participant profile pictures
+            if let participants = activity.participantUsers {
+                for participant in participants {
+                    if let participantPicture = participant.profilePicture {
+                        if profilePictureCache.getCachedImage(for: participant.id) == nil {
+                            _ = await profilePictureCache.downloadAndCacheImage(from: participantPicture, for: participant.id)
+                        }
+                    }
+                }
+            }
+            
+            // Preload invited user profile pictures
+            if let invitedUsers = activity.invitedUsers {
+                for invitedUser in invitedUsers {
+                    if let invitedPicture = invitedUser.profilePicture {
+                        if profilePictureCache.getCachedImage(for: invitedUser.id) == nil {
+                            _ = await profilePictureCache.downloadAndCacheImage(from: invitedPicture, for: invitedUser.id)
+                        }
+                    }
+                }
+            }
+            
+            // Preload chat message senders' profile pictures
+            if let chatMessages = activity.chatMessages {
+                for chatMessage in chatMessages {
+                    if let senderPicture = chatMessage.senderUser.profilePicture {
+                        if profilePictureCache.getCachedImage(for: chatMessage.senderUser.id) == nil {
+                            _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: chatMessage.senderUser.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Preload profile pictures for friend request senders
+    private func preloadProfilePicturesForFriendRequests(_ friendRequests: [FetchFriendRequestDTO]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        for request in friendRequests {
+            if let senderPicture = request.senderUser.profilePicture {
+                if profilePictureCache.getCachedImage(for: request.senderUser.id) == nil {
+                    _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: request.senderUser.id)
+                }
+            }
+        }
     }
     
     func refreshProfileStats(_ userId: UUID) async {

@@ -1047,6 +1047,11 @@ extension ProfileView {
 			selectedImage = nil
 			isImageLoading = false
 			editingState = .edit
+			
+			// Invalidate the cached profile picture since we have a new one
+			if let userId = userAuth.spawnUser?.id {
+				ProfilePictureCache.shared.removeCachedImage(for: userId)
+			}
 		}
 	}
 }

@@ -33,13 +33,11 @@ struct ProfilePictureView: View {
                     Image(pfpUrl)
                         .ProfileImageModifier(imageType: .activityParticipants)
                 } else {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image.ProfileImageModifier(imageType: .activityParticipants)
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: width, height: height)
-                    }
+                    CachedProfileImage(
+                        userId: user.id,
+                        url: URL(string: pfpUrl),
+                        imageType: .activityParticipants
+                    )
                 }
             } else {
                 Circle()

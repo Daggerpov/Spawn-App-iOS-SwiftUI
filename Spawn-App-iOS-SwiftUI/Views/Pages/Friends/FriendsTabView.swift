@@ -238,18 +238,13 @@ struct FriendsTabView: View {
                                     } else {
                                         NavigationLink(destination: ProfileView(user: friend)) {
                                             if let pfpUrl = friend.profilePicture {
-                                                AsyncImage(url: URL(string: pfpUrl)) {
-                                                    image in
-                                                    image
-                                                        .resizable()
-                                                        .scaledToFill()
-                                                        .frame(width: 50, height: 50)
-                                                        .clipShape(Circle())
-                                                        .transition(.opacity.animation(.easeInOut))
-                                                } placeholder: {
-                                                    ProgressView()
-                                                        .frame(width: 50, height: 50)
-                                                }
+                                                CachedProfileImageFlexible(
+                                                    userId: friend.id,
+                                                    url: URL(string: pfpUrl),
+                                                    width: 50,
+                                                    height: 50
+                                                )
+                                                .transition(.opacity.animation(.easeInOut))
                                             } else {
                                                 Image(systemName: "person.circle.fill")
                                                     .resizable()
@@ -370,17 +365,12 @@ struct RecommendedFriendView: View {
             } else {
                 NavigationLink(destination: ProfileView(user: friend)) {
                     if let pfpUrl = friend.profilePicture {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
-                        }
+                        CachedProfileImageFlexible(
+                            userId: friend.id,
+                            url: URL(string: pfpUrl),
+                            width: 50,
+                            height: 50
+                        )
                     } else {
                         Circle()
                             .fill(.white)
@@ -477,17 +467,12 @@ struct RecentlySpawnedView: View {
             } else {
                 NavigationLink(destination: ProfileView(user: recentUser.user)) {
                     if let pfpUrl = recentUser.user.profilePicture {
-                        AsyncImage(url: URL(string: pfpUrl)) { image in
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 50, height: 50)
-                                .clipShape(Circle())
-                        } placeholder: {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
-                        }
+                        CachedProfileImageFlexible(
+                            userId: recentUser.user.id,
+                            url: URL(string: pfpUrl),
+                            width: 50,
+                            height: 50
+                        )
                     } else {
                         Circle()
                             .fill(.white)

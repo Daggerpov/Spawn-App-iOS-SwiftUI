@@ -20,6 +20,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var bio: String?
 	var email: String
     var mutualFriendCount: Int?
+    var sharedActivitiesCount: Int?
 
 	init(
 		id: UUID,
@@ -28,7 +29,8 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		name: String? = nil,
 		bio: String? = nil,
 		email: String,
-        mutualFriendCount: Int? = 0
+        mutualFriendCount: Int? = 0,
+        sharedActivitiesCount: Int? = 0
 	) {
 		self.id = id
 		self.username = username
@@ -37,6 +39,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.bio = bio
 		self.email = email
         self.mutualFriendCount = mutualFriendCount
+        self.sharedActivitiesCount = sharedActivitiesCount
 	}
 }
 
@@ -72,7 +75,8 @@ extension RecommendedFriendUserDTO {
 		name: "Shannon",
 		bio: "This is my bio.",
 		email: "shannon@gmail.com",
-        mutualFriendCount: 3
+        mutualFriendCount: 3,
+        sharedActivitiesCount: 2
 	)
 
 	static var jennifer: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
@@ -82,7 +86,8 @@ extension RecommendedFriendUserDTO {
 		name: "Jennifer Tjen",
 		bio: "This is my bio.",
 		email: "jennifer@gmail.com",
-        mutualFriendCount: 1
+        mutualFriendCount: 1,
+        sharedActivitiesCount: 1
 	)
 
 	static var michael: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
@@ -92,7 +97,8 @@ extension RecommendedFriendUserDTO {
 		name: "Michael Tham",
 		bio: "This is my bio.",
 		email: "haley@gmail.com",
-        mutualFriendCount: 2
+        mutualFriendCount: 2,
+        sharedActivitiesCount: 0
 	)
 
 	static var haley: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
@@ -102,7 +108,8 @@ extension RecommendedFriendUserDTO {
 		name: "Haley",
 		bio: "This is my bio.",
 		email: "haley@gmail.com",
-        mutualFriendCount: 0
+        mutualFriendCount: 0,
+        sharedActivitiesCount: 3
 	)
 
 	static let mockUsers: [RecommendedFriendUserDTO] = {

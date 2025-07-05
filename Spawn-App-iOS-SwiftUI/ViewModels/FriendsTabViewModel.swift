@@ -48,6 +48,18 @@ class FriendsTabViewModel: ObservableObject {
 					}
 				}
 				.store(in: &cancellables)
+			
+			// Subscribe to AppCache recommended friends updates
+			appCache.$recommendedFriends
+				.sink { [weak self] cachedRecommendedFriends in
+					if !cachedRecommendedFriends.isEmpty {
+						self?.recommendedFriends = cachedRecommendedFriends
+						if !(self?.isSearching ?? false) {
+							self?.filteredRecommendedFriends = cachedRecommendedFriends
+						}
+					}
+				}
+				.store(in: &cancellables)
 		}
 	}
     
@@ -145,6 +157,8 @@ class FriendsTabViewModel: ObservableObject {
     func removeFromRecommended(friendId: UUID) {
         recommendedFriends.removeAll { $0.id == friendId }
         filteredRecommendedFriends.removeAll { $0.id == friendId }
+        // Update cache to reflect the change
+        appCache.updateRecommendedFriends(recommendedFriends)
     }
     
     // Remove user from recently spawned with list after adding
@@ -158,6 +172,16 @@ class FriendsTabViewModel: ObservableObject {
     func removeFromSearchResults(userId: UUID) {
         searchResults.removeAll { $0.id == userId }
     }
+    
+    // Method to get cached recommended friends for passing to other views
+    func getCachedRecommendedFriends() -> [RecommendedFriendUserDTO] {
+        return appCache.recommendedFriends
+    }
+    
+    // Method to refresh recommended friends cache
+    func refreshRecommendedFriendsCache() async {
+        await fetchRecommendedFriends()
+    }
 
 	func fetchAllData() async {
         await MainActor.run {
@@ -167,7 +191,16 @@ class FriendsTabViewModel: ObservableObject {
         // Create a task group to run these in parallel
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.fetchIncomingFriendRequests() }
-            group.addTask { await self.fetchRecommendedFriends() }
+            group.addTask { 
+                // Check cache first for recommended friends
+                if self.appCache.recommendedFriends.isEmpty {
+                    await self.fetchRecommendedFriends()
+                } else {
+                    await MainActor.run {
+                        self.recommendedFriends = self.appCache.recommendedFriends
+                    }
+                }
+            }
             group.addTask { await self.fetchFriends() }
             group.addTask { await self.fetchRecentlySpawnedWith() }
         }
@@ -215,6 +248,8 @@ class FriendsTabViewModel: ObservableObject {
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.recommendedFriends = fetchedRecommendedFriends
+					// Update cache
+					AppCache.shared.updateRecommendedFriends(fetchedRecommendedFriends)
 				}
 			} catch {
 				await MainActor.run {

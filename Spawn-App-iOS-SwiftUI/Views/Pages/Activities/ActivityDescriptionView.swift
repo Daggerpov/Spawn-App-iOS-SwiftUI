@@ -175,15 +175,11 @@ extension ActivityDescriptionView {
 		var body: some View {
 			HStack {
 				if let pfpUrl = chatMessage.senderUser.profilePicture {
-					AsyncImage(url: URL(string: pfpUrl)) {
-						image in
-						image
-							.ProfileImageModifier(imageType: .chatMessage)
-					} placeholder: {
-						Circle()
-							.fill(Color.gray)
-							.frame(width: 25, height: 25)
-					}
+					CachedProfileImage(
+						userId: chatMessage.senderUser.id,
+						url: URL(string: pfpUrl),
+						imageType: .chatMessage
+					)
 				} else {
 					Circle()
 						.fill(Color.gray)

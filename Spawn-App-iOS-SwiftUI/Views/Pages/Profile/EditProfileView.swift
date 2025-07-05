@@ -208,6 +208,8 @@ struct EditProfileView: View {
             // Update profile picture if selected
             if let newImage = selectedImage {
                 await userAuth.updateProfilePicture(newImage)
+                // Invalidate the cached profile picture since we have a new one
+                ProfilePictureCache.shared.removeCachedImage(for: userId)
             }
             
             // Refresh all profile data
@@ -253,17 +255,13 @@ struct ProfileImageSection: View {
                         .scaledToFill()
                         .frame(width: 110, height: 110)
                         .clipShape(Circle())
-                } else if let profilePicture = UserAuthViewModel.shared.spawnUser?.profilePicture {
-                    AsyncImage(url: URL(string: profilePicture)) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 110, height: 110)
-                            .clipShape(Circle())
-                    } placeholder: {
-                        ProgressView()
-                            .frame(width: 110, height: 110)
-                    }
+                } else if let profilePicture = UserAuthViewModel.shared.spawnUser?.profilePicture, let userId = UserAuthViewModel.shared.spawnUser?.id {
+                    CachedProfileImageFlexible(
+                        userId: userId,
+                        url: URL(string: profilePicture),
+                        width: 110,
+                        height: 110
+                    )
                 } else {
                     Image(systemName: "person.circle.fill")
                         .resizable()
