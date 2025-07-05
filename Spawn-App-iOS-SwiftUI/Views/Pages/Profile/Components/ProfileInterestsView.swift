@@ -26,10 +26,9 @@ struct ProfileInterestsView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 12) {
             // Interests section header
             interestsSectionHeader
-                .padding(.leading, 6)
             
             // Interests content
             Group {
@@ -39,7 +38,6 @@ struct ProfileInterestsView: View {
                     interestsContentView
                 }
             }
-            .padding(.top, -12)  // Slight overlap to position content nicely with header
         }
     }
 
@@ -60,7 +58,7 @@ struct ProfileInterestsView: View {
                 socialMediaIcons
             }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, 22)
     }
 
     private var socialMediaIcons: some View {
@@ -145,7 +143,7 @@ struct ProfileInterestsView: View {
 					.font(.onestSemiBold(size: 12))
 					.padding(.vertical, 8)
 					.padding(.horizontal, 14)
-					.foregroundColor(.primary)
+					.foregroundColor(Color.primary)
 					.lineLimit(1)
 					.background(universalBackgroundColor)
 					.clipShape(Capsule())
@@ -173,7 +171,7 @@ struct ProfileInterestsView: View {
 					.font(.onestSemiBold(size: 12))
 					.padding(.vertical, 6)
 					.padding(.horizontal, 12)
-					.foregroundColor(.primary)
+					.foregroundColor(Color.primary)
 					.lineLimit(1)
 					.background(Color.gray.opacity(0.1))
 					.clipShape(Capsule())

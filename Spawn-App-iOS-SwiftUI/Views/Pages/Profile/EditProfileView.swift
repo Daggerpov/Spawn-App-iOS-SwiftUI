@@ -352,92 +352,7 @@ struct PersonalInfoSection: View {
     }
 }
 
-// MARK: - FlowLayout for flexible wrapping
-struct FlowLayout: Layout {
-    var alignment: Alignment = .center
-    var spacing: CGFloat = 10
-    
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = FlowResult(
-            in: proposal.replacingUnspecifiedDimensions(),
-            subviews: subviews,
-            alignment: alignment,
-            spacing: spacing
-        )
-        return result.bounds
-    }
-    
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = FlowResult(
-            in: proposal.replacingUnspecifiedDimensions(),
-            subviews: subviews,
-            alignment: alignment,
-            spacing: spacing
-        )
-        for (index, subview) in subviews.enumerated() {
-            subview.place(at: result.offsets[index], proposal: ProposedViewSize(result.sizes[index]))
-        }
-    }
-    
-    struct FlowResult {
-        var bounds = CGSize.zero
-        var offsets: [CGPoint] = []
-        var sizes: [CGSize] = []
-        
-        init(in bounds: CGSize, subviews: Subviews, alignment: Alignment, spacing: CGFloat) {
-            var origin = CGPoint.zero
-            var lineHeight: CGFloat = 0
-            var lineOffsets: [CGPoint] = []
-            var lineSizes: [CGSize] = []
-            
-            for subview in subviews {
-                let size = subview.sizeThatFits(ProposedViewSize(bounds))
-                
-                if origin.x + size.width > bounds.width && !lineOffsets.isEmpty {
-                    // Start a new line
-                    alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
-                    origin.x = 0
-                    origin.y += lineHeight + spacing
-                    lineHeight = 0
-                    lineOffsets.removeAll()
-                    lineSizes.removeAll()
-                }
-                
-                lineOffsets.append(origin)
-                lineSizes.append(size)
-                lineHeight = max(lineHeight, size.height)
-                
-                origin.x += size.width + spacing
-            }
-            
-            // Align the last line
-            alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
-            
-            self.bounds = CGSize(
-                width: bounds.width,
-                height: origin.y + lineHeight
-            )
-        }
-        
-        private mutating func alignLine(
-            lineOffsets: inout [CGPoint],
-            lineSizes: inout [CGSize],
-            lineHeight: CGFloat,
-            bounds: CGSize,
-            alignment: Alignment
-        ) {
-            for (index, offset) in lineOffsets.enumerated() {
-                let size = lineSizes[index]
-                let alignedOffset = CGPoint(
-                    x: offset.x,
-                    y: offset.y + (lineHeight - size.height) / 2
-                )
-                offsets.append(alignedOffset)
-                sizes.append(size)
-            }
-        }
-    }
-}
+
 
 // MARK: - Interests Section
 struct InterestsSection: View {
@@ -455,41 +370,41 @@ struct InterestsSection: View {
                 .font(.custom("Onest", size: 16).weight(.medium))
                 .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
             
-            HStack(spacing: 12) {
-                Text("Type and press enter to add...")
-                    .font(.custom("Onest", size: 16))
-                    .foregroundColor(newInterest.isEmpty ? Color(red: 0.52, green: 0.49, blue: 0.49) : Color(red: 0.11, green: 0.11, blue: 0.11))
-                    .opacity(newInterest.isEmpty ? 1.0 : 0.0)
-                    .animation(.easeInOut(duration: 0.2), value: newInterest.isEmpty)
+            // Text field with placeholder overlay
+            ZStack(alignment: .leading) {
+                // Background
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
+                    .frame(height: 48)
                 
+                // Placeholder text
+                if newInterest.isEmpty {
+                    Text("Type and press enter to add...")
+                        .font(.custom("Onest", size: 16))
+                        .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+                        .padding(.leading, 16)
+                }
+                
+                // Text field
                 TextField("", text: $newInterest)
                     .font(.custom("Onest", size: 16))
                     .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .padding(.horizontal, 16)
                     .focused($isTextFieldFocused)
                     .onSubmit {
                         addInterest()
                     }
-                    .overlay(
-                        // Invisible overlay to capture taps
-                        Rectangle()
-                            .fill(Color.clear)
-                            .onTapGesture {
-                                isTextFieldFocused = true
-                            }
-                    )
+                    .frame(height: 48)
             }
-            .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-            .background(Color.white)
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(red: 0.52, green: 0.49, blue: 0.49), lineWidth: 0.5)
-            )
             
             // Existing interests as chips
             if !profileViewModel.userInterests.isEmpty {
-                // Use flexible flow layout for interests
-                FlowLayout(alignment: .leading, spacing: 8) {
+                // Flexible layout for interests that wraps to new lines
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 8) {
                     ForEach(profileViewModel.userInterests, id: \.self) { interest in
                         InterestChipView(interest: interest) {
                             removeInterest(interest)
@@ -499,7 +414,6 @@ struct InterestsSection: View {
                 .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
-        .frame(width: 364) // Match Figma width
         .padding(.horizontal)
     }
     
@@ -555,8 +469,8 @@ struct InterestChipView: View {
                 .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
             
             Button(action: onRemove) {
-                Text("􀆄")
-                    .font(.custom("SF Pro Display", size: 10).weight(.semibold))
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(Color(red: 0.88, green: 0.36, blue: 0.45))
             }
         }
