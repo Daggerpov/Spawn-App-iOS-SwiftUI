@@ -69,8 +69,9 @@ struct ProfileInterestsView: View {
             // Loading indicator
             ProgressView()
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding()
-                .padding(.top, 20)
+                .padding(.horizontal, 16)
+                .padding(.top, 28)
+                .padding(.bottom, 4)
         }
     }
 
@@ -148,8 +149,8 @@ struct ProfileInterestsView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .padding(.top, 16) // Increased top padding to account for the header
+                .padding(.top, 28)
+                .padding(.bottom, 4)
                 .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
@@ -159,8 +160,9 @@ struct ProfileInterestsView: View {
         Text("No interests added yet.")
             .foregroundColor(.secondary)
             .italic()
-            .padding()
-            .padding(.top, 24) // Increased top padding to account for the header
+            .padding(.horizontal, 16)
+            .padding(.top, 28)
+            .padding(.bottom, 4)
     }
 
     private func interestChip(interest: String) -> some View {

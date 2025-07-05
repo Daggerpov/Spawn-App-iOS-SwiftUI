@@ -37,7 +37,7 @@ struct ActivityFeedView: View {
                     .padding(.top, 12)
                 // Spawn In! row
                 HStack {
-                    Text("Spawn In!")
+                    Text("Spawn in!")
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
@@ -50,7 +50,7 @@ struct ActivityFeedView: View {
                     .padding(.bottom, 19)
                 // Activities in Your Area row
                 HStack {
-                    Text("See What's Happening!")
+                    Text("See what's happening")
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()

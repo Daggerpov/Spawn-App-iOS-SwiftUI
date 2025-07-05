@@ -12,17 +12,17 @@ let universalNewRectangleCornerRadius: CGFloat = 8
 
 // activity colors
 let activityRedHexCode: String = "#FD4E4C"
-let activityYellowHexCode: String = "#FBCD29"
+let activityOrangeHexCode: String = "#FF6B35"
 let activityIndigoHexCode: String = "#536AEE"
 let activityGreenHexCode: String = "#1AB979"
 let activityPinkHexCode: String = "#ED64A6"
 let activityTealHexCode: String = "#38B2AC"
-let activityBlueHexCode: String = "#1E86E8"
-let activityPurpleHexCode: String = "#713DE5"
+let activityBlueHexCode: String = "#1D85E7"
+let activityPurpleHexCode: String = "#703CE5"
 let activityIndigoDarkHexCode: String = "#242CBB"
 
 let activityColorHexCodes: [String] = [
-	activityRedHexCode, activityYellowHexCode, activityIndigoHexCode,
+	activityRedHexCode, activityOrangeHexCode, activityIndigoHexCode,
 	activityGreenHexCode, activityPinkHexCode, activityTealHexCode,
 	activityBlueHexCode, activityPurpleHexCode, activityIndigoDarkHexCode
 ]

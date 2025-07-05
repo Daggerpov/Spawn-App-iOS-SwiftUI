@@ -221,7 +221,8 @@ class ActivityCreationViewModel: ObservableObject {
 	func updateActivityType() {
 		guard let type = selectedType else { return }
 		
-		activity.title = type.rawValue
+		// Don't overwrite the user's custom title with the activity type name
+		// Only set icon and category based on the selected type
 		activity.icon = type.icon
 		activity.category = type.toActivityCategory()
 	}

@@ -117,7 +117,8 @@ struct ActivityTypeCardView: View {
         .buttonStyle(PlainButtonStyle())
         .disabled(mappedActivityType == nil)
         .opacity(mappedActivityType == nil ? 0.6 : 1.0)
-        .frame(width: 75, height: 100)
+        .frame(height: 100)
+        .frame(maxWidth: .infinity)
     }
 }
 

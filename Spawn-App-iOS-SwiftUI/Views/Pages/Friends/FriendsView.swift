@@ -79,11 +79,32 @@ extension FriendsView {
         NavigationLink(destination: {
             FriendRequestsView(userId: user.id)
         }) {
-            BaseFriendNavButtonView(
-                iconImageName: "friend_request_icon",
-                topText: "Friend Requests",
-                bottomText: "Accept or Deny"
-            )
+            HStack {
+                HStack(spacing: 8) {
+                    Text("Friend Requests")
+                        .font(Font.custom("Onest", size: 17).weight(.semibold))
+                        .foregroundColor(.white)
+                    VStack(spacing: 10) {
+                        Text("5")
+                            .font(Font.custom("Onest", size: 12).weight(.semibold))
+                            .lineSpacing(14.40)
+                            .foregroundColor(.white)
+                    }
+                    .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
+                    .frame(width: 20, height: 20)
+                    .background(Color(red: 1, green: 0.45, blue: 0.44))
+                    .cornerRadius(16)
+                }
+                
+                Spacer()
+                
+                Text("View All >")
+                    .font(Font.custom("Onest", size: 16).weight(.semibold))
+                    .foregroundColor(Color(red: 1, green: 1, blue: 1).opacity(0.80))
+            }
+            .padding(16)
+            .background(Color(red: 0.33, green: 0.42, blue: 0.93))
+            .cornerRadius(12)
         }
     }
 }

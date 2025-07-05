@@ -83,6 +83,14 @@ struct FriendsTabView: View {
         }
     }
     
+    var showAllRecommendedButton: some View {
+        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recommendedFriends)) {
+            Text("Show All")
+                .font(.onestRegular(size: 14))
+                .foregroundColor(universalSecondaryColor)
+        }
+    }
+    
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
 			if !viewModel.recentlySpawnedWith.isEmpty {
@@ -108,6 +116,7 @@ struct FriendsTabView: View {
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
+                    showAllRecommendedButton
                 }
 
 				ScrollView(showsIndicators: false) {
@@ -181,6 +190,10 @@ struct FriendsTabView: View {
                                             Text(friend.name ?? friend.username)
                                                 .font(.onestMedium(size: 16))
                                                 .foregroundColor(universalAccentColor)
+                                                .lineLimit(1)
+                                            Text("@\(friend.username)")
+                                                .font(.onestRegular(size: 12))
+                                                .foregroundColor(Color.gray)
                                                 .lineLimit(1)
                                         }
                                         .padding(.horizontal, 8)
@@ -265,6 +278,15 @@ struct RecommendedFriendView: View {
                     Text(FormatterService.shared.formatName(user: friend))
                         .font(.onestBold(size: 14))
                         .foregroundColor(universalAccentColor)
+                    Text("@\(friend.username)")
+                        .font(.onestRegular(size: 12))
+                        .foregroundColor(Color.gray)
+                    // Show mutual friends count if available
+                    if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
+                        Text("\(mutualCount) mutual friend\(mutualCount == 1 ? "" : "s")")
+                            .font(.onestRegular(size: 12))
+                            .foregroundColor(Color.gray)
+                    }
                 }
                 .padding(.leading, 8)
             }
@@ -363,6 +385,9 @@ struct RecentlySpawnedView: View {
                     Text(FormatterService.shared.formatName(user: recentUser.user))
                         .font(.onestBold(size: 14))
                         .foregroundColor(universalAccentColor)
+                    Text("@\(recentUser.user.username)")
+                        .font(.onestRegular(size: 12))
+                        .foregroundColor(Color.gray)
                 }
                 .padding(.leading, 8)
             }

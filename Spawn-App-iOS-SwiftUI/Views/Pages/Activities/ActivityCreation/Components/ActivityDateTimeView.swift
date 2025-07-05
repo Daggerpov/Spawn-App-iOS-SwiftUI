@@ -202,7 +202,7 @@ struct ActivityDateTimeView: View {
                                 Picker("Day", selection: $selectedDay) {
                                     ForEach(DayOption.allCases, id: \.self) { day in
                                         Text(day.title)
-                                            .font(Font.custom("Onest", size: 26))
+                                            .font(Font.custom("Onest", size: 22))
                                             .foregroundColor(pickerTextColor)
                                             .tag(day)
                                     }

@@ -459,7 +459,7 @@ struct ProfileView: View {
 				openSocialMediaLink: openSocialMediaLink,
 				removeInterest: removeInterest
 			)
-			.padding(.top, -8)
+			.padding(.top, 20)
 			.padding(.bottom, 8)
 
 			// User Stats (only for current user or friends)

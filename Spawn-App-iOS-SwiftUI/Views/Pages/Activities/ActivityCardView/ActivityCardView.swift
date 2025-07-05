@@ -21,21 +21,9 @@ struct ActivityCardView: View {
         
     }
     
-    // Create a muted version of the color for dark mode
+    // Use the same color for both light and dark modes
     private var cardBackgroundColor: Color {
-        switch colorScheme {
-        case .dark:
-            // Use a much darker, muted version of the color
-            return Color(.sRGB, 
-                        red: min(0.15, color.components.red * 0.3),
-                        green: min(0.15, color.components.green * 0.3), 
-                        blue: min(0.15, color.components.blue * 0.3),
-                        opacity: 0.8)
-        case .light:
-            return color
-        @unknown default:
-            return color
-        }
+        return color
     }
     
     // Border color for better definition in dark mode
