@@ -6,18 +6,21 @@
 //
 
 import Foundation
+import SwiftUI
 
 class ChatViewModel: ObservableObject {
     private let apiService: IAPIService
     private let senderUserId: UUID
-    private var activityId: UUID
-    @Published var chats: [FullActivityChatMessageDTO]
+    @ObservedObject private var activity: FullFeedActivityDTO
+    
+    var chats: [FullActivityChatMessageDTO] {
+        activity.chatMessages ?? []
+    }
     var creationMessage: String?
     
     init(senderUserId: UUID, activity: FullFeedActivityDTO) {
         self.senderUserId = senderUserId
-        self.activityId = activity.id
-        self.chats = activity.chatMessages ?? []
+        self.activity = activity
         apiService = MockAPIService.isMocking ? MockAPIService(userId: senderUserId) : APIService()
     }
     
@@ -36,7 +39,7 @@ class ChatViewModel: ObservableObject {
         let chatMessage: CreateChatMessageDTO = CreateChatMessageDTO(
             content: trimmedMessage,
             senderUserId: senderUserId,
-            activityId: activityId
+            activityId: activity.id
         )
         
         if let url = URL(string: APIService.baseURL + "chatMessages") {
@@ -45,21 +48,39 @@ class ChatViewModel: ObservableObject {
                 
                 // After successfully sending the message, fetch the updated activity data
                 guard let newChatMessage = response else {
-                    print("Error: No chat received API after creating chat message")
+                    print("Error: No chat received from API after creating chat message")
                     creationMessage = "Error sending message"
                     return
                 }
                 
-                chats.append(newChatMessage)
-                
-                // Clear any error message
                 await MainActor.run {
+                    if activity.chatMessages == nil {
+                        activity.chatMessages = []
+                    }
+                    activity.chatMessages?.append(newChatMessage)
                     creationMessage = nil
                 }
             } catch {
                 print("Error sending message: \(error)")
                 await MainActor.run {
                     creationMessage = "There was an error sending your chat message. Please try again"
+                }
+            }
+        }
+    }
+    
+    func refreshChat() async {
+        if let url = URL(string: APIService.baseURL + "activities/" + activity.id.uuidString + "/chats") {
+            do {
+                let chats: [FullActivityChatMessageDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+                await MainActor.run {
+                    activity.chatMessages = chats
+                }
+              
+            } catch {
+                print("Error refreshing chats: \(error)")
+                await MainActor.run {
+                    creationMessage = "There was an error refreshing the chatroom. Please try again"
                 }
             }
         }

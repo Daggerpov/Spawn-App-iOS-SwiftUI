@@ -15,6 +15,8 @@ struct ActivityFeedView: View {
     @Binding private var selectedTab: TabType
     private let horizontalSubHeadingPadding: CGFloat = 21
     private let bottomSubHeadingPadding: CGFloat = 14
+    @State private var showFullActivitiesList: Bool = false
+    @Environment(\.dismiss) private var dismiss
     
     init(user: BaseUserDTO, selectedTab: Binding<TabType>) {
         self.user = user
@@ -48,12 +50,17 @@ struct ActivityFeedView: View {
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
-                    seeAllActivityTypesButton
+                    seeAllActivitiesButton
                 }
                 .padding(.horizontal, horizontalSubHeadingPadding)
                 .padding(.bottom, bottomSubHeadingPadding)
                 // Activities
-                activityListView
+                //activityListView
+                ActivityListView(viewModel: viewModel, user: user, bound: 3) { activity, color in
+                    activityInPopup = activity
+                    colorInPopup = color
+                    showingActivityPopup = true
+                }
             }
             .onAppear {
                 Task {
@@ -93,8 +100,15 @@ struct ActivityFeedView: View {
         }
     }
     var seeAllActivitiesButton: some View {
-        Button(action: {selectedTab = TabType.creation}) { // TODO: change destination
+        Button(action: {showFullActivitiesList = true}) {
             seeAllText
+        }
+        .fullScreenCover(isPresented: $showFullActivitiesList) {
+            FullscreenActivityListView(viewModel: viewModel, user: user)  { activity, color in
+                activityInPopup = activity
+                colorInPopup = color
+                showingActivityPopup = true
+            }
         }
     }
     var seeAllText: some View {
@@ -117,13 +131,13 @@ extension ActivityFeedView {
 
 extension ActivityFeedView {
     var activityListView: some View {
-        ScrollView(.vertical) {
+        ScrollView {
             LazyVStack(spacing: 14) {
                 if viewModel.activities.isEmpty {
-                    Image("ActivityNotFound")
+                    Image("NoActivitiesFound")
                         .resizable()
                         .frame(width: 125, height: 125)
-                    Text("No Events Found")
+                    Text("No Activities Found")
                         .font(.onestSemiBold(size:32))
                         .foregroundColor(universalAccentColor)
                     Text("We couldn't find any events nearby.\nStart one yourself and be spontaneous!")
@@ -131,17 +145,16 @@ extension ActivityFeedView {
                         .multilineTextAlignment(.center)
                         .foregroundColor(figmaBlack300)
                 } else {
-                    ForEach(viewModel.activities) { activity in
-                        ActivityCardView(userId: user.id, activity: activity, color: figmaBlue) { activity, color in
-                                activityInPopup = activity
-                                colorInPopup = color
-                                showingActivityPopup = true
-                            }
+                    ForEach(0..<min(3, viewModel.activities.count), id: \.self) { activityIndex in
+                        ActivityCardView(userId: user.id, activity: viewModel.activities[activityIndex], color: figmaBlue) { activity, color in
+                            activityInPopup = activity
+                            colorInPopup = color
+                            showingActivityPopup = true
+                        }
                     }
                 }
             }
         }
-        .scrollIndicators(.hidden)
         .padding(.horizontal)
         .refreshable {
             Task {
@@ -151,17 +164,6 @@ extension ActivityFeedView {
         }
     }
 }
-
-//struct SeeAllButtonView: View {
-//    var destination: () -> View
-//    var body: some View {
-//        NavigationLink(destinati) { // TODO: change destination
-//            Text("See All")
-//                .font(.onestRegular(size: 13))
-//                .foregroundColor(universalSecondaryColor)
-//        }
-//    }
-//}
 
 @available(iOS 17, *)
 #Preview {

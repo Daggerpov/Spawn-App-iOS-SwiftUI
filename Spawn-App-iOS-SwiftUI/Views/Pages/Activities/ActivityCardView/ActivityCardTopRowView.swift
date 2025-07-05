@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ActivityCardTopRowView: View {
-	var activity: FullFeedActivityDTO
+	@ObservedObject var activity: FullFeedActivityDTO
     let subtitleFontSize: CGFloat = 14
     let subtitleColor: Color = .white.opacity(0.85)
     let viewModel: ActivityInfoViewModel

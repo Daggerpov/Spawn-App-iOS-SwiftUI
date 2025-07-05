@@ -51,6 +51,10 @@ class MockAPIService: IAPIService {
                 ] as! T
             }
         }
+        
+        if url.absoluteString.contains(APIService.baseURL + "activities/") && url.absoluteString.contains("/chats") {
+            return FullActivityChatMessageDTO.mockChatroom as! T
+        }
 
 
 

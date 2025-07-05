@@ -258,7 +258,7 @@ struct ProfileView: View {
 				profileInnerComponentsView
 					.padding(.horizontal)
 			}
-			.navigationBarBackButtonHidden()
+			.navigationBarBackButtonHidden(false)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .navigationBarLeading) {
