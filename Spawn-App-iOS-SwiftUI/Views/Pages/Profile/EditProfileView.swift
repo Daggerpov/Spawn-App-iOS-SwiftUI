@@ -337,6 +337,87 @@ struct PersonalInfoSection: View {
     }
 }
 
+// MARK: - FlowLayout for flexible wrapping
+struct FlowLayout: Layout {
+    var alignment: Alignment = .center
+    var spacing: CGFloat = 10
+    
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = FlowResult(
+            in: proposal.replacingUnspecifiedDimensions(),
+            subviews: subviews,
+            alignment: alignment,
+            spacing: spacing
+        )
+        return result.bounds
+    }
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = FlowResult(
+            in: proposal.replacingUnspecifiedDimensions(),
+            subviews: subviews,
+            alignment: alignment,
+            spacing: spacing
+        )
+        for (index, subview) in subviews.enumerated() {
+            subview.place(at: result.offsets[index], proposal: ProposedViewSize(result.sizes[index]))
+        }
+    }
+}
+
+struct FlowResult {
+    var bounds = CGSize.zero
+    var offsets: [CGPoint] = []
+    var sizes: [CGSize] = []
+    
+    init(in bounds: CGSize, subviews: Subviews, alignment: Alignment, spacing: CGFloat) {
+        var origin = CGPoint.zero
+        var lineHeight: CGFloat = 0
+        var lineOffsets: [CGPoint] = []
+        var lineSizes: [CGSize] = []
+        
+        for subview in subviews {
+            let size = subview.sizeThatFits(ProposedViewSize(bounds))
+            
+            if origin.x + size.width > bounds.width && !lineOffsets.isEmpty {
+                // Start a new line
+                alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
+                origin.x = 0
+                origin.y += lineHeight + spacing
+                lineHeight = 0
+                lineOffsets.removeAll()
+                lineSizes.removeAll()
+            }
+            
+            lineOffsets.append(origin)
+            lineSizes.append(size)
+            lineHeight = max(lineHeight, size.height)
+            
+            origin.x += size.width + spacing
+        }
+        
+        // Align the last line
+        alignLine(lineOffsets: &lineOffsets, lineSizes: &lineSizes, lineHeight: lineHeight, bounds: bounds, alignment: alignment)
+        
+        self.bounds = CGSize(
+            width: bounds.width,
+            height: origin.y + lineHeight
+        )
+    }
+    
+    private func alignLine(lineOffsets: inout [CGPoint], lineSizes: inout [CGSize], lineHeight: CGFloat, bounds: CGSize, alignment: Alignment) {
+        for (index, offset) in lineOffsets.enumerated() {
+            let size = lineSizes[index]
+            let alignedOffset = CGPoint(
+                x: offset.x,
+                y: offset.y + (lineHeight - size.height) / 2
+            )
+            offsets.append(alignedOffset)
+            sizes.append(size)
+        }
+    }
+}
+
 // MARK: - Interests Section
 struct InterestsSection: View {
     @ObservedObject var profileViewModel: ProfileViewModel
@@ -348,45 +429,56 @@ struct InterestsSection: View {
     @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Interests + Hobbies (Max \(maxInterests))")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+                .font(.custom("Onest", size: 16).weight(.medium))
+                .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
             
-            TextField("Type and press enter to add...", text: $newInterest)
-                .font(.subheadline)
-                .padding()
-                .foregroundColor(universalAccentColor)
-                .cornerRadius(10)
-                .focused($isTextFieldFocused)
-                .onSubmit {
-                    addInterest()
-                }
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: universalNewRectangleCornerRadius
+            HStack(spacing: 12) {
+                Text("Type and press enter to add...")
+                    .font(.custom("Onest", size: 16))
+                    .foregroundColor(newInterest.isEmpty ? Color(red: 0.52, green: 0.49, blue: 0.49) : Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .opacity(newInterest.isEmpty ? 1.0 : 0.0)
+                    .animation(.easeInOut(duration: 0.2), value: newInterest.isEmpty)
+                
+                TextField("", text: $newInterest)
+                    .font(.custom("Onest", size: 16))
+                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .focused($isTextFieldFocused)
+                    .onSubmit {
+                        addInterest()
+                    }
+                    .overlay(
+                        // Invisible overlay to capture taps
+                        Rectangle()
+                            .fill(Color.clear)
+                            .onTapGesture {
+                                isTextFieldFocused = true
+                            }
                     )
-                        .stroke(universalAccentColor, lineWidth: 1)
-                )
-                .placeholder(when: newInterest.isEmpty) {
-                    Text("Type and press enter to add...")
-                        .foregroundColor(universalAccentColor.opacity(0.7))
-                        .font(.subheadline)
-                        .padding(.leading)
-                }
-            
+            }
+            .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            .background(Color.white)
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(red: 0.52, green: 0.49, blue: 0.49), lineWidth: 0.5)
+            )
             
             // Existing interests as chips
             if !profileViewModel.userInterests.isEmpty {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 8) {
+                // Use flexible flow layout for interests
+                FlowLayout(alignment: .leading, spacing: 8) {
                     ForEach(profileViewModel.userInterests, id: \.self) { interest in
                         InterestChipView(interest: interest) {
                             removeInterest(interest)
                         }
                     }
                 }
+                .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
+        .frame(width: 364) // Match Figma width
         .padding(.horizontal)
     }
     
@@ -408,6 +500,8 @@ struct InterestsSection: View {
                     if success {
                         newInterest = ""
                         isTextFieldFocused = false // Dismiss keyboard
+                        // Force UI update
+                        profileViewModel.objectWillChange.send()
                     }
                 }
             }
@@ -420,6 +514,10 @@ struct InterestsSection: View {
     private func removeInterest(_ interest: String) {
         Task {
             await profileViewModel.removeUserInterest(userId: userId, interest: interest)
+            await MainActor.run {
+                // Force UI update
+                profileViewModel.objectWillChange.send()
+            }
         }
     }
 }
@@ -430,24 +528,20 @@ struct InterestChipView: View {
     let onRemove: () -> Void
     
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Text(interest)
-                .font(.caption)
-                .padding(.leading, 8)
-                .foregroundColor(universalAccentColor)
-            
-            Spacer()
+                .font(.custom("Onest", size: 14).weight(.medium))
+                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
             
             Button(action: onRemove) {
-                Image(systemName: "xmark")
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .padding(6)
+                Text("􀆄")
+                    .font(.custom("SF Pro Display", size: 10).weight(.semibold))
+                    .foregroundColor(Color(red: 0.88, green: 0.36, blue: 0.45))
             }
         }
-        .padding(.vertical, 4)
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(16)
+        .padding(12)
+        .background(Color(red: 0.86, green: 0.84, blue: 0.84))
+        .cornerRadius(100)
     }
 }
 

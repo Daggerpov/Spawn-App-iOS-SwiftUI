@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ProfileInterestsView: View {
     let user: Nameable
-    @StateObject var profileViewModel: ProfileViewModel
+    @ObservedObject var profileViewModel: ProfileViewModel
     @Binding var editingState: ProfileEditText
     @Binding var newInterest: String
     
@@ -115,23 +115,15 @@ struct ProfileInterestsView: View {
             if profileViewModel.userInterests.isEmpty {
                 emptyInterestsView
             } else {
-                // Interests as chips with proper layout
-                LazyVStack(alignment: .leading, spacing: 8) {
-                    // Use a simple LazyVGrid for consistent layout
-                    LazyVGrid(
-                        columns: [
-                            GridItem(.adaptive(minimum: 70, maximum: 150), spacing: 8)
-                        ],
-                        alignment: .leading,
-                        spacing: 8
-                    ) {
-                        ForEach(profileViewModel.userInterests, id: \.self) { interest in
-                            interestChip(interest: interest)
-                        }
+                // Interests as chips with flexible flow layout
+                FlowLayout(alignment: .leading, spacing: 8) {
+                    ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                        interestChip(interest: interest)
                     }
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
+                .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
         .frame(minHeight: 80)
