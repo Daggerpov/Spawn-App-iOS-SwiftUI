@@ -22,6 +22,7 @@ struct ContentView: View {
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					Text("Home")
 				}
 			MapView(user: user)
                 .tag(TabType.map)
@@ -32,6 +33,7 @@ struct ContentView: View {
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					Text("Map")
 				}
 			ActivityCreationView(
 				creatingUser: user,
@@ -49,6 +51,7 @@ struct ContentView: View {
 						targetSize: CGSize(width: 30, height: 27)
 					)!
 				)
+				Text("Activities")
 			}
 			FriendsView(user: user)
                 .tag(TabType.friends)
@@ -59,6 +62,7 @@ struct ContentView: View {
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					Text("Friends")
 				}
 			ProfileView(user: user)
                 .tag(TabType.profile)
@@ -69,6 +73,7 @@ struct ContentView: View {
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					Text("Profile")
 				}
 		}
 		.onAppear {
