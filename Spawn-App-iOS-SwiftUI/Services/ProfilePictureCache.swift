@@ -28,6 +28,7 @@ class ProfilePictureCache: ObservableObject {
     
     // Currently downloading images to prevent duplicate downloads
     private var downloadingImages: Set<String> = []
+    private let downloadingQueue = DispatchQueue(label: "ProfilePictureCache.downloading", attributes: .concurrent)
     
     // MARK: - Initialization
     private init() {
@@ -103,9 +104,9 @@ class ProfilePictureCache: ObservableObject {
         }
         
         // Check if already downloading
-        if downloadingImages.contains(key) {
+        if isDownloading(key) {
             // Wait for the download to complete
-            while downloadingImages.contains(key) {
+            while isDownloading(key) {
                 try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
             }
             // Try to get the cached image after download completes
@@ -113,8 +114,8 @@ class ProfilePictureCache: ObservableObject {
         }
         
         // Start download
-        downloadingImages.insert(key)
-        defer { downloadingImages.remove(key) }
+        startDownloading(key)
+        defer { stopDownloading(key) }
         
         guard let url = URL(string: urlString) else {
             return nil
@@ -190,6 +191,24 @@ class ProfilePictureCache: ObservableObject {
     }
     
     // MARK: - Private Methods
+    
+    private func isDownloading(_ key: String) -> Bool {
+        return downloadingQueue.sync {
+            return downloadingImages.contains(key)
+        }
+    }
+    
+    private func startDownloading(_ key: String) {
+        downloadingQueue.async(flags: .barrier) {
+            self.downloadingImages.insert(key)
+        }
+    }
+    
+    private func stopDownloading(_ key: String) {
+        downloadingQueue.async(flags: .barrier) {
+            self.downloadingImages.remove(key)
+        }
+    }
     
     private func saveToDisk(_ image: UIImage, for key: String) async {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
