@@ -220,40 +220,80 @@ struct ActivityTypeSelectionCard: View {
     let onTap: () -> Void
     @Environment(\.colorScheme) var colorScheme
     
+    // Dynamic colors based on selection state
+    private var iconColor: Color {
+        if isSelected {
+            return colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07)
+        } else {
+            return colorScheme == .dark ? Color.white.opacity(0.5) : Color(red: 0.07, green: 0.07, blue: 0.07).opacity(0.4)
+        }
+    }
+    
+    private var titleColor: Color {
+        if isSelected {
+            return colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07)
+        } else {
+            return colorScheme == .dark ? Color.white.opacity(0.5) : Color(red: 0.07, green: 0.07, blue: 0.07).opacity(0.4)
+        }
+    }
+    
+    private var peopleCountColor: Color {
+        if isSelected {
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        } else {
+            return Color(red: 0.52, green: 0.49, blue: 0.49).opacity(0.4)
+        }
+    }
+    
+    private var backgroundColor: Color {
+        if isSelected {
+            return colorScheme == .dark ? 
+                   Color(red: 0.24, green: 0.23, blue: 0.23) : 
+                   Color(red: 0.95, green: 0.93, blue: 0.93)
+        } else {
+            return colorScheme == .dark ? 
+                   Color(red: 0.24, green: 0.23, blue: 0.23).opacity(0.5) : 
+                   Color(red: 0.95, green: 0.93, blue: 0.93).opacity(0.5)
+        }
+    }
+    
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 4) {
                 // Icon
                 Text(activityType.icon)
                     .font(.onestBold(size: 34))
-                    .foregroundColor(colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07))
+                    .foregroundColor(iconColor)
                 
                 VStack(spacing: 2) {
                     // Title
                     Text(activityType.title)
                         .font(.onestSemiBold(size: 16))
-                        .foregroundColor(colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07))
+                        .foregroundColor(titleColor)
                     
                     // People count
                     Text("\(activityType.associatedFriends.count) people")
                         .font(.onestRegular(size: 13))
-                        .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+                        .foregroundColor(peopleCountColor)
                 }
             }
             .padding(16)
             .frame(width: 111, height: 111)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(colorScheme == .dark ? 
-                          Color(red: 0.24, green: 0.23, blue: 0.23) : 
-                          Color(red: 0.95, green: 0.93, blue: 0.93))
+                    .fill(backgroundColor)
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? (colorScheme == .dark ? .white : Color(red: 0.07, green: 0.07, blue: 0.07)) : Color.clear, lineWidth: 2)
+            .shadow(
+                color: isSelected ? (colorScheme == .dark ? Color.white.opacity(0.1) : Color.black.opacity(0.1)) : Color.clear,
+                radius: isSelected ? 4 : 0,
+                x: 0,
+                y: isSelected ? 2 : 0
             )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
+            .opacity(isSelected ? 1.0 : 0.6)
         }
         .buttonStyle(PlainButtonStyle())
+        .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 }
 
