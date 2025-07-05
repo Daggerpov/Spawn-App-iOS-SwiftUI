@@ -13,6 +13,7 @@ struct ProfileCalendarView: View {
 
 	@Binding var showCalendarPopup: Bool
 	@Binding var showActivityDetails: Bool
+	@Binding var navigateToCalendar: Bool
 
 	@State private var currentMonth = Calendar.current.component(
 		.month,
@@ -67,11 +68,11 @@ struct ProfileCalendarView: View {
 					}
 				}
 				.onTapGesture {
-					// Load all calendar activities before showing the popup
+					// Load all calendar activities before navigating to calendar
 					Task {
 						await profileViewModel.fetchAllCalendarActivities()
 						await MainActor.run {
-							showCalendarPopup = true
+							navigateToCalendar = true
 						}
 					}
 				}
@@ -290,6 +291,7 @@ struct MiniDayCell: View {
 	ProfileCalendarView(
 		profileViewModel: ProfileViewModel(userId: UUID()),
 		showCalendarPopup: .constant(false),
-		showActivityDetails: .constant(false)
+		showActivityDetails: .constant(false),
+		navigateToCalendar: .constant(false)
 	)
 }

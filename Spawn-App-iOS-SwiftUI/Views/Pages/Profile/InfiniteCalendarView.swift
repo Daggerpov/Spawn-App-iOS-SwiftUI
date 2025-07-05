@@ -29,51 +29,18 @@ struct InfiniteCalendarView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Header with back button
-                HStack {
-                    Button(action: {
-                        onDismiss()
-                    }) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "chevron.left")
-                                .font(.title2)
-                                .foregroundColor(universalAccentColor)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Your Event Calendar")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                    
-                    // Invisible spacer for balance
-                    Button(action: {}) {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .opacity(0)
-                    }
-                    .disabled(true)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 15)
-                
-                if isLoading {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    infiniteScrollCalendar
-                }
+        VStack(spacing: 0) {
+            if isLoading {
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                infiniteScrollCalendar
             }
-            .background(Color(.systemGroupedBackground))
-            .navigationBarHidden(true)
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Your Event Calendar")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
         .sheet(isPresented: $showingDayActivities) {
             DayActivitiesView(
                 activities: selectedDayActivities,
@@ -112,9 +79,11 @@ struct InfiniteCalendarView: View {
                     if let todayMonthData = monthsData.first(where: { monthData in
                         calendar.isDate(monthData.date, equalTo: today, toGranularity: .month)
                     }) {
-                        // Scroll to current month immediately
-                        DispatchQueue.main.async {
-                            proxy.scrollTo(todayMonthData.id, anchor: .center)
+                        // Scroll to current month with animation after a short delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                proxy.scrollTo(todayMonthData.id, anchor: .center)
+                            }
                         }
                     }
                 }
