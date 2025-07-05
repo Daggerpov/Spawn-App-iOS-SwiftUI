@@ -33,10 +33,8 @@ struct ProfileView: View {
 	@State private var showCalendarPopup: Bool = false
 	@State private var navigateToCalendar: Bool = false
 	@State private var showActivityDetails: Bool = false
-	    @State private var showReportDialog: Bool = false
-    @State private var showBlockDialog: Bool = false
-    @State private var reportType: ReportType = .harassment
-    @State private var reportDescription: String = ""
+	    	@State private var showReportDialog: Bool = false
+	@State private var showBlockDialog: Bool = false
     @State private var blockReason: String = ""
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showProfileMenu: Bool = false
@@ -48,8 +46,7 @@ struct ProfileView: View {
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
-	// For the back button
-	@State private var showBackButton: Bool = false
+
 
 	// Check if this is the current user's profile
 	private var isCurrentUserProfile: Bool {
@@ -155,10 +152,7 @@ struct ProfileView: View {
 					}
 				}
 
-				// Determine if back button should be shown based on navigation
-				if !isCurrentUserProfile {
-					showBackButton = true
-				}
+
 			}
 		}
 		.onChange(of: userAuth.spawnUser) { newUser in
@@ -229,9 +223,29 @@ struct ProfileView: View {
 		{
 			removeFriendConfirmationAlert
 		}
-			.alert("Report User", isPresented: $showReportDialog) {
-				reportUserAlert
-			}
+					.sheet(isPresented: $showReportDialog) {
+			ReportUserDrawer(
+				user: user,
+				onReport: { reportType, description in
+					if let currentUserId = userAuth.spawnUser?.id {
+						Task {
+							await profileViewModel.reportUser(
+								reporterId: currentUserId,
+								reportedId: user.id,
+								reportType: reportType,
+								description: description
+							)
+							
+							// Show success notification
+							notificationMessage = "User reported successfully"
+							showNotification = true
+						}
+					}
+				}
+			)
+			.presentationDetents([.medium, .large])
+			.presentationDragIndicator(.visible)
+		}
 			.alert("Block User", isPresented: $showBlockDialog) {
 				blockUserAlert
 			} message: {
@@ -251,7 +265,7 @@ struct ProfileView: View {
 					shareProfile: shareProfile
 				)
 				.background(universalBackgroundColor)
-				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 372 : 320)])
+				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 320)])
 			}
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
@@ -273,20 +287,6 @@ struct ProfileView: View {
 			.navigationBarBackButtonHidden(true)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
-				ToolbarItem(placement: .navigationBarLeading) {
-					if showBackButton {
-						Button(action: {
-							presentationMode.wrappedValue.dismiss()
-						}) {
-							HStack(spacing: 4) {
-								Image(systemName: "chevron.left")
-								Text("Back")
-							}
-							.foregroundColor(universalAccentColor)
-						}
-					}
-				}
-
 				ToolbarItem(placement: .principal) {
 					// Header text removed for other users' profiles
 					EmptyView()
@@ -617,41 +617,7 @@ struct ProfileView: View {
 		}
 	}
 
-	private var reportUserAlert: some View {
-		Group {
-			Picker("Report Type", selection: $reportType) {
-				ForEach(ReportType.allCases, id: \.self) { type in
-					Text(type.displayName).tag(type)
-				}
-			}
-			.pickerStyle(MenuPickerStyle())
-			
-			TextField("Description (optional)", text: $reportDescription)
-			
-			Button("Cancel", role: .cancel) {
-				reportDescription = ""
-				reportType = .harassment
-			}
-			Button("Report", role: .destructive) {
-				if let currentUserId = userAuth.spawnUser?.id {
-					Task {
-						await profileViewModel.reportUser(
-							reporterId: currentUserId,
-							reportedId: user.id,
-							reportType: reportType,
-							description: reportDescription.isEmpty ? "No description provided" : reportDescription
-						)
-						reportDescription = ""
-						reportType = .harassment
 
-						// Show success notification
-						notificationMessage = "User reported successfully"
-						showNotification = true
-					}
-				}
-			}
-		}
-	}
 
 	private var blockUserAlert: some View {
 		Group {

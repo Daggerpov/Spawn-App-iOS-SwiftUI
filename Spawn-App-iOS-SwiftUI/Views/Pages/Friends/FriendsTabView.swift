@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FriendsTabView: View {
 	@StateObject private var viewModel: FriendsTabViewModel
+	@StateObject var userAuth = UserAuthViewModel.shared
 	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false
@@ -29,6 +30,7 @@ struct FriendsTabView: View {
 	@State private var showBlockDialog: Bool = false
 	@State private var showAddToActivityType: Bool = false
 	@State private var selectedFriend: FullFriendUserDTO?
+	@State private var blockReason: String = ""
 
 	init(user: BaseUserDTO) {
 		self.user = user
@@ -100,18 +102,31 @@ struct FriendsTabView: View {
 			} message: {
 				Text("Are you sure you want to remove this friend?")
 			}
-			.alert("Report User", isPresented: $showReportDialog) {
-				Button("Cancel", role: .cancel) {}
-				Button("Report", role: .destructive) {
+					.sheet(isPresented: $showReportDialog) {
+			ReportUserDrawer(
+				user: selectedFriend ?? BaseUserDTO.danielAgapov,
+				onReport: { reportType, description in
 					// Handle report user action
+					// TODO: Implement report functionality
 				}
-			} message: {
-				Text("Report this user for inappropriate behavior?")
-			}
+			)
+			.presentationDetents([.medium, .large])
+			.presentationDragIndicator(.visible)
+		}
 			.alert("Block User", isPresented: $showBlockDialog) {
-				Button("Cancel", role: .cancel) {}
+				TextField("Reason for blocking", text: $blockReason)
+				Button("Cancel", role: .cancel) {
+					blockReason = ""
+				}
 				Button("Block", role: .destructive) {
-					// Handle block user action
+					if let friendToBlock = selectedFriend,
+					   let currentUserId = UserAuthViewModel.shared.spawnUser?.id,
+					   !blockReason.isEmpty {
+						Task {
+							await blockUser(blockerId: currentUserId, blockedId: friendToBlock.id, reason: blockReason)
+							blockReason = ""
+						}
+					}
 				}
 			} message: {
 				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
@@ -314,6 +329,23 @@ struct FriendsTabView: View {
 		}
 	}
 	
+	// Block user functionality
+	private func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
+		do {
+			let reportingService = UserReportingService()
+			try await reportingService.blockUser(
+				blockerId: blockerId,
+				blockedId: blockedId,
+				reason: reason
+			)
+			
+			// Refresh friends cache to remove the blocked user from friends list
+			await AppCache.shared.refreshFriends()
+			
+		} catch {
+			print("Failed to block user: \(error.localizedDescription)")
+		}
+	}
 }
 
 // Move RecommendedFriendView out of FriendsTabView

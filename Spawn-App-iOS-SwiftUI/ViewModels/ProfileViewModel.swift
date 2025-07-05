@@ -746,6 +746,10 @@ class ProfileViewModel: ObservableObject {
                 self.friendshipStatus = .blocked
                 self.errorMessage = nil
             }
+            
+            // Refresh friends cache to remove the blocked user from friends list
+            await AppCache.shared.refreshFriends()
+            
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to block user: \(error.localizedDescription)"
@@ -765,6 +769,10 @@ class ProfileViewModel: ObservableObject {
                 self.friendshipStatus = .none
                 self.errorMessage = nil
             }
+            
+            // Refresh friends cache for consistency
+            await AppCache.shared.refreshFriends()
+            
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to unblock user: \(error.localizedDescription)"
