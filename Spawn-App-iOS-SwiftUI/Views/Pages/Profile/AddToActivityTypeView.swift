@@ -7,55 +7,53 @@ struct AddToActivityTypeView: View {
     @StateObject private var viewModel = AddToActivityTypeViewModel()
     
     var body: some View {
-        NavigationView {
-            GeometryReader { geometry in
-                ZStack {
-                    // Background
-                    universalBackgroundColor
-                        .ignoresSafeArea()
-                    
-                    VStack(spacing: 0) {
-                        // Main content
-                        ScrollView {
-                            VStack(spacing: 24) {
-                                // Profile section with glow effect
-                                profileSection
-                                
-                                // Activity type grid
-                                activityTypeGrid
-                                
-                                // Spacer to push save button to bottom
-                                Spacer(minLength: 100)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.top, 20)
+        GeometryReader { geometry in
+            ZStack {
+                // Background
+                universalBackgroundColor
+                    .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Main content
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // Profile section with glow effect
+                            profileSection
+                            
+                            // Activity type grid
+                            activityTypeGrid
+                            
+                            // Spacer to push save button to bottom
+                            Spacer(minLength: 100)
                         }
-                        
-                        // Save button at bottom
-                        saveButton
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 34) // Account for tab bar
+                        .padding(.horizontal, 16)
+                        .padding(.top, 20)
                     }
+                    
+                    // Save button at bottom
+                    saveButton
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 34) // Account for tab bar
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarBackButtonHidden(true)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .medium))
-                            .foregroundColor(universalAccentColor)
-                    }
-                }
-                
-                ToolbarItem(placement: .principal) {
-                    Text("Add to Activity Type")
-                        .font(.onestMedium(size: 20))
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundColor(universalAccentColor)
                 }
+            }
+            
+            ToolbarItem(placement: .principal) {
+                Text("Add to Activity Type")
+                    .font(.onestMedium(size: 20))
+                    .foregroundColor(universalAccentColor)
             }
         }
         .onAppear {

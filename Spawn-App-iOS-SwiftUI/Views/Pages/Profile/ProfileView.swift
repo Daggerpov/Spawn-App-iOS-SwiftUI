@@ -39,6 +39,7 @@ struct ProfileView: View {
 	@State private var blockReason: String = ""
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showProfileMenu: Bool = false
+	@State private var showAddToActivityType: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var profileViewModel = ProfileViewModel()
@@ -232,6 +233,7 @@ struct ProfileView: View {
 					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
 					showReportDialog: $showReportDialog,
 					showBlockDialog: $showBlockDialog,
+					showAddToActivityType: $showAddToActivityType,
 					isFriend: profileViewModel.friendshipStatus == .friends,
 					copyProfileURL: copyProfileURL,
 					shareProfile: shareProfile
@@ -297,6 +299,15 @@ struct ProfileView: View {
 					}
 				}
 			}
+			.background(
+				NavigationLink(
+					destination: AddToActivityTypeView(user: user),
+					isActive: $showAddToActivityType
+				) {
+					EmptyView()
+				}
+				.hidden()
+			)
 
 			// Overlay for profile menu
 			profileMenuOverlay

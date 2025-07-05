@@ -12,12 +12,12 @@ struct ProfileMenuView: View {
     @Binding var showRemoveFriendConfirmation: Bool
     @Binding var showReportDialog: Bool
     @Binding var showBlockDialog: Bool
+    @Binding var showAddToActivityType: Bool
     let isFriend: Bool
     let copyProfileURL: () -> Void
     let shareProfile: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var isLoading: Bool = true
-    @State private var showAddToActivityType: Bool = false
     
     var body: some View {
         MenuContainer {
@@ -44,9 +44,7 @@ struct ProfileMenuView: View {
                 isLoading = false
             }
         }
-        .sheet(isPresented: $showAddToActivityType) {
-            AddToActivityTypeView(user: user)
-        }
+
     }
     
     private var loadingContent: some View {
@@ -161,20 +159,6 @@ private struct MenuContent: View {
     
     private var menuItems: some View {
         VStack(spacing: 0) {
-            if isFriend {
-                menuItem(
-                    icon: "person.badge.minus",
-                    text: "Remove Friend",
-                    color: .red
-                ) {
-                    dismiss()
-                    showRemoveFriendConfirmation = true
-                }
-                .background(universalBackgroundColor)
-                
-                Divider()
-            }
-            
             menuItem(
                 icon: "tag",
                 text: "Add to Activity Type",
@@ -232,6 +216,20 @@ private struct MenuContent: View {
                 showBlockDialog = true
             }
             .background(universalBackgroundColor)
+            
+            if isFriend {
+                Divider()
+                
+                menuItem(
+                    icon: "person.badge.minus",
+                    text: "Remove Friend",
+                    color: .red
+                ) {
+                    dismiss()
+                    showRemoveFriendConfirmation = true
+                }
+                .background(universalBackgroundColor)
+            }
         }
         .background(universalBackgroundColor)
     }
@@ -277,6 +275,7 @@ struct ProfileMenuView_Previews: PreviewProvider {
             showRemoveFriendConfirmation: .constant(false),
             showReportDialog: .constant(false),
             showBlockDialog: .constant(false),
+            showAddToActivityType: .constant(false),
             isFriend: true,
             copyProfileURL: {},
             shareProfile: {}
