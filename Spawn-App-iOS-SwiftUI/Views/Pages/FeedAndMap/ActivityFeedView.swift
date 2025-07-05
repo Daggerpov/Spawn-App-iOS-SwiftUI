@@ -128,19 +128,17 @@ struct ActivityFeedView: View {
 
 extension ActivityFeedView {
     var activityTypeListView: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                // Show only first 4 activity types and make them tappable to pre-select
-                ForEach(Array(viewModel.activityTypes.prefix(4)), id: \.id) { activityType in
-                    ActivityTypeCardView(activityType: activityType) { selectedActivityType in
-                        // Pre-select the activity type and navigate to creation
-                        ActivityCreationViewModel.initializeWithSelectedType(selectedActivityType)
-                        selectedTab = TabType.creation
-                    }
+        HStack(spacing: 12) {
+            // Show only first 4 activity types and make them tappable to pre-select
+            ForEach(Array(viewModel.activityTypes.prefix(4)), id: \.id) { activityType in
+                ActivityTypeCardView(activityType: activityType) { selectedActivityType in
+                    // Pre-select the activity type and navigate to creation
+                    ActivityCreationViewModel.initializeWithSelectedType(selectedActivityType)
+                    selectedTab = TabType.creation
                 }
             }
-            .padding(.horizontal, 20)
         }
+        .padding(.horizontal, 20)
     }
 }
 

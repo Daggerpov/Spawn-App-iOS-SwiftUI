@@ -169,6 +169,28 @@ private struct MenuContent: View {
                 Divider()
             }
             
+            menuItem(
+                icon: "link",
+                text: "Copy profile URL",
+                color: universalAccentColor
+            ) {
+                copyProfileURL()
+                dismiss()
+            }
+            .background(universalBackgroundColor)
+            
+            Divider()
+            
+            menuItem(
+                icon: "square.and.arrow.up",
+                text: "Share this Profile",
+                color: universalAccentColor
+            ) {
+                shareProfile()
+                dismiss()
+            }
+            .background(universalBackgroundColor)
+            
             Divider()
             
             menuItem(

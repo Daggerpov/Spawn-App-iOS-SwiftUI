@@ -67,10 +67,8 @@ struct ProfileView: View {
 	}
 
 	var body: some View {
-		NavigationStack {
-			profileContent
-				.background(universalBackgroundColor.ignoresSafeArea())
-		}
+		profileContent
+			.background(universalBackgroundColor.ignoresSafeArea())
 		.background(universalBackgroundColor)
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
@@ -131,7 +129,6 @@ struct ProfileView: View {
 						currentUserId: currentUserId,
 						profileUserId: user.id
 					)
-					print("checked friendship status")
 
 					// If they're friends, fetch their activities
 					if profileViewModel.friendshipStatus == .friends {
@@ -258,7 +255,7 @@ struct ProfileView: View {
 				profileInnerComponentsView
 					.padding(.horizontal)
 			}
-			.navigationBarBackButtonHidden(false)
+			.navigationBarBackButtonHidden(true)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .navigationBarLeading) {
@@ -266,8 +263,11 @@ struct ProfileView: View {
 						Button(action: {
 							presentationMode.wrappedValue.dismiss()
 						}) {
-							Image(systemName: "chevron.left")
-								.foregroundColor(universalAccentColor)
+							HStack(spacing: 4) {
+								Image(systemName: "chevron.left")
+								Text("Back")
+							}
+							.foregroundColor(universalAccentColor)
 						}
 					}
 				}
@@ -352,7 +352,7 @@ struct ProfileView: View {
 					.padding(.vertical, 10)
 					.padding(.horizontal, 20)
 					.frame(maxWidth: 200)
-					.background(universalAccentColor)
+					.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
 					.cornerRadius(12)
 				}
 				.disabled(profileViewModel.friendshipStatus == .requestSent)
@@ -401,7 +401,7 @@ struct ProfileView: View {
 					showCalendarPopup: $showCalendarPopup,
 					showActivityDetails: $showActivityDetails
 				)
-				.padding(.horizontal, 48)
+				.padding(.horizontal, 16)
 				.padding(.bottom, 15)
 			} else {
 				// User Activities Section for other users (based on friendship status)
@@ -410,7 +410,7 @@ struct ProfileView: View {
 					profileViewModel: profileViewModel,
 					showActivityDetails: $showActivityDetails
 				)
-				.padding(.horizontal, 48)
+				.padding(.horizontal, 16)
 				.padding(.bottom, 15)
 			}
 		}
@@ -588,12 +588,14 @@ struct ProfileView: View {
 		guard !newInterest.isEmpty else { return }
 
 		Task {
-			await profileViewModel.addUserInterest(
+			let success = await profileViewModel.addUserInterest(
 				userId: user.id,
 				interest: newInterest
 			)
 			await MainActor.run {
-				newInterest = ""
+				if success {
+					newInterest = ""
+				}
 			}
 		}
 	}
