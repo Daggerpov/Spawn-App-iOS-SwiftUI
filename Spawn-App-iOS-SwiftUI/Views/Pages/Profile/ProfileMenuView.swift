@@ -17,6 +17,7 @@ struct ProfileMenuView: View {
     let shareProfile: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var isLoading: Bool = true
+    @State private var showAddToActivityType: Bool = false
     
     var body: some View {
         MenuContainer {
@@ -28,6 +29,7 @@ struct ProfileMenuView: View {
                     showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
                     showReportDialog: $showReportDialog,
                     showBlockDialog: $showBlockDialog,
+                    showAddToActivityType: $showAddToActivityType,
                     isFriend: isFriend,
                     copyProfileURL: copyProfileURL,
                     shareProfile: shareProfile,
@@ -41,6 +43,9 @@ struct ProfileMenuView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 isLoading = false
             }
+        }
+        .sheet(isPresented: $showAddToActivityType) {
+            AddToActivityTypeView(user: user)
         }
     }
     
@@ -138,6 +143,7 @@ private struct MenuContent: View {
     @Binding var showRemoveFriendConfirmation: Bool
     @Binding var showReportDialog: Bool
     @Binding var showBlockDialog: Bool
+    @Binding var showAddToActivityType: Bool
     let isFriend: Bool
     let copyProfileURL: () -> Void
     let shareProfile: () -> Void
@@ -168,6 +174,18 @@ private struct MenuContent: View {
                 
                 Divider()
             }
+            
+            menuItem(
+                icon: "tag",
+                text: "Add to Activity Type",
+                color: universalAccentColor
+            ) {
+                dismiss()
+                showAddToActivityType = true
+            }
+            .background(universalBackgroundColor)
+            
+            Divider()
             
             menuItem(
                 icon: "link",

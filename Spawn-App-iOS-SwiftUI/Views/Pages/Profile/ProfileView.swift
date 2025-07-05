@@ -236,7 +236,7 @@ struct ProfileView: View {
 					shareProfile: shareProfile
 				)
 				.background(universalBackgroundColor)
-				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 310 : 260)])
+				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 370 : 320)])
 			}
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
@@ -316,6 +316,58 @@ struct ProfileView: View {
 
 			// Friendship badge (for other users' profiles)
 			friendshipBadge
+
+			// Friend Request Buttons (for incoming requests)
+			if !isCurrentUserProfile && profileViewModel.friendshipStatus == .requestReceived {
+				HStack(spacing: 12) {
+					Button(action: {
+						if let requestId = profileViewModel.pendingFriendRequestId {
+							Task {
+								await profileViewModel.acceptFriendRequest(requestId: requestId)
+							}
+						}
+					}) {
+						HStack {
+							Image(systemName: "checkmark")
+							Text("Accept Request")
+								.bold()
+						}
+						.font(.system(size: 16))
+						.foregroundColor(.white)
+						.padding(.vertical, 10)
+						.padding(.horizontal, 20)
+						.frame(maxWidth: .infinity)
+						.background(universalAccentColor)
+						.cornerRadius(12)
+					}
+
+					Button(action: {
+						if let requestId = profileViewModel.pendingFriendRequestId {
+							Task {
+								await profileViewModel.declineFriendRequest(requestId: requestId)
+							}
+						}
+					}) {
+						HStack {
+							Image(systemName: "xmark")
+							Text("Deny")
+								.bold()
+						}
+						.font(.system(size: 16))
+						.foregroundColor(universalAccentColor)
+						.padding(.vertical, 10)
+						.padding(.horizontal, 20)
+						.frame(maxWidth: .infinity)
+						.background(Color.clear)
+						.overlay(
+							RoundedRectangle(cornerRadius: 12)
+								.stroke(universalAccentColor, lineWidth: 2)
+						)
+					}
+				}
+				.padding(.horizontal, 20)
+				.padding(.vertical, 10)
+			}
 
 			// Add Friend Button for non-friends or showing Friend Request Sent
 			if !isCurrentUserProfile && 

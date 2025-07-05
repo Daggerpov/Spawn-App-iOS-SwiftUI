@@ -162,13 +162,15 @@ struct ActivityCreationView: View {
                 selectedDuration: $selectedDuration,
                 onNext: {
                     // Sync the activity title with the view model before proceeding
-                    viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
+                    let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                     
                     // Validate the title is not empty
-                    if viewModel.activity.title?.isEmpty ?? true {
-                        // Show error or prevent progression
+                    if trimmedTitle.isEmpty {
+                        // The validation is handled in ActivityDateTimeView
                         return
                     }
+                    
+                    viewModel.activity.title = trimmedTitle
                     
                     // Sync selectedDate and selectedDuration with viewModel
                     let calendar = Calendar.current

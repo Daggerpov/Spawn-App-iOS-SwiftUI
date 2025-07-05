@@ -116,30 +116,25 @@ struct ProfileInterestsView: View {
                 emptyInterestsView
             } else {
                 // Interests as chips with proper layout
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        // Use a simple LazyVGrid for consistent layout
-                        LazyVGrid(
-                            columns: [
-                                GridItem(
-                                    .adaptive(minimum: 80, maximum: 150),
-                                    spacing: 4
-                                )
-                            ],
-                            alignment: .leading,
-                            spacing: 4
-                        ) {
-                            ForEach(profileViewModel.userInterests, id: \.self)
-                            { interest in
-                                interestChip(interest: interest)
-                            }
+                LazyVStack(alignment: .leading, spacing: 8) {
+                    // Use a simple LazyVGrid for consistent layout
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.adaptive(minimum: 70, maximum: 150), spacing: 8)
+                        ],
+                        alignment: .leading,
+                        spacing: 8
+                    ) {
+                        ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                            interestChip(interest: interest)
                         }
                     }
-                    .padding()
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
         }
-        .frame(maxHeight: profileViewModel.userInterests.isEmpty ? 80 : 80)
+        .frame(minHeight: 80)
         .padding(.horizontal)
     }
 
@@ -184,10 +179,16 @@ struct ProfileInterestsView: View {
 			} else {
 				Text(interest)
 					.font(.onestSemiBold(size: 12))
-					.padding(.vertical, 4)
-					.padding(.horizontal, 8)
+					.padding(.vertical, 6)
+					.padding(.horizontal, 12)
 					.foregroundColor(.primary)
 					.lineLimit(1)
+					.background(Color.gray.opacity(0.1))
+					.clipShape(Capsule())
+					.overlay(
+						RoundedRectangle(cornerRadius: 20)
+							.stroke(Color.gray.opacity(0.3), lineWidth: 1)
+					)
 			}
 		}
     }

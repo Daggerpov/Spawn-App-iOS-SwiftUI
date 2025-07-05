@@ -71,14 +71,14 @@ struct ActivityDateTimeView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 32)
                     
-                    // Time Picker Section - Improved Layout
+                    // Time Picker Section - Improved Layout with more spacing
                     VStack(spacing: 24) {
                         HStack(spacing: 8) {
                             // Day picker (Today/Tomorrow)
                             Picker("Day", selection: $selectedDay) {
                                 ForEach(DayOption.allCases, id: \.self) { day in
                                     Text(day.title)
-                                        .font(.onestMedium(size: 20))
+                                        .font(.onestRegular(size: 28.75))
                                         .foregroundColor(universalAccentColor)
                                         .tag(day)
                                 }
@@ -104,7 +104,7 @@ struct ActivityDateTimeView: View {
                             Picker("Hour", selection: $selectedHour) {
                                 ForEach(hours, id: \.self) { h in
                                     Text("\(h)")
-                                        .font(.onestMedium(size: 24))
+                                        .font(.onestRegular(size: 28.75))
                                         .foregroundColor(universalAccentColor)
                                         .tag(h)
                                 }
@@ -123,7 +123,7 @@ struct ActivityDateTimeView: View {
                             Picker("Minute", selection: $selectedMinute) {
                                 ForEach(minutes, id: \.self) { m in
                                     Text(String(format: "%02d", m))
-                                        .font(.onestMedium(size: 24))
+                                        .font(.onestRegular(size: 28.75))
                                         .foregroundColor(universalAccentColor)
                                         .tag(m)
                                 }
@@ -141,11 +141,11 @@ struct ActivityDateTimeView: View {
                             // AM/PM picker
                             Picker("AM/PM", selection: $isAM) {
                                 Text("AM")
-                                    .font(.onestMedium(size: 24))
+                                    .font(.onestRegular(size: 28.75))
                                     .foregroundColor(universalAccentColor)
                                     .tag(true)
                                 Text("PM")
-                                    .font(.onestMedium(size: 24))
+                                    .font(.onestRegular(size: 28.75))
                                     .foregroundColor(universalAccentColor)
                                     .tag(false)
                             }
@@ -166,13 +166,21 @@ struct ActivityDateTimeView: View {
                         )
                     }
                     .padding(.horizontal, 20)
+                    .padding(.top, 40)
+                    .padding(.bottom, 40)
                     
                     // Title Section
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Title")
                                 .font(.onestMedium(size: 16))
                                 .foregroundColor(showTitleError ? .red : figmaBlack300)
+                            
+                            if showTitleError {
+                                Text("*")
+                                    .font(.onestMedium(size: 16))
+                                    .foregroundColor(.red)
+                            }
                             Spacer()
                         }
                         
@@ -207,7 +215,7 @@ struct ActivityDateTimeView: View {
                     .padding(.horizontal, 20)
                     
                     // Activity Duration Section
-                    VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 12) {
                         HStack {
                             Text("Activity Duration")
                                 .font(.onestMedium(size: 16))
@@ -223,7 +231,7 @@ struct ActivityDateTimeView: View {
                                     viewModel.selectedDuration = duration
                                 }) {
                                     Text(duration.title)
-                                        .font(.onestSemiBold(size: 14))
+                                        .font(.onestMedium(size: 16))
                                         .foregroundColor(selectedDuration == duration ? .white : figmaBlack300)
                                         .padding(.horizontal, 18)
                                         .padding(.vertical, 12)
@@ -253,13 +261,14 @@ struct ActivityDateTimeView: View {
             // Next Step Button
             ActivityNextStepButton(
                 title: "Next Step (Location)",
-                isEnabled: !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty
+                isEnabled: true
             ) {
                 let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                 if trimmedTitle.isEmpty {
                     showTitleError = true
                     return
                 }
+                showTitleError = false
                 updateSelectedDate()
                 onNext()
             }

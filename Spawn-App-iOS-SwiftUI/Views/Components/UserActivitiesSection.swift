@@ -7,7 +7,10 @@ struct UserActivitiesSection: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            friendActivitiesSection
+            // Only show activities section if they are friends
+            if profileViewModel.friendshipStatus == .friends {
+                friendActivitiesSection
+            }
             
             addToSeeActivitiesSection
         }
@@ -98,7 +101,7 @@ struct UserActivitiesSection: View {
         VStack(alignment: .leading, spacing: 12) {
             if profileViewModel.friendshipStatus != .friends {
                 VStack(alignment: .center, spacing: 12) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: "location.fill")
                         .font(.system(size: 32))
                         .foregroundColor(.gray.opacity(0.5))
                     
