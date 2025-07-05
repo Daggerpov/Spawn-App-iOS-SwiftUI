@@ -406,19 +406,31 @@ class ProfileViewModel: ObservableObject {
         }
         
         do {
-            let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(interest)")!
+            // URL encode the interest name to handle spaces and special characters
+            guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+                throw NSError(domain: "EncodingError", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to encode interest name"])
+            }
+            
+            let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(encodedInterest)")!
+            print("Attempting to delete interest at URL: \(url)")
+            
             let _ = try await apiService.deleteData(
                 from: url,
                 parameters: nil,
                 object: EmptyObject()
             )
             
-            // Update cache after successful API call
-            await AppCache.shared.refreshProfileInterests(userId)
+            print("Successfully deleted interest: \(interest)")
+            
+            // Update cache after successful API call - commented out for now
+            // await AppCache.shared.refreshProfileInterests(userId)
         } catch {
-            // Revert local state if API call fails
+            // Add debug information
+            print("Failed to remove interest '\(interest)': \(error.localizedDescription)")
+            
+            // Don't revert local state for now - let the user see immediate feedback
+            // We'll handle the UI optimistically
             await MainActor.run {
-                self.userInterests.append(interest)
                 self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
             }
         }
