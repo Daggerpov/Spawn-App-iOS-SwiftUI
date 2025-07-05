@@ -725,12 +725,12 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
-    func reportUser(reporterId: UUID, reportedId: UUID, reportType: ReportType, description: String) async {
+    func reportUser(reporterUserId: UUID, reportedUserId: UUID, reportType: ReportType, description: String) async {
         do {
             let reportingService = UserReportingService(apiService: self.apiService)
             try await reportingService.reportUser(
-                reporterId: reporterId,
-                reportedUserId: reportedId,
+                reporterUserId: reporterUserId,
+                reportedUserId: reportedUserId,
                 reportType: reportType,
                 description: description
             )
@@ -743,6 +743,18 @@ class ProfileViewModel: ObservableObject {
                 self.errorMessage = "Failed to report user: \(error.localizedDescription)"
             }
         }
+    }
+    
+    /// Legacy method for backward compatibility
+    /// - Deprecated: Use reportUser(reporterUserId:reportedUserId:reportType:description:) instead
+    @available(*, deprecated, message: "Use reportUser(reporterUserId:reportedUserId:reportType:description:) instead")
+    func reportUser(reporter: UserDTO, reportedUser: UserDTO, reportType: ReportType, description: String) async {
+        await reportUser(
+            reporterUserId: reporter.id,
+            reportedUserId: reportedUser.id,
+            reportType: reportType,
+            description: description
+        )
     }
     
     func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {

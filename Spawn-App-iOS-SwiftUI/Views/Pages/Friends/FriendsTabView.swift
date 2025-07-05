@@ -87,7 +87,7 @@ struct FriendsTabView: View {
 						shareProfile: { shareProfile(for: selectedFriend) }
 					)
 					.background(universalBackgroundColor)
-					.presentationDetents([.height(410)])
+					.presentationDetents([.height(364)])
 				}
 			}
 			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {

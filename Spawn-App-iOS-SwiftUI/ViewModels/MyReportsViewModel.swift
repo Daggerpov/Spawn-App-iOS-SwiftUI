@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 class MyReportsViewModel: ObservableObject {
-    @Published var reports: [ReportedContentDTO] = []
+    @Published var reports: [FetchReportedContentDTO] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     

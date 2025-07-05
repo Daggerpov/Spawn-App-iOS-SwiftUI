@@ -98,7 +98,7 @@ struct MyReportsView: View {
 }
 
 struct ReportRow: View {
-    let report: ReportedContentDTO
+    let report: FetchReportedContentDTO
     
     var body: some View {
         HStack {
@@ -114,11 +114,9 @@ struct ReportRow: View {
                     
                     Spacer()
                     
-                    if let timeReported = report.timeReported {
-                        Text(timeReported, style: .date)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
+                    Text(report.timeReported, style: .date)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
                 
                 Text(report.contentType.description)
@@ -137,7 +135,7 @@ struct ReportRow: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text(report.resolution?.rawValue.capitalized ?? "Pending")
+                    Text(report.resolution.rawValue.capitalized)
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundColor(colorForResolution(report.resolution))
@@ -180,7 +178,7 @@ struct ReportRow: View {
         }
     }
     
-    private func colorForResolution(_ resolution: ResolutionStatus?) -> Color {
+    private func colorForResolution(_ resolution: ResolutionStatus) -> Color {
         switch resolution {
         case .pending:
             return .orange
@@ -188,8 +186,6 @@ struct ReportRow: View {
             return .green
         case .dismissed:
             return .gray
-        case .none:
-            return .orange
         }
     }
 }

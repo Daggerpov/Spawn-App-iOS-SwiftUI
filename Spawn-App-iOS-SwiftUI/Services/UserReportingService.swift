@@ -83,37 +83,53 @@ class UserReportingService {
     
     // MARK: - Reporting Users
     
-    /// Report a user
-    /// - Parameters:
-    ///   - reporterId: ID of the user making the report
-    ///   - reportedUserId: ID of the user being reported
-    ///   - reportType: Type of report (harassment, violence, etc.)
-    ///   - description: Description of the report
     func reportUser(
-        reporterId: UUID,
+        reporterUserId: UUID,
         reportedUserId: UUID,
         reportType: ReportType,
         description: String
     ) async throws {
-        let url = URL(string: APIService.baseURL + "reports")!
-        let reportDTO = ReportedContentDTO(
+        let url = URL(string: APIService.baseURL + "reports/create")!
+        let reportDTO = CreateReportedContentDTO(
+            reporterUserId: reporterUserId,
             contentId: reportedUserId,
             contentType: .user,
             reportType: reportType,
             description: description
         )
         
-        let parameters = [
-            "reporterId": reporterId.uuidString
-        ]
-        
-        let _: EmptyResponse? = try await apiService.sendData(reportDTO, to: url, parameters: parameters)
+        let _: EmptyResponse? = try await apiService.sendData(reportDTO, to: url, parameters: nil)
     }
     
-    /// Get reports made by a user
+    /// Legacy method for backward compatibility
+    /// - Deprecated: Use reportUser(reporterUserId:reportedUserId:reportType:description:) instead
+    @available(*, deprecated, message: "Use reportUser(reporterUserId:reportedUserId:reportType:description:) instead")
+    func reportUser(
+        reporter: UserDTO,
+        reportedUser: UserDTO,
+        reportType: ReportType,
+        description: String
+    ) async throws {
+        try await reportUser(
+            reporterUserId: reporter.id,
+            reportedUserId: reportedUser.id,
+            reportType: reportType,
+            description: description
+        )
+    }
+    
+    /// Get reports made by a user (simplified for "my reports" page)
     /// - Parameter reporterId: ID of the user whose reports to retrieve
-    /// - Returns: Array of reports made by the user
-    func getReportsByUser(reporterId: UUID) async throws -> [ReportedContentDTO] {
+    /// - Returns: Array of simplified reports made by the user
+    func getReportsByUser(reporterId: UUID) async throws -> [FetchReportedContentDTO] {
+        let url = URL(string: APIService.baseURL + "reports/fetch/reporter/\(reporterId)")!
+        return try await apiService.fetchData(from: url, parameters: nil)
+    }
+    
+    /// Legacy method that returns full DTOs for backward compatibility
+    /// - Deprecated: Use getReportsByUser(reporterId:) instead for better performance
+    @available(*, deprecated, message: "Use getReportsByUser(reporterId:) instead for better performance")
+    func getFullReportsByUser(reporterId: UUID) async throws -> [ReportedContentDTO] {
         let url = URL(string: APIService.baseURL + "reports/reporter/\(reporterId)")!
         return try await apiService.fetchData(from: url, parameters: nil)
     }

@@ -199,79 +199,23 @@ struct ProfileView: View {
 	// Main content broken into a separate computed property to reduce complexity
 	private var profileContent: some View {
 		profileWithOverlay
-			.sheet(isPresented: $showImagePicker) {
-				if selectedImage != nil {
-					isImageLoading = true
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-						isImageLoading = false
-					}
-				}
-			} content: {
-				SwiftUIImagePicker(selectedImage: $selectedImage)
-					.ignoresSafeArea()
-			}
-			.onChange(of: selectedImage) { newImage in
-				if newImage != nil {
-					// Force UI update when image changes
-					DispatchQueue.main.async {
-						isImageLoading = true
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-							isImageLoading = false
-						}
-					}
-				}
-			}
-			.sheet(isPresented: $showActivityDetails) {
-				activityDetailsView
-			}
-			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation)
-		{
-			removeFriendConfirmationAlert
-		}
-					.sheet(isPresented: $showReportDialog) {
-			ReportUserDrawer(
-				user: user,
-				onReport: { reportType, description in
-					if let currentUserId = userAuth.spawnUser?.id {
-						Task {
-							await profileViewModel.reportUser(
-								reporterId: currentUserId,
-								reportedId: user.id,
-								reportType: reportType,
-								description: description
-							)
-							
-							// Show success notification
-							notificationMessage = "User reported successfully"
-							showNotification = true
-						}
-					}
-				}
-			)
-			.presentationDetents([.medium, .large])
-			.presentationDragIndicator(.visible)
-		}
-			.alert("Block User", isPresented: $showBlockDialog) {
-				blockUserAlert
-			} message: {
-				Text(
-					"Blocking this user will remove them from your friends list and they won't be able to see your profile or activities."
-				)
-			}
-			.sheet(isPresented: $showProfileMenu) {
-				ProfileMenuView(
-					user: user,
-					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-					showReportDialog: $showReportDialog,
-					showBlockDialog: $showBlockDialog,
-					showAddToActivityType: $showAddToActivityType,
-					isFriend: profileViewModel.friendshipStatus == .friends,
-					copyProfileURL: copyProfileURL,
-					shareProfile: shareProfile
-				)
-				.background(universalBackgroundColor)
-				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 320)])
-			}
+			.modifier(ImagePickerModifier(
+				showImagePicker: $showImagePicker,
+				selectedImage: $selectedImage,
+				isImageLoading: $isImageLoading
+			))
+			.modifier(SheetsAndAlertsModifier(
+				showActivityDetails: $showActivityDetails,
+				activityDetailsView: AnyView(activityDetailsView),
+				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+				removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
+				showReportDialog: $showReportDialog,
+				reportUserDrawer: AnyView(reportUserDrawer),
+				showBlockDialog: $showBlockDialog,
+				blockUserAlert: AnyView(blockUserAlert),
+				showProfileMenu: $showProfileMenu,
+				profileMenuSheet: AnyView(profileMenuSheet)
+			))
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
 				if showProfileMenu {
@@ -620,9 +564,49 @@ struct ProfileView: View {
 		}
 	}
 
+	// MARK: - Sub-expressions for better type checking
+	
+	private var reportUserDrawer: some View {
+		ReportUserDrawer(
+			user: user,
+			onReport: { reportType, description in
+				if let currentUser = userAuth.spawnUser {
+					Task {
+						await profileViewModel.reportUser(
+							reporterUserId: currentUser.id,
+							reportedUserId: user.id,
+							reportType: reportType,
+							description: description
+						)
+						
+						// Show success notification
+						notificationMessage = "User reported successfully"
+						showNotification = true
+					}
+				}
+			}
+		)
+		.presentationDetents([.medium, .large])
+		.presentationDragIndicator(.visible)
+	}
+	
+	private var profileMenuSheet: some View {
+		ProfileMenuView(
+			user: user,
+			showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+			showReportDialog: $showReportDialog,
+			showBlockDialog: $showBlockDialog,
+			showAddToActivityType: $showAddToActivityType,
+			isFriend: profileViewModel.friendshipStatus == .friends,
+			copyProfileURL: copyProfileURL,
+			shareProfile: shareProfile
+		)
+		.background(universalBackgroundColor)
+		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 320)])
+	}
+	
 	private var removeFriendConfirmationAlert: some View {
 		Group {
-			Button("Cancel", role: .cancel) {}
 			Button("Remove", role: .destructive) {
 				if let currentUserId = userAuth.spawnUser?.id {
 					Task {
@@ -630,13 +614,16 @@ struct ProfileView: View {
 							currentUserId: currentUserId,
 							profileUserId: user.id
 						)
+						
+						// Show success notification
+						notificationMessage = "Friend removed successfully"
+						showNotification = true
 					}
 				}
 			}
+			Button("Cancel", role: .cancel) { }
 		}
 	}
-
-
 
 	private var blockUserAlert: some View {
 		Group {
@@ -1088,5 +1075,73 @@ struct RoundedCorner: Shape {
 @available(iOS 17, *)
 #Preview {
 	ProfileView(user: BaseUserDTO.danielAgapov)
+}
+
+// MARK: - View Modifiers for better organization
+
+struct ImagePickerModifier: ViewModifier {
+	@Binding var showImagePicker: Bool
+	@Binding var selectedImage: UIImage?
+	@Binding var isImageLoading: Bool
+	
+	func body(content: Content) -> some View {
+		content
+			.sheet(isPresented: $showImagePicker) {
+				if selectedImage != nil {
+					isImageLoading = true
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+						isImageLoading = false
+					}
+				}
+			} content: {
+				SwiftUIImagePicker(selectedImage: $selectedImage)
+					.ignoresSafeArea()
+			}
+			.onChange(of: selectedImage) { newImage in
+				if newImage != nil {
+					// Force UI update when image changes
+					DispatchQueue.main.async {
+						isImageLoading = true
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+							isImageLoading = false
+						}
+					}
+				}
+			}
+	}
+}
+
+struct SheetsAndAlertsModifier: ViewModifier {
+	@Binding var showActivityDetails: Bool
+	let activityDetailsView: AnyView
+	@Binding var showRemoveFriendConfirmation: Bool
+	let removeFriendConfirmationAlert: AnyView
+	@Binding var showReportDialog: Bool
+	let reportUserDrawer: AnyView
+	@Binding var showBlockDialog: Bool
+	let blockUserAlert: AnyView
+	@Binding var showProfileMenu: Bool
+	let profileMenuSheet: AnyView
+	
+	func body(content: Content) -> some View {
+		content
+			.sheet(isPresented: $showActivityDetails) {
+				activityDetailsView
+			}
+			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
+				removeFriendConfirmationAlert
+			}
+			.sheet(isPresented: $showReportDialog) {
+				reportUserDrawer
+			}
+			.alert("Block User", isPresented: $showBlockDialog) {
+				blockUserAlert
+			} message: {
+				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
+			}
+			.sheet(isPresented: $showProfileMenu) {
+				profileMenuSheet
+			}
+	}
 }
 
