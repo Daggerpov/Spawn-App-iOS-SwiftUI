@@ -60,11 +60,17 @@ struct ActivityFeedView: View {
                 .padding(.bottom, bottomSubHeadingPadding)
                 // Activities
                 //activityListView
-                ActivityListView(viewModel: viewModel, user: user, bound: 3) { activity, color in
-                    activityInPopup = activity
-                    colorInPopup = color
-                    showingActivityPopup = true
-                }
+                ActivityListView(
+                    viewModel: viewModel,
+                    user: user,
+                    bound: 3,
+                    callback: { activity, color in
+                        activityInPopup = activity
+                        colorInPopup = color
+                        showingActivityPopup = true
+                    },
+                    selectedTab: $selectedTab
+                )
             }
             .onAppear {
                 Task {
@@ -166,11 +172,17 @@ extension ActivityFeedView {
                         .foregroundColor(figmaBlack300)
                 } else {
                     ForEach(0..<min(3, viewModel.activities.count), id: \.self) { activityIndex in
-                        ActivityCardView(userId: user.id, activity: viewModel.activities[activityIndex], color: figmaBlue) { activity, color in
-                            activityInPopup = activity
-                            colorInPopup = color
-                            showingActivityPopup = true
-                        }
+                        ActivityCardView(
+                            userId: user.id,
+                            activity: viewModel.activities[activityIndex],
+                            color: figmaBlue,
+                            callback: { activity, color in
+                                activityInPopup = activity
+                                colorInPopup = color
+                                showingActivityPopup = true
+                            },
+                            selectedTab: $selectedTab
+                        )
                     }
                 }
             }

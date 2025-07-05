@@ -7,9 +7,13 @@ struct ActivityCardView: View {
     var callback: (FullFeedActivityDTO, Color) -> Void
     @Environment(\.colorScheme) private var colorScheme
     
+    // Optional binding to control tab selection for current user navigation
+    @Binding var selectedTab: TabType?
+    
     init(
         userId: UUID, activity: FullFeedActivityDTO, color: Color,
-        callback: @escaping (FullFeedActivityDTO, Color) -> Void
+        callback: @escaping (FullFeedActivityDTO, Color) -> Void,
+        selectedTab: Binding<TabType?> = .constant(nil)
     ) {
         self.activity = activity
         self.color = color
@@ -18,6 +22,7 @@ struct ActivityCardView: View {
                 ? MockAPIService(userId: userId) : APIService(), userId: userId,
             activity: activity)
         self.callback = callback
+        self._selectedTab = selectedTab
         
     }
     
@@ -54,7 +59,7 @@ struct ActivityCardView: View {
         ZStack(alignment: .bottomTrailing) {
             VStack(alignment: .leading, spacing: 16) {
                 // Top Row: Title, Participants
-                ActivityCardTopRowView(activity: activity)
+                ActivityCardTopRowView(activity: activity, selectedTab: $selectedTab)
                 // Location Row
                 ActivityLocationView(activity: activity)
             }
