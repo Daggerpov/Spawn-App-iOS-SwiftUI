@@ -39,14 +39,24 @@ class ActivityTypeViewModel: ObservableObject {
         
         // Subscribe to cache updates if not mocking
         if !MockAPIService.isMocking {
-            // TODO: Implement cache subscription when activity types are added to AppCache
-            // appCache.$activityTypes
-            //     .sink { [weak self] cachedActivityTypes in
-            //         if !cachedActivityTypes.isEmpty {
-            //             self?.activityTypes = cachedActivityTypes
-            //         }
-            //     }
-            //     .store(in: &cancellables)
+            // Subscribe to cached activity types updates
+            appCache.$activityTypes
+                .sink { [weak self] cachedActivityTypes in
+                    if !cachedActivityTypes.isEmpty {
+                        self?.activityTypes = cachedActivityTypes
+                        self?.originalActivityTypes = cachedActivityTypes.map { ActivityTypeDTO(
+                            id: $0.id,
+                            title: $0.title,
+                            icon: $0.icon,
+                            associatedFriends: $0.associatedFriends,
+                            orderNum: $0.orderNum,
+                            isPinned: $0.isPinned
+                        )}
+                        self?.hasUnsavedChanges = false
+                        print("🔄 ActivityTypeViewModel: Activity types updated from cache with \(cachedActivityTypes.count) items")
+                    }
+                }
+                .store(in: &cancellables)
         }
     }
     
@@ -83,6 +93,9 @@ class ActivityTypeViewModel: ObservableObject {
             )}
             self.deletedActivityTypeIds.removeAll()
             self.hasUnsavedChanges = false
+            
+            // Update cache with fetched data
+            appCache.updateActivityTypes(fetchedTypes)
             
 
             
@@ -155,6 +168,9 @@ class ActivityTypeViewModel: ObservableObject {
             )}
             self.deletedActivityTypeIds.removeAll()
             self.hasUnsavedChanges = false
+            
+            // Update cache with saved changes
+            appCache.updateActivityTypes(updatedActivityTypesReturned)
             
             print("✅ Successfully saved batch changes: \(updatedActivityTypesReturned.count) total activity types returned")
             

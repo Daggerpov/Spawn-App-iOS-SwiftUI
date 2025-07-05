@@ -16,6 +16,7 @@ class AppCache: ObservableObject {
     // MARK: - Cached Data
     @Published var friends: [FullFriendUserDTO] = []
     @Published var activities: [FullFeedActivityDTO] = []
+    @Published var activityTypes: [ActivityTypeDTO] = []
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var friendRequests: [FetchFriendRequestDTO] = []
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
@@ -35,6 +36,7 @@ class AppCache: ObservableObject {
         static let lastChecked = "lastChecked"
         static let friends = "friends"
         static let activities = "activities"
+        static let activityTypes = "activityTypes"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
         static let otherProfiles = "otherProfiles"
@@ -106,6 +108,20 @@ class AppCache: ObservableObject {
                         // Need to fetch new data
                         Task {
                             await refreshActivities()
+                        }
+                    }
+                }
+                
+                // Activity Types Cache
+                if let activityTypesResponse = result[CacheKeys.activityTypes], activityTypesResponse.invalidate {
+                    if let updatedItems = activityTypesResponse.updatedItems,
+                       let updatedActivityTypes = try? JSONDecoder().decode([ActivityTypeDTO].self, from: updatedItems) {
+                        // Backend provided the updated data
+                        updateActivityTypes(updatedActivityTypes)
+                    } else {
+                        // Need to fetch new data
+                        Task {
+                            await refreshActivityTypes()
                         }
                     }
                 }
@@ -213,6 +229,44 @@ class AppCache: ObservableObject {
             activities.append(activity)
         }
         lastChecked[CacheKeys.activities] = Date()
+        saveToDisk()
+    }
+    
+    // MARK: - Activity Types Methods
+    
+    func updateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
+        activityTypes = newActivityTypes
+        lastChecked[CacheKeys.activityTypes] = Date()
+        saveToDisk()
+    }
+    
+    func refreshActivityTypes() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "\(userId)/activity-types") else { return }
+            
+            let fetchedActivityTypes: [ActivityTypeDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                updateActivityTypes(fetchedActivityTypes)
+            }
+        } catch {
+            print("Failed to refresh activity types: \(error.localizedDescription)")
+        }
+    }
+    
+    // Get activity types by user ID (for multi-user support)
+    func getActivityTypesForUser(_ userId: UUID) -> [ActivityTypeDTO] {
+        // For now, return the cached activity types (single user)
+        return activityTypes
+    }
+    
+    // Add or update activity types in the cache
+    func addOrUpdateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
+        activityTypes = newActivityTypes
+        lastChecked[CacheKeys.activityTypes] = Date()
         saveToDisk()
     }
     
@@ -436,6 +490,12 @@ class AppCache: ObservableObject {
             activities = loadedActivities
         }
         
+        // Load activity types
+        if let activityTypesData = UserDefaults.standard.data(forKey: CacheKeys.activityTypes),
+           let loadedActivityTypes = try? JSONDecoder().decode([ActivityTypeDTO].self, from: activityTypesData) {
+            activityTypes = loadedActivityTypes
+        }
+        
         // Load other profiles
         if let profilesData = UserDefaults.standard.data(forKey: CacheKeys.otherProfiles),
            let loadedProfiles = try? JSONDecoder().decode([UUID: BaseUserDTO].self, from: profilesData) {
@@ -497,6 +557,11 @@ class AppCache: ObservableObject {
         // Save activities
         if let activitiesData = try? JSONEncoder().encode(activities) {
             UserDefaults.standard.set(activitiesData, forKey: CacheKeys.activities)
+        }
+        
+        // Save activity types
+        if let activityTypesData = try? JSONEncoder().encode(activityTypes) {
+            UserDefaults.standard.set(activityTypesData, forKey: CacheKeys.activityTypes)
         }
         
         // Save other profiles
