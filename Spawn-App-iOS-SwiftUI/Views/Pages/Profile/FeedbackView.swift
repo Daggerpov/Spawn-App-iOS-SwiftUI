@@ -221,7 +221,33 @@ struct FeedbackView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(universalAccentColor)
+                        .font(.title3)
+                }
+                
+                Spacer()
+                
+                Text("Send Feedback")
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                
+                Spacer()
+                
+                // Empty view for balance
+                Color.clear.frame(width: 24, height: 24)
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            
+            // Content
             ScrollView {
                 VStack(spacing: 24) {
                     // Feedback type selector
@@ -270,31 +296,9 @@ struct FeedbackView: View {
                     }
                 }
             }
-            .navigationBarBackButtonHidden()
-            .background(universalBackgroundColor.ignoresSafeArea())
-            
-            .toolbarBackground(universalBackgroundColor, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Send Feedback")
-                        .font(.headline)
-                        .foregroundColor(universalAccentColor)
-                }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .foregroundColor(universalAccentColor)
-                    }
-                }
-            }
         }
-        .accentColor(universalAccentColor) // Set global accent color for the navigation view
+        .background(universalBackgroundColor)
+        .navigationBarHidden(true)
     }
     
     private func loadTransferable(from item: PhotosPickerItem?) {

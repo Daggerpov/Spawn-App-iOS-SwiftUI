@@ -6,34 +6,46 @@ struct MyReportsView: View {
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if viewModel.isLoading {
-                    ProgressView("Loading reports...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if viewModel.reports.isEmpty {
-                    emptyStateView
-                } else {
-                    reportsList
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(universalAccentColor)
+                        .font(.title3)
                 }
+                
+                Spacer()
+                
+                Text("My Reports")
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                
+                Spacer()
+                
+                // Empty view for balance
+                Color.clear.frame(width: 24, height: 24)
             }
-            .navigationTitle("My Reports")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(leading: cancelButton)
-            .onAppear {
-                loadReports()
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            
+            // Content
+            if viewModel.isLoading {
+                ProgressView("Loading reports...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.reports.isEmpty {
+                emptyStateView
+            } else {
+                reportsList
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
-    }
-    
-    private var cancelButton: some View {
-        Button(action: {
-            presentationMode.wrappedValue.dismiss()
-        }) {
-            Image(systemName: "chevron.left")
-                .foregroundColor(universalAccentColor)
-                .font(.title3)
+        .background(universalBackgroundColor)
+        .navigationBarHidden(true)
+        .onAppear {
+            loadReports()
         }
     }
     

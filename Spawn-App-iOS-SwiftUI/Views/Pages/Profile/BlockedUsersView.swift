@@ -10,51 +10,63 @@ struct BlockedUsersView: View {
     @State private var notificationMessage = ""
     
     var body: some View {
-        NavigationView {
-            VStack {
-                if viewModel.isLoading {
-                    ProgressView("Loading blocked users...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if viewModel.blockedUsers.isEmpty {
-                    emptyStateView
-                } else {
-                    blockedUsersList
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(universalAccentColor)
+                        .font(.title3)
                 }
+                
+                Spacer()
+                
+                Text("Blocked Users")
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                
+                Spacer()
+                
+                // Empty view for balance
+                Color.clear.frame(width: 24, height: 24)
             }
-            .navigationTitle("Blocked Users")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(leading: cancelButton)
-            .onAppear {
-                loadBlockedUsers()
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            
+            // Content
+            if viewModel.isLoading {
+                ProgressView("Loading blocked users...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.blockedUsers.isEmpty {
+                emptyStateView
+            } else {
+                blockedUsersList
             }
-            .alert("Unblock User", isPresented: $showUnblockConfirmation) {
-                Button("Cancel", role: .cancel) {}
-                Button("Unblock", role: .destructive) {
-                    if let user = userToUnblock {
-                        unblockUser(user)
-                    }
-                }
-            } message: {
+        }
+        .background(universalBackgroundColor)
+        .navigationBarHidden(true)
+        .onAppear {
+            loadBlockedUsers()
+        }
+        .alert("Unblock User", isPresented: $showUnblockConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Unblock", role: .destructive) {
                 if let user = userToUnblock {
-                    Text("Are you sure you want to unblock \(user.blockedUsername)?")
+                    unblockUser(user)
                 }
             }
-            .overlay(
-                notificationToast,
-                alignment: .top
-            )
+        } message: {
+            if let user = userToUnblock {
+                Text("Are you sure you want to unblock \(user.blockedUsername)?")
+            }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
-    }
-    
-    private var cancelButton: some View {
-        Button(action: {
-            presentationMode.wrappedValue.dismiss()
-        }) {
-            Image(systemName: "chevron.left")
-                .foregroundColor(universalAccentColor)
-                .font(.title3)
-        }
+        .overlay(
+            notificationToast,
+            alignment: .top
+        )
     }
     
     private var emptyStateView: some View {
@@ -217,5 +229,4 @@ struct BlockedUserRow: View {
 
 #Preview {
     BlockedUsersView()
-
 } 
