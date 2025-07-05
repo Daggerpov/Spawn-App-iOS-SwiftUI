@@ -158,7 +158,7 @@ struct ProfileInterestsView: View {
 					.font(.onestSemiBold(size: 12))
 					.padding(.vertical, 8)
 					.padding(.horizontal, 14)
-					.foregroundColor(figmaBittersweetOrange)
+					.foregroundColor(.primary)
 					.lineLimit(1)
 					.background(universalBackgroundColor)
 					.clipShape(Capsule())
@@ -184,16 +184,10 @@ struct ProfileInterestsView: View {
 			} else {
 				Text(interest)
 					.font(.onestSemiBold(size: 12))
-					.padding(.vertical, 8)
-					.padding(.horizontal, 12)
-					.foregroundColor(figmaBittersweetOrange)
+					.padding(.vertical, 4)
+					.padding(.horizontal, 8)
+					.foregroundColor(.primary)
 					.lineLimit(1)
-					.background(universalBackgroundColor)
-					.clipShape(Capsule())
-					.overlay(
-						RoundedRectangle(cornerRadius: 20)
-							.stroke(figmaBittersweetOrange, lineWidth: 1)
-					)
 			}
 		}
     }
