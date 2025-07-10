@@ -43,6 +43,14 @@ struct ActivityTypeView: View {
                 await viewModel.fetchActivityTypes()
             }
         }
+        .onDisappear {
+            // Save any unsaved changes when the view disappears
+            if viewModel.hasUnsavedChanges {
+                Task {
+                    await viewModel.saveBatchChanges()
+                }
+            }
+        }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.clearError()
