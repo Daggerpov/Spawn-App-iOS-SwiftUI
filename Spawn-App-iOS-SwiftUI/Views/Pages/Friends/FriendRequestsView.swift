@@ -118,7 +118,7 @@ struct FriendRequestsView: View {
                                         },
                                         onRemove: {
                                             Task {
-                                                await viewModel.respondToFriendRequest(requestId: request.id, action: .decline)
+                                                await viewModel.respondToFriendRequest(requestId: request.id, action: .cancel)
                                             }
                                         }
                                     )
