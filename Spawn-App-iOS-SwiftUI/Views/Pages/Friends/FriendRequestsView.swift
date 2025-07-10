@@ -151,35 +151,42 @@ struct FriendRequestItemView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Profile picture
-            if MockAPIService.isMocking {
-                if let pfp = friendRequest.senderUser.profilePicture {
-                    Image(pfp)
-                        .ProfileImageModifier(imageType: .friendsListView)
-                }
-            } else {
-                if let pfpUrl = friendRequest.senderUser.profilePicture {
-                    CachedProfileImage(
-                        userId: friendRequest.senderUser.id,
-                        url: URL(string: pfpUrl),
-                        imageType: .friendsListView
-                    )
-                } else {
-                    Circle()
-                        .fill(Color.gray)
-                        .frame(width: 50, height: 50)
+            // Clickable profile section
+            NavigationLink(destination: ProfileView(user: friendRequest.senderUser)) {
+                HStack(spacing: 12) {
+                    // Profile picture
+                    if MockAPIService.isMocking {
+                        if let pfp = friendRequest.senderUser.profilePicture {
+                            Image(pfp)
+                                .ProfileImageModifier(imageType: .friendsListView)
+                        }
+                    } else {
+                        if let pfpUrl = friendRequest.senderUser.profilePicture {
+                            CachedProfileImage(
+                                userId: friendRequest.senderUser.id,
+                                url: URL(string: pfpUrl),
+                                imageType: .friendsListView
+                            )
+                        } else {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 50, height: 50)
+                        }
+                    }
+                    
+                    // User info
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(FormatterService.shared.formatName(user: friendRequest.senderUser))
+                            .font(.headline)
+                            .foregroundColor(universalAccentColor)
+                        
+                        Text("@\(friendRequest.senderUser.username)")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                 }
             }
-            
-            // User info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(FormatterService.shared.formatName(user: friendRequest.senderUser))
-                    .font(.headline)
-                
-                Text("@\(friendRequest.senderUser.username)")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-            }
+            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
@@ -191,13 +198,13 @@ struct FriendRequestItemView: View {
                         onAccept()
                     }) {
                         Text("Accept")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.white)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 20)
-                            .frame(minWidth: 70)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .frame(minWidth: 60)
                             .background(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 8)
                                     .fill(hasAccepted ? Color.gray : universalSecondaryColor)
                             )
                     }
@@ -207,18 +214,18 @@ struct FriendRequestItemView: View {
                         hasRemoved = true
                         onRemove()
                     }) {
-                        Text("Decline")
-                            .font(.system(size: 14, weight: .semibold))
+                        Text("Remove")
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(universalAccentColor)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 20)
-                            .frame(minWidth: 70)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .frame(minWidth: 60)
                             .background(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.clear)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(universalAccentColor, lineWidth: 1.5)
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(universalAccentColor, lineWidth: 1)
                                     )
                             )
                     }
@@ -229,17 +236,17 @@ struct FriendRequestItemView: View {
                         onRemove()
                     }) {
                         Text("Cancel")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(universalAccentColor)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 20)
-                            .frame(minWidth: 70)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .frame(minWidth: 60)
                             .background(
-                                RoundedRectangle(cornerRadius: 10)
+                                RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.clear)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(universalAccentColor, lineWidth: 1.5)
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(universalAccentColor, lineWidth: 1)
                                     )
                             )
                     }
