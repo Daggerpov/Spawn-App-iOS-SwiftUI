@@ -10,6 +10,16 @@ import SwiftUI
 struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTab: TabType = .home
+    @StateObject private var friendsViewModel: FriendsTabViewModel
+    
+    init(user: BaseUserDTO) {
+        self.user = user
+        let vm = FriendsTabViewModel(
+            userId: user.id,
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: user.id) : APIService())
+        self._friendsViewModel = StateObject(wrappedValue: vm)
+    }
 
 	var body: some View {
 		TabView(selection: $selectedTab) {
@@ -62,6 +72,7 @@ struct ContentView: View {
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					.withNotificationBadge(count: friendsViewModel.incomingFriendRequests.count)
 					Text("Friends")
 				}
 			ProfileView(user: user)
@@ -99,6 +110,11 @@ struct ContentView: View {
 				default:
 					return UIColor.label
 				}
+			}
+			
+			// Fetch friend requests to show badge count
+			Task {
+				await friendsViewModel.fetchIncomingFriendRequests()
 			}
 		}
 	}
