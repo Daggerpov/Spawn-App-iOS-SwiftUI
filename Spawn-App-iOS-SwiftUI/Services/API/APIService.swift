@@ -190,7 +190,7 @@ class APIService: IAPIService {
 			// Only attempt array handling if we're not already expecting an array type
 			if !isArrayType {
 				// Try to decode as an array of that type
-				print("Attempting to decode as array and extract the first item")
+				print("Attempting to decode as array and extract the first item for entity type '\(T.self)' from URL: \(finalURL)")
 				
 				do {
 					// Use JSONSerialization first to check if it's an array

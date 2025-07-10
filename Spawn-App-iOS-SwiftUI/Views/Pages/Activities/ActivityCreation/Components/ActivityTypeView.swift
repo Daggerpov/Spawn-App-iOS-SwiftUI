@@ -118,6 +118,7 @@ struct ActivityTypeCard: View {
     let onPin: () -> Void
     let onDelete: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    @State private var navigateToManageType = false
     
     // Convert ActivityTypeDTO to ActivityType for selection comparison
     private var activityType: ActivityType? {
@@ -259,7 +260,9 @@ struct ActivityTypeCard: View {
                 Label(activityTypeDTO.isPinned ? "Unpin Type" : "Pin Type", systemImage: "pin")
             }
             
-            NavigationLink(destination: ActivityTypeManagementView(activityTypeDTO: activityTypeDTO)) {
+            Button(action: {
+                showingManageType = true
+            }) {
                 Label("Manage Type", systemImage: "slider.horizontal.3")
             }
             
@@ -267,6 +270,9 @@ struct ActivityTypeCard: View {
                 Label("Delete Type", systemImage: "trash")
             }
             .foregroundColor(.red)
+        }
+        .sheet(isPresented: $showingManageType) {
+            ActivityTypeManagementView(activityTypeDTO: activityTypeDTO)
         }
     }
 }
