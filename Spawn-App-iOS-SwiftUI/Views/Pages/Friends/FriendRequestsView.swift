@@ -49,7 +49,7 @@ struct FriendRequestsView: View {
                     if viewModel.isLoading {
                         ProgressView()
                             .padding()
-                    } else if viewModel.incomingFriendRequests.isEmpty && viewModel.sentFriendRequests.isEmpty {
+					                    } else if viewModel.incomingFriendRequests.isEmpty && viewModel.sentFriendRequests.isEmpty {
                         Text("No friend requests")
                             .foregroundColor(.gray)
                             .padding(.top, 40)
@@ -191,56 +191,59 @@ struct FriendRequestItemView: View {
                         onAccept()
                     }) {
                         Text("Accept")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(.white)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .frame(minWidth: 70)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(hasAccepted ? universalBackgroundColor : authPageBackgroundColor)
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(hasAccepted ? Color.gray : universalSecondaryColor)
                             )
                     }
+                    .disabled(hasAccepted)
                     
                     Button(action: {
                         hasRemoved = true
                         onRemove()
                     }) {
                         Text("Decline")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(universalAccentColor)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .frame(minWidth: 70)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(universalBackgroundColor.opacity(0.9))
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.clear)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(universalPlaceHolderTextColor, lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(universalAccentColor, lineWidth: 1.5)
                                     )
                             )
                     }
+                    .disabled(hasRemoved)
                 } else {
                     Button(action: {
                         hasRemoved = true
                         onRemove()
                     }) {
                         Text("Cancel")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(universalAccentColor)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 20)
+                            .frame(minWidth: 70)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(universalBackgroundColor.opacity(0.9))
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(Color.clear)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(universalPlaceHolderTextColor, lineWidth: 1)
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .stroke(universalAccentColor, lineWidth: 1.5)
                                     )
                             )
                     }
+                    .disabled(hasRemoved)
                 }
             }
         }
