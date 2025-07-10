@@ -29,10 +29,61 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var isLocationValid: Bool = true
 	@Published var isFormValid: Bool = false
 	
+	// Loading state
+	@Published var isCreatingActivity: Bool = false
+	
 	private var apiService: IAPIService
 	
 	public static func reInitialize() {
-		shared = ActivityCreationViewModel()
+		shared.resetToDefaults()
+	}
+	
+	// Method to pre-select an activity type (e.g., when coming from feed view)
+	public static func initializeWithSelectedType(_ activityType: ActivityType?) {
+		// Instead of creating a new instance, reset the existing one and set the type
+		shared.resetToDefaults()
+		shared.selectedType = activityType
+	}
+	
+	// Helper method to reset the current instance to defaults
+	private func resetToDefaults() {
+		
+		// Reset all properties to their default values
+		selectedDate = Date()
+		creationMessage = ""
+		selectedType = nil
+		selectedDuration = .indefinite
+		selectedLocation = nil
+		selectedFriends = []
+		selectedCategory = .general
+		isTitleValid = true
+		isInvitesValid = true
+		isLocationValid = true
+		isFormValid = false
+		isCreatingActivity = false
+		
+		// Reset the activity DTO
+		let defaultStart = Date()
+		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
+		activity = ActivityCreationDTO(
+			id: UUID(),
+			title: "",
+			startTime: defaultStart,
+			endTime: defaultEnd,
+			location: nil,
+			icon: "⭐️",
+			category: .general,
+			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+			invitedFriendUserIds: []
+		)
+		
+		// Reload friends
+		loadAllFriendsAsSelected()
+	}
+	
+	// Force reset method for debugging
+	public static func forceReset() {
+		shared.selectedType = nil
 	}
 
 	// Private initializer to enforce singleton pattern
@@ -56,6 +107,9 @@ class ActivityCreationViewModel: ObservableObject {
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
 			invitedFriendUserIds: []
 		)
+		
+		// Ensure selectedType starts as nil by default (no auto-selection)
+		self.selectedType = nil
 		
 		// Automatically populate friends when initializing
 		loadAllFriendsAsSelected()
@@ -156,7 +210,8 @@ class ActivityCreationViewModel: ObservableObject {
 	func updateActivityType() {
 		guard let type = selectedType else { return }
 		
-		activity.title = type.rawValue
+		// Don't overwrite the user's custom title with the activity type name
+		// Only set icon and category based on the selected type
 		activity.icon = type.icon
 		activity.category = type.toActivityCategory()
 	}
@@ -167,6 +222,11 @@ class ActivityCreationViewModel: ObservableObject {
 	}
 
 	func createActivity() async {
+		// Set loading state to true
+		await MainActor.run {
+			isCreatingActivity = true
+		}
+		
 		// Update activity with final details
 		updateActivityType()
 		updateActivityDuration()
@@ -189,6 +249,11 @@ class ActivityCreationViewModel: ObservableObject {
 						"There was an error creating your activity. Please try again"
 				}
 			}
+		}
+		
+		// Set loading state to false when done
+		await MainActor.run {
+			isCreatingActivity = false
 		}
 	}
 }

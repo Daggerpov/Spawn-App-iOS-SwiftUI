@@ -26,6 +26,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	var icon: String?
 	var category: ActivityCategory = .general
 	var createdAt: Date?
+	var isIndefinite: Bool?
 
 	// MARK: Relations
 	var creatorUser: BaseUserDTO
@@ -52,7 +53,8 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		chatMessages: [FullActivityChatMessageDTO]? = nil,
 		participationStatus: ParticipationStatus? = nil,
 		isSelfOwned: Bool? = nil,
-		createdAt: Date? = nil
+		createdAt: Date? = nil,
+		isIndefinite: Bool? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -69,12 +71,13 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		self.participationStatus = participationStatus
 		self.isSelfOwned = isSelfOwned
 		self.createdAt = createdAt
+		self.isIndefinite = isIndefinite
 	}
     
     // CodingKeys for all properties (including @Published ones)
     enum CodingKeys: String, CodingKey {
         case id, title, startTime, endTime, location, note, icon, category
-        case createdAt, creatorUser, invitedUsers
+        case createdAt, creatorUser, invitedUsers, isIndefinite
         case participantUsers, chatMessages, participationStatus, isSelfOwned
     }
     
@@ -91,6 +94,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         icon = try container.decodeIfPresent(String.self, forKey: .icon)
         category = try container.decodeIfPresent(ActivityCategory.self, forKey: .category) ?? .general
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
+        isIndefinite = try container.decodeIfPresent(Bool.self, forKey: .isIndefinite)
         creatorUser = try container.decode(BaseUserDTO.self, forKey: .creatorUser)
         invitedUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .invitedUsers)
         
@@ -114,6 +118,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         try container.encodeIfPresent(icon, forKey: .icon)
         try container.encode(category, forKey: .category)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
+        try container.encodeIfPresent(isIndefinite, forKey: .isIndefinite)
         try container.encode(creatorUser, forKey: .creatorUser)
         try container.encodeIfPresent(invitedUsers, forKey: .invitedUsers)
         

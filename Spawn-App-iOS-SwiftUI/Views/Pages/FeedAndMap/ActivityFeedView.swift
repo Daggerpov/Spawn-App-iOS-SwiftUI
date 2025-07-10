@@ -26,6 +26,10 @@ struct ActivityFeedView: View {
     
     var body: some View {
         ZStack {
+            // Background color
+            universalBackgroundColor
+                .ignoresSafeArea()
+            
             VStack(alignment: .leading, spacing: 0) {
                 HeaderView(user: user)
                     .padding(.horizontal, 12)
@@ -33,7 +37,7 @@ struct ActivityFeedView: View {
                     .padding(.top, 12)
                 // Spawn In! row
                 HStack {
-                    Text("Spawn In!")
+                    Text("Spawn in!")
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
@@ -46,7 +50,7 @@ struct ActivityFeedView: View {
                     .padding(.bottom, 19)
                 // Activities in Your Area row
                 HStack {
-                    Text("See What's Happening!")
+                    Text("See what's happening")
                         .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
@@ -56,11 +60,20 @@ struct ActivityFeedView: View {
                 .padding(.bottom, bottomSubHeadingPadding)
                 // Activities
                 //activityListView
-                ActivityListView(viewModel: viewModel, user: user, bound: 3) { activity, color in
-                    activityInPopup = activity
-                    colorInPopup = color
-                    showingActivityPopup = true
-                }
+                ActivityListView(
+                    viewModel: viewModel,
+                    user: user,
+                    bound: 3,
+                    callback: { activity, color in
+                        activityInPopup = activity
+                        colorInPopup = color
+                        showingActivityPopup = true
+                    },
+                    selectedTab: Binding(
+                        get: { selectedTab },
+                        set: { if let newValue = $0 { selectedTab = newValue } }
+                    )
+                )
             }
             .onAppear {
                 Task {
@@ -95,7 +108,11 @@ struct ActivityFeedView: View {
     }
     
     var seeAllActivityTypesButton: some View {
-        Button(action: {selectedTab = TabType.creation}) {
+        Button(action: {
+            // Reset activity creation view model to ensure no pre-selection
+            ActivityCreationViewModel.reInitialize()
+            selectedTab = TabType.creation
+        }) {
             seeAllText
         }
     }
@@ -120,12 +137,24 @@ struct ActivityFeedView: View {
 
 extension ActivityFeedView {
     var activityTypeListView: some View {
-        HStack {
-            ForEach(viewModel.activityTypes) { activityType in
-                ActivityTypeCardView(activityType: activityType)
+        HStack(spacing: 8) {
+            // Show only first 4 activity types and make them tappable to pre-select
+            ForEach(Array(viewModel.activityTypes.prefix(4)), id: \.id) { activityType in
+                ActivityTypeCardView(activityType: activityType) { selectedActivityType in
+                    // Pre-select the activity type and navigate to creation
+                    print("🎯 ActivityFeedView: Activity type '\(selectedActivityType.rawValue)' selected")
+                    
+                    // First set the tab to trigger the view change
+                    selectedTab = TabType.creation
+                    
+                    // Then set the pre-selection with a small delay to ensure the tab change happens first
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        ActivityCreationViewModel.initializeWithSelectedType(selectedActivityType)
+                    }
+                }
             }
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, 16)
     }
 }
 
@@ -146,11 +175,20 @@ extension ActivityFeedView {
                         .foregroundColor(figmaBlack300)
                 } else {
                     ForEach(0..<min(3, viewModel.activities.count), id: \.self) { activityIndex in
-                        ActivityCardView(userId: user.id, activity: viewModel.activities[activityIndex], color: figmaBlue) { activity, color in
-                            activityInPopup = activity
-                            colorInPopup = color
-                            showingActivityPopup = true
-                        }
+                        ActivityCardView(
+                            userId: user.id,
+                            activity: viewModel.activities[activityIndex],
+                            color: figmaBlue,
+                            callback: { activity, color in
+                                activityInPopup = activity
+                                colorInPopup = color
+                                showingActivityPopup = true
+                            },
+                            selectedTab: Binding(
+                                get: { selectedTab },
+                                set: { if let newValue = $0 { selectedTab = newValue } }
+                            )
+                        )
                     }
                 }
             }

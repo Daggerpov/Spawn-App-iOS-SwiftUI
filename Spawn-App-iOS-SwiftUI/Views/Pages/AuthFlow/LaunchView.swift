@@ -49,6 +49,7 @@ struct LaunchView: View {
 			}
 			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
+			.preferredColorScheme(.light)
 			.navigationDestination(
 				isPresented: $userAuth.shouldNavigateToUserInfoInputView
 			) {

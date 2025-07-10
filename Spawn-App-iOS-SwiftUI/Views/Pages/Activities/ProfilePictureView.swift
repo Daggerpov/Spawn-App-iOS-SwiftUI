@@ -12,6 +12,20 @@ struct ProfilePictureView: View {
     let height: CGFloat = 28
     @State var showProfile = false
     
+    // Optional binding to control tab selection for current user navigation
+    @Binding var selectedTab: TabType?
+    
+    // Check if this is the current user
+    private var isCurrentUser: Bool {
+        guard let currentUser = UserAuthViewModel.shared.spawnUser else { return false }
+        return currentUser.id == user.id
+    }
+    
+    init(user: BaseUserDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
+        self.user = user
+        self._selectedTab = selectedTab
+    }
+    
     var body: some View {
         VStack {
             if let pfpUrl = user.profilePicture {
@@ -19,13 +33,11 @@ struct ProfilePictureView: View {
                     Image(pfpUrl)
                         .ProfileImageModifier(imageType: .activityParticipants)
                 } else {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image.ProfileImageModifier(imageType: .activityParticipants)
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: width, height: height)
-                    }
+                    CachedProfileImage(
+                        userId: user.id,
+                        url: URL(string: pfpUrl),
+                        imageType: .activityParticipants
+                    )
                 }
             } else {
                 Circle()
@@ -34,7 +46,13 @@ struct ProfilePictureView: View {
             }
         }
         .onTapGesture {
-            showProfile = true
+            if isCurrentUser && selectedTab != nil {
+                // Navigate to profile tab for current user
+                selectedTab = .profile
+            } else {
+                // Show full screen cover for other users
+                showProfile = true
+            }
         }
         .fullScreenCover(isPresented: $showProfile) {
             ProfileView(user: user)

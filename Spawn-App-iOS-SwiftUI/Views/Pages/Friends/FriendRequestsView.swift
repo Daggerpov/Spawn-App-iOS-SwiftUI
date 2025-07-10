@@ -49,27 +49,83 @@ struct FriendRequestsView: View {
                     if viewModel.isLoading {
                         ProgressView()
                             .padding()
-                    } else if viewModel.friendRequests.isEmpty {
+					                    } else if viewModel.incomingFriendRequests.isEmpty && viewModel.sentFriendRequests.isEmpty {
                         Text("No friend requests")
                             .foregroundColor(.gray)
                             .padding(.top, 40)
                     } else {
-                        ForEach(viewModel.friendRequests) { request in
-                            FriendRequestItemView(
-                                friendRequest: request,
-                                onAccept: {
-                                    Task {
-                                        await viewModel.respondToFriendRequest(requestId: request.id, action: .accept)
-                                    }
-                                },
-                                onRemove: {
-                                    Task {
-                                        await viewModel.respondToFriendRequest(requestId: request.id, action: .decline)
-                                    }
+                        // Incoming friend requests section
+                        if !viewModel.incomingFriendRequests.isEmpty {
+                            VStack(spacing: 0) {
+                                HStack {
+                                    Text("Received")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(universalAccentColor)
+                                    Spacer()
                                 }
-                            )
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
+                                .padding(.horizontal)
+                                .padding(.vertical, 12)
+                                
+                                ForEach(viewModel.incomingFriendRequests) { request in
+                                    FriendRequestItemView(
+                                        friendRequest: request,
+                                        isIncoming: true,
+                                        onAccept: {
+                                            Task {
+                                                await viewModel.respondToFriendRequest(requestId: request.id, action: .accept)
+                                            }
+                                        },
+                                        onRemove: {
+                                            Task {
+                                                await viewModel.respondToFriendRequest(requestId: request.id, action: .decline)
+                                            }
+                                        }
+                                    )
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                }
+                            }
+                        }
+                        
+                        // Divider between sections
+                        if !viewModel.incomingFriendRequests.isEmpty && !viewModel.sentFriendRequests.isEmpty {
+                            Divider()
+                                .background(universalPlaceHolderTextColor)
+                                .padding(.horizontal)
+                                .padding(.vertical, 16)
+                        }
+                        
+                        // Sent friend requests section
+                        if !viewModel.sentFriendRequests.isEmpty {
+                            VStack(spacing: 0) {
+                                HStack {
+                                    Text("Sent")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(universalAccentColor)
+                                    Spacer()
+                                }
+                                .padding(.horizontal)
+                                .padding(.vertical, 12)
+                                
+                                ForEach(viewModel.sentFriendRequests) { request in
+                                    FriendRequestItemView(
+                                        friendRequest: request,
+                                        isIncoming: false,
+                                        onAccept: {
+                                            // No action for sent requests
+                                        },
+                                        onRemove: {
+                                            Task {
+                                                await viewModel.respondToFriendRequest(requestId: request.id, action: .decline)
+                                            }
+                                        }
+                                    )
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                }
+                            }
                         }
                     }
                 }
@@ -87,6 +143,7 @@ struct FriendRequestsView: View {
 
 struct FriendRequestItemView: View {
     let friendRequest: FetchFriendRequestDTO
+    let isIncoming: Bool
     let onAccept: () -> Void
     let onRemove: () -> Void
     @State private var hasAccepted = false
@@ -94,76 +151,106 @@ struct FriendRequestItemView: View {
     
     var body: some View {
         HStack(spacing: 12) {
-            // Profile picture
-            if MockAPIService.isMocking {
-                if let pfp = friendRequest.senderUser.profilePicture {
-                    Image(pfp)
-                        .ProfileImageModifier(imageType: .friendsListView)
-                }
-            } else {
-                if let pfpUrl = friendRequest.senderUser.profilePicture {
-                    AsyncImage(url: URL(string: pfpUrl)) { image in
-                        image.ProfileImageModifier(imageType: .friendsListView)
-                    } placeholder: {
-                        Circle()
-                            .fill(Color.gray)
-                            .frame(width: 50, height: 50)
+            // Clickable profile section
+            NavigationLink(destination: ProfileView(user: friendRequest.senderUser)) {
+                HStack(spacing: 12) {
+                    // Profile picture
+                    if MockAPIService.isMocking {
+                        if let pfp = friendRequest.senderUser.profilePicture {
+                            Image(pfp)
+                                .ProfileImageModifier(imageType: .friendsListView)
+                        }
+                    } else {
+                        if let pfpUrl = friendRequest.senderUser.profilePicture {
+                            CachedProfileImage(
+                                userId: friendRequest.senderUser.id,
+                                url: URL(string: pfpUrl),
+                                imageType: .friendsListView
+                            )
+                        } else {
+                            Circle()
+                                .fill(Color.gray)
+                                .frame(width: 50, height: 50)
+                        }
                     }
-                } else {
-                    Circle()
-                        .fill(Color.gray)
-                        .frame(width: 50, height: 50)
+                    
+                    // User info
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(FormatterService.shared.formatName(user: friendRequest.senderUser))
+                            .font(.headline)
+                            .foregroundColor(universalAccentColor)
+                        
+                        Text("@\(friendRequest.senderUser.username)")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                 }
             }
-            
-            // User info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(FormatterService.shared.formatName(user: friendRequest.senderUser))
-                    .font(.headline)
-                
-                Text("@\(friendRequest.senderUser.username)")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-            }
+            .buttonStyle(PlainButtonStyle())
             
             Spacer()
             
             // Action buttons
             HStack(spacing: 8) {
-                Button(action: {
-                    hasAccepted = true
-                    onAccept()
-                }) {
-                    Text("Accept")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(hasAccepted ? universalBackgroundColor : authPageBackgroundColor)
-                        )
-                }
-                
-                Button(action: {
-                    hasRemoved = true
-                    onRemove()
-                }) {
-                    Text("Remove")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(universalAccentColor)
-                        .padding(.vertical, 8)
-                        .padding(.horizontal, 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(universalBackgroundColor.opacity(0.9))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(universalPlaceHolderTextColor, lineWidth: 1)
-                                )
-                        )
+                if isIncoming {
+                    Button(action: {
+                        hasAccepted = true
+                        onAccept()
+                    }) {
+                        Text("Accept")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .frame(minWidth: 60)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(hasAccepted ? Color.gray : universalSecondaryColor)
+                            )
+                    }
+                    .disabled(hasAccepted)
+                    
+                    Button(action: {
+                        hasRemoved = true
+                        onRemove()
+                    }) {
+                        Text("Remove")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(universalAccentColor)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .frame(minWidth: 60)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.clear)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(universalAccentColor, lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .disabled(hasRemoved)
+                } else {
+                    Button(action: {
+                        hasRemoved = true
+                        onRemove()
+                    }) {
+                        Text("Cancel")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(universalAccentColor)
+                            .padding(.vertical, 6)
+                            .padding(.horizontal, 12)
+                            .frame(minWidth: 60)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.clear)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(universalAccentColor, lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .disabled(hasRemoved)
                 }
             }
         }

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ProfileInterestsView: View {
     let user: Nameable
-    @StateObject var profileViewModel: ProfileViewModel
+    @ObservedObject var profileViewModel: ProfileViewModel
     @Binding var editingState: ProfileEditText
     @Binding var newInterest: String
     
@@ -26,8 +26,8 @@ struct ProfileInterestsView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .top) {
-            // Interests content
+        VStack(alignment: .leading, spacing: 0) {
+            // Main content with overlaid header and social media icons
             Group {
                 if profileViewModel.isLoadingInterests {
                     interestsLoadingView
@@ -35,32 +35,44 @@ struct ProfileInterestsView: View {
                     interestsContentView
                 }
             }
-            .padding(.top, 24)  // Add padding to push content below the header
-
-            // Position the header to be centered on the top border
-            interestsSectionHeader
-                .padding(.leading, 6)
-        }
-    }
-
-    private var interestsSectionHeader: some View {
-        HStack {
-            Text("Interests + Hobbies")
-				.font(.onestBold(size: 14))
-                .foregroundColor(.white)
-                .padding(.vertical, 8)
-                .padding(.horizontal, 12)
-                .background(figmaBittersweetOrange)
-                .cornerRadius(12)
-
-            Spacer()
-
-            // Social media icons
-            if !profileViewModel.isLoadingSocialMedia {
-                socialMediaIcons
-            }
         }
         .padding(.horizontal)
+    }
+
+    private var interestsLoadingView: some View {
+        ZStack(alignment: .topLeading) {
+            // Background rectangle
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(figmaBittersweetOrange, lineWidth: 1)
+                .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
+            
+            // Header positioned on the border
+            HStack {
+                Text("Interests + Hobbies")
+                    .font(.onestBold(size: 14))
+                    .foregroundColor(.white)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(figmaBittersweetOrange)
+                    .cornerRadius(12)
+                    .offset(x: 16, y: -20)
+                
+                Spacer()
+                
+                // Social media icons
+                if !profileViewModel.isLoadingSocialMedia {
+                    socialMediaIcons
+                        .offset(x: -16, y: -24)
+                }
+            }
+            
+            // Loading indicator
+            ProgressView()
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 16)
+                .padding(.top, 28)
+                .padding(.bottom, 4)
+        }
     }
 
     private var socialMediaIcons: some View {
@@ -99,93 +111,106 @@ struct ProfileInterestsView: View {
         }
     }
 
-    private var interestsLoadingView: some View {
-        ProgressView()
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding()
-    }
-
     private var interestsContentView: some View {
         ZStack(alignment: .topLeading) {
-            // Background for interests section
+            // Background rectangle for interests section
             RoundedRectangle(cornerRadius: 15)
                 .stroke(figmaBittersweetOrange, lineWidth: 1)
                 .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
 
+            // Header and social media icons positioned on the border
+            HStack {
+                Text("Interests + Hobbies")
+                    .font(.onestBold(size: 14))
+                    .foregroundColor(.white)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(figmaBittersweetOrange)
+                    .cornerRadius(12)
+                    .offset(x: 16, y: -20)
+                
+                Spacer()
+                
+                // Social media icons
+                if !profileViewModel.isLoadingSocialMedia {
+                    socialMediaIcons
+                        .offset(x: -16, y: -24)
+                }
+            }
+
+            // Interests content
             if profileViewModel.userInterests.isEmpty {
                 emptyInterestsView
             } else {
-                // Interests as chips with proper layout
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        // Use a simple LazyVGrid for consistent layout
-                        LazyVGrid(
-                            columns: [
-                                GridItem(
-                                    .adaptive(minimum: 80, maximum: 150),
-                                    spacing: 4
-                                )
-                            ],
-                            alignment: .leading,
-                            spacing: 4
-                        ) {
-                            ForEach(profileViewModel.userInterests, id: \.self)
-                            { interest in
-                                interestChip(interest: interest)
-                            }
-                        }
+                // Interests as chips with simple layout
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                    ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                        interestChip(interest: interest)
                     }
-                    .padding()
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 28)
+                .padding(.bottom, 4)
+                .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
-        .frame(maxHeight: profileViewModel.userInterests.isEmpty ? 80 : 80)
-        .padding(.horizontal)
     }
 
     private var emptyInterestsView: some View {
         Text("No interests added yet.")
-            .foregroundColor(.gray)
+            .foregroundColor(.secondary)
             .italic()
-            .padding()
-            .padding(.top, 12)
+            .padding(.horizontal, 16)
+            .padding(.top, 28)
+            .padding(.bottom, 4)
     }
 
     private func interestChip(interest: String) -> some View {
-		Group{
-			if isCurrentUserProfile && editingState == .save {
-				Text(interest)
-					.font(.onestSemiBold(size: 12))
-					.padding(.vertical, 8)
-					.padding(.horizontal, 14)
-					.foregroundColor(universalAccentColor)
-					.lineLimit(1)
-					                .background(universalBackgroundColor)
-					.clipShape(Capsule())
-					.shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
-					.overlay(
-						isCurrentUserProfile && editingState == .save
-						? HStack {
-							Spacer()
-							Button(action: {
-								removeInterest(interest)
-							}) {
-								Image(systemName: "xmark.circle.fill")
-									.foregroundColor(.red)
-									.font(.caption)
-							}
-							.offset(x: 5, y: -8)
-						} : nil
-					)
-			} else {
-				Text(interest)
-					.font(.onestSemiBold(size: 12))
-					.padding(.vertical, 8)
-					.padding(.horizontal, 4)
-					.foregroundColor(universalAccentColor)
-					.lineLimit(1)
-			}
-		}
+        Group {
+            if isCurrentUserProfile && editingState == .save {
+                Text(interest)
+                    .font(.onestSemiBold(size: 12))
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 14)
+                    .foregroundColor(Color.primary)
+                    .lineLimit(1)
+                    .background(universalBackgroundColor)
+                    .clipShape(Capsule())
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(figmaBittersweetOrange, lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+                    .overlay(
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                removeInterest(interest)
+                            }) {
+                                Image(systemName: "xmark.circle")
+                                    .foregroundColor(.red)
+                                    .font(.caption)
+                                    .background(Color.white)
+                                    .clipShape(Circle())
+                            }
+                            .offset(x: 5, y: -8)
+                        }
+                    )
+            } else {
+                Text(interest)
+                    .font(.onestSemiBold(size: 12))
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 12)
+                    .foregroundColor(Color.primary)
+                    .lineLimit(1)
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(Capsule())
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                    )
+            }
+        }
     }
 }
 

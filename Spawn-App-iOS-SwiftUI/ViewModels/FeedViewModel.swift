@@ -10,6 +10,7 @@ import Combine
 
 class FeedViewModel: ObservableObject {
     @Published var activities: [FullFeedActivityDTO] = []
+    @Published var activityTypes: [ActivityTypeDTO] = []
     
     // Use the ActivityTypeViewModel for managing activity types
     @Published var activityTypeViewModel: ActivityTypeViewModel
@@ -26,6 +27,14 @@ class FeedViewModel: ObservableObject {
         
         // Initialize the activity type view model
         self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, apiService: apiService)
+        
+        // Subscribe to activity type changes to update the UI
+        activityTypeViewModel.$activityTypes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newActivityTypes in
+                self?.activityTypes = newActivityTypes
+            }
+            .store(in: &cancellables)
         
         // Only subscribe to AppCache if not mocking
         if !MockAPIService.isMocking {
@@ -67,10 +76,7 @@ class FeedViewModel: ObservableObject {
         await fetchActivitiesFromAPI()
     }
     
-    /// Access to activity types through the view model
-    var activityTypes: [ActivityTypeDTO] {
-        return activityTypeViewModel.activityTypes
-    }
+
     
     private func fetchActivitiesFromAPI() async {
         // Path: /api/v1/activities/feedActivities/{requestingUserId}
@@ -84,18 +90,9 @@ class FeedViewModel: ObservableObject {
                 from: url, parameters: nil
             )
             
-            print("✅ DEBUG: Successfully fetched \(fetchedActivities.count) activities")
-            print("📍 DEBUG: Activities with locations: \(fetchedActivities.filter { $0.location != nil }.count)")
-            
-            // Print location details for debugging
-            fetchedActivities.forEach { activity in
-                print("🗺 DEBUG: Activity '\(activity.title ?? "Untitled")' location: \(activity.location?.latitude ?? 0), \(activity.location?.longitude ?? 0)")
-            }
-            
             // Update the cache and view model
             await MainActor.run {
                 self.activities = fetchedActivities
-                print("📱 DEBUG: Updated ViewModel with \(self.activities.count) activities")
                 self.appCache.updateActivities(fetchedActivities)
             }
         } catch {

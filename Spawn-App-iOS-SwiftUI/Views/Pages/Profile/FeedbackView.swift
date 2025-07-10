@@ -39,6 +39,7 @@ struct MessageInputView: View {
     @Binding var message: String
     @Binding var isFocused: Bool
     @FocusState private var textFieldFocused: Bool
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -55,7 +56,7 @@ struct MessageInputView: View {
                     .padding(12)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            .stroke(borderColor, lineWidth: 1)
                     )
                     .focused($textFieldFocused)
                     .onChange(of: textFieldFocused) { newValue in
@@ -70,7 +71,7 @@ struct MessageInputView: View {
                 
                 if message.isEmpty && !textFieldFocused {
                     Text("Share your thoughts, report a bug, or suggest a feature...")
-                        .foregroundColor(Color.gray)
+                        .foregroundColor(universalPlaceHolderTextColor)
                         .padding(.leading, 16)
                         .padding(.top, 16)
                         .allowsHitTesting(false)
@@ -84,12 +85,17 @@ struct MessageInputView: View {
         }
         .padding(.horizontal)
     }
+    
+    private var borderColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.2) : Color.gray.opacity(0.3)
+    }
 }
 
 // MARK: - Image Picker Component
 struct ImagePickerView: View {
     @Binding var selectedItem: PhotosPickerItem?
     @Binding var selectedImage: UIImage?
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -103,35 +109,42 @@ struct ImagePickerView: View {
                 Spacer()
                 
                 if let selectedImage = selectedImage {
-                    Image(uiImage: selectedImage)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 150)
-                        .cornerRadius(8)
-                    
-                    Button(action: {
-                        self.selectedImage = nil
-                        self.selectedItem = nil
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.red)
-                            .font(.system(size: 24))
-                            .background(Circle().fill(Color.white))
+                    ZStack(alignment: .topTrailing) {
+                        Image(uiImage: selectedImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 150)
+                            .cornerRadius(8)
+                        
+                        Button(action: {
+                            self.selectedImage = nil
+                            self.selectedItem = nil
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.red)
+                                .font(.system(size: 24))
+                                .background(
+                                    Circle()
+                                        .fill(colorScheme == .dark ? Color.black : Color.white)
+                                        .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
+                                )
+                        }
+                        .offset(x: 8, y: -8)
                     }
-                    .offset(x: -10, y: -60)
                 } else {
                     PhotosPicker(selection: $selectedItem, matching: .images) {
-                        VStack {
+                        VStack(spacing: 8) {
                             Image(systemName: "photo")
                                 .font(.system(size: 40))
                             Text("Select Image")
+                                .font(.subheadline)
                         }
                         .foregroundColor(universalAccentColor)
                         .frame(maxWidth: 150, maxHeight: 100)
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                .stroke(borderColor, lineWidth: 1)
                         )
                     }
                 }
@@ -141,6 +154,10 @@ struct ImagePickerView: View {
             Spacer()
         }
         .padding(.horizontal)
+    }
+    
+    private var borderColor: Color {
+        colorScheme == .dark ? Color.white.opacity(0.2) : Color.gray.opacity(0.3)
     }
 }
 
@@ -156,19 +173,24 @@ struct SubmitButtonView: View {
                 if viewModel.isSubmitting {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .padding(.trailing, 5)
+                        .scaleEffect(0.9)
+                        .padding(.trailing, 8)
                 }
                 Text(viewModel.isSubmitting ? "Submitting..." : "Submit Feedback")
                     .font(.headline)
                     .foregroundColor(.white)
             }
             .frame(maxWidth: .infinity)
-            .padding()
-            .background(universalAccentColor)
-            .cornerRadius(10)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(universalAccentColor)
+                    .opacity(message.isEmpty || viewModel.isSubmitting ? 0.6 : 1.0)
+            )
         }
         .disabled(message.isEmpty || viewModel.isSubmitting)
         .padding(.horizontal)
+        .animation(.easeInOut(duration: 0.2), value: viewModel.isSubmitting)
     }
 }
 
@@ -176,27 +198,65 @@ struct SubmitButtonView: View {
 struct FeedbackStatusView: View {
     @ObservedObject var viewModel: FeedbackViewModel
     var onSuccess: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
-        VStack {
+        VStack(spacing: 8) {
             if let successMessage = viewModel.successMessage {
-                Text(successMessage)
-                    .foregroundColor(.green)
-                    .padding()
-                    .onAppear {
-                        // Dismiss after showing success message
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                            onSuccess()
-                        }
+                HStack {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 16))
+                    Text(successMessage)
+                        .font(.body)
+                }
+                .foregroundColor(successColor)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(successColor.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(successColor.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                .onAppear {
+                    // Dismiss after showing success message
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        onSuccess()
                     }
+                }
             }
             
             if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-                    .padding()
+                HStack {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.system(size: 16))
+                    Text(errorMessage)
+                        .font(.body)
+                }
+                .foregroundColor(errorColor)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(errorColor.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(errorColor.opacity(0.3), lineWidth: 1)
+                        )
+                )
             }
         }
+        .padding(.horizontal)
+    }
+    
+    private var successColor: Color {
+        colorScheme == .dark ? Color.green.opacity(0.8) : Color.green
+    }
+    
+    private var errorColor: Color {
+        colorScheme == .dark ? Color.red.opacity(0.8) : Color.red
     }
 }
 
@@ -204,6 +264,7 @@ struct FeedbackStatusView: View {
 struct FeedbackView: View {
     @StateObject private var viewModel: FeedbackViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     @State private var selectedType: FeedbackType = .GENERAL_FEEDBACK
     @State private var message: String = ""
@@ -221,7 +282,11 @@ struct FeedbackView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Header
+            headerView
+            
+            // Content
             ScrollView {
                 VStack(spacing: 24) {
                     // Feedback type selector
@@ -270,31 +335,48 @@ struct FeedbackView: View {
                     }
                 }
             }
-            .navigationBarBackButtonHidden()
-            .background(universalBackgroundColor.ignoresSafeArea())
-            
-            .toolbarBackground(universalBackgroundColor, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Send Feedback")
-                        .font(.headline)
-                        .foregroundColor(universalAccentColor)
-                }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        HStack {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                        .foregroundColor(universalAccentColor)
-                    }
-                }
-            }
         }
-        .accentColor(universalAccentColor) // Set global accent color for the navigation view
+        .background(universalBackgroundColor)
+        .navigationBarHidden(true)
+    }
+    
+    private var headerView: some View {
+        HStack {
+            Button(action: {
+                dismiss()
+            }) {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(universalAccentColor)
+                    .font(.title3)
+                    .padding(.all, 8)
+                    .background(
+                        Circle()
+                            .fill(universalAccentColor.opacity(0.1))
+                            .opacity(0)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+            .contentShape(Rectangle())
+            
+            Spacer()
+            
+            Text("Send Feedback")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+            
+            Spacer()
+            
+            // Empty view for balance
+            Color.clear.frame(width: 32, height: 32)
+        }
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .padding(.bottom, 16)
+        .background(
+            Rectangle()
+                .fill(universalBackgroundColor)
+                .shadow(color: universalAccentColor.opacity(0.1), radius: 1, x: 0, y: 1)
+        )
     }
     
     private func loadTransferable(from item: PhotosPickerItem?) {

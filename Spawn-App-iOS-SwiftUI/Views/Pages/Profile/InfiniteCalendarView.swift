@@ -4,85 +4,302 @@ import SwiftUI
 struct InfiniteCalendarView: View {
     let activities: [CalendarActivityDTO]
     let isLoading: Bool
+    let userCreationDate: Date?
     let onDismiss: () -> Void
     let onActivitySelected: (CalendarActivityDTO) -> Void
     
     @State private var currentDate = Date()
     @State private var showingDayActivities: Bool = false
-    @State private var selectedDate: Date = Date()
+    @State private var selectedDayActivities: [CalendarActivityDTO] = []
+    
+    private let calendar = Calendar.current
+    private let today = Date()
+    
+    // Calculate the earliest date to show in the calendar
+    private var earliestDate: Date {
+        guard let userCreationDate = userCreationDate else {
+            // If no user creation date, go back 2 years as default
+            return calendar.date(byAdding: .year, value: -2, to: today) ?? today
+        }
+        return userCreationDate
+    }
+    
+    // Generate months for infinite scrolling - respecting user creation date
+    private var monthsData: [MonthData] {
+        var months: [MonthData] = []
+        
+        // Calculate how many months back we can go from today to the earliest date
+        let monthsFromEarliestToToday = calendar.dateComponents([.month], from: earliestDate, to: today).month ?? 0
+        let maxMonthsBack = max(0, monthsFromEarliestToToday) // Ensure we don't go negative
+        
+        // Go back to the earliest date and forward 1 year
+        let startIndex = -maxMonthsBack
+        let endIndex = 12
+        
+        for i in startIndex...endIndex {
+            if let date = calendar.date(byAdding: .month, value: i, to: today) {
+                // Only include dates that are not before the user's creation date
+                if date >= earliestDate {
+                    months.append(MonthData(date: date, activities: activitiesForMonth(date)))
+                }
+            }
+        }
+        
+        return months
+    }
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header with month/year and navigation
-            HStack {
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        currentDate = Calendar.current.date(byAdding: .month, value: -1, to: currentDate) ?? currentDate
-                    }
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .foregroundColor(universalAccentColor)
-                }
-                
-                Spacer()
-                
-                Text(DateFormatter.monthYear.string(from: currentDate))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .foregroundColor(universalAccentColor)
-                
-                Spacer()
-                
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        currentDate = Calendar.current.date(byAdding: .month, value: 1, to: currentDate) ?? currentDate
-                    }
-                }) {
-                    Image(systemName: "chevron.right")
-                        .font(.title2)
-                        .foregroundColor(universalAccentColor)
-                }
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 15)
-            
             if isLoading {
                 ProgressView()
-                    .frame(maxWidth: .infinity, minHeight: 300)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                CalendarGridView(
-                    currentDate: currentDate,
-                    activities: activities,
-                    onActivitySelected: onActivitySelected,
-                    onDateSelected: { date in
-                        selectedDate = date
-                        // Show day activities if there are activities for this date
-                        if !getActivitiesForDate(date).isEmpty {
-                            self.showingDayActivities = true
-                        }
-                    }
-                )
+                infiniteScrollCalendar
             }
         }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle("Your Event Calendar")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
         .sheet(isPresented: $showingDayActivities) {
-            NavigationView {
-                DayActivitiesView(
-                    date: selectedDate,
-                    onDismiss: { showingDayActivities = false },
-                    onActivitySelected: { activity in
-                        showingDayActivities = false
-                        onActivitySelected(activity)
+            DayActivitiesView(
+                activities: selectedDayActivities,
+                onDismiss: { showingDayActivities = false },
+                onActivitySelected: { activity in
+                    showingDayActivities = false
+                    onActivitySelected(activity)
+                }
+            )
+        }
+    }
+    
+    private var infiniteScrollCalendar: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(spacing: 20) {
+                    ForEach(monthsData, id: \.id) { monthData in
+                        MonthView(
+                            monthData: monthData,
+                            today: today,
+                            onDayTapped: { activities in
+                                if activities.count == 1 {
+                                    onActivitySelected(activities.first!)
+                                } else if activities.count > 1 {
+                                    selectedDayActivities = activities
+                                    showingDayActivities = true
+                                }
+                            }
+                        )
+                        .id(monthData.id)
                     }
-                )
+                }
+                .padding(.horizontal, 20)
+                .onAppear {
+                    // Find the current month and scroll to it
+                    if let todayMonthData = monthsData.first(where: { monthData in
+                        calendar.isDate(monthData.date, equalTo: today, toGranularity: .month)
+                    }) {
+                        // Scroll to current month with animation after a short delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.easeInOut(duration: 0.5)) {
+                                proxy.scrollTo(todayMonthData.id, anchor: .center)
+                            }
+                        }
+                    }
+                }
             }
         }
     }
     
-    private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
+    private func activitiesForMonth(_ date: Date) -> [CalendarActivityDTO] {
         return activities.filter { activity in
-            Calendar.current.isDate(activity.date, inSameDayAs: date)
+            calendar.isDate(activity.date, equalTo: date, toGranularity: .month)
         }
+    }
+}
+
+// Data structure for each month
+struct MonthData: Identifiable {
+    let id = UUID()
+    let date: Date
+    let activities: [CalendarActivityDTO]
+}
+
+// Month view component
+struct MonthView: View {
+    let monthData: MonthData
+    let today: Date
+    let onDayTapped: ([CalendarActivityDTO]) -> Void
+    
+    private let calendar = Calendar.current
+    
+    // Get all days in the month
+    private var daysInMonth: [Date] {
+		guard let _ = calendar.dateInterval(of: .month, for: monthData.date),
+              let firstOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthData.date)) else {
+            return []
+        }
+        
+        let numberOfDays = calendar.range(of: .day, in: .month, for: monthData.date)?.count ?? 30
+        var days: [Date] = []
+        
+        for day in 1...numberOfDays {
+            if let date = calendar.date(byAdding: .day, value: day - 1, to: firstOfMonth) {
+                days.append(date)
+            }
+        }
+        
+        return days
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Month header
+            HStack {
+                Text(DateFormatter.monthYear.string(from: monthData.date))
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            // Days grid (4 columns)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                ForEach(daysInMonth, id: \.self) { date in
+                    DayCell(
+                        date: date,
+                        activities: activitiesForDate(date),
+                        isToday: calendar.isDate(date, inSameDayAs: today),
+                        onTapped: {
+                            let dayActivities = activitiesForDate(date)
+                            if !dayActivities.isEmpty {
+                                onDayTapped(dayActivities)
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+    
+    private func activitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
+        return monthData.activities.filter { activity in
+            calendar.isDate(activity.date, inSameDayAs: date)
+        }
+    }
+}
+
+// Individual day cell
+struct DayCell: View {
+    let date: Date
+    let activities: [CalendarActivityDTO]
+    let isToday: Bool
+    let onTapped: () -> Void
+    
+    private let calendar = Calendar.current
+    
+    private var dayNumber: String {
+        String(calendar.component(.day, from: date))
+    }
+    
+    var body: some View {
+        Button(action: onTapped) {
+            VStack(spacing: 6) {
+                // Day number
+                Text(dayNumber)
+                    .font(.system(size: 18, weight: isToday ? .bold : .semibold))
+                    .foregroundColor(isToday ? universalAccentColor : .primary)
+                
+                // Activity display
+                if activities.isEmpty {
+                    Spacer()
+                        .frame(minHeight: 40)
+                } else if activities.count == 1 {
+                    // Single activity - show its icon
+                    activityIconView(for: activities.first!)
+                        .frame(width: 40, height: 40)
+                } else {
+                    // Multiple activities - show count or multiple icons
+                    multipleActivitiesView
+                        .frame(width: 40, height: 40)
+                }
+            }
+            .frame(width: 80, height: 80)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(activities.isEmpty ? Color.gray.opacity(0.08) : Color.gray.opacity(0.05))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isToday ? universalAccentColor : Color.clear, lineWidth: 3)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    @ViewBuilder
+    private func activityIconView(for activity: CalendarActivityDTO) -> some View {
+        ZStack {
+            // Background color based on activity
+            RoundedRectangle(cornerRadius: 8)
+                .fill(activityColor(for: activity))
+                .frame(width: 40, height: 40)
+            
+            // Activity icon
+            if let icon = activity.icon, !icon.isEmpty {
+                Text(icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+            } else {
+                Image(systemName: activity.activityCategory?.systemIcon() ?? "star.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(.white)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private var multipleActivitiesView: some View {
+        if activities.count <= 3 {
+            // Show up to 3 activity icons as small dots
+            HStack(spacing: 3) {
+                ForEach(activities.prefix(3), id: \.id) { activity in
+                    Circle()
+                        .fill(activityColor(for: activity))
+                        .frame(width: 10, height: 10)
+                }
+            }
+        } else {
+            // Show count for more than 3 activities
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(LinearGradient(
+                        gradient: Gradient(colors: activities.prefix(3).map { activityColor(for: $0) }),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ))
+                    .frame(width: 40, height: 40)
+                
+                Text("\(activities.count)")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+            }
+        }
+    }
+    
+    private func activityColor(for activity: CalendarActivityDTO) -> Color {
+        // Use custom color if available
+        if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
+            return Color(hex: colorHex)
+        }
+        
+        // Otherwise use activity color based on ID
+        if let activityId = activity.activityId {
+            return getActivityColor(for: activityId)
+        }
+        
+        return .gray
     }
 }
 
@@ -112,137 +329,6 @@ struct EmptyCalendarView: View {
     }
 }
 
-// Calendar grid view
-struct CalendarGridView: View {
-    let currentDate: Date
-    let activities: [CalendarActivityDTO]
-    let onActivitySelected: (CalendarActivityDTO) -> Void
-    let onDateSelected: (Date) -> Void
-    
-    private let calendar = Calendar.current
-    private let dateFormatter = DateFormatter()
-    
-    private var monthDays: [Date] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: currentDate) else {
-            return []
-        }
-        
-        let firstOfMonth = monthInterval.start
-        let firstWeekday = calendar.component(.weekday, from: firstOfMonth)
-        let daysToSubtract = firstWeekday - 1
-        
-        guard let startDate = calendar.date(byAdding: .day, value: -daysToSubtract, to: firstOfMonth) else {
-            return []
-        }
-        
-        var days: [Date] = []
-        for i in 0..<42 { // 6 weeks * 7 days
-            if let day = calendar.date(byAdding: .day, value: i, to: startDate) {
-                days.append(day)
-            }
-        }
-        return days
-    }
-    
-    var body: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 8) {
-            // Weekday headers
-            ForEach(["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], id: \.self) { day in
-                Text(day)
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
-                    .frame(height: 30)
-            }
-            
-            // Calendar days
-            ForEach(monthDays, id: \.self) { date in
-                CalendarDayView(
-                    date: date,
-                    currentDate: currentDate,
-                    activities: activitiesForDate(date),
-                    onActivitySelected: onActivitySelected,
-                    onDateSelected: onDateSelected
-                )
-            }
-        }
-        .padding(.horizontal, 20)
-    }
-    
-    private func activitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
-        return activities.filter { activity in
-            calendar.isDate(activity.date, inSameDayAs: date)
-        }
-    }
-}
-
-// Cell representing a single day with one or more activities
-struct CalendarDayView: View {
-    let date: Date
-    let currentDate: Date
-    let activities: [CalendarActivityDTO]
-    let onActivitySelected: (CalendarActivityDTO) -> Void
-    let onDateSelected: (Date) -> Void
-    
-    private let calendar = Calendar.current
-    
-    private var isCurrentMonth: Bool {
-        calendar.isDate(date, equalTo: currentDate, toGranularity: .month)
-    }
-    
-    private var isToday: Bool {
-        calendar.isDate(date, inSameDayAs: Date())
-    }
-    
-    private var dayNumber: String {
-        String(calendar.component(.day, from: date))
-    }
-    
-    var body: some View {
-        VStack(spacing: 2) {
-            Text(dayNumber)
-                .font(.system(size: 16, weight: isToday ? .bold : .medium))
-                .foregroundColor(isCurrentMonth ? (isToday ? .white : .primary) : .secondary)
-            
-            if activities.count == 1 {
-                // Single activity - show as a colored circle
-                if let activityId = activities[0].activityId {
-                    Circle()
-                        .fill(getActivityColor(for: activityId))
-                        .frame(width: 8, height: 8)
-                }
-            } else if activities.count > 1 {
-                // Multiple activities - show as dots
-                HStack(spacing: 2) {
-                    ForEach(activities.prefix(3), id: \.id) { activity in
-                        Circle()
-                            .fill(activity.activityId != nil ? getActivityColor(for: activity.activityId!) : .gray)
-                            .frame(width: 4, height: 4)
-                    }
-                    if activities.count > 3 {
-                        Text("+")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-        }
-        .frame(width: 40, height: 40)
-        .background(
-            Circle()
-                .fill(isToday ? universalAccentColor : Color.clear)
-        )
-        .onTapGesture {
-            if activities.count == 1 {
-                onActivitySelected(activities[0])
-            } else if activities.count > 1 {
-                // If multiple activities, show the day activities list
-                onDateSelected(date)
-            }
-        }
-    }
-}
-
 // Extension for activity category icon
 extension CalendarActivityDTO {
     var categoryIcon: String {
@@ -264,6 +350,7 @@ extension DateFormatter {
     InfiniteCalendarView(
         activities: [],
         isLoading: false,
+        userCreationDate: nil,
         onDismiss: {},
         onActivitySelected: { _ in }
     )

@@ -117,14 +117,92 @@ struct ActivityTypeCard: View {
     @Binding var selectedType: ActivityType?
     let onPin: () -> Void
     let onDelete: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var navigateToManageType = false
     
     // Convert ActivityTypeDTO to ActivityType for selection comparison
     private var activityType: ActivityType? {
-        ActivityType.allCases.first { $0.rawValue == activityTypeDTO.title }
+        // First try exact match
+        if let exactMatch = ActivityType.allCases.first(where: { $0.rawValue == activityTypeDTO.title }) {
+            return exactMatch
+        }
+        
+        // If no exact match, try fuzzy matching for common cases
+        switch activityTypeDTO.title.lowercased() {
+        case "food":
+            return .foodAndDrink
+        case "active":
+            return .active
+        case "study":
+            return .grind
+        case "chill":
+            return .chill
+        case "general":
+            return .general
+        default:
+            // For unmapped types, return nil to make them unselectable
+            // This prevents conflicts in selection logic
+            return nil
+        }
     }
     
     private var isSelected: Bool {
-        selectedType == activityType
+        guard let activityType = activityType else {
+            return false
+        }
+        
+        let selected = selectedType == activityType
+        return selected
+    }
+    
+    // Adaptive background color
+    private var adaptiveBackgroundColor: Color {
+        // If unmapped, show as disabled
+        if activityType == nil {
+            return Color.gray.opacity(0.02)
+        }
+        
+        if isSelected {
+            return universalSecondaryColor.opacity(0.1)
+        } else {
+            switch colorScheme {
+            case .dark:
+                return Color.white.opacity(0.08)
+            case .light:
+                return Color.gray.opacity(0.05)
+            @unknown default:
+                return Color.gray.opacity(0.05)
+            }
+        }
+    }
+    
+    // Adaptive text color for people count
+    private var adaptiveSecondaryTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.white.opacity(0.6)
+        case .light:
+            return figmaBlack300
+        @unknown default:
+            return figmaBlack300
+        }
+    }
+    
+    // Adaptive text color for title
+    private var adaptiveTitleColor: Color {
+        // If unmapped, show as disabled
+        if activityType == nil {
+            return Color.gray.opacity(0.5)
+        }
+        
+        switch colorScheme {
+        case .dark:
+            return Color.white
+        case .light:
+            return universalAccentColor
+        @unknown default:
+            return universalAccentColor
+        }
     }
     
     var body: some View {
@@ -141,18 +219,18 @@ struct ActivityTypeCard: View {
                         Spacer()
                         Text("\(activityTypeDTO.associatedFriends.count) people")
                             .font(.caption)
-                            .foregroundColor(figmaBlack300)
+                            .foregroundColor(adaptiveSecondaryTextColor)
                     }
                     
                     Text(activityTypeDTO.title)
                         .font(.headline)
-                        .foregroundColor(universalAccentColor)
+                        .foregroundColor(adaptiveTitleColor)
                 }
                 .padding()
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(isSelected ? universalSecondaryColor.opacity(0.1) : Color.gray.opacity(0.05))
+                        .fill(adaptiveBackgroundColor)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(isSelected ? universalSecondaryColor : Color.clear, lineWidth: 2)
@@ -175,12 +253,16 @@ struct ActivityTypeCard: View {
                 }
             }
         }
+        .disabled(activityType == nil)
+        .opacity(activityType == nil ? 0.6 : 1.0)
         .contextMenu {
             Button(action: onPin) {
                 Label(activityTypeDTO.isPinned ? "Unpin Type" : "Pin Type", systemImage: "pin")
             }
             
-            NavigationLink(destination: ActivityTypeManagementView(activityTypeDTO: activityTypeDTO)) {
+            Button(action: {
+                navigateToManageType = true
+            }) {
                 Label("Manage Type", systemImage: "slider.horizontal.3")
             }
             
@@ -189,12 +271,20 @@ struct ActivityTypeCard: View {
             }
             .foregroundColor(.red)
         }
+        .background(
+            NavigationLink(
+                destination: ActivityTypeManagementView(activityTypeDTO: activityTypeDTO),
+                isActive: $navigateToManageType
+            ) {
+                EmptyView()
+            }
+        )
     }
 }
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @State var selectedType: ActivityType? = .foodAndDrink
+    @Previewable @State var selectedType: ActivityType? = nil
     @Previewable @StateObject var appCache = AppCache.shared
     
     NavigationView {

@@ -10,6 +10,16 @@ import SwiftUI
 struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTab: TabType = .home
+    @StateObject private var friendsViewModel: FriendsTabViewModel
+    
+    init(user: BaseUserDTO) {
+        self.user = user
+        let vm = FriendsTabViewModel(
+            userId: user.id,
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: user.id) : APIService())
+        self._friendsViewModel = StateObject(wrappedValue: vm)
+    }
 
 	var body: some View {
 		TabView(selection: $selectedTab) {
@@ -18,20 +28,22 @@ struct ContentView: View {
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "house")!,
+							UIImage(named: "home_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					Text("Home")
 				}
 			MapView(user: user)
                 .tag(TabType.map)
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "location.circle")!,
+							UIImage(named: "map_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					Text("Map")
 				}
 			ActivityCreationView(
 				creatingUser: user,
@@ -45,32 +57,37 @@ struct ContentView: View {
 			.tabItem {
 				Image(
 					uiImage: resizeImage(
-						UIImage(named: "activities_icon")!,
+						UIImage(named: "activities_nav_icon")!,
 						targetSize: CGSize(width: 30, height: 27)
 					)!
 				)
+				Text("Activities")
 			}
 			FriendsView(user: user)
                 .tag(TabType.friends)
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "list.bullet")!,
+							UIImage(named: "friends_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					.withNotificationBadge(count: friendsViewModel.incomingFriendRequests.count)
+					Text("Friends")
 				}
 			ProfileView(user: user)
                 .tag(TabType.profile)
 				.tabItem {
 					Image(
 						uiImage: resizeImage(
-							UIImage(systemName: "person.circle")!,
+							UIImage(named: "profile_nav_icon")!,
 							targetSize: CGSize(width: 30, height: 27)
 						)!
 					)
+					Text("Profile")
 				}
 		}
+		.tint(universalSecondaryColor) // Set the tint color for selected tabs to purple
 		.onAppear {
 			// Configure tab bar appearance for theme compatibility
 			let appearance = UITabBarAppearance()
@@ -93,6 +110,11 @@ struct ContentView: View {
 				default:
 					return UIColor.label
 				}
+			}
+			
+			// Fetch friend requests to show badge count
+			Task {
+				await friendsViewModel.fetchIncomingFriendRequests()
 			}
 		}
 	}

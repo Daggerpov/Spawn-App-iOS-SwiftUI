@@ -41,8 +41,9 @@ class MockAPIService: IAPIService {
 			}
 		}
         
-        if userId != nil {
-            if url.absoluteString == APIService.baseURL + "(userIdForUrl)/activity-types" {
+        if let userIdForUrl = userId {
+            if url.absoluteString == APIService.baseURL + "\(userIdForUrl)/activity-types" {
+                print("🔍 MOCK: Fetching activity types for user: \(userIdForUrl)")
                 return [
                     ActivityTypeDTO.mockChillActivityType,
                     ActivityTypeDTO.mockFoodActivityType,
@@ -117,7 +118,7 @@ class MockAPIService: IAPIService {
 		}
 
 		// fetchRecommendedFriends():
-		if url.absoluteString == APIService.baseURL + "users/recommended/\(userId ?? UUID())" {
+		if url.absoluteString == APIService.baseURL + "users/recommended-friends/\(userId ?? UUID())" {
 			return RecommendedFriendUserDTO.mockUsers as! T
 		}
 
@@ -127,17 +128,124 @@ class MockAPIService: IAPIService {
 		}
 
 		// fetchRecentlySpawnedWith():
-		if url.absoluteString == APIService.baseURL + "users/recentlySpawnedWith/\(userId ?? UUID())" {
-			return [BaseUserDTO.danielAgapov, Date.now] as! T
+		if url.absoluteString == APIService.baseURL + "users/\(userId ?? UUID())/recent-users" {
+			return BaseUserDTO.mockUsers.map { user in
+				RecentlySpawnedUserDTO(user: user, dateTime: Date())
+			} as! T
 		}
 
-		// fetchSearchResults():
-		if url.absoluteString == APIService.baseURL + "users/search/\(userId ?? UUID())" {
+		// fetchSearchResults() - for users/search endpoint
+		if url.absoluteString.contains("users/search") {
+			// Extract query parameter
+			let urlComponents = URLComponents(string: url.absoluteString)
+			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
+			
+			// If no search query, return all users
+			if searchQuery.isEmpty {
+				return BaseUserDTO.mockUsers as! T
+			}
+			
+			// Filter mock users by search query
+			let filteredUsers = BaseUserDTO.mockUsers.filter { user in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: user).lowercased()
+				let username = user.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
+			return filteredUsers as! T
+		}
+
+		// fetchFilteredResults() - for users/filtered/{userId} endpoint
+		if url.absoluteString.contains("users/filtered/") {
+			// Extract search query from URL
+			let urlComponents = URLComponents(string: url.absoluteString)
+			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
+			
+			// Filter mock data by search query
+			let filteredFriends = FullFriendUserDTO.mockUsers.filter { user in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: user).lowercased()
+				let username = user.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
+			let filteredRecommended = RecommendedFriendUserDTO.mockUsers.filter { user in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: user).lowercased()
+				let username = user.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
+			let filteredRequests = FetchFriendRequestDTO.mockFriendRequests.filter { request in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
+				let username = request.senderUser.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
 			return SearchedUserResult(
-				incomingFriendRequests: FetchFriendRequestDTO.mockFriendRequests,
-				recommendedFriends: RecommendedFriendUserDTO.mockUsers,
-				friends: FullFriendUserDTO.mockUsers
+				incomingFriendRequests: filteredRequests,
+				recommendedFriends: filteredRecommended,
+				friends: filteredFriends
 			) as! T
+		}
+
+		// Check friendship status endpoint
+		if url.absoluteString.contains("users/") && url.absoluteString.contains("/is-friend/") {
+			// Extract userIds from URL - e.g., "users/123/is-friend/456"
+			let urlComponents = url.absoluteString.components(separatedBy: "/")
+			if let userAIndex = urlComponents.firstIndex(of: "users"),
+			   userAIndex + 1 < urlComponents.count,
+			   let userBIndex = urlComponents.firstIndex(of: "is-friend"),
+			   userBIndex + 1 < urlComponents.count {
+				let userAId = urlComponents[userAIndex + 1]
+				let userBId = urlComponents[userBIndex + 1]
+				
+				// For demo purposes, simulate that some users are friends
+				// Map UUIDs to usernames for easier testing
+				let userAName = getUsernameFromMockUsers(userAId)
+				let userBName = getUsernameFromMockUsers(userBId)
+				
+				// Define mock friendships
+				let friendships = [
+					"daggerpov": ["uhdlee", "shannonaurl"],
+					"uhdlee": ["daggerpov", "jenntjen"],
+					"shannonaurl": ["daggerpov", "michaeltham"],
+					"jenntjen": ["uhdlee", "haleyusername"],
+					"michaeltham": ["shannonaurl"],
+					"haleyusername": ["jenntjen"]
+				]
+				
+				// Check if the users are friends in our mock data
+				let isFriend = friendships[userAName]?.contains(userBName) ?? false
+				return isFriend as! T
+			}
+			return false as! T
+		}
+
+		// Incoming friend requests endpoint
+		if url.absoluteString.contains("friend-requests/incoming/") {
+			// Extract userId from URL
+			let urlComponents = url.absoluteString.components(separatedBy: "/")
+			if let incomingIndex = urlComponents.firstIndex(of: "incoming"),
+			   incomingIndex + 1 < urlComponents.count {
+				let receiverUserId = urlComponents[incomingIndex + 1]
+				let receiverUsername = getUsernameFromMockUsers(receiverUserId)
+				
+				// For demo purposes, simulate that some users have incoming friend requests
+				let incomingRequests: [String: [FetchFriendRequestDTO]] = [
+					"daggerpov": [], // Daniel Agapov has no incoming requests
+					"uhdlee": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)], // Daniel Lee has request from Daniel Agapov
+					"shannonaurl": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.michael)], // Shannon has request from Michael
+					"jenntjen": [],
+					"michaeltham": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.haley)], // Michael has request from Haley
+					"haleyusername": []
+				]
+				
+				return (incomingRequests[receiverUsername] ?? []) as! T
+			}
+			return [] as! T
 		}
 
 		// Handle calendar activities fetch
@@ -202,8 +310,28 @@ class MockAPIService: IAPIService {
 
 			// Fetch user interests
 			if url.absoluteString.contains("users/") && url.absoluteString.contains("/interests") {
-				// Return mock interests
-				return ["Hiking", "Photography", "Cooking", "Travel", "Music"] as! T
+				// Extract userId from URL to return different interests for different users
+				let urlComponents = url.absoluteString.components(separatedBy: "/")
+				if let usersIndex = urlComponents.firstIndex(of: "users"),
+				   usersIndex + 1 < urlComponents.count {
+					let userId = urlComponents[usersIndex + 1]
+					let username = getUsernameFromMockUsers(userId)
+					
+					// Return different interests for different users
+					let userInterests = [
+						"daggerpov": ["Hiking", "Photography", "Cooking", "Travel", "Music"],
+						"uhdlee": ["Basketball", "Biking", "Bouldering", "F1", "Poker", "Cooking", "Travel"],
+						"shannonaurl": ["Basketball", "Reading", "Gaming"],
+						"jenntjen": ["Art", "Photography", "Yoga", "Travel"],
+						"michaeltham": ["Fitness", "Basketball", "Music", "Cooking"],
+						"haleyusername": ["Dance", "Photography", "Travel", "Food"]
+					]
+					
+					return (userInterests[username] ?? ["Basketball"]) as! T
+				}
+				
+				// Fallback for current user or unknown user
+				return ["Basketball"] as! T
 			}
 		}
 		
@@ -485,6 +613,11 @@ class MockAPIService: IAPIService {
 					let mockActivities = createMockActivities()
 					updatedItems = try? JSONEncoder().encode(mockActivities)
 
+				case "activityTypes":
+					// Return mock activity types data
+					let mockActivityTypes = createMockActivityTypes()
+					updatedItems = try? JSONEncoder().encode(mockActivityTypes)
+
 				case "profilePicture":
 					// Return mock profile picture data
 					if let userId = userId
@@ -565,6 +698,16 @@ class MockAPIService: IAPIService {
 		]
 	}
 
+	private func createMockActivityTypes() -> [ActivityTypeDTO] {
+		// Return mock activity types data
+		return [
+			ActivityTypeDTO.mockChillActivityType,
+			ActivityTypeDTO.mockFoodActivityType,
+			ActivityTypeDTO.mockActiveActivityType,
+			ActivityTypeDTO.mockStudyActivityType
+		]
+	}
+
 	private func createMockCalendarActivities(parameters: [String: String]?) -> [CalendarActivityDTO] {
 		// Get the current month and year from parameters, or use current date
 		let calendar = Calendar.current
@@ -607,6 +750,22 @@ class MockAPIService: IAPIService {
 		}
 
 		return activities
+	}
+
+	private func getUsernameFromMockUsers(_ userId: String) -> String {
+		// Convert string to UUID and look up the username in mock users
+		guard let uuid = UUID(uuidString: userId) else { return "" }
+		
+		let mockUsers = [
+			BaseUserDTO.danielAgapov,
+			BaseUserDTO.danielLee,
+			BaseUserDTO.shannon,
+			BaseUserDTO.jennifer,
+			BaseUserDTO.michael,
+			BaseUserDTO.haley
+		]
+		
+		return mockUsers.first { $0.id == uuid }?.username ?? ""
 	}
 }
 

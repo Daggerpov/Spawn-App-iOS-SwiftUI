@@ -16,6 +16,7 @@ class AppCache: ObservableObject {
     // MARK: - Cached Data
     @Published var friends: [FullFriendUserDTO] = []
     @Published var activities: [FullFeedActivityDTO] = []
+    @Published var activityTypes: [ActivityTypeDTO] = []
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var friendRequests: [FetchFriendRequestDTO] = []
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
@@ -35,6 +36,7 @@ class AppCache: ObservableObject {
         static let lastChecked = "lastChecked"
         static let friends = "friends"
         static let activities = "activities"
+        static let activityTypes = "activityTypes"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
         static let otherProfiles = "otherProfiles"
@@ -110,6 +112,20 @@ class AppCache: ObservableObject {
                     }
                 }
                 
+                // Activity Types Cache
+                if let activityTypesResponse = result[CacheKeys.activityTypes], activityTypesResponse.invalidate {
+                    if let updatedItems = activityTypesResponse.updatedItems,
+                       let updatedActivityTypes = try? JSONDecoder().decode([ActivityTypeDTO].self, from: updatedItems) {
+                        // Backend provided the updated data
+                        updateActivityTypes(updatedActivityTypes)
+                    } else {
+                        // Need to fetch new data
+                        Task {
+                            await refreshActivityTypes()
+                        }
+                    }
+                }
+                
                 // Other Profiles Cache
                 if let otherProfilesResponse = result[CacheKeys.otherProfiles], otherProfilesResponse.invalidate {
                     Task {
@@ -154,6 +170,11 @@ class AppCache: ObservableObject {
         friends = newFriends
         lastChecked[CacheKeys.friends] = Date()
         saveToDisk()
+        
+        // Preload profile pictures for friends
+        Task {
+            await preloadProfilePictures(for: newFriends)
+        }
     }
     
     func refreshFriends() async {
@@ -180,7 +201,17 @@ class AppCache: ObservableObject {
     func updateActivities(_ newActivities: [FullFeedActivityDTO]) {
         activities = newActivities
         lastChecked[CacheKeys.activities] = Date()
+        
+        // Pre-assign colors for even distribution
+        let activityIds = newActivities.map { $0.id }
+        ActivityColorService.shared.assignColorsForActivities(activityIds)
+        
         saveToDisk()
+        
+        // Preload profile pictures for activity creators and participants
+        Task {
+            await preloadProfilePicturesForActivities(newActivities)
+        }
     }
     
     func refreshActivities() async {
@@ -212,7 +243,49 @@ class AppCache: ObservableObject {
         } else {
             activities.append(activity)
         }
+        
+        // Ensure color is assigned for the activity
+        ActivityColorService.shared.assignColorsForActivities([activity.id])
+        
         lastChecked[CacheKeys.activities] = Date()
+        saveToDisk()
+    }
+    
+    // MARK: - Activity Types Methods
+    
+    func updateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
+        activityTypes = newActivityTypes
+        lastChecked[CacheKeys.activityTypes] = Date()
+        saveToDisk()
+    }
+    
+    func refreshActivityTypes() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "\(userId)/activity-types") else { return }
+            
+            let fetchedActivityTypes: [ActivityTypeDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                updateActivityTypes(fetchedActivityTypes)
+            }
+        } catch {
+            print("Failed to refresh activity types: \(error.localizedDescription)")
+        }
+    }
+    
+    // Get activity types by user ID (for multi-user support)
+    func getActivityTypesForUser(_ userId: UUID) -> [ActivityTypeDTO] {
+        // For now, return the cached activity types (single user)
+        return activityTypes
+    }
+    
+    // Add or update activity types in the cache
+    func addOrUpdateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
+        activityTypes = newActivityTypes
+        lastChecked[CacheKeys.activityTypes] = Date()
         saveToDisk()
     }
     
@@ -270,6 +343,11 @@ class AppCache: ObservableObject {
         recommendedFriends = newRecommendedFriends
         lastChecked[CacheKeys.recommendedFriends] = Date()
         saveToDisk()
+        
+        // Preload profile pictures for recommended friends
+        Task {
+            await preloadProfilePictures(for: newRecommendedFriends)
+        }
     }
     
     func refreshRecommendedFriends() async {
@@ -295,6 +373,11 @@ class AppCache: ObservableObject {
         friendRequests = newFriendRequests
         lastChecked[CacheKeys.friendRequests] = Date()
         saveToDisk()
+        
+        // Preload profile pictures for friend request senders
+        Task {
+            await preloadProfilePicturesForFriendRequests(newFriendRequests)
+        }
     }
     
     func refreshFriendRequests() async {
@@ -338,8 +421,89 @@ class AppCache: ObservableObject {
     
     func updateProfileActivities(_ userId: UUID, _ activities: [ProfileActivityDTO]) {
         profileActivities[userId] = activities
+        
+        // Pre-assign colors for even distribution
+        let activityIds = activities.map { $0.id }
+        ActivityColorService.shared.assignColorsForActivities(activityIds)
+        
         lastChecked[CacheKeys.profileActivities] = Date()
         saveToDisk()
+    }
+    
+    // MARK: - Profile Picture Caching
+    
+    /// Preload profile pictures for a collection of users
+    private func preloadProfilePictures<T: Nameable>(for users: [T]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        for user in users {
+            guard let profilePictureUrl = user.profilePicture else { continue }
+            
+            // Only download if not already cached
+            if profilePictureCache.getCachedImage(for: user.id) == nil {
+                _ = await profilePictureCache.downloadAndCacheImage(from: profilePictureUrl, for: user.id)
+            }
+        }
+    }
+    
+    /// Preload profile pictures for activity creators and participants
+    private func preloadProfilePicturesForActivities(_ activities: [FullFeedActivityDTO]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        for activity in activities {
+            // Preload creator profile picture
+            if let creatorPicture = activity.creatorUser.profilePicture {
+                if profilePictureCache.getCachedImage(for: activity.creatorUser.id) == nil {
+                    _ = await profilePictureCache.downloadAndCacheImage(from: creatorPicture, for: activity.creatorUser.id)
+                }
+            }
+            
+            // Preload participant profile pictures
+            if let participants = activity.participantUsers {
+                for participant in participants {
+                    if let participantPicture = participant.profilePicture {
+                        if profilePictureCache.getCachedImage(for: participant.id) == nil {
+                            _ = await profilePictureCache.downloadAndCacheImage(from: participantPicture, for: participant.id)
+                        }
+                    }
+                }
+            }
+            
+            // Preload invited user profile pictures
+            if let invitedUsers = activity.invitedUsers {
+                for invitedUser in invitedUsers {
+                    if let invitedPicture = invitedUser.profilePicture {
+                        if profilePictureCache.getCachedImage(for: invitedUser.id) == nil {
+                            _ = await profilePictureCache.downloadAndCacheImage(from: invitedPicture, for: invitedUser.id)
+                        }
+                    }
+                }
+            }
+            
+            // Preload chat message senders' profile pictures
+            if let chatMessages = activity.chatMessages {
+                for chatMessage in chatMessages {
+                    if let senderPicture = chatMessage.senderUser.profilePicture {
+                        if profilePictureCache.getCachedImage(for: chatMessage.senderUser.id) == nil {
+                            _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: chatMessage.senderUser.id)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Preload profile pictures for friend request senders
+    private func preloadProfilePicturesForFriendRequests(_ friendRequests: [FetchFriendRequestDTO]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        for request in friendRequests {
+            if let senderPicture = request.senderUser.profilePicture {
+                if profilePictureCache.getCachedImage(for: request.senderUser.id) == nil {
+                    _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: request.senderUser.id)
+                }
+            }
+        }
     }
     
     func refreshProfileStats(_ userId: UUID) async {
@@ -436,6 +600,12 @@ class AppCache: ObservableObject {
             activities = loadedActivities
         }
         
+        // Load activity types
+        if let activityTypesData = UserDefaults.standard.data(forKey: CacheKeys.activityTypes),
+           let loadedActivityTypes = try? JSONDecoder().decode([ActivityTypeDTO].self, from: activityTypesData) {
+            activityTypes = loadedActivityTypes
+        }
+        
         // Load other profiles
         if let profilesData = UserDefaults.standard.data(forKey: CacheKeys.otherProfiles),
            let loadedProfiles = try? JSONDecoder().decode([UUID: BaseUserDTO].self, from: profilesData) {
@@ -497,6 +667,11 @@ class AppCache: ObservableObject {
         // Save activities
         if let activitiesData = try? JSONEncoder().encode(activities) {
             UserDefaults.standard.set(activitiesData, forKey: CacheKeys.activities)
+        }
+        
+        // Save activity types
+        if let activityTypesData = try? JSONEncoder().encode(activityTypes) {
+            UserDefaults.standard.set(activityTypesData, forKey: CacheKeys.activityTypes)
         }
         
         // Save other profiles
