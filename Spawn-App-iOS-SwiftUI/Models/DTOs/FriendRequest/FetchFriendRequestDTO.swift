@@ -34,4 +34,14 @@ extension FetchFriendRequestDTO {
             mutualFriendCount: 2
 		)
 	]
+    
+    static let mockSentFriendRequests: [FetchFriendRequestDTO] = [
+        FetchFriendRequestDTO(
+            id: UUID(), senderUser: BaseUserDTO.haley),
+        FetchFriendRequestDTO(
+            id: UUID(),
+            senderUser: BaseUserDTO.jennifer,
+            mutualFriendCount: 1
+        )
+    ]
 }
