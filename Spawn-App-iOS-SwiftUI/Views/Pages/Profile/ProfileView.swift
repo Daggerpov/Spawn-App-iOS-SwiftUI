@@ -69,12 +69,9 @@ struct ProfileView: View {
 	}
 
 	var body: some View {
-		NavigationView {
-			profileContent
-				.background(universalBackgroundColor.ignoresSafeArea())
+		profileContent
+			.background(universalBackgroundColor.ignoresSafeArea())
 			.background(universalBackgroundColor)
-		}
-		.navigationViewStyle(StackNavigationViewStyle())
 		.onChange(of: editingState) { newState in
 			switch newState {
 			case .save:
@@ -306,7 +303,7 @@ struct ProfileView: View {
 
 			// Friend Request Buttons (for incoming requests)
 			if !isCurrentUserProfile && profileViewModel.friendshipStatus == .requestReceived {
-				HStack(spacing: 12) {
+				HStack(spacing: 10) {
 					Button(action: {
 						if let requestId = profileViewModel.pendingFriendRequestId {
 							Task {
@@ -314,18 +311,18 @@ struct ProfileView: View {
 							}
 						}
 					}) {
-						HStack {
+						HStack(spacing: 6) {
 							Image(systemName: "checkmark")
-							Text("Accept Request")
-								.bold()
+								.font(.system(size: 14, weight: .semibold))
+							Text("Accept")
+								.font(.system(size: 14, weight: .semibold))
 						}
-						.font(.system(size: 16))
 						.foregroundColor(.white)
-						.padding(.vertical, 10)
-						.padding(.horizontal, 20)
+						.padding(.vertical, 12)
+						.padding(.horizontal, 16)
 						.frame(maxWidth: .infinity)
 						.background(universalAccentColor)
-						.cornerRadius(12)
+						.cornerRadius(10)
 					}
 
 					Button(action: {
@@ -335,20 +332,20 @@ struct ProfileView: View {
 							}
 						}
 					}) {
-						HStack {
+						HStack(spacing: 6) {
 							Image(systemName: "xmark")
+								.font(.system(size: 14, weight: .semibold))
 							Text("Deny")
-								.bold()
+								.font(.system(size: 14, weight: .semibold))
 						}
-						.font(.system(size: 16))
 						.foregroundColor(universalAccentColor)
-						.padding(.vertical, 10)
-						.padding(.horizontal, 20)
+						.padding(.vertical, 12)
+						.padding(.horizontal, 16)
 						.frame(maxWidth: .infinity)
 						.background(Color.clear)
 						.overlay(
-							RoundedRectangle(cornerRadius: 12)
-								.stroke(universalAccentColor, lineWidth: 2)
+							RoundedRectangle(cornerRadius: 10)
+								.stroke(universalAccentColor, lineWidth: 1.5)
 						)
 					}
 				}
@@ -804,7 +801,7 @@ struct ProfileView: View {
 
 			case .requestReceived:
 				// Accept/Deny buttons
-				HStack(spacing: 12) {
+				HStack(spacing: 10) {
 					Button(action: {
 						if let requestId = profileViewModel
 							.pendingFriendRequestId
@@ -816,19 +813,19 @@ struct ProfileView: View {
 							}
 						}
 					}) {
-						HStack {
+						HStack(spacing: 4) {
 							Image(systemName: "checkmark")
-							Text("Accept Request")
-								.bold()
+								.font(.system(size: 12, weight: .semibold))
+							Text("Accept")
+								.font(.system(size: 12, weight: .semibold))
 						}
-						.font(.caption)
 						.foregroundColor(.white)
-						.padding(.vertical, 24)
-						.padding(.horizontal, 8)
+						.padding(.vertical, 8)
+						.padding(.horizontal, 12)
 						.frame(height: 32)
 						.frame(maxWidth: .infinity)
 						.background(universalAccentColor)
-						.cornerRadius(12)
+						.cornerRadius(8)
 					}
 
 					Button(action: {
@@ -842,19 +839,19 @@ struct ProfileView: View {
 							}
 						}
 					}) {
-						HStack {
+						HStack(spacing: 4) {
 							Image(systemName: "xmark")
+								.font(.system(size: 12, weight: .semibold))
 							Text("Deny")
-								.bold()
+								.font(.system(size: 12, weight: .semibold))
 						}
-						.font(.caption)
 						.foregroundColor(universalAccentColor)
-						.padding(.vertical, 24)
-						.padding(.horizontal, 8)
+						.padding(.vertical, 8)
+						.padding(.horizontal, 12)
 						.frame(height: 32)
 						.frame(maxWidth: .infinity)
 						.overlay(
-							RoundedRectangle(cornerRadius: 12)
+							RoundedRectangle(cornerRadius: 8)
 								.stroke(universalAccentColor, lineWidth: 1)
 						)
 					}
