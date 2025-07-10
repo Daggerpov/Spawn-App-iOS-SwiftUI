@@ -37,11 +37,6 @@ class FormatterService {
 		dateFormatter.timeZone = .current
 
 		if let startTime = activity.startTime {
-			// Check if activity is indefinite
-			if activity.isIndefinite == true {
-				return "Starts at \(dateFormatter.string(from: startTime))"
-			}
-			
 			if let endTime = activity.endTime,
 				Calendar.current.isDate(startTime, inSameDayAs: endTime)
 			{
