@@ -43,6 +43,11 @@ struct ActivityCreationLocationView: View {
                         )
                     }
                 }
+                .onReceive(locationManager.$locationError) { error in
+                    if let error = error {
+                        print("Location error in ActivityCreationLocationView: \(error)")
+                    }
+                }
             
             // Pin in center of map
             VStack {
