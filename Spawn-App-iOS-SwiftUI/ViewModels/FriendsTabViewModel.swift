@@ -73,10 +73,13 @@ class FriendsTabViewModel: ObservableObject {
                     self?.filteredFriends = self?.friends ?? []
                     self?.filteredRecommendedFriends = self?.recommendedFriends ?? []
                     self?.filteredIncomingFriendRequests = self?.incomingFriendRequests ?? []
+                    self?.searchResults = []
                 } else {
                     self?.isSearching = true
                     Task {
+                        // For friend search, we want to filter existing friends/recommended friends
                         await self?.fetchFilteredResults(query: query)
+                        // For general user search, we want to search all users
                         await self?.performSearch(searchText: query)
                     }
                 }
@@ -86,7 +89,11 @@ class FriendsTabViewModel: ObservableObject {
     
     func fetchFilteredResults(query: String) async {
         if query.isEmpty {
-            await fetchAllData()
+            await MainActor.run {
+                self.filteredFriends = self.friends
+                self.filteredRecommendedFriends = self.recommendedFriends
+                self.filteredIncomingFriendRequests = self.incomingFriendRequests
+            }
             return
         }
         
@@ -114,6 +121,8 @@ class FriendsTabViewModel: ObservableObject {
                 }
             }
         } else {
+            print("Invalid URL for filtered search")
+            await localFilterResults(query: query)
             await MainActor.run {
                 self.isLoading = false
             }
@@ -389,8 +398,7 @@ class FriendsTabViewModel: ObservableObject {
             return
         }
         
-        isLoading = true
-        defer { isLoading = false }
+        // Don't set isLoading here as it's already set in the search flow
         
         if MockAPIService.isMocking {
             // Filter mock data for testing
@@ -405,18 +413,21 @@ class FriendsTabViewModel: ObservableObject {
         }
         
         do {
-            // API endpoint for searching users: /api/v1/users/search?query={searchText}
+            // API endpoint for searching users: /api/v1/users/search?searchQuery={searchText}
             guard let url = URL(string: APIService.baseURL + "users/search") else {
+                print("Invalid URL for user search")
+                searchResults = []
                 return
             }
             
             let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(
                 from: url, 
-                parameters: ["query": searchText]
+                parameters: ["searchQuery": searchText]
             )
             self.searchResults = fetchedUsers
         } catch {
-            // Handle error
+            print("Error performing user search: \(error.localizedDescription)")
+            searchResults = []
         }
     }
 }

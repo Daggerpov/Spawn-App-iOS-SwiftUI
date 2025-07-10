@@ -118,7 +118,7 @@ class MockAPIService: IAPIService {
 		}
 
 		// fetchRecommendedFriends():
-		if url.absoluteString == APIService.baseURL + "users/recommended/\(userId ?? UUID())" {
+		if url.absoluteString == APIService.baseURL + "users/recommended-friends/\(userId ?? UUID())" {
 			return RecommendedFriendUserDTO.mockUsers as! T
 		}
 
@@ -128,16 +128,66 @@ class MockAPIService: IAPIService {
 		}
 
 		// fetchRecentlySpawnedWith():
-		if url.absoluteString == APIService.baseURL + "users/recentlySpawnedWith/\(userId ?? UUID())" {
-			return [BaseUserDTO.danielAgapov, Date.now] as! T
+		if url.absoluteString == APIService.baseURL + "users/\(userId ?? UUID())/recent-users" {
+			return BaseUserDTO.mockUsers.map { user in
+				RecentlySpawnedUserDTO(user: user, dateTime: Date())
+			} as! T
 		}
 
-		// fetchSearchResults():
-		if url.absoluteString == APIService.baseURL + "users/search/\(userId ?? UUID())" {
+		// fetchSearchResults() - for users/search endpoint
+		if url.absoluteString.contains("users/search") {
+			// Extract query parameter
+			let urlComponents = URLComponents(string: url.absoluteString)
+			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
+			
+			// If no search query, return all users
+			if searchQuery.isEmpty {
+				return BaseUserDTO.mockUsers as! T
+			}
+			
+			// Filter mock users by search query
+			let filteredUsers = BaseUserDTO.mockUsers.filter { user in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: user).lowercased()
+				let username = user.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
+			return filteredUsers as! T
+		}
+
+		// fetchFilteredResults() - for users/filtered/{userId} endpoint
+		if url.absoluteString.contains("users/filtered/") {
+			// Extract search query from URL
+			let urlComponents = URLComponents(string: url.absoluteString)
+			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
+			
+			// Filter mock data by search query
+			let filteredFriends = FullFriendUserDTO.mockUsers.filter { user in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: user).lowercased()
+				let username = user.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
+			let filteredRecommended = RecommendedFriendUserDTO.mockUsers.filter { user in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: user).lowercased()
+				let username = user.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
+			let filteredRequests = FetchFriendRequestDTO.mockFriendRequests.filter { request in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
+				let username = request.senderUser.username.lowercased()
+				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
 			return SearchedUserResult(
-				incomingFriendRequests: FetchFriendRequestDTO.mockFriendRequests,
-				recommendedFriends: RecommendedFriendUserDTO.mockUsers,
-				friends: FullFriendUserDTO.mockUsers
+				incomingFriendRequests: filteredRequests,
+				recommendedFriends: filteredRecommended,
+				friends: filteredFriends
 			) as! T
 		}
 
