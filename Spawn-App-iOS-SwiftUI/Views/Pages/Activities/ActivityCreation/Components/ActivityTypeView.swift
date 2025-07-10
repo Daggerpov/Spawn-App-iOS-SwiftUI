@@ -261,7 +261,7 @@ struct ActivityTypeCard: View {
             }
             
             Button(action: {
-                showingManageType = true
+                navigateToManageType = true
             }) {
                 Label("Manage Type", systemImage: "slider.horizontal.3")
             }
@@ -271,9 +271,14 @@ struct ActivityTypeCard: View {
             }
             .foregroundColor(.red)
         }
-        .sheet(isPresented: $showingManageType) {
-            ActivityTypeManagementView(activityTypeDTO: activityTypeDTO)
-        }
+        .background(
+            NavigationLink(
+                destination: ActivityTypeManagementView(activityTypeDTO: activityTypeDTO),
+                isActive: $navigateToManageType
+            ) {
+                EmptyView()
+            }
+        )
     }
 }
 
