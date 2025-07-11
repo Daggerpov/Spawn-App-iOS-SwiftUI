@@ -28,6 +28,56 @@
 - `NotificationService.shared`
 - `KeychainService.shared`
 
+## Figma-to-Code Plugin Output Rules
+
+### Understanding Design Intent, Not Implementation
+- **Rule**: Use Figma-to-code output ONLY to understand the visual design and layout intent
+- **Never**: Copy the generated code directly into the project
+- **Always**: Translate the design using the project's existing styling system
+
+#### Examples:
+```swift
+// ❌ WRONG - Direct copy from Figma plugin
+Text("Save")
+  .font(Font.custom("Onest", size: 20).weight(.semibold))
+  .foregroundColor(.white)
+  .padding(16)
+  .frame(width: 290, height: 56)
+  .background(Color(red: 0.42, green: 0.51, blue: 0.98))
+  .cornerRadius(16)
+
+// ✅ CORRECT - Use project's styling system
+Text("Save")
+  .font(.onestSemiBold(size: 20))
+  .foregroundColor(.white)
+  .padding(.horizontal, 16)
+  .padding(.vertical, 12)
+  .frame(maxWidth: .infinity)
+  .background(figmaBlue)
+  .cornerRadius(universalRectangleCornerRadius)
+```
+
+#### What to Extract from Figma Output:
+1. **Layout Structure**: Understand the hierarchy of VStacks, HStacks, and ZStacks
+2. **Component Relationships**: See how elements are positioned relative to each other
+3. **Visual Hierarchy**: Identify primary, secondary, and accent elements
+4. **Spacing Patterns**: Observe the general spacing between elements
+5. **Color Roles**: Understand which colors are used for what purposes
+
+#### What NOT to Copy:
+1. **Hardcoded Colors**: Use predefined colors from `Constants.swift`
+2. **Hardcoded Fonts**: Use the Onest font extensions (`.onestSemiBold()`, etc.)
+3. **Exact Pixel Values**: Use consistent spacing and sizing patterns
+4. **Complex Offset/Frame Calculations**: Simplify using standard layout patterns
+5. **Excessive Nesting**: Optimize the view hierarchy for maintainability
+
+#### Translation Guidelines:
+- Replace `Color(red: X, green: Y, blue: Z)` with appropriate constant colors
+- Replace `Font.custom("Onest", size: X)` with `.onestSemiBold(size: X)`
+- Replace exact `.frame(width: X, height: Y)` with responsive sizing
+- Replace complex `.offset()` chains with proper layout containers
+- Replace hardcoded spacing with consistent padding patterns
+
 ### Additional SwiftUI Best Practices
 
 #### Environment Objects
