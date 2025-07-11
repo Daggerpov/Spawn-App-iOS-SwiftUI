@@ -155,6 +155,11 @@
       "name": "Debug Statements",
       "pattern": "\\.(swift)$",
       "rule": "NEVER add debug statements (print, NSLog, debugPrint, etc.) unless explicitly instructed by the user. Debug statements clutter the console, impact performance, and should only be added when actively debugging a specific issue. Remove debug statements after debugging is complete. Focus on clean, readable code without debug output."
+    },
+    {
+      "name": "popup_overlay_colors",
+      "description": "Guidelines for popup and overlay color consistency",
+      "rule": "For popups and overlays, ALWAYS use adaptive colors that work in both light and dark modes. For semi-transparent overlays, use Color.black.opacity(0.6) for dark backgrounds and Color.white.opacity(0.6) for light backgrounds. For popup backgrounds, use universalBackgroundColor with appropriate opacity. For text, use universalAccentColor. For destructive actions, use universalTertiaryColor (red). Never hardcode colors like Color(red: 0.13, green: 0.13, blue: 0.13) - these break in light mode. Use environment-aware colors or the Color(UIColor { traitCollection in ... }) pattern for complex adaptive colors."
     }
   ],
   "terminal_safety": {
