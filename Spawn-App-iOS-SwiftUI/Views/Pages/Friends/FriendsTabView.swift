@@ -131,15 +131,11 @@ struct FriendsTabView: View {
 			} message: {
 				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
 			}
-			.background(
-				NavigationLink(
-					destination: selectedFriend != nil ? AddToActivityTypeView(user: selectedFriend!) : nil,
-					isActive: $showAddToActivityType
-				) {
-					EmptyView()
+			.navigationDestination(isPresented: $showAddToActivityType) {
+				if let friend = selectedFriend {
+					AddToActivityTypeView(user: friend)
 				}
-				.hidden()
-			)
+			}
 		}
 	}
     

@@ -14,19 +14,13 @@ struct UserActivitiesSection: View {
             }
             
             addToSeeActivitiesSection
-            
-            // Hidden NavigationLink for friend activities
-            NavigationLink(
-                destination: FriendActivitiesShowAllView(
-                    user: user,
-                    profileViewModel: profileViewModel,
-                    showActivityDetails: $showActivityDetails
-                ),
-                isActive: $showFriendActivities
-            ) {
-                EmptyView()
-            }
-            .hidden()
+        }
+        .navigationDestination(isPresented: $showFriendActivities) {
+            FriendActivitiesShowAllView(
+                user: user,
+                profileViewModel: profileViewModel,
+                showActivityDetails: $showActivityDetails
+            )
         }
     }
     

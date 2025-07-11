@@ -230,7 +230,7 @@ struct ProfileCalendarView: View {
 
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
-		let calendar = Calendar.current
+		_ = Calendar.current
 		
 		// Create a UTC calendar for consistent date comparison
 		var utcCalendar = Calendar.current

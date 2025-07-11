@@ -35,7 +35,7 @@ class AppCache: ObservableObject {
     private enum CacheKeys {
         static let lastChecked = "lastChecked"
         static let friends = "friends"
-        static let activities = "activities"
+        static let events = "events"  // Changed from "activities" to match backend
         static let activityTypes = "activityTypes"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
@@ -43,7 +43,7 @@ class AppCache: ObservableObject {
         static let profileStats = "profileStats"
         static let profileInterests = "profileInterests"
         static let profileSocialMedia = "profileSocialMedia"
-        static let profileActivities = "profileActivities"
+        static let profileEvents = "profileEvents"  // Changed from "profileActivities" to match backend
     }
     
     private init() {
@@ -99,7 +99,7 @@ class AppCache: ObservableObject {
                 
 
                 
-                if let activitiesResponse = result[CacheKeys.activities], activitiesResponse.invalidate {
+                if let activitiesResponse = result[CacheKeys.events], activitiesResponse.invalidate {
                     if let updatedItems = activitiesResponse.updatedItems,
                        let updatedActivities = try? JSONDecoder().decode([FullFeedActivityDTO].self, from: updatedItems) {
                         // Backend provided the updated data
@@ -200,7 +200,7 @@ class AppCache: ObservableObject {
     
     func updateActivities(_ newActivities: [FullFeedActivityDTO]) {
         activities = newActivities
-        lastChecked[CacheKeys.activities] = Date()
+        lastChecked[CacheKeys.events] = Date()
         
         // Pre-assign colors for even distribution
         let activityIds = newActivities.map { $0.id }
@@ -247,7 +247,7 @@ class AppCache: ObservableObject {
         // Ensure color is assigned for the activity
         ActivityColorService.shared.assignColorsForActivities([activity.id])
         
-        lastChecked[CacheKeys.activities] = Date()
+        lastChecked[CacheKeys.events] = Date()
         saveToDisk()
     }
     
@@ -454,7 +454,7 @@ class AppCache: ObservableObject {
         let activityIds = activities.map { $0.id }
         ActivityColorService.shared.assignColorsForActivities(activityIds)
         
-        lastChecked[CacheKeys.profileActivities] = Date()
+        lastChecked[CacheKeys.profileEvents] = Date()
         saveToDisk()
     }
     
@@ -623,7 +623,7 @@ class AppCache: ObservableObject {
 
         
         // Load activities
-        if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.activities),
+        if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.events),
            let loadedActivities = try? JSONDecoder().decode([FullFeedActivityDTO].self, from: activitiesData) {
             activities = loadedActivities
         }
@@ -673,7 +673,7 @@ class AppCache: ObservableObject {
 
         
         // Load profile activities
-        if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.profileActivities),
+        if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.profileEvents),
            let loadedActivities = try? JSONDecoder().decode([UUID: [ProfileActivityDTO]].self, from: activitiesData) {
             profileActivities = loadedActivities
         }
@@ -694,7 +694,7 @@ class AppCache: ObservableObject {
         
         // Save activities
         if let activitiesData = try? JSONEncoder().encode(activities) {
-            UserDefaults.standard.set(activitiesData, forKey: CacheKeys.activities)
+            UserDefaults.standard.set(activitiesData, forKey: CacheKeys.events)
         }
         
         // Save activity types
@@ -736,7 +736,7 @@ class AppCache: ObservableObject {
         
         // Save profile activities
         if let activitiesData = try? JSONEncoder().encode(profileActivities) {
-            UserDefaults.standard.set(activitiesData, forKey: CacheKeys.profileActivities)
+            UserDefaults.standard.set(activitiesData, forKey: CacheKeys.profileEvents)
         }
     }
 } 

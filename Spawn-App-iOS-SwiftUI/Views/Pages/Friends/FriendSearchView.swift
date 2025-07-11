@@ -452,15 +452,9 @@ struct FriendRowView: View {
         } message: {
             Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
         }
-        .background(
-            NavigationLink(
-                destination: AddToActivityTypeView(user: userForProfile),
-                isActive: $showAddToActivityType
-            ) {
-                EmptyView()
-            }
-            .hidden()
-        )
+        .navigationDestination(isPresented: $showAddToActivityType) {
+            AddToActivityTypeView(user: userForProfile)
+        }
     }
     
     // Helper methods for profile actions

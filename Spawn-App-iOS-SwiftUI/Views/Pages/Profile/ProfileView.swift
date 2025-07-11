@@ -292,24 +292,18 @@ struct ProfileView: View {
 					}
 				}
 			}
-			.background(
-				NavigationLink(
-					destination: AddToActivityTypeView(user: user),
-					isActive: $showAddToActivityType
-				) {
-					EmptyView()
-				}
-				.hidden()
-			)
-			.background(
-				NavigationLink(
-					destination: AddToActivityTypeView(user: user),
-					isActive: $navigateToAddToActivityType
-				) {
-					EmptyView()
-				}
-				.hidden()
-			)
+			.navigationDestination(isPresented: $showAddToActivityType) {
+				AddToActivityTypeView(user: user)
+			}
+			.navigationDestination(isPresented: $navigateToAddToActivityType) {
+				AddToActivityTypeView(user: user)
+			}
+			.navigationDestination(isPresented: $navigateToCalendar) {
+				calendarFullScreenView
+			}
+			.navigationDestination(isPresented: $navigateToDayActivities) {
+				dayActivitiesPageView
+			}
 
 			// Overlay for profile menu
 			profileMenuOverlay
@@ -483,22 +477,7 @@ struct ProfileView: View {
 					.padding(.horizontal, 16)
 					.padding(.bottom, 15)
 					
-					NavigationLink(
-						destination: calendarFullScreenView,
-						isActive: $navigateToCalendar
-					) {
-						EmptyView()
-					}
-					.hidden()
-					
-					// Hidden NavigationLink for day activities
-					NavigationLink(
-						destination: dayActivitiesPageView,
-						isActive: $navigateToDayActivities
-					) {
-						EmptyView()
-					}
-					.hidden()
+					EmptyView()
 				}
 			} else {
 				// User Activities Section for other users (based on friendship status)

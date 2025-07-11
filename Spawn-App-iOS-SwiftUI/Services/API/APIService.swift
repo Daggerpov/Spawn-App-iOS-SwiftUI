@@ -949,10 +949,18 @@ class APIService: IAPIService {
 			throw APIError.URLError
 		}
 		
-		// Convert the dictionary of cache items and their timestamps to JSON
+		// Create a wrapper structure that matches the backend DTO
+		struct CacheValidationRequest: Codable {
+			let timestamps: [String: Date]
+		}
+		
+		// Wrap the cache items in the expected structure
+		let requestBody = CacheValidationRequest(timestamps: cachedItems)
+		
+		// Convert to JSON
 		let encoder = JSONEncoder()
 		encoder.dateEncodingStrategy = .iso8601
-		let jsonData = try encoder.encode(cachedItems)
+		let jsonData = try encoder.encode(requestBody)
 		
 		// Create and configure the request
 		var urlRequest = URLRequest(url: url)

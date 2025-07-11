@@ -77,9 +77,6 @@ struct ActivityCreationView: View {
                 .animation(.easeInOut, value: currentStep)
         }
         .background(universalBackgroundColor)
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet()
-        }
         .onAppear {
             // Initialize activityTitle from view model if it exists
             if let title = viewModel.activity.title, !title.isEmpty {

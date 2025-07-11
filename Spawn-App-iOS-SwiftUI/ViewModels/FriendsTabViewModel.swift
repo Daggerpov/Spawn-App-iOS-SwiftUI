@@ -504,10 +504,16 @@ class FriendsTabViewModel: ObservableObject {
                     "requestingUserId": userId.uuidString
                 ]
             )
-            self.searchResults = fetchedUsers
+            
+            // Ensure updating on the main thread
+            await MainActor.run {
+                self.searchResults = fetchedUsers
+            }
         } catch {
             print("Error performing user search: \(error.localizedDescription)")
-            searchResults = []
+            await MainActor.run {
+                self.searchResults = []
+            }
         }
     }
     

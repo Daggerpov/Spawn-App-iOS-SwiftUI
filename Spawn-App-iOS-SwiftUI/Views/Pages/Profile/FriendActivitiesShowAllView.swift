@@ -38,18 +38,15 @@ struct FriendActivitiesShowAllView: View {
                 }
                 
                 // Hidden NavigationLink for calendar
-                NavigationLink(
-                    destination: friendCalendarFullScreenView,
-                    isActive: $navigateToCalendar
-                ) {
-                    EmptyView()
-                }
-                .hidden()
+                EmptyView()
             }
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showActivityDetails) {
             activityDetailsView
+        }
+        .navigationDestination(isPresented: $navigateToCalendar) {
+            friendCalendarFullScreenView
         }
         .onAppear {
             fetchFriendData()

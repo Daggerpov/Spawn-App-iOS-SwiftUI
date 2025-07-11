@@ -158,15 +158,11 @@ struct FriendRequestsView: View {
                 }
             }
         )
-        .background(
-            NavigationLink(
-                destination: acceptedFriend != nil ? AddToActivityTypeView(user: acceptedFriend!) : nil,
-                isActive: $navigateToAddToActivityType
-            ) {
-                EmptyView()
+        .navigationDestination(isPresented: $navigateToAddToActivityType) {
+            if let friend = acceptedFriend {
+                AddToActivityTypeView(user: friend)
             }
-            .hidden()
-        )
+        }
     }
 }
 

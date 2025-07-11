@@ -810,8 +810,7 @@ class MockAPIService: IAPIService {
 		}
 	}
 
-	func validateCache(_ cachedItems: [String: Date]) async throws -> [String:
-		CacheValidationResponse]
+	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] 
 	{
 		// Don't send validation request if there are no cached items to validate
 		if cachedItems.isEmpty {
