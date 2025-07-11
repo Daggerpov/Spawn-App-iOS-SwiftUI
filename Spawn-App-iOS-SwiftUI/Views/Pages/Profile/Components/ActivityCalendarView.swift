@@ -17,6 +17,7 @@ struct ActivityCalendarView: View {
     
     @State private var currentMonth = Date()
     @State private var scrollOffset: CGFloat = 0
+    @State private var hasInitiallyScrolled = false
     
     var onDismiss: (() -> Void)?
     
@@ -42,16 +43,21 @@ struct ActivityCalendarView: View {
                         .padding(.horizontal, 16)
                         .padding(.bottom, 100) // Safe area padding
                         .onAppear {
+                            // Only scroll to current month on first appearance
+                            guard !hasInitiallyScrolled else { return }
+                            
                             // Find the current month and scroll to it
                             let today = Date()
                             if let currentMonth = monthsArray.first(where: { month in
                                 Calendar.current.isDate(month, equalTo: today, toGranularity: .month)
                             }) {
-                                // Scroll to current month with animation after a short delay
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                // Scroll to current month immediately on first appearance
+                                // Use a small delay to ensure the scroll view has loaded
+                                DispatchQueue.main.async {
+                                    withAnimation(.easeInOut(duration: 0.8)) {
                                         proxy.scrollTo(currentMonth, anchor: .center)
                                     }
+                                    hasInitiallyScrolled = true
                                 }
                             }
                         }
