@@ -42,7 +42,7 @@ class FeedViewModel: ObservableObject {
             appCache.$activities
                 .sink { [weak self] cachedActivities in
                     if !cachedActivities.isEmpty {
-                        self?.activities = cachedActivities
+                        self?.activities = self?.filterExpiredIndefiniteActivities(cachedActivities) ?? []
                     }
                 }
                 .store(in: &cancellables)
@@ -67,7 +67,7 @@ class FeedViewModel: ObservableObject {
         // Check the cache first for unfiltered activities
         if !appCache.activities.isEmpty {
             await MainActor.run {
-                self.activities = appCache.activities
+                self.activities = self.filterExpiredIndefiniteActivities(appCache.activities)
             }
             return
         }
@@ -90,16 +90,40 @@ class FeedViewModel: ObservableObject {
                 from: url, parameters: nil
             )
             
-            // Update the cache and view model
+            // Filter expired indefinite activities and update the cache and view model
+            let filteredActivities = self.filterExpiredIndefiniteActivities(fetchedActivities)
             await MainActor.run {
-                self.activities = fetchedActivities
-                self.appCache.updateActivities(fetchedActivities)
+                self.activities = filteredActivities
+                self.appCache.updateActivities(fetchedActivities) // Keep original activities in cache
             }
         } catch {
             print("❌ DEBUG: Error fetching activities: \(error)")
             await MainActor.run {
                 self.activities = []
             }
+        }
+    }
+    
+    /// Filters out indefinite activities (null end time) that have a start time before the current client-side day
+    /// Indefinite activities 'expire' by midnight of the local time
+    private func filterExpiredIndefiniteActivities(_ activities: [FullFeedActivityDTO]) -> [FullFeedActivityDTO] {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
+        
+        return activities.filter { activity in
+            // If the activity has an end time, keep it (let backend handle expiration)
+            if activity.endTime != nil {
+                return true
+            }
+            
+            // If the activity has no end time (indefinite), check if it started before today
+            guard let startTime = activity.startTime else {
+                return false // Remove activities with no start time
+            }
+            
+            // Keep indefinite activities that start today or in the future
+            return startTime >= startOfToday
         }
     }
 }

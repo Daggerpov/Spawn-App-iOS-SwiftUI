@@ -190,11 +190,11 @@ class ActivityCreationViewModel: ObservableObject {
 
 	func updateActivityDuration() {
 		let startTime = selectedDate
-		let endTime: Date
+		let endTime: Date?
 		
 		switch selectedDuration {
 		case .indefinite:
-			endTime = Calendar.current.date(byAdding: .hour, value: 24, to: startTime) ?? startTime
+			endTime = nil // Set to nil for indefinite duration
 		case .twoHours:
 			endTime = Calendar.current.date(byAdding: .hour, value: 2, to: startTime) ?? startTime
 		case .oneHour:

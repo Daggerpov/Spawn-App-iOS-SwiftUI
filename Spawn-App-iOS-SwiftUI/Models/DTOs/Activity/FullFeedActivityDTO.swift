@@ -182,17 +182,38 @@ extension FullFeedActivityDTO {
         chatMessages: [.mockChat4, .mockChat1, .mockChat2, .mockChat3],
         isSelfOwned: true
     )
+    
     static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
         id: UUID(),
-        title: "Dinner time!!!!!!",
-        startTime: dateFromTimeString("10:00 PM"),
-        endTime: dateFromTimeString("11:30 PM"),
+        title: "Indefinite Hangout",
+        startTime: dateFromTimeString("2:00 PM"),
+        endTime: nil, // Indefinite activity - no end time
         location: Location(
-            id: UUID(), name: "Gather - Place Vanier",
+            id: UUID(), name: "Central Library",
             latitude: 49.26468617023799, longitude: -123.25859833051356),
-        note: "let's eat!",
-        creatorUser: BaseUserDTO.jennifer,
-        participantUsers: [],
+        note: "Come hang out whenever you can!",
+        creatorUser: BaseUserDTO.danielAgapov,
+        participantUsers: [
+            BaseUserDTO.danielAgapov,
+            BaseUserDTO.shannon,
+        ],
+        isSelfOwned: true
+    )
+    
+    // Mock indefinite activity from yesterday - should be filtered out
+    static let mockExpiredIndefiniteActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+        id: UUID(),
+        title: "Yesterday's Indefinite Study Session",
+        startTime: Calendar.current.date(byAdding: .day, value: -1, to: Date()),
+        endTime: nil, // Indefinite activity - no end time
+        location: Location(
+            id: UUID(), name: "Library",
+            latitude: 49.26468617023799, longitude: -123.25859833051356),
+        note: "This should be filtered out!",
+        creatorUser: BaseUserDTO.danielAgapov,
+        participantUsers: [
+            BaseUserDTO.danielAgapov,
+        ],
         isSelfOwned: true
     )
 } 
