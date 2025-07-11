@@ -10,6 +10,9 @@ struct ManagePeopleView: View {
     @State private var selectedFriends: Set<UUID> = []
     @State private var isSuggestedCollapsed = false
     
+    // Debounced save timer
+    @State private var saveTimer: Timer?
+    
     let user: BaseUserDTO
     let activityTitle: String
     let activityTypeDTO: ActivityTypeDTO? // Add optional activity type for managing existing activity types
@@ -83,6 +86,9 @@ struct ManagePeopleView: View {
             }
         }
         .onDisappear {
+            // Cancel any pending save timer
+            saveTimer?.invalidate()
+            
             // Only update the activity creation view model if we're in activity creation mode
             if activityTypeDTO == nil {
                 let selectedFriendObjects = friendsViewModel.friends.filter { selectedFriends.contains($0.id) }
@@ -180,6 +186,11 @@ struct ManagePeopleView: View {
                 
                 Button(action: {
                     selectedFriends.removeAll()
+                    
+                    // If we're managing an activity type, trigger debounced save
+                    if activityTypeDTO != nil {
+                        debouncedSave()
+                    }
                 }) {
                     Text("Clear Selection")
                         .font(.onestMedium(size: 16))
@@ -295,6 +306,18 @@ struct ManagePeopleView: View {
         } else {
             selectedFriends.insert(friend.id)
         }
+        
+        // If we're managing an activity type, trigger debounced save
+        if activityTypeDTO != nil {
+            debouncedSave()
+        }
+    }
+    
+    private func debouncedSave() {
+        saveTimer?.invalidate()
+        saveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+            saveActivityTypeChanges()
+        }
     }
     
     private func saveActivityTypeChanges() {
@@ -326,6 +349,11 @@ struct ManagePeopleView: View {
         
         // Update the activity type using the view model
         activityTypeViewModel.optimisticallyUpdateActivityType(updatedActivityTypeDTO)
+        
+        // Save the changes to the backend
+        Task {
+            await activityTypeViewModel.saveBatchChanges()
+        }
         
         print("✅ Saved changes to activity type: \(activityTypeDTO.title)")
         print("   Updated associated friends count: \(updatedAssociatedFriends.count)")

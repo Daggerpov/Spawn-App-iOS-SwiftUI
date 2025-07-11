@@ -94,14 +94,9 @@ struct ProfileCalendarView: View {
 									if dayActivities.isEmpty {
 										// Empty day cell
 										RoundedRectangle(cornerRadius: 4.5)
-											.fill(Color(hex: "#DBDBDB"))
+											.fill(figmaCalendarDayIcon)
 											.frame(width: 32, height: 32)
 											.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
-											.overlay(
-												Text("\(Calendar.current.component(.day, from: date))")
-													.font(.onestMedium(size: 10))
-													.foregroundColor(.black)
-											)
 											.onTapGesture {
 												// Navigate to full calendar view on empty day tap
 												Task {
@@ -127,6 +122,7 @@ struct ProfileCalendarView: View {
 										// Day cell with activities
 										CalendarDayCell(activities: dayActivities, dayNumber: Calendar.current.component(.day, from: date))
 											.onTapGesture {
+												print("🔥 ProfileCalendarView: Day cell tapped with \(dayActivities.count) activities")
 												handleDaySelection(activities: dayActivities)
 											}
 									}
@@ -164,13 +160,17 @@ struct ProfileCalendarView: View {
 	}
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
+		print("🔥 ProfileCalendarView: handleDaySelection called with \(activities.count) activities")
 		if activities.count == 1 {
 			// If only one activity, directly open it
+			print("🔥 ProfileCalendarView: Opening single activity")
 			handleActivitySelection(activities[0])
 		} else if activities.count > 1 {
 			// If multiple activities, navigate to day activities page
+			print("🔥 ProfileCalendarView: Navigating to day activities page")
 			selectedDayActivities = activities
 			navigateToDayActivities = true
+			print("🔥 ProfileCalendarView: navigateToDayActivities set to true")
 		}
 	}
 
@@ -300,7 +300,7 @@ struct CalendarDayCell: View {
 
 		// Fallback to activity color based on ID
 		guard let activityId = activity.activityId else {
-			return Color(hex: "#DBDBDB")  // Default gray color
+			return figmaCalendarDayIcon  // Default gray color
 		}
 		return getActivityColor(for: activityId)
 	}

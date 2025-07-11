@@ -149,6 +149,7 @@ struct ActivityTypeCard: View {
     let onDelete: () -> Void
     let onManage: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    @State private var showDeleteConfirmation = false
     
     private var isSelected: Bool {
         return selectedActivityType?.id == activityTypeDTO.id
@@ -249,10 +250,18 @@ struct ActivityTypeCard: View {
                 Label("Manage Type", systemImage: "slider.horizontal.3")
             }
             
-            Button(action: onDelete) {
+            Button(action: { showDeleteConfirmation = true }) {
                 Label("Delete Type", systemImage: "trash")
             }
             .foregroundColor(.red)
+        }
+        .alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                onDelete()
+            }
+        } message: {
+            Text("Are you sure you want to delete '\(activityTypeDTO.title)'? This action cannot be undone.")
         }
     }
 }

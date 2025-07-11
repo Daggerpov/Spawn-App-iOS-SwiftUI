@@ -167,15 +167,15 @@ struct FriendActivitiesShowAllView: View {
                                             navigateToFullCalendar()
                                         }
                                 } else {
-                                    // Empty day cell
-                                    RoundedRectangle(cornerRadius: 6.6)
-                                        .fill(Color(hex: "#DBDBDB"))
-                                        .frame(width: 46, height: 46)
-                                        .shadow(color: Color.black.opacity(0.1), radius: 6.6, x: 0, y: 1.6)
-                                        .onTapGesture {
-                                            // Navigate to full calendar view on empty day tap
-                                            navigateToFullCalendar()
-                                        }
+                                    									// Empty day cell
+									RoundedRectangle(cornerRadius: 6.6)
+										.fill(figmaCalendarDayIcon)
+										.frame(width: 46, height: 46)
+										.shadow(color: Color.black.opacity(0.1), radius: 6.6, x: 0, y: 1.6)
+										.onTapGesture {
+											// Navigate to full calendar view on empty day tap
+											navigateToFullCalendar()
+										}
                                 }
                             }
                         }
@@ -288,7 +288,7 @@ struct FriendActivitiesShowAllView: View {
         
         Task {
             if let fullActivity = await profileViewModel.fetchActivityDetails(activityId: activityId) {
-                print("✅ Fetched activity details: \(fullActivity.title)")
+                print("✅ Fetched activity details: \(fullActivity.title ?? "No title")")
                 await MainActor.run {
                     showActivityDetails = true
                 }
@@ -336,11 +336,11 @@ struct FriendCalendarDaySquare: View {
             return Color(hex: colorHexCode)
         }
         
-        // Fallback to activity color based on ID
-        guard let activityId = activity.activityId else {
-            return Color(red: 0.88, green: 0.85, blue: 0.85)  // Default gray color matching Figma
-        }
-        return getActivityColor(for: activityId)
+        		// Fallback to activity color based on ID
+		guard let activityId = activity.activityId else {
+			return figmaCalendarDayIcon  // Default gray color matching Figma
+		}
+		return getActivityColor(for: activityId)
     }
 }
 

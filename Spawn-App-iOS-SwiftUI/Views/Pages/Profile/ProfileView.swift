@@ -182,6 +182,13 @@ struct ProfileView: View {
 				}
 			}
 		}
+		.onChange(of: navigateToDayActivities) { newValue in
+			print("🔥 ProfileView: navigateToDayActivities changed to \(newValue)")
+			if newValue {
+				print("🔥 ProfileView: Navigation should be triggered to day activities")
+				print("🔥 ProfileView: Selected activities count: \(selectedDayActivities.count)")
+			}
+		}
 		// Add a timer to periodically refresh data
 		.onReceive(
 			Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
@@ -466,7 +473,6 @@ struct ProfileView: View {
 					.padding(.horizontal, 16)
 					.padding(.bottom, 15)
 					
-					// Hidden NavigationLink for calendar
 					NavigationLink(
 						destination: calendarFullScreenView,
 						isActive: $navigateToCalendar
@@ -585,10 +591,12 @@ struct ProfileView: View {
 			activities: selectedDayActivities,
 			onDismiss: {
 				// Reset navigation state when day activities view is dismissed
+				print("🔥 ProfileView: DayActivitiesPageView dismissed")
 				navigateToDayActivities = false
 			},
 			onActivitySelected: { activity in
 				// Reset navigation state and handle activity selection
+				print("🔥 ProfileView: Activity selected from DayActivitiesPageView")
 				navigateToDayActivities = false
 				handleActivitySelection(activity)
 			}

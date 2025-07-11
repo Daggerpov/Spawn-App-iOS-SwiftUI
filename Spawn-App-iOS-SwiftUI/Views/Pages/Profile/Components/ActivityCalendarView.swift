@@ -252,23 +252,7 @@ struct CalendarDayTile: View {
                         }
                     }
                 
-                // Day number overlay
-                VStack {
-                    Spacer()
-                    HStack {
-                        Text("\(dayNumber)")
-                            .font(.onestSemiBold(size: 12))
-                            .foregroundColor(dayNumberColor)
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 7)
-                            .background(dayNumberBackgroundColor)
-                            .clipShape(RoundedRectangle(cornerRadius: 16))
-                        
-                        Spacer()
-                    }
-                    .padding(.bottom, 6)
-                    .padding(.leading, 6)
-                }
+
             } else {
                 // Days outside current month - invisible
                 Color.clear
@@ -278,39 +262,15 @@ struct CalendarDayTile: View {
         .frame(width: tileSize, height: tileSize)
     }
     
-    private var dayNumber: Int {
-        Calendar.current.component(.day, from: day)
-    }
-    
     private var isToday: Bool {
         Calendar.current.isDate(day, inSameDayAs: Date())
-    }
-    
-    private var dayNumberColor: Color {
-        if isToday {
-            return Color.white
-        } else if activities.isEmpty {
-            return figmaBlack300
-        } else {
-            return Color.white
-        }
-    }
-    
-    private var dayNumberBackgroundColor: Color {
-        if isToday {
-            return figmaBlue
-        } else if activities.isEmpty {
-            return Color(hex: "#F6F6F6")
-        } else {
-            return Color.black.opacity(0.6)
-        }
     }
     
     private var activityBackgroundColor: Color {
         if isToday {
             return Color(hex: "#848484")
         } else if activities.isEmpty {
-            return Color(hex: "#F6F6F6")
+            return figmaCalendarDayIcon
         } else {
             return Color.white
         }

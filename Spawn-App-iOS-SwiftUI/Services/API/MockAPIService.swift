@@ -875,7 +875,7 @@ class MockAPIService: IAPIService {
 					let calendarActivity = CalendarActivityDTO(
 						id: UUID(),
 						date: date,
-						
+						title: activity.title,
 						icon: activity.icon,
 						colorHexCode: getActivityColorHex(for: activity.id),
 						activityId: activity.id

@@ -20,11 +20,11 @@ struct Spawn_App_iOS_SwiftUIApp: App {
         // Register custom fonts
         Font.registerFonts()
         
-        // Create font instances for our custom fonts
-        let regularFont = UIFont(name: "Onest-Regular", size: 16)!
-        let mediumFont = UIFont(name: "Onest-Medium", size: 16)!
-        let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16)!
-        let boldFont = UIFont(name: "Onest-Bold", size: 16)!
+        // Create font instances for our custom fonts with fallbacks
+        let regularFont = UIFont(name: "Onest-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let mediumFont = UIFont(name: "Onest-Medium", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .medium)
+        let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .semibold)
+        let boldFont = UIFont(name: "Onest-Bold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .bold)
         
         // Set default appearance for common UI controls
         UILabel.appearance().font = regularFont
@@ -50,9 +50,9 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	var body: some Scene {
 		WindowGroup {
 			Group {
-				if userAuth.isLoggedIn && userAuth.spawnUser != nil {
+				if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
 					// User is logged in and user data exists - go to main content
-					ContentView(user: userAuth.spawnUser!)
+					ContentView(user: spawnUser)
 						.onAppear {
 							// Connect the app delegate to the app
 							appDelegate.app = self

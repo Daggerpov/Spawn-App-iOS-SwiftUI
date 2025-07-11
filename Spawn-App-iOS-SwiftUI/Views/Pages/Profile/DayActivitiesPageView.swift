@@ -10,25 +10,32 @@ struct DayActivitiesPageView: View {
     
     var body: some View {
         ZStack {
-            // White background matching Figma design
-            Color.white
+            // Dark background matching Figma design
+            Color(red: 0.12, green: 0.12, blue: 0.12)
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
+                // Header section
                 headerView
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                    .padding(.bottom, 20)
                 
-                // Activities list
+                // Activities content
                 if activities.isEmpty {
                     emptyStateView
                 } else {
-                    activitiesListView
+                    activitiesScrollView
                 }
                 
                 Spacer()
             }
         }
         .navigationBarHidden(true)
+        .onAppear {
+            print("🔥 DayActivitiesPageView: appeared with \(activities.count) activities")
+            print("🔥 DayActivitiesPageView: date is \(formattedDate)")
+        }
     }
     
     private var headerView: some View {
@@ -40,33 +47,30 @@ struct DayActivitiesPageView: View {
             }) {
                 Text("􀆉")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .foregroundColor(.white)
             }
             
             // Title
             Text("Events - \(formattedDate)")
-                .font(.onestSemiBold(size: 20))
-                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                .font(.custom("Onest", size: 20).weight(.semibold))
+                .foregroundColor(.white)
             
             // Invisible spacer to balance the layout
             Text("􀆉")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                .foregroundColor(.white)
                 .opacity(0)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 24)
-        .padding(.top, 16)
-        .padding(.bottom, 20)
+        .frame(width: 375)
     }
     
-    private var activitiesListView: some View {
+    private var activitiesScrollView: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
-                ForEach(activities, id: \.id) { activity in
-                    DayActivityCard(
+                ForEach(Array(activities.enumerated()), id: \.offset) { index, activity in
+                    FigmaActivityCard(
                         activity: activity,
-                        color: getColorForActivity(activity),
+                        color: getColorForActivity(activity, index: index),
                         onTap: {
                             onActivitySelected(activity)
                         }
@@ -86,12 +90,12 @@ struct DayActivitiesPageView: View {
                 .foregroundColor(.gray.opacity(0.6))
             
             Text("No Events Found")
-                .font(.onestSemiBold(size: 24))
-                .foregroundColor(.primary)
+                .font(.custom("Onest", size: 24).weight(.semibold))
+                .foregroundColor(.white)
             
             Text("There are no activities scheduled for this day.")
-                .font(.onestRegular(size: 16))
-                .foregroundColor(.secondary)
+                .font(.custom("Onest", size: 16))
+                .foregroundColor(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -104,7 +108,7 @@ struct DayActivitiesPageView: View {
         return formatter.string(from: date)
     }
     
-    private func getColorForActivity(_ activity: CalendarActivityDTO) -> Color {
+    private func getColorForActivity(_ activity: CalendarActivityDTO, index: Int) -> Color {
         // If we have a color hex code from the backend, use it
         if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
             return Color(hex: colorHex)
@@ -112,15 +116,16 @@ struct DayActivitiesPageView: View {
         
         // Otherwise, use the activity color based on ID
         guard let activityId = activity.activityId else {
-            return figmaBlue // Default color
+            // Use alternating colors from the Figma design
+            return index % 2 == 0 ? Color(red: 0.21, green: 0.46, blue: 1) : Color(red: 0.50, green: 1, blue: 0.75)
         }
         
         return getActivityColor(for: activityId)
     }
 }
 
-// MARK: - Day Activity Card
-struct DayActivityCard: View {
+// MARK: - Figma Activity Card matching the design
+struct FigmaActivityCard: View {
     let activity: CalendarActivityDTO
     let color: Color
     let onTap: () -> Void
@@ -129,12 +134,12 @@ struct DayActivityCard: View {
         Button(action: onTap) {
             HStack(spacing: 10) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Sample Activity")
-                        .font(.onestSemiBold(size: 17))
+                    Text("Activity")
+                        .font(.custom("Onest", size: 17).weight(.semibold))
                         .foregroundColor(textColor)
                     
-                    Text("Activity Location • \(formattedDate)")
-                        .font(.onestMedium(size: 13))
+                    Text("Event • \(formattedDate)")
+                        .font(.custom("Onest", size: 13).weight(.medium))
                         .foregroundColor(subtitleColor)
                 }
                 
@@ -162,7 +167,7 @@ struct DayActivityCard: View {
                 }
             }
             .padding(EdgeInsets(top: 13, leading: 16, bottom: 13, trailing: 16))
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(width: 364)
             .background(color)
             .cornerRadius(12)
             .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 2)
@@ -177,42 +182,38 @@ struct DayActivityCard: View {
     }
     
     private var textColor: Color {
-        // Use white text for darker backgrounds, black for lighter backgrounds
-        if color == figmaBlue || color.isDark {
+        // Use white text for blue background, black text for light backgrounds
+        if color == Color(red: 0.21, green: 0.46, blue: 1) {
             return .white
         } else {
-            return Color(red: 0, green: 0, blue: 0, opacity: 0.75)
+            return Color(red: 0, green: 0, blue: 0).opacity(0.75)
         }
     }
     
     private var subtitleColor: Color {
-        if color == figmaBlue || color.isDark {
-            return Color.white.opacity(0.80)
+        if color == Color(red: 0.21, green: 0.46, blue: 1) {
+            return Color(red: 0, green: 0, blue: 0).opacity(0.80)
         } else {
-            return Color(red: 0, green: 0, blue: 0, opacity: 0.60)
+            return Color(red: 1, green: 1, blue: 1).opacity(0.60)
         }
     }
     
     private var participantCountColor: Color {
-        if color == figmaBlue || color.isDark {
-            return figmaBlue
+        if color == Color(red: 0.21, green: 0.46, blue: 1) {
+            return Color(red: 0.21, green: 0.46, blue: 1)
         } else {
             return Color(red: 0.13, green: 0.25, blue: 0.19)
         }
     }
 }
 
-// MARK: - Color Extension
+// MARK: - Color Extension for hex support
 extension Color {
     var isDark: Bool {
-        // Convert to RGB and check if it's generally dark
-        let uiColor = UIColor(self)
-        var red: CGFloat = 0
-        var green: CGFloat = 0
-        var blue: CGFloat = 0
-        var alpha: CGFloat = 0
-        
-        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        guard let components = cgColor?.components else { return false }
+        let red = components[0]
+        let green = components[1]
+        let blue = components[2]
         
         // Calculate luminance
         let luminance = 0.299 * red + 0.587 * green + 0.114 * blue
@@ -230,6 +231,7 @@ struct DayActivitiesPageView_Previews: PreviewProvider {
                 CalendarActivityDTO(
                     id: UUID(),
                     date: Date(),
+					title: "asdf",
                     icon: "🎉",
                     colorHexCode: "#3575FF",
                     activityId: UUID()
@@ -237,6 +239,7 @@ struct DayActivitiesPageView_Previews: PreviewProvider {
                 CalendarActivityDTO(
                     id: UUID(),
                     date: Date(),
+					title: "asdf",
                     icon: "🥾",
                     colorHexCode: "#80FF75",
                     activityId: UUID()

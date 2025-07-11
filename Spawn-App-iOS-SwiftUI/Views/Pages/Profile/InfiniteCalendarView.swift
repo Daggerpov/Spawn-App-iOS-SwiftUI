@@ -208,11 +208,6 @@ struct DayCell: View {
     var body: some View {
         Button(action: onTapped) {
             VStack(spacing: 6) {
-                // Day number
-                Text(dayNumber)
-                    .font(.system(size: 18, weight: isToday ? .bold : .semibold))
-                    .foregroundColor(isToday ? universalAccentColor : .primary)
-                
                 // Activity display
                 if activities.isEmpty {
                     Spacer()
@@ -230,11 +225,31 @@ struct DayCell: View {
             .frame(width: 80, height: 80)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(activities.isEmpty ? Color.gray.opacity(0.08) : Color.gray.opacity(0.05))
+                    .fill(activities.isEmpty ? figmaCalendarDayIcon : Color.gray.opacity(0.05))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(isToday ? universalAccentColor : Color.clear, lineWidth: 3)
+            )
+            .overlay(
+                // Date number overlay
+                VStack {
+                    HStack {
+                        Spacer()
+                        Text(dayNumber)
+                            .font(.custom("SF Pro Text", size: 16).weight(.semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.black.opacity(0.7))
+                            )
+                    }
+                    .padding(.top, 4)
+                    .padding(.trailing, 4)
+                    Spacer()
+                }
             )
         }
         .buttonStyle(PlainButtonStyle())

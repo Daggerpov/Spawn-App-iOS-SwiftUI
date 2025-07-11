@@ -15,7 +15,9 @@ class UserReportingService {
     ///   - blockedId: ID of the user being blocked  
     ///   - reason: Reason for blocking
     func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async throws {
-        let url = URL(string: APIService.baseURL + "blocked-users/block")!
+        guard let url = URL(string: APIService.baseURL + "blocked-users/block") else {
+            throw APIError.URLError
+        }
         let blockDTO = BlockedUserCreationDTO(
             blockerId: blockerId,
             blockedId: blockedId,
@@ -30,7 +32,9 @@ class UserReportingService {
     ///   - blockerId: ID of the user doing the unblocking
     ///   - blockedId: ID of the user being unblocked
     func unblockUser(blockerId: UUID, blockedId: UUID) async throws {
-        let url = URL(string: APIService.baseURL + "blocked-users/unblock")!
+        guard let url = URL(string: APIService.baseURL + "blocked-users/unblock") else {
+            throw APIError.URLError
+        }
         let parameters = [
             "blockerId": blockerId.uuidString,
             "blockedId": blockedId.uuidString
@@ -45,7 +49,9 @@ class UserReportingService {
     ///   - returnOnlyIds: If true, returns only UUIDs; if false, returns full BlockedUserDTO objects
     /// - Returns: Either array of UUIDs or array of BlockedUserDTO objects
     func getBlockedUsers(blockerId: UUID, returnOnlyIds: Bool = false) async throws -> [UUID] {
-        let url = URL(string: APIService.baseURL + "blocked-users/\(blockerId)")!
+        guard let url = URL(string: APIService.baseURL + "blocked-users/\(blockerId)") else {
+            throw APIError.URLError
+        }
         let parameters = ["returnOnlyIds": returnOnlyIds ? "true" : "false"]
         
         if returnOnlyIds {
@@ -60,7 +66,9 @@ class UserReportingService {
     /// - Parameter blockerId: ID of the user whose blocked list to retrieve
     /// - Returns: Array of full BlockedUserDTO objects with user details
     func getFullBlockedUsers(blockerId: UUID) async throws -> [BlockedUserDTO] {
-        let url = URL(string: APIService.baseURL + "blocked-users/\(blockerId)")!
+        guard let url = URL(string: APIService.baseURL + "blocked-users/\(blockerId)") else {
+            throw APIError.URLError
+        }
         let parameters = ["returnOnlyIds": "false"]
         
         return try await apiService.fetchData(from: url, parameters: parameters)
@@ -72,7 +80,9 @@ class UserReportingService {
     ///   - blockedId: ID of the user who might be blocked
     /// - Returns: True if blocked, false otherwise
     func isUserBlocked(blockerId: UUID, blockedId: UUID) async throws -> Bool {
-        let url = URL(string: APIService.baseURL + "blocked-users/is-blocked")!
+        guard let url = URL(string: APIService.baseURL + "blocked-users/is-blocked") else {
+            throw APIError.URLError
+        }
         let parameters = [
             "blockerId": blockerId.uuidString,
             "blockedId": blockedId.uuidString

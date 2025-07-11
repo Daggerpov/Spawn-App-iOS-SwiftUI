@@ -19,6 +19,9 @@ struct ActivityTypeEditView: View {
         activityTypeDTO.associatedFriends.isEmpty && activityTypeDTO.title == "New Activity"
     }
     
+    // Debounced save timer
+    @State private var saveTimer: Timer?
+    
     init(activityTypeDTO: ActivityTypeDTO) {
         self.activityTypeDTO = activityTypeDTO
         
@@ -43,15 +46,34 @@ struct ActivityTypeEditView: View {
                 isTitleFieldFocused = true
             }
         }
+        .onDisappear {
+            // Cancel any pending save timer
+            saveTimer?.invalidate()
+            
+            // Save changes if there are any unsaved changes
+            if hasChanges && !isNewActivityType {
+                Task {
+                    await viewModel.saveBatchChanges()
+                }
+            }
+        }
         .onChange(of: editedTitle) { _ in
             updateHasChanges()
             // Apply optimistic update immediately
             optimisticallyUpdateActivityType()
+            // Debounce save for existing activity types
+            if !isNewActivityType {
+                debouncedSave()
+            }
         }
         .onChange(of: editedIcon) { _ in
             updateHasChanges()
             // Apply optimistic update immediately
             optimisticallyUpdateActivityType()
+            // Debounce save for existing activity types
+            if !isNewActivityType {
+                debouncedSave()
+            }
         }
         .navigationDestination(isPresented: $navigateToFriendSelection) {
             navigationDestinationView
@@ -235,7 +257,7 @@ struct ActivityTypeEditView: View {
                     await viewModel.saveBatchChanges()
                     
                     // Dismiss both views
-                    await MainActor.run {
+                    MainActor.run {
                         dismiss()
                     }
                 }
@@ -301,7 +323,7 @@ struct ActivityTypeEditView: View {
             await viewModel.saveBatchChanges()
             
             // Dismiss after saving
-            await MainActor.run {
+            MainActor.run {
                 dismiss()
             }
         }
@@ -310,6 +332,15 @@ struct ActivityTypeEditView: View {
     private func optimisticallyUpdateActivityType() {
         let optimisticActivityType = createUpdatedActivityType()
         viewModel.optimisticallyUpdateActivityType(optimisticActivityType)
+    }
+    
+    private func debouncedSave() {
+        saveTimer?.invalidate()
+        saveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
+            Task {
+                await viewModel.saveBatchChanges()
+            }
+        }
     }
 }
 
