@@ -664,6 +664,13 @@ class ProfileViewModel: ObservableObject {
             
             // Update cache after successful API call
             await AppCache.shared.refreshProfileInterests(userId)
+            
+            // Update local state with fresh data from cache to ensure consistency
+            await MainActor.run {
+                if let cachedInterests = AppCache.shared.profileInterests[userId] {
+                    self.userInterests = cachedInterests
+                }
+            }
         } catch {
             print("❌ Failed to remove interest '\(interest)': \(error.localizedDescription)")
             

@@ -110,7 +110,7 @@ struct ActivityPreConfirmationView: View {
                     .padding(.trailing, 24)
             }
         }
-        .padding(.top, 4)
+        .padding(.top, 50)
         .padding(.bottom, 12)
     }
     
