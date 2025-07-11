@@ -43,7 +43,7 @@ struct ActivityTypeEditView: View {
                 
                 Spacer()
                 
-                Text("New Activity")
+                Text("New Activity Type")
                     .font(.headline)
                     .foregroundColor(universalAccentColor)
                 
