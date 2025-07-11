@@ -75,7 +75,10 @@ struct ContentView: View {
 					.withNotificationBadge(count: friendsViewModel.incomingFriendRequests.count)
 					Text("Friends")
 				}
-			ProfileView(user: user)
+			
+			NavigationStack {
+				ProfileView(user: user)
+			}
                 .tag(TabType.profile)
 				.tabItem {
 					Image(
