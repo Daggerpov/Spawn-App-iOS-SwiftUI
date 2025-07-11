@@ -14,6 +14,7 @@ struct ActivityCalendarView: View {
     @Environment(\.dismiss) private var dismiss
     
     let userCreationDate: Date?
+    let calendarOwnerName: String?
     
     @State private var currentMonth = Date()
     @State private var scrollOffset: CGFloat = 0
@@ -65,7 +66,7 @@ struct ActivityCalendarView: View {
                 }
             }
         }
-        .navigationTitle("Your Activity Calendar")
+        .navigationTitle(calendarOwnerName != nil ? "\(calendarOwnerName!)'s Activity Calendar" : "Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // Fetch calendar data for current and upcoming months
@@ -96,9 +97,9 @@ struct ActivityCalendarView: View {
         let monthsFromEarliestToToday = calendar.dateComponents([.month], from: earliestDate, to: today).month ?? 0
         let maxMonthsBack = max(0, monthsFromEarliestToToday) // Ensure we don't go negative
         
-        // Go back to the earliest date and forward 1 year
+        // Go back to the earliest date and forward 1 month
         let startIndex = -maxMonthsBack
-        let endIndex = 12
+        let endIndex = 1
         
         for i in startIndex...endIndex {
             if let date = calendar.date(byAdding: .month, value: i, to: today) {
@@ -421,6 +422,7 @@ extension DateFormatter {
     ActivityCalendarView(
         profileViewModel: ProfileViewModel(userId: UUID()),
         userCreationDate: nil,
+        calendarOwnerName: nil,
         onDismiss: {}
     )
 } 

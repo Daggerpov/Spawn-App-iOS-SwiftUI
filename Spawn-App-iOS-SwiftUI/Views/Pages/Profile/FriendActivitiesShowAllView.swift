@@ -8,6 +8,9 @@ struct FriendActivitiesShowAllView: View {
     @Environment(\.presentationMode) var presentationMode
     @Environment(\.colorScheme) private var colorScheme
     
+    // Add navigation state for full calendar view
+    @State private var navigateToCalendar: Bool = false
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -36,6 +39,15 @@ struct FriendActivitiesShowAllView: View {
                         .padding(.bottom, 100) // Safe area padding
                     }
                 }
+                
+                // Hidden NavigationLink for calendar
+                NavigationLink(
+                    destination: friendCalendarFullScreenView,
+                    isActive: $navigateToCalendar
+                ) {
+                    EmptyView()
+                }
+                .hidden()
             }
         }
         .navigationBarHidden(true)
@@ -45,6 +57,19 @@ struct FriendActivitiesShowAllView: View {
         .onAppear {
             fetchFriendData()
         }
+    }
+    
+    // MARK: - Calendar Full Screen View
+    private var friendCalendarFullScreenView: some View {
+        ActivityCalendarView(
+            profileViewModel: profileViewModel,
+            userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
+            calendarOwnerName: FormatterService.shared.formatFirstName(user: user),
+            onDismiss: {
+                // Reset navigation state when calendar view is dismissed
+                navigateToCalendar = false
+            }
+        )
     }
     
     // MARK: - Debug Info Section (Remove in production)
@@ -167,7 +192,8 @@ struct FriendActivitiesShowAllView: View {
                                     // Day cell with real activity data
                                     FriendCalendarDaySquare(activity: activity)
                                         .onTapGesture {
-                                            handleActivitySelection(activity)
+                                            // Navigate to full calendar view instead of just showing activity details
+                                            navigateToFullCalendar()
                                         }
                                 } else {
                                     // Empty day cell
@@ -175,6 +201,10 @@ struct FriendActivitiesShowAllView: View {
                                         .fill(Color(hex: "#DBDBDB"))
                                         .frame(width: 46, height: 46)
                                         .shadow(color: Color.black.opacity(0.1), radius: 6.6, x: 0, y: 1.6)
+                                        .onTapGesture {
+                                            // Navigate to full calendar view on empty day tap
+                                            navigateToFullCalendar()
+                                        }
                                 }
                             }
                         }
@@ -266,6 +296,16 @@ struct FriendActivitiesShowAllView: View {
                         print("  \(index + 1). \(activity.date.formatted()) - \(activity.icon ?? "No icon")")
                     }
                 }
+            }
+        }
+    }
+    
+    private func navigateToFullCalendar() {
+        Task {
+            // Fetch all calendar activities for the friend before navigating
+            await profileViewModel.fetchAllCalendarActivities(friendUserId: user.id)
+            await MainActor.run {
+                navigateToCalendar = true
             }
         }
     }

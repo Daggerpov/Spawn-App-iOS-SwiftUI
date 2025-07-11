@@ -351,6 +351,7 @@ struct ActivityTypeOptionsPopup: View {
     @Binding var isPresented: Bool
     let onManagePeople: () -> Void
     let onDeleteActivityType: () -> Void
+    @State private var showDeleteConfirmation = false
     
     var body: some View {
         ZStack {
@@ -387,7 +388,7 @@ struct ActivityTypeOptionsPopup: View {
                             }
                             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .frame(height: 63)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .background(Color(red: 0.95, green: 0.93, blue: 0.93))
                             .overlay(
                                 Rectangle()
@@ -402,14 +403,11 @@ struct ActivityTypeOptionsPopup: View {
                         
                         // Delete Activity Type option
                         Button(action: {
-                            onDeleteActivityType()
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isPresented = false
-                            }
+                            showDeleteConfirmation = true
                         }) {
                             HStack(spacing: 10) {
-                                Text("􀈑")
-                                    .font(Font.custom("SF Pro Display", size: 20).weight(.medium))
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 20, weight: .medium))
                                     .foregroundColor(Color(red: 1, green: 0.45, blue: 0.44))
                                 Text("Delete Activity Type")
                                     .font(Font.custom("Onest", size: 20).weight(.medium))
@@ -417,7 +415,7 @@ struct ActivityTypeOptionsPopup: View {
                             }
                             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .frame(height: 63)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, alignment: .center)
                             .background(Color(red: 0.95, green: 0.93, blue: 0.93))
                             .shadow(
                                 color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
@@ -434,8 +432,8 @@ struct ActivityTypeOptionsPopup: View {
                         }
                     }) {
                         HStack(spacing: 10) {
-                            Text("􀆄")
-                                .font(Font.custom("SF Pro Display", size: 20).weight(.medium))
+                            Image(systemName: "xmark")
+                                .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
                             Text("Cancel")
                                 .font(Font.custom("Onest", size: 20).weight(.medium))
@@ -443,7 +441,7 @@ struct ActivityTypeOptionsPopup: View {
                         }
                         .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                         .frame(height: 63)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(maxWidth: .infinity, alignment: .center)
                         .background(Color(red: 0.95, green: 0.93, blue: 0.93))
                         .cornerRadius(16)
                         .shadow(
@@ -456,6 +454,17 @@ struct ActivityTypeOptionsPopup: View {
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
             }
+        }
+        .alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                onDeleteActivityType()
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    isPresented = false
+                }
+            }
+        } message: {
+            Text("Are you sure you want to delete this activity type? This action cannot be undone.")
         }
     }
 }

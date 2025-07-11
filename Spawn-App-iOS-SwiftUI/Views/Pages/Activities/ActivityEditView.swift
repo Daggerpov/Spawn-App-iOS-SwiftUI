@@ -150,7 +150,7 @@ struct ActivityEditView: View {
             .sheet(isPresented: $showEmojiPicker) {
                 NavigationView {
                     VStack {
-                        TextField("", text: $editedIcon)
+                        TextField("Tap to add emoji", text: $editedIcon)
                             .font(.system(size: 60))
                             .multilineTextAlignment(.center)
                             .keyboardType(.default)

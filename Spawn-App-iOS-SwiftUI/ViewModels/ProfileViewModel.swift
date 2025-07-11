@@ -323,6 +323,58 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    // Method to fetch all calendar activities for a friend
+    func fetchAllCalendarActivities(friendUserId: UUID) async {
+        await MainActor.run { self.isLoadingCalendar = true }
+        
+        guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ ProfileViewModel: No requesting user ID available for calendar activities")
+            await MainActor.run {
+                self.isLoadingCalendar = false
+                self.errorMessage = "User ID not available"
+            }
+            return
+        }
+        
+        print("🔄 ProfileViewModel: Fetching all calendar activities for friend: \(friendUserId)")
+        print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
+        
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(friendUserId)/calendar")!
+            let parameters = [
+                "requestingUserId": requestingUserId.uuidString
+            ]
+            
+            print("📡 ProfileViewModel: Making calendar API call to: \(url.absoluteString)")
+            print("📡 ProfileViewModel: Parameters: \(parameters)")
+            
+            let activities: [CalendarActivityDTO] = try await apiService.fetchData(
+                from: url,
+                parameters: parameters
+            )
+            
+            print("✅ ProfileViewModel: Successfully fetched \(activities.count) calendar activities")
+            
+            await MainActor.run {
+                self.allCalendarActivities = activities
+                self.isLoadingCalendar = false
+                
+                // Pre-assign colors for calendar activities
+                let activityIds = activities.compactMap { $0.activityId }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
+                
+                print("✅ ProfileViewModel: All calendar activities updated with \(activities.count) activities")
+            }
+        } catch {
+            print("❌ ProfileViewModel: Error fetching friend's all calendar activities: \(error.localizedDescription)")
+            await MainActor.run {
+                self.errorMessage = "Failed to load friend's calendar: \(error.localizedDescription)"
+                self.allCalendarActivities = []
+                self.isLoadingCalendar = false
+            }
+        }
+    }
+    
     // Method to fetch friend's calendar activities
     func fetchFriendCalendarActivities(friendUserId: UUID, month: Int, year: Int) async {
         await MainActor.run { self.isLoadingCalendar = true }
@@ -356,7 +408,7 @@ class ProfileViewModel: ObservableObject {
                 parameters: parameters
             )
             
-            print("✅ ProfileViewModel: Successfully fetched \(activities.count) calendar activities")
+
             
             // Log calendar activity details
             if !activities.isEmpty {
@@ -373,6 +425,8 @@ class ProfileViewModel: ObservableObject {
             )
             
             await MainActor.run {
+				print("✅ ProfileViewModel: Successfully fetched \(activities.count) calendar activities")
+
                 self.calendarActivities = grid
                 self.allCalendarActivities = activities
                 self.isLoadingCalendar = false

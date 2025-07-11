@@ -558,6 +558,7 @@ struct ProfileView: View {
 		ActivityCalendarView(
 			profileViewModel: profileViewModel,
 			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
+			calendarOwnerName: nil,
 			onDismiss: {
 				// Reset navigation state when calendar view is dismissed
 				navigateToCalendar = false

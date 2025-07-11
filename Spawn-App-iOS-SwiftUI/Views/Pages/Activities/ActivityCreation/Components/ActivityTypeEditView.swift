@@ -31,166 +31,12 @@ struct ActivityTypeEditView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header with back button
-            HStack {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(universalAccentColor)
-                        .font(.title3)
-                }
-                
-                Spacer()
-                
-                Text("New Activity Type")
-                    .font(.headline)
-                    .foregroundColor(universalAccentColor)
-                
-                Spacer()
-                
-                // Empty view for balance
-                Color.clear.frame(width: 24, height: 24)
-            }
-            .padding(.horizontal)
-            .padding(.top, 8)
-            .padding(.bottom, 16)
-            
-            // Main content
-            ZStack {
-                // Background - adaptive to light/dark mode
-                universalBackgroundColor
-                    .ignoresSafeArea()
-                
-                // Main circular content
-            VStack(spacing: 30) {
-                // Icon picker area
-                ZStack {
-                    // Main circular background
-                    Circle()
-                        .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
-                        .frame(width: 128, height: 128)
-                    
-                    // Icon display - make it clickable
-                    Button(action: {
-                        showEmojiPicker = true
-                    }) {
-                        Text(editedIcon)
-                            .font(.system(size: 40))
-                    }
-                    
-                    // Edit button overlay - positioned at bottom right
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                showEmojiPicker = true
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
-                                        .frame(width: 36, height: 36)
-                                    
-                                    Image(systemName: "pencil")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white)
-                                }
-                            }
-                            .offset(x: 15, y: 15)
-                        }
-                    }
-                }
-                .frame(width: 128, height: 128)
-                
-                // Title text field
-                TextField("New Activity", text: $editedTitle)
-                    .font(.onestMedium(size: 32))
-                    .foregroundColor(universalAccentColor)
-                    .multilineTextAlignment(.center)
-                    .textFieldStyle(PlainTextFieldStyle())
-                    .frame(maxWidth: 250)
-                    .focused($isTitleFieldFocused)
-            }
-            .padding(40)
-            .frame(width: 290, height: 290)
-            .background(colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93))
-            .cornerRadius(30)
-            .offset(x: 0, y: -150)
-            
-            // Save/Next button
-            Button(action: {
-                if isNewActivityType {
-                    // For new activity types, navigate to friend selection
-                    navigateToNextStep()
-                } else {
-                    // For existing activity types, save changes
-                    saveChanges()
-                }
-            }) {
-                Text(isNewActivityType ? "Next" : "Save")
-                    .font(.onestSemiBold(size: 20))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(figmaBlue)
-                    .cornerRadius(16)
-            }
-            .frame(width: 290, height: 56)
-            .disabled((!hasChanges && !isNewActivityType) || viewModel.isLoading)
-            .offset(x: 0, y: 40)
-            
-            // Cancel button
-            Button(action: {
-                dismiss()
-            }) {
-                Text("Cancel")
-                    .font(.onestSemiBold(size: 20))
-                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.clear)
-                    .cornerRadius(16)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 0.5)
-                    )
-            }
-            .frame(width: 290, height: 56)
-            .disabled(viewModel.isLoading)
-            .offset(x: 0, y: 110)
-            
-            }
+            headerView
+            mainContentView
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showEmojiPicker) {
-            NavigationView {
-                VStack {
-                    TextField("", text: $editedIcon)
-                        .font(.system(size: 60))
-                        .multilineTextAlignment(.center)
-                        .keyboardType(.default)
-                        .textInputAutocapitalization(.never)
-                        .disableAutocorrection(true)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .onAppear {
-                            // Focus the text field to show keyboard
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
-                            }
-                        }
-                }
-                .navigationTitle("Choose Emoji")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            showEmojiPicker = false
-                        }
-                    }
-                }
-            }
-            .presentationDetents([.medium])
+            emojiPickerSheet
         }
         .onAppear {
             setupInitialState()
@@ -210,22 +56,7 @@ struct ActivityTypeEditView: View {
             optimisticallyUpdateActivityType()
         }
         .navigationDestination(isPresented: $navigateToFriendSelection) {
-            ActivityTypeFriendSelectionView(
-                activityTypeDTO: createUpdatedActivityType(),
-                onComplete: { finalActivityType in
-                    // Save the activity type with selected friends
-                    Task {
-                        await viewModel.createActivityType(finalActivityType)
-                        await viewModel.saveBatchChanges()
-                        
-                        // Dismiss both views
-                        await MainActor.run {
-                            dismiss()
-                        }
-                    }
-                }
-            )
-            .environmentObject(AppCache.shared)
+            navigationDestinationView
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
@@ -236,25 +67,231 @@ struct ActivityTypeEditView: View {
                 Text(errorMessage)
             }
         }
-        .overlay(
-            // Loading overlay
-            Group {
-                if viewModel.isLoading {
+        .overlay(loadingOverlay)
+    }
+    
+    // MARK: - View Components
+    
+    private var headerView: some View {
+        HStack {
+            Button(action: {
+                dismiss()
+            }) {
+                Image(systemName: "chevron.left")
+                    .foregroundColor(universalAccentColor)
+                    .font(.title3)
+            }
+            
+            Spacer()
+            
+            Text("New Activity Type")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+            
+            Spacer()
+            
+            // Empty view for balance
+            Color.clear.frame(width: 24, height: 24)
+        }
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .padding(.bottom, 16)
+    }
+    
+    private var mainContentView: some View {
+        ZStack {
+            // Background - adaptive to light/dark mode
+            universalBackgroundColor
+                .ignoresSafeArea()
+            
+            circularContentView
+            actionButtonsView
+        }
+    }
+    
+    private var circularContentView: some View {
+        VStack(spacing: 30) {
+            iconPickerView
+            titleTextField
+        }
+        .padding(40)
+        .frame(width: 290, height: 290)
+        .background(colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93))
+        .cornerRadius(30)
+        .offset(x: 0, y: -150)
+    }
+    
+    private var iconPickerView: some View {
+        ZStack {
+            // Main circular background
+            Circle()
+                .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
+                .frame(width: 128, height: 128)
+            
+            // Icon display - make it clickable
+            Button(action: {
+                showEmojiPicker = true
+            }) {
+                Text(editedIcon)
+                    .font(.system(size: 40))
+            }
+            
+            // Edit button overlay - positioned at bottom right
+            editButtonOverlay
+        }
+        .frame(width: 128, height: 128)
+    }
+    
+    private var editButtonOverlay: some View {
+        VStack {
+            Spacer()
+            HStack {
+                Spacer()
+                Button(action: {
+                    showEmojiPicker = true
+                }) {
                     ZStack {
-                        Color.black.opacity(0.3)
-                            .ignoresSafeArea()
+                        Circle()
+                            .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                            .frame(width: 36, height: 36)
                         
-                        ProgressView("Saving...")
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(universalBackgroundColor)
-                            )
+                        Image(systemName: "pencil")
+                            .font(.system(size: 14))
+                            .foregroundColor(.white)
+                    }
+                }
+                .offset(x: 15, y: 15)
+            }
+        }
+    }
+    
+    private var titleTextField: some View {
+        TextField("New Activity", text: $editedTitle)
+            .font(.onestMedium(size: 32))
+            .foregroundColor(universalAccentColor)
+            .multilineTextAlignment(.center)
+            .textFieldStyle(PlainTextFieldStyle())
+            .frame(maxWidth: 250)
+            .focused($isTitleFieldFocused)
+    }
+    
+    private var actionButtonsView: some View {
+        VStack(spacing: 70) {
+            saveButton
+            cancelButton
+        }
+        .offset(x: 0, y: 40)
+    }
+    
+    private var saveButton: some View {
+        Button(action: {
+            if isNewActivityType {
+                // For new activity types, navigate to friend selection
+                navigateToNextStep()
+            } else {
+                // For existing activity types, save changes
+                saveChanges()
+            }
+        }) {
+            Text(isNewActivityType ? "Next" : "Save")
+                .font(.onestSemiBold(size: 20))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(figmaBlue)
+                .cornerRadius(16)
+        }
+        .frame(width: 290, height: 56)
+        .disabled((!hasChanges && !isNewActivityType) || viewModel.isLoading)
+    }
+    
+    private var cancelButton: some View {
+        Button(action: {
+            dismiss()
+        }) {
+            Text("Cancel")
+                .font(.onestSemiBold(size: 20))
+                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(Color.clear)
+                .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 0.5)
+                )
+        }
+        .frame(width: 290, height: 56)
+        .disabled(viewModel.isLoading)
+    }
+    
+         private var emojiPickerSheet: some View {
+         NavigationView {
+             VStack {
+                 TextField("Tap to add emoji", text: $editedIcon)
+                     .font(.system(size: 60))
+                     .multilineTextAlignment(.center)
+                     .keyboardType(.default)
+                     .textInputAutocapitalization(.never)
+                     .disableAutocorrection(true)
+                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                     .onAppear {
+                         // Focus the text field to show keyboard
+                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                             UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
+                         }
+                     }
+             }
+             .navigationTitle("Choose Emoji")
+             .navigationBarTitleDisplayMode(.inline)
+             .toolbar {
+                 ToolbarItem(placement: .navigationBarTrailing) {
+                     Button("Done") {
+                         showEmojiPicker = false
+                     }
+                 }
+             }
+         }
+         .presentationDetents([.medium])
+     }
+    
+    private var navigationDestinationView: some View {
+        ActivityTypeFriendSelectionView(
+            activityTypeDTO: createUpdatedActivityType(),
+            onComplete: { finalActivityType in
+                // Save the activity type with selected friends
+                Task {
+                    await viewModel.createActivityType(finalActivityType)
+                    await viewModel.saveBatchChanges()
+                    
+                    // Dismiss both views
+                    await MainActor.run {
+                        dismiss()
                     }
                 }
             }
         )
+        .environmentObject(AppCache.shared)
     }
+    
+    private var loadingOverlay: some View {
+        Group {
+            if viewModel.isLoading {
+                ZStack {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                    
+                    ProgressView("Saving...")
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(universalBackgroundColor)
+                        )
+                }
+            }
+        }
+    }
+
 
     // MARK: - Private Methods
     private func setupInitialState() {

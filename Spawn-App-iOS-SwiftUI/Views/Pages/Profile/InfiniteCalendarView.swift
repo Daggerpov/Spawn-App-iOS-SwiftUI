@@ -32,9 +32,9 @@ struct InfiniteCalendarView: View {
         let monthsFromEarliestToToday = calendar.dateComponents([.month], from: earliestDate, to: today).month ?? 0
         let maxMonthsBack = max(0, monthsFromEarliestToToday) // Ensure we don't go negative
         
-        // Go back to the earliest date and forward 1 year
+        // Go back to the earliest date and forward 1 month
         let startIndex = -maxMonthsBack
-        let endIndex = 12
+        let endIndex = 1
         
         for i in startIndex...endIndex {
             if let date = calendar.date(byAdding: .month, value: i, to: today) {

@@ -6,34 +6,10 @@ struct DayActivitiesPageView: View {
     let onDismiss: () -> Void
     let onActivitySelected: (CalendarActivityDTO) -> Void
     
-    @StateObject private var viewModel: DayActivitiesViewModel
-    @Environment(\.colorScheme) private var colorScheme
-    
-    init(
-        date: Date,
-        activities: [CalendarActivityDTO],
-        onDismiss: @escaping () -> Void,
-        onActivitySelected: @escaping (CalendarActivityDTO) -> Void
-    ) {
-        self.date = date
-        self.activities = activities
-        self.onDismiss = onDismiss
-        self.onActivitySelected = onActivitySelected
-        
-        self._viewModel = StateObject(
-            wrappedValue: DayActivitiesViewModel(
-                apiService: MockAPIService.isMocking 
-                    ? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
-                    : APIService(),
-                activities: activities
-            )
-        )
-    }
-    
     var body: some View {
         ZStack {
-            // Dark background matching Figma design
-            Color(red: 0.12, green: 0.12, blue: 0.12)
+            // White background matching Figma design
+            Color.white
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -41,7 +17,7 @@ struct DayActivitiesPageView: View {
                 headerView
                 
                 // Activities list
-                if viewModel.activities.isEmpty {
+                if activities.isEmpty {
                     emptyStateView
                 } else {
                     activitiesListView
@@ -50,40 +26,70 @@ struct DayActivitiesPageView: View {
                 Spacer()
             }
         }
-        .onAppear {
-            Task {
-                await viewModel.loadActivitiesIfNeeded()
-            }
-        }
     }
-}
-
-// MARK: - Header View
-extension DayActivitiesPageView {
+    
     private var headerView: some View {
         HStack(spacing: 32) {
             // Back button
             Button(action: onDismiss) {
                 Text("􀆉")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
             }
             
             // Title
             Text("Events - \(formattedDate)")
                 .font(.onestSemiBold(size: 20))
-                .foregroundColor(.white)
+                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
             
             // Invisible spacer to balance the layout
             Text("􀆉")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
                 .opacity(0)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
-        .padding(.top, 16) // Reduced for sheet presentation
+        .padding(.top, 16)
         .padding(.bottom, 20)
+    }
+    
+    private var activitiesListView: some View {
+        ScrollView {
+            LazyVStack(spacing: 16) {
+                ForEach(activities, id: \.id) { activity in
+                    DayActivityCard(
+                        activity: activity,
+                        color: getColorForActivity(activity),
+                        onTap: {
+                            onActivitySelected(activity)
+                        }
+                    )
+                    .padding(.horizontal, 32)
+                }
+            }
+            .padding(.top, 8)
+            .padding(.bottom, 100)
+        }
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(.system(size: 60))
+                .foregroundColor(.gray.opacity(0.6))
+            
+            Text("No Events Found")
+                .font(.onestSemiBold(size: 24))
+                .foregroundColor(.primary)
+            
+            Text("There are no activities scheduled for this day.")
+                .font(.onestRegular(size: 16))
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
     }
     
     private var formattedDate: String {
@@ -91,195 +97,7 @@ extension DayActivitiesPageView {
         formatter.dateFormat = "MMMM d"
         return formatter.string(from: date)
     }
-}
-
-// MARK: - Activities List View
-extension DayActivitiesPageView {
-    private var activitiesListView: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(viewModel.activities, id: \.id) { activity in
-                    if let activityId = activity.activityId,
-                       let fullActivity = viewModel.getActivity(for: activityId)
-                    {
-                        DayActivityCard(
-                            activity: fullActivity,
-                            color: getColorForActivity(activity),
-                            onTap: {
-                                onActivitySelected(activity)
-                            }
-                        )
-                        .padding(.horizontal, 32)
-                    } else {
-                        // Loading state
-                        ActivityLoadingCard(activity: activity, color: getColorForActivity(activity))
-                            .padding(.horizontal, 32)
-                            .onAppear {
-                                if let activityId = activity.activityId {
-                                    Task {
-                                        await viewModel.fetchActivity(activityId)
-                                    }
-                                }
-                            }
-                    }
-                }
-            }
-            .padding(.top, 8)
-            .padding(.bottom, 100) // Extra padding for bottom safe area
-        }
-        .refreshable {
-            Task {
-                await viewModel.loadActivitiesIfNeeded()
-            }
-        }
-    }
-}
-
-// MARK: - Empty State View
-extension DayActivitiesPageView {
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "calendar.badge.exclamationmark")
-                .font(.system(size: 60))
-                .foregroundColor(.white.opacity(0.7))
-            
-            Text("No Events Found")
-                .font(.onestSemiBold(size: 24))
-                .foregroundColor(.white)
-            
-            Text("There are no activities scheduled for this day.")
-                .font(.onestRegular(size: 16))
-                .foregroundColor(.white.opacity(0.7))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
-    }
-}
-
-// MARK: - Custom Activity Card for Day Sheet
-extension DayActivitiesPageView {
-    private struct DayActivityCard: View {
-        let activity: FullFeedActivityDTO
-        let color: Color
-        let onTap: () -> Void
-        
-        var body: some View {
-            Button(action: onTap) {
-                HStack(spacing: 10) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(activity.title ?? "Sample Activity")
-                            .font(.onestSemiBold(size: 17))
-                            .foregroundColor(.white)
-                        
-						Text("\(activity.location?.name ?? "Activity Location") • \(formattedDate)")
-                            .font(.onestMedium(size: 13))
-                            .foregroundColor(Color.black.opacity(0.80))
-                    }
-                    
-                    Spacer()
-                    
-                    // Participant count and avatars
-                    HStack(spacing: -8) {
-                        // Participant count
-                        VStack(spacing: 0) {
-							Text(
-								"+\(max(0, (activity.participantUsers?.count ?? 0) - 2))"
-							)
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(figmaBlue)
-                        }
-                        .frame(width: 33.60, height: 33.60)
-                        .background(.white)
-                        .clipShape(Circle())
-                        
-                        // Avatar circles (placeholder)
-                        ForEach(0..<min(2, activity.participantUsers?.count ?? 0), id: \.self) { _ in
-                            Circle()
-                                .fill(Color.red.opacity(0.5))
-                                .frame(width: 33.53, height: 34.26)
-                                .shadow(color: Color.black.opacity(0.25), radius: 3.22, x: 0, y: 1.29)
-                        }
-                    }
-                }
-                .padding(EdgeInsets(top: 13, leading: 16, bottom: 13, trailing: 16))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(color)
-                .cornerRadius(12)
-                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 2)
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-        
-        private var formattedDate: String {
-            guard let startTime = activity.startTime else { return "Date TBD" }
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMMM d"
-            return formatter.string(from: startTime)
-        }
-    }
-}
-
-// MARK: - Loading Card Component
-extension DayActivitiesPageView {
-    private struct ActivityLoadingCard: View {
-        let activity: CalendarActivityDTO
-        let color: Color
-        
-        var body: some View {
-            VStack(alignment: .leading, spacing: 16) {
-                // Loading content
-                HStack {
-                    VStack(alignment: .leading, spacing: 6) {
-                        // Title placeholder
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(width: 150, height: 16)
-                        
-                        // Subtitle placeholder
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(width: 200, height: 12)
-                    }
-                    
-                    Spacer()
-                    
-                    // Loading indicator
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle())
-                        .scaleEffect(0.8)
-                }
-                
-                // Location placeholder
-                HStack {
-                    Image(systemName: "mappin.and.ellipse")
-                        .foregroundColor(.white.opacity(0.7))
-                        .font(.onestMedium(size: 12))
-                    
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(width: 120, height: 12)
-                    
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.15))
-                .cornerRadius(100)
-            }
-            .padding(14)
-            .background(
-                RoundedRectangle(cornerRadius: 14)
-                    .fill(color)
-                    .opacity(0.8)
-            )
-            .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
-        }
-    }
-}
-
-// MARK: - Helper Functions
-extension DayActivitiesPageView {
+    
     private func getColorForActivity(_ activity: CalendarActivityDTO) -> Color {
         // If we have a color hex code from the backend, use it
         if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
@@ -295,9 +113,109 @@ extension DayActivitiesPageView {
     }
 }
 
+// MARK: - Day Activity Card
+struct DayActivityCard: View {
+    let activity: CalendarActivityDTO
+    let color: Color
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Sample Activity")
+                        .font(.onestSemiBold(size: 17))
+                        .foregroundColor(textColor)
+                    
+                    Text("Activity Location • \(formattedDate)")
+                        .font(.onestMedium(size: 13))
+                        .foregroundColor(subtitleColor)
+                }
+                
+                Spacer()
+                
+                // Participant count and avatars
+                HStack(spacing: -8) {
+                    // Participant count
+                    VStack(spacing: 0) {
+                        Text("+2")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(participantCountColor)
+                    }
+                    .frame(width: 33.60, height: 33.60)
+                    .background(.white)
+                    .clipShape(Circle())
+                    
+                    // Avatar circles (placeholder)
+                    ForEach(0..<2, id: \.self) { _ in
+                        Circle()
+                            .fill(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+                            .frame(width: 33.53, height: 34.26)
+                            .shadow(color: Color.black.opacity(0.25), radius: 3.22, x: 0, y: 1.29)
+                    }
+                }
+            }
+            .padding(EdgeInsets(top: 13, leading: 16, bottom: 13, trailing: 16))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(color)
+            .cornerRadius(12)
+            .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 2)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM d"
+        return formatter.string(from: activity.date)
+    }
+    
+    private var textColor: Color {
+        // Use white text for darker backgrounds, black for lighter backgrounds
+        if color == figmaBlue || color.isDark {
+            return .white
+        } else {
+            return Color(red: 0, green: 0, blue: 0, opacity: 0.75)
+        }
+    }
+    
+    private var subtitleColor: Color {
+        if color == figmaBlue || color.isDark {
+            return Color.white.opacity(0.80)
+        } else {
+            return Color(red: 0, green: 0, blue: 0, opacity: 0.60)
+        }
+    }
+    
+    private var participantCountColor: Color {
+        if color == figmaBlue || color.isDark {
+            return figmaBlue
+        } else {
+            return Color(red: 0.13, green: 0.25, blue: 0.19)
+        }
+    }
+}
+
+// MARK: - Color Extension
+extension Color {
+    var isDark: Bool {
+        // Convert to RGB and check if it's generally dark
+        let uiColor = UIColor(self)
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        // Calculate luminance
+        let luminance = 0.299 * red + 0.587 * green + 0.114 * blue
+        return luminance < 0.5
+    }
+}
+
 // MARK: - Previews
 #if DEBUG
-@available(iOS 17, *)
 struct DayActivitiesPageView_Previews: PreviewProvider {
     static var previews: some View {
         DayActivitiesPageView(
@@ -306,17 +224,15 @@ struct DayActivitiesPageView_Previews: PreviewProvider {
                 CalendarActivityDTO(
                     id: UUID(),
                     date: Date(),
-        
                     icon: "🎉",
-                    colorHexCode: "#5667FF",
+                    colorHexCode: "#3575FF",
                     activityId: UUID()
                 ),
                 CalendarActivityDTO(
                     id: UUID(),
                     date: Date(),
-        
                     icon: "🥾",
-                    colorHexCode: "#1AB979",
+                    colorHexCode: "#80FF75",
                     activityId: UUID()
                 )
             ],

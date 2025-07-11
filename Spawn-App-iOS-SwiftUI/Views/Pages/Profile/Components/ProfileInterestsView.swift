@@ -112,8 +112,13 @@ struct ProfileInterestsView: View {
     }
 
     private var interestsContentView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header with social media icons
+        ZStack(alignment: .topLeading) {
+            // Background rectangle
+            RoundedRectangle(cornerRadius: 15)
+                .stroke(figmaBittersweetOrange, lineWidth: 1)
+                .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
+            
+            // Header positioned on the border
             HStack {
                 Text("Interests + Hobbies")
                     .font(.onestBold(size: 14))
@@ -122,21 +127,22 @@ struct ProfileInterestsView: View {
                     .padding(.horizontal, 12)
                     .background(figmaBittersweetOrange)
                     .cornerRadius(12)
+                    .offset(x: 16, y: -20)
                 
                 Spacer()
                 
                 // Social media icons
                 if !profileViewModel.isLoadingSocialMedia {
                     socialMediaIcons
+                        .offset(x: -16, y: -24)
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
             
             // Content area with dynamic height
             Group {
                 if profileViewModel.userInterests.isEmpty {
                     emptyInterestsView
+                        .padding(.top, 28)
                 } else {
                     // Interests as chips with flexible layout
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
@@ -145,17 +151,12 @@ struct ProfileInterestsView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.top, 12)
+                    .padding(.top, 28)
                     .padding(.bottom, 16)
                     .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
                 }
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(figmaBittersweetOrange, lineWidth: 1)
-                .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
-        )
     }
 
     private var emptyInterestsView: some View {
@@ -164,7 +165,6 @@ struct ProfileInterestsView: View {
             .italic()
             .font(.onestRegular(size: 14))
             .padding(.horizontal, 16)
-            .padding(.top, 12)
             .padding(.bottom, 16)
     }
 
