@@ -32,7 +32,7 @@ struct LaunchView: View {
 				// Google Sign-In Button
 				Button(action: {
 					Task {
-						await userAuth.signInWithGoogle()
+						await userAuth.loginWithGoogle()
 					}
 				}) {
 					AuthProviderButtonView(authProviderType: .google)

@@ -42,7 +42,7 @@ struct LoginView: View {
                     // Continue with Google
                     Button(action: {
                         Task {
-                            await viewModel.signInWithGoogle()
+                            await viewModel.loginWithGoogle()
                         }
                     }) {
                         AuthProviderButtonView(.google)

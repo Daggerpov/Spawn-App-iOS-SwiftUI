@@ -9,17 +9,17 @@ import SwiftUI
 
 struct CoreInputView: View {
     @ObservedObject private var viewModel: UserAuthViewModel = UserAuthViewModel.shared
-    @State private var input1 = ""
-    @State private var input2 = ""
+    @State var input1 = ""
+    @State var input2 = ""
     
     var heading: String
     var subtitle: String
     
     var label1: String
-    var label2: String
+    var label2: String?
     
     var inputText1: String
-    var inputText2: String
+    var inputText2: String?
     
     var labelSubtitle: String?
     
@@ -79,27 +79,28 @@ struct CoreInputView: View {
                         }
                         
                         // Password Field
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(label2)
-                                .font(.onestRegular(size: 16))
-                                .foregroundColor(.primary)
-                            
-                            SecureField(inputText2, text: $input2)
-                                .textFieldStyle(CustomTextFieldStyle())
-                        }
-                        // Continue Button
-                        Button(action: {
-                            continueAction()
-                        }) {
-                            OnboardingButtonCoreView("Continue") {
-                                isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+                        if let label2 = self.label2, let inputText2 = self.inputText2 {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(label2)
+                                    .font(.onestRegular(size: 16))
+                                    .foregroundColor(.primary)
+                                
+                                SecureField(inputText2, text: $input2)
+                                    .textFieldStyle(CustomTextFieldStyle())
                             }
+                            // Continue Button
+                            Button(action: {
+                                continueAction()
+                            }) {
+                                OnboardingButtonCoreView("Continue") {
+                                    isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+                                }
+                            }
+                            .padding(.top, -16)
+                            .padding(.bottom, -30)
+                            .padding(.horizontal, -22)
+                            .disabled(!isFormValid)
                         }
-                        .padding(.top, -16)
-                        .padding(.bottom, -30)
-                        .padding(.horizontal, -22)
-                        .disabled(!isFormValid)
-                            
                     }
                     .padding(.horizontal, 40)
                     
@@ -141,7 +142,7 @@ struct CoreInputView: View {
                         // Continue with Google
                         Button(action: {
                             Task{
-                                await viewModel.signInWithGoogle()
+                                await viewModel.loginWithGoogle()
                             }
                         }) {
                             AuthProviderButtonView(.google)

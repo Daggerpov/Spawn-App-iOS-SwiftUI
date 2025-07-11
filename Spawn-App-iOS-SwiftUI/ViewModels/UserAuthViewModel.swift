@@ -51,6 +51,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var defaultPfpFetchError: Bool = false
 	@Published var defaultPfpUrlString: String? = nil
+    
+    @Published var shouldNavigateToPhoneNumberView: Bool = false
+    @Published var shouldNavigateToVerificationCodeView: Bool = false
+    
+    private var isOnboarding: Bool = false
 
 	private init(apiService: IAPIService) {
         self.spawnUser = nil
@@ -102,6 +107,16 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			if let appleIDCredential = authorization.credential
 				as? ASAuthorizationAppleIDCredential
 			{
+                if isOnboarding {
+                    Task {
+                        if let idToken = appleIDCredential.identityToken {
+                            let idTokenString: String? = String(data: idToken, encoding: .utf8)
+                            await self.register(email: appleIDCredential.email, idToken: idTokenString, provider: .apple)
+                        }
+                    }
+                    return
+                }
+                
 				// Set user details
                 let userIdentifier = appleIDCredential.user
                 if let email = appleIDCredential.email {
@@ -139,8 +154,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		}
 	}
+    
+    func loginWithGoogle() async {
+        self.isOnboarding = false
+        await signInWithGoogle()
+    }
 
-	func signInWithGoogle() async {
+	private func signInWithGoogle() async {
 		await MainActor.run {
 			guard
 				let windowScene = UIApplication.shared.connectedScenes.first
@@ -178,6 +198,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					}
 					guard let user = user else { return }
                     
+                    if isOnboarding {
+                        Task {
+                            await self.register(email: user.profile?.email, idToken: user.idToken?.tokenString, provider: .google)
+                        }
+                        return
+                    }
+                    
                     // Request a higher resolution image (400px instead of 100px)
                     self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
                     self.name = user.profile?.name
@@ -197,6 +224,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func signInWithApple() {
+        self.isOnboarding = false
+        
 		let appleIDProvider = ASAuthorizationAppleIDProvider()
 		let request = appleIDProvider.createRequest()
 		request.requestedScopes = [.fullName, .email]
@@ -722,6 +751,74 @@ class UserAuthViewModel: NSObject, ObservableObject {
         self.spawnUser = BaseUserDTO.danielAgapov
         self.hasCheckedSpawnUserExistence = true
     }
+    
+    func googleRegister() async {
+        self.isOnboarding = true
+        await signInWithGoogle()
+    }
+    
+    func appleRegister() {
+        self.isOnboarding = true
+        let appleIDProvider = ASAuthorizationAppleIDProvider()
+        let request = appleIDProvider.createRequest()
+        request.requestedScopes = [.fullName, .email]
+
+        let authorizationController = ASAuthorizationController(
+            authorizationRequests: [request]
+        )
+        authorizationController.delegate = self  // Ensure delegate is set
+        authorizationController.performRequests()
+    }
+    
+    
+    func register(email: String?, idToken: String?, provider: AuthProviderType?) async {
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/registration") {
+                let registration: RegistrationDTO = RegistrationDTO(email: email, idToken: idToken, provider: provider?.rawValue)
+                let response: BaseUserDTO? = try await self.apiService.sendData(registration, to: url, parameters: nil)
+                guard let user: BaseUserDTO = response else {
+                    print("Failed to register account")
+                    return
+                }
+                
+                await MainActor.run {
+                    self.shouldNavigateToPhoneNumberView = true
+                    self.spawnUser = user
+                    self.email = user.email
+                }
+            }
+            
+        } catch {
+            print("Error registering user")
+            self.shouldNavigateToPhoneNumberView = false
+        }
+    }
+    
+    func requestVerification(number: String) async {
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/verification") {
+                guard let userId = spawnUser?.id else {
+                    print("Cannot send verification request without user ID")
+                    return
+                }
+                let request = SendVerificationRequestDTO(phoneNumber: number, userId: userId.uuidString)
+                let response: BaseUserDTO? = try await self.apiService.sendData(request, to: url, parameters: nil)
+                guard let user: BaseUserDTO = response else {
+                    print("Failed to request verification code")
+                    return
+                }
+                
+                await MainActor.run {
+                    self.shouldNavigateToVerificationCodeView = true
+                }
+            }
+        } catch {
+            print("Error registering user")
+            self.shouldNavigateToPhoneNumberView = false
+        }
+    }
+    
+    
 }
 
 // Conform to ASAuthorizationControllerDelegate
