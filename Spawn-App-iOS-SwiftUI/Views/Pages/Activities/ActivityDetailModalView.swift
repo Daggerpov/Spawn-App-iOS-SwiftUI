@@ -172,7 +172,7 @@ struct ActivityDetailModalView: View {
                     .foregroundColor(.white)
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(location.name ?? "Location")
+                    Text(location.name)
                         .font(.custom("Onest", size: 16).weight(.bold))
                         .foregroundColor(.white)
                     

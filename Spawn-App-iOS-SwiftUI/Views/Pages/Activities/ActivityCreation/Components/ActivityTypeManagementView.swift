@@ -19,6 +19,16 @@ struct ActivityTypeManagementView: View {
         self._viewModel = StateObject(wrappedValue: ActivityTypeViewModel(userId: userId))
     }
     
+    // Computed property to get the current activity type data from view model
+    private var currentActivityType: ActivityTypeDTO? {
+        return viewModel.activityTypes.first { $0.id == activityTypeDTO.id }
+    }
+    
+    // Use current data if available, otherwise fall back to original
+    private var displayActivityType: ActivityTypeDTO {
+        return currentActivityType ?? activityTypeDTO
+    }
+    
     // MARK: - Theme-aware colors
     private var adaptiveCardBackgroundColor: Color {
         colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93)
@@ -57,7 +67,7 @@ struct ActivityTypeManagementView: View {
                     
                     Spacer()
                     
-                    Text("Manage Type - \(activityTypeDTO.title)")
+                    Text("Manage Type - \(displayActivityType.title)")
                         .font(.onestSemiBold(size: 20))
                         .foregroundColor(universalAccentColor)
                     
@@ -97,12 +107,24 @@ struct ActivityTypeManagementView: View {
                     .navigationDestination(isPresented: $showingManagePeople) {
             ManagePeopleView(
                 user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
-                activityTitle: activityTypeDTO.title,
-                activityTypeDTO: activityTypeDTO
+                activityTitle: displayActivityType.title,
+                activityTypeDTO: displayActivityType
             )
         }
+        .onAppear {
+            // Fetch the latest activity types when the view appears
+            Task {
+                await viewModel.fetchActivityTypes()
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .activityTypesChanged)) { _ in
+            // Refresh when activity types change
+            Task {
+                await viewModel.fetchActivityTypes()
+            }
+        }
         .fullScreenCover(isPresented: $showingEditView) {
-            ActivityTypeEditView(activityTypeDTO: activityTypeDTO)
+            ActivityTypeEditView(activityTypeDTO: displayActivityType)
         }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
@@ -123,7 +145,7 @@ struct ActivityTypeManagementView: View {
                     },
                     onDeleteActivityType: {
                         Task {
-                            await viewModel.deleteActivityType(activityTypeDTO)
+                            await viewModel.deleteActivityType(displayActivityType)
                             // Dismiss the view after successful deletion
                             if viewModel.errorMessage == nil {
                                 dismiss()
@@ -148,13 +170,13 @@ struct ActivityTypeManagementView: View {
                         .fill(Color.clear)
                         .frame(width: 40, height: 40)
                     
-                    Text(activityTypeDTO.icon)
+                    Text(displayActivityType.icon)
                         .font(.system(size: 24))
                 }
                 .frame(width: 40, height: 40)
                 
                 // Activity Title
-                Text(activityTypeDTO.title)
+                Text(displayActivityType.title)
                     .font(.onestMedium(size: 24))
                     .foregroundColor(adaptiveCardTextColor)
             }
@@ -188,10 +210,10 @@ struct ActivityTypeManagementView: View {
     private var peopleSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Only show header when there are friends
-            if !activityTypeDTO.associatedFriends.isEmpty {
+            if !displayActivityType.associatedFriends.isEmpty {
                 // Header with people count and manage button - improved alignment
                 HStack(alignment: .center, spacing: 12) {
-                    Text("People (\(activityTypeDTO.associatedFriends.count))")
+                    Text("People (\(displayActivityType.associatedFriends.count))")
                         .font(.onestSemiBold(size: 17))
                         .foregroundColor(adaptivePeopleCountColor)
                     
@@ -205,13 +227,13 @@ struct ActivityTypeManagementView: View {
                 }
             }
             
-            if activityTypeDTO.associatedFriends.isEmpty {
+            if displayActivityType.associatedFriends.isEmpty {
                 // Empty state - new design
                 emptyStateView
             } else {
                 // People list - following Figma design pattern
                 LazyVStack(spacing: 12) {
-                    ForEach(activityTypeDTO.associatedFriends, id: \.id) { friend in
+                    ForEach(displayActivityType.associatedFriends, id: \.id) { friend in
                         peopleRowView(friend: friend)
                     }
                 }
