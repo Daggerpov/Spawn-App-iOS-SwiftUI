@@ -21,6 +21,12 @@ class ProfileViewModel: ObservableObject {
     @Published var selectedActivity: FullFeedActivityDTO?
     @Published var isLoadingActivity: Bool = false
     
+    // New property to store all activities organized by day position in the grid
+    @Published var calendarActivitiesByDay: [[[CalendarActivityDTO]]] = Array(
+        repeating: Array(repeating: [CalendarActivityDTO](), count: 7),
+        count: 5
+    )
+    
     // New properties for friendship status
 	@Published var friendshipStatus: FriendshipStatus = MockAPIService.isMocking ? .friends : .unknown
     @Published var isLoadingFriendshipStatus: Bool = false
@@ -317,6 +323,80 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    // Method to fetch friend's calendar activities
+    func fetchFriendCalendarActivities(friendUserId: UUID, month: Int, year: Int) async {
+        await MainActor.run { self.isLoadingCalendar = true }
+        
+        guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ ProfileViewModel: No requesting user ID available for calendar activities")
+            await MainActor.run {
+                self.isLoadingCalendar = false
+                self.errorMessage = "User ID not available"
+            }
+            return
+        }
+        
+        print("🔄 ProfileViewModel: Fetching calendar activities for friend: \(friendUserId)")
+        print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
+        print("📅 Month: \(month), Year: \(year)")
+        
+        do {
+            let url = URL(string: APIService.baseURL + "users/\(friendUserId)/calendar")!
+            let parameters = [
+                "month": String(month),
+                "year": String(year),
+                "requestingUserId": requestingUserId.uuidString
+            ]
+            
+            print("📡 ProfileViewModel: Making calendar API call to: \(url.absoluteString)")
+            print("📡 ProfileViewModel: Parameters: \(parameters)")
+            
+            let activities: [CalendarActivityDTO] = try await apiService.fetchData(
+                from: url,
+                parameters: parameters
+            )
+            
+            print("✅ ProfileViewModel: Successfully fetched \(activities.count) calendar activities")
+            
+            // Log calendar activity details
+            if !activities.isEmpty {
+                print("📅 ProfileViewModel: Calendar activity details:")
+                for (index, activity) in activities.enumerated() {
+                    print("  \(index + 1). \(activity.date.formatted()) - \(activity.icon ?? "No icon") - ID: \(activity.activityId?.uuidString ?? "No ID")")
+                }
+            }
+            
+            let grid = convertToCalendarGrid(
+                activities: activities,
+                month: month,
+                year: year
+            )
+            
+            await MainActor.run {
+                self.calendarActivities = grid
+                self.allCalendarActivities = activities
+                self.isLoadingCalendar = false
+                
+                // Pre-assign colors for calendar activities
+                let activityIds = activities.compactMap { $0.activityId }
+                ActivityColorService.shared.assignColorsForActivities(activityIds)
+                
+                print("✅ ProfileViewModel: Calendar grid updated with \(activities.count) activities")
+            }
+        } catch {
+            print("❌ ProfileViewModel: Error fetching friend's calendar activities: \(error.localizedDescription)")
+            await MainActor.run {
+                self.errorMessage = "Failed to load friend's calendar: \(error.localizedDescription)"
+                self.calendarActivities = Array(
+                    repeating: Array(repeating: nil, count: 7),
+                    count: 5
+                )
+                self.allCalendarActivities = []
+                self.isLoadingCalendar = false
+            }
+        }
+    }
+    
     private func convertToCalendarGrid(
         activities: [CalendarActivityDTO],
         month: Int,
@@ -324,6 +404,12 @@ class ProfileViewModel: ObservableObject {
     ) -> [[CalendarActivityDTO?]] {
         var grid = Array(
             repeating: Array(repeating: nil as CalendarActivityDTO?, count: 7),
+            count: 5
+        )
+        
+        // Reset the activities by day grid
+        calendarActivitiesByDay = Array(
+            repeating: Array(repeating: [], count: 7),
             count: 5
         )
         
@@ -353,7 +439,7 @@ class ProfileViewModel: ObservableObject {
             }
         }
         
-        // Place first activity of each day in the grid
+        // Place first activity of each day in the grid AND store all activities for each day
         for (day, dayActivities) in activitiesByDay {
             if !dayActivities.isEmpty {
                 let position = day + firstDayOffset - 1
@@ -361,6 +447,7 @@ class ProfileViewModel: ObservableObject {
                     let row = position / 7
                     let col = position % 7
                     grid[row][col] = dayActivities.first
+                    calendarActivitiesByDay[row][col] = dayActivities // Store all activities for this day
                 }
             }
         }
@@ -405,6 +492,17 @@ class ProfileViewModel: ObservableObject {
             return range.count
         }
         return 30  // Default fallback
+    }
+    
+    // MARK: - Calendar Helper Methods
+    
+    // Get all activities for a specific day position in the calendar grid
+    func getActivitiesForDay(row: Int, col: Int) -> [CalendarActivityDTO] {
+        guard row >= 0 && row < calendarActivitiesByDay.count &&
+              col >= 0 && col < calendarActivitiesByDay[row].count else {
+            return []
+        }
+        return calendarActivitiesByDay[row][col]
     }
     
     // MARK: - Interest Management
@@ -461,11 +559,15 @@ class ProfileViewModel: ObservableObject {
     
     func fetchActivityDetails(activityId: UUID) async -> FullFeedActivityDTO? {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ ProfileViewModel: No user ID available for activity details")
             await MainActor.run {
                 self.errorMessage = "User ID not available"
             }
             return nil
         }
+        
+        print("🔄 ProfileViewModel: Fetching activity details for activity: \(activityId)")
+        print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
         
         await MainActor.run { self.isLoadingActivity = true }
         
@@ -473,10 +575,16 @@ class ProfileViewModel: ObservableObject {
             let url = URL(string: APIService.baseURL + "activities/\(activityId)")!
             let parameters = ["requestingUserId": userId.uuidString]
             
+            print("📡 ProfileViewModel: Making activity details API call to: \(url.absoluteString)")
+            print("📡 ProfileViewModel: Parameters: \(parameters)")
+            
             let activity: FullFeedActivityDTO = try await apiService.fetchData(
                 from: url,
                 parameters: parameters
             )
+            
+            print("✅ ProfileViewModel: Successfully fetched activity details: \(activity.title)")
+            print("📋 Activity Details: ID: \(activity.id), Title: \(activity.title), Location: \(activity.location?.name ?? "No location")")
             
             await MainActor.run {
                 self.selectedActivity = activity
@@ -485,6 +593,7 @@ class ProfileViewModel: ObservableObject {
             
             return activity
         } catch {
+            print("❌ ProfileViewModel: Error fetching activity details: \(error.localizedDescription)")
             await MainActor.run {
                 self.errorMessage = "Failed to load activity: \(error.localizedDescription)"
                 self.isLoadingActivity = false
@@ -657,16 +766,21 @@ class ProfileViewModel: ObservableObject {
     // New method to fetch profile activities (both upcoming and past)
     func fetchProfileActivities(profileUserId: UUID) async {
         guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ ProfileViewModel: No requesting user ID available")
             await MainActor.run {
                 self.errorMessage = "User ID not available"
             }
             return
         }
         
+        print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
+        print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
+        
         await MainActor.run { self.isLoadingUserActivities = true }
         
         // Check cache first
         if let cachedActivities = AppCache.shared.profileActivities[profileUserId] {
+            print("💾 ProfileViewModel: Found cached profile activities: \(cachedActivities.count)")
             await MainActor.run {
                 self.profileActivities = cachedActivities
                 self.isLoadingUserActivities = false
@@ -678,10 +792,23 @@ class ProfileViewModel: ObservableObject {
             let url = URL(string: APIService.baseURL + "activities/profile/\(profileUserId)")!
             let parameters = ["requestingUserId": requestingUserId.uuidString]
             
+            print("📡 ProfileViewModel: Making API call to: \(url.absoluteString)")
+            print("📡 ProfileViewModel: Parameters: \(parameters)")
+            
             let activities: [ProfileActivityDTO] = try await self.apiService.fetchData(
                 from: url,
                 parameters: parameters
             )
+            
+            print("✅ ProfileViewModel: Successfully fetched \(activities.count) profile activities")
+            
+            // Log activity details
+            if !activities.isEmpty {
+                print("📋 ProfileViewModel: Activity details:")
+                for (index, activity) in activities.enumerated() {
+                    print("  \(index + 1). \(activity.title ?? "No title") - \(activity.startTime?.formatted() ?? "No time")")
+                }
+            }
             
             await MainActor.run {
                 self.profileActivities = activities
@@ -690,6 +817,7 @@ class ProfileViewModel: ObservableObject {
                 AppCache.shared.updateProfileActivities(profileUserId, activities)
             }
         } catch {
+            print("❌ ProfileViewModel: Error fetching profile activities: \(error.localizedDescription)")
             await MainActor.run {
                 self.errorMessage = "Failed to load profile activities: \(error.localizedDescription)"
                 self.profileActivities = []

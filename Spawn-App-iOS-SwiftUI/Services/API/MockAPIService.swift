@@ -331,6 +331,108 @@ class MockAPIService: IAPIService {
 				// Fallback for current user or unknown user
 				return ["Basketball"] as! T
 			}
+
+			// Fetch user profile info
+			if url.absoluteString.contains("users/") && url.absoluteString.contains("/profile-info") {
+				// Extract userId from URL to return different profile info for different users
+				let urlComponents = url.absoluteString.components(separatedBy: "/")
+				if let usersIndex = urlComponents.firstIndex(of: "users"),
+				   usersIndex + 1 < urlComponents.count {
+					let userId = urlComponents[usersIndex + 1]
+					let username = getUsernameFromMockUsers(userId)
+					
+					// Return profile info with dateCreated set to a reasonable time in the past
+					// For mock users, let's say they were created 6 months ago
+					let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date()) ?? Date()
+					
+					// Find the corresponding mock user
+					let mockUsers = [
+						BaseUserDTO.danielAgapov,
+						BaseUserDTO.danielLee,
+						BaseUserDTO.shannon,
+						BaseUserDTO.jennifer,
+						BaseUserDTO.michael,
+						BaseUserDTO.haley
+					]
+					
+					if let mockUser = mockUsers.first(where: { $0.username == username }) {
+						return UserProfileInfoDTO(
+							userId: mockUser.id,
+							name: mockUser.name ?? "",
+							username: mockUser.username,
+							bio: mockUser.bio,
+							profilePicture: mockUser.profilePicture,
+							dateCreated: sixMonthsAgo
+						) as! T
+					}
+				}
+				
+				// Fallback for current user or unknown user
+				let sixMonthsAgo = Calendar.current.date(byAdding: .month, value: -6, to: Date()) ?? Date()
+				return UserProfileInfoDTO(
+					userId: UUID(),
+					name: "Daniel Agapov",
+					username: "daggerpov",
+					bio: "Spawn Creator",
+					profilePicture: "Daniel_Agapov_pfp",
+					dateCreated: sixMonthsAgo
+				) as! T
+			}
+			
+			// Fetch user social media
+			if url.absoluteString.contains("users/") && url.absoluteString.contains("/social-media") {
+				// Extract userId from URL to return different social media for different users
+				let urlComponents = url.absoluteString.components(separatedBy: "/")
+				if let usersIndex = urlComponents.firstIndex(of: "users"),
+				   usersIndex + 1 < urlComponents.count {
+					let userIdString = urlComponents[usersIndex + 1]
+					let userId = UUID(uuidString: userIdString) ?? UUID()
+					let username = getUsernameFromMockUsers(userIdString)
+					
+					// Return different social media for different users
+					let userSocialMedia = [
+						"daggerpov": UserSocialMediaDTO(
+							id: UUID(),
+							userId: userId,
+							whatsappLink: "https://wa.me/1234567890",
+							instagramLink: "https://www.instagram.com/daggerpov"
+						),
+						"uhdlee": UserSocialMediaDTO(
+							id: UUID(),
+							userId: userId,
+							whatsappLink: "https://wa.me/0987654321",
+							instagramLink: "https://www.instagram.com/uhdlee"
+						),
+						"shannonaurl": UserSocialMediaDTO(
+							id: UUID(),
+							userId: userId,
+							whatsappLink: nil,
+							instagramLink: "https://www.instagram.com/shannonaurl"
+						)
+					]
+					
+					// Return social media for the specific user, or empty social media if not found
+					if let mockSocialMedia = userSocialMedia[username] {
+						return mockSocialMedia as! T
+					} else {
+						// Return empty social media for users without data
+						return UserSocialMediaDTO(
+							id: UUID(),
+							userId: userId,
+							whatsappLink: nil,
+							instagramLink: nil
+						) as! T
+					}
+				}
+				
+				// Fallback for current user or unknown user
+				return UserSocialMediaDTO(
+					id: UUID(),
+					userId: userId ?? UUID(),
+					whatsappLink: nil,
+					instagramLink: nil
+				) as! T
+			}
 		}
 		
 
@@ -408,6 +510,42 @@ class MockAPIService: IAPIService {
 			&& url.absoluteString.contains("/toggleStatus")
 		{
 			return FullFeedActivityDTO.mockDinnerActivity as! U
+		}
+		
+		// Activity details update (title, icon, etc.)
+		if url.absoluteString.contains("activities/") && !url.absoluteString.contains("/toggleStatus") {
+			// Extract activity ID from URL
+			let urlComponents = url.absoluteString.components(separatedBy: "/")
+			if let activityIdString = urlComponents.last,
+			   let activityId = UUID(uuidString: activityIdString) {
+				
+				print("🔍 MOCK: Updating activity details for ID: \(activityId)")
+				
+				// Get the current activity from cache or create a mock one
+				var activityToUpdate = AppCache.shared.getActivityById(activityId) ?? FullFeedActivityDTO.mockDinnerActivity
+				activityToUpdate.id = activityId
+				
+				// Apply updates from the request data
+				if let updateData = object as? [String: String] {
+					print("📝 MOCK: Applying updates: \(updateData)")
+					
+					if let newTitle = updateData["title"], !newTitle.isEmpty {
+						activityToUpdate.title = newTitle
+						print("📝 MOCK: Updated title to: \(newTitle)")
+					}
+					
+					if let newIcon = updateData["icon"], !newIcon.isEmpty {
+						activityToUpdate.icon = newIcon
+						print("📝 MOCK: Updated icon to: \(newIcon)")
+					}
+				}
+				
+				// Update the cache with the modified activity
+				AppCache.shared.addOrUpdateActivity(activityToUpdate)
+				
+				print("✅ MOCK: Successfully updated activity: \(activityToUpdate.title ?? "No title")")
+				return activityToUpdate as! U
+			}
 		}
 
 		// FriendRequestViewModel.swift - friendRequestAction():

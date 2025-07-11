@@ -8,9 +8,10 @@ struct ActivityTypeEditView: View {
     @State private var editedTitle: String = ""
     @State private var editedIcon: String = ""
     @State private var hasChanges: Bool = false
-    @State private var isEmojiPickerPresented: Bool = false
     @State private var navigateToFriendSelection: Bool = false
+    @State private var showEmojiPicker: Bool = false
     @State private var emojiInputText: String = ""
+    @FocusState private var isTitleFieldFocused: Bool
     @FocusState private var isEmojiTextFieldFocused: Bool
     
     @StateObject private var viewModel: ActivityTypeViewModel
@@ -29,39 +30,39 @@ struct ActivityTypeEditView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Header with back button
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(universalAccentColor)
+                        .font(.title3)
+                }
+                
+                Spacer()
+                
+                Text("New Activity")
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                
+                Spacer()
+                
+                // Empty view for balance
+                Color.clear.frame(width: 24, height: 24)
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
+            
+            // Main content
             ZStack {
                 // Background - adaptive to light/dark mode
                 universalBackgroundColor
                     .ignoresSafeArea()
-            
-            // Header
-            VStack {
-                HStack(spacing: 32) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(universalAccentColor)
-                            .font(.title3)
-                    }
-                    
-                    Text("Create Type - Name")
-                        .font(.onestSemiBold(size: 20))
-                        .foregroundColor(universalAccentColor)
-                        .frame(maxWidth: .infinity)
-                    
-                    // Empty view for balance
-                    Color.clear.frame(width: 24, height: 24)
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
                 
-                Spacer()
-            }
-            .offset(x: 0, y: -380)
-            
-            // Main circular content
+                // Main circular content
             VStack(spacing: 30) {
                 // Icon picker area
                 ZStack {
@@ -72,22 +73,19 @@ struct ActivityTypeEditView: View {
                     
                     // Icon display - make it clickable
                     Button(action: {
-                        // Clear the input text and focus to trigger emoji keyboard
-                        emojiInputText = ""
-                        isEmojiTextFieldFocused = true
+                        showEmojiPicker = true
                     }) {
                         Text(editedIcon)
                             .font(.system(size: 40))
                     }
                     
-                    // Edit button overlay
+                    // Edit button overlay - positioned at bottom right
                     VStack {
+                        Spacer()
                         HStack {
                             Spacer()
                             Button(action: {
-                                // Clear the input text and focus to trigger emoji keyboard
-                                emojiInputText = ""
-                                isEmojiTextFieldFocused = true
+                                showEmojiPicker = true
                             }) {
                                 ZStack {
                                     Circle()
@@ -99,9 +97,8 @@ struct ActivityTypeEditView: View {
                                         .foregroundColor(.white)
                                 }
                             }
-                            .offset(x: 20, y: -20)
+                            .offset(x: 15, y: 15)
                         }
-                        Spacer()
                     }
                 }
                 .frame(width: 128, height: 128)
@@ -113,6 +110,7 @@ struct ActivityTypeEditView: View {
                     .multilineTextAlignment(.center)
                     .textFieldStyle(PlainTextFieldStyle())
                     .frame(maxWidth: 250)
+                    .focused($isTitleFieldFocused)
             }
             .padding(40)
             .frame(width: 290, height: 290)
@@ -162,28 +160,54 @@ struct ActivityTypeEditView: View {
             .disabled(viewModel.isLoading)
             .offset(x: 0, y: 110)
             
-            // Hidden text field for emoji input
-            TextField("", text: $emojiInputText)
-                .opacity(0)
-                .frame(width: 0, height: 0)
-                .focused($isEmojiTextFieldFocused)
-                .onChange(of: emojiInputText) { newValue in
-                    // Extract the last character if it's an emoji
-                    if let lastChar = newValue.last, lastChar.isEmoji {
-                        editedIcon = String(lastChar)
-                        isEmojiTextFieldFocused = false
-                    }
-                }
+            }
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showEmojiPicker) {
+            NavigationView {
+                VStack {
+                    TextField("", text: $editedIcon)
+                        .font(.system(size: 60))
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.default)
+                        .textInputAutocapitalization(.never)
+                        .disableAutocorrection(true)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .onAppear {
+                            // Focus the text field to show keyboard
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
+                            }
+                        }
+                }
+                .navigationTitle("Choose Emoji")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            showEmojiPicker = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.medium])
+        }
         .onAppear {
             setupInitialState()
+            // Auto-focus the title field when the view appears
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isTitleFieldFocused = true
+            }
         }
         .onChange(of: editedTitle) { _ in
             updateHasChanges()
+            // Apply optimistic update immediately
+            optimisticallyUpdateActivityType()
         }
         .onChange(of: editedIcon) { _ in
             updateHasChanges()
+            // Apply optimistic update immediately
+            optimisticallyUpdateActivityType()
         }
         .navigationDestination(isPresented: $navigateToFriendSelection) {
             ActivityTypeFriendSelectionView(
@@ -230,7 +254,6 @@ struct ActivityTypeEditView: View {
                 }
             }
         )
-        }
     }
 
     // MARK: - Private Methods
@@ -256,7 +279,7 @@ struct ActivityTypeEditView: View {
     private func createUpdatedActivityType() -> ActivityTypeDTO {
         return ActivityTypeDTO(
             id: activityTypeDTO.id,
-            title: editedTitle.trimmingCharacters(in: .whitespacesAndNewlines),
+            title: editedTitle,
             icon: editedIcon,
             associatedFriends: activityTypeDTO.associatedFriends,
             orderNum: activityTypeDTO.orderNum,
@@ -265,41 +288,33 @@ struct ActivityTypeEditView: View {
     }
     
     private func saveChanges() {
-        // Validate input
-        guard !editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return
-        }
-        
-        // Create updated activity type
-        let updatedActivityType = createUpdatedActivityType()
-        
-        // Update through view model
+		let updatedActivityType = createUpdatedActivityType()
+		viewModel.updateActivityType(updatedActivityType)
         Task {
-            await viewModel.updateActivityType(updatedActivityType)
-            
-            // Save changes to backend
             await viewModel.saveBatchChanges()
             
-            // Dismiss on success
-            if viewModel.errorMessage == nil {
-                await MainActor.run {
-                    dismiss()
-                }
+            // Dismiss after saving
+            await MainActor.run {
+                dismiss()
             }
         }
     }
-}
-
-// MARK: - Character extension for emoji detection
-extension Character {
-    var isEmoji: Bool {
-        guard let scalar = unicodeScalars.first else { return false }
-        return scalar.properties.isEmoji
+    
+    private func optimisticallyUpdateActivityType() {
+        let optimisticActivityType = createUpdatedActivityType()
+        viewModel.optimisticallyUpdateActivityType(optimisticActivityType)
     }
 }
+
+
 
 // MARK: - Preview
 @available(iOS 17, *)
 #Preview {
-    ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.mockChillActivityType)
+    @Previewable @StateObject var appCache = AppCache.shared
+    
+    NavigationView {
+        ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+            .environmentObject(appCache)
+    }
 } 

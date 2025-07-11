@@ -17,9 +17,6 @@ struct ActivityTypeFriendSelectionView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Header
-                headerView
-                
                 // Search bar
                 searchBarView
                     .padding(.horizontal, 24)
@@ -64,22 +61,11 @@ struct ActivityTypeFriendSelectionView: View {
                 }
             }
         }
-        .navigationBarHidden(true)
-    }
-    
-    // MARK: - View Components
-    
-    private var headerView: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(universalPlaceHolderTextColor)
-                }
-                
-                Spacer()
-                
+        .navigationTitle("Select friends to add to this type")
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(false)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { saveActivityType() }) {
                     Text("Save")
                         .font(.onestSemiBold(size: 16))
@@ -87,15 +73,10 @@ struct ActivityTypeFriendSelectionView: View {
                 }
                 .disabled(isLoading)
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            
-            Text("Select friends to add to this type")
-                .font(.onestSemiBold(size: 20))
-                .foregroundColor(universalAccentColor)
-                .padding(.top, 40)
         }
     }
+    
+    // MARK: - View Components
     
     private var searchBarView: some View {
         HStack(spacing: 8) {

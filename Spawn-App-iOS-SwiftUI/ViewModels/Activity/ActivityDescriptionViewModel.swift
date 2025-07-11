@@ -14,6 +14,8 @@ class ActivityDescriptionViewModel: ObservableObject {
 	var apiService: IAPIService
 	var creationMessage: String?
 	@Published var isParticipating: Bool = false
+	@Published var errorMessage: String?
+	@Published var isLoading: Bool = false
 
 	init(apiService: IAPIService, activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID) {
 		self.apiService = apiService
@@ -30,6 +32,118 @@ class ActivityDescriptionViewModel: ObservableObject {
 		if let participants = activity.participantUsers {
 			isParticipating = participants.contains { $0.id == senderUserId }
 		}
+	}
+	
+	// MARK: - Optimistic Updates for Activity Editing
+	
+	/// Optimistically updates the activity title immediately in the UI
+	func optimisticallyUpdateActivityTitle(_ newTitle: String) {
+		activity.title = newTitle
+		AppCache.shared.optimisticallyUpdateActivity(activity)
+		print("⚡ Optimistically updated activity title to: \(newTitle)")
+	}
+	
+	/// Optimistically updates the activity icon immediately in the UI
+	func optimisticallyUpdateActivityIcon(_ newIcon: String) {
+		activity.icon = newIcon
+		AppCache.shared.optimisticallyUpdateActivity(activity)
+		print("⚡ Optimistically updated activity icon to: \(newIcon)")
+	}
+	
+	/// Optimistically updates both title and icon
+	func optimisticallyUpdateActivity(title: String? = nil, icon: String? = nil) {
+		if let title = title {
+			activity.title = title
+		}
+		if let icon = icon {
+			activity.icon = icon
+		}
+		AppCache.shared.optimisticallyUpdateActivity(activity)
+		print("⚡ Optimistically updated activity: title=\(title ?? "unchanged"), icon=\(icon ?? "unchanged")")
+	}
+	
+	/// Saves activity changes to the backend
+	func saveActivityChanges() async {
+		await MainActor.run {
+			isLoading = true
+			errorMessage = nil
+		}
+		
+		defer {
+			Task { @MainActor in
+				isLoading = false
+			}
+		}
+		
+		print("🔄 Attempting to save activity changes for ID: \(activity.id)")
+		print("📝 Activity title: '\(activity.title ?? "nil")', icon: '\(activity.icon ?? "nil")'")
+		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
+		
+		guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)") else {
+			print("❌ Error: Invalid URL for activity update")
+			await MainActor.run {
+				errorMessage = "Invalid URL for activity update"
+			}
+			return
+		}
+		
+		print("📡 Making API call to: \(url.absoluteString)")
+		
+		do {
+			// Create a simple update DTO with just the fields we want to update
+			let updateData = [
+				"title": activity.title ?? "",
+				"icon": activity.icon ?? ""
+			]
+			
+			print("📦 Sending update data: \(updateData)")
+			
+			let updatedActivity: FullFeedActivityDTO = try await apiService.updateData(
+				updateData, to: url, parameters: nil)
+			
+			print("✅ API call successful, received updated activity:")
+			print("📋 Updated activity - ID: \(updatedActivity.id), Title: '\(updatedActivity.title ?? "nil")', Icon: '\(updatedActivity.icon ?? "nil")'")
+			
+			await MainActor.run {
+				self.activity = updatedActivity
+				// Update cache with confirmed changes
+				AppCache.shared.addOrUpdateActivity(updatedActivity)
+				print("✅ Successfully saved activity changes to backend")
+			}
+		} catch let error as APIError {
+			print("❌ APIError saving activity changes: \(error)")
+			await MainActor.run {
+				switch error {
+				case .invalidStatusCode(let statusCode):
+					errorMessage = "Server error (status \(statusCode)). Please try again."
+				case .invalidData:
+					errorMessage = "Invalid data format. Please try again."
+				case .URLError:
+					errorMessage = "Network error. Please check your connection."
+				case .failedHTTPRequest(let description):
+					errorMessage = "Request failed: \(description)"
+				case .failedJSONParsing(let url):
+					errorMessage = "Failed to parse server response. Please try again."
+				case .unknownError(let error):
+					errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
+				case .failedTokenSaving(let tokenType):
+					errorMessage = "Authentication error. Please try logging in again."
+				}
+			}
+		} catch {
+			print("❌ Unknown error saving activity changes: \(error)")
+			print("❌ Error type: \(type(of: error))")
+			print("❌ Error description: \(error.localizedDescription)")
+			await MainActor.run {
+				errorMessage = "Failed to save changes: \(error.localizedDescription)"
+			}
+		}
+	}
+	
+	/// Clears any error messages
+	@MainActor
+	func clearError() {
+		errorMessage = nil
 	}
 	
 	func toggleParticipation() async {

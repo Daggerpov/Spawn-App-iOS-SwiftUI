@@ -4,18 +4,29 @@ struct ManagePeopleView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var searchViewModel = SearchViewModel()
     @StateObject private var friendsViewModel: FriendsTabViewModel
+    @StateObject private var activityTypeViewModel: ActivityTypeViewModel
     @ObservedObject var activityCreationViewModel = ActivityCreationViewModel.shared
     @State private var searchText = ""
     @State private var selectedFriends: Set<UUID> = []
+    @State private var isSuggestedCollapsed = false
     
     let user: BaseUserDTO
     let activityTitle: String
+    let activityTypeDTO: ActivityTypeDTO? // Add optional activity type for managing existing activity types
     
-    init(user: BaseUserDTO, activityTitle: String = "Activity") {
+    init(user: BaseUserDTO, activityTitle: String = "Activity", activityTypeDTO: ActivityTypeDTO? = nil) {
         self.user = user
         self.activityTitle = activityTitle
+        self.activityTypeDTO = activityTypeDTO
         self._friendsViewModel = StateObject(
             wrappedValue: FriendsTabViewModel(
+                userId: user.id,
+                apiService: MockAPIService.isMocking
+                    ? MockAPIService(userId: user.id) : APIService()
+            )
+        )
+        self._activityTypeViewModel = StateObject(
+            wrappedValue: ActivityTypeViewModel(
                 userId: user.id,
                 apiService: MockAPIService.isMocking
                     ? MockAPIService(userId: user.id) : APIService()
@@ -62,13 +73,24 @@ struct ManagePeopleView: View {
             friendsViewModel.connectSearchViewModel(searchViewModel)
             loadFriendsData()
             
-            // Initialize selected friends from activity creation view model
-            selectedFriends = Set(activityCreationViewModel.selectedFriends.map { $0.id })
+            // Initialize selected friends based on context
+            if let activityTypeDTO = activityTypeDTO {
+                // For managing existing activity type - use associated friends
+                selectedFriends = Set(activityTypeDTO.associatedFriends.map { $0.id })
+            } else {
+                // For activity creation - use activity creation view model
+                selectedFriends = Set(activityCreationViewModel.selectedFriends.map { $0.id })
+            }
         }
         .onDisappear {
-            // Update the activity creation view model with selected friends
-            let selectedFriendObjects = friendsViewModel.friends.filter { selectedFriends.contains($0.id) }
-            activityCreationViewModel.selectedFriends = selectedFriendObjects
+            // Only update the activity creation view model if we're in activity creation mode
+            if activityTypeDTO == nil {
+                let selectedFriendObjects = friendsViewModel.friends.filter { selectedFriends.contains($0.id) }
+                activityCreationViewModel.selectedFriends = selectedFriendObjects
+            } else {
+                // For activity type management, save changes to the activity type
+                saveActivityTypeChanges()
+            }
         }
     }
     
@@ -123,14 +145,24 @@ struct ManagePeopleView: View {
                     .font(.onestMedium(size: 16))
                     .foregroundColor(figmaBlack300)
                 
-                Image(systemName: "info.circle")
-                    .font(.system(size: 16))
-                    .foregroundColor(universalAccentColor)
+                Spacer()
+                
+                Button(action: {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isSuggestedCollapsed.toggle()
+                    }
+                }) {
+                    Image(systemName: isSuggestedCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.system(size: 16))
+                        .foregroundColor(universalAccentColor)
+                }
             }
             
-            VStack(spacing: 12) {
-                ForEach(suggestedFriends.prefix(3), id: \.id) { friend in
-                    friendRowView(friend: friend, isSelected: false)
+            if !isSuggestedCollapsed {
+                VStack(spacing: 12) {
+                    ForEach(suggestedFriends.prefix(3), id: \.id) { friend in
+                        friendRowView(friend: friend, isSelected: false)
+                    }
                 }
             }
         }
@@ -264,10 +296,44 @@ struct ManagePeopleView: View {
             selectedFriends.insert(friend.id)
         }
     }
+    
+    private func saveActivityTypeChanges() {
+        guard let activityTypeDTO = activityTypeDTO else { return }
+        
+        // Get the original friend IDs
+        let originalFriendIds = Set(activityTypeDTO.associatedFriends.map { $0.id })
+        
+        // Check if there are any changes to save
+        if selectedFriends == originalFriendIds {
+            print("No changes to save for activity type: \(activityTypeDTO.title)")
+            return
+        }
+        
+        // Create updated associated friends list
+        let updatedAssociatedFriends = friendsViewModel.friends
+            .filter { selectedFriends.contains($0.id) }
+            .map { $0.asBaseUser }
+        
+        // Create updated activity type DTO
+        let updatedActivityTypeDTO = ActivityTypeDTO(
+            id: activityTypeDTO.id,
+            title: activityTypeDTO.title,
+            icon: activityTypeDTO.icon,
+            associatedFriends: updatedAssociatedFriends,
+            orderNum: activityTypeDTO.orderNum,
+            isPinned: activityTypeDTO.isPinned
+        )
+        
+        // Update the activity type using the view model
+        activityTypeViewModel.optimisticallyUpdateActivityType(updatedActivityTypeDTO)
+        
+        print("✅ Saved changes to activity type: \(activityTypeDTO.title)")
+        print("   Updated associated friends count: \(updatedAssociatedFriends.count)")
+    }
 }
 
 // MARK: - Preview
 @available(iOS 17.0, *)
 #Preview {
-    ManagePeopleView(user: .danielAgapov, activityTitle: "Chill")
+    ManagePeopleView(user: .danielAgapov, activityTitle: "Chill", activityTypeDTO: nil)
 } 

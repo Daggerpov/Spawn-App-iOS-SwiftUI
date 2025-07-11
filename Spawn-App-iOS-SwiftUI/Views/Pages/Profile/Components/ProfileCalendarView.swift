@@ -17,17 +17,55 @@ struct ProfileCalendarView: View {
 	@Binding var showActivityDetails: Bool
 	@Binding var navigateToCalendar: Bool
 
-	@State private var currentMonth = Calendar.current.component(
-		.month,
-		from: Date()
-	)
-	@State private var currentYear = Calendar.current.component(
-		.year,
-		from: Date()
-	)
+	@State private var currentDate = Date()
+	
+	private var currentMonth: Int {
+		Calendar.current.component(.month, from: currentDate)
+	}
+	
+	private var currentYear: Int {
+		Calendar.current.component(.year, from: currentDate)
+	}
+	
+	private var calendarDays: [Date?] {
+		let calendar = Calendar.current
+		let firstDayOfMonth = calendar.date(from: DateComponents(year: currentYear, month: currentMonth, day: 1))!
+		let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) - 1 // 0-indexed
+		let daysInMonth = calendar.range(of: .day, in: .month, for: firstDayOfMonth)!.count
+		
+		var days: [Date?] = []
+		
+		// Add empty days for the beginning of the month
+		for _ in 0..<firstWeekday {
+			days.append(nil)
+		}
+		
+		// Add actual days of the month
+		for day in 1...daysInMonth {
+			if let date = calendar.date(from: DateComponents(year: currentYear, month: currentMonth, day: day)) {
+				days.append(date)
+			}
+		}
+		
+		// Fill to 35 days (5 rows × 7 days)
+		while days.count < 35 {
+			days.append(nil)
+		}
+		
+		return days
+	}
 
 	var body: some View {
 		VStack(spacing: 8) {
+			// Month/Year header
+			HStack {
+				Text(monthYearString())
+					.font(.onestMedium(size: 14))
+					.foregroundColor(.primary)
+				Spacer()
+			}
+			.padding(.horizontal, 4)
+			
 			// Days of week header
 			HStack(spacing: 4) {
 				ForEach(Array(zip(0..<weekDays.count, weekDays)), id: \.0) { index, day in
@@ -48,24 +86,52 @@ struct ProfileCalendarView: View {
 					ForEach(0..<5, id: \.self) { row in
 						HStack(spacing: 4) {
 							ForEach(0..<7, id: \.self) { col in
-								if let dayActivities = getDayActivities(row: row, col: col) {
+								let dayIndex = row * 7 + col
+								if dayIndex < calendarDays.count, let date = calendarDays[dayIndex] {
+									let dayActivities = getActivitiesForDate(date)
 									if dayActivities.isEmpty {
 										// Empty day cell
 										RoundedRectangle(cornerRadius: 4.5)
 											.fill(Color(hex: "#DBDBDB"))
 											.frame(width: 32, height: 32)
 											.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
+											.overlay(
+												Text("\(Calendar.current.component(.day, from: date))")
+													.font(.onestMedium(size: 10))
+													.foregroundColor(.black)
+											)
+											.onTapGesture {
+												// Navigate to full calendar view on empty day tap
+												Task {
+													do {
+														// Add timeout to prevent hanging
+														try await withTimeout(seconds: 3) {
+															await profileViewModel.fetchAllCalendarActivities()
+														}
+														await MainActor.run {
+															navigateToCalendar = true
+														}
+													} catch {
+														// If fetching fails or times out, still allow navigation to calendar
+														// The calendar view will handle the empty state
+														print("Failed to fetch calendar activities: \(error)")
+														await MainActor.run {
+															navigateToCalendar = true
+														}
+													}
+												}
+											}
 									} else {
 										// Day cell with activities
-										CalendarDayCell(activities: dayActivities)
+										CalendarDayCell(activities: dayActivities, dayNumber: Calendar.current.component(.day, from: date))
 											.onTapGesture {
 												handleDaySelection(activities: dayActivities)
 											}
 									}
 								} else {
-									// Days outside current month
+									// Empty cell for days outside the month
 									RoundedRectangle(cornerRadius: 4.5)
-										.stroke(Color(hex: "#DBDBDB"), lineWidth: 0.5)
+										.fill(Color.clear)
 										.frame(width: 32, height: 32)
 								}
 							}
@@ -73,28 +139,6 @@ struct ProfileCalendarView: View {
 					}
 				}
 				.padding(.horizontal, 4)
-				.onTapGesture {
-					// Only navigate when tapping on empty areas (not on activity days)
-					// Load all calendar activities before navigating to calendar
-					Task {
-						do {
-							// Add timeout to prevent hanging
-							try await withTimeout(seconds: 3) {
-								await profileViewModel.fetchAllCalendarActivities()
-							}
-							await MainActor.run {
-								navigateToCalendar = true
-							}
-						} catch {
-							// If fetching fails or times out, still allow navigation to calendar
-							// The calendar view will handle the empty state
-							print("Failed to fetch calendar activities: \(error)")
-							await MainActor.run {
-								navigateToCalendar = true
-							}
-						}
-					}
-				}
 			}
 		}
 		.onAppear {
@@ -123,12 +167,7 @@ struct ProfileCalendarView: View {
 			handleActivitySelection(activities[0])
 		} else if activities.count > 1 {
 			// If multiple activities, show day's activities in a sheet
-			Task {
-				await profileViewModel.fetchAllCalendarActivities()
-				await MainActor.run {
-					showDayActivities(activities: activities)
-				}
-			}
+			showDayActivities(activities: activities)
 		}
 	}
 
@@ -182,32 +221,12 @@ struct ProfileCalendarView: View {
 		}
 	}
 
-	// Get array of activities for a specific day cell
-	private func getDayActivities(row: Int, col: Int) -> [CalendarActivityDTO]? {
-		// Convert the original single-activity grid to an array of activities per cell
-		let activity = profileViewModel.calendarActivities[row][col]
-
-		if activity == nil {
-			return nil
+	// Get activities for a specific date
+	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
+		let calendar = Calendar.current
+		return profileViewModel.allCalendarActivities.filter { activity in
+			calendar.isDate(activity.date, inSameDayAs: date)
 		}
-
-		// Find all activities for this day by date checking
-		if let firstActivity = activity {
-			let day = Calendar.current.component(.day, from: firstActivity.date)
-			let month = Calendar.current.component(.month, from: firstActivity.date)
-			let year = Calendar.current.component(.year, from: firstActivity.date)
-
-			// Filter all activities matching this date
-			return profileViewModel.allCalendarActivities.filter { act in
-				let actDay = Calendar.current.component(.day, from: act.date)
-				let actMonth = Calendar.current.component(.month, from: act.date)
-				let actYear = Calendar.current.component(.year, from: act.date)
-
-				return actDay == day && actMonth == month && actYear == year
-			}
-		}
-
-		return []
 	}
 
 	private var weekDays: [String] {
@@ -216,11 +235,7 @@ struct ProfileCalendarView: View {
 
 	private func fetchCalendarData() {
 		Task {
-			await profileViewModel.fetchCalendarActivities(
-				month: currentMonth,
-				year: currentYear
-			)
-			// Also fetch all activities to have them ready
+			// Fetch all calendar activities instead of just current month
 			await profileViewModel.fetchAllCalendarActivities()
 		}
 	}
@@ -262,6 +277,7 @@ struct ProfileCalendarView: View {
 // Calendar day cell component matching Figma design
 struct CalendarDayCell: View {
 	let activities: [CalendarActivityDTO]
+	let dayNumber: Int
 	
 	var body: some View {
 		ZStack {
@@ -273,9 +289,14 @@ struct CalendarDayCell: View {
 					.frame(width: 32, height: 32)
 					.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
 					.overlay(
-						activityIcon(for: activity)
-							.font(.onestMedium(size: 18))
-							.foregroundColor(.black)
+						VStack(spacing: 1) {
+							activityIcon(for: activity)
+								.font(.onestMedium(size: 12))
+								.foregroundColor(.black)
+							Text("\(dayNumber)")
+								.font(.onestMedium(size: 8))
+								.foregroundColor(.black)
+						}
 					)
 			} else if activities.count > 1 {
 				// Multiple activities - show primary activity color with count
@@ -287,10 +308,13 @@ struct CalendarDayCell: View {
 					.overlay(
 						VStack(spacing: 0) {
 							activityIcon(for: primaryActivity)
-								.font(.onestMedium(size: 12))
+								.font(.onestMedium(size: 10))
 								.foregroundColor(.black)
 							Text("\(activities.count)")
 								.font(.onestMedium(size: 8))
+								.foregroundColor(.black)
+							Text("\(dayNumber)")
+								.font(.onestMedium(size: 6))
 								.foregroundColor(.black)
 						}
 					)
@@ -322,7 +346,6 @@ struct CalendarDayCell: View {
 			}
 		}
 	}
-
 }
 
 #Preview {

@@ -112,6 +112,11 @@ class ActivityTypeViewModel: ObservableObject {
             return
         }
         
+        // Store the current state for potential rollback
+        let preUpdateActivityTypes = activityTypes
+        let preUpdateOriginalActivityTypes = originalActivityTypes
+        let preUpdateDeletedIds = deletedActivityTypeIds
+        
         isLoading = true
         errorMessage = nil
         
@@ -176,6 +181,16 @@ class ActivityTypeViewModel: ObservableObject {
         } catch {
             print("❌ Error saving batch changes: \(error)")
             errorMessage = "Failed to save changes"
+            
+            // Revert optimistic changes on failure
+            self.activityTypes = preUpdateActivityTypes
+            self.originalActivityTypes = preUpdateOriginalActivityTypes
+            self.deletedActivityTypeIds = preUpdateDeletedIds
+            
+            // Also revert the cache
+            appCache.updateActivityTypes(preUpdateActivityTypes)
+            
+            print("↩️ Reverted optimistic changes due to backend failure")
         }
     }
     
@@ -221,6 +236,20 @@ class ActivityTypeViewModel: ObservableObject {
             activityTypes[index] = activityTypeDTO
             hasUnsavedChanges = true
             print("📝 Locally updated activity type: \(activityTypeDTO.title)")
+        }
+    }
+    
+    /// Updates an existing activity type optimistically (immediately) and also updates the AppCache
+    @MainActor
+    func optimisticallyUpdateActivityType(_ activityTypeDTO: ActivityTypeDTO) {
+        if let index = activityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) {
+            activityTypes[index] = activityTypeDTO
+            hasUnsavedChanges = true
+            
+            // Also update the AppCache immediately for optimistic UI updates
+            appCache.updateActivityTypeInCache(activityTypeDTO)
+            
+            print("⚡ Optimistically updated activity type: \(activityTypeDTO.title)")
         }
     }
     

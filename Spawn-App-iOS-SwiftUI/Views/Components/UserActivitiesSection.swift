@@ -17,7 +17,7 @@ struct UserActivitiesSection: View {
             
             // Hidden NavigationLink for friend activities
             NavigationLink(
-                destination: FriendActivitiesListView(
+                destination: FriendActivitiesShowAllView(
                     user: user,
                     profileViewModel: profileViewModel,
                     showActivityDetails: $showActivityDetails

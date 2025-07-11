@@ -97,7 +97,8 @@ struct ActivityTypeManagementView: View {
                     .navigationDestination(isPresented: $showingManagePeople) {
             ManagePeopleView(
                 user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
-                activityTitle: activityTypeDTO.title
+                activityTitle: activityTypeDTO.title,
+                activityTypeDTO: activityTypeDTO
             )
         }
         .fullScreenCover(isPresented: $showingEditView) {
@@ -244,7 +245,7 @@ struct ActivityTypeManagementView: View {
             // Add friends button - matching Figma design exactly
             Button(action: { showingManagePeople = true }) {
                 HStack(spacing: 5.6) {
-                    Text("􀅼")
+                    Image(systemName: "plus")
                         .font(.system(size: 16.8, weight: .semibold))
                         .foregroundColor(figmaGreen)
                     
@@ -350,24 +351,14 @@ struct ActivityTypeOptionsPopup: View {
     @Binding var isPresented: Bool
     let onManagePeople: () -> Void
     let onDeleteActivityType: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
-    
-    private var adaptiveOverlayColor: Color {
-        colorScheme == .dark ? Color.black.opacity(0.6) : Color.black.opacity(0.4)
-    }
-    
-    private var adaptivePopupBackground: Color {
-        colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.95, blue: 0.95)
-    }
-    
-    private var adaptiveBorderColor: Color {
-        colorScheme == .dark ? Color(red: 0.52, green: 0.49, blue: 0.49) : Color(red: 0.85, green: 0.85, blue: 0.85)
-    }
     
     var body: some View {
         ZStack {
-            // Semi-transparent background overlay
-            adaptiveOverlayColor
+            // Semi-transparent background overlay - matching Figma exactly
+            Rectangle()
+                .foregroundColor(.clear)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(red: 0.13, green: 0.13, blue: 0.13).opacity(0.60))
                 .ignoresSafeArea()
                 .onTapGesture {
                     withAnimation(.easeInOut(duration: 0.3)) {
@@ -391,21 +382,20 @@ struct ActivityTypeOptionsPopup: View {
                         }) {
                             HStack(spacing: 10) {
                                 Text("Manage People")
-                                    .font(.onestMedium(size: 20))
-                                    .foregroundColor(figmaBlue)
-                                Spacer()
+                                    .font(Font.custom("Onest", size: 20).weight(.medium))
+                                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
                             }
                             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .frame(height: 63)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(adaptivePopupBackground)
+                            .background(Color(red: 0.95, green: 0.93, blue: 0.93))
                             .overlay(
                                 Rectangle()
                                     .inset(by: 0.50)
-                                    .stroke(adaptiveBorderColor, lineWidth: 0.50)
+                                    .stroke(Color(red: 0.52, green: 0.49, blue: 0.49), lineWidth: 0.50)
                             )
                             .shadow(
-                                color: Color.black.opacity(0.1), radius: 8, y: 2
+                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -419,19 +409,18 @@ struct ActivityTypeOptionsPopup: View {
                         }) {
                             HStack(spacing: 10) {
                                 Text("􀈑")
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(universalTertiaryColor)
+                                    .font(Font.custom("SF Pro Display", size: 20).weight(.medium))
+                                    .foregroundColor(Color(red: 1, green: 0.45, blue: 0.44))
                                 Text("Delete Activity Type")
-                                    .font(.onestMedium(size: 20))
-                                    .foregroundColor(universalTertiaryColor)
-                                Spacer()
+                                    .font(Font.custom("Onest", size: 20).weight(.medium))
+                                    .foregroundColor(Color(red: 1, green: 0.45, blue: 0.44))
                             }
                             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .frame(height: 63)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(adaptivePopupBackground)
+                            .background(Color(red: 0.95, green: 0.93, blue: 0.93))
                             .shadow(
-                                color: Color.black.opacity(0.1), radius: 8, y: 2
+                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
                             )
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -444,24 +433,27 @@ struct ActivityTypeOptionsPopup: View {
                             isPresented = false
                         }
                     }) {
-                        HStack {
-                            Spacer()
+                        HStack(spacing: 10) {
+                            Text("􀆄")
+                                .font(Font.custom("SF Pro Display", size: 20).weight(.medium))
+                                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
                             Text("Cancel")
-                                .font(.onestMedium(size: 20))
-                                .foregroundColor(universalAccentColor)
-                            Spacer()
+                                .font(Font.custom("Onest", size: 20).weight(.medium))
+                                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
                         }
                         .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                         .frame(height: 63)
-                        .background(adaptivePopupBackground)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(red: 0.95, green: 0.93, blue: 0.93))
                         .cornerRadius(16)
                         .shadow(
-                            color: Color.black.opacity(0.1), radius: 8, y: 2
+                            color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
                         )
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
-                .padding(.horizontal, 16)
+                .frame(width: 380)
+                .padding(.horizontal, 24)
                 .padding(.bottom, 40)
             }
         }

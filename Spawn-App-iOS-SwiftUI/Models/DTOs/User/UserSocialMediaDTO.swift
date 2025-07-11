@@ -1,7 +1,7 @@
 import Foundation
 
 struct UserSocialMediaDTO: Codable, Equatable {
-    var id: UUID
+    var id: UUID?
     var userId: UUID
     var whatsappLink: String?
     var instagramLink: String?

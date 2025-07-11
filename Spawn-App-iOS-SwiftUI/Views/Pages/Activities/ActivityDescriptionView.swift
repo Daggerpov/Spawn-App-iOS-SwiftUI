@@ -11,6 +11,7 @@ struct ActivityDescriptionView: View {
 	@State private var messageText: String = ""
 	@ObservedObject var viewModel: ActivityDescriptionViewModel
 	var color: Color
+	@State private var showActivityEditView = false
 
 	init(
 		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
@@ -78,8 +79,7 @@ struct ActivityDescriptionView: View {
 									Task {
 										if viewModel.activity.isSelfOwned == true {
 											// Handle edit action
-											print("Edit activity")
-											// TODO: Implement edit functionality
+											showActivityEditView = true
 										} else {
 											// Toggle participation for non-owned activities
 											await viewModel.toggleParticipation()
@@ -113,6 +113,9 @@ struct ActivityDescriptionView: View {
 			.padding(20)
 			.background(color)
 			.cornerRadius(universalRectangleCornerRadius)
+		}
+		.sheet(isPresented: $showActivityEditView) {
+			ActivityEditView(viewModel: viewModel)
 		}
 	}
 	
