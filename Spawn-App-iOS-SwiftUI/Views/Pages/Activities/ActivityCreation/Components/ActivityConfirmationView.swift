@@ -53,7 +53,7 @@ struct ActivityConfirmationView: View {
     }
     
     private var activityTitle: String {
-        return viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedType?.rawValue ?? "Activity")
+        return viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Activity")
     }
 }
 

@@ -88,4 +88,42 @@ Text("Save")
 #### State Management
 - Prefer `@StateObject` for view-owned objects
 - Use `@ObservedObject` for objects passed down from parent views
-- Use `@EnvironmentObject` for globally shared objects 
+- Use `@EnvironmentObject` for globally shared objects
+
+## DTO Property Validation Rules
+
+### Always Verify DTO Properties Before Access
+- **Rule**: Check DTO structure and available properties before accessing them in code
+- **Never**: Assume properties exist on DTOs without verification
+- **Always**: Inspect the DTO definition first, then access only existing properties
+
+#### Examples:
+```swift
+// ❌ WRONG - Accessing properties without verification
+Text(activity.title ?? "Activity")  // CalendarActivityDTO doesn't have 'title'
+Text(activity.description ?? "")    // FullFeedActivityDTO doesn't have 'description'
+
+// ✅ CORRECT - Verify DTO structure first
+// For CalendarActivityDTO: only has id, date, icon, colorHexCode, activityId
+// For FullFeedActivityDTO: has title, note (not description), startTime, endTime, etc.
+Text(fullActivity.title ?? "Activity")  // Use full activity after fetching
+Text(fullActivity.note ?? "")           // Use 'note' instead of 'description'
+```
+
+#### Common DTO Property Mappings:
+- `CalendarActivityDTO`: Basic calendar display info (id, date, icon, colorHexCode, activityId)
+- `FullFeedActivityDTO`: Complete activity details (title, note, startTime, endTime, location, etc.)
+- `BaseUserDTO`: User information (id, username, name, profilePictureURL, etc.)
+- `ProfileActivityDTO`: Profile-specific activity data
+
+#### Best Practices:
+1. **Read the DTO definition** in `Models/DTOs/` before accessing properties
+2. **Use code completion** to see available properties
+3. **Fetch full DTOs** when you need complete information (e.g., use activityId from CalendarActivityDTO to fetch FullFeedActivityDTO)
+4. **Check property names** carefully (e.g., 'note' vs 'description', 'name' vs 'title')
+5. **Handle optional properties** appropriately with nil coalescing or optional binding
+
+#### When to Fetch Additional Data:
+- If you have a `CalendarActivityDTO` but need title/description, fetch the full activity using `activityId`
+- If you have a `BaseUserDTO` but need detailed profile info, fetch `UserProfileInfoDTO`
+- If you have activity ID but need participants, fetch `FullFeedActivityDTO` 

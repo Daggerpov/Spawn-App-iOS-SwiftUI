@@ -87,8 +87,6 @@ class MockAPIService: IAPIService {
 					"Coffee House", "Cinema", "Game Room", "Beach",
 				]
 				activityToCache.title = possibleTitles.randomElement()
-				activityToCache.category =
-					ActivityCategory.allCases.randomElement() ?? .general
 				activityToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"]
 					.randomElement()
 				activityToCache.location = Location(
@@ -739,7 +737,7 @@ class MockAPIService: IAPIService {
 					let calendarActivity = CalendarActivityDTO(
 						id: UUID(),
 						date: date,
-						activityCategory: activity.category,
+						
 						icon: activity.icon,
 						colorHexCode: getActivityColorHex(for: activity.id),
 						activityId: activity.id

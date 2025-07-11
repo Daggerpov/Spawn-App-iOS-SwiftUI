@@ -19,6 +19,7 @@ class Activity: Identifiable, Codable {
 	var createdAt: Date?
 
 	// MARK: Relations
+	var activityTypeId: UUID?
 	var creatorUser: UserDTO?
 
 	// tech note: I'll be able to check if current user is in an activity's partipants to determine which symbol to show in feed
@@ -33,6 +34,7 @@ class Activity: Identifiable, Codable {
 		startTime: Date? = nil,
 		endTime: Date? = nil,
 		location: Location? = nil,
+		activityTypeId: UUID? = nil,
 		note: String? = nil,
 		creatorUser: UserDTO? = UserDTO.danielAgapov,
 		participantUsers: [UserDTO]? = nil,
@@ -46,6 +48,7 @@ class Activity: Identifiable, Codable {
 		self.startTime = startTime
 		self.endTime = endTime
 		self.location = location
+		self.activityTypeId = activityTypeId
 		self.note = note
 		self.creatorUser = creatorUser
 		self.participantUsers = participantUsers

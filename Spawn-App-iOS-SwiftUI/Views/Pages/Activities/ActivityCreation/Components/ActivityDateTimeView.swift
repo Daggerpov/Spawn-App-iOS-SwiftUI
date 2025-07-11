@@ -166,7 +166,7 @@ struct ActivityDateTimeView: View {
                             .font(.custom("Onest", size: 20).weight(.semibold))
                             .foregroundColor(headerTextColor)
                         
-                        Text("Set a time for your \"\(viewModel.selectedType?.rawValue ?? "Activity")\" Activity")
+                        Text("Set a time for your \"\(viewModel.selectedActivityType?.title ?? "Activity")\" Activity")
                             .font(.custom("Onest", size: 16).weight(.medium))
                             .foregroundColor(secondaryTextColor)
                             .multilineTextAlignment(.center)

@@ -43,4 +43,16 @@ extension ActivityTypeDTO {
     static var mockFoodActivityType: ActivityTypeDTO = ActivityTypeDTO(id: UUID(), title: "Food", icon: "🍽️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.michael, BaseUserDTO.haley], orderNum: 1, isPinned: true)
     static var mockActiveActivityType: ActivityTypeDTO = ActivityTypeDTO(id: UUID(), title: "Active", icon: "🏃", associatedFriends: [BaseUserDTO.haley, BaseUserDTO.shannon, BaseUserDTO.michael, BaseUserDTO.danielLee], orderNum: 2, isPinned: false)
     static var mockStudyActivityType: ActivityTypeDTO = ActivityTypeDTO(id: UUID(), title: "Study", icon: "✏️", associatedFriends: BaseUserDTO.mockUsers, orderNum: 3, isPinned: false)
+    
+    /// Creates a new ActivityTypeDTO instance with default values for creating a new activity type
+    static func createNew() -> ActivityTypeDTO {
+        return ActivityTypeDTO(
+            id: UUID(),
+            title: "New Activity",
+            icon: "⭐️",
+            associatedFriends: [],
+            orderNum: 0,
+            isPinned: false
+        )
+    }
 }

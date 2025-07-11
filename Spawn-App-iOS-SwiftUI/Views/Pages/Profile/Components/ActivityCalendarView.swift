@@ -1,5 +1,5 @@
 //
-//  EventCalendarView.swift
+//  ActivityCalendarView.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/14/24.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct EventCalendarView: View {
+struct ActivityCalendarView: View {
     @StateObject var profileViewModel: ProfileViewModel
     @StateObject var userAuth = UserAuthViewModel.shared
     @Environment(\.dismiss) private var dismiss
@@ -34,16 +34,15 @@ struct EventCalendarView: View {
                     
                     Spacer()
                     
-                    Text("Your Event Calendar")
+                    Text("Your Activity Calendar")
                         .font(.onestSemiBold(size: 20))
                         .foregroundColor(universalAccentColor)
                     
                     Spacer()
                     
                     // Invisible spacer to center the title
-                    Image(systemName: "chevron.left")
-                        .font(.onestSemiBold(size: 20))
-                        .opacity(0)
+                    Color.clear
+                        .frame(width: 20, height: 20)
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
@@ -109,12 +108,12 @@ struct MonthCalendarView: View {
                 .foregroundColor(figmaBlack300)
                 .padding(.leading, 4)
             
-            // Calendar grid
+            // Calendar grid - 4 days per row
             VStack(spacing: 12) {
-                ForEach(0..<numberOfWeeks, id: \.self) { weekIndex in
+                ForEach(0..<numberOfRows, id: \.self) { rowIndex in
                     HStack(spacing: 12) {
-                        ForEach(0..<7, id: \.self) { dayIndex in
-                            let dayOffset = weekIndex * 7 + dayIndex
+                        ForEach(0..<4, id: \.self) { dayIndex in
+                            let dayOffset = rowIndex * 4 + dayIndex
                             let day = dayForOffset(dayOffset)
                             
                             CalendarDayTile(
@@ -139,23 +138,20 @@ struct MonthCalendarView: View {
         }
     }
     
-    private var numberOfWeeks: Int {
+    private var numberOfRows: Int {
         let calendar = Calendar.current
-        let firstOfMonth = calendar.dateInterval(of: .month, for: month)?.start ?? month
         let range = calendar.range(of: .day, in: .month, for: month) ?? 1..<32
-        let firstWeekday = calendar.component(.weekday, from: firstOfMonth)
         let daysInMonth = range.count
         
-        return Int(ceil(Double(daysInMonth + firstWeekday - 1) / 7.0))
+        // Calculate number of rows needed for 4 days per row
+        return Int(ceil(Double(daysInMonth) / 4.0))
     }
     
     private func dayForOffset(_ offset: Int) -> Date {
         let calendar = Calendar.current
         let firstOfMonth = calendar.dateInterval(of: .month, for: month)?.start ?? month
-        let firstWeekday = calendar.component(.weekday, from: firstOfMonth)
-        let dayOffset = offset - firstWeekday + 1
         
-        return calendar.date(byAdding: .day, value: dayOffset, to: firstOfMonth) ?? firstOfMonth
+        return calendar.date(byAdding: .day, value: offset, to: firstOfMonth) ?? firstOfMonth
     }
     
     private func isCurrentMonth(_ date: Date) -> Bool {
@@ -189,50 +185,38 @@ struct CalendarDayTile: View {
     var body: some View {
         ZStack {
             if isCurrentMonth {
-                if activities.isEmpty {
-                    // Empty day tile
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(Color(hex: "#DBDBDB"))
-                        .frame(width: tileSize, height: tileSize)
-                        .shadow(color: Color.black.opacity(0.1), radius: 12.34, x: 0, y: 3.09)
-                } else {
-                    // Day with activities
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(activityBackgroundColor)
-                        .frame(width: tileSize, height: tileSize)
-                        .shadow(color: Color.black.opacity(0.1), radius: 12.34, x: 0, y: 3.09)
-                        .overlay(
-                            VStack(spacing: 4) {
-                                if activities.count == 1 {
-                                    // Single activity emoji
+                // Background rectangle
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(activityBackgroundColor)
+                    .frame(width: tileSize, height: tileSize)
+                    .shadow(color: Color.black.opacity(0.1), radius: 12.34, x: 0, y: 3.09)
+                    .overlay(
+                        // Activity content
+                        VStack(spacing: 4) {
+                            if activities.count == 1 {
+                                // Single activity emoji
+                                activityEmoji(for: activities[0])
+                                    .font(.onestMedium(size: 49.37))
+                                    .foregroundColor(figmaBlack300)
+                            } else if activities.count > 1 {
+                                // Multiple activities - show first two emojis
+                                HStack(spacing: 2) {
                                     activityEmoji(for: activities[0])
-                                        .font(.onestMedium(size: 49.37))
+                                        .font(.onestMedium(size: 37.03))
                                         .foregroundColor(figmaBlack300)
-                                } else {
-                                    // Multiple activities - show first two emojis
-                                    HStack(spacing: 2) {
-                                        activityEmoji(for: activities[0])
-                                            .font(.onestMedium(size: 37.03))
-                                            .foregroundColor(figmaBlack300)
-                                        
-                                        if activities.count > 1 {
-                                            activityEmoji(for: activities[1])
-                                                .font(.onestMedium(size: 37.03))
-                                                .foregroundColor(figmaBlack300)
-                                        }
-                                    }
+                                    
+                                    activityEmoji(for: activities[1])
+                                        .font(.onestMedium(size: 37.03))
+                                        .foregroundColor(figmaBlack300)
                                 }
                             }
-                        )
-                        .onTapGesture {
-                            if activities.count == 1 {
-                                onActivitySelected(activities[0])
-                            } else if activities.count > 1 {
-                                // For multiple activities, select the first one
-                                onActivitySelected(activities[0])
-                            }
                         }
-                }
+                    )
+                    .onTapGesture {
+                        if activities.count >= 1 {
+                            onActivitySelected(activities[0])
+                        }
+                    }
                 
                 // Day number overlay
                 VStack {
@@ -264,54 +248,38 @@ struct CalendarDayTile: View {
         Calendar.current.component(.day, from: day)
     }
     
-    private var isToday: Bool {
-        Calendar.current.isDateInToday(day)
-    }
-    
     private var dayNumberColor: Color {
-        isToday ? Color(hex: "#1D1D1D") : figmaBlack300
+        if activities.isEmpty {
+            return figmaBlack300
+        } else {
+            return Color.white
+        }
     }
     
     private var dayNumberBackgroundColor: Color {
-        isToday ? figmaBlue : Color(hex: "#F2EAEA")
+        if activities.isEmpty {
+            return Color.clear
+        } else {
+            return Color.black.opacity(0.6)
+        }
     }
     
     private var activityBackgroundColor: Color {
         if activities.isEmpty {
-            return Color(hex: "#DBDBDB")
+            return Color(hex: "#F6F6F6")
+        } else {
+            return Color.white
         }
-        
-        // Use predefined colors from the Figma design
-        let colors = [
-            Color(hex: "#FF9191"), // Red
-            Color(hex: "#59EEE1"), // Teal
-            Color(hex: "#FF9F6B"), // Orange
-            Color(hex: "#E15B73"), // Pink
-            Color(hex: "#9797FF"), // Purple
-            Color(hex: "#5EF029"), // Green
-            Color(hex: "#5EF0C0"), // Mint
-            Color(hex: "#DEA0FF"), // Light Purple
-            Color(hex: "#FFE45C")  // Yellow
-        ]
-        
-        // Use activity ID to determine color consistently
-        if let firstActivity = activities.first,
-           let activityId = firstActivity.activityId {
-            let index = abs(activityId.hashValue) % colors.count
-            return colors[index]
-        }
-        
-        return Color(hex: "#DBDBDB")
     }
     
-    private func activityEmoji(for activity: CalendarActivityDTO) -> Text {
-        if let icon = activity.icon, !icon.isEmpty {
-            return Text(icon)
+    private func activityEmoji(for activity: CalendarActivityDTO) -> some View {
+        Group {
+            if let icon = activity.icon, !icon.isEmpty {
+                Text(icon)
+            } else {
+                Text("⭐️")
+            }
         }
-        
-        // Fallback emojis based on activity category
-        let fallbackEmoji = activity.activityCategory?.emoji ?? "⭐"
-        return Text(fallbackEmoji)
     }
 }
 
@@ -321,83 +289,91 @@ struct ActivityDetailsSheet: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Handle bar
-            RoundedRectangle(cornerRadius: 2.5)
-                .fill(figmaBlack300)
-                .frame(width: 36, height: 5)
-                .padding(.top, 12)
-            
-            // Activity details
-            VStack(alignment: .leading, spacing: 12) {
-                Text(activity.title ?? "Activity")
-                    .font(.onestSemiBold(size: 24))
-                    .foregroundColor(universalAccentColor)
-                
-                if let description = activity.description {
-                    Text(description)
-                        .font(.onestRegular(size: 16))
-                        .foregroundColor(figmaBlack300)
-                }
-                
+        NavigationView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Activity header
                 HStack {
-                    Image(systemName: "calendar")
-                        .foregroundColor(figmaBlue)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Activity")
+                            .font(.onestSemiBold(size: 24))
+                            .foregroundColor(universalAccentColor)
+                        
+                        Text(DateFormatter.dayMonthYear.string(from: activity.date))
+                            .font(.onestMedium(size: 16))
+                            .foregroundColor(figmaBlack300)
+                    }
                     
-                    Text(formatDate(activity.date))
-                        .font(.onestMedium(size: 14))
-                        .foregroundColor(figmaBlack300)
+                    Spacer()
+                    
+                    // Activity icon
+                    if let icon = activity.icon, !icon.isEmpty {
+                        Text(icon)
+                            .font(.onestMedium(size: 40))
+                    } else {
+                        Text("⭐️")
+                            .font(.onestMedium(size: 40))
+                            .foregroundColor(universalAccentColor)
+                    }
                 }
+                .padding(.horizontal, 20)
+                
+                // Activity details
+                VStack(alignment: .leading, spacing: 16) {
+                    if let activityId = activity.activityId {
+                        Text("Activity ID: \(activityId.uuidString)")
+                            .font(.onestMedium(size: 14))
+                            .foregroundColor(figmaBlack300)
+                    }
+                    
+                    if let colorHex = activity.colorHexCode {
+                        HStack {
+                            Text("Color:")
+                                .font(.onestMedium(size: 14))
+                                .foregroundColor(figmaBlack300)
+                            
+                            Circle()
+                                .fill(Color(hex: colorHex))
+                                .frame(width: 20, height: 20)
+                            
+                            Text(colorHex)
+                                .font(.onestMedium(size: 14))
+                                .foregroundColor(figmaBlack300)
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer()
+                
+                // Close button
+                Button(action: {
+                    dismiss()
+                }) {
+                    Text("Close")
+                        .font(.onestSemiBold(size: 16))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(universalAccentColor)
+                        .cornerRadius(universalRectangleCornerRadius)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
-            .padding(.horizontal, 24)
-            
-            Spacer()
-            
-            Button(action: {
-                dismiss()
-            }) {
-                Text("Close")
-                    .font(.onestSemiBold(size: 16))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(figmaBlue)
-                    .clipShape(RoundedRectangle(cornerRadius: universalRectangleCornerRadius))
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 34)
+            .background(universalBackgroundColor)
+            .navigationBarHidden(true)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(universalBackgroundColor)
-        .presentationDetents([.medium])
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }
 
-// Extension to add emoji support to ActivityCategory
-extension ActivityCategory {
-    var emoji: String {
-        switch self {
-        case .general:
-            return "⭐"
-        case .foodAndDrink:
-            return "🍣"
-        case .active:
-            return "🏃‍♂️"
-        case .grind:
-            return "💻"
-        case .chill:
-            return "🎉"
-        }
-    }
+extension DateFormatter {
+    static let dayMonthYear: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d, yyyy"
+        return formatter
+    }()
 }
 
 #Preview {
-    EventCalendarView(profileViewModel: ProfileViewModel(userId: UUID()))
+    ActivityCalendarView(profileViewModel: ProfileViewModel(userId: UUID()))
 } 

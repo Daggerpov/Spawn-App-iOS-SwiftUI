@@ -24,10 +24,10 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
-	var category: ActivityCategory = .general
 	var createdAt: Date?
 
 	// MARK: Relations
+	var activityTypeId: UUID?
 	var creatorUser: BaseUserDTO
 
 	// tech note: I'll be able to check if current user is in an activity's partipants to determine which symbol to show in feed
@@ -43,9 +43,9 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		startTime: Date? = nil,
 		endTime: Date? = nil,
 		location: Location? = nil,
+		activityTypeId: UUID? = nil,
 		note: String? = nil,
 		icon: String? = nil,
-		category: ActivityCategory = .general,
 		creatorUser: BaseUserDTO,
 		participantUsers: [BaseUserDTO]? = nil,
 		invitedUsers: [BaseUserDTO]? = nil,
@@ -59,9 +59,9 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		self.startTime = startTime
 		self.endTime = endTime
 		self.location = location
+		self.activityTypeId = activityTypeId
 		self.note = note
 		self.icon = icon
-		self.category = category
 		self.creatorUser = creatorUser
 		self.participantUsers = participantUsers
 		self.invitedUsers = invitedUsers
@@ -73,7 +73,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
     
     // CodingKeys for all properties (including @Published ones)
     enum CodingKeys: String, CodingKey {
-        case id, title, startTime, endTime, location, note, icon, category
+        case id, title, startTime, endTime, location, activityTypeId, note, icon
         case createdAt, creatorUser, invitedUsers
         case participantUsers, chatMessages, participationStatus, isSelfOwned
     }
@@ -87,9 +87,9 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
         endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
         location = try container.decodeIfPresent(Location.self, forKey: .location)
+        activityTypeId = try container.decodeIfPresent(UUID.self, forKey: .activityTypeId)
         note = try container.decodeIfPresent(String.self, forKey: .note)
         icon = try container.decodeIfPresent(String.self, forKey: .icon)
-        category = try container.decodeIfPresent(ActivityCategory.self, forKey: .category) ?? .general
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
         creatorUser = try container.decode(BaseUserDTO.self, forKey: .creatorUser)
         invitedUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .invitedUsers)
@@ -110,9 +110,9 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         try container.encodeIfPresent(startTime, forKey: .startTime)
         try container.encodeIfPresent(endTime, forKey: .endTime)
         try container.encodeIfPresent(location, forKey: .location)
+        try container.encodeIfPresent(activityTypeId, forKey: .activityTypeId)
         try container.encodeIfPresent(note, forKey: .note)
         try container.encodeIfPresent(icon, forKey: .icon)
-        try container.encode(category, forKey: .category)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
         try container.encode(creatorUser, forKey: .creatorUser)
         try container.encodeIfPresent(invitedUsers, forKey: .invitedUsers)

@@ -140,16 +140,16 @@ extension ActivityFeedView {
         HStack(spacing: 8) {
             // Show only first 4 activity types and make them tappable to pre-select
             ForEach(Array(viewModel.activityTypes.prefix(4)), id: \.id) { activityType in
-                ActivityTypeCardView(activityType: activityType) { selectedActivityType in
+                ActivityTypeCardView(activityType: activityType) { selectedActivityTypeDTO in
                     // Pre-select the activity type and navigate to creation
-                    print("🎯 ActivityFeedView: Activity type '\(selectedActivityType.rawValue)' selected")
+                    print("🎯 ActivityFeedView: Activity type '\(selectedActivityTypeDTO.title)' selected")
                     
                     // First set the tab to trigger the view change
                     selectedTab = TabType.creation
                     
                     // Then set the pre-selection with a small delay to ensure the tab change happens first
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        ActivityCreationViewModel.initializeWithSelectedType(selectedActivityType)
+                        ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
                     }
                 }
             }

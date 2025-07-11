@@ -139,7 +139,6 @@ struct ThemePreviewCard: View {
             ),
             note: "Let's study together!",
             icon: "📚",
-            category: .grind,
             creatorUser: BaseUserDTO.danielAgapov,
             participantUsers: [
                 BaseUserDTO.danielAgapov,

@@ -134,9 +134,10 @@ struct ProfileCalendarView: View {
 	}
 
 	private func showDayActivities(activities: [CalendarActivityDTO]) {
-		// Present a sheet with ActivityCardViews for each activity
+		// Present a full-screen page with ActivityCardViews for each activity
 		let sheet = UIViewController()
-		let hostingController = UIHostingController(rootView: DayActivitiesView(
+		let hostingController = UIHostingController(rootView: DayActivitiesPageView(
+			date: activities.first?.date ?? Date(),
 			activities: activities,
 			onDismiss: {
 				sheet.dismiss(animated: true)
@@ -153,11 +154,8 @@ struct ProfileCalendarView: View {
 		sheet.view.addSubview(hostingController.view)
 		hostingController.didMove(toParent: sheet)
 
-		// Set up sheet presentation controller
-		if let presentationController = sheet.presentationController as? UISheetPresentationController {
-			presentationController.detents = [.medium(), .large()]
-			presentationController.prefersGrabberVisible = true
-		}
+		// Set up full screen presentation
+		sheet.modalPresentationStyle = .fullScreen
 
 		// Present the sheet
 		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -281,14 +279,12 @@ struct CalendarDayCell: View {
 			if let icon = activity.icon, !icon.isEmpty {
 				Text(icon)
 			} else {
-				// Fallback to system icon from the ActivityCategory enum
-				Image(
-					systemName: activity.activityCategory?.systemIcon()
-					?? "star.fill"
-				)
+				// Fallback to default emoji
+				Text("⭐️")
 			}
 		}
 	}
+
 }
 
 #Preview {

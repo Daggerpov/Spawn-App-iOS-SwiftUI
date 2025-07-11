@@ -10,6 +10,9 @@ import SwiftUI
 struct FriendRequestsView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: FriendRequestsViewModel
+    @State private var showSuccessDrawer = false
+    @State private var acceptedFriend: BaseUserDTO?
+    @State private var navigateToAddToActivityType = false
     
     init(userId: UUID) {
         self._viewModel = StateObject(wrappedValue: FriendRequestsViewModel(userId: userId))
@@ -74,6 +77,9 @@ struct FriendRequestsView: View {
                                         onAccept: {
                                             Task {
                                                 await viewModel.respondToFriendRequest(requestId: request.id, action: .accept)
+                                                // Show success drawer after successful acceptance
+                                                acceptedFriend = request.senderUser
+                                                showSuccessDrawer = true
                                             }
                                         },
                                         onRemove: {
@@ -138,6 +144,29 @@ struct FriendRequestsView: View {
         .task {
             await viewModel.fetchFriendRequests()
         }
+        .overlay(
+            // Success drawer overlay
+            Group {
+                if showSuccessDrawer, let friend = acceptedFriend {
+                    FriendRequestSuccessDrawer(
+                        friendUser: friend,
+                        isPresented: $showSuccessDrawer,
+                        onAddToActivityType: {
+                            navigateToAddToActivityType = true
+                        }
+                    )
+                }
+            }
+        )
+        .background(
+            NavigationLink(
+                destination: acceptedFriend != nil ? AddToActivityTypeView(user: acceptedFriend!) : nil,
+                isActive: $navigateToAddToActivityType
+            ) {
+                EmptyView()
+            }
+            .hidden()
+        )
     }
 }
 

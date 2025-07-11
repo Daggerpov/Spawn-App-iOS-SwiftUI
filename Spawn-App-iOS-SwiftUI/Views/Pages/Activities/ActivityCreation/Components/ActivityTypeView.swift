@@ -1,15 +1,18 @@
 import SwiftUI
 
 struct ActivityTypeView: View {
-    @Binding var selectedType: ActivityType?
+    @Binding var selectedActivityType: ActivityTypeDTO?
     let onNext: () -> Void
     
     @EnvironmentObject var appCache: AppCache
     @StateObject private var viewModel: ActivityTypeViewModel
+    @State private var navigateToManageType = false
+    @State private var navigateToCreateType = false
+    @State private var selectedActivityTypeForManagement: ActivityTypeDTO?
     
     // Initialize the view model with userId
-    init(selectedType: Binding<ActivityType?>, onNext: @escaping () -> Void) {
-        self._selectedType = selectedType
+    init(selectedActivityType: Binding<ActivityTypeDTO?>, onNext: @escaping () -> Void) {
+        self._selectedActivityType = selectedActivityType
         self.onNext = onNext
         
         // Get userId from UserAuthViewModel like the original code
@@ -35,7 +38,7 @@ struct ActivityTypeView: View {
                 
                 ActivityNextStepButton(
                     title: "Next Step",
-                    isEnabled: selectedType != nil,
+                    isEnabled: selectedActivityType != nil,
                     action: onNext
                 )
             }
@@ -60,6 +63,14 @@ struct ActivityTypeView: View {
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
                 }
+            }
+            .navigationDestination(isPresented: $navigateToManageType) {
+                if let activityType = selectedActivityTypeForManagement {
+                    ActivityTypeManagementView(activityTypeDTO: activityType)
+                }
+            }
+            .navigationDestination(isPresented: $navigateToCreateType) {
+                ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
             }
         }
     }
@@ -107,15 +118,24 @@ struct ActivityTypeView: View {
                 ForEach(viewModel.sortedActivityTypes, id: \.id) { activityTypeDTO in
                     ActivityTypeCard(
                         activityTypeDTO: activityTypeDTO,
-                        selectedType: $selectedType,
+                        selectedActivityType: $selectedActivityType,
                         onPin: {
                             viewModel.togglePin(for: activityTypeDTO)
                         },
                         onDelete: {
                             viewModel.deleteActivityType(activityTypeDTO)
+                        },
+                        onManage: {
+                            selectedActivityTypeForManagement = activityTypeDTO
+                            navigateToManageType = true
                         }
                     )
                 }
+                
+                // Create New Activity Button
+                CreateNewActivityTypeCard(onCreateNew: {
+                    navigateToCreateType = true
+                })
             }
             .padding()
         }
@@ -124,54 +144,18 @@ struct ActivityTypeView: View {
 
 struct ActivityTypeCard: View {
     let activityTypeDTO: ActivityTypeDTO
-    @Binding var selectedType: ActivityType?
+    @Binding var selectedActivityType: ActivityTypeDTO?
     let onPin: () -> Void
     let onDelete: () -> Void
+    let onManage: () -> Void
     @Environment(\.colorScheme) private var colorScheme
-    @State private var navigateToManageType = false
-    
-    // Convert ActivityTypeDTO to ActivityType for selection comparison
-    private var activityType: ActivityType? {
-        // First try exact match
-        if let exactMatch = ActivityType.allCases.first(where: { $0.rawValue == activityTypeDTO.title }) {
-            return exactMatch
-        }
-        
-        // If no exact match, try fuzzy matching for common cases
-        switch activityTypeDTO.title.lowercased() {
-        case "food":
-            return .foodAndDrink
-        case "active":
-            return .active
-        case "study":
-            return .grind
-        case "chill":
-            return .chill
-        case "general":
-            return .general
-        default:
-            // For unmapped types, return nil to make them unselectable
-            // This prevents conflicts in selection logic
-            return nil
-        }
-    }
     
     private var isSelected: Bool {
-        guard let activityType = activityType else {
-            return false
-        }
-        
-        let selected = selectedType == activityType
-        return selected
+        return selectedActivityType?.id == activityTypeDTO.id
     }
     
     // Adaptive background color
     private var adaptiveBackgroundColor: Color {
-        // If unmapped, show as disabled
-        if activityType == nil {
-            return Color.gray.opacity(0.02)
-        }
-        
         if isSelected {
             return universalSecondaryColor.opacity(0.1)
         } else {
@@ -200,11 +184,6 @@ struct ActivityTypeCard: View {
     
     // Adaptive text color for title
     private var adaptiveTitleColor: Color {
-        // If unmapped, show as disabled
-        if activityType == nil {
-            return Color.gray.opacity(0.5)
-        }
-        
         switch colorScheme {
         case .dark:
             return Color.white
@@ -217,9 +196,7 @@ struct ActivityTypeCard: View {
     
     var body: some View {
         Button(action: { 
-            if let type = activityType {
-                selectedType = type
-            }
+            selectedActivityType = activityTypeDTO
         }) {
             ZStack {
                 VStack(alignment: .leading, spacing: 8) {
@@ -263,16 +240,12 @@ struct ActivityTypeCard: View {
                 }
             }
         }
-        .disabled(activityType == nil)
-        .opacity(activityType == nil ? 0.6 : 1.0)
         .contextMenu {
             Button(action: onPin) {
                 Label(activityTypeDTO.isPinned ? "Unpin Type" : "Pin Type", systemImage: "pin")
             }
             
-            Button(action: {
-                navigateToManageType = true
-            }) {
+            Button(action: onManage) {
                 Label("Manage Type", systemImage: "slider.horizontal.3")
             }
             
@@ -281,20 +254,88 @@ struct ActivityTypeCard: View {
             }
             .foregroundColor(.red)
         }
-        .navigationDestination(isPresented: $navigateToManageType) {
-            ActivityTypeManagementView(activityTypeDTO: activityTypeDTO)
+    }
+}
+
+struct CreateNewActivityTypeCard: View {
+    let onCreateNew: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // Design colors based on Figma specifications
+    private var cardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
+        case .light:
+            return Color(red: 0.98, green: 0.85, blue: 0.85).opacity(0.70)
+        @unknown default:
+            return Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
         }
+    }
+    
+    private var borderColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.38, green: 0.35, blue: 0.35)
+        case .light:
+            return Color(red: 0.75, green: 0.65, blue: 0.65)
+        @unknown default:
+            return Color(red: 0.38, green: 0.35, blue: 0.35)
+        }
+    }
+    
+    private var textColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.82, green: 0.80, blue: 0.80)
+        case .light:
+            return Color(red: 0.45, green: 0.35, blue: 0.35)
+        @unknown default:
+            return Color(red: 0.82, green: 0.80, blue: 0.80)
+        }
+    }
+    
+    var body: some View {
+        Button(action: onCreateNew) {
+            VStack(spacing: 8) {
+                // Icon area - matches Figma dimensions with custom image
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 54, height: 47)
+                    .overlay(
+                        Image("CreateNewActivityIcon")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 40, height: 35)
+                    )
+                
+                // Text
+                Text("Create New Activity")
+                    .font(.onestMedium(size: 12))
+                    .foregroundColor(textColor)
+                    .multilineTextAlignment(.center)
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity)
+            .background(cardBackgroundColor)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(borderColor, lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @State var selectedType: ActivityType? = nil
+    @Previewable @State var selectedActivityType: ActivityTypeDTO? = nil
     @Previewable @StateObject var appCache = AppCache.shared
     
     NavigationView {
         ActivityTypeView(
-            selectedType: $selectedType,
+            selectedActivityType: $selectedActivityType,
             onNext: {
                 print("Next step tapped")
             }

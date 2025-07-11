@@ -1,5 +1,86 @@
 import SwiftUI
 
+// MARK: - Native SwiftUI Emoji Picker
+struct EmojiPickerView: View {
+    @Binding var selectedEmoji: String
+    @Environment(\.dismiss) private var dismiss
+    @State private var inputText: String = ""
+    @FocusState private var isTextFieldFocused: Bool
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                Text("Select an Emoji")
+                    .font(.onestSemiBold(size: 24))
+                    .foregroundColor(universalAccentColor)
+                    .padding(.top, 20)
+                
+                // Display current emoji
+                if !selectedEmoji.isEmpty {
+                    Text(selectedEmoji)
+                        .font(.system(size: 80))
+                        .padding()
+                } else {
+                    Text("No emoji selected")
+                        .font(.onestRegular(size: 16))
+                        .foregroundColor(.secondary)
+                        .padding()
+                }
+                
+                // Text field for emoji input
+                TextField("Tap here to open emoji keyboard", text: $inputText)
+                    .font(.system(size: 32))
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .multilineTextAlignment(.center)
+                    .focused($isTextFieldFocused)
+                    .onChange(of: inputText) { newValue in
+                        if let lastChar = newValue.last, lastChar.isEmoji {
+                            selectedEmoji = String(lastChar)
+                        }
+                    }
+                    .padding(.horizontal)
+                
+                Spacer()
+                
+                // Done button
+                Button("Done") {
+                    dismiss()
+                }
+                .font(.onestSemiBold(size: 18))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(figmaBlue)
+                .cornerRadius(12)
+                .padding(.horizontal)
+                .padding(.bottom, 20)
+            }
+            .background(universalBackgroundColor)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                    .foregroundColor(figmaBlue)
+                }
+            }
+            .onAppear {
+                // Auto-focus the text field to bring up the keyboard
+                isTextFieldFocused = true
+            }
+        }
+    }
+}
+
+// MARK: - Character extension for emoji detection
+extension Character {
+    var isEmoji: Bool {
+        guard let scalar = unicodeScalars.first else { return false }
+        return scalar.properties.isEmoji
+    }
+}
+
 struct ActivityTypeEditView: View {
     let activityTypeDTO: ActivityTypeDTO
     @Environment(\.dismiss) private var dismiss
@@ -9,8 +90,14 @@ struct ActivityTypeEditView: View {
     @State private var editedIcon: String = ""
     @State private var hasChanges: Bool = false
     @State private var isEmojiPickerPresented: Bool = false
+    @State private var navigateToFriendSelection: Bool = false
     
     @StateObject private var viewModel: ActivityTypeViewModel
+    
+    // Track if this is a new activity type (no associated friends yet)
+    private var isNewActivityType: Bool {
+        activityTypeDTO.associatedFriends.isEmpty && activityTypeDTO.title == "New Activity"
+    }
     
     init(activityTypeDTO: ActivityTypeDTO) {
         self.activityTypeDTO = activityTypeDTO
@@ -21,10 +108,11 @@ struct ActivityTypeEditView: View {
     }
     
     var body: some View {
-        ZStack {
-            // Background
-            Color(red: 0.12, green: 0.12, blue: 0.12)
-                .ignoresSafeArea()
+        NavigationStack {
+            ZStack {
+                // Background
+                Color(red: 0.12, green: 0.12, blue: 0.12)
+                    .ignoresSafeArea()
             
             // Header
             VStack {
@@ -33,8 +121,8 @@ struct ActivityTypeEditView: View {
                         dismiss()
                     }) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.white)
+                            .font(.title3)
                     }
                     
                     Text("Create Type - Name")
@@ -42,8 +130,8 @@ struct ActivityTypeEditView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                     
-                    Color.clear
-                        .frame(width: 24, height: 24)
+                    // Empty view for balance
+                    Color.clear.frame(width: 24, height: 24)
                 }
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
@@ -103,11 +191,17 @@ struct ActivityTypeEditView: View {
             .cornerRadius(30)
             .offset(x: 0, y: -150)
             
-            // Save button
+            // Save/Next button
             Button(action: {
-                saveChanges()
+                if isNewActivityType {
+                    // For new activity types, navigate to friend selection
+                    navigateToNextStep()
+                } else {
+                    // For existing activity types, save changes
+                    saveChanges()
+                }
             }) {
-                Text("Save")
+                Text(isNewActivityType ? "Next" : "Save")
                     .font(.onestSemiBold(size: 20))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
@@ -116,7 +210,7 @@ struct ActivityTypeEditView: View {
                     .cornerRadius(16)
             }
             .frame(width: 290, height: 56)
-            .disabled(!hasChanges || viewModel.isLoading)
+            .disabled((!hasChanges && !isNewActivityType) || viewModel.isLoading)
             .offset(x: 0, y: 40)
             
             // Cancel button
@@ -152,6 +246,24 @@ struct ActivityTypeEditView: View {
         .sheet(isPresented: $isEmojiPickerPresented) {
             EmojiPickerView(selectedEmoji: $editedIcon)
         }
+        .navigationDestination(isPresented: $navigateToFriendSelection) {
+            ActivityTypeFriendSelectionView(
+                activityTypeDTO: createUpdatedActivityType(),
+                onComplete: { finalActivityType in
+                    // Save the activity type with selected friends
+                    Task {
+                        await viewModel.createActivityType(finalActivityType)
+                        await viewModel.saveBatchChanges()
+                        
+                        // Dismiss both views
+                        await MainActor.run {
+                            dismiss()
+                        }
+                    }
+                }
+            )
+            .environmentObject(AppCache.shared)
+        }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") {
                 viewModel.clearError()
@@ -179,6 +291,7 @@ struct ActivityTypeEditView: View {
                 }
             }
         )
+        }
     }
 
     // MARK: - Private Methods
@@ -192,14 +305,17 @@ struct ActivityTypeEditView: View {
         hasChanges = (editedTitle != activityTypeDTO.title) || (editedIcon != activityTypeDTO.icon)
     }
     
-    private func saveChanges() {
-        // Validate input
+    private func navigateToNextStep() {
+        // Validate input before proceeding
         guard !editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return
         }
         
-        // Create updated activity type
-        let updatedActivityType = ActivityTypeDTO(
+        navigateToFriendSelection = true
+    }
+    
+    private func createUpdatedActivityType() -> ActivityTypeDTO {
+        return ActivityTypeDTO(
             id: activityTypeDTO.id,
             title: editedTitle.trimmingCharacters(in: .whitespacesAndNewlines),
             icon: editedIcon,
@@ -207,6 +323,16 @@ struct ActivityTypeEditView: View {
             orderNum: activityTypeDTO.orderNum,
             isPinned: activityTypeDTO.isPinned
         )
+    }
+    
+    private func saveChanges() {
+        // Validate input
+        guard !editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return
+        }
+        
+        // Create updated activity type
+        let updatedActivityType = createUpdatedActivityType()
         
         // Update through view model
         Task {
@@ -225,60 +351,8 @@ struct ActivityTypeEditView: View {
     }
 }
 
-// MARK: - Simple Emoji Picker View
-struct EmojiPickerView: View {
-    @Binding var selectedEmoji: String
-    @Environment(\.dismiss) private var dismiss
-    
-    private let emojis = ["🍽️", "🏃", "💼", "🛋️", "⭐️", "🎯", "🎨", "🎵", "📚", "🏀", "⚽️", "🎮", "🎪", "🎭", "🎬", "📱", "💻", "☕️", "🍕", "🍔", "🎂", "🍿", "🏊", "🚴", "🧘", "🎳", "🎪", "🎨", "🎵", "📖", "🎲", "🎯", "🎪", "🎭"]
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                Text("Select an Icon")
-                    .font(.onestSemiBold(size: 24))
-                    .foregroundColor(universalAccentColor)
-                    .padding(.top, 20)
-                
-                ScrollView {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 20) {
-                        ForEach(emojis, id: \.self) { emoji in
-                            Button(action: {
-                                selectedEmoji = emoji
-                                dismiss()
-                            }) {
-                                Text(emoji)
-                                    .font(.system(size: 40))
-                                    .frame(width: 60, height: 60)
-                                    .background(
-                                        Circle()
-                                            .fill(selectedEmoji == emoji ? figmaBlue.opacity(0.2) : Color.clear)
-                                    )
-                                    .overlay(
-                                        Circle()
-                                            .stroke(selectedEmoji == emoji ? figmaBlue : Color.clear, lineWidth: 2)
-                                    )
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                }
-                
-                Spacer()
-            }
-            .background(universalBackgroundColor)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                    .foregroundColor(figmaBlue)
-                }
-            }
-        }
-    }
-}
+// MARK: - Preview
+// Using SwiftUI's native emoji picker via standard text field
 
 @available(iOS 17, *)
 #Preview {

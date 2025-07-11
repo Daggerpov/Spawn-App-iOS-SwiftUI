@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import MCEmojiPicker
 
 struct ActivityCreationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
@@ -88,7 +87,7 @@ struct ActivityCreationView: View {
             }
             
             // If we're starting fresh (no pre-selected type), ensure absolutely clean state
-            if currentStep == .activityType && viewModel.selectedType == nil {
+            if currentStep == .activityType && viewModel.selectedActivityType == nil {
                 // First try force reset
                 ActivityCreationViewModel.forceReset()
                 // Then full reinitialization to be absolutely sure
@@ -116,7 +115,7 @@ struct ActivityCreationView: View {
             else if newTab == TabType.creation && currentStep != .confirmation {
                 currentStep = .activityType
                 // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
-                if viewModel.selectedType == nil {
+                if viewModel.selectedActivityType == nil {
                     ActivityCreationViewModel.reInitialize()
                 }
                 // Reset other state variables
@@ -143,7 +142,7 @@ struct ActivityCreationView: View {
         switch currentStep {
         case .activityType:
             ActivityTypeView(
-                selectedType: $viewModel.selectedType,
+                selectedActivityType: $viewModel.selectedActivityType,
                 onNext: {
                     currentStep = .dateTime
                 }

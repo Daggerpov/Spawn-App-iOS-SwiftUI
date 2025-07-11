@@ -39,6 +39,8 @@ struct ProfileView: View {
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showProfileMenu: Bool = false
 	@State private var showAddToActivityType: Bool = false
+	@State private var showSuccessDrawer: Bool = false
+	@State private var navigateToAddToActivityType: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var profileViewModel = ProfileViewModel()
@@ -280,9 +282,29 @@ struct ProfileView: View {
 				}
 				.hidden()
 			)
+			.background(
+				NavigationLink(
+					destination: AddToActivityTypeView(user: user),
+					isActive: $navigateToAddToActivityType
+				) {
+					EmptyView()
+				}
+				.hidden()
+			)
 
 			// Overlay for profile menu
 			profileMenuOverlay
+			
+			// Success drawer overlay
+			if showSuccessDrawer {
+				FriendRequestSuccessDrawer(
+					friendUser: user as! BaseUserDTO,
+					isPresented: $showSuccessDrawer,
+					onAddToActivityType: {
+						navigateToAddToActivityType = true
+					}
+				)
+			}
 		}
 	}
 
@@ -308,6 +330,8 @@ struct ProfileView: View {
 						if let requestId = profileViewModel.pendingFriendRequestId {
 							Task {
 								await profileViewModel.acceptFriendRequest(requestId: requestId)
+								// Show success drawer after successful acceptance
+								showSuccessDrawer = true
 							}
 						}
 					}) {
@@ -531,7 +555,7 @@ struct ProfileView: View {
 	}
 
 	private var calendarFullScreenView: some View {
-		EventCalendarView(
+		ActivityCalendarView(
 			profileViewModel: profileViewModel
 		)
 	}
@@ -804,6 +828,8 @@ struct ProfileView: View {
 								await profileViewModel.acceptFriendRequest(
 									requestId: requestId
 								)
+								// Show success drawer after successful acceptance
+								showSuccessDrawer = true
 							}
 						}
 					}) {

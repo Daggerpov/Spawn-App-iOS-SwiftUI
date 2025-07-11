@@ -58,11 +58,12 @@ struct InfiniteCalendarView: View {
             }
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Your Event Calendar")
+        .navigationTitle("Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
-        .sheet(isPresented: $showingDayActivities) {
-            DayActivitiesView(
+        .fullScreenCover(isPresented: $showingDayActivities) {
+            DayActivitiesPageView(
+                date: selectedDayActivities.first?.date ?? Date(),
                 activities: selectedDayActivities,
                 onDismiss: { showingDayActivities = false },
                 onActivitySelected: { activity in
@@ -252,12 +253,14 @@ struct DayCell: View {
                     .font(.system(size: 20))
                     .foregroundColor(.white)
             } else {
-                Image(systemName: activity.activityCategory?.systemIcon() ?? "star.fill")
-                    .font(.system(size: 16))
+                Text("⭐️")
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
             }
         }
     }
+    
+
     
     @ViewBuilder
     private var multipleActivitiesView: some View {
@@ -326,13 +329,6 @@ struct EmptyCalendarView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
-    }
-}
-
-// Extension for activity category icon
-extension CalendarActivityDTO {
-    var categoryIcon: String {
-        return activityCategory?.systemIcon() ?? "circle.fill"
     }
 }
 

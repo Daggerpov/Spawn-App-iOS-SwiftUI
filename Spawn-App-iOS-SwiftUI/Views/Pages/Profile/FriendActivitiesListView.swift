@@ -8,47 +8,20 @@ struct FriendActivitiesListView: View {
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        ScrollView {
+        ZStack {
+            universalBackgroundColor
+            
             VStack(spacing: 32) {
-                if profileViewModel.isLoadingUserActivities {
-                    HStack {
-                        Spacer()
-                        ProgressView()
-                        Spacer()
-                    }
-                    .frame(height: 200)
-                } else if sortedActivities.isEmpty {
-                    VStack(spacing: 20) {
-                        Image(systemName: "calendar.badge.exclamationmark")
-                            .font(.system(size: 60))
-                            .foregroundColor(.gray.opacity(0.6))
-                        
-                        VStack(spacing: 8) {
-                            Text("No Activities Yet")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
-                            
-                            Text("\(FormatterService.shared.formatFirstName(user: user)) hasn't created any activities yet.")
-                                .font(.body)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                                .padding(.horizontal, 40)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.top, 100)
-                } else {
-                    // Upcoming Activities Section
-                    if !upcomingActivities.isEmpty {
-                        upcomingActivitiesSection
-                    }
-                    
-                    // Past Activities Section
-                    if !pastActivities.isEmpty {
-                        pastActivitiesSection
-                    }
-                }
+                // Header Section
+                headerSection
+                
+                // Sample Activity Cards
+                sampleActivityCards
+                
+                // Calendar Grid
+                calendarGrid
+                
+                Spacer()
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
@@ -61,82 +34,148 @@ struct FriendActivitiesListView: View {
         }
     }
     
-    // MARK: - Section Views
-    private var upcomingActivitiesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Text("Upcoming Activities")
-                    .font(.onestSemiBold(size: 16))
-                    .foregroundColor(Color(red: 0.23, green: 0.22, blue: 0.22))
-                Spacer()
-            }
+    // MARK: - Header Section
+    private var headerSection: some View {
+        HStack(spacing: 12) {
+            Text("Activities by \(FormatterService.shared.formatFirstName(user: user))")
+                .font(.onestSemiBold(size: 16))
+                .foregroundColor(figmaBlack300)
             
-            LazyVStack(spacing: 12) {
-                ForEach(upcomingActivities) { activity in
-                    StyledActivityCard(
-                        activity: activity,
-                        isUpcoming: true,
-                        onTap: {
-                            profileViewModel.selectedActivity = activity
-                            showActivityDetails = true
-                        }
-                    )
+            Spacer()
+            
+            Text("Show All")
+                .font(.onestMedium(size: 14))
+                .foregroundColor(figmaBlue)
+        }
+    }
+    
+    // MARK: - Sample Activity Cards
+    private var sampleActivityCards: some View {
+        VStack(spacing: 12) {
+            // First activity card (blue)
+            ActivityCardExample(
+                title: "Activity Name",
+                creator: "First Last",
+                time: "1 - 2:30pm",
+                location: "Location • 500m away",
+                participantCount: "+12",
+                timeLabel: "Later Today",
+                backgroundColor: figmaBlue,
+                participantColor: figmaBlue,
+                timeLabelColor: Color(red: 1, green: 0.95, blue: 0.70).opacity(0.80)
+            )
+            
+            // Second activity card (red)
+            ActivityCardExample(
+                title: "Activity Name",
+                creator: "First Last",
+                time: "1 - 2:30pm",
+                location: "Location • 500m away",
+                participantCount: "+12",
+                timeLabel: "In 3 Hours",
+                backgroundColor: Color(red: 0.77, green: 0.19, blue: 0.19),
+                participantColor: Color(red: 0.77, green: 0.19, blue: 0.19),
+                timeLabelColor: Color(red: 1, green: 0.78, blue: 0.49).opacity(0.80)
+            )
+        }
+    }
+    
+    // MARK: - Calendar Grid
+    private var calendarGrid: some View {
+        VStack(spacing: 16) {
+            // Days of the week header
+            dayOfWeekHeader
+            
+            // Calendar grid rows
+            ForEach(0..<6, id: \.self) { row in
+                HStack(spacing: 8) {
+                    ForEach(0..<7, id: \.self) { col in
+                        CalendarDaySquare(
+                            color: getColorForDay(row: row, col: col),
+                            emoji: getEmojiForDay(row: row, col: col),
+                            hasEmoji: hasEmojiForDay(row: row, col: col)
+                        )
+                    }
                 }
             }
         }
     }
     
-    private var pastActivitiesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Text("Past Activities")
-                    .font(.onestSemiBold(size: 16))
-                    .foregroundColor(Color(red: 0.23, green: 0.22, blue: 0.22))
-                Spacer()
-            }
-            
-            LazyVStack(spacing: 12) {
-                ForEach(pastActivities) { activity in
-                    StyledActivityCard(
-                        activity: activity,
-                        isUpcoming: false,
-                        onTap: {
-                            profileViewModel.selectedActivity = activity
-                            showActivityDetails = true
-                        }
-                    )
-                }
+    // MARK: - Days of Week Header
+    private var dayOfWeekHeader: some View {
+        HStack(spacing: 8) {
+            ForEach(["S", "M", "T", "W", "T", "F", "S"], id: \.self) { day in
+                Text(day)
+                    .font(.onestMedium(size: 13))
+                    .foregroundColor(figmaBlack300)
+                    .frame(width: 46, height: 16)
             }
         }
     }
     
     // MARK: - Helper Methods
-    private var sortedActivities: [ProfileActivityDTO] {
-        return upcomingActivities + pastActivities
+    private func getColorForDay(row: Int, col: Int) -> Color {
+        let dayIndex = row * 7 + col
+        
+        // Define the color pattern based on the Figma design using project constants
+        let colorPatterns: [Color] = [
+            // Row 1 - all gray
+            universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor,
+            
+            // Row 2 
+            universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, Color(red: 1, green: 0.57, blue: 0.57), Color(red: 0.35, green: 0.93, blue: 0.88),
+            
+            // Row 3
+            universalPlaceHolderTextColor, Color(red: 1, green: 0.62, blue: 0.42), universalPlaceHolderTextColor, Color(red: 0.88, green: 0.36, blue: 0.45), universalPlaceHolderTextColor, universalPlaceHolderTextColor, Color(red: 0.59, green: 0.59, blue: 1),
+            
+            // Row 4
+            universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, Color(red: 0.37, green: 0.88, blue: 0.16), universalPlaceHolderTextColor,
+            
+            // Row 5
+            universalPlaceHolderTextColor, Color(red: 0.36, green: 0.94, blue: 0.75), universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, universalPlaceHolderTextColor, Color(red: 0.87, green: 0.61, blue: 1),
+            
+            // Row 6
+            Color(red: 1, green: 0.87, blue: 0.36), universalPlaceHolderTextColor, Color(red: 0.52, green: 0.49, blue: 0.49), Color(red: 0.52, green: 0.49, blue: 0.49), Color(red: 0.52, green: 0.49, blue: 0.49), Color(red: 0.52, green: 0.49, blue: 0.49), Color(red: 0.52, green: 0.49, blue: 0.49),
+        ]
+        
+        return colorPatterns[safe: dayIndex] ?? universalPlaceHolderTextColor
     }
     
-    private var upcomingActivities: [ProfileActivityDTO] {
-        let upcoming = profileViewModel.profileActivities
-            .filter { !$0.isPastActivity }
+    private func getEmojiForDay(row: Int, col: Int) -> String {
+        let dayIndex = row * 7 + col
         
-        return upcoming.sorted { activity1, activity2 in
-            guard let start1 = activity1.startTime, let start2 = activity2.startTime else {
-                return false
+        // Define emoji patterns based on the Figma design
+        let emojiPatterns: [String?] = [
+            // Row 1 - all empty
+            nil, nil, nil, nil, nil, nil, nil,
+            // Row 2 
+            nil, nil, nil, nil, nil, nil, nil,
+            // Row 3
+            nil, nil, nil, nil, nil, nil, nil,
+            // Row 4
+            nil, nil, nil, nil, nil, nil, nil,
+            // Row 5
+            nil, nil, nil, nil, "🚗", nil, nil,
+            // Row 6
+            nil, nil, "🍣", "🏃‍♂️", "💻", "💻", "🎉"
+        ]
+        
+        // Additional emojis for last row
+        if row == 5 {
+            let lastRowEmojis = ["📚", "🏖️", "🎮", "✈️"]
+            if col >= 3 && col < 7 {
+                return lastRowEmojis[safe: col - 3] ?? ""
             }
-            return start1 < start2
         }
+        
+        if let emoji = emojiPatterns[safe: dayIndex] {
+            return emoji ?? ""
+        }
+        return ""
     }
     
-    private var pastActivities: [ProfileActivityDTO] {
-        let past = profileViewModel.profileActivities
-            .filter { $0.isPastActivity }
-        
-        return past.sorted { activity1, activity2 in
-            guard let start1 = activity1.startTime, let start2 = activity2.startTime else {
-                return false
-            }
-            return start1 > start2
-        }
+    private func hasEmojiForDay(row: Int, col: Int) -> Bool {
+        return !getEmojiForDay(row: row, col: col).isEmpty
     }
     
     // MARK: - Activity Details Sheet
@@ -158,240 +197,124 @@ struct FriendActivitiesListView: View {
     }
 }
 
-// MARK: - Styled Activity Card
-struct StyledActivityCard: View {
-    let activity: ProfileActivityDTO
-    let isUpcoming: Bool
-    let onTap: () -> Void
-    
-    private var cardColor: Color {
-        if isUpcoming {
-            // Cycle through colors for upcoming activities
-            let colors = [
-                Color(red: 0.20, green: 0.30, blue: 0.87), // Blue
-                Color(red: 0.99, green: 0.31, blue: 0.30), // Red
-                Color(red: 0.33, green: 0.42, blue: 0.93), // Purple
-                Color(red: 0.92, green: 0.50, blue: 0.15), // Orange
-            ]
-            return colors[abs(activity.id.hashValue) % colors.count]
-        } else {
-            // Cycle through colors for past activities
-            let colors = [
-                Color(red: 0.21, green: 0.46, blue: 1.00), // Light Blue
-                Color(red: 0.50, green: 1.00, blue: 0.75), // Light Green
-                Color(red: 0.92, green: 0.15, blue: 0.52), // Pink
-                Color(red: 1.00, green: 0.90, blue: 0.57), // Yellow
-            ]
-            return colors[abs(activity.id.hashValue) % colors.count]
-        }
-    }
-    
-    private var participantCountColor: Color {
-        if isUpcoming {
-            let colors = [
-                Color(red: 0.20, green: 0.30, blue: 0.87), // Blue
-                Color(red: 0.99, green: 0.31, blue: 0.30), // Red
-                Color(red: 0.33, green: 0.42, blue: 0.93), // Purple
-                Color(red: 0.92, green: 0.50, blue: 0.15), // Orange
-            ]
-            return colors[abs(activity.id.hashValue) % colors.count]
-        } else {
-            let colors = [
-                Color(red: 0.21, green: 0.46, blue: 1.00), // Light Blue
-                Color(red: 0.13, green: 0.25, blue: 0.19), // Dark Green
-                Color(red: 0.92, green: 0.15, blue: 0.52), // Pink
-                Color(red: 0.25, green: 0.22, blue: 0.14), // Brown
-            ]
-            return colors[abs(activity.id.hashValue) % colors.count]
-        }
-    }
-    
-    private var timeText: String {
-        guard let startTime = activity.startTime else { return "" }
-        
-        let calendar = Calendar.current
-        let now = Date()
-        
-        if isUpcoming {
-            let timeInterval = startTime.timeIntervalSince(now)
-            let hours = Int(timeInterval / 3600)
-            
-            if calendar.isDateInToday(startTime) {
-                if hours <= 1 {
-                    return "Later Today"
-                } else {
-                    return "In \(hours) Hours"
-                }
-            } else if calendar.isDateInTomorrow(startTime) {
-                return "Tomorrow"
-            } else {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMM d"
-                return formatter.string(from: startTime)
-            }
-        } else {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d"
-            return formatter.string(from: startTime)
-        }
-    }
-    
-    private var titleTextColor: Color {
-        // For past activities with light backgrounds, use darker text
-        if !isUpcoming {
-            let lightBackgrounds = [1, 3] // Light Green and Yellow indices
-            let colorIndex = abs(activity.id.hashValue) % 4
-            if lightBackgrounds.contains(colorIndex) {
-                return Color(red: 0, green: 0, blue: 0).opacity(0.75)
-            }
-        }
-        return .white
-    }
-    
-    private var subtitleTextColor: Color {
-        // For past activities with light backgrounds, use different subtitle colors
-        if !isUpcoming {
-            let lightBackgrounds = [1, 3] // Light Green and Yellow indices
-            let colorIndex = abs(activity.id.hashValue) % 4
-            if lightBackgrounds.contains(colorIndex) {
-                return Color(red: 1, green: 1, blue: 1).opacity(0.60)
-            }
-        }
-        return Color(red: 1, green: 1, blue: 1).opacity(0.80)
-    }
+// MARK: - Activity Card Example
+struct ActivityCardExample: View {
+    let title: String
+    let creator: String
+    let time: String
+    let location: String
+    let participantCount: String
+    let timeLabel: String
+    let backgroundColor: Color
+    let participantColor: Color
+    let timeLabelColor: Color
     
     var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                // Activity Title and Details
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(alignment: .bottom, spacing: 6) {
-                        Text(activity.title ?? "Activity")
-                            .font(.onestSemiBold(size: isUpcoming ? 20 : 17))
-                            .foregroundColor(titleTextColor)
-                            .lineLimit(1)
+        ZStack {
+            HStack(alignment: .top, spacing: 16) {
+                // Left side - activity info
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(title)
+                            .font(.onestSemiBold(size: 20))
+                            .foregroundColor(.white)
+                        
+                        Text("By \(creator) • \(time)")
+                            .font(.onestRegular(size: 13))
+                            .foregroundColor(.white.opacity(0.80))
                     }
                     
-                    if isUpcoming {
-                        Text("By \(FormatterService.shared.formatFirstName(user: activity.creatorUser)) • \(formatTime())")
-                            .font(.onestMedium(size: 13))
-                            .foregroundColor(subtitleTextColor)
-                            .lineLimit(1)
-                    } else {
-                        Text("\(activity.location?.name ?? "Location") • \(timeText)")
-                            .font(.onestMedium(size: 13))
-                            .foregroundColor(subtitleTextColor)
-                            .lineLimit(1)
-                    }
-                }
-                
-                // Location badge for upcoming activities
-                if isUpcoming, let locationName = activity.location?.name {
+                    // Location badge
                     HStack(spacing: 8) {
-                        HStack(spacing: 8) {
-                            Text("􀎫")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                            Text("\(locationName) • 500m away")
-                                .font(.onestSemiBold(size: 13))
-                                .foregroundColor(.white)
-                                .lineLimit(1)
-                        }
+                        Image(systemName: "location.fill")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Text(location)
+                            .font(.onestSemiBold(size: 13))
+                            .foregroundColor(.white)
                     }
-                    .padding(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
-                    .background(Color(red: 0, green: 0, blue: 0).opacity(0.20))
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 12)
+                    .background(Color.black.opacity(0.20))
                     .cornerRadius(100)
                 }
-            }
-            
-            Spacer()
-            
-            // Participant count and profile images
-            VStack(alignment: .trailing, spacing: 0) {
-                // Participant count
-                VStack(spacing: 0) {
-                    Text("+\(activity.participantUsers?.count ?? 0)")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundColor(participantCountColor)
-                }
-                .frame(width: 33.60, height: 33.60)
-                .background(.white)
-                .cornerRadius(51.67)
                 
-                // Profile image placeholders
-                VStack(spacing: -8) {
-                    ForEach(0..<min(2, activity.participantUsers?.count ?? 0), id: \.self) { _ in
+                Spacer()
+                
+                // Right side - participants
+                VStack(alignment: .trailing, spacing: 8) {
+                    // Participant count
+                    Text(participantCount)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(participantColor)
+                        .frame(width: 34, height: 34)
+                        .background(.white)
+                        .clipShape(Circle())
+                    
+                    // Mock profile pictures
+                    VStack(spacing: 4) {
                         Circle()
-                            .frame(width: 33.53, height: 34.26)
-                            .foregroundColor(.clear)
-                            .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
-                            .shadow(
-                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25),
-                                radius: 3.22,
-                                y: 1.29
-                            )
+                            .fill(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+                            .frame(width: 34, height: 34)
+                            .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
+                        
+                        Circle()
+                            .fill(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+                            .frame(width: 34, height: 34)
+                            .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
                     }
                 }
-                .padding(.top, 8)
             }
+            .padding(20)
+            .background(backgroundColor)
+            .cornerRadius(universalNewRectangleCornerRadius)
+            .shadow(color: .black.opacity(0.20), radius: 16, y: 4)
             
-            // Time badge for upcoming activities
-            if isUpcoming {
-                HStack(spacing: 10) {
-                    Text(timeText)
+            // Time label overlay
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Text(timeLabel)
                         .font(.onestSemiBold(size: 11))
-                        .foregroundColor(Color(red: 0, green: 0, blue: 0).opacity(0.80))
+                        .foregroundColor(.black.opacity(0.80))
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(timeLabelColor)
+                        .cornerRadius(universalNewRectangleCornerRadius)
+                        .shadow(color: .white.opacity(0.25), radius: 24)
+                        .offset(x: -16, y: -12)
                 }
-                .padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
-                .background(Color(red: 1, green: 1, blue: 1).opacity(0.80))
-                .cornerRadius(8)
-                .shadow(
-                    color: Color(red: 1, green: 1, blue: 1, opacity: 0.25),
-                    radius: 24
-                )
-                .offset(x: -50, y: 47)
             }
-        }
-        .padding(EdgeInsets(
-            top: isUpcoming ? 20 : 13,
-            leading: 16,
-            bottom: isUpcoming ? 16 : 13,
-            trailing: 16
-        ))
-        .background(cardColor)
-        .cornerRadius(12)
-        .shadow(
-            color: Color(red: 0, green: 0, blue: 0, opacity: isUpcoming ? 0.20 : 0.25),
-            radius: isUpcoming ? 16 : 8,
-            y: isUpcoming ? 4 : 2
-        )
-        .onTapGesture {
-            onTap()
-        }
-    }
-    
-    private func formatTime() -> String {
-        guard let startTime = activity.startTime else { return "" }
-        
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a"
-        let startTimeStr = formatter.string(from: startTime)
-        
-        if let endTime = activity.endTime {
-            let endTimeStr = formatter.string(from: endTime)
-            return "\(startTimeStr) - \(endTimeStr)"
-        } else {
-            return startTimeStr
         }
     }
 }
 
-#Preview {
-    NavigationView {
-        FriendActivitiesListView(
-            user: BaseUserDTO.danielAgapov,
-            profileViewModel: ProfileViewModel(),
-            showActivityDetails: .constant(false)
-        )
+// MARK: - Calendar Day Square
+struct CalendarDaySquare: View {
+    let color: Color
+    let emoji: String
+    let hasEmoji: Bool
+    
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 6.62)
+                .fill(color)
+                .frame(width: 46, height: 46)
+                .shadow(color: .black.opacity(0.10), radius: 6.62, y: 1.65)
+            
+            if hasEmoji {
+                Text(emoji)
+                    .font(.system(size: 26))
+            }
+        }
+    }
+}
+
+// MARK: - Array Extension for Safe Access
+extension Array {
+    subscript(safe index: Int) -> Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 } 
