@@ -16,7 +16,7 @@ struct ActivityTypeEditView: View {
     
     // Track if this is a new activity type (no associated friends yet)
     private var isNewActivityType: Bool {
-        activityTypeDTO.associatedFriends.isEmpty && activityTypeDTO.title == "New Activity"
+        activityTypeDTO.associatedFriends.isEmpty && activityTypeDTO.title.isEmpty
     }
     
     // Debounced save timer
@@ -170,8 +170,8 @@ struct ActivityTypeEditView: View {
                 Button(action: {
                     showEmojiPicker = true
                 }) {
-                    Text("􀈊")
-                        .font(Font.custom("SF Pro Display", size: 21.75))
+                    Image(systemName: "pencil")
+                        .font(.system(size: 14))
                         .foregroundColor(.white)
                 }
                 .padding(13.59)
@@ -185,7 +185,7 @@ struct ActivityTypeEditView: View {
     }
     
     private var titleTextField: some View {
-        TextField("New Activity", text: $editedTitle)
+        TextField("Activity name", text: $editedTitle)
             .font(.onestMedium(size: 32))
             .foregroundColor(universalAccentColor)
             .multilineTextAlignment(.center)
@@ -230,6 +230,9 @@ struct ActivityTypeEditView: View {
             .cornerRadius(16)
             .offset(x: 0, y: 38)
             .onTapGesture {
+                // Only proceed if validation passes
+                guard !(isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) else { return }
+                
                 if isNewActivityType {
                     // For new activity types, navigate to friend selection
                     navigateToNextStep()
@@ -238,7 +241,7 @@ struct ActivityTypeEditView: View {
                     saveChanges()
                 }
             }
-            .disabled((!hasChanges && !isNewActivityType) || viewModel.isLoading)
+            .disabled((isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) || (!hasChanges && !isNewActivityType) || viewModel.isLoading)
         }
     }
     

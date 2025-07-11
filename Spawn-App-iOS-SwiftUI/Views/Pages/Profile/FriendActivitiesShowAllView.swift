@@ -305,6 +305,10 @@ struct FriendActivitiesShowAllView: View {
 struct FriendCalendarDaySquare: View {
     let activity: CalendarActivityDTO
     
+    private var dayNumber: String {
+        String(Calendar.current.component(.day, from: activity.date))
+    }
+    
     var body: some View {
         RoundedRectangle(cornerRadius: 6.62)
             .fill(activityColor)
@@ -326,6 +330,26 @@ struct FriendCalendarDaySquare: View {
                             .font(.onestMedium(size: 26.47))
                             .foregroundColor(.black)
                     }
+                }
+            )
+            .overlay(
+                // Date number badge (positioned in top-right corner)
+                VStack {
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 0) {
+                            Text(dayNumber)
+                                .font(.custom("Onest", size: 8).weight(.semibold))
+                                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        }
+                        .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
+                        .frame(width: 14, height: 14)
+                        .background(Color(red: 0.95, green: 0.93, blue: 0.93))
+                        .cornerRadius(12)
+                    }
+                    .padding(.top, 3)
+                    .padding(.trailing, 3)
+                    Spacer()
                 }
             )
     }

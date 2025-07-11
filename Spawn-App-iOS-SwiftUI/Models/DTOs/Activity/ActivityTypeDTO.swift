@@ -48,7 +48,7 @@ extension ActivityTypeDTO {
     static func createNew() -> ActivityTypeDTO {
         return ActivityTypeDTO(
             id: UUID(),
-            title: "New Activity",
+            title: "",
             icon: "⭐️",
             associatedFriends: [],
             orderNum: 0,

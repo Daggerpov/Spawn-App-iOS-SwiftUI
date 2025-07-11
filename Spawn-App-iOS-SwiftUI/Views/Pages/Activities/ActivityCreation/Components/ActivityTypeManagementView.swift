@@ -411,10 +411,10 @@ struct ActivityTypeOptionsPopup: View {
                             HStack(spacing: 10) {
                                 Image(systemName: "xmark")
                                     .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(Color(red: 1, green: 0.45, blue: 0.44))
+                                    .foregroundColor(.red)
                                 Text("Delete Activity Type")
                                     .font(Font.custom("Onest", size: 20).weight(.medium))
-                                    .foregroundColor(Color(red: 1, green: 0.45, blue: 0.44))
+                                    .foregroundColor(.red)
                             }
                             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
                             .frame(height: 63)

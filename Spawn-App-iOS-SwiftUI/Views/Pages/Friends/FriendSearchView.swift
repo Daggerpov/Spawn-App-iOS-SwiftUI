@@ -361,7 +361,7 @@ struct FriendRowView: View {
                         // Add delay before removing the item
                         try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
                         if friend != nil {
-                            await viewModel.removeFromSearchResults(userId: targetUserId)
+                            viewModel.removeFromSearchResults(userId: targetUserId)
                         } else if user != nil {
                             viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
                         } else if recommendedFriend != nil {

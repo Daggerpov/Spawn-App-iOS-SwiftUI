@@ -210,6 +210,10 @@ struct CalendarDayTile: View {
     private let tileSize: CGFloat = 86.4
     private let cornerRadius: CGFloat = 12.34
     
+    private var dayNumber: String {
+        String(Calendar.current.component(.day, from: day))
+    }
+    
     var body: some View {
         ZStack {
             if isCurrentMonth {
@@ -246,6 +250,26 @@ struct CalendarDayTile: View {
                                     }
                                 }
                             }
+                        }
+                    )
+                    .overlay(
+                        // Date number badge (positioned in top-right corner)
+                        VStack {
+                            HStack {
+                                Spacer()
+                                VStack(spacing: 0) {
+                                    Text(dayNumber)
+                                        .font(.custom("Onest", size: 12).weight(.semibold))
+                                        .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                                }
+                                .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
+                                .frame(width: 20, height: 20)
+                                .background(Color(red: 0.95, green: 0.93, blue: 0.93))
+                                .cornerRadius(16)
+                            }
+                            .padding(.top, 6)
+                            .padding(.trailing, 6)
+                            Spacer()
                         }
                     )
                     .onTapGesture {
