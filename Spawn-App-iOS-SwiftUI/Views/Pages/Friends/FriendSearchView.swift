@@ -363,9 +363,9 @@ struct FriendRowView: View {
                         if friend != nil {
                             await viewModel.removeFromSearchResults(userId: targetUserId)
                         } else if user != nil {
-                            await viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
+                            viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
                         } else if recommendedFriend != nil {
-                            await viewModel.removeFromRecommended(friendId: targetUserId)
+                            viewModel.removeFromRecommended(friendId: targetUserId)
                         }
                     }
                 }) {

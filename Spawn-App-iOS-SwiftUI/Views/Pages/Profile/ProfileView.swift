@@ -187,6 +187,16 @@ struct ProfileView: View {
 			if newValue {
 				print("🔥 ProfileView: Navigation should be triggered to day activities")
 				print("🔥 ProfileView: Selected activities count: \(selectedDayActivities.count)")
+				
+				// Debug: Print selected activities
+				for (index, activity) in selectedDayActivities.enumerated() {
+					print("🔥 ProfileView: Selected activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date)")
+				}
+				
+				// Ensure navigation happens on main thread
+				DispatchQueue.main.async {
+					print("🔥 ProfileView: About to trigger navigation to day activities")
+				}
 			}
 		}
 		// Add a timer to periodically refresh data
@@ -586,8 +596,13 @@ struct ProfileView: View {
 	}
 	
 	private var dayActivitiesPageView: some View {
-		DayActivitiesPageView(
-			date: selectedDayActivities.first?.date ?? Date(),
+		// Get the date from the first activity, or use today as fallback
+		let date = selectedDayActivities.first?.date ?? Date()
+		
+		print("🔥 ProfileView: Creating DayActivitiesPageView with date: \(date), activities: \(selectedDayActivities.count)")
+		
+		return DayActivitiesPageView(
+			date: date,
 			activities: selectedDayActivities,
 			onDismiss: {
 				// Reset navigation state when day activities view is dismissed

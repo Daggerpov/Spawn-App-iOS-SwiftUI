@@ -211,9 +211,9 @@ struct FigmaActivityCard: View {
 extension Color {
     var isDark: Bool {
         guard let components = cgColor?.components else { return false }
-        let red = components[0]
-        let green = components[1]
-        let blue = components[2]
+        				let red = components.indices.contains(0) ? components[0] : 0
+				let green = components.indices.contains(1) ? components[1] : 0
+				let blue = components.indices.contains(2) ? components[2] : 0
         
         // Calculate luminance
         let luminance = 0.299 * red + 0.587 * green + 0.114 * blue

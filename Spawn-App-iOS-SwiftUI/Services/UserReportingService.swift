@@ -99,7 +99,9 @@ class UserReportingService {
         reportType: ReportType,
         description: String
     ) async throws {
-        let url = URL(string: APIService.baseURL + "reports/create")!
+        guard let url = URL(string: APIService.baseURL + "reports/create") else {
+            throw APIError.URLError
+        }
         let reportDTO = CreateReportedContentDTO(
             reporterUserId: reporterUserId,
             contentId: reportedUserId,
@@ -132,7 +134,9 @@ class UserReportingService {
     /// - Parameter reporterId: ID of the user whose reports to retrieve
     /// - Returns: Array of simplified reports made by the user
     func getReportsByUser(reporterId: UUID) async throws -> [FetchReportedContentDTO] {
-        let url = URL(string: APIService.baseURL + "reports/fetch/reporter/\(reporterId)")!
+        guard let url = URL(string: APIService.baseURL + "reports/fetch/reporter/\(reporterId)") else {
+            throw APIError.URLError
+        }
         return try await apiService.fetchData(from: url, parameters: nil)
     }
     
@@ -140,7 +144,9 @@ class UserReportingService {
     /// - Deprecated: Use getReportsByUser(reporterId:) instead for better performance
     @available(*, deprecated, message: "Use getReportsByUser(reporterId:) instead for better performance")
     func getFullReportsByUser(reporterId: UUID) async throws -> [ReportedContentDTO] {
-        let url = URL(string: APIService.baseURL + "reports/reporter/\(reporterId)")!
+        guard let url = URL(string: APIService.baseURL + "reports/reporter/\(reporterId)") else {
+            throw APIError.URLError
+        }
         return try await apiService.fetchData(from: url, parameters: nil)
     }
     
@@ -148,7 +154,9 @@ class UserReportingService {
     /// - Parameter userId: ID of the user to get reports about
     /// - Returns: Array of reports about the user
     func getReportsAboutUser(userId: UUID) async throws -> [ReportedContentDTO] {
-        let url = URL(string: APIService.baseURL + "reports/\(userId)")!
+        guard let url = URL(string: APIService.baseURL + "reports/\(userId)") else {
+            throw APIError.URLError
+        }
         return try await apiService.fetchData(from: url, parameters: nil)
     }
 }

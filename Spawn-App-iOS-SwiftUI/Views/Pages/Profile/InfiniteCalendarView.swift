@@ -207,20 +207,38 @@ struct DayCell: View {
     
     var body: some View {
         Button(action: onTapped) {
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
+                // Date number at the top
+                HStack {
+                    Spacer()
+                    Text(dayNumber)
+                        .font(.custom("SF Pro Text", size: 14).weight(.semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.black.opacity(0.8))
+                        )
+                }
+                .padding(.top, 4)
+                .padding(.trailing, 4)
+                
                 // Activity display
                 if activities.isEmpty {
                     Spacer()
-                        .frame(minHeight: 40)
+                        .frame(minHeight: 32)
                 } else if activities.count == 1 {
                     // Single activity - show its icon
                     activityIconView(for: activities.first!)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 32, height: 32)
                 } else {
                     // Multiple activities - show count or multiple icons
                     multipleActivitiesView
-                        .frame(width: 40, height: 40)
+                        .frame(width: 32, height: 32)
                 }
+                
+                Spacer()
             }
             .frame(width: 80, height: 80)
             .background(
@@ -230,26 +248,6 @@ struct DayCell: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(isToday ? universalAccentColor : Color.clear, lineWidth: 3)
-            )
-            .overlay(
-                // Date number overlay
-                VStack {
-                    HStack {
-                        Spacer()
-                        Text(dayNumber)
-                            .font(.custom("SF Pro Text", size: 16).weight(.semibold))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.black.opacity(0.7))
-                            )
-                    }
-                    .padding(.top, 4)
-                    .padding(.trailing, 4)
-                    Spacer()
-                }
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -261,16 +259,16 @@ struct DayCell: View {
             // Background color based on activity
             RoundedRectangle(cornerRadius: 8)
                 .fill(activityColor(for: activity))
-                .frame(width: 40, height: 40)
+                .frame(width: 32, height: 32)
             
             // Activity icon
             if let icon = activity.icon, !icon.isEmpty {
                 Text(icon)
-                    .font(.system(size: 20))
+                    .font(.system(size: 16))
                     .foregroundColor(.white)
             } else {
                 Text("⭐️")
-                    .font(.system(size: 20))
+                    .font(.system(size: 16))
                     .foregroundColor(.white)
             }
         }
@@ -282,11 +280,11 @@ struct DayCell: View {
     private var multipleActivitiesView: some View {
         if activities.count <= 3 {
             // Show up to 3 activity icons as small dots
-            HStack(spacing: 3) {
+            HStack(spacing: 2) {
                 ForEach(activities.prefix(3), id: \.id) { activity in
                     Circle()
                         .fill(activityColor(for: activity))
-                        .frame(width: 10, height: 10)
+                        .frame(width: 8, height: 8)
                 }
             }
         } else {
@@ -298,10 +296,10 @@ struct DayCell: View {
                         startPoint: .leading,
                         endPoint: .trailing
                     ))
-                    .frame(width: 40, height: 40)
+                    .frame(width: 32, height: 32)
                 
                 Text("\(activities.count)")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundColor(.white)
             }
         }

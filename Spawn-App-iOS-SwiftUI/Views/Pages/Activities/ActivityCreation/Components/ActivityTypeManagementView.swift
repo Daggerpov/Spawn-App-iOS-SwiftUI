@@ -158,8 +158,9 @@ struct ActivityTypeManagementView: View {
             }
             .padding(20)
             
-            // Edit button overlay - positioned at top right
+            // Edit button overlay - positioned at bottom right
             VStack {
+                Spacer()
                 HStack {
                     Spacer()
                     Button(action: {
@@ -175,9 +176,8 @@ struct ActivityTypeManagementView: View {
                                 .foregroundColor(.white)
                         }
                     }
-                    .offset(x: 10, y: -10)
+                    .offset(x: 10, y: 10)
                 }
-                Spacer()
             }
         }
         .frame(width: 145, height: 145)
@@ -185,18 +185,21 @@ struct ActivityTypeManagementView: View {
     
     private var peopleSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Header with people count and manage button - improved alignment
-            HStack(alignment: .center, spacing: 12) {
-                Text("People (\(activityTypeDTO.associatedFriends.count))")
-                    .font(.onestSemiBold(size: 17))
-                    .foregroundColor(adaptivePeopleCountColor)
-                
-                Spacer()
-                
-                Button(action: { showingManagePeople = true }) {
-                    Text("Manage People")
-                        .font(.onestMedium(size: 16))
-                        .foregroundColor(figmaBlue)
+            // Only show header when there are friends
+            if !activityTypeDTO.associatedFriends.isEmpty {
+                // Header with people count and manage button - improved alignment
+                HStack(alignment: .center, spacing: 12) {
+                    Text("People (\(activityTypeDTO.associatedFriends.count))")
+                        .font(.onestSemiBold(size: 17))
+                        .foregroundColor(adaptivePeopleCountColor)
+                    
+                    Spacer()
+                    
+                    Button(action: { showingManagePeople = true }) {
+                        Text("Manage People")
+                            .font(.onestMedium(size: 16))
+                            .foregroundColor(figmaBlue)
+                    }
                 }
             }
             

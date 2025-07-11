@@ -252,8 +252,8 @@ struct ActivityTypeCard: View {
             
             Button(action: { showDeleteConfirmation = true }) {
                 Label("Delete Type", systemImage: "trash")
+                    .foregroundColor(.red)
             }
-            .foregroundColor(.red)
         }
         .alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}

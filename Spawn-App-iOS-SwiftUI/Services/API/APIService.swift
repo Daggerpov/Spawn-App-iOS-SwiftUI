@@ -807,20 +807,30 @@ class APIService: IAPIService {
 		for (key, value) in formData {
 			if let data = value as? Data {
 				// Handle image data
-				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-				body.append("Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(using: .utf8)!)
-				body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-				body.append(data)
+				if let boundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8),
+				   let contentDispositionData = "Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(using: .utf8),
+				   let contentTypeData = "Content-Type: image/jpeg\r\n\r\n".data(using: .utf8) {
+					body.append(boundaryData)
+					body.append(contentDispositionData)
+					body.append(contentTypeData)
+					body.append(data)
+				}
 			} else {
 				// Handle text fields
-				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-				body.append("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8)!)
-				body.append("\(value)".data(using: .utf8)!)
+				if let boundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8),
+				   let contentDispositionData = "Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8),
+				   let valueData = "\(value)".data(using: .utf8) {
+					body.append(boundaryData)
+					body.append(contentDispositionData)
+					body.append(valueData)
+				}
 			}
 		}
 		
 		// Add final boundary
-		body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+		if let finalBoundaryData = "\r\n--\(boundary)--\r\n".data(using: .utf8) {
+			body.append(finalBoundaryData)
+		}
 		
 		request.httpBody = body
 		

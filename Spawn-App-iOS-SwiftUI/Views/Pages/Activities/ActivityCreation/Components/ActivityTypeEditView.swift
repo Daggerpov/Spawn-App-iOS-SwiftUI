@@ -253,11 +253,11 @@ struct ActivityTypeEditView: View {
             onComplete: { finalActivityType in
                 // Save the activity type with selected friends
                 Task {
-                    await viewModel.createActivityType(finalActivityType)
+                    viewModel.createActivityType(finalActivityType)
                     await viewModel.saveBatchChanges()
                     
                     // Dismiss both views
-                    MainActor.run {
+                    Task { @MainActor in
                         dismiss()
                     }
                 }
@@ -323,7 +323,7 @@ struct ActivityTypeEditView: View {
             await viewModel.saveBatchChanges()
             
             // Dismiss after saving
-            MainActor.run {
+            Task { @MainActor in
                 dismiss()
             }
         }

@@ -264,7 +264,7 @@ struct ChatroomButtonView: View {
                         Text("Be the first to send a message!")
                             .foregroundColor(.white.opacity(0.8))
                             .font(.onestRegular(size: 15))
-                    } else {
+                    } else if !viewModel.chats.isEmpty {
                         let sender = viewModel.chats[0].senderUser
                         Text((sender == user ? "You:" : sender.name ?? sender.username) + " " + viewModel.chats[0].content)
                             .foregroundColor(.white.opacity(0.8))

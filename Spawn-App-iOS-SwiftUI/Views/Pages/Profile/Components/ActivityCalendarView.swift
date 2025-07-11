@@ -239,15 +239,17 @@ struct CalendarDayTile: View {
                                         .font(.onestMedium(size: 37.03))
                                         .foregroundColor(figmaBlack300)
                                     
-                                    activityEmoji(for: activities[1])
-                                        .font(.onestMedium(size: 37.03))
-                                        .foregroundColor(figmaBlack300)
+                                    if activities.count > 1 {
+                                        activityEmoji(for: activities[1])
+                                            .font(.onestMedium(size: 37.03))
+                                            .foregroundColor(figmaBlack300)
+                                    }
                                 }
                             }
                         }
                     )
                     .onTapGesture {
-                        if activities.count >= 1 {
+                        if !activities.isEmpty {
                             onActivitySelected(activities[0])
                         }
                     }

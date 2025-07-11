@@ -522,7 +522,9 @@ class MockAPIService: IAPIService {
 				print("🔍 MOCK: Updating activity details for ID: \(activityId)")
 				
 				// Get the current activity from cache or create a mock one
-				var activityToUpdate = AppCache.shared.getActivityById(activityId) ?? FullFeedActivityDTO.mockDinnerActivity
+				let activityToUpdate = AppCache.shared.getActivityById(
+					activityId
+				) ?? FullFeedActivityDTO.mockDinnerActivity
 				activityToUpdate.id = activityId
 				
 				// Apply updates from the request data

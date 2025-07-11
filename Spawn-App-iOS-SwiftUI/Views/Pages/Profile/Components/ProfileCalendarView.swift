@@ -161,7 +161,7 @@ struct ProfileCalendarView: View {
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
 		print("🔥 ProfileCalendarView: handleDaySelection called with \(activities.count) activities")
-		if activities.count == 1 {
+		if activities.count == 1, !activities.isEmpty {
 			// If only one activity, directly open it
 			print("🔥 ProfileCalendarView: Opening single activity")
 			handleActivitySelection(activities[0])
@@ -194,9 +194,24 @@ struct ProfileCalendarView: View {
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
 		let calendar = Calendar.current
-		return profileViewModel.allCalendarActivities.filter { activity in
-			calendar.isDate(activity.date, inSameDayAs: date)
+		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
+			let isMatch = calendar.isDate(activity.date, inSameDayAs: date)
+			if isMatch {
+				print("🔥 ProfileCalendarView: Found activity for date \(date): \(activity.title ?? "No title")")
+			}
+			return isMatch
 		}
+		
+		// Debug: Print all activities and their dates
+		if filteredActivities.isEmpty {
+			print("🔥 ProfileCalendarView: No activities found for date \(date)")
+			print("🔥 ProfileCalendarView: All available activities (\(profileViewModel.allCalendarActivities.count)):")
+			for activity in profileViewModel.allCalendarActivities {
+				print("  - \(activity.title ?? "No title"): \(activity.date)")
+			}
+		}
+		
+		return filteredActivities
 	}
 
 	private var weekDays: [String] {
@@ -251,7 +266,7 @@ struct CalendarDayCell: View {
 	
 	var body: some View {
 		ZStack {
-			if activities.count == 1 {
+			if activities.count == 1, !activities.isEmpty {
 				// Single activity - show its icon and color
 				let activity = activities[0]
 				RoundedRectangle(cornerRadius: 4.5)
@@ -268,7 +283,7 @@ struct CalendarDayCell: View {
 								.foregroundColor(.black)
 						}
 					)
-			} else if activities.count > 1 {
+			} else if activities.count > 1, !activities.isEmpty {
 				// Multiple activities - show primary activity color with count
 				let primaryActivity = activities[0]
 				RoundedRectangle(cornerRadius: 4.5)
