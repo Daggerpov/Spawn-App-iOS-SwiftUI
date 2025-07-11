@@ -232,9 +232,11 @@ class ActivityCreationViewModel: ObservableObject {
 		if isCreatingActivity {
 			return
 		}
-		
-		isCreatingActivity = true
-		
+
+		await MainActor.run {
+			isCreatingActivity = true
+		}
+
 		// Map selected friends to their IDs
 		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
 		
@@ -278,10 +280,14 @@ class ActivityCreationViewModel: ObservableObject {
 			
 		} catch {
 			print("Error creating activity: \(error)")
-			creationMessage = "Failed to create activity. Please try again."
+			await MainActor.run {
+				creationMessage = "Failed to create activity. Please try again."
+			}
 		}
 		
-		isCreatingActivity = false
+		await MainActor.run {
+			isCreatingActivity = false
+		}
 	}
 }
 

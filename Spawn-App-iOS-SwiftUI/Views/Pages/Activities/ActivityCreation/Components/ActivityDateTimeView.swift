@@ -152,10 +152,12 @@ struct ActivityDateTimeView: View {
                     ActivityBackButton {
                         onBack()
                     }
+                    .padding(.leading, 24)
+                    
                     Spacer()
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 8)
+                .padding(.top, 50)
+                .padding(.bottom, 12)
             }
             
             ScrollView {
@@ -377,7 +379,7 @@ struct ActivityDateTimeView: View {
             Spacer()
             
             // Next Step Button
-            Button(action: {
+            Enhanced3DButton(title: "Next Step (Location)") {
                 let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                 if trimmedTitle.isEmpty {
                     showTitleError = true
@@ -386,18 +388,7 @@ struct ActivityDateTimeView: View {
                 showTitleError = false
                 updateSelectedDate()
                 onNext()
-            }) {
-                HStack(spacing: 8) {
-                    Text("Next Step (Location)")
-                        .font(.custom("Onest", size: 20).weight(.semibold))
-                        .foregroundColor(.white)
-                }
-                .padding(16)
-                .frame(width: 375, height: 56)
-                .background(Color(red: 0.42, green: 0.51, blue: 0.98))
-                .cornerRadius(16)
             }
-            .buttonStyle(PlainButtonStyle())
             .padding(.horizontal, 20)
             
             // Step indicators

@@ -72,10 +72,8 @@ struct ActivityConfirmationView: View {
         HStack {
             // Back button
             if let onBack = onBack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(universalAccentColor)
+                ActivityBackButton {
+                    onBack()
                 }
                 .padding(.leading, 24)
             }

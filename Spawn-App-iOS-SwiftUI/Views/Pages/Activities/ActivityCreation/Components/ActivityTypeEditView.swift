@@ -172,41 +172,14 @@ struct ActivityTypeEditView: View {
     }
     
     private var actionButtonsView: some View {
-        ZStack {
-            // Cancel button
-            HStack(spacing: 8) {
-                Text("Cancel")
-                    .font(Font.custom("Onest", size: 20).weight(.semibold))
-                    .lineSpacing(24)
-                    .foregroundColor(Color(red: 0.15, green: 0.14, blue: 0.14))
-            }
-            .padding(16)
-            .frame(width: 290, height: 56)
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .inset(by: 0.50)
-                    .stroke(Color(red: 0.15, green: 0.14, blue: 0.14), lineWidth: 0.50)
-            )
-            .offset(x: 0, y: 110)
-            .onTapGesture {
-                dismiss()
-            }
-            .disabled(viewModel.isLoading)
-            
+        VStack(spacing: 16) {
             // Save button
-            HStack(spacing: 8) {
-                Text(isNewActivityType ? "Next" : "Save")
-                    .font(Font.custom("Onest", size: 20).weight(.semibold))
-                    .lineSpacing(24)
-                    .foregroundColor(.white)
-            }
-            .padding(16)
-            .frame(width: 290, height: 56)
-            .background(Color(red: 0.42, green: 0.51, blue: 0.98))
-            .cornerRadius(16)
-            .offset(x: 0, y: 38)
-            .onTapGesture {
+            Enhanced3DButton(
+                title: isNewActivityType ? "Next" : "Save",
+                backgroundColor: Color(red: 0.42, green: 0.51, blue: 0.98),
+                foregroundColor: .white,
+                isEnabled: !((isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) || (!hasChanges && !isNewActivityType) || viewModel.isLoading)
+            ) {
                 // Only proceed if validation passes
                 guard !(isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) else { return }
                 
@@ -218,8 +191,21 @@ struct ActivityTypeEditView: View {
                     saveChanges()
                 }
             }
-            .disabled((isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) || (!hasChanges && !isNewActivityType) || viewModel.isLoading)
+            .frame(width: 290)
+            
+            // Cancel button
+            Enhanced3DButton(
+                title: "Cancel",
+                backgroundColor: Color.clear,
+                foregroundColor: Color(red: 0.15, green: 0.14, blue: 0.14),
+                borderColor: Color(red: 0.15, green: 0.14, blue: 0.14),
+                isEnabled: !viewModel.isLoading
+            ) {
+                dismiss()
+            }
+            .frame(width: 290)
         }
+        .padding(.top, 38)
     }
     
 
