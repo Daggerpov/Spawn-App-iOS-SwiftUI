@@ -631,6 +631,9 @@ class ProfileViewModel: ObservableObject {
     
     // Interest management methods
     func removeUserInterest(userId: UUID, interest: String) async {
+        // Store original state for potential rollback
+        let originalInterests = userInterests
+        
         // Update local state immediately for better UX
         await MainActor.run {
             self.userInterests.removeAll { $0 == interest }
@@ -643,7 +646,7 @@ class ProfileViewModel: ObservableObject {
             }
             
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(encodedInterest)")!
-            print("Attempting to delete interest at URL: \(url)")
+            print("🔥 Attempting to delete interest '\(interest)' at URL: \(url)")
             
             let _ = try await apiService.deleteData(
                 from: url,
@@ -651,18 +654,27 @@ class ProfileViewModel: ObservableObject {
                 object: EmptyObject()
             )
             
-            print("Successfully deleted interest: \(interest)")
+            print("✅ Successfully deleted interest: \(interest)")
             
             // Update cache after successful API call
             await AppCache.shared.refreshProfileInterests(userId)
         } catch {
-            // Add debug information
-            print("Failed to remove interest '\(interest)': \(error.localizedDescription)")
+            print("❌ Failed to remove interest '\(interest)': \(error.localizedDescription)")
             
-            // Don't revert local state for now - let the user see immediate feedback
-            // We'll handle the UI optimistically
+            // Revert the optimistic update since the API call failed
             await MainActor.run {
-                self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
+                self.userInterests = originalInterests
+                
+                // Provide specific error message based on the error type
+                if (error as NSError).localizedDescription.contains("404") {
+                    self.errorMessage = "Interest '\(interest)' was not found in your profile. Your interests have been refreshed."
+                    // Force refresh from server to sync cache
+                    Task {
+                        await self.fetchUserInterests(userId: userId)
+                    }
+                } else {
+                    self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
+                }
             }
         }
     }
