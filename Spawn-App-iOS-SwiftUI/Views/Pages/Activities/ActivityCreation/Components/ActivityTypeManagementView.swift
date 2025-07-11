@@ -289,7 +289,7 @@ struct PeopleRowView: View {
         HStack(spacing: 12) {
             HStack(spacing: 12) {
                 // Profile picture
-                AsyncImage(url: URL(string: friend.profilePicture ?? "")) { image in
+                AsyncImage(url: friend.profilePicture.flatMap { URL(string: $0) }) { image in
                     image
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -307,7 +307,7 @@ struct PeopleRowView: View {
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(adaptiveNameColor)
                     
-                    Text("@\(friend.username ?? "")")
+                    Text("@\(friend.username)")
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(adaptiveNameColor)
                 }

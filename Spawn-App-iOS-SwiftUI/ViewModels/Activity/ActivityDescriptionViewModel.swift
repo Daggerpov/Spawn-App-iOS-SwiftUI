@@ -122,11 +122,11 @@ class ActivityDescriptionViewModel: ObservableObject {
 					errorMessage = "Network error. Please check your connection."
 				case .failedHTTPRequest(let description):
 					errorMessage = "Request failed: \(description)"
-				case .failedJSONParsing(let url):
+				case .failedJSONParsing:
 					errorMessage = "Failed to parse server response. Please try again."
 				case .unknownError(let error):
 					errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
-				case .failedTokenSaving(let tokenType):
+				case .failedTokenSaving:
 					errorMessage = "Authentication error. Please try logging in again."
 				}
 			}

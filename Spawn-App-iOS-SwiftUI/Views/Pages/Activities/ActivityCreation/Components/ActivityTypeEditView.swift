@@ -170,19 +170,18 @@ struct ActivityTypeEditView: View {
                 Button(action: {
                     showEmojiPicker = true
                 }) {
-                    ZStack {
-                        Circle()
-                            .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
-                            .frame(width: 36, height: 36)
-                        
-                        Image(systemName: "pencil")
-                            .font(.system(size: 14))
-                            .foregroundColor(.white)
-                    }
+                    Text("􀈊")
+                        .font(Font.custom("SF Pro Display", size: 21.75))
+                        .foregroundColor(.white)
                 }
-                .offset(x: 15, y: 15)
+                .padding(13.59)
+                .frame(width: 36.25, height: 36.25)
+                .background(Color(red: 0.52, green: 0.49, blue: 0.49))
+                .cornerRadius(27.19)
+                .offset(x: 8, y: 8)
             }
         }
+        .frame(width: 128, height: 128)
     }
     
     private var titleTextField: some View {
@@ -196,53 +195,51 @@ struct ActivityTypeEditView: View {
     }
     
     private var actionButtonsView: some View {
-        VStack(spacing: 70) {
-            saveButton
-            cancelButton
-        }
-        .offset(x: 0, y: 40)
-    }
-    
-    private var saveButton: some View {
-        Button(action: {
-            if isNewActivityType {
-                // For new activity types, navigate to friend selection
-                navigateToNextStep()
-            } else {
-                // For existing activity types, save changes
-                saveChanges()
+        ZStack {
+            // Cancel button
+            HStack(spacing: 8) {
+                Text("Cancel")
+                    .font(Font.custom("Onest", size: 20).weight(.semibold))
+                    .lineSpacing(24)
+                    .foregroundColor(Color(red: 0.15, green: 0.14, blue: 0.14))
             }
-        }) {
-            Text(isNewActivityType ? "Next" : "Save")
-                .font(.onestSemiBold(size: 20))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(figmaBlue)
-                .cornerRadius(16)
+            .padding(16)
+            .frame(width: 290, height: 56)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .inset(by: 0.50)
+                    .stroke(Color(red: 0.15, green: 0.14, blue: 0.14), lineWidth: 0.50)
+            )
+            .offset(x: 0, y: 110)
+            .onTapGesture {
+                dismiss()
+            }
+            .disabled(viewModel.isLoading)
+            
+            // Save button
+            HStack(spacing: 8) {
+                Text(isNewActivityType ? "Next" : "Save")
+                    .font(Font.custom("Onest", size: 20).weight(.semibold))
+                    .lineSpacing(24)
+                    .foregroundColor(.white)
+            }
+            .padding(16)
+            .frame(width: 290, height: 56)
+            .background(Color(red: 0.42, green: 0.51, blue: 0.98))
+            .cornerRadius(16)
+            .offset(x: 0, y: 38)
+            .onTapGesture {
+                if isNewActivityType {
+                    // For new activity types, navigate to friend selection
+                    navigateToNextStep()
+                } else {
+                    // For existing activity types, save changes
+                    saveChanges()
+                }
+            }
+            .disabled((!hasChanges && !isNewActivityType) || viewModel.isLoading)
         }
-        .frame(width: 290, height: 56)
-        .disabled((!hasChanges && !isNewActivityType) || viewModel.isLoading)
-    }
-    
-    private var cancelButton: some View {
-        Button(action: {
-            dismiss()
-        }) {
-            Text("Cancel")
-                .font(.onestSemiBold(size: 20))
-                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(Color.clear)
-                .cornerRadius(16)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 0.5)
-                )
-        }
-        .frame(width: 290, height: 56)
-        .disabled(viewModel.isLoading)
     }
     
 

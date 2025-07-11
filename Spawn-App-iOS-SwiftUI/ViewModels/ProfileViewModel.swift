@@ -462,11 +462,11 @@ class ProfileViewModel: ObservableObject {
         )
         
         // Reset the activities by day grid
-        calendarActivitiesByDay = Array(
-            repeating: Array(repeating: [], count: 7),
-            count: 5
-        )
-        
+		calendarActivitiesByDay = Array(
+			repeating: Array(repeating: [], count: 7),
+			count: 5
+		)
+
         let firstDayOffset = firstDayOfMonth(month: month, year: year)
         
         // Group activities by day
@@ -501,7 +501,7 @@ class ProfileViewModel: ObservableObject {
                     let row = position / 7
                     let col = position % 7
                     grid[row][col] = dayActivities.first
-                    calendarActivitiesByDay[row][col] = dayActivities // Store all activities for this day
+					calendarActivitiesByDay[row][col] = dayActivities // Store all activities for this day
                 }
             }
         }
@@ -637,8 +637,8 @@ class ProfileViewModel: ObservableObject {
                 parameters: parameters
             )
             
-            print("✅ ProfileViewModel: Successfully fetched activity details: \(activity.title)")
-            print("📋 Activity Details: ID: \(activity.id), Title: \(activity.title), Location: \(activity.location?.name ?? "No location")")
+            print("✅ ProfileViewModel: Successfully fetched activity details: \(activity.title ?? "No title")")
+            print("📋 Activity Details: ID: \(activity.id), Title: \(activity.title ?? "No title"), Location: \(activity.location?.name ?? "No location")")
             
             await MainActor.run {
                 self.selectedActivity = activity

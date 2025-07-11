@@ -70,8 +70,8 @@ struct ProfileCalendarView: View {
 			
 			// Days of week header
 			HStack(spacing: 4) {
-				ForEach(Array(zip(0..<weekDays.count, weekDays)), id: \.0) { index, day in
-					Text(day)
+				ForEach(0..<weekDays.count, id: \.self) { index in
+					Text(weekDays[index])
 						.font(.onestMedium(size: 9))
 						.foregroundColor(Color(hex: "#8E8484"))
 						.frame(width: 32, height: 12)
@@ -91,6 +91,7 @@ struct ProfileCalendarView: View {
 								let dayIndex = row * 7 + col
 								if dayIndex < calendarDays.count, let date = calendarDays[dayIndex] {
 									let dayActivities = getActivitiesForDate(date)
+									
 									if dayActivities.isEmpty {
 										// Empty day cell
 										RoundedRectangle(cornerRadius: 4.5)
@@ -98,6 +99,7 @@ struct ProfileCalendarView: View {
 											.frame(width: 32, height: 32)
 											.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
 											.onTapGesture {
+												print("🔥 ProfileCalendarView: Empty day cell tapped for date \(date)")
 												// Navigate to full calendar view on empty day tap
 												Task {
 													do {
@@ -122,8 +124,13 @@ struct ProfileCalendarView: View {
 										// Day cell with activities
 										CalendarDayCell(activities: dayActivities, dayNumber: Calendar.current.component(.day, from: date))
 											.onTapGesture {
-												print("🔥 ProfileCalendarView: Day cell tapped with \(dayActivities.count) activities")
-												handleDaySelection(activities: dayActivities)
+												print("🔥 ProfileCalendarView: Day cell tapped for date \(date) with \(dayActivities.count) activities")
+												
+												// Create a fresh copy of activities to ensure they don't get lost
+												let activitiesCopy = Array(dayActivities)
+												print("🔥 ProfileCalendarView: Created activities copy with \(activitiesCopy.count) activities")
+												
+												handleDaySelection(activities: activitiesCopy)
 											}
 									}
 								} else {
@@ -161,15 +168,21 @@ struct ProfileCalendarView: View {
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
 		print("🔥 ProfileCalendarView: handleDaySelection called with \(activities.count) activities")
-		if activities.count == 1, !activities.isEmpty {
-			// If only one activity, directly open it
-			print("🔥 ProfileCalendarView: Opening single activity")
-			handleActivitySelection(activities[0])
-		} else if activities.count > 1 {
-			// If multiple activities, navigate to day activities page
-			print("🔥 ProfileCalendarView: Navigating to day activities page")
-			selectedDayActivities = activities
-			navigateToDayActivities = true
+		
+		// Debug: Print activity details
+		for (index, activity) in activities.enumerated() {
+			print("🔥 ProfileCalendarView: Activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date), ID: \(activity.activityId?.uuidString ?? "No ID")")
+		}
+		
+		// Always set selectedDayActivities regardless of count
+		selectedDayActivities = activities
+		print("🔥 ProfileCalendarView: selectedDayActivities set to \(activities.count) activities")
+		
+		// Always navigate to day activities page for any day selection
+		print("🔥 ProfileCalendarView: Navigating to day activities page")
+		
+		DispatchQueue.main.async {
+			self.navigateToDayActivities = true
 			print("🔥 ProfileCalendarView: navigateToDayActivities set to true")
 		}
 	}
@@ -193,6 +206,7 @@ struct ProfileCalendarView: View {
 
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
+		print("🔥 ProfileCalendarView: getActivitiesForDate called for date: \(date)")
 		let calendar = Calendar.current
 		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
 			let isMatch = calendar.isDate(activity.date, inSameDayAs: date)
@@ -201,6 +215,8 @@ struct ProfileCalendarView: View {
 			}
 			return isMatch
 		}
+		
+		print("🔥 ProfileCalendarView: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities")
 		
 		// Debug: Print all activities and their dates
 		if filteredActivities.isEmpty {
@@ -219,9 +235,18 @@ struct ProfileCalendarView: View {
 	}
 
 	private func fetchCalendarData() {
+		print("🔥 ProfileCalendarView: fetchCalendarData called")
 		Task {
 			// Fetch all calendar activities instead of just current month
+			print("🔥 ProfileCalendarView: Starting to fetch all calendar activities")
 			await profileViewModel.fetchAllCalendarActivities()
+			
+			await MainActor.run {
+				print("🔥 ProfileCalendarView: Finished fetching calendar activities. Total: \(profileViewModel.allCalendarActivities.count)")
+				for (index, activity) in profileViewModel.allCalendarActivities.enumerated() {
+					print("🔥 ProfileCalendarView: Activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date)")
+				}
+			}
 		}
 	}
 

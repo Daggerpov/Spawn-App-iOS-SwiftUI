@@ -601,6 +601,14 @@ struct ProfileView: View {
 		
 		print("🔥 ProfileView: Creating DayActivitiesPageView with date: \(date), activities: \(selectedDayActivities.count)")
 		
+		// Debug: Print each activity
+		for (index, activity) in selectedDayActivities.enumerated() {
+			print("🔥 ProfileView: DayActivitiesPageView Activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date), ID: \(activity.activityId?.uuidString ?? "No ID")")
+		}
+		
+		// Debug: Check if we have activities in the ProfileViewModel
+		print("🔥 ProfileView: ProfileViewModel has \(profileViewModel.allCalendarActivities.count) total calendar activities")
+		
 		return DayActivitiesPageView(
 			date: date,
 			activities: selectedDayActivities,

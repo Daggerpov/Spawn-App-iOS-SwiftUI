@@ -205,72 +205,71 @@ struct DayCell: View {
         String(calendar.component(.day, from: date))
     }
     
+    private var activityBackgroundColor: Color {
+        if let firstActivity = activities.first {
+            return activityColor(for: firstActivity)
+        }
+        return Color.gray.opacity(0.05)
+    }
+    
     var body: some View {
         Button(action: onTapped) {
-            VStack(spacing: 4) {
-                // Date number at the top
-                HStack {
-                    Spacer()
-                    Text(dayNumber)
-                        .font(.custom("SF Pro Text", size: 14).weight(.semibold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.black.opacity(0.8))
-                        )
-                }
-                .padding(.top, 4)
-                .padding(.trailing, 4)
+            ZStack {
+                // Main calendar cell background
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(activities.isEmpty ? figmaCalendarDayIcon : activityBackgroundColor)
+                    .frame(width: 86, height: 86)
+                    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 3)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isToday ? universalAccentColor : Color.clear, lineWidth: 2)
+                    )
                 
-                // Activity display
-                if activities.isEmpty {
-                    Spacer()
-                        .frame(minHeight: 32)
-                } else if activities.count == 1 {
-                    // Single activity - show its icon
-                    activityIconView(for: activities.first!)
-                        .frame(width: 32, height: 32)
-                } else {
-                    // Multiple activities - show count or multiple icons
-                    multipleActivitiesView
-                        .frame(width: 32, height: 32)
+                // Activity display (centered)
+                if !activities.isEmpty {
+                    if activities.count == 1 {
+                        // Single activity - show its icon
+                        activityIconView(for: activities.first!)
+                    } else {
+                        // Multiple activities - show count or multiple icons
+                        multipleActivitiesView
+                    }
                 }
                 
-                Spacer()
+                // Date number badge (positioned in top-right corner)
+                VStack {
+                    HStack {
+                        Spacer()
+                        VStack(spacing: 0) {
+                            Text(dayNumber)
+                                .font(.custom("Onest", size: 12).weight(.semibold))
+                                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        }
+                        .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
+                        .frame(width: 20, height: 20)
+                        .background(Color(red: 0.95, green: 0.93, blue: 0.93))
+                        .cornerRadius(16)
+                    }
+                    .padding(.top, 6)
+                    .padding(.trailing, 6)
+                    Spacer()
+                }
             }
-            .frame(width: 80, height: 80)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(activities.isEmpty ? figmaCalendarDayIcon : Color.gray.opacity(0.05))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isToday ? universalAccentColor : Color.clear, lineWidth: 3)
-            )
         }
         .buttonStyle(PlainButtonStyle())
     }
     
     @ViewBuilder
     private func activityIconView(for activity: CalendarActivityDTO) -> some View {
-        ZStack {
-            // Background color based on activity
-            RoundedRectangle(cornerRadius: 8)
-                .fill(activityColor(for: activity))
-                .frame(width: 32, height: 32)
-            
-            // Activity icon
-            if let icon = activity.icon, !icon.isEmpty {
-                Text(icon)
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-            } else {
-                Text("⭐️")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-            }
+        // Activity icon (centered in the cell, no background since cell has the color)
+        if let icon = activity.icon, !icon.isEmpty {
+            Text(icon)
+                .font(.custom("Onest", size: 40).weight(.medium))
+                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+        } else {
+            Text("⭐️")
+                .font(.custom("Onest", size: 40).weight(.medium))
+                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
         }
     }
     
@@ -278,29 +277,31 @@ struct DayCell: View {
     
     @ViewBuilder
     private var multipleActivitiesView: some View {
-        if activities.count <= 3 {
-            // Show up to 3 activity icons as small dots
-            HStack(spacing: 2) {
-                ForEach(activities.prefix(3), id: \.id) { activity in
-                    Circle()
-                        .fill(activityColor(for: activity))
-                        .frame(width: 8, height: 8)
+        if activities.count == 2 {
+            // Show 2 icons side by side (matching Figma design)
+            HStack(spacing: -5) {
+                ForEach(activities.prefix(2), id: \.id) { activity in
+                    if let icon = activity.icon, !icon.isEmpty {
+                        Text(icon)
+                            .font(.custom("Onest", size: 30).weight(.medium))
+                            .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                    } else {
+                        Text("⭐️")
+                            .font(.custom("Onest", size: 30).weight(.medium))
+                            .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                    }
                 }
             }
         } else {
-            // Show count for more than 3 activities
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(LinearGradient(
-                        gradient: Gradient(colors: activities.prefix(3).map { activityColor(for: $0) }),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ))
-                    .frame(width: 32, height: 32)
-                
-                Text("\(activities.count)")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
+            // For 3+ activities, show the first icon larger
+            if let firstActivity = activities.first, let icon = firstActivity.icon, !icon.isEmpty {
+                Text(icon)
+                    .font(.custom("Onest", size: 40).weight(.medium))
+                    .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+            } else {
+                Text("⭐️")
+                    .font(.custom("Onest", size: 40).weight(.medium))
+                    .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
             }
         }
     }

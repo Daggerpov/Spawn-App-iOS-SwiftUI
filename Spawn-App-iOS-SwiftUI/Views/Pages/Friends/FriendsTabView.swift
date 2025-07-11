@@ -419,7 +419,7 @@ struct RecommendedFriendView: View {
                         await viewModel.addFriend(friendUserId: friend.id)
                         // Add delay before removing the item
                         try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-                        await viewModel.removeFromRecommended(friendId: friend.id)
+                        viewModel.removeFromRecommended(friendId: friend.id)
                     }
                 }) {
                     HStack(spacing: 6) {
@@ -527,7 +527,7 @@ struct RecentlySpawnedView: View {
                         await viewModel.addFriend(friendUserId: recentUser.user.id)
                         // Add delay before removing the item
                         try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-                        await viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
+                        viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
                     }
                 }) {
                     HStack(spacing: 6) {

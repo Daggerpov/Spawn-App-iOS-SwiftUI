@@ -72,17 +72,13 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         isLoading = true
         
         Task {
-            do {
-                let downloadedImage = await cache.downloadAndCacheImage(from: url.absoluteString, for: userId)
-                
-                await MainActor.run {
-                    isLoading = false
-                    image = downloadedImage
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    loadError = error
+            let downloadedImage = await cache.downloadAndCacheImage(from: url.absoluteString, for: userId)
+            
+            await MainActor.run {
+                isLoading = false
+                image = downloadedImage
+                if downloadedImage == nil {
+                    loadError = NSError(domain: "CachedAsyncImage", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to download image"])
                 }
             }
         }
