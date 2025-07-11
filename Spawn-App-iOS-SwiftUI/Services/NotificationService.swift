@@ -451,6 +451,46 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         scheduleLocalNotification(title: title, body: body, userInfo: userInfo)
     }
     
+    // Test in-app notifications (for development)
+    func testInAppNotification(type: NotificationType) {
+        print("Testing in-app notification of type: \(type.rawValue)")
+        
+        Task { @MainActor in
+            switch type {
+            case .friendRequest:
+                InAppNotificationManager.shared.showNotification(
+                    title: "Friend Request",
+                    message: "Alex Chen wants to be your friend",
+                    type: .friendRequest
+                )
+            case .activityInvite:
+                InAppNotificationManager.shared.showNotification(
+                    title: "Activity Invite",
+                    message: "You're invited to Coffee & Chat",
+                    type: .activityInvite
+                )
+            case .activityUpdate:
+                InAppNotificationManager.shared.showNotification(
+                    title: "Activity Update",
+                    message: "Basketball Game has been updated",
+                    type: .activityUpdate
+                )
+            case .chat:
+                InAppNotificationManager.shared.showNotification(
+                    title: "New Message",
+                    message: "Sarah sent a message in Study Group",
+                    type: .chat
+                )
+            case .welcome:
+                InAppNotificationManager.shared.showNotification(
+                    title: "Welcome to Spawn!",
+                    message: "Start connecting with friends and activities",
+                    type: .welcome
+                )
+            }
+        }
+    }
+    
     // Save preferences to UserDefaults as a fallback
     private func loadPreferencesFromUserDefaults() {
         let defaults = UserDefaults.standard

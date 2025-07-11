@@ -159,17 +159,20 @@ private struct MenuContent: View {
     
     private var menuItems: some View {
         VStack(spacing: 0) {
-            menuItem(
-                icon: "tag",
-                text: "Add to Activity Type",
-                color: universalAccentColor
-            ) {
-                dismiss()
-                showAddToActivityType = true
+            // Only show "Add to Activity Type" for friends
+            if isFriend {
+                menuItem(
+                    icon: "tag",
+                    text: "Add to Activity Type",
+                    color: universalAccentColor
+                ) {
+                    dismiss()
+                    showAddToActivityType = true
+                }
+                .background(universalBackgroundColor)
+                
+                Divider()
             }
-            .background(universalBackgroundColor)
-            
-            Divider()
             
             menuItem(
                 icon: "link",

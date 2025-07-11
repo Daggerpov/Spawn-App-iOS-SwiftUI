@@ -400,45 +400,57 @@ struct RecommendedFriendView: View {
 
             Spacer()
 
-            Button(action: {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    isAdded = true
+            // Check if user is already a friend
+            if viewModel.isFriend(userId: friend.id) {
+                // Show three dots button for existing friends
+                Button(action: {
+                    // TODO: Add ProfileMenuView functionality here if needed
+                }) {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(universalAccentColor)
+                        .padding(8)
                 }
-                Task {
-                    await viewModel.addFriend(friendUserId: friend.id)
-                    // Add delay before removing the item
-                    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-                    await viewModel.removeFromRecommended(friendId: friend.id)
-                }
-            }) {
-                HStack(spacing: 6) {
-                    if isAdded {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                            .transition(.scale.combined(with: .opacity))
-                    } else {
-                        Text("Add +")
-                            .font(.onestMedium(size: 14))
-                            .transition(.scale.combined(with: .opacity))
+            } else {
+                Button(action: {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        isAdded = true
                     }
+                    Task {
+                        await viewModel.addFriend(friendUserId: friend.id)
+                        // Add delay before removing the item
+                        try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+                        await viewModel.removeFromRecommended(friendId: friend.id)
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        if isAdded {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .transition(.scale.combined(with: .opacity))
+                        } else {
+                            Text("Add +")
+                                .font(.onestMedium(size: 14))
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .foregroundColor(isAdded ? .white : .gray)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isAdded ? universalAccentColor : Color.clear)
+                            .animation(.easeInOut(duration: 0.3), value: isAdded)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
+                            .animation(.easeInOut(duration: 0.3), value: isAdded)
+                    )
+                    .frame(minHeight: 46, maxHeight: 46)
                 }
-                .foregroundColor(isAdded ? .white : .gray)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isAdded ? universalAccentColor : Color.clear)
-                        .animation(.easeInOut(duration: 0.3), value: isAdded)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
-                        .animation(.easeInOut(duration: 0.3), value: isAdded)
-                )
-                .frame(minHeight: 46, maxHeight: 46)
+                .buttonStyle(PlainButtonStyle())
+                .disabled(isAdded)
             }
-            .buttonStyle(PlainButtonStyle())
-            .disabled(isAdded)
         }
         .padding(.vertical, 12)
         .cornerRadius(16)
@@ -496,45 +508,57 @@ struct RecentlySpawnedView: View {
 
             Spacer()
 
-            Button(action: {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    isAdded = true
+            // Check if user is already a friend
+            if viewModel.isFriend(userId: recentUser.user.id) {
+                // Show three dots button for existing friends
+                Button(action: {
+                    // TODO: Add ProfileMenuView functionality here if needed
+                }) {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(universalAccentColor)
+                        .padding(8)
                 }
-                Task {
-                    await viewModel.addFriend(friendUserId: recentUser.user.id)
-                    // Add delay before removing the item
-                    try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-                    await viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
-                }
-            }) {
-                HStack(spacing: 6) {
-                    if isAdded {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                            .transition(.scale.combined(with: .opacity))
-                    } else {
-                        Text("Add +")
-                            .font(.onestMedium(size: 14))
-                            .transition(.scale.combined(with: .opacity))
+            } else {
+                Button(action: {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        isAdded = true
                     }
+                    Task {
+                        await viewModel.addFriend(friendUserId: recentUser.user.id)
+                        // Add delay before removing the item
+                        try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+                        await viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        if isAdded {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                                .transition(.scale.combined(with: .opacity))
+                        } else {
+                            Text("Add +")
+                                .font(.onestMedium(size: 14))
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .foregroundColor(isAdded ? .white : .gray)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isAdded ? universalAccentColor : Color.clear)
+                            .animation(.easeInOut(duration: 0.3), value: isAdded)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
+                            .animation(.easeInOut(duration: 0.3), value: isAdded)
+                    )
+                    .frame(minHeight: 46, maxHeight: 46)
                 }
-                .foregroundColor(isAdded ? .white : .gray)
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isAdded ? universalAccentColor : Color.clear)
-                        .animation(.easeInOut(duration: 0.3), value: isAdded)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
-                        .animation(.easeInOut(duration: 0.3), value: isAdded)
-                )
-                .frame(minHeight: 46, maxHeight: 46)
+                .buttonStyle(PlainButtonStyle())
+                .disabled(isAdded)
             }
-            .buttonStyle(PlainButtonStyle())
-            .disabled(isAdded)
         }
     }
 }

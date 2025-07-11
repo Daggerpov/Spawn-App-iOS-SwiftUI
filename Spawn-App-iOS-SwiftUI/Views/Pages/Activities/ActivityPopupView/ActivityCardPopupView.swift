@@ -177,7 +177,7 @@ extension ActivityCardPopupView {
                 .foregroundColor(figmaSoftBlue)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 10)
-                .background(universalBackgroundColor)
+                .background(.white)
                 .cornerRadius(12)
             }
             .padding(.vertical, 10)
@@ -225,7 +225,7 @@ struct ParticipationButtonView: View {
                 }
                 .padding(.horizontal, 30)
                 .padding(.vertical, 10)
-                .background(universalBackgroundColor)
+                .background(.white)
                 .cornerRadius(12)
             }
             Spacer()

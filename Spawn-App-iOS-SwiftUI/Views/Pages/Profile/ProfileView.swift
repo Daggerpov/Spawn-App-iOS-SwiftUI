@@ -33,6 +33,8 @@ struct ProfileView: View {
 	@State private var showCalendarPopup: Bool = false
 	@State private var navigateToCalendar: Bool = false
 	@State private var showActivityDetails: Bool = false
+	@State private var navigateToDayActivities: Bool = false
+	@State private var selectedDayActivities: [CalendarActivityDTO] = []
 	    	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
     @State private var blockReason: String = ""
@@ -457,7 +459,9 @@ struct ProfileView: View {
 						profileViewModel: profileViewModel,
 						showCalendarPopup: $showCalendarPopup,
 						showActivityDetails: $showActivityDetails,
-						navigateToCalendar: $navigateToCalendar
+						navigateToCalendar: $navigateToCalendar,
+						navigateToDayActivities: $navigateToDayActivities,
+						selectedDayActivities: $selectedDayActivities
 					)
 					.padding(.horizontal, 16)
 					.padding(.bottom, 15)
@@ -466,6 +470,15 @@ struct ProfileView: View {
 					NavigationLink(
 						destination: calendarFullScreenView,
 						isActive: $navigateToCalendar
+					) {
+						EmptyView()
+					}
+					.hidden()
+					
+					// Hidden NavigationLink for day activities
+					NavigationLink(
+						destination: dayActivitiesPageView,
+						isActive: $navigateToDayActivities
 					) {
 						EmptyView()
 					}
@@ -565,6 +578,22 @@ struct ProfileView: View {
 			}
 		)
 	}
+	
+	private var dayActivitiesPageView: some View {
+		DayActivitiesPageView(
+			date: selectedDayActivities.first?.date ?? Date(),
+			activities: selectedDayActivities,
+			onDismiss: {
+				// Reset navigation state when day activities view is dismissed
+				navigateToDayActivities = false
+			},
+			onActivitySelected: { activity in
+				// Reset navigation state and handle activity selection
+				navigateToDayActivities = false
+				handleActivitySelection(activity)
+			}
+		)
+	}
 
 	private var activityDetailsView: some View {
 		Group {
@@ -623,7 +652,7 @@ struct ProfileView: View {
 			shareProfile: shareProfile
 		)
 		.background(universalBackgroundColor)
-		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 320)])
+		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 276)])
 	}
 	
 	private var removeFriendConfirmationAlert: some View {

@@ -6,6 +6,8 @@ struct DayActivitiesPageView: View {
     let onDismiss: () -> Void
     let onActivitySelected: (CalendarActivityDTO) -> Void
     
+    @Environment(\.presentationMode) var presentationMode
+    
     var body: some View {
         ZStack {
             // White background matching Figma design
@@ -26,12 +28,16 @@ struct DayActivitiesPageView: View {
                 Spacer()
             }
         }
+        .navigationBarHidden(true)
     }
     
     private var headerView: some View {
         HStack(spacing: 32) {
             // Back button
-            Button(action: onDismiss) {
+            Button(action: {
+                presentationMode.wrappedValue.dismiss()
+                onDismiss()
+            }) {
                 Text("􀆉")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))

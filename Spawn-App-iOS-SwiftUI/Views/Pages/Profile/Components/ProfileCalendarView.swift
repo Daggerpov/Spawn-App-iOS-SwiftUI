@@ -16,6 +16,8 @@ struct ProfileCalendarView: View {
 	@Binding var showCalendarPopup: Bool
 	@Binding var showActivityDetails: Bool
 	@Binding var navigateToCalendar: Bool
+	@Binding var navigateToDayActivities: Bool
+	@Binding var selectedDayActivities: [CalendarActivityDTO]
 
 	@State private var currentDate = Date()
 	
@@ -166,8 +168,9 @@ struct ProfileCalendarView: View {
 			// If only one activity, directly open it
 			handleActivitySelection(activities[0])
 		} else if activities.count > 1 {
-			// If multiple activities, show day's activities in a sheet
-			showDayActivities(activities: activities)
+			// If multiple activities, navigate to day activities page
+			selectedDayActivities = activities
+			navigateToDayActivities = true
 		}
 	}
 
@@ -186,40 +189,7 @@ struct ProfileCalendarView: View {
 		}
 	}
 
-	private func showDayActivities(activities: [CalendarActivityDTO]) {
-		// Present a sheet with ActivityCardViews for each activity
-		let sheet = UIViewController()
-		let hostingController = UIHostingController(rootView: DayActivitiesPageView(
-			date: activities.first?.date ?? Date(),
-			activities: activities,
-			onDismiss: {
-				sheet.dismiss(animated: true)
-			},
-			onActivitySelected: { activity in
-				sheet.dismiss(animated: true) {
-					self.handleActivitySelection(activity)
-				}
-			}
-		))
 
-		sheet.addChild(hostingController)
-		hostingController.view.frame = sheet.view.bounds
-		sheet.view.addSubview(hostingController.view)
-		hostingController.didMove(toParent: sheet)
-
-		// Set up sheet presentation with detents
-		sheet.modalPresentationStyle = .pageSheet
-		if let sheetPresentationController = sheet.sheetPresentationController {
-			sheetPresentationController.detents = [.medium(), .large()]
-			sheetPresentationController.prefersGrabberVisible = true
-		}
-
-		// Present the sheet
-		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-		   let rootViewController = windowScene.windows.first?.rootViewController {
-			rootViewController.present(sheet, animated: true)
-		}
-	}
 
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
@@ -353,6 +323,8 @@ struct CalendarDayCell: View {
 		profileViewModel: ProfileViewModel(userId: UUID()),
 		showCalendarPopup: .constant(false),
 		showActivityDetails: .constant(false),
-		navigateToCalendar: .constant(false)
+		navigateToCalendar: .constant(false),
+		navigateToDayActivities: .constant(false),
+		selectedDayActivities: .constant([])
 	)
 }

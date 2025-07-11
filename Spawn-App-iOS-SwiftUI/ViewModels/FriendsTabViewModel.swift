@@ -430,4 +430,9 @@ class FriendsTabViewModel: ObservableObject {
             searchResults = []
         }
     }
+    
+    // Method to check if a user is already a friend
+    func isFriend(userId: UUID) -> Bool {
+        return friends.contains { $0.id == userId }
+    }
 }

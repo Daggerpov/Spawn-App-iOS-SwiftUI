@@ -95,7 +95,7 @@ struct NotificationSettingsView: View {
                     }
                     
                     #if DEBUG
-                    Section(header: Text("Test Notifications (Debug)")) {
+                    Section(header: Text("Test Push Notifications (Debug)")) {
                         Button("Test Friend Request Notification") {
                             NotificationService.shared.sendTestNotification(type: "friendRequest")
                         }
@@ -115,6 +115,33 @@ struct NotificationSettingsView: View {
                             NotificationService.shared.sendTestNotification(type: "chat")
                         }
                         .disabled(!notificationService.chatMessagesEnabled)
+                    }
+                    
+                    Section(header: Text("Test In-App Notifications (Debug)")) {
+                        Button("Test Friend Request In-App") {
+                            NotificationService.shared.testInAppNotification(type: .friendRequest)
+                        }
+                        .foregroundColor(.blue)
+                        
+                        Button("Test Activity Invite In-App") {
+                            NotificationService.shared.testInAppNotification(type: .activityInvite)
+                        }
+                        .foregroundColor(.orange)
+                        
+                        Button("Test Activity Update In-App") {
+                            NotificationService.shared.testInAppNotification(type: .activityUpdate)
+                        }
+                        .foregroundColor(.red)
+                        
+                        Button("Test Chat Message In-App") {
+                            NotificationService.shared.testInAppNotification(type: .chat)
+                        }
+                        .foregroundColor(.teal)
+                        
+                        Button("Test Welcome In-App") {
+                            NotificationService.shared.testInAppNotification(type: .welcome)
+                        }
+                        .foregroundColor(.purple)
                     }
                     #endif
                 }
