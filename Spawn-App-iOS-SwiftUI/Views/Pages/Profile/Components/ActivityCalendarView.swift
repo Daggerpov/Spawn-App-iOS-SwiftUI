@@ -10,11 +10,15 @@ import SwiftUI
 struct ActivityCalendarView: View {
     @StateObject var profileViewModel: ProfileViewModel
     @StateObject var userAuth = UserAuthViewModel.shared
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.dismiss) private var dismiss
+    
+    let userCreationDate: Date?
     
     @State private var currentMonth = Date()
     @State private var scrollOffset: CGFloat = 0
+    
+    var onDismiss: (() -> Void)?
     
     var body: some View {
         ZStack {
@@ -22,63 +26,80 @@ struct ActivityCalendarView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Navigation header
-                HStack(spacing: 32) {
-                    Button(action: {
-                        dismiss()
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.onestSemiBold(size: 20))
-                            .foregroundColor(figmaBlack300)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Your Activity Calendar")
-                        .font(.onestSemiBold(size: 20))
-                        .foregroundColor(universalAccentColor)
-                    
-                    Spacer()
-                    
-                    // Invisible spacer to center the title
-                    Color.clear
-                        .frame(width: 20, height: 20)
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .padding(.bottom, 24)
-                
                 // Scrollable calendar content
-                ScrollView {
-                    LazyVStack(spacing: 32) {
-                        ForEach(monthsArray, id: \.self) { month in
-                            MonthCalendarView(
-                                month: month,
-                                profileViewModel: profileViewModel,
-                                userAuth: userAuth
-                            )
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 32) {
+                            ForEach(monthsArray, id: \.self) { month in
+                                MonthCalendarView(
+                                    month: month,
+                                    profileViewModel: profileViewModel,
+                                    userAuth: userAuth
+                                )
+                                .id(month)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 100) // Safe area padding
+                        .onAppear {
+                            // Find the current month and scroll to it
+                            let today = Date()
+                            if let currentMonth = monthsArray.first(where: { month in
+                                Calendar.current.isDate(month, equalTo: today, toGranularity: .month)
+                            }) {
+                                // Scroll to current month with animation after a short delay
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                        proxy.scrollTo(currentMonth, anchor: .center)
+                                    }
+                                }
+                            }
                         }
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 100) // Safe area padding
                 }
             }
         }
+        .navigationTitle("Your Activity Calendar")
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // Fetch calendar data for current and upcoming months
             fetchCalendarData()
+        }
+        .onDisappear {
+            // Reset navigation state when leaving the calendar view
+            // This prevents the NavigationLink from getting stuck in active state
+            onDismiss?()
         }
     }
     
     private var monthsArray: [Date] {
         let calendar = Calendar.current
-        let currentDate = Date()
+        let today = Date()
         var months: [Date] = []
         
-        // Generate 12 months starting from current month
-        for i in 0..<12 {
-            if let month = calendar.date(byAdding: .month, value: i, to: currentDate) {
-                months.append(month)
+        // Calculate the earliest date to show in the calendar
+        let earliestDate: Date
+        if let userCreationDate = userCreationDate {
+            earliestDate = userCreationDate
+        } else {
+            // If no user creation date, go back 2 years as default
+            earliestDate = calendar.date(byAdding: .year, value: -2, to: today) ?? today
+        }
+        
+        // Calculate how many months back we can go from today to the earliest date
+        let monthsFromEarliestToToday = calendar.dateComponents([.month], from: earliestDate, to: today).month ?? 0
+        let maxMonthsBack = max(0, monthsFromEarliestToToday) // Ensure we don't go negative
+        
+        // Go back to the earliest date and forward 1 year
+        let startIndex = -maxMonthsBack
+        let endIndex = 12
+        
+        for i in startIndex...endIndex {
+            if let date = calendar.date(byAdding: .month, value: i, to: today) {
+                // Only include dates that are not before the user's creation date
+                if date >= earliestDate {
+                    months.append(date)
+                }
             }
         }
         
@@ -191,6 +212,12 @@ struct CalendarDayTile: View {
                     .frame(width: tileSize, height: tileSize)
                     .shadow(color: Color.black.opacity(0.1), radius: 12.34, x: 0, y: 3.09)
                     .overlay(
+                        // Blue border overlay for current day
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .inset(by: 1)
+                            .stroke(isToday ? figmaBlue : Color.clear, lineWidth: 2)
+                    )
+                    .overlay(
                         // Activity content
                         VStack(spacing: 4) {
                             if activities.count == 1 {
@@ -248,8 +275,14 @@ struct CalendarDayTile: View {
         Calendar.current.component(.day, from: day)
     }
     
+    private var isToday: Bool {
+        Calendar.current.isDate(day, inSameDayAs: Date())
+    }
+    
     private var dayNumberColor: Color {
-        if activities.isEmpty {
+        if isToday {
+            return Color.white
+        } else if activities.isEmpty {
             return figmaBlack300
         } else {
             return Color.white
@@ -257,15 +290,19 @@ struct CalendarDayTile: View {
     }
     
     private var dayNumberBackgroundColor: Color {
-        if activities.isEmpty {
-            return Color.clear
+        if isToday {
+            return figmaBlue
+        } else if activities.isEmpty {
+            return Color(hex: "#F6F6F6")
         } else {
             return Color.black.opacity(0.6)
         }
     }
     
     private var activityBackgroundColor: Color {
-        if activities.isEmpty {
+        if isToday {
+            return Color(hex: "#848484")
+        } else if activities.isEmpty {
             return Color(hex: "#F6F6F6")
         } else {
             return Color.white
@@ -375,5 +412,9 @@ extension DateFormatter {
 }
 
 #Preview {
-    ActivityCalendarView(profileViewModel: ProfileViewModel(userId: UUID()))
+    ActivityCalendarView(
+        profileViewModel: ProfileViewModel(userId: UUID()),
+        userCreationDate: nil,
+        onDismiss: {}
+    )
 } 

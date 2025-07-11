@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+struct TimeoutError: Error {}
+
 struct ProfileCalendarView: View {
 	@StateObject var profileViewModel: ProfileViewModel
 	@StateObject var userAuth = UserAuthViewModel.shared
@@ -75,9 +77,21 @@ struct ProfileCalendarView: View {
 					// Only navigate when tapping on empty areas (not on activity days)
 					// Load all calendar activities before navigating to calendar
 					Task {
-						await profileViewModel.fetchAllCalendarActivities()
-						await MainActor.run {
-							navigateToCalendar = true
+						do {
+							// Add timeout to prevent hanging
+							try await withTimeout(seconds: 3) {
+								await profileViewModel.fetchAllCalendarActivities()
+							}
+							await MainActor.run {
+								navigateToCalendar = true
+							}
+						} catch {
+							// If fetching fails or times out, still allow navigation to calendar
+							// The calendar view will handle the empty state
+							print("Failed to fetch calendar activities: \(error)")
+							await MainActor.run {
+								navigateToCalendar = true
+							}
 						}
 					}
 				}
@@ -134,7 +148,7 @@ struct ProfileCalendarView: View {
 	}
 
 	private func showDayActivities(activities: [CalendarActivityDTO]) {
-		// Present a full-screen page with ActivityCardViews for each activity
+		// Present a sheet with ActivityCardViews for each activity
 		let sheet = UIViewController()
 		let hostingController = UIHostingController(rootView: DayActivitiesPageView(
 			date: activities.first?.date ?? Date(),
@@ -154,8 +168,12 @@ struct ProfileCalendarView: View {
 		sheet.view.addSubview(hostingController.view)
 		hostingController.didMove(toParent: sheet)
 
-		// Set up full screen presentation
-		sheet.modalPresentationStyle = .fullScreen
+		// Set up sheet presentation with detents
+		sheet.modalPresentationStyle = .pageSheet
+		if let sheetPresentationController = sheet.sheetPresentationController {
+			sheetPresentationController.detents = [.medium(), .large()]
+			sheetPresentationController.prefersGrabberVisible = true
+		}
 
 		// Present the sheet
 		if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
@@ -218,6 +236,26 @@ struct ProfileCalendarView: View {
 			return formatter.string(from: date)
 		}
 		return "\(currentMonth)/\(currentYear)"
+	}
+	
+	private func withTimeout<T>(seconds: Double, operation: @escaping () async throws -> T) async throws -> T {
+		try await withThrowingTaskGroup(of: T.self) { group in
+			group.addTask {
+				try await operation()
+			}
+			
+			group.addTask {
+				try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+				throw TimeoutError()
+			}
+			
+			guard let result = try await group.next() else {
+				throw TimeoutError()
+			}
+			
+			group.cancelAll()
+			return result
+		}
 	}
 }
 

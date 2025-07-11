@@ -31,28 +31,25 @@ struct DayActivitiesPageView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Background
-                universalBackgroundColor
-                    .ignoresSafeArea()
+        ZStack {
+            // Dark background matching Figma design
+            Color(red: 0.12, green: 0.12, blue: 0.12)
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Header
+                headerView
                 
-                VStack(spacing: 0) {
-                    // Header
-                    headerView
-                    
-                    // Activities list
-                    if viewModel.activities.isEmpty {
-                        emptyStateView
-                    } else {
-                        activitiesListView
-                    }
-                    
-                    Spacer()
+                // Activities list
+                if viewModel.activities.isEmpty {
+                    emptyStateView
+                } else {
+                    activitiesListView
                 }
+                
+                Spacer()
             }
         }
-        .navigationBarHidden(true)
         .onAppear {
             Task {
                 await viewModel.loadActivitiesIfNeeded()
@@ -67,26 +64,25 @@ extension DayActivitiesPageView {
         HStack(spacing: 32) {
             // Back button
             Button(action: onDismiss) {
-                Image(systemName: "chevron.left")
-                    .font(.onestSemiBold(size: 20))
-                    .foregroundColor(universalAccentColor)
+                Text("􀆉")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
             }
-            
-            Spacer()
             
             // Title
             Text("Events - \(formattedDate)")
                 .font(.onestSemiBold(size: 20))
-                .foregroundColor(universalAccentColor)
+                .foregroundColor(.white)
             
-            Spacer()
-            
-            // Invisible spacer to center the title
-            Color.clear
-                .frame(width: 20, height: 20)
+            // Invisible spacer to balance the layout
+            Text("􀆉")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+                .opacity(0)
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
-        .padding(.top, 16)
+        .padding(.top, 16) // Reduced for sheet presentation
         .padding(.bottom, 20)
     }
     
@@ -106,19 +102,18 @@ extension DayActivitiesPageView {
                     if let activityId = activity.activityId,
                        let fullActivity = viewModel.getActivity(for: activityId)
                     {
-                        ActivityCardView(
-                            userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+                        DayActivityCard(
                             activity: fullActivity,
                             color: getColorForActivity(activity),
-                            callback: { _, _ in
+                            onTap: {
                                 onActivitySelected(activity)
                             }
                         )
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 32)
                     } else {
                         // Loading state
                         ActivityLoadingCard(activity: activity, color: getColorForActivity(activity))
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 32)
                             .onAppear {
                                 if let activityId = activity.activityId {
                                     Task {
@@ -146,19 +141,80 @@ extension DayActivitiesPageView {
         VStack(spacing: 20) {
             Image(systemName: "calendar.badge.exclamationmark")
                 .font(.system(size: 60))
-                .foregroundColor(figmaBlack300)
+                .foregroundColor(.white.opacity(0.7))
             
             Text("No Events Found")
                 .font(.onestSemiBold(size: 24))
-                .foregroundColor(universalAccentColor)
+                .foregroundColor(.white)
             
             Text("There are no activities scheduled for this day.")
                 .font(.onestRegular(size: 16))
-                .foregroundColor(figmaBlack300)
+                .foregroundColor(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
+    }
+}
+
+// MARK: - Custom Activity Card for Day Sheet
+extension DayActivitiesPageView {
+    private struct DayActivityCard: View {
+        let activity: FullFeedActivityDTO
+        let color: Color
+        let onTap: () -> Void
+        
+        var body: some View {
+            Button(action: onTap) {
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(activity.title ?? "Sample Activity")
+                            .font(.onestSemiBold(size: 17))
+                            .foregroundColor(.white)
+                        
+                        Text("\(activity.location ?? "Activity Location") • \(formattedDate)")
+                            .font(.onestMedium(size: 13))
+                            .foregroundColor(Color.black.opacity(0.80))
+                    }
+                    
+                    Spacer()
+                    
+                    // Participant count and avatars
+                    HStack(spacing: -8) {
+                        // Participant count
+                        VStack(spacing: 0) {
+                            Text("+\(max(0, activity.participantUsers.count - 2))")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(figmaBlue)
+                        }
+                        .frame(width: 33.60, height: 33.60)
+                        .background(.white)
+                        .clipShape(Circle())
+                        
+                        // Avatar circles (placeholder)
+                        ForEach(0..<min(2, activity.participantUsers.count), id: \.self) { _ in
+                            Circle()
+                                .fill(Color.red.opacity(0.5))
+                                .frame(width: 33.53, height: 34.26)
+                                .shadow(color: Color.black.opacity(0.25), radius: 3.22, x: 0, y: 1.29)
+                        }
+                    }
+                }
+                .padding(EdgeInsets(top: 13, leading: 16, bottom: 13, trailing: 16))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(color)
+                .cornerRadius(12)
+                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 2)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        
+        private var formattedDate: String {
+            guard let startTime = activity.startTime else { return "Date TBD" }
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMMM d"
+            return formatter.string(from: startTime)
+        }
     }
 }
 

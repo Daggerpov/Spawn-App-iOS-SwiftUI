@@ -127,3 +127,58 @@ Text(fullActivity.note ?? "")           // Use 'note' instead of 'description'
 - If you have a `CalendarActivityDTO` but need title/description, fetch the full activity using `activityId`
 - If you have a `BaseUserDTO` but need detailed profile info, fetch `UserProfileInfoDTO`
 - If you have activity ID but need participants, fetch `FullFeedActivityDTO` 
+
+## Navigation Back Button Rules
+
+### Avoid Duplicate Back Buttons
+- **Rule**: Never create custom back buttons in views that are presented via NavigationLink
+- **Problem**: Views presented via NavigationLink automatically get a system back button, creating duplicates
+- **Solution**: Use system navigation or present differently (sheet, fullScreenCover)
+
+#### Examples:
+```swift
+// ❌ WRONG - Custom back button in NavigationLink destination
+struct DetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        VStack {
+            HStack {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.left")
+                }
+                Spacer()
+                Text("Detail Title")
+                Spacer()
+            }
+            // ... rest of content
+        }
+    }
+}
+
+// ✅ CORRECT - Let system handle navigation
+struct DetailView: View {
+    var body: some View {
+        VStack {
+            // ... content without custom back button
+        }
+        .navigationTitle("Detail Title")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+```
+
+#### Solutions for Different Presentation Types:
+1. **NavigationLink destinations**: Remove custom back buttons, use `.navigationTitle()` and `.navigationBarTitleDisplayMode()`
+2. **Sheets**: Keep custom close buttons as they don't have system navigation
+3. **FullScreenCover**: Keep custom close buttons as they don't have system navigation
+
+#### When Custom Back Buttons Are Acceptable:
+- Modal presentations (sheet, fullScreenCover)
+- Custom navigation implementations
+- Views that need special back button behavior (alerts, confirmations)
+
+#### Common Fixes:
+- Remove custom back button HStacks from NavigationLink destinations
+- Replace with `.navigationTitle()` and `.navigationBarTitleDisplayMode()`
+- Keep custom styling for modal presentations only

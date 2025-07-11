@@ -556,7 +556,12 @@ struct ProfileView: View {
 
 	private var calendarFullScreenView: some View {
 		ActivityCalendarView(
-			profileViewModel: profileViewModel
+			profileViewModel: profileViewModel,
+			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
+			onDismiss: {
+				// Reset navigation state when calendar view is dismissed
+				navigateToCalendar = false
+			}
 		)
 	}
 

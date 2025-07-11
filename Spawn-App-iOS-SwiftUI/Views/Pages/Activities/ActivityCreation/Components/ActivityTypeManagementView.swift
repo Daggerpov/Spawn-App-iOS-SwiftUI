@@ -190,13 +190,14 @@ struct ActivityTypeManagementView: View {
                     .font(.onestSemiBold(size: 17))
                     .foregroundColor(adaptivePeopleCountColor)
                 
+                Spacer()
+                
                 Button(action: { showingManagePeople = true }) {
                     Text("Manage People")
                         .font(.onestMedium(size: 16))
                         .foregroundColor(figmaBlue)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             
             if activityTypeDTO.associatedFriends.isEmpty {
                 // Empty state - new design

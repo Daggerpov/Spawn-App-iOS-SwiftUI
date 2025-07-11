@@ -61,7 +61,7 @@ struct InfiniteCalendarView: View {
         .navigationTitle("Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
-        .fullScreenCover(isPresented: $showingDayActivities) {
+        .sheet(isPresented: $showingDayActivities) {
             DayActivitiesPageView(
                 date: selectedDayActivities.first?.date ?? Date(),
                 activities: selectedDayActivities,
@@ -71,6 +71,7 @@ struct InfiniteCalendarView: View {
                     onActivitySelected(activity)
                 }
             )
+            .presentationDetents([.medium, .large])
         }
     }
     

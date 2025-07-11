@@ -1,86 +1,5 @@
 import SwiftUI
 
-// MARK: - Native SwiftUI Emoji Picker
-struct EmojiPickerView: View {
-    @Binding var selectedEmoji: String
-    @Environment(\.dismiss) private var dismiss
-    @State private var inputText: String = ""
-    @FocusState private var isTextFieldFocused: Bool
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Text("Select an Emoji")
-                    .font(.onestSemiBold(size: 24))
-                    .foregroundColor(universalAccentColor)
-                    .padding(.top, 20)
-                
-                // Display current emoji
-                if !selectedEmoji.isEmpty {
-                    Text(selectedEmoji)
-                        .font(.system(size: 80))
-                        .padding()
-                } else {
-                    Text("No emoji selected")
-                        .font(.onestRegular(size: 16))
-                        .foregroundColor(.secondary)
-                        .padding()
-                }
-                
-                // Text field for emoji input
-                TextField("Tap here to open emoji keyboard", text: $inputText)
-                    .font(.system(size: 32))
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .multilineTextAlignment(.center)
-                    .focused($isTextFieldFocused)
-                    .onChange(of: inputText) { newValue in
-                        if let lastChar = newValue.last, lastChar.isEmoji {
-                            selectedEmoji = String(lastChar)
-                        }
-                    }
-                    .padding(.horizontal)
-                
-                Spacer()
-                
-                // Done button
-                Button("Done") {
-                    dismiss()
-                }
-                .font(.onestSemiBold(size: 18))
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(figmaBlue)
-                .cornerRadius(12)
-                .padding(.horizontal)
-                .padding(.bottom, 20)
-            }
-            .background(universalBackgroundColor)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                    .foregroundColor(figmaBlue)
-                }
-            }
-            .onAppear {
-                // Auto-focus the text field to bring up the keyboard
-                isTextFieldFocused = true
-            }
-        }
-    }
-}
-
-// MARK: - Character extension for emoji detection
-extension Character {
-    var isEmoji: Bool {
-        guard let scalar = unicodeScalars.first else { return false }
-        return scalar.properties.isEmoji
-    }
-}
-
 struct ActivityTypeEditView: View {
     let activityTypeDTO: ActivityTypeDTO
     @Environment(\.dismiss) private var dismiss
@@ -91,6 +10,8 @@ struct ActivityTypeEditView: View {
     @State private var hasChanges: Bool = false
     @State private var isEmojiPickerPresented: Bool = false
     @State private var navigateToFriendSelection: Bool = false
+    @State private var emojiInputText: String = ""
+    @FocusState private var isEmojiTextFieldFocused: Bool
     
     @StateObject private var viewModel: ActivityTypeViewModel
     
@@ -110,8 +31,8 @@ struct ActivityTypeEditView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                Color(red: 0.12, green: 0.12, blue: 0.12)
+                // Background - adaptive to light/dark mode
+                universalBackgroundColor
                     .ignoresSafeArea()
             
             // Header
@@ -121,13 +42,13 @@ struct ActivityTypeEditView: View {
                         dismiss()
                     }) {
                         Image(systemName: "chevron.left")
-                            .foregroundColor(.white)
+                            .foregroundColor(universalAccentColor)
                             .font(.title3)
                     }
                     
                     Text("Create Type - Name")
                         .font(.onestSemiBold(size: 20))
-                        .foregroundColor(.white)
+                        .foregroundColor(universalAccentColor)
                         .frame(maxWidth: .infinity)
                     
                     // Empty view for balance
@@ -149,16 +70,24 @@ struct ActivityTypeEditView: View {
                         .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
                         .frame(width: 128, height: 128)
                     
-                    // Icon display
-                    Text(editedIcon)
-                        .font(.system(size: 40))
+                    // Icon display - make it clickable
+                    Button(action: {
+                        // Clear the input text and focus to trigger emoji keyboard
+                        emojiInputText = ""
+                        isEmojiTextFieldFocused = true
+                    }) {
+                        Text(editedIcon)
+                            .font(.system(size: 40))
+                    }
                     
                     // Edit button overlay
                     VStack {
                         HStack {
                             Spacer()
                             Button(action: {
-                                isEmojiPickerPresented = true
+                                // Clear the input text and focus to trigger emoji keyboard
+                                emojiInputText = ""
+                                isEmojiTextFieldFocused = true
                             }) {
                                 ZStack {
                                     Circle()
@@ -180,14 +109,14 @@ struct ActivityTypeEditView: View {
                 // Title text field
                 TextField("New Activity", text: $editedTitle)
                     .font(.onestMedium(size: 32))
-                    .foregroundColor(.white)
+                    .foregroundColor(universalAccentColor)
                     .multilineTextAlignment(.center)
                     .textFieldStyle(PlainTextFieldStyle())
                     .frame(maxWidth: 250)
             }
             .padding(40)
             .frame(width: 290, height: 290)
-            .background(Color(red: 0.24, green: 0.23, blue: 0.23))
+            .background(colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93))
             .cornerRadius(30)
             .offset(x: 0, y: -150)
             
@@ -232,6 +161,19 @@ struct ActivityTypeEditView: View {
             .frame(width: 290, height: 56)
             .disabled(viewModel.isLoading)
             .offset(x: 0, y: 110)
+            
+            // Hidden text field for emoji input
+            TextField("", text: $emojiInputText)
+                .opacity(0)
+                .frame(width: 0, height: 0)
+                .focused($isEmojiTextFieldFocused)
+                .onChange(of: emojiInputText) { newValue in
+                    // Extract the last character if it's an emoji
+                    if let lastChar = newValue.last, lastChar.isEmoji {
+                        editedIcon = String(lastChar)
+                        isEmojiTextFieldFocused = false
+                    }
+                }
         }
         .navigationBarHidden(true)
         .onAppear {
@@ -242,9 +184,6 @@ struct ActivityTypeEditView: View {
         }
         .onChange(of: editedIcon) { _ in
             updateHasChanges()
-        }
-        .sheet(isPresented: $isEmojiPickerPresented) {
-            EmojiPickerView(selectedEmoji: $editedIcon)
         }
         .navigationDestination(isPresented: $navigateToFriendSelection) {
             ActivityTypeFriendSelectionView(
@@ -351,9 +290,15 @@ struct ActivityTypeEditView: View {
     }
 }
 
-// MARK: - Preview
-// Using SwiftUI's native emoji picker via standard text field
+// MARK: - Character extension for emoji detection
+extension Character {
+    var isEmoji: Bool {
+        guard let scalar = unicodeScalars.first else { return false }
+        return scalar.properties.isEmoji
+    }
+}
 
+// MARK: - Preview
 @available(iOS 17, *)
 #Preview {
     ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.mockChillActivityType)
