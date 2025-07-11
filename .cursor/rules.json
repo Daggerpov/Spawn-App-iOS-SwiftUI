@@ -160,6 +160,46 @@
       "name": "popup_overlay_colors",
       "description": "Guidelines for popup and overlay color consistency",
       "rule": "For popups and overlays, ALWAYS use adaptive colors that work in both light and dark modes. For semi-transparent overlays, use Color.black.opacity(0.6) for dark backgrounds and Color.white.opacity(0.6) for light backgrounds. For popup backgrounds, use universalBackgroundColor with appropriate opacity. For text, use universalAccentColor. For destructive actions, use universalTertiaryColor (red). Never hardcode colors like Color(red: 0.13, green: 0.13, blue: 0.13) - these break in light mode. Use environment-aware colors or the Color(UIColor { traitCollection in ... }) pattern for complex adaptive colors."
+    },
+    {
+      "name": "Build Check After Changes",
+      "pattern": "\\.(swift)$",
+      "rule": "After making code changes, ALWAYS run a build check to ensure the code compiles successfully. Use 'xcodebuild -scheme Spawn-App-iOS-SwiftUI build' or build in Xcode to verify changes don't introduce compilation errors. This helps catch syntax errors, missing imports, type mismatches, and other issues early in the development process."
+    },
+    {
+      "name": "Singleton Pattern - Environment Objects",
+      "pattern": "\\.(swift)$",
+      "rule": "NEVER instantiate singleton classes when passing them as environment objects. ALWAYS access singletons via their .shared property. Use .environmentObject(UserAuthViewModel.shared) NOT .environmentObject(UserAuthViewModel()). This ensures consistent global state across the app. Common singletons: UserAuthViewModel.shared, NotificationService.shared, KeychainService.shared."
+    },
+    {
+      "name": "Figma-to-Code Plugin Output",
+      "pattern": "\\.(swift)$",
+      "rule": "Use Figma-to-code output ONLY to understand visual design and layout intent. NEVER copy generated code directly into the project. ALWAYS translate designs using the project's existing styling system. Replace hardcoded colors with Constants.swift colors, use Onest font extensions (.onestSemiBold), use responsive sizing patterns, and avoid complex offset/frame calculations."
+    },
+    {
+      "name": "Figma Translation Guidelines",
+      "pattern": "\\.(swift)$",
+      "rule": "When translating Figma designs: Replace Color(red: X, green: Y, blue: Z) with figma-prefixed colors (figmaBlue, figmaSoftBlue, etc.). Replace Font.custom('Onest', size: X) with .onestSemiBold(size: X). Replace exact .frame(width: X, height: Y) with responsive sizing. Replace complex .offset() chains with proper layout containers. Use consistent padding patterns instead of hardcoded spacing."
+    },
+    {
+      "name": "DTO Property Validation",
+      "pattern": "\\.(swift)$",
+      "rule": "ALWAYS verify DTO structure and available properties before accessing them in code. NEVER assume properties exist on DTOs. Check DTO definitions in Models/DTOs/ first. CalendarActivityDTO has: id, date, icon, colorHexCode, activityId. FullFeedActivityDTO has: title, note (not description), startTime, endTime, location. Use activityId from CalendarActivityDTO to fetch FullFeedActivityDTO when complete info is needed."
+    },
+    {
+      "name": "Navigation Back Button Rules",
+      "pattern": "\\.(swift)$",
+      "rule": "NEVER create custom back buttons in views presented via NavigationLink - they automatically get system back buttons, creating duplicates. Use .navigationTitle() and .navigationBarTitleDisplayMode() instead. Only use custom back buttons for modal presentations (sheet, fullScreenCover) or custom navigation implementations."
+    },
+    {
+      "name": "SwiftUI Environment Objects Best Practices",
+      "pattern": "\\.(swift)$",
+      "rule": "Use @EnvironmentObject for shared state accessed by multiple views. Pass environment objects at the highest level possible in view hierarchy. ALWAYS use existing singleton instances rather than creating new ones. For shared state: @EnvironmentObject, for view-owned objects: @StateObject, for objects passed from parent: @ObservedObject."
+    },
+    {
+      "name": "DTO Common Property Mappings",
+      "pattern": "\\.(swift)$",
+      "rule": "Know the correct DTO property names: CalendarActivityDTO (id, date, icon, colorHexCode, activityId), FullFeedActivityDTO (title, note, startTime, endTime, location), BaseUserDTO (id, username, name, profilePictureURL). Use 'note' not 'description'. Use 'name' not 'title' for user names. Handle optional properties with nil coalescing or optional binding."
     }
   ],
   "terminal_safety": {
