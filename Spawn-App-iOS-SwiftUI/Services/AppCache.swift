@@ -251,6 +251,23 @@ class AppCache: ObservableObject {
         saveToDisk()
     }
     
+    // Optimistically update an activity in the cache (for immediate UI updates)
+    func optimisticallyUpdateActivity(_ activity: FullFeedActivityDTO) {
+        if let index = activities.firstIndex(where: { $0.id == activity.id }) {
+            // Update the existing activity object's properties to trigger UI updates
+            activities[index].title = activity.title
+            activities[index].icon = activity.icon
+            activities[index].note = activity.note
+            activities[index].location = activity.location
+            activities[index].startTime = activity.startTime
+            activities[index].endTime = activity.endTime
+            
+            print("⚡ Optimistically updated activity: \(activity.title ?? "Unnamed")")
+        }
+        
+        // Don't save to disk immediately for optimistic updates - wait for backend confirmation
+    }
+    
     // MARK: - Activity Types Methods
     
     func updateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
@@ -285,6 +302,17 @@ class AppCache: ObservableObject {
     // Add or update activity types in the cache
     func addOrUpdateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
         activityTypes = newActivityTypes
+        lastChecked[CacheKeys.activityTypes] = Date()
+        saveToDisk()
+    }
+    
+    // Update a single activity type in the cache (for optimistic updates)
+    func updateActivityTypeInCache(_ activityTypeDTO: ActivityTypeDTO) {
+        if let index = activityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) {
+            activityTypes[index] = activityTypeDTO
+        } else {
+            activityTypes.append(activityTypeDTO)
+        }
         lastChecked[CacheKeys.activityTypes] = Date()
         saveToDisk()
     }
