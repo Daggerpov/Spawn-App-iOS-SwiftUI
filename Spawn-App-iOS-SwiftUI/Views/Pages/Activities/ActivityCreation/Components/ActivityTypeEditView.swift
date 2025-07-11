@@ -23,26 +23,121 @@ struct ActivityTypeEditView: View {
     var body: some View {
         ZStack {
             // Background
-            universalBackgroundColor
+            Color(red: 0.12, green: 0.12, blue: 0.12)
                 .ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                // Header
-                headerSection
+            // Header
+            VStack {
+                HStack(spacing: 32) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    
+                    Text("Create Type - Name")
+                        .font(.onestSemiBold(size: 20))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                    
+                    Color.clear
+                        .frame(width: 24, height: 24)
+                }
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
                 
                 Spacer()
-                
-                // Main content
-                mainContentSection
-                
-                Spacer()
-                
-                // Action buttons
-                actionButtonsSection
-                
-                // Bottom safe area padding
-                Color.clear.frame(height: 50)
             }
+            .offset(x: 0, y: -380)
+            
+            // Main circular content
+            VStack(spacing: 30) {
+                // Icon picker area
+                ZStack {
+                    // Main circular background
+                    Circle()
+                        .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
+                        .frame(width: 128, height: 128)
+                    
+                    // Icon display
+                    Text(editedIcon)
+                        .font(.system(size: 40))
+                    
+                    // Edit button overlay
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                isEmojiPickerPresented = true
+                            }) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                        .frame(width: 36, height: 36)
+                                    
+                                    Image(systemName: "pencil")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .offset(x: 20, y: -20)
+                        }
+                        Spacer()
+                    }
+                }
+                .frame(width: 128, height: 128)
+                
+                // Title text field
+                TextField("New Activity", text: $editedTitle)
+                    .font(.onestMedium(size: 32))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .frame(maxWidth: 250)
+            }
+            .padding(40)
+            .frame(width: 290, height: 290)
+            .background(Color(red: 0.24, green: 0.23, blue: 0.23))
+            .cornerRadius(30)
+            .offset(x: 0, y: -150)
+            
+            // Save button
+            Button(action: {
+                saveChanges()
+            }) {
+                Text("Save")
+                    .font(.onestSemiBold(size: 20))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(figmaBlue)
+                    .cornerRadius(16)
+            }
+            .frame(width: 290, height: 56)
+            .disabled(!hasChanges || viewModel.isLoading)
+            .offset(x: 0, y: 40)
+            
+            // Cancel button
+            Button(action: {
+                dismiss()
+            }) {
+                Text("Cancel")
+                    .font(.onestSemiBold(size: 20))
+                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.clear)
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 0.5)
+                    )
+            }
+            .frame(width: 290, height: 56)
+            .disabled(viewModel.isLoading)
+            .offset(x: 0, y: 110)
         }
         .navigationBarHidden(true)
         .onAppear {
@@ -85,129 +180,7 @@ struct ActivityTypeEditView: View {
             }
         )
     }
-    
-    // MARK: - Header Section
-    private var headerSection: some View {
-        HStack(spacing: 32) {
-            // Back button
-            Button(action: {
-                dismiss()
-            }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(universalAccentColor)
-            }
-            
-            // Title
-            Text("Edit Activity Type")
-                .font(.onestSemiBold(size: 20))
-                .foregroundColor(universalAccentColor)
-                .frame(maxWidth: .infinity)
-            
-            // Placeholder for balance
-            Color.clear
-                .frame(width: 24, height: 24)
-        }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
-    }
-    
-    // MARK: - Main Content Section
-    private var mainContentSection: some View {
-        VStack(spacing: 40) {
-            // Activity Type Display Circle
-            ZStack {
-                // Main circular background
-                Circle()
-                    .fill(Color(red: 0.24, green: 0.23, blue: 0.23))
-                    .frame(width: 180, height: 180)
-                
-                VStack(spacing: 20) {
-                    // Icon with emoji picker button
-                    ZStack {
-                        // Icon background
-                        Circle()
-                            .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
-                            .frame(width: 80, height: 80)
-                        
-                        // Icon text
-                        Text(editedIcon)
-                            .font(.system(size: 32))
-                        
-                        // Edit icon button overlay
-                        VStack {
-                            HStack {
-                                Spacer()
-                                Button(action: {
-                                    isEmojiPickerPresented = true
-                                }) {
-                                    ZStack {
-                                        Circle()
-                                            .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
-                                            .frame(width: 28, height: 28)
-                                        
-                                        Image(systemName: "pencil")
-                                            .font(.system(size: 12))
-                                            .foregroundColor(.white)
-                                    }
-                                }
-                                .offset(x: 8, y: -8)
-                            }
-                            Spacer()
-                        }
-                    }
-                    
-                    // Editable title field
-                    TextField("Activity Type Name", text: $editedTitle)
-                        .font(.onestMedium(size: 24))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .textFieldStyle(PlainTextFieldStyle())
-                        .frame(maxWidth: 200)
-                }
-            }
-            .frame(width: 200, height: 200)
-        }
-    }
-    
-    // MARK: - Action Buttons Section
-    private var actionButtonsSection: some View {
-        VStack(spacing: 16) {
-            // Save button
-            Button(action: {
-                saveChanges()
-            }) {
-                Text("Save")
-                    .font(.onestSemiBold(size: 20))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(hasChanges ? figmaBlue : universalPassiveColor)
-                    .cornerRadius(16)
-            }
-            .disabled(!hasChanges || viewModel.isLoading)
-            .animation(.easeInOut(duration: 0.2), value: hasChanges)
-            
-            // Cancel button
-            Button(action: {
-                dismiss()
-            }) {
-                Text("Cancel")
-                    .font(.onestSemiBold(size: 20))
-                    .foregroundColor(figmaBlack300)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.clear)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(figmaBlack300, lineWidth: 1)
-                    )
-            }
-            .disabled(viewModel.isLoading)
-        }
-        .padding(.horizontal, 40)
-    }
-    
+
     // MARK: - Private Methods
     private func setupInitialState() {
         editedTitle = activityTypeDTO.title

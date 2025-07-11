@@ -18,46 +18,48 @@ struct ActivityTypeView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            headerSection
-            
-            if viewModel.isLoading {
-                ProgressView("Loading activity types...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.activityTypes.isEmpty {
-                emptyStateSection
-            } else {
-                activityTypeGrid
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                headerSection
+                
+                if viewModel.isLoading {
+                    ProgressView("Loading activity types...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if viewModel.activityTypes.isEmpty {
+                    emptyStateSection
+                } else {
+                    activityTypeGrid
+                }
+                
+                Spacer()
+                
+                ActivityNextStepButton(
+                    title: "Next Step",
+                    isEnabled: selectedType != nil,
+                    action: onNext
+                )
             }
-            
-            Spacer()
-            
-            ActivityNextStepButton(
-                title: "Next Step",
-                isEnabled: selectedType != nil,
-                action: onNext
-            )
-        }
-        .onAppear {
-            Task {
-                await viewModel.fetchActivityTypes()
-            }
-        }
-        .onDisappear {
-            // Save any unsaved changes when the view disappears
-            if viewModel.hasUnsavedChanges {
+            .onAppear {
                 Task {
-                    await viewModel.saveBatchChanges()
+                    await viewModel.fetchActivityTypes()
                 }
             }
-        }
-        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-            Button("OK") {
-                viewModel.clearError()
+            .onDisappear {
+                // Save any unsaved changes when the view disappears
+                if viewModel.hasUnsavedChanges {
+                    Task {
+                        await viewModel.saveBatchChanges()
+                    }
+                }
             }
-        } message: {
-            if let errorMessage = viewModel.errorMessage {
-                Text(errorMessage)
+            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button("OK") {
+                    viewModel.clearError()
+                }
+            } message: {
+                if let errorMessage = viewModel.errorMessage {
+                    Text(errorMessage)
+                }
             }
         }
     }
@@ -279,14 +281,9 @@ struct ActivityTypeCard: View {
             }
             .foregroundColor(.red)
         }
-        .background(
-            NavigationLink(
-                destination: ActivityTypeManagementView(activityTypeDTO: activityTypeDTO),
-                isActive: $navigateToManageType
-            ) {
-                EmptyView()
-            }
-        )
+        .navigationDestination(isPresented: $navigateToManageType) {
+            ActivityTypeManagementView(activityTypeDTO: activityTypeDTO)
+        }
     }
 }
 
