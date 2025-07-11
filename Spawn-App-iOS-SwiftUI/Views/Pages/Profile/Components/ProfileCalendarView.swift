@@ -27,47 +27,52 @@ struct ProfileCalendarView: View {
 	var body: some View {
 		VStack(spacing: 8) {
 			// Days of week header
-			HStack {
+			HStack(spacing: 4) {
 				ForEach(Array(zip(0..<weekDays.count, weekDays)), id: \.0) { index, day in
 					Text(day)
 						.font(.onestMedium(size: 9))
-						.frame(maxWidth: .infinity)
-						.foregroundColor(.gray)
+						.foregroundColor(Color(hex: "#8E8484"))
+						.frame(width: 32, height: 12)
 				}
 			}
+			.padding(.horizontal, 4)
 
 			if profileViewModel.isLoadingCalendar {
 				ProgressView()
 					.frame(maxWidth: .infinity, minHeight: 150)
 			} else {
 				// Calendar grid (clickable to show popup)
-				VStack(spacing: 3) {
+				VStack(spacing: 4) {
 					ForEach(0..<5, id: \.self) { row in
-						HStack(spacing: 3) {
+						HStack(spacing: 4) {
 							ForEach(0..<7, id: \.self) { col in
 								if let dayActivities = getDayActivities(row: row, col: col) {
 									if dayActivities.isEmpty {
 										// Empty day cell
-										RoundedRectangle(cornerRadius: 6)
-											.fill(Color.gray.opacity(0.2))
-											.frame(height: 32)
+										RoundedRectangle(cornerRadius: 4.5)
+											.fill(Color(hex: "#DBDBDB"))
+											.frame(width: 32, height: 32)
+											.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
 									} else {
-										// Mini day cell with multiple activities
-										MiniDayCell(activities: dayActivities)
+										// Day cell with activities
+										CalendarDayCell(activities: dayActivities)
 											.onTapGesture {
 												handleDaySelection(activities: dayActivities)
 											}
 									}
 								} else {
-									RoundedRectangle(cornerRadius: 6)
-										.fill(Color.gray.opacity(0.2))
-										.frame(height: 32)
+									// Days outside current month
+									RoundedRectangle(cornerRadius: 4.5)
+										.stroke(Color(hex: "#DBDBDB"), lineWidth: 0.5)
+										.frame(width: 32, height: 32)
 								}
 							}
 						}
 					}
 				}
+				.padding(.horizontal, 4)
 				.onTapGesture {
+					// Only navigate when tapping on empty areas (not on activity days)
 					// Load all calendar activities before navigating to calendar
 					Task {
 						await profileViewModel.fetchAllCalendarActivities()
@@ -218,39 +223,40 @@ struct ProfileCalendarView: View {
 	}
 }
 
-// Helper struct for the mini day cell in the profile view
-struct MiniDayCell: View {
+// Calendar day cell component matching Figma design
+struct CalendarDayCell: View {
 	let activities: [CalendarActivityDTO]
 	
 	var body: some View {
 		ZStack {
-			RoundedRectangle(cornerRadius: 6)
-				.fill(Color.gray.opacity(0.3))
-				.frame(height: 32)
-			
 			if activities.count == 1 {
 				// Single activity - show its icon and color
 				let activity = activities[0]
-				RoundedRectangle(cornerRadius: 6)
+				RoundedRectangle(cornerRadius: 4.5)
 					.fill(activityColor(for: activity))
-					.frame(height: 32)
+					.frame(width: 32, height: 32)
+					.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
 					.overlay(
 						activityIcon(for: activity)
-							.foregroundColor(.white)
+							.font(.onestMedium(size: 18))
+							.foregroundColor(.black)
 					)
 			} else if activities.count > 1 {
-				// Multiple activities - show count and mixed colors
-				RoundedRectangle(cornerRadius: 6)
-					.fill(LinearGradient(
-						gradient: Gradient(colors: activities.prefix(3).map { activityColor(for: $0) }),
-						startPoint: .leading,
-						endPoint: .trailing
-					))
-					.frame(height: 32)
+				// Multiple activities - show primary activity color with count
+				let primaryActivity = activities[0]
+				RoundedRectangle(cornerRadius: 4.5)
+					.fill(activityColor(for: primaryActivity))
+					.frame(width: 32, height: 32)
+					.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
 					.overlay(
-						Text("\(activities.count)")
-							.font(.system(size: 10, weight: .bold))
-							.foregroundColor(.white)
+						VStack(spacing: 0) {
+							activityIcon(for: primaryActivity)
+								.font(.onestMedium(size: 12))
+								.foregroundColor(.black)
+							Text("\(activities.count)")
+								.font(.onestMedium(size: 8))
+								.foregroundColor(.black)
+						}
 					)
 			}
 		}
@@ -264,7 +270,7 @@ struct MiniDayCell: View {
 
 		// Fallback to activity color based on ID
 		guard let activityId = activity.activityId else {
-			return Color.gray.opacity(0.6)  // Default color for null activity ID
+			return Color(hex: "#DBDBDB")  // Default gray color
 		}
 		return getActivityColor(for: activityId)
 	}
@@ -274,14 +280,12 @@ struct MiniDayCell: View {
 			// If we have an icon from the backend, use it directly
 			if let icon = activity.icon, !icon.isEmpty {
 				Text(icon)
-					.font(.system(size: 10))
 			} else {
 				// Fallback to system icon from the ActivityCategory enum
 				Image(
 					systemName: activity.activityCategory?.systemIcon()
 					?? "star.fill"
 				)
-				.font(.system(size: 10))
 			}
 		}
 	}

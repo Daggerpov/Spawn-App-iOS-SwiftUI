@@ -531,14 +531,8 @@ struct ProfileView: View {
 	}
 
 	private var calendarFullScreenView: some View {
-		InfiniteCalendarView(
-			activities: profileViewModel.allCalendarActivities,
-			isLoading: profileViewModel.isLoadingCalendar,
-			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
-			onDismiss: { navigateToCalendar = false },
-			onActivitySelected: { activity in
-				handleActivitySelection(activity)
-			}
+		EventCalendarView(
+			profileViewModel: profileViewModel
 		)
 	}
 
