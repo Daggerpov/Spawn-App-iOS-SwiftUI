@@ -9,9 +9,7 @@ struct ManagePeopleView: View {
     @State private var searchText = ""
     @State private var selectedFriends: Set<UUID> = []
     @State private var isSuggestedCollapsed = false
-    
-    // Debounced save timer
-    @State private var saveTimer: Timer?
+    @State private var isLoading = false
     
     let user: BaseUserDTO
     let activityTitle: String
@@ -86,19 +84,12 @@ struct ManagePeopleView: View {
             }
         }
         .onDisappear {
-            // Cancel any pending save timer
-            saveTimer?.invalidate()
-            
             // Only update the activity creation view model if we're in activity creation mode
             if activityTypeDTO == nil {
                 let selectedFriendObjects = friendsViewModel.friends.filter { selectedFriends.contains($0.id) }
                 activityCreationViewModel.selectedFriends = selectedFriendObjects
-            } else {
-                // For activity type management, ensure changes are saved when navigating back
-                if hasUnsavedChanges {
-                    saveActivityTypeChanges()
-                }
             }
+            // For activity type management, changes are saved immediately on selection
         }
     }
     
@@ -189,10 +180,11 @@ struct ManagePeopleView: View {
                 Button(action: {
                     selectedFriends.removeAll()
                     
-                    // If we're managing an activity type, provide immediate feedback and trigger debounced save
-                    if activityTypeDTO != nil {
-                        applyImmediateOptimisticUpdate()
-                        debouncedSave()
+                    // If we're managing an activity type, save changes immediately
+                    if let activityTypeDTO = activityTypeDTO {
+                        Task {
+                            await saveActivityTypeChanges(activityTypeDTO)
+                        }
                     }
                 }) {
                     Text("Clear Selection")
@@ -268,12 +260,6 @@ struct ManagePeopleView: View {
     }
     
     // MARK: - Computed Properties
-    private var hasUnsavedChanges: Bool {
-        guard let activityTypeDTO = activityTypeDTO else { return false }
-        let originalFriendIds = Set(activityTypeDTO.associatedFriends.map { $0.id })
-        return selectedFriends != originalFriendIds
-    }
-    
     private var suggestedFriends: [FullFriendUserDTO] {
         let filtered = filteredFriends.filter { !selectedFriends.contains($0.id) }
         return Array(filtered.prefix(3))
@@ -299,75 +285,30 @@ struct ManagePeopleView: View {
     
     // MARK: - Methods
     private func loadFriendsData() {
-        if AppCache.shared.friends.isEmpty {
-            Task {
-                await friendsViewModel.fetchAllData()
-            }
-        } else {
-            friendsViewModel.friends = AppCache.shared.friends
-            friendsViewModel.filteredFriends = AppCache.shared.friends
+        Task {
+            await friendsViewModel.fetchAllData()
         }
     }
     
     private func toggleFriendSelection(_ friend: FullFriendUserDTO) {
+        // Simple toggle of selection state
         if selectedFriends.contains(friend.id) {
             selectedFriends.remove(friend.id)
         } else {
             selectedFriends.insert(friend.id)
         }
         
-        // If we're managing an activity type, provide immediate feedback and trigger debounced save
-        if activityTypeDTO != nil {
-            // Apply immediate optimistic update for instant visual feedback
-            applyImmediateOptimisticUpdate()
-            // Still trigger debounced save for persistence
-            debouncedSave()
+        // If we're managing an activity type, save changes immediately
+        if let activityTypeDTO = activityTypeDTO {
+            Task {
+                await saveActivityTypeChanges(activityTypeDTO)
+            }
         }
     }
     
-    private func debouncedSave() {
-        saveTimer?.invalidate()
-        saveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
-            saveActivityTypeChanges()
-        }
-    }
-    
-    private func applyImmediateOptimisticUpdate() {
-        guard let activityTypeDTO = activityTypeDTO else { return }
-        
-        // Create updated associated friends list with current selections
-        let updatedAssociatedFriends = friendsViewModel.friends
-            .filter { selectedFriends.contains($0.id) }
-            .map { $0.asBaseUser }
-        
-        // Create updated activity type DTO
-        let updatedActivityTypeDTO = ActivityTypeDTO(
-            id: activityTypeDTO.id,
-            title: activityTypeDTO.title,
-            icon: activityTypeDTO.icon,
-            associatedFriends: updatedAssociatedFriends,
-            orderNum: activityTypeDTO.orderNum,
-            isPinned: activityTypeDTO.isPinned
-        )
-        
-        // Apply optimistic update immediately for instant visual feedback
-        activityTypeViewModel.optimisticallyUpdateActivityType(updatedActivityTypeDTO)
-        
-        print("⚡ Applied immediate optimistic update for: \(activityTypeDTO.title)")
-        print("   Updated associated friends count: \(updatedAssociatedFriends.count)")
-    }
-    
-    private func saveActivityTypeChanges() {
-        guard let activityTypeDTO = activityTypeDTO else { return }
-        
-        // Get the original friend IDs
-        let originalFriendIds = Set(activityTypeDTO.associatedFriends.map { $0.id })
-        
-        // Check if there are any changes to save
-        if selectedFriends == originalFriendIds {
-            print("No changes to save for activity type: \(activityTypeDTO.title)")
-            return
-        }
+    @MainActor
+    private func saveActivityTypeChanges(_ activityType: ActivityTypeDTO) async {
+        isLoading = true
         
         // Create updated associated friends list
         let updatedAssociatedFriends = friendsViewModel.friends
@@ -376,24 +317,57 @@ struct ManagePeopleView: View {
         
         // Create updated activity type DTO
         let updatedActivityTypeDTO = ActivityTypeDTO(
-            id: activityTypeDTO.id,
-            title: activityTypeDTO.title,
-            icon: activityTypeDTO.icon,
+            id: activityType.id,
+            title: activityType.title,
+            icon: activityType.icon,
             associatedFriends: updatedAssociatedFriends,
-            orderNum: activityTypeDTO.orderNum,
-            isPinned: activityTypeDTO.isPinned
+            orderNum: activityType.orderNum,
+            isPinned: activityType.isPinned
         )
         
-        // Update the activity type using the view model
-        activityTypeViewModel.optimisticallyUpdateActivityType(updatedActivityTypeDTO)
-        
-        // Save the changes to the backend
-        Task {
-            await activityTypeViewModel.saveBatchChanges()
+        do {
+            // Make direct API call to update the activity type
+            let endpoint = "\(user.id)/activity-types"
+            guard let url = URL(string: APIService.baseURL + endpoint) else {
+                print("❌ Invalid URL for activity type update")
+                isLoading = false
+                return
+            }
+            
+            let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+                updatedActivityTypes: [updatedActivityTypeDTO],
+                deletedActivityTypeIds: []
+            )
+            
+            let apiService: IAPIService = MockAPIService.isMocking 
+                ? MockAPIService(userId: user.id) : APIService()
+                
+            let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
+                batchUpdateDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            // Update the view model with the confirmed data from API
+            activityTypeViewModel.activityTypes = updatedActivityTypes
+            
+            // Update cache with confirmed data
+            AppCache.shared.updateActivityTypes(updatedActivityTypes)
+            
+            // Post notification for UI updates
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            
+            print("✅ Successfully updated activity type: \(activityType.title)")
+            
+        } catch {
+            print("❌ Error updating activity type: \(error)")
+            // On error, refresh from cache/API to get correct state
+            Task {
+                await activityTypeViewModel.fetchActivityTypes()
+            }
         }
         
-        print("✅ Saved changes to activity type: \(activityTypeDTO.title)")
-        print("   Updated associated friends count: \(updatedAssociatedFriends.count)")
+        isLoading = false
     }
 }
 

@@ -230,25 +230,14 @@ struct ProfileCalendarView: View {
 
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
-		print("🔥 ProfileCalendarView: getActivitiesForDate called for date: \(date)")
 		let calendar = Calendar.current
 		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
-			let isMatch = calendar.isDate(activity.date, inSameDayAs: date)
-			if isMatch {
-				print("🔥 ProfileCalendarView: Found activity for date \(date): \(activity.title ?? "No title")")
-			}
-			return isMatch
+			calendar.isDate(activity.date, inSameDayAs: date)
 		}
 		
-		print("🔥 ProfileCalendarView: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities")
-		
-		// Debug: Print all activities and their dates
-		if filteredActivities.isEmpty {
-			print("🔥 ProfileCalendarView: No activities found for date \(date)")
-			print("🔥 ProfileCalendarView: All available activities (\(profileViewModel.allCalendarActivities.count)):")
-			for activity in profileViewModel.allCalendarActivities {
-				print("  - \(activity.title ?? "No title"): \(activity.date)")
-			}
+		// Only log when we find activities to reduce noise
+		if !filteredActivities.isEmpty {
+			print("📅 Calendar: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities")
 		}
 		
 		return filteredActivities
@@ -259,17 +248,10 @@ struct ProfileCalendarView: View {
 	}
 
 	private func fetchCalendarData() {
-		print("🔥 ProfileCalendarView: fetchCalendarData called")
 		Task {
-			// Fetch all calendar activities instead of just current month
-			print("🔥 ProfileCalendarView: Starting to fetch all calendar activities")
 			await profileViewModel.fetchAllCalendarActivities()
-			
 			await MainActor.run {
-				print("🔥 ProfileCalendarView: Finished fetching calendar activities. Total: \(profileViewModel.allCalendarActivities.count)")
-				for (index, activity) in profileViewModel.allCalendarActivities.enumerated() {
-					print("🔥 ProfileCalendarView: Activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date)")
-				}
+				print("📅 Calendar: Loaded \(profileViewModel.allCalendarActivities.count) activities")
 			}
 		}
 	}

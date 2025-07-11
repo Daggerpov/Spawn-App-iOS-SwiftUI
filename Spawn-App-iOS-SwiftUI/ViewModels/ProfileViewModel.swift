@@ -295,6 +295,7 @@ class ProfileViewModel: ObservableObject {
         await MainActor.run { self.isLoadingCalendar = true }
         
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ Calendar: No user ID available")
             await MainActor.run {
                 self.isLoadingCalendar = false
                 self.errorMessage = "User ID not available"
@@ -302,9 +303,41 @@ class ProfileViewModel: ObservableObject {
             return
         }
         
+        print("📡 Calendar: Fetching activities for user \(userId)")
+        print("📡 Calendar: API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
+        print("📡 Calendar: Base URL: \(APIService.baseURL)")
+        
+        // Check authentication status
+        if !MockAPIService.isMocking {
+            let hasAccessToken = KeychainService.shared.load(key: "accessToken") != nil
+            let hasRefreshToken = KeychainService.shared.load(key: "refreshToken") != nil
+            let isLoggedIn = UserAuthViewModel.shared.isLoggedIn
+            print("🔐 Calendar: Authentication status - Access token: \(hasAccessToken ? "✅" : "❌"), Refresh token: \(hasRefreshToken ? "✅" : "❌"), Logged in: \(isLoggedIn ? "✅" : "❌")")
+            
+            if !hasAccessToken && !hasRefreshToken {
+                print("❌ Calendar: No authentication tokens found - user may need to log in")
+                await MainActor.run {
+                    self.errorMessage = "Authentication required - please log in again"
+                    self.allCalendarActivities = []
+                    self.isLoadingCalendar = false
+                }
+                return
+            }
+        }
+        
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/calendar")!
+            print("📡 Calendar: Making request to: \(url.absoluteString)")
+            
             let activities: [CalendarActivityDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            print("✅ Calendar: Successfully fetched \(activities.count) activities")
+            if !activities.isEmpty {
+                print("📅 Calendar: Sample activity dates:")
+                for activity in activities.prefix(3) {
+                    print("   - \(activity.date): \(activity.title ?? "No title")")
+                }
+            }
             
             await MainActor.run {
                 self.allCalendarActivities = activities
@@ -315,8 +348,28 @@ class ProfileViewModel: ObservableObject {
                 ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
         } catch {
+            print("❌ Calendar: Error fetching activities")
+            print("❌ Calendar: Error details: \(error)")
+            if let apiError = error as? APIError {
+                print("❌ Calendar: API Error type: \(apiError)")
+                switch apiError {
+                case .invalidStatusCode(let statusCode):
+                    print("❌ Calendar: HTTP Status Code: \(statusCode)")
+                    if statusCode == 401 {
+                        print("❌ Calendar: Authentication failed - user may need to log in again")
+                    } else if statusCode == 404 {
+                        print("❌ Calendar: Endpoint not found - check API URL")
+                    }
+                case .failedHTTPRequest(let description):
+                    print("❌ Calendar: HTTP Request failed: \(description)")
+                default:
+                    break
+                }
+            }
+            
             await MainActor.run {
-                self.errorMessage = "Failed to load calendar: \(error.localizedDescription)"
+                let errorMsg = "Failed to load calendar: \(error.localizedDescription)"
+                self.errorMessage = errorMsg
                 self.allCalendarActivities = []
                 self.isLoadingCalendar = false
             }
@@ -600,8 +653,8 @@ class ProfileViewModel: ObservableObject {
             
             print("Successfully deleted interest: \(interest)")
             
-            // Update cache after successful API call - commented out for now
-            // await AppCache.shared.refreshProfileInterests(userId)
+            // Update cache after successful API call
+            await AppCache.shared.refreshProfileInterests(userId)
         } catch {
             // Add debug information
             print("Failed to remove interest '\(interest)': \(error.localizedDescription)")

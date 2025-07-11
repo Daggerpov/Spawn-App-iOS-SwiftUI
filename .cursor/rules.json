@@ -2,6 +2,11 @@
   "version": 1,
   "rules": [
     {
+      "name": "Mock API Service Usage",
+      "pattern": "\\.(swift)$",
+      "rule": "NEVER set MockAPIService.isMocking = true or enable mock mode unless explicitly instructed by the user to use mock data. The app should always work with real API data by default. Only enable mock mode when the user specifically requests testing with mock data or when debugging mock API functionality. Always verify authentication and API connectivity issues before suggesting mock mode as a solution."
+    },
+    {
       "name": "Swift Indentation",
       "pattern": "\\.(swift)$",
       "rule": "Use tabs for indentation in Swift files"

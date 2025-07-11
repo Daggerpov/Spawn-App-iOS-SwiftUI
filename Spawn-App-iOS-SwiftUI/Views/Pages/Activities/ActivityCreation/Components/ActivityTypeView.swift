@@ -47,14 +47,7 @@ struct ActivityTypeView: View {
                     await viewModel.fetchActivityTypes()
                 }
             }
-            .onDisappear {
-                // Save any unsaved changes when the view disappears
-                if viewModel.hasUnsavedChanges {
-                    Task {
-                        await viewModel.saveBatchChanges()
-                    }
-                }
-            }
+
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
                     viewModel.clearError()
@@ -120,10 +113,14 @@ struct ActivityTypeView: View {
                         activityTypeDTO: activityTypeDTO,
                         selectedActivityType: $selectedActivityType,
                         onPin: {
-                            viewModel.togglePin(for: activityTypeDTO)
+                            Task {
+                                await viewModel.togglePin(for: activityTypeDTO)
+                            }
                         },
                         onDelete: {
-                            viewModel.deleteActivityType(activityTypeDTO)
+                            Task {
+                                await viewModel.deleteActivityType(activityTypeDTO)
+                            }
                         },
                         onManage: {
                             selectedActivityTypeForManagement = activityTypeDTO
