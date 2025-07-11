@@ -12,6 +12,7 @@ struct ActivityDescriptionView: View {
 	@ObservedObject var viewModel: ActivityDescriptionViewModel
 	var color: Color
 	@State private var showActivityEditView = false
+	@State private var showAttendees = false
 
 	init(
 		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
@@ -91,6 +92,11 @@ struct ActivityDescriptionView: View {
 				}
 				.frame(maxWidth: .infinity)  // Ensures the HStack uses the full width of its parent
 
+				// Participants section
+				if let participants = viewModel.activity.participantUsers, !participants.isEmpty {
+					participantsSection(participants: participants)
+				}
+
 				if let chatMessages = viewModel.activity.chatMessages {
 					Divider()
 						.frame(height: 0.5)
@@ -117,6 +123,17 @@ struct ActivityDescriptionView: View {
 		.sheet(isPresented: $showActivityEditView) {
 			ActivityEditView(viewModel: viewModel)
 		}
+		.sheet(isPresented: $showAttendees) {
+			AttendeeListView(
+				activity: viewModel.activity,
+				activityColor: color,
+				onDismiss: {
+					showAttendees = false
+				}
+			)
+			.presentationDetents([.large])
+			.presentationDragIndicator(.visible)
+		}
 	}
 	
 	var usernamesView: some View {
@@ -131,6 +148,61 @@ struct ActivityDescriptionView: View {
 		return Text(displayText)
 			.foregroundColor(.white)
 			.font(.caption)
+	}
+	
+	// MARK: - Participants Section
+	
+	private func participantsSection(participants: [BaseUserDTO]) -> some View {
+		Button(action: {
+			showAttendees = true
+		}) {
+			HStack(spacing: -10) {
+				// Show first few participant avatars
+				ForEach(Array(participants.prefix(3).enumerated()), id: \.offset) { index, participant in
+					Circle()
+						.fill(Color.gray.opacity(0.5))
+						.frame(width: 42, height: 42)
+						.overlay(
+							Group {
+								if let profilePictureUrl = participant.profilePicture, let url = URL(string: profilePictureUrl) {
+									CachedProfileImage(
+										userId: participant.id,
+										url: url,
+										imageType: .chatMessage
+									)
+									.clipShape(Circle())
+								} else {
+									Text(String(participant.name?.prefix(1) ?? participant.username.prefix(1)))
+										.foregroundColor(.white)
+										.font(.system(size: 16, weight: .semibold))
+								}
+							}
+						)
+						.shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+				}
+				
+				// Show +count if more participants
+				if participants.count > 3 {
+					Circle()
+						.fill(.white)
+						.frame(width: 42, height: 42)
+						.overlay(
+							Text("+\(participants.count - 3)")
+								.foregroundColor(universalAccentColor)
+								.font(.system(size: 15, weight: .bold))
+						)
+						.shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+				}
+				
+				Spacer()
+				
+				Text("View Attendees")
+					.font(.custom("Onest", size: 14).weight(.medium))
+					.foregroundColor(.white.opacity(0.8))
+			}
+		}
+		.buttonStyle(PlainButtonStyle())
+		.padding(.vertical, 12)
 	}
 }
 

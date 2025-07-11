@@ -250,10 +250,14 @@ struct ActivityTypeCard: View {
                 Label("Manage Type", systemImage: "slider.horizontal.3")
             }
             
-            Button(action: { showDeleteConfirmation = true }) {
-                Label("Delete Type", systemImage: "trash")
+            Button(role: .destructive, action: { showDeleteConfirmation = true }) {
+                HStack {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                    Text("Delete Type")
+                        .foregroundColor(.red)
+                }
             }
-            .foregroundColor(.red)
         }
         .alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
             Button("Cancel", role: .cancel) {}

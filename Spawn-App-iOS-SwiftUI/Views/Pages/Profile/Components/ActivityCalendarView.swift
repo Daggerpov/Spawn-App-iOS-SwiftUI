@@ -257,18 +257,15 @@ struct CalendarDayTile: View {
                         VStack {
                             HStack {
                                 Spacer()
-                                VStack(spacing: 0) {
-                                    Text(dayNumber)
-                                        .font(.custom("Onest", size: 12).weight(.semibold))
-                                        .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
-                                }
-                                .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
-                                .frame(width: 20, height: 20)
-                                .background(Color(red: 0.95, green: 0.93, blue: 0.93))
-                                .cornerRadius(16)
+                                Text(dayNumber)
+                                    .font(.onestMedium(size: 10))
+                                    .foregroundColor(.black)
+                                    .padding(4)
+                                    .background(Color.white.opacity(0.9))
+                                    .clipShape(Circle())
                             }
-                            .padding(.top, 6)
-                            .padding(.trailing, 6)
+                            .padding(.top, 4)
+                            .padding(.trailing, 4)
                             Spacer()
                         }
                     )

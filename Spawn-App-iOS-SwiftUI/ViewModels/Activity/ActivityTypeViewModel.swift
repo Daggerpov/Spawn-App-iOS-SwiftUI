@@ -176,6 +176,9 @@ class ActivityTypeViewModel: ObservableObject {
             // Update cache with saved changes
             appCache.updateActivityTypes(updatedActivityTypesReturned)
             
+            // Post notification for final UI refresh after successful save
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            
             print("✅ Successfully saved batch changes: \(updatedActivityTypesReturned.count) total activity types returned")
             
         } catch {
@@ -196,13 +199,25 @@ class ActivityTypeViewModel: ObservableObject {
     
     // MARK: - Local State Manipulation Methods
     
-    /// Toggles the pin status of an activity type locally
+    /// Toggles the pin status of an activity type locally and updates cache immediately
     @MainActor
     func togglePin(for activityTypeDTO: ActivityTypeDTO) {
         if let index = activityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) {
             activityTypes[index].isPinned.toggle()
             hasUnsavedChanges = true
-            print("🔄 Locally toggled pin status for: \(activityTypeDTO.title)")
+            
+            // Update the AppCache immediately for instant UI updates across all views
+            appCache.updateActivityTypeInCache(activityTypes[index])
+            
+            // Post notification for immediate UI updates across all views
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            
+            print("⚡ Toggled pin status for: \(activityTypeDTO.title) to \(activityTypes[index].isPinned)")
+            
+            // Auto-save the changes to persist them immediately
+            Task {
+                await saveBatchChanges()
+            }
         }
     }
     
@@ -248,6 +263,9 @@ class ActivityTypeViewModel: ObservableObject {
             
             // Also update the AppCache immediately for optimistic UI updates
             appCache.updateActivityTypeInCache(activityTypeDTO)
+            
+            // Post notification for immediate UI updates across all views
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
             
             print("⚡ Optimistically updated activity type: \(activityTypeDTO.title)")
         }

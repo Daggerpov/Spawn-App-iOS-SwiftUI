@@ -94,8 +94,10 @@ struct ManagePeopleView: View {
                 let selectedFriendObjects = friendsViewModel.friends.filter { selectedFriends.contains($0.id) }
                 activityCreationViewModel.selectedFriends = selectedFriendObjects
             } else {
-                // For activity type management, save changes to the activity type
-                saveActivityTypeChanges()
+                // For activity type management, ensure changes are saved when navigating back
+                if hasUnsavedChanges {
+                    saveActivityTypeChanges()
+                }
             }
         }
     }
@@ -187,8 +189,9 @@ struct ManagePeopleView: View {
                 Button(action: {
                     selectedFriends.removeAll()
                     
-                    // If we're managing an activity type, trigger debounced save
+                    // If we're managing an activity type, provide immediate feedback and trigger debounced save
                     if activityTypeDTO != nil {
+                        applyImmediateOptimisticUpdate()
                         debouncedSave()
                     }
                 }) {
@@ -265,6 +268,12 @@ struct ManagePeopleView: View {
     }
     
     // MARK: - Computed Properties
+    private var hasUnsavedChanges: Bool {
+        guard let activityTypeDTO = activityTypeDTO else { return false }
+        let originalFriendIds = Set(activityTypeDTO.associatedFriends.map { $0.id })
+        return selectedFriends != originalFriendIds
+    }
+    
     private var suggestedFriends: [FullFriendUserDTO] {
         let filtered = filteredFriends.filter { !selectedFriends.contains($0.id) }
         return Array(filtered.prefix(3))
@@ -307,8 +316,11 @@ struct ManagePeopleView: View {
             selectedFriends.insert(friend.id)
         }
         
-        // If we're managing an activity type, trigger debounced save
+        // If we're managing an activity type, provide immediate feedback and trigger debounced save
         if activityTypeDTO != nil {
+            // Apply immediate optimistic update for instant visual feedback
+            applyImmediateOptimisticUpdate()
+            // Still trigger debounced save for persistence
             debouncedSave()
         }
     }
@@ -318,6 +330,31 @@ struct ManagePeopleView: View {
         saveTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { _ in
             saveActivityTypeChanges()
         }
+    }
+    
+    private func applyImmediateOptimisticUpdate() {
+        guard let activityTypeDTO = activityTypeDTO else { return }
+        
+        // Create updated associated friends list with current selections
+        let updatedAssociatedFriends = friendsViewModel.friends
+            .filter { selectedFriends.contains($0.id) }
+            .map { $0.asBaseUser }
+        
+        // Create updated activity type DTO
+        let updatedActivityTypeDTO = ActivityTypeDTO(
+            id: activityTypeDTO.id,
+            title: activityTypeDTO.title,
+            icon: activityTypeDTO.icon,
+            associatedFriends: updatedAssociatedFriends,
+            orderNum: activityTypeDTO.orderNum,
+            isPinned: activityTypeDTO.isPinned
+        )
+        
+        // Apply optimistic update immediately for instant visual feedback
+        activityTypeViewModel.optimisticallyUpdateActivityType(updatedActivityTypeDTO)
+        
+        print("⚡ Applied immediate optimistic update for: \(activityTypeDTO.title)")
+        print("   Updated associated friends count: \(updatedAssociatedFriends.count)")
     }
     
     private func saveActivityTypeChanges() {

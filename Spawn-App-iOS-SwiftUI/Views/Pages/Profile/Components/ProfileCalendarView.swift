@@ -155,13 +155,15 @@ struct ProfileCalendarView: View {
 				let activityColor = activity.isSelfOwned == true ?
 				universalAccentColor : getActivityColor(for: activity.id)
 
-				ActivityDescriptionView(
+				ActivityDetailModalView(
 					activity: activity,
-					users: activity.participantUsers,
-					color: activityColor,
-					userId: userAuth.spawnUser?.id ?? UUID()
+					activityColor: activityColor,
+					onDismiss: {
+						showActivityDetails = false
+					}
 				)
-				.presentationDetents([.medium, .large])
+				.presentationDetents([.large])
+				.presentationDragIndicator(.visible)
 			}
 		}
 	}
@@ -169,21 +171,43 @@ struct ProfileCalendarView: View {
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
 		print("🔥 ProfileCalendarView: handleDaySelection called with \(activities.count) activities")
 		
-		// Debug: Print activity details
+		// Enhanced Debug: Print detailed activity information
+		print("🔥 ProfileCalendarView: DETAILED ACTIVITY INFO:")
 		for (index, activity) in activities.enumerated() {
-			print("🔥 ProfileCalendarView: Activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date), ID: \(activity.activityId?.uuidString ?? "No ID")")
+			print("🔥   Activity \(index + 1):")
+			print("🔥     - id: \(activity.id)")
+			print("🔥     - title: \(activity.title ?? "nil")")
+			print("🔥     - date: \(activity.date)")
+			print("🔥     - icon: \(activity.icon ?? "nil")")
+			print("🔥     - colorHexCode: \(activity.colorHexCode ?? "nil")")
+			print("🔥     - activityId: \(activity.activityId?.uuidString ?? "nil") ⚠️")
 		}
 		
-		// Always set selectedDayActivities regardless of count
-		selectedDayActivities = activities
-		print("🔥 ProfileCalendarView: selectedDayActivities set to \(activities.count) activities")
+		// Check for nil activityId values
+		let activitiesWithNilId = activities.filter { $0.activityId == nil }
+		if !activitiesWithNilId.isEmpty {
+			print("🚨 ProfileCalendarView: WARNING - \(activitiesWithNilId.count) activities have nil activityId!")
+			print("🚨 This will prevent proper navigation to activity details.")
+		} else {
+			print("✅ ProfileCalendarView: All activities have valid activityId values")
+		}
 		
-		// Always navigate to day activities page for any day selection
-		print("🔥 ProfileCalendarView: Navigating to day activities page")
-		
-		DispatchQueue.main.async {
-			self.navigateToDayActivities = true
-			print("🔥 ProfileCalendarView: navigateToDayActivities set to true")
+		// NEW LOGIC: Handle single vs multiple activities differently
+		if activities.count == 1 {
+			// Single activity - show activity detail modal directly
+			print("🔥 ProfileCalendarView: Single activity - showing detail modal")
+			let activity = activities[0]
+			handleActivitySelection(activity)
+		} else {
+			// Multiple activities - navigate to day activities page
+			print("🔥 ProfileCalendarView: Multiple activities - navigating to day activities page")
+			selectedDayActivities = activities
+			print("🔥 ProfileCalendarView: selectedDayActivities set to \(activities.count) activities")
+			
+			DispatchQueue.main.async {
+				self.navigateToDayActivities = true
+				print("🔥 ProfileCalendarView: navigateToDayActivities set to true")
+			}
 		}
 	}
 

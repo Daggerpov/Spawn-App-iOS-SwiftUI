@@ -56,6 +56,19 @@ class FeedViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        // Register for activity type changes for immediate UI refresh
+        NotificationCenter.default.publisher(for: .activityTypesChanged)
+            .sink { [weak self] _ in
+                // Force immediate UI refresh by updating activity types from the cache
+                if let self = self {
+                    Task { @MainActor in
+                        self.activityTypes = self.appCache.activityTypes
+                        self.objectWillChange.send()
+                    }
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func fetchAllData() async {

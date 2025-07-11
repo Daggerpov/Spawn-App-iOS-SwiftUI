@@ -461,11 +461,11 @@ class ProfileViewModel: ObservableObject {
             count: 5
         )
         
-        // Reset the activities by day grid
-		calendarActivitiesByDay = Array(
-			repeating: Array(repeating: [], count: 7),
-			count: 5
-		)
+        // Create the activities by day grid to be set on main thread later
+        var newCalendarActivitiesByDay: [[[CalendarActivityDTO]]] = Array(
+            repeating: Array(repeating: [], count: 7),
+            count: 5
+        )
 
         let firstDayOffset = firstDayOfMonth(month: month, year: year)
         
@@ -501,9 +501,14 @@ class ProfileViewModel: ObservableObject {
                     let row = position / 7
                     let col = position % 7
                     grid[row][col] = dayActivities.first
-					calendarActivitiesByDay[row][col] = dayActivities // Store all activities for this day
+                    newCalendarActivitiesByDay[row][col] = dayActivities // Store all activities for this day
                 }
             }
+        }
+        
+        // Update the published property on the main thread
+        Task { @MainActor in
+            self.calendarActivitiesByDay = newCalendarActivitiesByDay
         }
         
         return grid

@@ -337,18 +337,15 @@ struct FriendCalendarDaySquare: View {
                 VStack {
                     HStack {
                         Spacer()
-                        VStack(spacing: 0) {
-                            Text(dayNumber)
-                                .font(.custom("Onest", size: 8).weight(.semibold))
-                                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
-                        }
-                        .padding(EdgeInsets(top: 4, leading: 6, bottom: 4, trailing: 6))
-                        .frame(width: 14, height: 14)
-                        .background(Color(red: 0.95, green: 0.93, blue: 0.93))
-                        .cornerRadius(12)
+                        Text(dayNumber)
+                            .font(.onestMedium(size: 8))
+                            .foregroundColor(.black)
+                            .padding(2)
+                            .background(Color.white.opacity(0.9))
+                            .clipShape(Circle())
                     }
-                    .padding(.top, 3)
-                    .padding(.trailing, 3)
+                    .padding(.top, 2)
+                    .padding(.trailing, 2)
                     Spacer()
                 }
             )

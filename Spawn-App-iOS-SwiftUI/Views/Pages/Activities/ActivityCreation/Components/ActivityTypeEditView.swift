@@ -318,7 +318,7 @@ struct ActivityTypeEditView: View {
     
     private func saveChanges() {
 		let updatedActivityType = createUpdatedActivityType()
-		viewModel.updateActivityType(updatedActivityType)
+		viewModel.optimisticallyUpdateActivityType(updatedActivityType)
         Task {
             await viewModel.saveBatchChanges()
             

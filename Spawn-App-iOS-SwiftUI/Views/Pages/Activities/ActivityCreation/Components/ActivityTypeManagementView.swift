@@ -409,7 +409,7 @@ struct ActivityTypeOptionsPopup: View {
                             showDeleteConfirmation = true
                         }) {
                             HStack(spacing: 10) {
-                                Image(systemName: "xmark")
+                                Image(systemName: "trash")
                                     .font(.system(size: 20, weight: .medium))
                                     .foregroundColor(.red)
                                 Text("Delete Activity Type")
