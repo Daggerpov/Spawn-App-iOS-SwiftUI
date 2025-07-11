@@ -82,13 +82,22 @@ struct UserActivitiesSection: View {
                     Spacer()
                 }
             } else if profileViewModel.profileActivities.isEmpty {
-                HStack {
-                    Spacer()
-                    Text("No activities")
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(.gray)
-                    Spacer()
+                VStack(spacing: 16) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 32))
+                        .foregroundColor(.gray.opacity(0.6))
+                    
+                    Text("\(FormatterService.shared.formatFirstName(user: user)) hasn't spawned any activities yet!")
+                        .font(.onestMedium(size: 16))
+                        .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        .multilineTextAlignment(.center)
                 }
+                .padding(32)
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(red: 0.56, green: 0.52, blue: 0.52), lineWidth: 0.5)
+                )
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {

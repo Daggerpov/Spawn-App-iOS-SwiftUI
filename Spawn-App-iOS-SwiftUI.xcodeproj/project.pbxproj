@@ -15,6 +15,7 @@
 		AAEC10182DC08D4C0089C05A /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = AAEC10172DC08D4C0089C05A /* FirebaseCore */; };
 		DC0171592D43507E003BF3DB /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = DC0171582D43507E003BF3DB /* GoogleSignIn */; };
 		DC01715B2D43507E003BF3DB /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = DC01715A2D43507E003BF3DB /* GoogleSignInSwift */; };
+		DC46ADCE2E20E4850006CB18 /* ElegantEmojiPicker in Frameworks */ = {isa = PBXBuildFile; productRef = DC46ADCD2E20E4850006CB18 /* ElegantEmojiPicker */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +77,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DC46ADCE2E20E4850006CB18 /* ElegantEmojiPicker in Frameworks */,
 				AAEC10162DC08AB30089C05A /* FirebaseMessaging in Frameworks */,
 				658B2F332D9949F7004DE038 /* SwiftyCrop in Frameworks */,
 				654DED2B2DC095400059C268 /* MapLibre in Frameworks */,
@@ -152,6 +154,7 @@
 				AAEC10152DC08AB30089C05A /* FirebaseMessaging */,
 				AAEC10172DC08D4C0089C05A /* FirebaseCore */,
 				657BA6A32DCDEF9400C2ADDE /* MCEmojiPicker */,
+				DC46ADCD2E20E4850006CB18 /* ElegantEmojiPicker */,
 			);
 			productName = "Spawn-App-iOS-SwiftUI";
 			productReference = 65D503592CD86EB300923A01 /* Spawn-App-iOS-SwiftUI.app */;
@@ -242,6 +245,7 @@
 				654DED292DC095400059C268 /* XCRemoteSwiftPackageReference "maplibre-gl-native-distribution" */,
 				AAEC10122DC08AB30089C05A /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				657BA6A22DCDEF9400C2ADDE /* XCRemoteSwiftPackageReference "MCEmojiPicker" */,
+				DC46ADCC2E20E4850006CB18 /* XCRemoteSwiftPackageReference "Elegant-Emoji-Picker" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 65D5035A2CD86EB300923A01 /* Products */;
@@ -657,6 +661,14 @@
 				minimumVersion = 8.0.0;
 			};
 		};
+		DC46ADCC2E20E4850006CB18 /* XCRemoteSwiftPackageReference "Elegant-Emoji-Picker" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Finalet/Elegant-Emoji-Picker";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -699,6 +711,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = DC0171572D43507E003BF3DB /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		DC46ADCD2E20E4850006CB18 /* ElegantEmojiPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DC46ADCC2E20E4850006CB18 /* XCRemoteSwiftPackageReference "Elegant-Emoji-Picker" */;
+			productName = ElegantEmojiPicker;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -11,6 +11,9 @@ struct SearchBarView: View {
     @Binding var searchText: String
     @Binding var isSearching: Bool
     var placeholder: String
+    var autofocus: Bool = false
+    
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
         HStack {
@@ -21,6 +24,7 @@ struct SearchBarView: View {
             TextField(placeholder, text: $searchText)
                 .font(.onestRegular(size: 16))
                 .foregroundColor(universalAccentColor)
+                .focused($isTextFieldFocused)
                 .onChange(of: searchText) { newValue in
                     isSearching = !newValue.isEmpty
                 }
@@ -51,6 +55,14 @@ struct SearchBarView: View {
                 )
         )
         .foregroundColor(universalAccentColor)
+        .onAppear {
+            if autofocus {
+                // Small delay to ensure the view is fully loaded
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isTextFieldFocused = true
+                }
+            }
+        }
     }
 }
 
@@ -62,7 +74,8 @@ struct SearchBarView: View {
     return SearchBarView(
         searchText: $searchText,
         isSearching: $isSearching,
-        placeholder: "Search for friends"
+        placeholder: "Search for friends",
+        autofocus: true
     )
     .padding()
 }

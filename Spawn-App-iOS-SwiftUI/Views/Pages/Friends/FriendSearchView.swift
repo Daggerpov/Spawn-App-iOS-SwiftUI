@@ -82,7 +82,8 @@ struct FriendSearchView: View {
                 SearchBarView(
                     searchText: $searchViewModel.searchText,
                     isSearching: $searchViewModel.isSearching,
-                    placeholder: "Search for friends"
+                    placeholder: "Search for friends",
+                    autofocus: displayMode == .search
                 )
                 .padding(.horizontal)
                 .padding(.bottom, 8)

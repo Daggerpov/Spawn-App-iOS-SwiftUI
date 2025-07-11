@@ -10,9 +10,7 @@ struct ActivityTypeEditView: View {
     @State private var hasChanges: Bool = false
     @State private var navigateToFriendSelection: Bool = false
     @State private var showEmojiPicker: Bool = false
-    @State private var emojiInputText: String = ""
     @FocusState private var isTitleFieldFocused: Bool
-    @FocusState private var isEmojiTextFieldFocused: Bool
     
     @StateObject private var viewModel: ActivityTypeViewModel
     
@@ -36,7 +34,7 @@ struct ActivityTypeEditView: View {
         }
         .navigationBarHidden(true)
         .sheet(isPresented: $showEmojiPicker) {
-            emojiPickerSheet
+            ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
         }
         .onAppear {
             setupInitialState()
@@ -225,35 +223,7 @@ struct ActivityTypeEditView: View {
         .disabled(viewModel.isLoading)
     }
     
-         private var emojiPickerSheet: some View {
-         NavigationView {
-             VStack {
-                 TextField("Tap to add emoji", text: $editedIcon)
-                     .font(.system(size: 60))
-                     .multilineTextAlignment(.center)
-                     .keyboardType(.default)
-                     .textInputAutocapitalization(.never)
-                     .disableAutocorrection(true)
-                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                     .onAppear {
-                         // Focus the text field to show keyboard
-                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                             UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
-                         }
-                     }
-             }
-             .navigationTitle("Choose Emoji")
-             .navigationBarTitleDisplayMode(.inline)
-             .toolbar {
-                 ToolbarItem(placement: .navigationBarTrailing) {
-                     Button("Done") {
-                         showEmojiPicker = false
-                     }
-                 }
-             }
-         }
-         .presentationDetents([.medium])
-     }
+
     
     private var navigationDestinationView: some View {
         ActivityTypeFriendSelectionView(

@@ -26,9 +26,6 @@ struct FriendActivitiesShowAllView: View {
                     
                     ScrollView {
                         VStack(spacing: 32) {
-                            // API Status Debug Info (Remove in production)
-                            debugInfoSection
-                            
                             // Activity Cards Section
                             activityCardsSection
                             
@@ -72,33 +69,7 @@ struct FriendActivitiesShowAllView: View {
         )
     }
     
-    // MARK: - Debug Info Section (Remove in production)
-    private var debugInfoSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("🔍 Debug Info")
-                .font(.onestBold(size: 14))
-                .foregroundColor(.orange)
-            
-            Text("Mock Mode: \(MockAPIService.isMocking ? "ON" : "OFF")")
-                .font(.onestRegular(size: 12))
-                .foregroundColor(MockAPIService.isMocking ? .red : .green)
-            
-            Text("Profile Activities: \(profileViewModel.profileActivities.count)")
-                .font(.onestRegular(size: 12))
-                .foregroundColor(.blue)
-            
-            Text("Calendar Activities: \(profileViewModel.allCalendarActivities.count)")
-                .font(.onestRegular(size: 12))
-                .foregroundColor(.blue)
-            
-            Text("Loading States - Profile: \(profileViewModel.isLoadingUserActivities ? "Loading" : "Done"), Calendar: \(profileViewModel.isLoadingCalendar ? "Loading" : "Done")")
-                .font(.onestRegular(size: 10))
-                .foregroundColor(.gray)
-        }
-        .padding()
-        .background(Color.black.opacity(0.1))
-        .cornerRadius(8)
-    }
+
 
     // MARK: - Header View
     private var headerView: some View {

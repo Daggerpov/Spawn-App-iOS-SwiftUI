@@ -148,33 +148,7 @@ struct ActivityEditView: View {
                 optimisticallyUpdateActivity()
             }
             .sheet(isPresented: $showEmojiPicker) {
-                NavigationView {
-                    VStack {
-                        TextField("Tap to add emoji", text: $editedIcon)
-                            .font(.system(size: 60))
-                            .multilineTextAlignment(.center)
-                            .keyboardType(.default)
-                            .textInputAutocapitalization(.never)
-                            .disableAutocorrection(true)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .onAppear {
-                                // Focus the text field to show keyboard
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    UIApplication.shared.sendAction(#selector(UIResponder.becomeFirstResponder), to: nil, from: nil, for: nil)
-                                }
-                            }
-                    }
-                    .navigationTitle("Choose Emoji")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("Done") {
-                                showEmojiPicker = false
-                            }
-                        }
-                    }
-                }
-                .presentationDetents([.medium])
+                ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {
