@@ -214,6 +214,9 @@ struct ActivityCreationView: View {
                 onClose: {
                     ActivityCreationViewModel.reInitialize()
                     closeCallback()
+                },
+                onBack: {
+                    currentStep = currentStep.previous()
                 }
             )
         }

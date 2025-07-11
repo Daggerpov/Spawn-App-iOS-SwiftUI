@@ -247,11 +247,12 @@ struct ActivityTypeCard: View {
                 Label("Manage Type", systemImage: "slider.horizontal.3")
             }
             
-            Button(role: .destructive, action: { showDeleteConfirmation = true }) {
-                HStack {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
+            Button(action: { showDeleteConfirmation = true }) {
+                Label {
                     Text("Delete Type")
+                        .foregroundColor(.red)
+                } icon: {
+                    Image(systemName: "trash")
                         .foregroundColor(.red)
                 }
             }

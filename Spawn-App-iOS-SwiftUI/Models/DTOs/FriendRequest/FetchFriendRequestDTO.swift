@@ -44,4 +44,7 @@ extension FetchFriendRequestDTO {
             mutualFriendCount: 1
         )
     ]
+    
+    // Alias for consistency
+    static let mockOutgoingFriendRequests: [FetchFriendRequestDTO] = mockSentFriendRequests
 }

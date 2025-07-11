@@ -12,9 +12,15 @@ struct ContentView: View {
     @State private var selectedTab: TabType = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
     @StateObject private var inAppNotificationManager = InAppNotificationManager.shared
+    @ObservedObject var deepLinkManager: DeepLinkManager
     
-    init(user: BaseUserDTO) {
+    // Deep link state
+    @State private var shouldShowDeepLinkedActivity = false
+    @State private var deepLinkedActivityId: UUID?
+    
+    init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
         self.user = user
+        self.deepLinkManager = deepLinkManager
         let vm = FriendsTabViewModel(
             userId: user.id,
             apiService: MockAPIService.isMocking
@@ -25,7 +31,12 @@ struct ContentView: View {
 	var body: some View {
         ZStack {
             TabView(selection: $selectedTab) {
-                ActivityFeedView(user: user, selectedTab: $selectedTab)
+                ActivityFeedView(
+                    user: user, 
+                    selectedTab: $selectedTab, 
+                    deepLinkedActivityId: $deepLinkedActivityId, 
+                    shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
+                )
                     .tag(TabType.home)
                     .tabItem {
                         Image(
@@ -122,6 +133,16 @@ struct ContentView: View {
                     await friendsViewModel.fetchIncomingFriendRequests()
                 }
             }
+            .onChange(of: deepLinkManager.shouldShowActivity) { shouldShow in
+                if shouldShow, let activityId = deepLinkManager.activityToShow {
+                    handleDeepLinkActivity(activityId)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .deepLinkActivityReceived)) { notification in
+                if let activityId = notification.userInfo?["activityId"] as? UUID {
+                    handleDeepLinkActivity(activityId)
+                }
+            }
             
             // In-app notification overlay
             VStack {
@@ -144,7 +165,22 @@ struct ContentView: View {
                 Spacer()
             }
         }
-	}
+    }
+    
+    // MARK: - Deep Link Handling
+    private func handleDeepLinkActivity(_ activityId: UUID) {
+        print("🎯 ContentView: Handling deep link for activity: \(activityId)")
+        
+        // Switch to home tab to show the activity in feed
+        selectedTab = .home
+        
+        // Set up the deep linked activity state
+        deepLinkedActivityId = activityId
+        shouldShowDeepLinkedActivity = true
+        
+        // Clear the deep link manager state
+        deepLinkManager.clearPendingDeepLink()
+    }
 }
 
 @available(iOS 17.0, *)

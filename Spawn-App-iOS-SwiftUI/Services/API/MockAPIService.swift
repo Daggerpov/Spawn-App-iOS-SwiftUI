@@ -134,17 +134,27 @@ class MockAPIService: IAPIService {
 
 		// fetchSearchResults() - for users/search endpoint
 		if url.absoluteString.contains("users/search") {
-			// Extract query parameter
+			// Extract query parameters
 			let urlComponents = URLComponents(string: url.absoluteString)
 			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
+			let requestingUserIdString = urlComponents?.queryItems?.first(where: { $0.name == "requestingUserId" })?.value
+			let requestingUserId = requestingUserIdString.flatMap { UUID(uuidString: $0) }
 			
-			// If no search query, return all users
-			if searchQuery.isEmpty {
-				return BaseUserDTO.mockUsers as! T
+			// Start with all users
+			var filteredUsers = BaseUserDTO.mockUsers
+			
+			// Filter out the requesting user if provided
+			if let requestingUserId = requestingUserId {
+				filteredUsers = filteredUsers.filter { $0.id != requestingUserId }
 			}
 			
-			// Filter mock users by search query
-			let filteredUsers = BaseUserDTO.mockUsers.filter { user in
+			// If no search query, return all users (except requesting user)
+			if searchQuery.isEmpty {
+				return filteredUsers as! T
+			}
+			
+			// Filter by search query
+			filteredUsers = filteredUsers.filter { user in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: user).lowercased()
 				let username = user.username.lowercased()
@@ -160,33 +170,91 @@ class MockAPIService: IAPIService {
 			let urlComponents = URLComponents(string: url.absoluteString)
 			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
 			
-			// Filter mock data by search query
+			var allUsers: [SearchResultUser] = []
+			
+			// Filter and add friends
 			let filteredFriends = FullFriendUserDTO.mockUsers.filter { user in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: user).lowercased()
 				let username = user.username.lowercased()
-				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
+			for friend in filteredFriends {
+				allUsers.append(SearchResultUser(
+					user: BaseUserDTO(
+						id: friend.id,
+						username: friend.username,
+						profilePicture: friend.profilePicture,
+						name: friend.name,
+						bio: friend.bio,
+						email: friend.email
+					),
+					relationshipType: .friend,
+					mutualFriendCount: nil,
+					friendRequestId: nil
+				))
+			}
+			
+			// Filter and add recommended friends
 			let filteredRecommended = RecommendedFriendUserDTO.mockUsers.filter { user in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: user).lowercased()
 				let username = user.username.lowercased()
-				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
+			for recommended in filteredRecommended {
+				allUsers.append(SearchResultUser(
+					user: BaseUserDTO(
+						id: recommended.id,
+						username: recommended.username,
+						profilePicture: recommended.profilePicture,
+						name: recommended.name,
+						bio: recommended.bio,
+						email: recommended.email
+					),
+					relationshipType: .recommendedFriend,
+					mutualFriendCount: recommended.mutualFriendCount,
+					friendRequestId: nil
+				))
+			}
+			
+			// Filter and add incoming friend requests
 			let filteredRequests = FetchFriendRequestDTO.mockFriendRequests.filter { request in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
 				let username = request.senderUser.username.lowercased()
-				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
-			return SearchedUserResult(
-				incomingFriendRequests: filteredRequests,
-				recommendedFriends: filteredRecommended,
-				friends: filteredFriends
-			) as! T
+			for request in filteredRequests {
+				allUsers.append(SearchResultUser(
+					user: request.senderUser,
+					relationshipType: .incomingFriendRequest,
+					mutualFriendCount: nil,
+					friendRequestId: request.id
+				))
+			}
+			
+			// Filter and add outgoing friend requests
+			let filteredOutgoingRequests = FetchFriendRequestDTO.mockOutgoingFriendRequests.filter { request in
+				let lowercasedQuery = searchQuery.lowercased()
+				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
+				let username = request.senderUser.username.lowercased()
+				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
+			}
+			
+			for request in filteredOutgoingRequests {
+				allUsers.append(SearchResultUser(
+					user: request.senderUser,
+					relationshipType: .outgoingFriendRequest,
+					mutualFriendCount: nil,
+					friendRequestId: request.id
+				))
+			}
+			
+			return SearchedUserResult(users: allUsers) as! T
 		}
 
 		// Check friendship status endpoint
@@ -242,6 +310,30 @@ class MockAPIService: IAPIService {
 				]
 				
 				return (incomingRequests[receiverUsername] ?? []) as! T
+			}
+			return [] as! T
+		}
+
+		// Sent friend requests endpoint
+		if url.absoluteString.contains("friend-requests/sent/") {
+			// Extract userId from URL
+			let urlComponents = url.absoluteString.components(separatedBy: "/")
+			if let sentIndex = urlComponents.firstIndex(of: "sent"),
+			   sentIndex + 1 < urlComponents.count {
+				let senderUserId = urlComponents[sentIndex + 1]
+				let senderUsername = getUsernameFromMockUsers(senderUserId)
+				
+				// For demo purposes, simulate that some users have sent friend requests
+				let sentRequests: [String: [FetchFriendRequestDTO]] = [
+					"daggerpov": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.haley)], // Daniel Agapov sent request to Haley
+					"uhdlee": [], // Daniel Lee has no sent requests
+					"shannonaurl": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.jennifer)], // Shannon sent request to Jennifer
+					"jenntjen": [],
+					"michaeltham": [], 
+					"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.michael)] // Haley sent request to Michael
+				]
+				
+				return (sentRequests[senderUsername] ?? []) as! T
 			}
 			return [] as! T
 		}

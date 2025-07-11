@@ -18,10 +18,17 @@ struct ActivityFeedView: View {
     @State private var showFullActivitiesList: Bool = false
     @Environment(\.dismiss) private var dismiss
     
-    init(user: BaseUserDTO, selectedTab: Binding<TabType>) {
+    // Deep link parameters
+    @Binding var deepLinkedActivityId: UUID?
+    @Binding var shouldShowDeepLinkedActivity: Bool
+    @State private var isFetchingDeepLinkedActivity = false
+    
+    init(user: BaseUserDTO, selectedTab: Binding<TabType>, deepLinkedActivityId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedActivity: Binding<Bool> = .constant(false)) {
         self.user = user
         self._viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService(), userId: user.id))
         self._selectedTab = selectedTab
+        self._deepLinkedActivityId = deepLinkedActivityId
+        self._shouldShowDeepLinkedActivity = shouldShowDeepLinkedActivity
     }
     
     var body: some View {
@@ -105,6 +112,11 @@ struct ActivityFeedView: View {
                 }
             }
         }
+        .onChange(of: shouldShowDeepLinkedActivity) { shouldShow in
+            if shouldShow, let activityId = deepLinkedActivityId {
+                handleDeepLinkedActivity(activityId)
+            }
+        }
     }
     
     var seeAllActivityTypesButton: some View {
@@ -132,6 +144,68 @@ struct ActivityFeedView: View {
         Text("See All")
             .font(.onestRegular(size: 13))
             .foregroundColor(universalSecondaryColor)
+    }
+    
+    // MARK: - Deep Link Handling
+    private func handleDeepLinkedActivity(_ activityId: UUID) {
+        print("🎯 ActivityFeedView: Handling deep linked activity: \(activityId)")
+        
+        guard !isFetchingDeepLinkedActivity else {
+            print("⚠️ ActivityFeedView: Already fetching deep linked activity, ignoring")
+            return
+        }
+        
+        isFetchingDeepLinkedActivity = true
+        
+        Task {
+            do {
+                // First check if the activity is already in our current activities list
+                if let existingActivity = viewModel.activities.first(where: { $0.id == activityId }) {
+                    print("✅ ActivityFeedView: Found activity in current feed, showing popup")
+                    await MainActor.run {
+                        activityInPopup = existingActivity
+                        colorInPopup = getActivityColor(for: activityId)
+                        showingActivityPopup = true
+                        shouldShowDeepLinkedActivity = false
+                        deepLinkedActivityId = nil
+                        isFetchingDeepLinkedActivity = false
+                    }
+                    return
+                }
+                
+                // If not found in current activities, fetch from API
+                print("🔄 ActivityFeedView: Activity not in current feed, fetching from API")
+                let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService()
+                
+                guard let url = URL(string: "\(APIService.baseURL)activities/\(activityId)") else {
+                    throw APIError.URLError
+                }
+                
+                let parameters = ["requestingUserId": user.id.uuidString]
+                let activity: FullFeedActivityDTO = try await apiService.fetchData(from: url, parameters: parameters)
+                
+                print("✅ ActivityFeedView: Successfully fetched deep linked activity")
+                await MainActor.run {
+                    activityInPopup = activity
+                    colorInPopup = getActivityColor(for: activityId)
+                    showingActivityPopup = true
+                    shouldShowDeepLinkedActivity = false
+                    deepLinkedActivityId = nil
+                    isFetchingDeepLinkedActivity = false
+                }
+                
+            } catch {
+                print("❌ ActivityFeedView: Failed to fetch deep linked activity: \(error)")
+                await MainActor.run {
+                    shouldShowDeepLinkedActivity = false
+                    deepLinkedActivityId = nil
+                    isFetchingDeepLinkedActivity = false
+                }
+                
+                // Show error to user
+                // You could show an alert or toast here
+            }
+        }
     }
 }
 
@@ -206,8 +280,14 @@ extension ActivityFeedView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @State var tab = TabType.home
+    @Previewable @State var deepLinkedActivityId: UUID? = nil
+    @Previewable @State var shouldShowDeepLinkedActivity = false
     NavigationView {
-        ActivityFeedView(user: .danielAgapov, selectedTab: $tab)
+        ActivityFeedView(
+            user: .danielAgapov, 
+            selectedTab: $tab, 
+            deepLinkedActivityId: $deepLinkedActivityId, 
+            shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
+        )
     }
-    
 }

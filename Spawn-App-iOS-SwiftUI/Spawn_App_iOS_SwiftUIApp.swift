@@ -15,6 +15,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var appCache = AppCache.shared
 	@StateObject var themeService = ThemeService.shared
+	@StateObject var deepLinkManager = DeepLinkManager.shared
     
     init() {
         // Register custom fonts
@@ -52,7 +53,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 			Group {
 				if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
 					// User is logged in and user data exists - go to main content
-					ContentView(user: spawnUser)
+					ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
 						.onAppear {
 							// Connect the app delegate to the app
 							appDelegate.app = self
@@ -60,6 +61,17 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 							// Initialize and validate the cache
 							Task {
 								await appCache.validateCache()
+							}
+						}
+						.onOpenURL { url in
+							print("🔗 App: Received URL: \(url.absoluteString)")
+							// Handle Google Sign-In URLs
+							if url.scheme == "com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na" {
+								GIDSignIn.sharedInstance.handle(url)
+							}
+							// Handle Spawn deep links (both custom URL schemes and Universal Links)
+							else if url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") {
+								deepLinkManager.handleURL(url)
 							}
 						}
 						.onestFontTheme()

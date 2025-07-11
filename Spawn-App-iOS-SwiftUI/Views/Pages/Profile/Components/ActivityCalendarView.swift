@@ -188,10 +188,21 @@ struct MonthCalendarView: View {
     }
     
     private func getActivitiesForDay(_ date: Date) -> [CalendarActivityDTO] {
-        let calendar = Calendar.current
-        return profileViewModel.allCalendarActivities.filter { activity in
-            calendar.isDate(activity.date, inSameDayAs: date)
+        // Create a UTC calendar for consistent date comparison
+        var utcCalendar = Calendar.current
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        
+        let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
+            // Use UTC calendar for consistent date comparison since backend sends UTC dates
+            utcCalendar.isDate(activity.date, inSameDayAs: date)
         }
+        
+        // Add debug logging for this view as well
+        if !filteredActivities.isEmpty {
+            print("📅 ActivityCalendarView: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities")
+        }
+        
+        return filteredActivities
     }
     
     private func monthYearString() -> String {

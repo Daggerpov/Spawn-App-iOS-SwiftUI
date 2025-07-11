@@ -522,29 +522,34 @@ class ProfileViewModel: ObservableObject {
 
         let firstDayOffset = firstDayOfMonth(month: month, year: year)
         
-        // Group activities by day
+        // Group activities by day using UTC calendar for consistency
+        var utcCalendar = Calendar.current
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        
         var activitiesByDay: [Int: [CalendarActivityDTO]] = [:]
         
+        print("📅 ProfileViewModel: Converting \(activities.count) activities to calendar grid for \(month)/\(year)")
+        
         for activity in activities {
-            let activityMonth = Calendar.current.component(
-                .month,
-                from: activity.date
-            )
-            let activityYear = Calendar.current.component(
-                .year,
-                from: activity.date
-            )
+            let activityMonth = utcCalendar.component(.month, from: activity.date)
+            let activityYear = utcCalendar.component(.year, from: activity.date)
             
             // Only include activities from the specified month and year
             if activityMonth == month && activityYear == year {
-                let day = Calendar.current.component(.day, from: activity.date)
+                let day = utcCalendar.component(.day, from: activity.date)
+                
+                print("📅 ProfileViewModel: Including activity '\(activity.title ?? "No title")' on day \(day)")
                 
                 if activitiesByDay[day] == nil {
                     activitiesByDay[day] = []
                 }
                 activitiesByDay[day]?.append(activity)
+            } else {
+                print("📅 ProfileViewModel: Excluding activity '\(activity.title ?? "No title")' - wrong month/year (\(activityMonth)/\(activityYear))")
             }
         }
+        
+        print("📅 ProfileViewModel: Grouped activities by day: \(activitiesByDay.keys.sorted())")
         
         // Place first activity of each day in the grid AND store all activities for each day
         for (day, dayActivities) in activitiesByDay {
@@ -555,6 +560,7 @@ class ProfileViewModel: ObservableObject {
                     let col = position % 7
                     grid[row][col] = dayActivities.first
                     newCalendarActivitiesByDay[row][col] = dayActivities // Store all activities for this day
+                    print("📅 ProfileViewModel: Placed \(dayActivities.count) activities at grid position [\(row)][\(col)] for day \(day)")
                 }
             }
         }

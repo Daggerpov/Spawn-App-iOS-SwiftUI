@@ -231,13 +231,53 @@ struct ProfileCalendarView: View {
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
 		let calendar = Calendar.current
+		
+		// Create a UTC calendar for consistent date comparison
+		var utcCalendar = Calendar.current
+		utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+		
 		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
-			calendar.isDate(activity.date, inSameDayAs: date)
+			// Use UTC calendar for consistent date comparison since backend sends UTC dates
+			let isSameDay = utcCalendar.isDate(activity.date, inSameDayAs: date)
+			
+			// Add debug logging for dates that don't match
+			if !isSameDay {
+				let dateFormatter = DateFormatter()
+				dateFormatter.dateFormat = "yyyy-MM-dd"
+				dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+				
+				let activityDateString = dateFormatter.string(from: activity.date)
+				let targetDateString = dateFormatter.string(from: date)
+				
+				if activityDateString == targetDateString {
+					print("🔍 Calendar: Date strings match but isDate check failed - Activity: \(activityDateString), Target: \(targetDateString)")
+				}
+			}
+			
+			return isSameDay
 		}
 		
-		// Only log when we find activities to reduce noise
+		// Log when we find activities and when we don't to help debug
 		if !filteredActivities.isEmpty {
 			print("📅 Calendar: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities")
+			for activity in filteredActivities {
+				print("  - \(activity.title ?? "No title") on \(activity.date)")
+			}
+		} else {
+			let dateFormatter = DateFormatter()
+			dateFormatter.dateFormat = "yyyy-MM-dd"
+			let dateString = dateFormatter.string(from: date)
+			print("📅 Calendar: No activities found for day \(Calendar.current.component(.day, from: date)) (\(dateString))")
+			
+			// Show sample of available activities for debugging
+			if !profileViewModel.allCalendarActivities.isEmpty {
+				print("  Available activities:")
+				for activity in profileViewModel.allCalendarActivities.prefix(3) {
+					dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+					let activityDateString = dateFormatter.string(from: activity.date)
+					print("    - \(activity.title ?? "No title") on \(activityDateString)")
+				}
+			}
 		}
 		
 		return filteredActivities
