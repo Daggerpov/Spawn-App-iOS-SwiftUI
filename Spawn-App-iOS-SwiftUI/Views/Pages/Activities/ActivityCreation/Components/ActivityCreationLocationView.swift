@@ -63,9 +63,17 @@ struct ActivityCreationLocationView: View {
             // Top navigation
             VStack {
                 HStack {
-                    ActivityBackButton {
+                    Button(action: {
                         onBack?()
+                    }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
                     }
+                    .frame(width: 48, height: 48)
+                    .background(.white)
+                    .cornerRadius(100)
+                    .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2)
                     .padding(.leading, 24)
                     
                     Spacer()
@@ -89,7 +97,7 @@ struct ActivityCreationLocationView: View {
                     }
                     .padding(.trailing, 24)
                 }
-                .padding(.top, 50)
+                .padding(.top, 60)
                 .padding(.bottom, 12)
                 
                 Spacer()
