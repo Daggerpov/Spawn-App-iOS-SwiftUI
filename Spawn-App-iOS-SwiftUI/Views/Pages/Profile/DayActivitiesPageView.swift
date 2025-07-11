@@ -172,7 +172,7 @@ extension DayActivitiesPageView {
                             .font(.onestSemiBold(size: 17))
                             .foregroundColor(.white)
                         
-                        Text("\(activity.location ?? "Activity Location") • \(formattedDate)")
+						Text("\(activity.location?.name ?? "Activity Location") • \(formattedDate)")
                             .font(.onestMedium(size: 13))
                             .foregroundColor(Color.black.opacity(0.80))
                     }
@@ -183,7 +183,9 @@ extension DayActivitiesPageView {
                     HStack(spacing: -8) {
                         // Participant count
                         VStack(spacing: 0) {
-                            Text("+\(max(0, activity.participantUsers.count - 2))")
+							Text(
+								"+\(max(0, (activity.participantUsers?.count ?? 0) - 2))"
+							)
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(figmaBlue)
                         }
@@ -192,7 +194,7 @@ extension DayActivitiesPageView {
                         .clipShape(Circle())
                         
                         // Avatar circles (placeholder)
-                        ForEach(0..<min(2, activity.participantUsers.count), id: \.self) { _ in
+                        ForEach(0..<min(2, activity.participantUsers?.count ?? 0), id: \.self) { _ in
                             Circle()
                                 .fill(Color.red.opacity(0.5))
                                 .frame(width: 33.53, height: 34.26)
