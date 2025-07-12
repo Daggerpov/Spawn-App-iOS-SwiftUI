@@ -54,6 +54,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     @Published var shouldNavigateToPhoneNumberView: Bool = false
     @Published var shouldNavigateToVerificationCodeView: Bool = false
+    @Published var shouldNavigateToUserDetailsView: Bool = false
+    @Published var secondsUntilNextVerificationAttempt: Int = 30
+    
+    @Published var shouldNavigateToUserOptionalDetailsInputView: Bool = false
     
     private var isOnboarding: Bool = false
 
@@ -94,6 +98,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		self.shouldNavigateToFeedView = false
 		self.shouldNavigateToUserInfoInputView = false
+		self.shouldNavigateToPhoneNumberView = false
+		self.shouldNavigateToVerificationCodeView = false
+		self.shouldNavigateToUserDetailsView = false
+		self.secondsUntilNextVerificationAttempt = 30
 		self.activeAlert = nil
 		self.authAlert = nil
 
@@ -111,7 +119,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     Task {
                         if let idToken = appleIDCredential.identityToken {
                             let idTokenString: String? = String(data: idToken, encoding: .utf8)
-                            await self.register(email: appleIDCredential.email, idToken: idTokenString, provider: .apple)
+                            await self.registerWithOAuth(
+                                idToken: idTokenString ?? "",
+                                provider: .apple,
+                                email: appleIDCredential.email,
+                                name: appleIDCredential.fullName?.givenName != nil ? "\(appleIDCredential.fullName?.givenName ?? "") \(appleIDCredential.fullName?.familyName ?? "")" : nil,
+                                profilePictureUrl: nil
+                            )
                         }
                     }
                     return
@@ -200,7 +214,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     
                     if isOnboarding {
                         Task {
-                            await self.register(email: user.profile?.email, idToken: user.idToken?.tokenString, provider: .google)
+                            await self.registerWithOAuth(
+                                idToken: user.idToken?.tokenString ?? "",
+                                provider: .google,
+                                email: user.profile?.email,
+                                name: user.profile?.name,
+                                profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
+                            )
                         }
                         return
                     }
@@ -818,6 +838,173 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
     }
     
+    // New method for sending email verification
+    func sendEmailVerification(email: String) async {
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/register/verification/send") {
+                let emailVerificationDTO = EmailVerificationSendDTO(email: email)
+                let response: EmailVerificationResponseDTO? = try await self.apiService.sendData(emailVerificationDTO, to: url, parameters: nil)
+                
+                await MainActor.run {
+                    if let response = response {
+                        // Success - navigate to verification code view
+                        self.shouldNavigateToVerificationCodeView = true
+                        self.email = email
+                        // Store the seconds until next attempt for the timer
+                        self.secondsUntilNextVerificationAttempt = response.secondsUntilNextAttempt
+                    } else {
+                        // Handle error
+                        self.errorMessage = "Failed to send verification email"
+                    }
+                }
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                // Handle specific API errors
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 400:
+                        self.errorMessage = "Invalid email address"
+                    case 409:
+                        self.errorMessage = "Email already registered"
+                    default:
+                        self.errorMessage = "Failed to send verification email"
+                    }
+                } else {
+                    self.errorMessage = "Failed to send verification email"
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to send verification email"
+            }
+        }
+    }
+    
+    // New method for OAuth registration
+    func registerWithOAuth(idToken: String, provider: AuthProviderType, email: String?, name: String?, profilePictureUrl: String?) async {
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/register/oauth") {
+                let oauthRegistrationDTO = OAuthRegistrationDTO(
+                    idToken: idToken,
+                    provider: provider.rawValue,
+                    email: email,
+                    name: name,
+                    profilePictureUrl: profilePictureUrl
+                )
+                
+                let response: BaseUserDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
+                
+                await MainActor.run {
+                    if let user = response {
+                        // Success - navigate to user details view
+                        self.spawnUser = user
+                        self.shouldNavigateToUserDetailsView = true
+                        self.email = user.email
+                    } else {
+                        // Handle error
+                        self.errorMessage = "Failed to register with OAuth"
+                    }
+                }
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                // Handle specific API errors
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 400:
+                        self.errorMessage = "Invalid OAuth credentials"
+                    case 409:
+                        self.errorMessage = "Account already exists"
+                    default:
+                        self.errorMessage = "Failed to register with OAuth"
+                    }
+                } else {
+                    self.errorMessage = "Failed to register with OAuth"
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to register with OAuth"
+            }
+        }
+    }
+    
+    // New method for verifying email verification code
+    func verifyEmailCode(email: String, code: String) async {
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/register/verification/check") {
+                let verificationDTO = EmailVerificationVerifyDTO(email: email, code: code)
+                let response: BaseUserDTO? = try await self.apiService.sendData(verificationDTO, to: url, parameters: nil)
+                
+                await MainActor.run {
+                    if let user = response {
+                        // Success - navigate to user details view
+                        self.spawnUser = user
+                        self.shouldNavigateToUserDetailsView = true
+                        self.email = user.email
+                    } else {
+                        // Handle error
+                        self.errorMessage = "Invalid verification code"
+                    }
+                }
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                // Handle specific API errors
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 400:
+                        self.errorMessage = "Invalid verification code"
+                    case 404:
+                        self.errorMessage = "Verification code not found"
+                    default:
+                        self.errorMessage = "Failed to verify code"
+                    }
+                } else {
+                    self.errorMessage = "Failed to verify code"
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to verify code"
+            }
+        }
+    }
+    
+    // Update user details after registration
+    func updateUserDetails(id: String, username: String, phoneNumber: String, password: String?) async {
+        do {
+            let dto = UpdateUserDetailsDTO(id: id, username: username, phoneNumber: phoneNumber, password: password)
+            if let url = URL(string: APIService.baseURL + "auth/user/details") {
+                let response: BaseUserDTO? = try await self.apiService.sendData(dto, to: url, parameters: nil)
+                await MainActor.run {
+                    if let user = response {
+                        self.spawnUser = user
+                        self.shouldNavigateToUserOptionalDetailsInputView = true
+                        self.errorMessage = nil
+                    } else {
+                        self.errorMessage = "Failed to update user details."
+                    }
+                }
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                switch error {
+                case .failedHTTPRequest(let description):
+                    self.errorMessage = description
+                case .invalidStatusCode(let statusCode):
+                    self.errorMessage = "Server error (\(statusCode))."
+                default:
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to update user details."
+            }
+        }
+    }
     
 }
 

@@ -44,68 +44,74 @@ struct VerificationCodeView: View {
                         Text("Verify Your Email")
                             .font(heading1)
                             .foregroundColor(.primary)
-                        Text("We’ve sent a 6-digit code to\n" + (viewModel.email ?? "your email/phone").replacingOccurrences(of: "@", with: "\n@"))
+                        Text("We've sent a 6-digit code to " + (viewModel.email ?? "your email"))
                             .font(.onestRegular(size: 16))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
                     }
                     .padding(.horizontal, 40)
                     
-                    // Verification Code Input
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Verification Code")
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(.primary)
-                        HStack(spacing: 12) {
-                            ForEach(0..<6, id: \ .self) { idx in
-                                ZStack {
-                                    Rectangle()
-                                        .fill(viewModel.errorMessage != nil ? Color.red.opacity(0.1) : figmaAuthButtonGrey)
-                                        .frame(width: 48, height: 56)
-                                        .cornerRadius(12)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(viewModel.errorMessage != nil ? Color.red : Color.clear, lineWidth: 2)
-                                        )
-                                    TextField("", text: Binding(
-                                        get: { code[idx] },
-                                        set: { newValue in
-                                            if newValue.count <= 1 && (newValue.isEmpty || newValue.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) == nil) {
-                                                code[idx] = newValue
-                                                if !newValue.isEmpty && idx < 5 {
-                                                    focusedIndex = idx + 1
+                    // Form Fields
+                    VStack(spacing: 24) {
+                        // Verification Code Input
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Verification Code")
+                                .font(.onestRegular(size: 16))
+                                .foregroundColor(.primary)
+                            HStack(spacing: 12) {
+                                ForEach(0..<6, id: \ .self) { idx in
+                                    ZStack {
+                                        Rectangle()
+                                            .fill(viewModel.errorMessage != nil ? Color.red.opacity(0.1) : figmaAuthButtonGrey)
+                                            .frame(width: 48, height: 56)
+                                            .cornerRadius(12)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 12)
+                                                    .stroke(viewModel.errorMessage != nil ? Color.red : Color.clear, lineWidth: 2)
+                                            )
+                                        TextField("", text: Binding(
+                                            get: { code[idx] },
+                                            set: { newValue in
+                                                if newValue.count <= 1 && (newValue.isEmpty || newValue.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) == nil) {
+                                                    code[idx] = newValue
+                                                    if !newValue.isEmpty && idx < 5 {
+                                                        focusedIndex = idx + 1
+                                                    }
                                                 }
                                             }
-                                        }
-                                    ))
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.center)
-                                    .font(.onestRegular(size: 24))
-                                    .frame(width: 48, height: 56)
-                                    .focused($focusedIndex, equals: idx)
+                                        ))
+                                        .keyboardType(.numberPad)
+                                        .multilineTextAlignment(.center)
+                                        .font(.onestRegular(size: 24))
+                                        .frame(width: 48, height: 56)
+                                        .focused($focusedIndex, equals: idx)
+                                    }
                                 }
                             }
                         }
-                    }
-                    .padding(.bottom, 8)
-                    
-                    // Verify Button
-                    Button(action: {
-                        // Call viewModel.verifyCode(codeString)
-                        // Example: viewModel.verifyCode(codeString)
-                    }) {
-                        OnboardingButtonCoreView("Verify") {
-                            isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+                        
+                        // Verify Button
+                        Button(action: {
+                            Task {
+                                if let email = viewModel.email {
+                                    await viewModel.verifyEmailCode(email: email, code: codeString)
+                                }
+                            }
+                        }) {
+                            OnboardingButtonCoreView("Verify") {
+                                isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+                            }
                         }
+                        .padding(.top, -16)
+                        .padding(.bottom, -30)
+                        .padding(.horizontal, -22)
+                        .disabled(!isFormValid)
                     }
-                    .padding(.top, -16)
-                    .padding(.bottom, -30)
-                    .padding(.horizontal, -22)
-                    .disabled(!isFormValid)
+                    .padding(.horizontal, 40)
                     
                     // Resend Code
                     HStack(spacing: 4) {
-                        Text("Didn’t get it?")
+                        Text("Didn't get it?")
                             .font(.onestRegular(size: 16))
                         Button(action: {
                             resendCode()
@@ -140,6 +146,7 @@ struct VerificationCodeView: View {
                 Spacer()
             }
             .background(Color(.systemBackground))
+            .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView()})
             .onAppear {
                 startTimer()
                 focusedIndex = 0
@@ -152,7 +159,7 @@ struct VerificationCodeView: View {
     }
     
     private func startTimer() {
-        secondsRemaining = 30
+        secondsRemaining = viewModel.secondsUntilNextVerificationAttempt
         isResendEnabled = false
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
@@ -167,8 +174,15 @@ struct VerificationCodeView: View {
     }
     
     private func resendCode() {
-        // Call viewModel.requestVerification(number:) or similar
-        startTimer()
+        Task {
+            if let email = viewModel.email {
+                await viewModel.sendEmailVerification(email: email)
+                // The timer will be updated with the new seconds from the backend response
+                await MainActor.run {
+                    startTimer()
+                }
+            }
+        }
     }
 }
 

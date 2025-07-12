@@ -66,7 +66,7 @@ struct RegisterInputView: View {
                         // Continue Button
                         Button(action: {
                             Task {
-                                await viewModel.register(email: emailInput, idToken: nil, provider: nil)
+                                await viewModel.sendEmailVerification(email: emailInput)
                             }
                         }) {
                             OnboardingButtonCoreView("Continue") {
@@ -124,6 +124,8 @@ struct RegisterInputView: View {
             }
             .background(Color(.systemBackground))
             .navigationDestination(isPresented: $viewModel.shouldNavigateToPhoneNumberView, destination: {PhoneNumberView(viewModel: viewModel)})
+            .navigationDestination(isPresented: $viewModel.shouldNavigateToVerificationCodeView, destination: {VerificationCodeView(viewModel: viewModel)})
+            .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView()})
         }
         .navigationBarHidden(true)
     }
