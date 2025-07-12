@@ -19,6 +19,8 @@ struct ActivityCalendarView: View {
     @State private var currentMonth = Date()
     @State private var scrollOffset: CGFloat = 0
     @State private var hasInitiallyScrolled = false
+    @State private var showingDayActivities = false
+    @State private var selectedDayActivities: [CalendarActivityDTO] = []
     
     var onDismiss: (() -> Void)?
     
@@ -68,6 +70,18 @@ struct ActivityCalendarView: View {
         }
         .navigationTitle(calendarOwnerName != nil ? "\(calendarOwnerName!)'s Activity Calendar" : "Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingDayActivities) {
+            DayActivitiesPageView(
+                date: selectedDayActivities.first?.dateAsDate ?? Date(),
+                activities: selectedDayActivities,
+                onDismiss: { showingDayActivities = false },
+                onActivitySelected: { activity in
+                    showingDayActivities = false
+                    handleActivitySelection(activity)
+                }
+            )
+            .presentationDetents([.medium, .large])
+        }
         .onAppear {
             // Fetch calendar data for current and upcoming months
             fetchCalendarData()
@@ -118,6 +132,17 @@ struct ActivityCalendarView: View {
             await profileViewModel.fetchAllCalendarActivities()
         }
     }
+    
+    private func handleActivitySelection(_ activity: CalendarActivityDTO) {
+        Task {
+            if let activityId = activity.activityId,
+               let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
+                await MainActor.run {
+                    // Activity details will be shown via the existing sheet in the calling view
+                }
+            }
+        }
+    }
 }
 
 struct MonthCalendarView: View {
@@ -127,6 +152,8 @@ struct MonthCalendarView: View {
     
     @State private var showActivityDetails = false
     @State private var selectedActivity: CalendarActivityDTO?
+    @State private var showingDayActivities = false
+    @State private var selectedDayActivities: [CalendarActivityDTO] = []
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -148,9 +175,14 @@ struct MonthCalendarView: View {
                                 day: day,
                                 activities: getActivitiesForDay(day),
                                 isCurrentMonth: isCurrentMonth(day),
-                                onActivitySelected: { activity in
-                                    selectedActivity = activity
-                                    showActivityDetails = true
+                                onDayTapped: { activities in
+                                    if activities.count == 1 {
+                                        selectedActivity = activities.first!
+                                        showActivityDetails = true
+                                    } else if activities.count > 1 {
+                                        selectedDayActivities = activities
+                                        showingDayActivities = true
+                                    }
                                 }
                             )
                         }
@@ -163,6 +195,19 @@ struct MonthCalendarView: View {
             if let activity = selectedActivity {
                 ActivityDetailsSheet(activity: activity, userAuth: userAuth)
             }
+        }
+        .sheet(isPresented: $showingDayActivities) {
+            DayActivitiesPageView(
+                date: selectedDayActivities.first?.dateAsDate ?? Date(),
+                activities: selectedDayActivities,
+                onDismiss: { showingDayActivities = false },
+                onActivitySelected: { activity in
+                    showingDayActivities = false
+                    selectedActivity = activity
+                    showActivityDetails = true
+                }
+            )
+            .presentationDetents([.medium, .large])
         }
     }
     
@@ -216,7 +261,7 @@ struct CalendarDayTile: View {
     let day: Date
     let activities: [CalendarActivityDTO]
     let isCurrentMonth: Bool
-    let onActivitySelected: (CalendarActivityDTO) -> Void
+    let onDayTapped: ([CalendarActivityDTO]) -> Void
     
     private let tileSize: CGFloat = 86.4
     private let cornerRadius: CGFloat = 12.34
@@ -282,7 +327,7 @@ struct CalendarDayTile: View {
                     )
                     .onTapGesture {
                         if !activities.isEmpty {
-                            onActivitySelected(activities[0])
+                            onDayTapped(activities)
                         }
                     }
                 

@@ -242,10 +242,16 @@ struct ActivityConfirmationView: View {
                         shareViaIMessage()
                     }) {
                         VStack(spacing: 8) {
-                            Image("imessage")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 64, height: 64)
+                            ZStack {
+                                Circle()
+                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                    .frame(width: 64, height: 64)
+                                Image("imessage")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 40, height: 40)
+                                    .foregroundColor(.white)
+                            }
                             Text("Message")
                                 .font(Font.custom("SF Pro Display", size: 14))
                                 .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))

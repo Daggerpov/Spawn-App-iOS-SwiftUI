@@ -179,18 +179,10 @@ struct ProfileCalendarView: View {
 	}
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
-		// NEW LOGIC: Handle single vs multiple activities differently
-		if activities.count == 1 {
-			// Single activity - show activity detail modal directly
-			let activity = activities[0]
-			handleActivitySelection(activity)
-		} else {
-			// Multiple activities - navigate to day activities page
-			selectedDayActivities = activities
-			
-			DispatchQueue.main.async {
-				self.navigateToDayActivities = true
-			}
+		// NEW LOGIC: Always navigate to full calendar view first
+		// This preserves the old logic of showing the full calendar before day selection
+		DispatchQueue.main.async {
+			self.navigateToCalendar = true
 		}
 	}
 
