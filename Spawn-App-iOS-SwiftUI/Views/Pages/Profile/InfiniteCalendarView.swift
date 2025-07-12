@@ -63,7 +63,7 @@ struct InfiniteCalendarView: View {
         .navigationBarBackButtonHidden(false)
         .sheet(isPresented: $showingDayActivities) {
             DayActivitiesPageView(
-                date: selectedDayActivities.first?.date ?? Date(),
+                date: selectedDayActivities.first?.dateAsDate ?? Date(),
                 activities: selectedDayActivities,
                 onDismiss: { showingDayActivities = false },
                 onActivitySelected: { activity in
@@ -115,7 +115,7 @@ struct InfiniteCalendarView: View {
     
     private func activitiesForMonth(_ date: Date) -> [CalendarActivityDTO] {
         return activities.filter { activity in
-            calendar.isDate(activity.date, equalTo: date, toGranularity: .month)
+            calendar.isDate(activity.dateAsDate, equalTo: date, toGranularity: .month)
         }
     }
 }
@@ -187,7 +187,7 @@ struct MonthView: View {
     
     private func activitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
         return monthData.activities.filter { activity in
-            calendar.isDate(activity.date, inSameDayAs: date)
+            calendar.isDate(activity.dateAsDate, inSameDayAs: date)
         }
     }
 }

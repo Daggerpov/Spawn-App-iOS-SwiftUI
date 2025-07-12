@@ -40,7 +40,7 @@ extension FetchFriendRequestDTO {
             id: UUID(), senderUser: BaseUserDTO.haley),
         FetchFriendRequestDTO(
             id: UUID(),
-            senderUser: BaseUserDTO.jennifer,
+            senderUser: BaseUserDTO.danielAgapov,
             mutualFriendCount: 1
         )
     ]

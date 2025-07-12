@@ -275,12 +275,9 @@ class MockAPIService: IAPIService {
 				
 				// Define mock friendships
 				let friendships = [
-					"daggerpov": ["uhdlee", "shannonaurl"],
-					"uhdlee": ["daggerpov", "jenntjen"],
-					"shannonaurl": ["daggerpov", "michaeltham"],
-					"jenntjen": ["uhdlee", "haleyusername"],
-					"michaeltham": ["shannonaurl"],
-					"haleyusername": ["jenntjen"]
+					"daggerpov": ["uhdlee", "haleyusername"],
+					"uhdlee": ["daggerpov", "haleyusername"],
+					"haleyusername": ["daggerpov", "uhdlee"]
 				]
 				
 				// Check if the users are friends in our mock data
@@ -303,10 +300,7 @@ class MockAPIService: IAPIService {
 				let incomingRequests: [String: [FetchFriendRequestDTO]] = [
 					"daggerpov": [], // Daniel Agapov has no incoming requests
 					"uhdlee": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)], // Daniel Lee has request from Daniel Agapov
-					"shannonaurl": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.michael)], // Shannon has request from Michael
-					"jenntjen": [],
-					"michaeltham": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.haley)], // Michael has request from Haley
-					"haleyusername": []
+					"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielLee)] // Haley has request from Daniel Lee
 				]
 				
 				return (incomingRequests[receiverUsername] ?? []) as! T
@@ -327,10 +321,7 @@ class MockAPIService: IAPIService {
 				let sentRequests: [String: [FetchFriendRequestDTO]] = [
 					"daggerpov": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.haley)], // Daniel Agapov sent request to Haley
 					"uhdlee": [], // Daniel Lee has no sent requests
-					"shannonaurl": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.jennifer)], // Shannon sent request to Jennifer
-					"jenntjen": [],
-					"michaeltham": [], 
-					"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.michael)] // Haley sent request to Michael
+					"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)] // Haley sent request to Daniel Agapov
 				]
 				
 				return (sentRequests[senderUsername] ?? []) as! T
@@ -411,9 +402,6 @@ class MockAPIService: IAPIService {
 					let userInterests = [
 						"daggerpov": ["Hiking", "Photography", "Cooking", "Travel", "Music"],
 						"uhdlee": ["Basketball", "Biking", "Bouldering", "F1", "Poker", "Cooking", "Travel"],
-						"shannonaurl": ["Basketball", "Reading", "Gaming"],
-						"jenntjen": ["Art", "Photography", "Yoga", "Travel"],
-						"michaeltham": ["Fitness", "Basketball", "Music", "Cooking"],
 						"haleyusername": ["Dance", "Photography", "Travel", "Food"]
 					]
 					
@@ -441,9 +429,6 @@ class MockAPIService: IAPIService {
 					let mockUsers = [
 						BaseUserDTO.danielAgapov,
 						BaseUserDTO.danielLee,
-						BaseUserDTO.shannon,
-						BaseUserDTO.jennifer,
-						BaseUserDTO.michael,
 						BaseUserDTO.haley
 					]
 					
@@ -495,11 +480,11 @@ class MockAPIService: IAPIService {
 							whatsappLink: "https://wa.me/0987654321",
 							instagramLink: "https://www.instagram.com/uhdlee"
 						),
-						"shannonaurl": UserSocialMediaDTO(
+						"haleyusername": UserSocialMediaDTO(
 							id: UUID(),
 							userId: userId,
 							whatsappLink: nil,
-							instagramLink: "https://www.instagram.com/shannonaurl"
+							instagramLink: "https://www.instagram.com/haleyusername"
 						)
 					]
 					
@@ -673,6 +658,14 @@ class MockAPIService: IAPIService {
 			if let batchUpdateDTO = object as? BatchActivityTypeUpdateDTO {
 				print("🔍 MOCK: Batch updating activity types with \(batchUpdateDTO.updatedActivityTypes.count) updates and \(batchUpdateDTO.deletedActivityTypeIds.count) deletions")
 				
+				// Log the details of what we're updating
+				for updatedType in batchUpdateDTO.updatedActivityTypes {
+					print("📝 MOCK: Updating activity type: \(updatedType.title)")
+					print("   - ID: \(updatedType.id)")
+					print("   - isPinned: \(updatedType.isPinned)")
+					print("   - orderNum: \(updatedType.orderNum)")
+				}
+				
 				// Simulate the backend behavior: return ALL user's activity types after the update
 				// Start with the mock activity types and apply the changes
 				var allActivityTypes = [
@@ -682,20 +675,37 @@ class MockAPIService: IAPIService {
 					ActivityTypeDTO.mockStudyActivityType
 				]
 				
+				print("📋 MOCK: Starting with \(allActivityTypes.count) mock activity types")
+				
 				// Remove deleted activity types
+				let originalCount = allActivityTypes.count
 				allActivityTypes.removeAll { activityType in
 					batchUpdateDTO.deletedActivityTypeIds.contains(activityType.id)
+				}
+				
+				if allActivityTypes.count != originalCount {
+					print("🗑️ MOCK: Removed \(originalCount - allActivityTypes.count) activity types")
 				}
 				
 				// Update or add the updated activity types
 				for updatedType in batchUpdateDTO.updatedActivityTypes {
 					if let existingIndex = allActivityTypes.firstIndex(where: { $0.id == updatedType.id }) {
 						// Update existing activity type
+						let oldType = allActivityTypes[existingIndex]
+						print("🔄 MOCK: Updating existing activity type: \(oldType.title)")
+						print("   - Old isPinned: \(oldType.isPinned) -> New isPinned: \(updatedType.isPinned)")
 						allActivityTypes[existingIndex] = updatedType
 					} else {
 						// Add new activity type
+						print("➕ MOCK: Adding new activity type: \(updatedType.title)")
 						allActivityTypes.append(updatedType)
 					}
+				}
+				
+				print("📊 MOCK: Final activity types count: \(allActivityTypes.count)")
+				print("📋 MOCK: Final activity types:")
+				for (index, activityType) in allActivityTypes.enumerated() {
+					print("   \(index + 1). \(activityType.title) - isPinned: \(activityType.isPinned)")
 				}
 				
 				return allActivityTypes as! U
@@ -810,97 +820,18 @@ class MockAPIService: IAPIService {
 		}
 	}
 
-	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] 
-	{
-		// Don't send validation request if there are no cached items to validate
-		if cachedItems.isEmpty {
-			print("MOCK: No cached items to validate, returning empty response")
-			return [:]
-		}
-		
-		// In the mock implementation, we'll pretend everything is fresh except for items
-		// that are older than 30 minutes
+	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] {
+		// In mock mode, all cache items are always valid
 		var result: [String: CacheValidationResponse] = [:]
-
-		for (key, timestamp) in cachedItems {
-			let timeElapsed = Date().timeIntervalSince(timestamp)
-			let needsInvalidation = timeElapsed > 1800  // 30 minutes
-
-			// For demo purposes, we'll simulate invalidation based on time elapsed
-			if needsInvalidation {
-				// Create mock data based on the cache key
-				var updatedItems: Data?
-
-				switch key {
-				case "friends":
-					// Return mock friends data
-					let mockFriends = createMockFriends()
-					updatedItems = try? JSONEncoder().encode(mockFriends)
-
-				case "activities":
-					// Return mock activities data
-					let mockActivities = createMockActivities()
-					updatedItems = try? JSONEncoder().encode(mockActivities)
-
-				case "activityTypes":
-					// Return mock activity types data
-					let mockActivityTypes = createMockActivityTypes()
-					updatedItems = try? JSONEncoder().encode(mockActivityTypes)
-
-				case "profilePicture":
-					// Return mock profile picture data
-					if let userId = userId
-						?? UserAuthViewModel.shared.spawnUser?.id
-					{
-						let mockProfile = BaseUserDTO(
-							id: userId,
-							username: "mockuser",
-							profilePicture:
-								"https://mock-s3.amazonaws.com/profile-pictures/\(UUID().uuidString).jpg",
-							name: "Mock User",
-							bio: "This is a mock user",
-							email: "mock@example.com"
-						)
-						updatedItems = try? JSONEncoder().encode(mockProfile)
-					}
-
-				case "recommendedFriends":
-					// Return mock recommended friends data
-					let mockRecommendedFriends = Array(
-						RecommendedFriendUserDTO.mockUsers.prefix(3)
-					)
-					updatedItems = try? JSONEncoder().encode(
-						mockRecommendedFriends
-					)
-
-				case "friendRequests":
-					// Return mock friend requests data
-					let mockFriendRequests = FetchFriendRequestDTO
-						.mockFriendRequests
-					updatedItems = try? JSONEncoder().encode(mockFriendRequests)
-
-				case "otherProfiles":
-					// For other profiles, we don't include data to force a separate fetch
-					updatedItems = nil
-
-				case "tagFriends":
-					// For tag friends, we don't include data to force a separate fetch
-					updatedItems = nil
-
-				default:
-					updatedItems = nil
-				}
-
-				result[key] = CacheValidationResponse(
-					invalidate: true,
-					updatedItems: updatedItems
-				)
-			} else {
-				result[key] = CacheValidationResponse(invalidate: false)
-			}
+		for key in cachedItems.keys {
+			result[key] = CacheValidationResponse(invalidate: false, updatedItems: nil)
 		}
-
 		return result
+	}
+	
+	func clearCalendarCaches() async throws {
+		// In mock mode, just log that we're clearing caches
+		print("🧹 MOCK: Clearing calendar caches")
 	}
 
 	// Helper methods to create mock data
@@ -965,7 +896,7 @@ class MockAPIService: IAPIService {
 			for dayOffset in [3, 8, 15, 22] {
 				dateComponents.day = dayOffset + index
 				if let date = calendar.date(from: dateComponents) {
-					let calendarActivity = CalendarActivityDTO(
+					let calendarActivity = CalendarActivityDTO.create(
 						id: UUID(),
 						date: date,
 						title: activity.title,
@@ -988,9 +919,6 @@ class MockAPIService: IAPIService {
 		let mockUsers = [
 			BaseUserDTO.danielAgapov,
 			BaseUserDTO.danielLee,
-			BaseUserDTO.shannon,
-			BaseUserDTO.jennifer,
-			BaseUserDTO.michael,
 			BaseUserDTO.haley
 		]
 		

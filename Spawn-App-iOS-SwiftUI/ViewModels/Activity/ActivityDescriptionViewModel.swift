@@ -36,18 +36,22 @@ class ActivityDescriptionViewModel: ObservableObject {
 	
 	// MARK: - Optimistic Updates for Activity Editing
 	
-	/// Optimistically updates the activity title immediately in the UI
-	func optimisticallyUpdateActivityTitle(_ newTitle: String) {
+	/// Optimistically updates the activity title
+	@MainActor
+	func updateActivityTitle(_ newTitle: String) {
 		activity.title = newTitle
-		AppCache.shared.optimisticallyUpdateActivity(activity)
-		print("⚡ Optimistically updated activity title to: \(newTitle)")
+		
+		// Update the activity in the cache
+		AppCache.shared.addOrUpdateActivity(activity)
+		
+		// Notify UI
+		objectWillChange.send()
 	}
 	
 	/// Optimistically updates the activity icon immediately in the UI
 	func optimisticallyUpdateActivityIcon(_ newIcon: String) {
 		activity.icon = newIcon
 		AppCache.shared.optimisticallyUpdateActivity(activity)
-		print("⚡ Optimistically updated activity icon to: \(newIcon)")
 	}
 	
 	/// Optimistically updates both title and icon
@@ -59,7 +63,6 @@ class ActivityDescriptionViewModel: ObservableObject {
 			activity.icon = icon
 		}
 		AppCache.shared.optimisticallyUpdateActivity(activity)
-		print("⚡ Optimistically updated activity: title=\(title ?? "unchanged"), icon=\(icon ?? "unchanged")")
 	}
 	
 	/// Saves activity changes to the backend
@@ -75,8 +78,6 @@ class ActivityDescriptionViewModel: ObservableObject {
 			}
 		}
 		
-		print("🔄 Attempting to save activity changes for ID: \(activity.id)")
-		print("📝 Activity title: '\(activity.title ?? "nil")', icon: '\(activity.icon ?? "nil")'")
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 		
 		guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)") else {
@@ -96,19 +97,13 @@ class ActivityDescriptionViewModel: ObservableObject {
 				"icon": activity.icon ?? ""
 			]
 			
-			print("📦 Sending update data: \(updateData)")
-			
 			let updatedActivity: FullFeedActivityDTO = try await apiService.updateData(
 				updateData, to: url, parameters: nil)
-			
-			print("✅ API call successful, received updated activity:")
-			print("📋 Updated activity - ID: \(updatedActivity.id), Title: '\(updatedActivity.title ?? "nil")', Icon: '\(updatedActivity.icon ?? "nil")'")
 			
 			await MainActor.run {
 				self.activity = updatedActivity
 				// Update cache with confirmed changes
 				AppCache.shared.addOrUpdateActivity(updatedActivity)
-				print("✅ Successfully saved activity changes to backend")
 			}
 		} catch let error as APIError {
 			print("❌ APIError saving activity changes: \(error)")

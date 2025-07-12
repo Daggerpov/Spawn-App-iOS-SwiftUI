@@ -10,267 +10,271 @@ struct ActivityConfirmationView: View {
     // State for drag gesture
     @State private var dragOffset: CGFloat = 0
     
-    // Colors based on theme
-    private var backgroundColor: Color {
-        colorScheme == .dark ? Color(red: 0.12, green: 0.12, blue: 0.12) : .white
-    }
-    
-    private var primaryTextColor: Color {
-        colorScheme == .dark ? .white : Color(red: 0.11, green: 0.11, blue: 0.11)
-    }
-    
-    private var secondaryTextColor: Color {
-        colorScheme == .dark ? Color(red: 0.82, green: 0.80, blue: 0.80) : Color(red: 0.15, green: 0.14, blue: 0.14)
-    }
-    
-    private var buttonBackgroundColor: Color {
-        colorScheme == .dark ? Color(red: 0.52, green: 0.49, blue: 0.49) : Color(red: 0.88, green: 0.85, blue: 0.85)
-    }
-    
-    private var overlayColor: Color {
-        colorScheme == .dark ? Color(red: 0, green: 0, blue: 0).opacity(0.6) : Color(red: 1, green: 1, blue: 1).opacity(0.60)
+    private var activityTitle: String {
+        return viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Activity")
     }
     
     var body: some View {
-        ZStack {
-            // Background
-            backgroundColor
-                .ignoresSafeArea()
-            
+        ZStack() {
             VStack(spacing: 0) {
-                // Status bar area (simplified - remove double time)
-                statusBarView
+                // Header with back button and title
+                headerView
                 
                 // Main content
                 VStack(spacing: 0) {
                     Spacer()
                     
-                    // Success icon placeholder
-                    ZStack {}
-                        .frame(width: 144, height: 144)
-                        .offset(y: -131)
-                    
-                    // Success message
                     VStack(spacing: 12) {
-                        Text("Success!")
-                            .font(.custom("Onest", size: 32))
-                            .fontWeight(.semibold)
-                            .foregroundColor(primaryTextColor)
+                        Image("success-check")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 80, height: 80)
                         
+                        Text("Success!")
+                            .font(Font.custom("Onest", size: 32).weight(.semibold))
+                            .foregroundColor(.white)
                         Text("You've spawned in and \"\(activityTitle)\" is now live for your friends.")
-                            .font(.custom("Onest", size: 16))
-                            .fontWeight(.medium)
+                            .font(Font.custom("Onest", size: 16).weight(.medium))
                             .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
                             .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
                     }
-                    .offset(y: 17.5)
+                    .padding(.top, 80)
                     
                     Spacer()
                     
-                    // Action buttons
-                    VStack(spacing: 70) {
-                        // Share with network button
-                        Button(action: {
-                            // Add haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                            impactGenerator.impactOccurred()
-                            showShareSheet = true
-                        }) {
-                            HStack(spacing: 12) {
-                                Text("􀈂")
-                                    .font(.custom("SF Pro Display", size: 24))
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                
-                                Text("Share with your network")
-                                    .font(.custom("Onest", size: 20))
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
-                            }
-                            .padding(EdgeInsets(top: 12, leading: 24, bottom: 12, trailing: 24))
-                            .background(Color(red: 0.26, green: 0.38, blue: 1))
-                            .cornerRadius(100)
-                        }
-                        .shadow(color: Color.black.opacity(0.25), radius: 8, y: 2)
-                        .offset(x: 0.5, y: 120.5)
-                        
-                        // Return to home button
-                        Button(action: {
-                            // Add haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                            impactGenerator.impactOccurred()
-                            onClose()
-                        }) {
-                            HStack(spacing: 8) {
-                                Text("Return to Home")
-                                    .font(.custom("Onest", size: 16))
-                                    .fontWeight(.medium)
-                                    .foregroundColor(secondaryTextColor)
-                            }
-                            .padding(EdgeInsets(top: 16, leading: 24, bottom: 16, trailing: 24))
-                            .frame(height: 43)
-                            .background(Color.clear)
-                            .cornerRadius(100)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 100)
-                                    .inset(by: 1)
-                                    .stroke(secondaryTextColor, lineWidth: 1)
-                            )
-                        }
-                        .shadow(color: Color.black.opacity(0.25), radius: 8, y: 2)
-                        .offset(y: 190.5)
+                    // Share with your network button
+                    Button(action: {
+                        // Add haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        showShareSheet = true
+                    }) {
+                        Image("share_with_network_button")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: 280)
                     }
+                    .padding(.bottom, 16)
                     
-                    Spacer()
+                    // Return to Home button
+                    Button(action: {
+                        // Add haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                        impactGenerator.impactOccurred()
+                        onClose()
+                    }) {
+                        HStack(spacing: 8) {
+                            Text("Return to Home")
+                                .font(Font.custom("Onest", size: 16).weight(.medium))
+                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                        }
+                        .padding(EdgeInsets(top: 16, leading: 24, bottom: 16, trailing: 24))
+                        .frame(height: 43)
+                        .cornerRadius(100)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 100)
+                                .inset(by: 1)
+                                .stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 1)
+                        )
+                    }
+                    .shadow(
+                        color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
+                    )
+                    .padding(.bottom, 120)
                 }
             }
             
-            // Overlay when share sheet is shown
-            if showShareSheet {
-                overlayColor
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                            showShareSheet = false
-                        }
-                    }
-            }
-            
-            // Share drawer
+            // Share drawer overlay
             if showShareSheet {
                 shareDrawerOverlay
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(backgroundColor)
-        .cornerRadius(44)
+        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
         .ignoresSafeArea()
     }
     
-    // MARK: - Status Bar View
-    private var statusBarView: some View {
+    // MARK: - Header View
+    private var headerView: some View {
         HStack {
-            // Time (single instance)
-            Text("2:05")
-                .font(.custom("SF Pro Text", size: 20))
-                .fontWeight(.semibold)
-                .foregroundColor(primaryTextColor)
+            // Back button
+            if let onBack = onBack {
+                ActivityBackButton {
+                    onBack()
+                }
+                .padding(.leading, 24)
+            }
             
             Spacer()
             
-            // Status indicators
-            Rectangle()
-                .fill(Color.black)
-                .frame(width: 192, height: 20)
-                .cornerRadius(30)
+            // Title
+            Text("Confirm")
+                .font(.onestSemiBold(size: 20))
+                .foregroundColor(.white)
+            
+            Spacer()
+            
+            // Invisible spacer for balance
+            if onBack != nil {
+                Color.clear
+                    .frame(width: 44, height: 44)
+                    .padding(.trailing, 24)
+            }
         }
-        .padding(.horizontal, 24)
-        .frame(height: 37)
-        .offset(y: -444.5)
+        .padding(.top, 50)
+        .padding(.bottom, 12)
     }
     
     // MARK: - Share Drawer Overlay
     private var shareDrawerOverlay: some View {
-        VStack {
-            Spacer()
+        ZStack() {
+            // Background overlay
+            Rectangle()
+                .foregroundColor(.clear)
+                .frame(width: 428, height: 926)
+                .background(Color(red: 0, green: 0, blue: 0).opacity(0.60))
+                .offset(x: 0, y: 0)
+                .onTapGesture {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        showShareSheet = false
+                    }
+                }
             
-            // Share drawer
-            VStack(spacing: 0) {
-                // Drag handle
+            // Share menu content
+            ZStack() {
                 Rectangle()
-                    .fill(Color(red: 0.56, green: 0.52, blue: 0.52))
+                    .foregroundColor(.clear)
                     .frame(width: 50, height: 4)
+                    .background(Color(red: 0.56, green: 0.52, blue: 0.52))
                     .cornerRadius(100)
-                    .offset(y: -104)
-                
-                // Share title
-                Text("Share this Spawn")
-                    .font(.custom("Onest", size: 20))
-                    .fontWeight(.semibold)
-                    .lineSpacing(24)
-                    .foregroundColor(primaryTextColor)
-                    .frame(width: 375)
-                    .offset(x: 2.5, y: -65)
-                
-                // Share options
+                    .offset(x: 0, y: -104)
                 HStack(spacing: 32) {
-                    // Share via
-                    shareOption(
-                        systemIcon: "􀈂",
-                        title: "Share via",
-                        action: {
-                            // Add haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                            impactGenerator.impactOccurred()
-                            showShareSheet = false
-                            shareViaSystem()
+                    Text("Share this Spawn")
+                        .font(Font.custom("Onest", size: 20).weight(.semibold))
+                        .lineSpacing(24)
+                        .foregroundColor(.white)
+                }
+                .frame(width: 375)
+                .offset(x: 2.50, y: -65)
+                VStack(alignment: .leading, spacing: 10) {
+                    Rectangle()
+                        .foregroundColor(.clear)
+                        .frame(width: 134, height: 5)
+                        .background(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        .cornerRadius(100)
+                }
+                .padding(EdgeInsets(top: 8, leading: 147, bottom: 8, trailing: 147))
+                .frame(width: 428)
+                .offset(x: 0, y: 107.50)
+                HStack(spacing: 32) {
+                    // Share via button
+                    Button(action: {
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                        impactGenerator.impactOccurred()
+                        showShareSheet = false
+                        shareViaSystem()
+                    }) {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                    .frame(width: 64, height: 64)
+                                Image("share_via_button")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 40, height: 40)
+                            }
+                            Text("Share via")
+                                .font(Font.custom("SF Pro Display", size: 14))
+                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
                         }
-                    )
+                        .frame(width: 64)
+                    }
                     
-                    // Copy link
-                    shareOption(
-                        systemIcon: "􀉣",
-                        title: "Copy Link",
-                        action: {
-                            // Add haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                            impactGenerator.impactOccurred()
-                            showShareSheet = false
-                            copyLink()
+                    // Copy Link button
+                    Button(action: {
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                        impactGenerator.impactOccurred()
+                        showShareSheet = false
+                        copyLink()
+                    }) {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                    .frame(width: 64, height: 64)
+                                Image("copy_link_button")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 40, height: 40)
+                            }
+                            Text("Copy Link")
+                                .font(Font.custom("SF Pro Display", size: 14))
+                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
                         }
-                    )
+                        .frame(width: 68)
+                    }
                     
-                    // WhatsApp
-                    shareOption(
-                        title: "WhatsApp",
-                        backgroundColor: Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50),
-                        action: {
-                            // Add haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                            impactGenerator.impactOccurred()
-                            showShareSheet = false
-                            shareViaWhatsApp()
+                    // WhatsApp button
+                    Button(action: {
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                        impactGenerator.impactOccurred()
+                        showShareSheet = false
+                        shareViaWhatsApp()
+                    }) {
+                        VStack(spacing: 8) {
+                            Image("whatsapp_logo_for_sharing")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 64, height: 64)
+                            Text("WhatsApp")
+                                .font(Font.custom("SF Pro Display", size: 14))
+                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
                         }
-                    )
+                        .frame(width: 72)
+                    }
                     
-                    // iMessage
-                    shareOption(
-                        title: "iMessage",
-                        action: {
-                            // Add haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                            impactGenerator.impactOccurred()
-                            showShareSheet = false
-                            shareViaIMessage()
+                    // iMessage button
+                    Button(action: {
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                        impactGenerator.impactOccurred()
+                        showShareSheet = false
+                        shareViaIMessage()
+                    }) {
+                        VStack(spacing: 8) {
+                            Image("imessage")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 64, height: 64)
+                            Text("Message")
+                                .font(Font.custom("SF Pro Display", size: 14))
+                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
                         }
-                    )
+                        .frame(width: 65)
+                    }
                 }
                 .frame(width: 368)
-                .offset(x: -1, y: 17.5)
-                
-                // Bottom handle
-                Rectangle()
-                    .fill(Color(red: 0.56, green: 0.52, blue: 0.52))
-                    .frame(width: 134, height: 5)
-                    .cornerRadius(100)
-                    .offset(y: 107.5)
+                .offset(x: -1, y: 17.50)
             }
             .frame(width: 428, height: 236)
-            .background(backgroundColor)
+            .background(Color(red: 0.12, green: 0.12, blue: 0.12))
             .cornerRadius(20)
-            .shadow(color: Color.black.opacity(0.10), radius: 32)
+            .shadow(
+                color: Color(red: 0, green: 0, blue: 0, opacity: 0.10), radius: 32
+            )
+            .offset(x: 0, y: 250)
             .offset(y: max(0, dragOffset))
             .gesture(
                 DragGesture()
                     .onChanged { value in
                         // Only allow dragging down
-                        if value.translation.y > 0 {
-                            dragOffset = value.translation.y
+                        if value.translation.height > 0 {
+                            dragOffset = value.translation.height
                         }
                     }
                     .onEnded { value in
                         // If dragged down enough, dismiss
-                        if value.translation.y > 100 {
+                        if value.translation.height > 100 {
                             withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                                 showShareSheet = false
                                 dragOffset = 0
@@ -286,41 +290,7 @@ struct ActivityConfirmationView: View {
         }
         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: showShareSheet)
     }
-    
-    // MARK: - Helper Views
-    private func shareOption(
-        systemIcon: String? = nil,
-        title: String,
-        backgroundColor: Color? = nil,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                // Icon container
-                ZStack {
-                    if let systemIcon = systemIcon {
-                        Text(systemIcon)
-                            .font(.custom("SF Pro Display", size: 24))
-                            .fontWeight(.medium)
-                            .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
-                    } else {
-                        // Empty for WhatsApp and iMessage (would need actual icons)
-                        ZStack {}
-                    }
-                }
-                .frame(width: 64, height: 64)
-                .background(backgroundColor ?? buttonBackgroundColor)
-                .cornerRadius(systemIcon == "􀉣" ? 94.12 : (title == "WhatsApp" ? 88.89 : (title == "iMessage" ? 98.46 : 100)))
-                .padding(systemIcon == "􀉣" ? 11.29 : (title == "WhatsApp" ? 10.67 : 12))
-                
-                // Title
-                Text(title)
-                    .font(.custom("SF Pro Display", size: 16))
-                    .foregroundColor(secondaryTextColor)
-            }
-            .frame(width: title == "Copy Link" ? 68 : (title == "WhatsApp" ? 72 : (title == "iMessage" ? 65 : 64)))
-        }
-    }
+
     
     // MARK: - Share Functions
     private func shareViaSystem() {
@@ -401,10 +371,6 @@ struct ActivityConfirmationView: View {
     private func generateShareURL(for activity: ActivityCreationDTO) -> URL {
         // Use the centralized Constants for share URL generation
         return ServiceConstants.generateActivityShareURL(for: activity.id)
-    }
-    
-    private var activityTitle: String {
-        return viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Activity")
     }
 }
 

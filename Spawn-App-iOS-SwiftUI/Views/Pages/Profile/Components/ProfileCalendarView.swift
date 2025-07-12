@@ -59,92 +59,9 @@ struct ProfileCalendarView: View {
 
 	var body: some View {
 		VStack(spacing: 8) {
-			// Month/Year header
-			HStack {
-				Text(monthYearString())
-					.font(.onestMedium(size: 14))
-					.foregroundColor(.primary)
-				Spacer()
-			}
-			.padding(.horizontal, 4)
-			
-			// Days of week header
-			HStack(spacing: 4) {
-				ForEach(0..<weekDays.count, id: \.self) { index in
-					Text(weekDays[index])
-						.font(.onestMedium(size: 9))
-						.foregroundColor(Color(hex: "#8E8484"))
-						.frame(width: 32, height: 12)
-				}
-			}
-			.padding(.horizontal, 4)
-
-			if profileViewModel.isLoadingCalendar {
-				ProgressView()
-					.frame(maxWidth: .infinity, minHeight: 150)
-			} else {
-				// Calendar grid (clickable to show popup)
-				VStack(spacing: 4) {
-					ForEach(0..<5, id: \.self) { row in
-						HStack(spacing: 4) {
-							ForEach(0..<7, id: \.self) { col in
-								let dayIndex = row * 7 + col
-								if dayIndex < calendarDays.count, let date = calendarDays[dayIndex] {
-									let dayActivities = getActivitiesForDate(date)
-									
-									if dayActivities.isEmpty {
-										// Empty day cell
-										RoundedRectangle(cornerRadius: 4.5)
-											.fill(figmaCalendarDayIcon)
-											.frame(width: 32, height: 32)
-											.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
-											.onTapGesture {
-												print("🔥 ProfileCalendarView: Empty day cell tapped for date \(date)")
-												// Navigate to full calendar view on empty day tap
-												Task {
-													do {
-														// Add timeout to prevent hanging
-														try await withTimeout(seconds: 3) {
-															await profileViewModel.fetchAllCalendarActivities()
-														}
-														await MainActor.run {
-															navigateToCalendar = true
-														}
-													} catch {
-														// If fetching fails or times out, still allow navigation to calendar
-														// The calendar view will handle the empty state
-														print("Failed to fetch calendar activities: \(error)")
-														await MainActor.run {
-															navigateToCalendar = true
-														}
-													}
-												}
-											}
-									} else {
-										// Day cell with activities
-										CalendarDayCell(activities: dayActivities, dayNumber: Calendar.current.component(.day, from: date))
-											.onTapGesture {
-												print("🔥 ProfileCalendarView: Day cell tapped for date \(date) with \(dayActivities.count) activities")
-												
-												// Create a fresh copy of activities to ensure they don't get lost
-												let activitiesCopy = Array(dayActivities)
-												print("🔥 ProfileCalendarView: Created activities copy with \(activitiesCopy.count) activities")
-												
-												handleDaySelection(activities: activitiesCopy)
-											}
-									}
-								} else {
-									// Empty cell for days outside the month
-									RoundedRectangle(cornerRadius: 4.5)
-										.fill(Color.clear)
-										.frame(width: 32, height: 32)
-								}
-							}
-						}
-					}
-				}
-				.padding(.horizontal, 4)
-			}
+			monthYearHeader
+			weekDaysHeader
+			calendarContent
 		}
 		.onAppear {
 			fetchCalendarData()
@@ -168,45 +85,111 @@ struct ProfileCalendarView: View {
 		}
 	}
 
+	// MARK: - Computed Properties for Body Components
+	
+	private var monthYearHeader: some View {
+		HStack {
+			Text(monthYearString())
+				.font(.onestMedium(size: 14))
+				.foregroundColor(.primary)
+			Spacer()
+		}
+		.padding(.horizontal, 4)
+	}
+	
+	private var weekDaysHeader: some View {
+		HStack(spacing: 4) {
+			ForEach(0..<weekDays.count, id: \.self) { index in
+				Text(weekDays[index])
+					.font(.onestMedium(size: 9))
+					.foregroundColor(Color(hex: "#8E8484"))
+					.frame(width: 32, height: 12)
+			}
+		}
+		.padding(.horizontal, 4)
+	}
+	
+	private var calendarContent: some View {
+		Group {
+			if profileViewModel.isLoadingCalendar {
+				loadingView
+			} else {
+				calendarGrid
+			}
+		}
+	}
+	
+	private var loadingView: some View {
+		ProgressView()
+			.frame(maxWidth: .infinity, minHeight: 150)
+	}
+	
+	private var calendarGrid: some View {
+		VStack(spacing: 4) {
+			ForEach(0..<5, id: \.self) { row in
+				calendarRow(row)
+			}
+		}
+		.padding(.horizontal, 4)
+	}
+	
+	private func calendarRow(_ row: Int) -> some View {
+		HStack(spacing: 4) {
+			ForEach(0..<7, id: \.self) { col in
+				calendarDayCell(row: row, col: col)
+			}
+		}
+	}
+	
+	private func calendarDayCell(row: Int, col: Int) -> some View {
+		let dayIndex = row * 7 + col
+		
+		return Group {
+			if dayIndex < calendarDays.count, let date = calendarDays[dayIndex] {
+				let dayActivities = getActivitiesForDate(date)
+				
+				if dayActivities.isEmpty {
+					emptyDayCell
+				} else {
+					CalendarDayCell(activities: dayActivities, dayNumber: Calendar.current.component(.day, from: date))
+						.onTapGesture {
+							handleDaySelection(activities: dayActivities)
+						}
+				}
+			} else {
+				outsideMonthCell
+			}
+		}
+	}
+	
+	private var emptyDayCell: some View {
+		RoundedRectangle(cornerRadius: 4.5)
+			.fill(figmaCalendarDayIcon)
+			.frame(width: 32, height: 32)
+			.shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 1)
+			.onTapGesture {
+				handleDaySelection(activities: [])
+			}
+	}
+	
+	private var outsideMonthCell: some View {
+		RoundedRectangle(cornerRadius: 4.5)
+			.fill(Color.clear)
+			.frame(width: 32, height: 32)
+	}
+
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
-		print("🔥 ProfileCalendarView: handleDaySelection called with \(activities.count) activities")
-		
-		// Enhanced Debug: Print detailed activity information
-		print("🔥 ProfileCalendarView: DETAILED ACTIVITY INFO:")
-		for (index, activity) in activities.enumerated() {
-			print("🔥   Activity \(index + 1):")
-			print("🔥     - id: \(activity.id)")
-			print("🔥     - title: \(activity.title ?? "nil")")
-			print("🔥     - date: \(activity.date)")
-			print("🔥     - icon: \(activity.icon ?? "nil")")
-			print("🔥     - colorHexCode: \(activity.colorHexCode ?? "nil")")
-			print("🔥     - activityId: \(activity.activityId?.uuidString ?? "nil") ⚠️")
-		}
-		
-		// Check for nil activityId values
-		let activitiesWithNilId = activities.filter { $0.activityId == nil }
-		if !activitiesWithNilId.isEmpty {
-			print("🚨 ProfileCalendarView: WARNING - \(activitiesWithNilId.count) activities have nil activityId!")
-			print("🚨 This will prevent proper navigation to activity details.")
-		} else {
-			print("✅ ProfileCalendarView: All activities have valid activityId values")
-		}
-		
 		// NEW LOGIC: Handle single vs multiple activities differently
 		if activities.count == 1 {
 			// Single activity - show activity detail modal directly
-			print("🔥 ProfileCalendarView: Single activity - showing detail modal")
 			let activity = activities[0]
 			handleActivitySelection(activity)
 		} else {
 			// Multiple activities - navigate to day activities page
-			print("🔥 ProfileCalendarView: Multiple activities - navigating to day activities page")
 			selectedDayActivities = activities
-			print("🔥 ProfileCalendarView: selectedDayActivities set to \(activities.count) activities")
 			
 			DispatchQueue.main.async {
 				self.navigateToDayActivities = true
-				print("🔥 ProfileCalendarView: navigateToDayActivities set to true")
 			}
 		}
 	}
@@ -238,46 +221,8 @@ struct ProfileCalendarView: View {
 		
 		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
 			// Use UTC calendar for consistent date comparison since backend sends UTC dates
-			let isSameDay = utcCalendar.isDate(activity.date, inSameDayAs: date)
-			
-			// Add debug logging for dates that don't match
-			if !isSameDay {
-				let dateFormatter = DateFormatter()
-				dateFormatter.dateFormat = "yyyy-MM-dd"
-				dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-				
-				let activityDateString = dateFormatter.string(from: activity.date)
-				let targetDateString = dateFormatter.string(from: date)
-				
-				if activityDateString == targetDateString {
-					print("🔍 Calendar: Date strings match but isDate check failed - Activity: \(activityDateString), Target: \(targetDateString)")
-				}
-			}
-			
+			let isSameDay = utcCalendar.isDate(activity.dateAsDate, inSameDayAs: date)
 			return isSameDay
-		}
-		
-		// Log when we find activities and when we don't to help debug
-		if !filteredActivities.isEmpty {
-			print("📅 Calendar: Day \(Calendar.current.component(.day, from: date)) has \(filteredActivities.count) activities")
-			for activity in filteredActivities {
-				print("  - \(activity.title ?? "No title") on \(activity.date)")
-			}
-		} else {
-			let dateFormatter = DateFormatter()
-			dateFormatter.dateFormat = "yyyy-MM-dd"
-			let dateString = dateFormatter.string(from: date)
-			print("📅 Calendar: No activities found for day \(Calendar.current.component(.day, from: date)) (\(dateString))")
-			
-			// Show sample of available activities for debugging
-			if !profileViewModel.allCalendarActivities.isEmpty {
-				print("  Available activities:")
-				for activity in profileViewModel.allCalendarActivities.prefix(3) {
-					dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-					let activityDateString = dateFormatter.string(from: activity.date)
-					print("    - \(activity.title ?? "No title") on \(activityDateString)")
-				}
-			}
 		}
 		
 		return filteredActivities
@@ -290,9 +235,6 @@ struct ProfileCalendarView: View {
 	private func fetchCalendarData() {
 		Task {
 			await profileViewModel.fetchAllCalendarActivities()
-			await MainActor.run {
-				print("📅 Calendar: Loaded \(profileViewModel.allCalendarActivities.count) activities")
-			}
 		}
 	}
 

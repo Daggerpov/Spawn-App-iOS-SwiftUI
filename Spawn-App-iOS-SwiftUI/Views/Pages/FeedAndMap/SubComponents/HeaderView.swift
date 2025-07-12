@@ -14,8 +14,6 @@ struct HeaderView: View {
 		HStack {
 			Spacer()
 			VStack {
-				Image("SpawnLogo")
-				Spacer().frame(height: 38)
 				HStack {
 					Text(
 						"Hey \(user.name?.components(separatedBy: " ").first ?? user.username)! 👋"

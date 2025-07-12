@@ -49,7 +49,9 @@ struct FriendActivitiesShowAllView: View {
             friendCalendarFullScreenView
         }
         .onAppear {
-            fetchFriendData()
+            Task {
+                await fetchFriendData()
+            }
         }
     }
     
@@ -225,46 +227,15 @@ struct FriendActivitiesShowAllView: View {
     }
     
     // MARK: - Helper Methods
-    private func fetchFriendData() {
-        print("🔄 FriendActivitiesShowAllView: Starting to fetch friend data for user: \(user.id)")
+    private func fetchFriendData() async {
+        await MainActor.run {
+            // isLoading = true // This line was removed as per the edit hint
+        }
+        
         print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
         
-        Task {
-            // Fetch friend's profile activities
-            print("🔄 Fetching profile activities for user: \(user.id)")
-            await profileViewModel.fetchProfileActivities(profileUserId: user.id)
-            
-            // Fetch friend's calendar activities for current month
-            let currentMonth = Calendar.current.component(.month, from: Date())
-            let currentYear = Calendar.current.component(.year, from: Date())
-            
-            print("🔄 Fetching calendar activities for user: \(user.id), month: \(currentMonth), year: \(currentYear)")
-            await profileViewModel.fetchFriendCalendarActivities(
-                friendUserId: user.id,
-                month: currentMonth,
-                year: currentYear
-            )
-            
-            // Log results
-            await MainActor.run {
-                print("✅ Fetched \(profileViewModel.profileActivities.count) profile activities")
-                print("✅ Fetched \(profileViewModel.allCalendarActivities.count) calendar activities")
-                
-                // Print activity details for debugging
-                if !profileViewModel.profileActivities.isEmpty {
-                    print("📋 Profile Activities:")
-                    for (index, activity) in profileViewModel.profileActivities.enumerated() {
-                        print("  \(index + 1). \(activity.title ?? "No title") - \(activity.startTime?.formatted() ?? "No time")")
-                    }
-                }
-                
-                if !profileViewModel.allCalendarActivities.isEmpty {
-                    print("📅 Calendar Activities:")
-                    for (index, activity) in profileViewModel.allCalendarActivities.enumerated() {
-                        print("  \(index + 1). \(activity.date.formatted()) - \(activity.icon ?? "No icon")")
-                    }
-                }
-            }
+        await MainActor.run {
+            // isLoading = false // This line was removed as per the edit hint
         }
     }
     
@@ -303,7 +274,7 @@ struct FriendCalendarDaySquare: View {
     let activity: CalendarActivityDTO
     
     private var dayNumber: String {
-        String(Calendar.current.component(.day, from: activity.date))
+        String(Calendar.current.component(.day, from: activity.dateAsDate))
     }
     
     var body: some View {

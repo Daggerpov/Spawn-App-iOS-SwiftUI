@@ -89,12 +89,12 @@ extension Activity {
 			id: UUID(), name: "Gather - Place Vanier",
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
-		creatorUser: UserDTO.jennifer,
+		creatorUser: UserDTO.danielAgapov,
 		participantUsers: [
 			UserDTO.danielLee,
 			UserDTO.haley,
-			UserDTO.jennifer,
-			UserDTO.michael,
+			UserDTO.danielAgapov,
+			UserDTO.haley,
 		]
 	)
 
@@ -109,7 +109,7 @@ extension Activity {
 				longitude: -123.23986523529379),
 			creatorUser: UserDTO.danielAgapov,
 			participantUsers: [
-				UserDTO.danielAgapov, UserDTO.jennifer, UserDTO.shannon, UserDTO.haley,
+				UserDTO.danielAgapov, UserDTO.danielAgapov, UserDTO.danielLee, UserDTO.haley,
 				UserDTO.danielLee,
 			],
 			chatMessages: [
@@ -147,7 +147,7 @@ extension Activity {
 			location: Location(
 				id: UUID(), name: "Ross Drive - Wesbrook Mall",
 				latitude: 49.25189587512135, longitude: -123.237051932404),
-			creatorUser: UserDTO.shannon,
+			creatorUser: UserDTO.danielLee,
 			participantUsers: [UserDTO.danielLee]
 		),
 		Activity(
@@ -178,7 +178,7 @@ extension Activity {
 			location: Location(
 				id: UUID(), name: "UBC Student Recreation Centre",
 				latitude: 49.2687302352351, longitude: -123.24897582888525),
-			creatorUser: UserDTO.michael
+			creatorUser: UserDTO.haley
 		),
 	]
 } 

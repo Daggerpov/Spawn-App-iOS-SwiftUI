@@ -25,6 +25,22 @@ struct ActivityTypeView: View {
             VStack(alignment: .leading, spacing: 16) {
                 headerSection
                 
+                // Error message display
+                if let errorMessage = viewModel.errorMessage {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle")
+                            .foregroundColor(.red)
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(8)
+                    .padding(.horizontal)
+                }
+                
                 if viewModel.isLoading {
                     ProgressView("Loading activity types...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

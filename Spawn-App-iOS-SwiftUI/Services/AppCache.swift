@@ -72,6 +72,16 @@ class AppCache: ObservableObject {
             return
         }
         
+        // Clear calendar caches due to data format changes (CalendarActivityDTO date field changed from Date to String)
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            try await apiService.clearCalendarCaches()
+            print("✅ Successfully cleared calendar caches on startup")
+        } catch {
+            print("⚠️ Failed to clear calendar caches on startup: \(error.localizedDescription)")
+            // Don't block cache validation if this fails
+        }
+        
         // Don't send validation request if we have no cached items to validate
         if lastChecked.isEmpty {
             print("No cached items to validate, skipping cache validation")
@@ -251,21 +261,9 @@ class AppCache: ObservableObject {
         saveToDisk()
     }
     
-    // Optimistically update an activity in the cache (for immediate UI updates)
+    /// Optimistically updates an activity in the cache
     func optimisticallyUpdateActivity(_ activity: FullFeedActivityDTO) {
-        if let index = activities.firstIndex(where: { $0.id == activity.id }) {
-            // Update the existing activity object's properties to trigger UI updates
-            activities[index].title = activity.title
-            activities[index].icon = activity.icon
-            activities[index].note = activity.note
-            activities[index].location = activity.location
-            activities[index].startTime = activity.startTime
-            activities[index].endTime = activity.endTime
-            
-            print("⚡ Optimistically updated activity: \(activity.title ?? "Unnamed")")
-        }
-        
-        // Don't save to disk immediately for optimistic updates - wait for backend confirmation
+        addOrUpdateActivity(activity)
     }
     
     // MARK: - Activity Types Methods

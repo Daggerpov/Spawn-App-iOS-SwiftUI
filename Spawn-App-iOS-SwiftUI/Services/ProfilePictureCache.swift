@@ -25,6 +25,7 @@ class ProfilePictureCache: ObservableObject {
     // Metadata about cached images
     private var cacheMetadata: [String: CacheMetadata] = [:]
     private let metadataKey = "ProfilePictureCacheMetadata"
+    private let metadataQueue = DispatchQueue(label: "ProfilePictureCache.metadata", attributes: .concurrent)
     
     // Currently downloading images to prevent duplicate downloads
     private var downloadingImages: Set<String> = []
@@ -75,7 +76,7 @@ class ProfilePictureCache: ObservableObject {
         memoryCache.setObject(image, forKey: key as NSString)
         
         // Update access time
-        cacheMetadata[key]?.lastAccessed = Date()
+        updateLastAccessed(for: key)
         saveMetadata()
         
         return image
@@ -153,7 +154,7 @@ class ProfilePictureCache: ObservableObject {
         try? fileManager.removeItem(at: fileURL)
         
         // Remove metadata
-        cacheMetadata.removeValue(forKey: key)
+        removeMetadata(for: key)
         saveMetadata()
     }
     
@@ -170,7 +171,7 @@ class ProfilePictureCache: ObservableObject {
         }
         
         // Clear metadata
-        cacheMetadata.removeAll()
+        clearAllMetadata()
         saveMetadata()
     }
     
@@ -210,6 +211,44 @@ class ProfilePictureCache: ObservableObject {
         }
     }
     
+    // MARK: - Thread-Safe Metadata Access
+    
+    private func getMetadata(for key: String) -> CacheMetadata? {
+        return metadataQueue.sync {
+            return cacheMetadata[key]
+        }
+    }
+    
+    private func setMetadata(_ metadata: CacheMetadata, for key: String) {
+        metadataQueue.async(flags: .barrier) {
+            self.cacheMetadata[key] = metadata
+        }
+    }
+    
+    private func updateLastAccessed(for key: String) {
+        metadataQueue.async(flags: .barrier) {
+            self.cacheMetadata[key]?.lastAccessed = Date()
+        }
+    }
+    
+    private func removeMetadata(for key: String) {
+        metadataQueue.async(flags: .barrier) {
+            self.cacheMetadata.removeValue(forKey: key)
+        }
+    }
+    
+    private func clearAllMetadata() {
+        metadataQueue.async(flags: .barrier) {
+            self.cacheMetadata.removeAll()
+        }
+    }
+    
+    private func getAllMetadata() -> [String: CacheMetadata] {
+        return metadataQueue.sync {
+            return cacheMetadata
+        }
+    }
+    
     private func saveToDisk(_ image: UIImage, for key: String) async {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             print("Failed to convert image to JPEG data for key \(key)")
@@ -222,13 +261,14 @@ class ProfilePictureCache: ObservableObject {
             try imageData.write(to: fileURL)
             
             // Update metadata
+            let metadata = CacheMetadata(
+                cachedAt: Date(),
+                lastAccessed: Date(),
+                fileSize: Int64(imageData.count)
+            )
+            setMetadata(metadata, for: key)
             await MainActor.run {
-                cacheMetadata[key] = CacheMetadata(
-                    cachedAt: Date(),
-                    lastAccessed: Date(),
-                    fileSize: Int64(imageData.count)
-                )
-                saveMetadata()
+                self.saveMetadata()
             }
             
             // Clean up if cache is too large
@@ -244,11 +284,14 @@ class ProfilePictureCache: ObservableObject {
               let metadata = try? JSONDecoder().decode([String: CacheMetadata].self, from: data) else {
             return
         }
-        cacheMetadata = metadata
+        metadataQueue.async(flags: .barrier) {
+            self.cacheMetadata = metadata
+        }
     }
     
     private func saveMetadata() {
-        guard let data = try? JSONEncoder().encode(cacheMetadata) else {
+        let metadata = getAllMetadata()
+        guard let data = try? JSONEncoder().encode(metadata) else {
             return
         }
         UserDefaults.standard.set(data, forKey: metadataKey)
@@ -258,8 +301,9 @@ class ProfilePictureCache: ObservableObject {
         let cutoffDate = Date().addingTimeInterval(-maxCacheAge)
         var keysToRemove: [String] = []
         
-        for (key, metadata) in cacheMetadata {
-            if metadata.cachedAt < cutoffDate {
+        let metadata = getAllMetadata()
+        for (key, metadataEntry) in metadata {
+            if metadataEntry.cachedAt < cutoffDate {
                 keysToRemove.append(key)
             }
         }
@@ -276,7 +320,8 @@ class ProfilePictureCache: ObservableObject {
         
         if currentSize > maxCacheSize {
             // Sort by last accessed time and remove oldest
-            let sortedEntries = cacheMetadata.sorted { $0.value.lastAccessed < $1.value.lastAccessed }
+            let metadata = getAllMetadata()
+            let sortedEntries = metadata.sorted { $0.value.lastAccessed < $1.value.lastAccessed }
             
             for (key, _) in sortedEntries {
                 if let userId = UUID(uuidString: key) {

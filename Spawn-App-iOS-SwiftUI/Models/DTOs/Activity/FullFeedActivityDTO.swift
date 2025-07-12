@@ -155,12 +155,12 @@ extension FullFeedActivityDTO {
 			id: UUID(), name: "Gather - Place Vanier",
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
-		creatorUser: BaseUserDTO.jennifer,
+		creatorUser: BaseUserDTO.danielAgapov,
 		participantUsers: [
 			BaseUserDTO.danielLee,
 			BaseUserDTO.haley,
-			BaseUserDTO.jennifer,
-			BaseUserDTO.michael,
+			BaseUserDTO.danielAgapov,
+			BaseUserDTO.haley,
 		]
 	)
     static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
@@ -172,12 +172,12 @@ extension FullFeedActivityDTO {
             id: UUID(), name: "Gather - Place Vanier",
             latitude: 49.26468617023799, longitude: -123.25859833051356),
         note: "let's eat!",
-        creatorUser: BaseUserDTO.jennifer,
+        creatorUser: BaseUserDTO.danielAgapov,
         participantUsers: [
             BaseUserDTO.danielLee,
             BaseUserDTO.haley,
-            BaseUserDTO.jennifer,
-            BaseUserDTO.michael,
+            BaseUserDTO.danielAgapov,
+            BaseUserDTO.haley,
         ],
         chatMessages: [.mockChat4, .mockChat1, .mockChat2, .mockChat3],
         isSelfOwned: true
@@ -195,7 +195,7 @@ extension FullFeedActivityDTO {
         creatorUser: BaseUserDTO.danielAgapov,
         participantUsers: [
             BaseUserDTO.danielAgapov,
-            BaseUserDTO.shannon,
+            BaseUserDTO.danielLee,
         ],
         isSelfOwned: true
     )

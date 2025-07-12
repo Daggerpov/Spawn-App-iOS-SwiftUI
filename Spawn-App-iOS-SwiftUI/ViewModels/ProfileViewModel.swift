@@ -475,7 +475,7 @@ class ProfileViewModel: ObservableObject {
             if !activities.isEmpty {
                 print("📅 ProfileViewModel: Calendar activity details:")
                 for (index, activity) in activities.enumerated() {
-                    print("  \(index + 1). \(activity.date.formatted()) - \(activity.icon ?? "No icon") - ID: \(activity.activityId?.uuidString ?? "No ID")")
+                    print("  \(index + 1). \(activity.date) - \(activity.icon ?? "No icon") - ID: \(activity.activityId?.uuidString ?? "No ID")")
                 }
             }
             
@@ -539,12 +539,12 @@ class ProfileViewModel: ObservableObject {
         print("📅 ProfileViewModel: Converting \(activities.count) activities to calendar grid for \(month)/\(year)")
         
         for activity in activities {
-            let activityMonth = utcCalendar.component(.month, from: activity.date)
-            let activityYear = utcCalendar.component(.year, from: activity.date)
+            let activityMonth = utcCalendar.component(.month, from: activity.dateAsDate)
+            let activityYear = utcCalendar.component(.year, from: activity.dateAsDate)
             
             // Only include activities from the specified month and year
             if activityMonth == month && activityYear == year {
-                let day = utcCalendar.component(.day, from: activity.date)
+                let day = utcCalendar.component(.day, from: activity.dateAsDate)
                 
                 print("📅 ProfileViewModel: Including activity '\(activity.title ?? "No title")' on day \(day)")
                 
@@ -660,24 +660,16 @@ class ProfileViewModel: ObservableObject {
             }
             
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(encodedInterest)")!
-            print("🔥 Attempting to delete interest '\(interest)' at URL: \(url)")
             
-            let _ = try await apiService.deleteData(
+            try await apiService.deleteData(
                 from: url,
                 parameters: nil,
-                object: EmptyObject()
+                object: nil as EmptyRequestBody?
             )
             
-            print("✅ Successfully deleted interest: \(interest)")
-            
-            // Update cache after successful API call
-            await AppCache.shared.refreshProfileInterests(userId)
-            
-            // Update local state with fresh data from cache to ensure consistency
             await MainActor.run {
-                if let cachedInterests = AppCache.shared.profileInterests[userId] {
-                    self.userInterests = cachedInterests
-                }
+                self.userInterests.removeAll { $0 == interest }
+                objectWillChange.send()
             }
         } catch {
             print("❌ Failed to remove interest '\(interest)': \(error.localizedDescription)")

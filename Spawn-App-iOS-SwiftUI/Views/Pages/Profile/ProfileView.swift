@@ -183,19 +183,10 @@ struct ProfileView: View {
 			}
 		}
 		.onChange(of: navigateToDayActivities) { newValue in
-			print("🔥 ProfileView: navigateToDayActivities changed to \(newValue)")
 			if newValue {
-				print("🔥 ProfileView: Navigation should be triggered to day activities")
-				print("🔥 ProfileView: Selected activities count: \(selectedDayActivities.count)")
-				
-				// Debug: Print selected activities
-				for (index, activity) in selectedDayActivities.enumerated() {
-					print("🔥 ProfileView: Selected activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date)")
-				}
-				
 				// Ensure navigation happens on main thread
 				DispatchQueue.main.async {
-					print("🔥 ProfileView: About to trigger navigation to day activities")
+					// Navigation logic handled by the view
 				}
 			}
 		}
@@ -576,29 +567,17 @@ struct ProfileView: View {
 	
 	private var dayActivitiesPageView: some View {
 		// Get the date from the first activity, or use today as fallback
-		let date = selectedDayActivities.first?.date ?? Date()
-		
-		print("🔥 ProfileView: Creating DayActivitiesPageView with date: \(date), activities: \(selectedDayActivities.count)")
-		
-		// Debug: Print each activity
-		for (index, activity) in selectedDayActivities.enumerated() {
-			print("🔥 ProfileView: DayActivitiesPageView Activity \(index + 1): \(activity.title ?? "No title"), Date: \(activity.date), ID: \(activity.activityId?.uuidString ?? "No ID")")
-		}
-		
-		// Debug: Check if we have activities in the ProfileViewModel
-		print("🔥 ProfileView: ProfileViewModel has \(profileViewModel.allCalendarActivities.count) total calendar activities")
+		let date = selectedDayActivities.first?.dateAsDate ?? Date()
 		
 		return DayActivitiesPageView(
 			date: date,
 			activities: selectedDayActivities,
 			onDismiss: {
 				// Reset navigation state when day activities view is dismissed
-				print("🔥 ProfileView: DayActivitiesPageView dismissed")
 				navigateToDayActivities = false
 			},
 			onActivitySelected: { activity in
 				// Reset navigation state and handle activity selection
-				print("🔥 ProfileView: Activity selected from DayActivitiesPageView")
 				navigateToDayActivities = false
 				handleActivitySelection(activity)
 			}

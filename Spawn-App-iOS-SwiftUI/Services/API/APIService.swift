@@ -996,6 +996,45 @@ class APIService: IAPIService {
 		
 		return validationResponse
 	}
+	
+	/// Clear calendar caches on the backend
+	func clearCalendarCaches() async throws {
+		resetState()
+		
+		// Create the URL for the clear calendar caches endpoint
+		guard let url = URL(string: APIService.baseURL + "cache/clear-calendar-caches") else {
+			throw APIError.URLError
+		}
+		
+		// Create and configure the request
+		var urlRequest = URLRequest(url: url)
+		urlRequest.httpMethod = "POST"
+		urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		setAuthHeader(request: &urlRequest)
+		
+		// Send the request
+		let (_, response) = try await URLSession.shared.data(for: urlRequest)
+
+		// Validate the response
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+		
+		// Handle auth token refresh if needed
+		if httpResponse.statusCode == 401 {
+			let bearerAccessToken: String = try await handleRefreshToken()
+			_ = try await retryRequest(request: &urlRequest, bearerAccessToken: bearerAccessToken)
+		} else if httpResponse.statusCode != 200 {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage = "Failed to clear calendar caches. Status code: \(httpResponse.statusCode)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		print("✅ Successfully cleared calendar caches on backend")
+	}
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end

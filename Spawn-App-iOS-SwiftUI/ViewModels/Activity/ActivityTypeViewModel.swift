@@ -87,6 +87,19 @@ class ActivityTypeViewModel: ObservableObject {
     /// Toggles the pin status of an activity type via direct API call
     @MainActor
     func togglePin(for activityTypeDTO: ActivityTypeDTO) async {
+        // Check if we're already at the pin limit when trying to pin
+        if !activityTypeDTO.isPinned {
+            let currentPinnedCount = activityTypes.filter { $0.isPinned }.count
+            
+            if currentPinnedCount >= 3 {
+                print("❌ Cannot pin: Already at maximum of 3 pinned activity types")
+                await MainActor.run {
+                    errorMessage = "You can only pin up to 3 activity types"
+                }
+                return
+            }
+        }
+        
         let updatedActivityType = ActivityTypeDTO(
             id: activityTypeDTO.id,
             title: activityTypeDTO.title,
@@ -97,7 +110,6 @@ class ActivityTypeViewModel: ObservableObject {
         )
         
         await updateActivityType(updatedActivityType)
-        print("⚡ Toggled pin status for: \(activityTypeDTO.title) to \(updatedActivityType.isPinned)")
     }
     
     /// Deletes an activity type via direct API call
@@ -189,6 +201,8 @@ class ActivityTypeViewModel: ObservableObject {
     /// Updates an existing activity type via direct API call
     @MainActor
     func updateActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
+        print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
+        
         isLoading = true
         errorMessage = nil
         
@@ -197,9 +211,12 @@ class ActivityTypeViewModel: ObservableObject {
         do {
             let endpoint = "\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
+                print("❌ Invalid URL for endpoint: \(endpoint)")
                 errorMessage = "Invalid URL"
                 return
             }
+            
+            print("📡 Making API call to: \(url.absoluteString)")
             
             let batchUpdateDTO = BatchActivityTypeUpdateDTO(
                 updatedActivityTypes: [activityTypeDTO],
@@ -221,11 +238,36 @@ class ActivityTypeViewModel: ObservableObject {
             // Post notification for UI updates
             NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
             
-            print("✅ Successfully updated activity type: \(activityTypeDTO.title)")
-            
         } catch {
             print("❌ Error updating activity type: \(error)")
-            errorMessage = "Failed to update activity type"
+            print("❌ Error details: \(error.localizedDescription)")
+            
+            // Enhanced error handling
+            if let error = error as? APIError {
+                switch error {
+                case .invalidStatusCode(let statusCode):
+                    errorMessage = "Server error (status \(statusCode)). Please try again."
+                case .invalidData:
+                    errorMessage = "Invalid response format. Please try again."
+                case .URLError:
+                    errorMessage = "Network error. Please check your connection."
+                case .failedHTTPRequest(let description):
+                    errorMessage = "Request failed: \(description)"
+                case .failedJSONParsing:
+                    errorMessage = "Failed to parse server response. Please try again."
+                case .unknownError(let error):
+                    errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
+                case .failedTokenSaving:
+                    errorMessage = "Authentication error. Please try logging in again."
+                }
+            } else {
+                errorMessage = "Failed to update activity type"
+            }
+            
+            // Check if error is related to pinning limits
+            if error.localizedDescription.contains("pinned activity types") {
+                errorMessage = "You can only pin up to 3 activity types"
+            }
             
             // Refresh from API to get correct state
             await fetchActivityTypes()
@@ -236,7 +278,7 @@ class ActivityTypeViewModel: ObservableObject {
     
     /// Computed property to sort activity types with pinned ones first
     var sortedActivityTypes: [ActivityTypeDTO] {
-        activityTypes.sorted { first, second in
+        let sorted = activityTypes.sorted { first, second in
             // Pinned types come first
             if first.isPinned != second.isPinned {
                 return first.isPinned
@@ -244,6 +286,8 @@ class ActivityTypeViewModel: ObservableObject {
             // If both are pinned or both are not pinned, sort by orderNum
             return first.orderNum < second.orderNum
         }
+        
+        return sorted
     }
     
     /// Clears any error messages

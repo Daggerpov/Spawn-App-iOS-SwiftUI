@@ -194,7 +194,7 @@ struct MonthCalendarView: View {
         
         let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
             // Use UTC calendar for consistent date comparison since backend sends UTC dates
-            utcCalendar.isDate(activity.date, inSameDayAs: date)
+            utcCalendar.isDate(activity.dateAsDate, inSameDayAs: date)
         }
         
         // Add debug logging for this view as well
@@ -336,7 +336,7 @@ struct ActivityDetailsSheet: View {
                             .font(.onestSemiBold(size: 24))
                             .foregroundColor(universalAccentColor)
                         
-                        Text(DateFormatter.dayMonthYear.string(from: activity.date))
+                        Text(DateFormatter.dayMonthYear.string(from: activity.dateAsDate))
                             .font(.onestMedium(size: 16))
                             .foregroundColor(figmaBlack300)
                     }

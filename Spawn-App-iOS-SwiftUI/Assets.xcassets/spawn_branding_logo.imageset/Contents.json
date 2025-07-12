@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "Michael_pfp.jpeg",
+      "filename" : "Group 18.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "Group 18 (1).png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "Group 18 (2).png",
       "idiom" : "universal",
       "scale" : "3x"
     }

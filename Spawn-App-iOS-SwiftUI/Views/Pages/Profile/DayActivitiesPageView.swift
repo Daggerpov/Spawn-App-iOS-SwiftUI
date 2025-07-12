@@ -26,8 +26,8 @@ struct DayActivitiesPageView: View {
                         presentationMode.wrappedValue.dismiss()
                         onDismiss()
                     }) {
-                        Text("􀆉")
-                            .font(Font.custom("SF Pro Display", size: 20).weight(.semibold))
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .medium))
                             .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
                     }
                     
@@ -88,6 +88,21 @@ struct DayActivitiesPageView: View {
             }
             
             Group {
+                Rectangle()
+                    .foregroundColor(.clear)
+                    .frame(width: 428, height: 56)
+                    .background(Color(red: 0, green: 0, blue: 0).opacity(0))
+                    .offset(x: 428, y: -379)
+                Rectangle()
+                    .foregroundColor(.clear)
+                    .frame(width: 428, height: 56)
+                    .background(Color(red: 0, green: 0, blue: 0).opacity(0))
+                    .offset(x: 428, y: -379)
+                Rectangle()
+                    .foregroundColor(.clear)
+                    .frame(width: 428, height: 56)
+                    .background(Color(red: 0, green: 0, blue: 0).opacity(0))
+                    .offset(x: 428, y: -379)
                 Rectangle()
                     .foregroundColor(.clear)
                     .frame(width: 428, height: 56)
@@ -310,7 +325,7 @@ struct DayActivitiesPageView: View {
                             Text(activities.count > 0 ? (activities[0].title ?? "Sample Activity") : "Sample Activity")
                                 .font(Font.custom("Onest", size: 17).weight(.semibold))
                                 .foregroundColor(.white)
-                            Text("\(activities.count > 0 ? (activities[0].title ?? "Activity Location") : "Activity Location") • \(activities.count > 0 ? formattedActivityDate(activities[0].date) : "April 28")")
+                            Text("\(activities.count > 0 ? (activities[0].title ?? "Activity Location") : "Activity Location") • \(activities.count > 0 ? formattedActivityDate(activities[0].dateAsDate) : "April 28")")
                                 .font(Font.custom("Onest", size: 13).weight(.medium))
                                 .foregroundColor(Color(red: 1, green: 1, blue: 1).opacity(0.80))
                         }
@@ -355,7 +370,7 @@ struct DayActivitiesPageView: View {
                             Text(activities.count > 1 ? (activities[1].title ?? "Sample Activity") : "Sample Activity")
                                 .font(Font.custom("Onest", size: 17).weight(.semibold))
                                 .foregroundColor(Color(red: 0, green: 0, blue: 0).opacity(0.75))
-                            Text("\(activities.count > 1 ? (activities[1].title ?? "Activity Location") : "Activity Location") • \(activities.count > 1 ? formattedActivityDate(activities[1].date) : "April 28")")
+                            Text("\(activities.count > 1 ? (activities[1].title ?? "Activity Location") : "Activity Location") • \(activities.count > 1 ? formattedActivityDate(activities[1].dateAsDate) : "April 28")")
                                 .font(Font.custom("Onest", size: 13).weight(.medium))
                                 .foregroundColor(Color(red: 0, green: 0, blue: 0).opacity(0.60))
                         }
@@ -441,49 +456,22 @@ struct DayActivitiesPageView: View {
             }
         }
         .onAppear {
-            print("🔥 DayActivitiesPageView: appeared with \(activities.count) activities")
-            print("🔥 DayActivitiesPageView: date is \(formattedDate)")
-            
-            // Enhanced debug logging for activityId values
-            print("🔥 DayActivitiesPageView: DETAILED ACTIVITY DEBUG:")
-            for (index, activity) in activities.enumerated() {
-                print("🔥   Activity \(index + 1):")
-                print("🔥     - id: \(activity.id)")
-                print("🔥     - title: \(activity.title ?? "nil")")
-                print("🔥     - date: \(activity.date)")
-                print("🔥     - icon: \(activity.icon ?? "nil")")
-                print("🔥     - colorHexCode: \(activity.colorHexCode ?? "nil")")
-                print("🔥     - activityId: \(activity.activityId?.uuidString ?? "nil") ⚠️")
-                print("🔥     ---")
-            }
-            
-            // Check if any activities have nil activityId
-            let activitiesWithNilId = activities.filter { $0.activityId == nil }
-            if !activitiesWithNilId.isEmpty {
-                print("🚨 DayActivitiesPageView: WARNING - \(activitiesWithNilId.count) activities have nil activityId!")
-                print("🚨 This will prevent loading full activity details.")
-            } else {
-                print("✅ DayActivitiesPageView: All activities have valid activityId values")
-            }
+            // View appeared
         }
     }
     
     // MARK: - Helper Methods
     
     private func handleActivitySelection(_ activity: CalendarActivityDTO) {
-        print("🔥 DayActivitiesPageView: Activity selected: \(activity.title ?? "Unknown")")
-        
         Task {
             if let activityId = activity.activityId,
                let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
                 await MainActor.run {
                     showActivityDetails = true
                 }
-            } else {
-                print("🚨 DayActivitiesPageView: Failed to fetch activity details for activityId: \(activity.activityId?.uuidString ?? "nil")")
             }
         }
-    }
+	}
     
     private var formattedDate: String {
         let formatter = DateFormatter()
@@ -505,7 +493,7 @@ struct DayActivitiesPageView_Previews: PreviewProvider {
         DayActivitiesPageView(
             date: Date(),
             activities: [
-                CalendarActivityDTO(
+                CalendarActivityDTO.create(
                     id: UUID(),
                     date: Date(),
                     title: "Sample Activity",
@@ -513,7 +501,7 @@ struct DayActivitiesPageView_Previews: PreviewProvider {
                     colorHexCode: "#3575FF",
                     activityId: UUID()
                 ),
-                CalendarActivityDTO(
+                CalendarActivityDTO.create(
                     id: UUID(),
                     date: Date(),
                     title: "Another Activity",
