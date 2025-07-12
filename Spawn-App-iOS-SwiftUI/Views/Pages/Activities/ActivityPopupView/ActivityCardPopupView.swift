@@ -13,14 +13,17 @@ struct ActivityCardPopupView: View {
     @StateObject private var cardViewModel: ActivityCardViewModel
     @ObservedObject var activity: FullFeedActivityDTO
     var activityColor: Color
+    @State private var region: MKCoordinateRegion
     
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity)
-        _mapViewModel = StateObject(wrappedValue: MapViewModel(activity: activity))
+        let mapVM = MapViewModel(activity: activity)
+        _mapViewModel = StateObject(wrappedValue: mapVM)
         self._cardViewModel = StateObject(wrappedValue: ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity))
         self.activityColor = activityColor
+        _region = State(initialValue: mapVM.initialRegion)
     }
     
     var body: some View {
@@ -47,7 +50,7 @@ struct ActivityCardPopupView: View {
                     ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
                     
                     // Map view
-                    Map(coordinateRegion: mapViewModel.$region, annotationItems: [mapViewModel]) { pin in
+                    Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
                         MapAnnotation(coordinate: pin.coordinate) {
                             Image(systemName: "mappin")
                                 .font(.title)
@@ -192,6 +195,10 @@ struct ParticipationButtonView: View {
     @ObservedObject private var activity: FullFeedActivityDTO
     @ObservedObject private var cardViewModel: ActivityCardViewModel
     
+    // Animation states for 3D effect
+    @State private var isPressed = false
+    @State private var scale: CGFloat = 1.0
+    
     init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel) {
         self.activity = activity
         self.cardViewModel = cardViewModel
@@ -211,8 +218,15 @@ struct ParticipationButtonView: View {
     var body: some View {
         HStack {
             Button(action: {
-                Task {
-                    await cardViewModel.toggleParticipation()
+                // Haptic feedback
+                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                impactGenerator.impactOccurred()
+                
+                // Execute action with slight delay for animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    Task {
+                        await cardViewModel.toggleParticipation()
+                    }
                 }
             }) {
                 HStack {
@@ -227,7 +241,28 @@ struct ParticipationButtonView: View {
                 .padding(.vertical, 10)
                 .background(.white)
                 .cornerRadius(12)
+                .scaleEffect(scale)
+                .shadow(
+                    color: Color.black.opacity(0.15),
+                    radius: isPressed ? 2 : 8,
+                    x: 0,
+                    y: isPressed ? 2 : 4
+                )
             }
+            .buttonStyle(PlainButtonStyle())
+            .animation(.easeInOut(duration: 0.15), value: scale)
+            .animation(.easeInOut(duration: 0.15), value: isPressed)
+            .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                isPressed = pressing
+                scale = pressing ? 0.95 : 1.0
+                
+                // Additional haptic feedback for press down
+                if pressing {
+                    let selectionGenerator = UISelectionFeedbackGenerator()
+                    selectionGenerator.selectionChanged()
+                }
+            }, perform: {})
+            
             Spacer()
             ParticipantsImagesView(activity: activity)
         }

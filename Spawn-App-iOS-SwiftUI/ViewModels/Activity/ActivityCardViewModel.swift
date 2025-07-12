@@ -27,6 +27,12 @@ class ActivityCardViewModel: ObservableObject {
 		// Use the participationStatus from the activity DTO instead of checking the participants array
 		self.isParticipating = activity.participationStatus == .participating
 	}
+	
+	/// Updates the activity object and refreshes participation status
+	public func updateActivity(_ updatedActivity: FullFeedActivityDTO) {
+		self.activity = updatedActivity
+		fetchIsParticipating()
+	}
 
 	/// Toggles the user's participation status in the activity
 	public func toggleParticipation() async {
