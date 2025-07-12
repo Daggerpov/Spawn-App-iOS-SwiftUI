@@ -35,17 +35,50 @@ class FormatterService {
 		let dateFormatter = DateFormatter()
 		dateFormatter.dateFormat = "h:mm a"
 		dateFormatter.timeZone = .current
+		let now = Date()
 
 		if let startTime = activity.startTime {
-			if let endTime = activity.endTime,
-				Calendar.current.isDate(startTime, inSameDayAs: endTime)
-			{
-				return
-					"\(dateFormatter.string(from: startTime)) - \(dateFormatter.string(from: endTime))"
+			// Check if activity has started
+			let hasStarted = now >= startTime
+			
+			if let endTime = activity.endTime {
+				let hasEnded = now >= endTime
+				let isSameDay = Calendar.current.isDate(startTime, inSameDayAs: endTime)
+				
+				if hasEnded {
+					// Activity has completely ended
+					return "Ended at \(dateFormatter.string(from: endTime))"
+				} else if hasStarted {
+					// Activity is currently happening
+					if isSameDay {
+						return "Started at \(dateFormatter.string(from: startTime)) • Ends at \(dateFormatter.string(from: endTime))"
+					} else {
+						return "Started at \(dateFormatter.string(from: startTime))"
+					}
+				} else {
+					// Activity hasn't started yet
+					if isSameDay {
+						return "\(dateFormatter.string(from: startTime)) - \(dateFormatter.string(from: endTime))"
+					} else {
+						return "Starts at \(dateFormatter.string(from: startTime))"
+					}
+				}
+			} else {
+				// No end time specified
+				if hasStarted {
+					return "Started at \(dateFormatter.string(from: startTime))"
+				} else {
+					return "Starts at \(dateFormatter.string(from: startTime))"
+				}
 			}
-			return "Starts at \(dateFormatter.string(from: startTime))"
 		} else if let endTime = activity.endTime {
-			return "Ends at \(dateFormatter.string(from: endTime))"
+			// Only end time specified
+			let hasEnded = now >= endTime
+			if hasEnded {
+				return "Ended at \(dateFormatter.string(from: endTime))"
+			} else {
+				return "Ends at \(dateFormatter.string(from: endTime))"
+			}
 		} else {
 			return "No Time Available"
 		}

@@ -210,16 +210,50 @@ struct ActivityDetailModalView: View {
         
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a • MMMM d"
+        let now = Date()
+        
+        // Check if activity has started
+        let hasStarted = now >= startTime
         
         if let endTime = activity.endTime {
-            let startFormatter = DateFormatter()
-            startFormatter.dateFormat = "h:mm"
-            let endFormatter = DateFormatter()
-            endFormatter.dateFormat = "h:mm a • MMMM d"
+            let hasEnded = now >= endTime
+            let isSameDay = Calendar.current.isDate(startTime, inSameDayAs: endTime)
             
-            return "\(startFormatter.string(from: startTime)) - \(endFormatter.string(from: endTime))"
+            if hasEnded {
+                // Activity has completely ended
+                let endFormatter = DateFormatter()
+                endFormatter.dateFormat = "h:mm a • MMMM d"
+                return "Ended at \(endFormatter.string(from: endTime))"
+            } else if hasStarted {
+                // Activity is currently happening
+                if isSameDay {
+                    let startFormatter = DateFormatter()
+                    startFormatter.dateFormat = "h:mm a"
+                    let endFormatter = DateFormatter()
+                    endFormatter.dateFormat = "h:mm a • MMMM d"
+                    return "Started at \(startFormatter.string(from: startTime)) • Ends at \(endFormatter.string(from: endTime))"
+                } else {
+                    return "Started at \(formatter.string(from: startTime))"
+                }
+            } else {
+                // Activity hasn't started yet
+                if isSameDay {
+                    let startFormatter = DateFormatter()
+                    startFormatter.dateFormat = "h:mm"
+                    let endFormatter = DateFormatter()
+                    endFormatter.dateFormat = "h:mm a • MMMM d"
+                    return "\(startFormatter.string(from: startTime)) - \(endFormatter.string(from: endTime))"
+                } else {
+                    return "Starts at \(formatter.string(from: startTime))"
+                }
+            }
         } else {
-            return formatter.string(from: startTime)
+            // No end time specified
+            if hasStarted {
+                return "Started at \(formatter.string(from: startTime))"
+            } else {
+                return "Starts at \(formatter.string(from: startTime))"
+            }
         }
     }
     
@@ -229,10 +263,25 @@ struct ActivityDetailModalView: View {
         }
         
         let now = Date()
-        if startTime < now {
-            return "Event Passed"
+        let hasStarted = now >= startTime
+        
+        if let endTime = activity.endTime {
+            let hasEnded = now >= endTime
+            
+            if hasEnded {
+                return "Ended"
+            } else if hasStarted {
+                return "Happening Now"
+            } else {
+                return "Upcoming"
+            }
         } else {
-            return "Upcoming"
+            // No end time specified
+            if hasStarted {
+                return "Started"
+            } else {
+                return "Upcoming"
+            }
         }
     }
     
