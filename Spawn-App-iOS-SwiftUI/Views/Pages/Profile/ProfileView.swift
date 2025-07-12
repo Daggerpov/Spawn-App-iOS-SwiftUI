@@ -43,6 +43,14 @@ struct ProfileView: View {
 	@State private var showAddToActivityType: Bool = false
 	@State private var showSuccessDrawer: Bool = false
 	@State private var navigateToAddToActivityType: Bool = false
+	
+	// Animation states for 3D effects
+	@State private var addFriendPressed = false
+	@State private var addFriendScale: CGFloat = 1.0
+	@State private var acceptButtonPressed = false
+	@State private var acceptButtonScale: CGFloat = 1.0
+	@State private var denyButtonPressed = false
+	@State private var denyButtonScale: CGFloat = 1.0
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var profileViewModel = ProfileViewModel()
@@ -388,6 +396,10 @@ struct ProfileView: View {
 				Button(action: {
 					if profileViewModel.friendshipStatus == .none, 
 					   let currentUserId = userAuth.spawnUser?.id {
+						// Haptic feedback
+						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+						impactGenerator.impactOccurred()
+						
 						Task {
 							await profileViewModel.sendFriendRequest(
 								fromUserId: currentUserId,
@@ -413,9 +425,31 @@ struct ProfileView: View {
 					.frame(maxWidth: 200)
 					.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
 					.cornerRadius(12)
+					.scaleEffect(addFriendScale)
+					.shadow(
+						color: profileViewModel.friendshipStatus == .none ? Color.black.opacity(0.15) : Color.clear,
+						radius: addFriendPressed ? 2 : 8,
+						x: 0,
+						y: addFriendPressed ? 2 : 4
+					)
 				}
+				.buttonStyle(PlainButtonStyle())
 				.disabled(profileViewModel.friendshipStatus == .requestSent)
 				.padding(.vertical, 10)
+				.animation(.easeInOut(duration: 0.15), value: addFriendScale)
+				.animation(.easeInOut(duration: 0.15), value: addFriendPressed)
+				.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+					if profileViewModel.friendshipStatus == .none {
+						addFriendPressed = pressing
+						addFriendScale = pressing ? 0.95 : 1.0
+						
+						// Additional haptic feedback for press down
+						if pressing {
+							let selectionGenerator = UISelectionFeedbackGenerator()
+							selectionGenerator.selectionChanged()
+						}
+					}
+				}, perform: {})
 			}
 
 			// Profile Action Buttons
@@ -848,6 +882,10 @@ struct ProfileView: View {
 						if let requestId = profileViewModel
 							.pendingFriendRequestId
 						{
+							// Haptic feedback
+							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+							impactGenerator.impactOccurred()
+							
 							Task {
 								await profileViewModel.acceptFriendRequest(
 									requestId: requestId
@@ -870,12 +908,36 @@ struct ProfileView: View {
 						.frame(maxWidth: .infinity)
 						.background(universalAccentColor)
 						.cornerRadius(8)
+						.scaleEffect(acceptButtonScale)
+						.shadow(
+							color: Color.black.opacity(0.15),
+							radius: acceptButtonPressed ? 2 : 8,
+							x: 0,
+							y: acceptButtonPressed ? 2 : 4
+						)
 					}
+					.buttonStyle(PlainButtonStyle())
+					.animation(.easeInOut(duration: 0.15), value: acceptButtonScale)
+					.animation(.easeInOut(duration: 0.15), value: acceptButtonPressed)
+					.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+						acceptButtonPressed = pressing
+						acceptButtonScale = pressing ? 0.95 : 1.0
+						
+						// Additional haptic feedback for press down
+						if pressing {
+							let selectionGenerator = UISelectionFeedbackGenerator()
+							selectionGenerator.selectionChanged()
+						}
+					}, perform: {})
 
 					Button(action: {
 						if let requestId = profileViewModel
 							.pendingFriendRequestId
 						{
+							// Haptic feedback
+							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+							impactGenerator.impactOccurred()
+							
 							Task {
 								await profileViewModel.declineFriendRequest(
 									requestId: requestId
@@ -898,7 +960,27 @@ struct ProfileView: View {
 							RoundedRectangle(cornerRadius: 8)
 								.stroke(universalAccentColor, lineWidth: 1)
 						)
+						.scaleEffect(denyButtonScale)
+						.shadow(
+							color: Color.black.opacity(0.15),
+							radius: denyButtonPressed ? 2 : 8,
+							x: 0,
+							y: denyButtonPressed ? 2 : 4
+						)
 					}
+					.buttonStyle(PlainButtonStyle())
+					.animation(.easeInOut(duration: 0.15), value: denyButtonScale)
+					.animation(.easeInOut(duration: 0.15), value: denyButtonPressed)
+					.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+						denyButtonPressed = pressing
+						denyButtonScale = pressing ? 0.95 : 1.0
+						
+						// Additional haptic feedback for press down
+						if pressing {
+							let selectionGenerator = UISelectionFeedbackGenerator()
+							selectionGenerator.selectionChanged()
+						}
+					}, perform: {})
 				}
 
 			case .friends:
