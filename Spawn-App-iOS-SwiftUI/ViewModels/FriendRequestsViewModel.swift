@@ -63,7 +63,7 @@ class FriendRequestsViewModel: ObservableObject {
     @MainActor
     func respondToFriendRequest(requestId: UUID, action: FriendRequestAction) async {
         do {
-            // API endpoint: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
+            // API endpoint: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject/cancel}
             guard let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)") else {
                 errorMessage = "Invalid URL"
                 return
@@ -80,7 +80,7 @@ class FriendRequestsViewModel: ObservableObject {
             self.sentFriendRequests.removeAll { $0.id == requestId }
             
         } catch {
-            errorMessage = "Failed to \(action == .accept ? "accept" : "decline") friend request: \(error.localizedDescription)"
+            errorMessage = "Failed to \(action == .accept ? "accept" : action == .cancel ? "cancel" : "decline") friend request: \(error.localizedDescription)"
             
             // For mock environment, simulate success
             if MockAPIService.isMocking {

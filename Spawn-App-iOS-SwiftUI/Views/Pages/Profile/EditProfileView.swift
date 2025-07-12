@@ -570,20 +570,6 @@ struct SocialMediaField: View {
     }
 }
 
-// Extension to support placeholders with custom styling
-extension View {
-    func placeholder<Content: View>(
-        when shouldShow: Bool,
-        alignment: Alignment = .leading,
-        @ViewBuilder placeholder: () -> Content) -> some View {
-        
-        ZStack(alignment: alignment) {
-            placeholder().opacity(shouldShow ? 1 : 0)
-            self
-        }
-    }
-}
-
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var profileViewModel = ProfileViewModel(

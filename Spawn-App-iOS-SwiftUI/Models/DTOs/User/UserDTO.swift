@@ -67,36 +67,6 @@ extension UserDTO {
 		)
 	}()
 
-	static var shannon: UserDTO = UserDTO(
-		id: UUID(),
-		friendUserIds: [],
-		username: "shannonaurl",
-		profilePicture: "Shannon_pfp",
-		name: "Shannon",
-		bio: "This is my bio.",
-		email: "shannon@gmail.com"
-	)
-
-	static var jennifer: UserDTO = UserDTO(
-		id: UUID(),
-		friendUserIds: [],
-		username: "jenntjen",
-		profilePicture: "Jennifer_pfp",
-		name: "Jennifer Tjen",
-		bio: "This is my bio.",
-		email: "jennifer@gmail.com"
-	)
-
-	static var michael: UserDTO = UserDTO(
-		id: UUID(),
-		friendUserIds: [],
-		username: "michaeltham",
-		profilePicture: "Michael_pfp",
-		name: "Michael Tham",
-		bio: "This is my bio.",
-		email: "haley@gmail.com"
-	)
-
 	static var haley: UserDTO = UserDTO(
 		id: UUID(),
 		friendUserIds: [],
@@ -108,6 +78,6 @@ extension UserDTO {
 	)
 
 	static let mockUsers: [UserDTO] = {
-		return [danielAgapov, shannon, jennifer, michael, haley]
+		return [danielAgapov, danielLee, haley]
 	}()
 }

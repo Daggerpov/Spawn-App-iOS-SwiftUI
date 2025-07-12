@@ -82,7 +82,8 @@ struct FriendSearchView: View {
                 SearchBarView(
                     searchText: $searchViewModel.searchText,
                     isSearching: $searchViewModel.isSearching,
-                    placeholder: "Search for friends"
+                    placeholder: "Search for friends",
+                    autofocus: displayMode == .search
                 )
                 .padding(.horizontal)
                 .padding(.bottom, 8)
@@ -337,7 +338,10 @@ struct FriendRowView: View {
             Spacer()
             
             // Different controls depending on the context
-            if isExistingFriend {
+            let targetUserId = friend?.id ?? user?.id ?? recommendedFriend?.id ?? UUID()
+            let isFriendStatus = isExistingFriend || viewModel.isFriend(userId: targetUserId)
+            
+            if isFriendStatus {
                 // Show three dots button for existing friends
                 Button(action: {
                     showProfileMenu = true
@@ -353,16 +357,15 @@ struct FriendRowView: View {
                         isAdded = true
                     }
                     Task {
-                        let targetUserId = friend?.id ?? user?.id ?? recommendedFriend?.id ?? UUID()
                         await viewModel.addFriend(friendUserId: targetUserId)
                         // Add delay before removing the item
                         try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
                         if friend != nil {
-                            await viewModel.removeFromSearchResults(userId: targetUserId)
+                            viewModel.removeFromSearchResults(userId: targetUserId)
                         } else if user != nil {
-                            await viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
+                            viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
                         } else if recommendedFriend != nil {
-                            await viewModel.removeFromRecommended(friendId: targetUserId)
+                            viewModel.removeFromRecommended(friendId: targetUserId)
                         }
                     }
                 }) {
@@ -449,15 +452,9 @@ struct FriendRowView: View {
         } message: {
             Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
         }
-        .background(
-            NavigationLink(
-                destination: AddToActivityTypeView(user: userForProfile),
-                isActive: $showAddToActivityType
-            ) {
-                EmptyView()
-            }
-            .hidden()
-        )
+        .navigationDestination(isPresented: $showAddToActivityType) {
+            AddToActivityTypeView(user: userForProfile)
+        }
     }
     
     // Helper methods for profile actions

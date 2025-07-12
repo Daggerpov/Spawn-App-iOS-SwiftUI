@@ -6,5 +6,5 @@ struct UserProfileInfoDTO: Codable {
     let username: String
     let bio: String?
     let profilePicture: String?
-    let dateCreated: Date
+    let dateCreated: Date?
 } 

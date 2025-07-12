@@ -42,7 +42,7 @@ class DayActivitiesViewModel: ObservableObject {
         if let firstActivity = activities.first {
             let formatter = DateFormatter()
             formatter.dateFormat = "MMMM d, yyyy"
-            headerTitle = formatter.string(from: firstActivity.date)
+            headerTitle = formatter.string(from: firstActivity.dateAsDate)
         } else {
             headerTitle = "Activities"
         }

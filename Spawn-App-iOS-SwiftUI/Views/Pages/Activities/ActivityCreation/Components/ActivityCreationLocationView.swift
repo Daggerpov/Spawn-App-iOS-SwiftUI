@@ -3,7 +3,7 @@ import MapKit
 import CoreLocation
 
 // Extension to make MKCoordinateRegion conform to Equatable
-extension MKCoordinateRegion: Equatable {
+extension MKCoordinateRegion: @retroactive Equatable {
     public static func == (lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
         return lhs.center.latitude == rhs.center.latitude &&
                lhs.center.longitude == rhs.center.longitude &&
@@ -67,10 +67,14 @@ struct ActivityCreationLocationView: View {
                         onBack?()
                     }) {
                         Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(universalAccentColor)
-                            .background(Circle().fill(universalBackgroundColor).frame(width: 32, height: 32))
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
                     }
+                    .frame(width: 48, height: 48)
+                    .background(.white)
+                    .cornerRadius(100)
+                    .shadow(color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2)
+                    .padding(.leading, 24)
                     
                     Spacer()
                     
@@ -91,9 +95,10 @@ struct ActivityCreationLocationView: View {
                             .background(universalBackgroundColor.opacity(0.9))
                             .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
+                    .padding(.trailing, 24)
                 }
-                .padding(.horizontal)
-                .padding(.top, 8)
+                .padding(.top, 60)
+                .padding(.bottom, 12)
                 
                 Spacer()
             }

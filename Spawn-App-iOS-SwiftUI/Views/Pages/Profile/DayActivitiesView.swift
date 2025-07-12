@@ -34,7 +34,7 @@ struct DayActivitiesView: View {
         onDismiss: @escaping () -> Void,
         onActivitySelected: @escaping (CalendarActivityDTO) -> Void
     ) {
-        self.date = activities.first?.date ?? Date()
+        self.date = activities.first?.dateAsDate ?? Date()
         self.onDismiss = onDismiss
         self.onActivitySelected = onActivitySelected
         

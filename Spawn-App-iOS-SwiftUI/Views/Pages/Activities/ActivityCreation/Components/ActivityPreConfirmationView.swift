@@ -19,7 +19,7 @@ struct ActivityPreConfirmationView: View {
                     .padding(.horizontal, 24)
                 
                 // Activity title
-                Text(viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedType?.rawValue ?? "Morning Stroll"))
+                Text(viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Morning Stroll"))
                     .font(.onestSemiBold(size: 32))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
@@ -86,10 +86,8 @@ struct ActivityPreConfirmationView: View {
         HStack {
             // Back button
             if let onBack = onBack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(.white)
+                ActivityBackButton {
+                    onBack()
                 }
                 .padding(.leading, 24)
             }
@@ -110,7 +108,7 @@ struct ActivityPreConfirmationView: View {
                     .padding(.trailing, 24)
             }
         }
-        .padding(.top, 4)
+        .padding(.top, 50)
         .padding(.bottom, 12)
     }
     
@@ -123,17 +121,17 @@ struct ActivityPreConfirmationView: View {
                     .fill(Color(red: 0.24, green: 0.23, blue: 0.23))
                     .frame(width: 48, height: 48)
                 
-                Text(viewModel.selectedType?.icon ?? "🥾")
+                Text(viewModel.selectedActivityType?.icon ?? "🥾")
                     .font(.system(size: 32))
             }
             
             // Activity details
             VStack(spacing: 12) {
-                Text(viewModel.selectedType?.rawValue ?? "Hike")
+                Text(viewModel.selectedActivityType?.title ?? "Hike")
                     .font(.onestMedium(size: 24))
                     .foregroundColor(.white)
                 
-                Text("\(viewModel.selectedType?.peopleCount ?? 14) people")
+                Text("\(viewModel.selectedActivityType?.associatedFriends.count ?? 14) people")
                     .font(.onestRegular(size: 18))
                     .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
             }

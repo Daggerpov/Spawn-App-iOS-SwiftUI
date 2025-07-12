@@ -68,39 +68,6 @@ extension RecommendedFriendUserDTO {
 		)
 	}()
 
-	static var shannon: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
-		id: UUID(),
-		username: "shannonaurl",
-		profilePicture: "Shannon_pfp",
-		name: "Shannon",
-		bio: "This is my bio.",
-		email: "shannon@gmail.com",
-        mutualFriendCount: 3,
-        sharedActivitiesCount: 2
-	)
-
-	static var jennifer: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
-		id: UUID(),
-		username: "jenntjen",
-		profilePicture: "Jennifer_pfp",
-		name: "Jennifer Tjen",
-		bio: "This is my bio.",
-		email: "jennifer@gmail.com",
-        mutualFriendCount: 1,
-        sharedActivitiesCount: 1
-	)
-
-	static var michael: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
-		id: UUID(),
-		username: "michaeltham",
-		profilePicture: "Michael_pfp",
-		name: "Michael Tham",
-		bio: "This is my bio.",
-		email: "haley@gmail.com",
-        mutualFriendCount: 2,
-        sharedActivitiesCount: 0
-	)
-
 	static var haley: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
 		id: UUID(),
 		username: "haleyusername",
@@ -113,6 +80,6 @@ extension RecommendedFriendUserDTO {
 	)
 
 	static let mockUsers: [RecommendedFriendUserDTO] = {
-		return [danielAgapov, shannon, jennifer, michael, haley]
+		return [danielAgapov, danielLee, haley]
 	}()
 }

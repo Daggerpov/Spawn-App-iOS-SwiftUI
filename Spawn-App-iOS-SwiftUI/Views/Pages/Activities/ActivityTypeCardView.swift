@@ -8,35 +8,8 @@ import SwiftUI
 
 struct ActivityTypeCardView: View {
     var activityType: ActivityTypeDTO
-    var onTap: ((ActivityType) -> Void)? = nil
+    var onTap: ((ActivityTypeDTO) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
-    
-    // Convert ActivityTypeDTO to ActivityType for selection
-    private var mappedActivityType: ActivityType? {
-        // First try exact match
-        if let exactMatch = ActivityType.allCases.first(where: { $0.rawValue == activityType.title }) {
-            return exactMatch
-        }
-        
-        // If no exact match, try fuzzy matching for common cases
-        switch activityType.title.lowercased() {
-        case "food":
-            return .foodAndDrink
-        case "active":
-            return .active
-        case "study":
-            return .grind
-        case "chill":
-            return .chill
-        case "general":
-            return .general
-        default:
-            // For unmapped types, return nil to make them unselectable
-            // This prevents conflicts in selection logic
-            print("⚠️ ActivityTypeCardView: '\(activityType.title)' cannot be mapped to ActivityType - making unselectable")
-            return nil
-        }
-    }
     
     // Adaptive background gradient for dark mode
     private var adaptiveBackgroundGradient: LinearGradient {
@@ -68,11 +41,6 @@ struct ActivityTypeCardView: View {
     
     // Adaptive text color
     private var adaptiveTextColor: Color {
-        // If unmapped, show as disabled
-        if mappedActivityType == nil {
-            return Color.gray.opacity(0.5)
-        }
-        
         switch colorScheme {
         case .dark:
             return Color.white
@@ -85,11 +53,11 @@ struct ActivityTypeCardView: View {
     
     var body: some View {
         Button(action: {
-            if let mappedType = mappedActivityType, let onTap = onTap {
-                print("🔘 ActivityTypeCardView '\(activityType.title)' button tapped. Mapped to: \(mappedType.rawValue)")
-                onTap(mappedType)
+            if let onTap = onTap {
+                print("🔘 ActivityTypeCardView '\(activityType.title)' button tapped")
+                onTap(activityType)
             } else {
-                print("❌ ActivityTypeCardView '\(activityType.title)' button tapped but mappedActivityType is nil or onTap is nil")
+                print("❌ ActivityTypeCardView '\(activityType.title)' button tapped but onTap is nil")
             }
         }) {
             ZStack {
@@ -115,8 +83,6 @@ struct ActivityTypeCardView: View {
             }
         }
         .buttonStyle(PlainButtonStyle())
-        .disabled(mappedActivityType == nil)
-        .opacity(mappedActivityType == nil ? 0.6 : 1.0)
         .frame(height: 100)
         .frame(maxWidth: .infinity)
     }

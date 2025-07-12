@@ -33,12 +33,16 @@ struct ProfileView: View {
 	@State private var showCalendarPopup: Bool = false
 	@State private var navigateToCalendar: Bool = false
 	@State private var showActivityDetails: Bool = false
+	@State private var navigateToDayActivities: Bool = false
+	@State private var selectedDayActivities: [CalendarActivityDTO] = []
 	    	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
     @State private var blockReason: String = ""
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showProfileMenu: Bool = false
 	@State private var showAddToActivityType: Bool = false
+	@State private var showSuccessDrawer: Bool = false
+	@State private var navigateToAddToActivityType: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var profileViewModel = ProfileViewModel()
@@ -178,6 +182,14 @@ struct ProfileView: View {
 				}
 			}
 		}
+		.onChange(of: navigateToDayActivities) { newValue in
+			if newValue {
+				// Ensure navigation happens on main thread
+				DispatchQueue.main.async {
+					// Navigation logic handled by the view
+				}
+			}
+		}
 		// Add a timer to periodically refresh data
 		.onReceive(
 			Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
@@ -271,18 +283,32 @@ struct ProfileView: View {
 					}
 				}
 			}
-			.background(
-				NavigationLink(
-					destination: AddToActivityTypeView(user: user),
-					isActive: $showAddToActivityType
-				) {
-					EmptyView()
-				}
-				.hidden()
-			)
+			.navigationDestination(isPresented: $showAddToActivityType) {
+				AddToActivityTypeView(user: user)
+			}
+			.navigationDestination(isPresented: $navigateToAddToActivityType) {
+				AddToActivityTypeView(user: user)
+			}
+			.navigationDestination(isPresented: $navigateToCalendar) {
+				calendarFullScreenView
+			}
+			.navigationDestination(isPresented: $navigateToDayActivities) {
+				dayActivitiesPageView
+			}
 
 			// Overlay for profile menu
 			profileMenuOverlay
+			
+			// Success drawer overlay
+			if showSuccessDrawer {
+				FriendRequestSuccessDrawer(
+					friendUser: user as! BaseUserDTO,
+					isPresented: $showSuccessDrawer,
+					onAddToActivityType: {
+						navigateToAddToActivityType = true
+					}
+				)
+			}
 		}
 	}
 
@@ -308,6 +334,8 @@ struct ProfileView: View {
 						if let requestId = profileViewModel.pendingFriendRequestId {
 							Task {
 								await profileViewModel.acceptFriendRequest(requestId: requestId)
+								// Show success drawer after successful acceptance
+								showSuccessDrawer = true
 							}
 						}
 					}) {
@@ -433,19 +461,14 @@ struct ProfileView: View {
 						profileViewModel: profileViewModel,
 						showCalendarPopup: $showCalendarPopup,
 						showActivityDetails: $showActivityDetails,
-						navigateToCalendar: $navigateToCalendar
+						navigateToCalendar: $navigateToCalendar,
+						navigateToDayActivities: $navigateToDayActivities,
+						selectedDayActivities: $selectedDayActivities
 					)
 					.padding(.horizontal, 16)
 					.padding(.bottom, 15)
 					
-					// Hidden NavigationLink for calendar
-					NavigationLink(
-						destination: calendarFullScreenView,
-						isActive: $navigateToCalendar
-					) {
-						EmptyView()
-					}
-					.hidden()
+					EmptyView()
 				}
 			} else {
 				// User Activities Section for other users (based on friendship status)
@@ -531,12 +554,31 @@ struct ProfileView: View {
 	}
 
 	private var calendarFullScreenView: some View {
-		InfiniteCalendarView(
-			activities: profileViewModel.allCalendarActivities,
-			isLoading: profileViewModel.isLoadingCalendar,
+		ActivityCalendarView(
+			profileViewModel: profileViewModel,
 			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
-			onDismiss: { navigateToCalendar = false },
+			calendarOwnerName: nil,
+			onDismiss: {
+				// Reset navigation state when calendar view is dismissed
+				navigateToCalendar = false
+			}
+		)
+	}
+	
+	private var dayActivitiesPageView: some View {
+		// Get the date from the first activity, or use today as fallback
+		let date = selectedDayActivities.first?.dateAsDate ?? Date()
+		
+		return DayActivitiesPageView(
+			date: date,
+			activities: selectedDayActivities,
+			onDismiss: {
+				// Reset navigation state when day activities view is dismissed
+				navigateToDayActivities = false
+			},
 			onActivitySelected: { activity in
+				// Reset navigation state and handle activity selection
+				navigateToDayActivities = false
 				handleActivitySelection(activity)
 			}
 		)
@@ -599,7 +641,7 @@ struct ProfileView: View {
 			shareProfile: shareProfile
 		)
 		.background(universalBackgroundColor)
-		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 320)])
+		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 276)])
 	}
 	
 	private var removeFriendConfirmationAlert: some View {
@@ -810,6 +852,8 @@ struct ProfileView: View {
 								await profileViewModel.acceptFriendRequest(
 									requestId: requestId
 								)
+								// Show success drawer after successful acceptance
+								showSuccessDrawer = true
 							}
 						}
 					}) {

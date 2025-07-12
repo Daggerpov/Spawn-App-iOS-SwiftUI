@@ -12,12 +12,15 @@ let package = Package(
             targets: ["Spawn-App-iOS-SwiftUI"])
     ],
     dependencies: [
-        // No external dependencies needed - using standard MapKit
+        // Elegant Emoji Picker for beautiful emoji selection
+        .package(url: "https://github.com/Finalet/Elegant-Emoji-Picker.git", from: "1.0.0")
     ],
     targets: [
         .target(
             name: "Spawn-App-iOS-SwiftUI",
-            dependencies: []),
+            dependencies: [
+                .product(name: "ElegantEmojiPicker", package: "Elegant-Emoji-Picker")
+            ]),
         .testTarget(
             name: "Spawn-App-iOS-SwiftUITests",
             dependencies: ["Spawn-App-iOS-SwiftUI"])

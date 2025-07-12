@@ -436,16 +436,11 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
         
         if #available(iOS 17.0, *) {
             // Configure initial camera safely
-            do {
-                let camera = MKMapCamera(lookingAtCenter: region.center, 
-                                       fromDistance: 2000, // Initial distance in meters
-                                       pitch: 0, // Initial pitch (0 for top-down)
-                                       heading: 0) // Initial heading (0 for north)
-                mapView.camera = camera
-            } catch {
-                // If camera setup fails, fall back to region
-                mapView.setRegion(region, animated: false)
-            }
+            let camera = MKMapCamera(lookingAtCenter: region.center, 
+                                   fromDistance: 2000, // Initial distance in meters
+                                   pitch: 0, // Initial pitch (0 for top-down)
+                                   heading: 0) // Initial heading (0 for north)
+            mapView.camera = camera
         } else {
             // For iOS 16 and below, just set the region
             mapView.setRegion(region, animated: false)
@@ -455,49 +450,42 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        // Safely handle potential crashes by wrapping in do-catch
-        do {
-            if #available(iOS 17.0, *) {
-                // Get current camera state
-                let currentCamera = mapView.camera
-                let targetPitch = is3DMode ? 45.0 : 0.0
+        if #available(iOS 17.0, *) {
+            // Get current camera state
+            let currentCamera = mapView.camera
+            let targetPitch = is3DMode ? 45.0 : 0.0
+            
+            // Only update camera if mode changed or significant location change
+            let isLocationChange = abs(mapView.region.center.latitude - region.center.latitude) > 0.0001 || 
+                                 abs(mapView.region.center.longitude - region.center.longitude) > 0.0001
+            
+            if isLocationChange || abs(currentCamera.pitch - targetPitch) > 1.0 {
+                // Create new camera while preserving current altitude and heading
+                let newCamera = MKMapCamera(
+                    lookingAtCenter: region.center,
+                    fromDistance: max(currentCamera.altitude, 500), // Ensure minimum altitude
+                    pitch: targetPitch,
+                    heading: currentCamera.heading
+                )
                 
-                // Only update camera if mode changed or significant location change
-                let isLocationChange = abs(mapView.region.center.latitude - region.center.latitude) > 0.0001 || 
-                                     abs(mapView.region.center.longitude - region.center.longitude) > 0.0001
-                
-                if isLocationChange || abs(currentCamera.pitch - targetPitch) > 1.0 {
-                    // Create new camera while preserving current altitude and heading
-                    let newCamera = MKMapCamera(
-                        lookingAtCenter: region.center,
-                        fromDistance: max(currentCamera.altitude, 500), // Ensure minimum altitude
-                        pitch: targetPitch,
-                        heading: currentCamera.heading
-                    )
-                    
-                    UIView.animate(
-                        withDuration: 0.75,
-                        delay: 0,
-                        options: [.curveEaseInOut],
-                        animations: {
-                            mapView.camera = newCamera
-                        },
-                        completion: nil
-                    )
-                }
-                
-                // Update region only if not in 3D mode or if it's a significant change
-                if !is3DMode || isLocationChange {
-                    mapView.setRegion(region, animated: true)
-                }
-            } else {
-                // For iOS 16 and below, just update the region
+                UIView.animate(
+                    withDuration: 0.75,
+                    delay: 0,
+                    options: [.curveEaseInOut],
+                    animations: {
+                        mapView.camera = newCamera
+                    },
+                    completion: nil
+                )
+            }
+            
+            // Update region only if not in 3D mode or if it's a significant change
+            if !is3DMode || isLocationChange {
                 mapView.setRegion(region, animated: true)
             }
-        } catch {
-            // If there's any error, fall back to basic region update
-            print("MapView update error: \(error.localizedDescription)")
-            mapView.setRegion(region, animated: false)
+        } else {
+            // For iOS 16 and below, just update the region
+            mapView.setRegion(region, animated: true)
         }
         
         // Update annotations

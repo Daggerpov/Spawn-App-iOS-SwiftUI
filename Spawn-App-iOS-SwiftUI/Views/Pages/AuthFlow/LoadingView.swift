@@ -12,7 +12,7 @@ struct LoadingView: View {
         VStack {
             Spacer()
             
-            Image("spawn_new_logo")
+            Image("spawn_branding_logo")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 200, height: 100)

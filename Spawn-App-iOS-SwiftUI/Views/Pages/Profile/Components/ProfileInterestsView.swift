@@ -113,12 +113,12 @@ struct ProfileInterestsView: View {
 
     private var interestsContentView: some View {
         ZStack(alignment: .topLeading) {
-            // Background rectangle for interests section
+            // Background rectangle
             RoundedRectangle(cornerRadius: 15)
                 .stroke(figmaBittersweetOrange, lineWidth: 1)
                 .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
-
-            // Header and social media icons positioned on the border
+            
+            // Header positioned on the border
             HStack {
                 Text("Interests + Hobbies")
                     .font(.onestBold(size: 14))
@@ -137,21 +137,24 @@ struct ProfileInterestsView: View {
                         .offset(x: -16, y: -24)
                 }
             }
-
-            // Interests content
-            if profileViewModel.userInterests.isEmpty {
-                emptyInterestsView
-            } else {
-                // Interests as chips with simple layout
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                    ForEach(profileViewModel.userInterests, id: \.self) { interest in
-                        interestChip(interest: interest)
+            
+            // Content area with dynamic height
+            Group {
+                if profileViewModel.userInterests.isEmpty {
+                    emptyInterestsView
+                        .padding(.top, 28)
+                } else {
+                    // Interests as chips with flexible layout
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+                        ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                            interestChip(interest: interest)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 28)
+                    .padding(.bottom, 16)
+                    .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 28)
-                .padding(.bottom, 4)
-                .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
     }
@@ -160,9 +163,9 @@ struct ProfileInterestsView: View {
         Text("No interests added yet.")
             .foregroundColor(.secondary)
             .italic()
+            .font(.onestRegular(size: 14))
             .padding(.horizontal, 16)
-            .padding(.top, 28)
-            .padding(.bottom, 4)
+            .padding(.bottom, 16)
     }
 
     private func interestChip(interest: String) -> some View {

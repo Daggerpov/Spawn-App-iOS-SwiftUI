@@ -32,9 +32,9 @@ struct InfiniteCalendarView: View {
         let monthsFromEarliestToToday = calendar.dateComponents([.month], from: earliestDate, to: today).month ?? 0
         let maxMonthsBack = max(0, monthsFromEarliestToToday) // Ensure we don't go negative
         
-        // Go back to the earliest date and forward 1 year
+        // Go back to the earliest date and forward 1 month
         let startIndex = -maxMonthsBack
-        let endIndex = 12
+        let endIndex = 1
         
         for i in startIndex...endIndex {
             if let date = calendar.date(byAdding: .month, value: i, to: today) {
@@ -58,11 +58,12 @@ struct InfiniteCalendarView: View {
             }
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Your Event Calendar")
+        .navigationTitle("Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
         .sheet(isPresented: $showingDayActivities) {
-            DayActivitiesView(
+            DayActivitiesPageView(
+                date: selectedDayActivities.first?.dateAsDate ?? Date(),
                 activities: selectedDayActivities,
                 onDismiss: { showingDayActivities = false },
                 onActivitySelected: { activity in
@@ -70,6 +71,7 @@ struct InfiniteCalendarView: View {
                     onActivitySelected(activity)
                 }
             )
+            .presentationDetents([.medium, .large])
         }
     }
     
@@ -113,7 +115,7 @@ struct InfiniteCalendarView: View {
     
     private func activitiesForMonth(_ date: Date) -> [CalendarActivityDTO] {
         return activities.filter { activity in
-            calendar.isDate(activity.date, equalTo: date, toGranularity: .month)
+            calendar.isDate(activity.dateAsDate, equalTo: date, toGranularity: .month)
         }
     }
 }
@@ -185,7 +187,7 @@ struct MonthView: View {
     
     private func activitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
         return monthData.activities.filter { activity in
-            calendar.isDate(activity.date, inSameDayAs: date)
+            calendar.isDate(activity.dateAsDate, inSameDayAs: date)
         }
     }
 }
@@ -203,87 +205,100 @@ struct DayCell: View {
         String(calendar.component(.day, from: date))
     }
     
+    private var activityBackgroundColor: Color {
+        if let firstActivity = activities.first {
+            return activityColor(for: firstActivity)
+        }
+        return Color.gray.opacity(0.05)
+    }
+    
     var body: some View {
         Button(action: onTapped) {
-            VStack(spacing: 6) {
-                // Day number
-                Text(dayNumber)
-                    .font(.system(size: 18, weight: isToday ? .bold : .semibold))
-                    .foregroundColor(isToday ? universalAccentColor : .primary)
+            ZStack {
+                // Main calendar cell background
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(activities.isEmpty ? figmaCalendarDayIcon : activityBackgroundColor)
+                    .frame(width: 86, height: 86)
+                    .shadow(color: Color.black.opacity(0.1), radius: 12, x: 0, y: 3)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isToday ? universalAccentColor : Color.clear, lineWidth: 2)
+                    )
                 
-                // Activity display
-                if activities.isEmpty {
+                // Activity display (centered)
+                if !activities.isEmpty {
+                    if activities.count == 1 {
+                        // Single activity - show its icon
+                        activityIconView(for: activities.first!)
+                    } else {
+                        // Multiple activities - show count or multiple icons
+                        multipleActivitiesView
+                    }
+                }
+                
+                // Date number badge (positioned in top-right corner)
+                VStack {
+                    HStack {
+                        Spacer()
+                        Text(dayNumber)
+                            .font(.onestMedium(size: 12))
+                            .foregroundColor(.black)
+                            .padding(6)
+                            .background(Color.white.opacity(0.9))
+                            .clipShape(Circle())
+                    }
+                    .padding(.top, 6)
+                    .padding(.trailing, 6)
                     Spacer()
-                        .frame(minHeight: 40)
-                } else if activities.count == 1 {
-                    // Single activity - show its icon
-                    activityIconView(for: activities.first!)
-                        .frame(width: 40, height: 40)
-                } else {
-                    // Multiple activities - show count or multiple icons
-                    multipleActivitiesView
-                        .frame(width: 40, height: 40)
                 }
             }
-            .frame(width: 80, height: 80)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(activities.isEmpty ? Color.gray.opacity(0.08) : Color.gray.opacity(0.05))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isToday ? universalAccentColor : Color.clear, lineWidth: 3)
-            )
         }
         .buttonStyle(PlainButtonStyle())
     }
     
     @ViewBuilder
     private func activityIconView(for activity: CalendarActivityDTO) -> some View {
-        ZStack {
-            // Background color based on activity
-            RoundedRectangle(cornerRadius: 8)
-                .fill(activityColor(for: activity))
-                .frame(width: 40, height: 40)
-            
-            // Activity icon
-            if let icon = activity.icon, !icon.isEmpty {
-                Text(icon)
-                    .font(.system(size: 20))
-                    .foregroundColor(.white)
-            } else {
-                Image(systemName: activity.activityCategory?.systemIcon() ?? "star.fill")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-            }
+        // Activity icon (centered in the cell, no background since cell has the color)
+        if let icon = activity.icon, !icon.isEmpty {
+            Text(icon)
+                .font(.custom("Onest", size: 40).weight(.medium))
+                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+        } else {
+            Text("⭐️")
+                .font(.custom("Onest", size: 40).weight(.medium))
+                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
         }
     }
     
+
+    
     @ViewBuilder
     private var multipleActivitiesView: some View {
-        if activities.count <= 3 {
-            // Show up to 3 activity icons as small dots
-            HStack(spacing: 3) {
-                ForEach(activities.prefix(3), id: \.id) { activity in
-                    Circle()
-                        .fill(activityColor(for: activity))
-                        .frame(width: 10, height: 10)
+        if activities.count == 2 {
+            // Show 2 icons side by side (matching Figma design)
+            HStack(spacing: -5) {
+                ForEach(activities.prefix(2), id: \.id) { activity in
+                    if let icon = activity.icon, !icon.isEmpty {
+                        Text(icon)
+                            .font(.custom("Onest", size: 30).weight(.medium))
+                            .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                    } else {
+                        Text("⭐️")
+                            .font(.custom("Onest", size: 30).weight(.medium))
+                            .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                    }
                 }
             }
         } else {
-            // Show count for more than 3 activities
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(LinearGradient(
-                        gradient: Gradient(colors: activities.prefix(3).map { activityColor(for: $0) }),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ))
-                    .frame(width: 40, height: 40)
-                
-                Text("\(activities.count)")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white)
+            // For 3+ activities, show the first icon larger
+            if let firstActivity = activities.first, let icon = firstActivity.icon, !icon.isEmpty {
+                Text(icon)
+                    .font(.custom("Onest", size: 40).weight(.medium))
+                    .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+            } else {
+                Text("⭐️")
+                    .font(.custom("Onest", size: 40).weight(.medium))
+                    .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
             }
         }
     }
@@ -326,13 +341,6 @@ struct EmptyCalendarView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
-    }
-}
-
-// Extension for activity category icon
-extension CalendarActivityDTO {
-    var categoryIcon: String {
-        return activityCategory?.systemIcon() ?? "circle.fill"
     }
 }
 
