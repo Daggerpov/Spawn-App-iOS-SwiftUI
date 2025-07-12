@@ -19,7 +19,7 @@ struct ActivityCalendarView: View {
     @State private var currentMonth = Date()
     @State private var scrollOffset: CGFloat = 0
     @State private var hasInitiallyScrolled = false
-    @State private var showingDayActivities = false
+    @State private var navigateToDayActivities = false
     @State private var selectedDayActivities: [CalendarActivityDTO] = []
     
     var onDismiss: (() -> Void)?
@@ -38,7 +38,9 @@ struct ActivityCalendarView: View {
                                 MonthCalendarView(
                                     month: month,
                                     profileViewModel: profileViewModel,
-                                    userAuth: userAuth
+                                    userAuth: userAuth,
+                                    navigateToDayActivities: $navigateToDayActivities,
+                                    selectedDayActivities: $selectedDayActivities
                                 )
                                 .id(month)
                             }
@@ -70,17 +72,18 @@ struct ActivityCalendarView: View {
         }
         .navigationTitle(calendarOwnerName != nil ? "\(calendarOwnerName!)'s Activity Calendar" : "Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingDayActivities) {
+        .navigationDestination(isPresented: $navigateToDayActivities) {
             DayActivitiesPageView(
                 date: selectedDayActivities.first?.dateAsDate ?? Date(),
                 activities: selectedDayActivities,
-                onDismiss: { showingDayActivities = false },
+                onDismiss: {
+                    navigateToDayActivities = false
+                },
                 onActivitySelected: { activity in
-                    showingDayActivities = false
+                    navigateToDayActivities = false
                     handleActivitySelection(activity)
                 }
             )
-            .presentationDetents([.medium, .large])
         }
         .onAppear {
             // Fetch calendar data for current and upcoming months
@@ -138,7 +141,8 @@ struct ActivityCalendarView: View {
             if let activityId = activity.activityId,
                let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
                 await MainActor.run {
-                    // Activity details will be shown via the existing sheet in the calling view
+                    // The activity details will be shown via the ProfileView's existing sheet
+                    // when navigateToDayActivities is set to false
                 }
             }
         }
@@ -149,11 +153,11 @@ struct MonthCalendarView: View {
     let month: Date
     @StateObject var profileViewModel: ProfileViewModel
     @StateObject var userAuth: UserAuthViewModel
+    @Binding var navigateToDayActivities: Bool
+    @Binding var selectedDayActivities: [CalendarActivityDTO]
     
     @State private var showActivityDetails = false
     @State private var selectedActivity: CalendarActivityDTO?
-    @State private var showingDayActivities = false
-    @State private var selectedDayActivities: [CalendarActivityDTO] = []
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -181,7 +185,7 @@ struct MonthCalendarView: View {
                                         showActivityDetails = true
                                     } else if activities.count > 1 {
                                         selectedDayActivities = activities
-                                        showingDayActivities = true
+                                        navigateToDayActivities = true
                                     }
                                 }
                             )
@@ -195,19 +199,6 @@ struct MonthCalendarView: View {
             if let activity = selectedActivity {
                 ActivityDetailsSheet(activity: activity, userAuth: userAuth)
             }
-        }
-        .sheet(isPresented: $showingDayActivities) {
-            DayActivitiesPageView(
-                date: selectedDayActivities.first?.dateAsDate ?? Date(),
-                activities: selectedDayActivities,
-                onDismiss: { showingDayActivities = false },
-                onActivitySelected: { activity in
-                    showingDayActivities = false
-                    selectedActivity = activity
-                    showActivityDetails = true
-                }
-            )
-            .presentationDetents([.medium, .large])
         }
     }
     

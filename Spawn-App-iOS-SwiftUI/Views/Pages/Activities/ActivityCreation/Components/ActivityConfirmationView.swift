@@ -31,7 +31,7 @@ struct ActivityConfirmationView: View {
                             .frame(width: 80, height: 80)
                         
                         Text("Success!")
-                            .font(Font.custom("Onest", size: 32).weight(.semibold))
+                            .font(Font.custom("Onest", size: 48).weight(.semibold))
                             .foregroundColor(.white)
                         Text("You've spawned in and \"\(activityTitle)\" is now live for your friends.")
                             .font(Font.custom("Onest", size: 16).weight(.medium))
@@ -242,16 +242,10 @@ struct ActivityConfirmationView: View {
                         shareViaIMessage()
                     }) {
                         VStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
-                                    .frame(width: 64, height: 64)
-                                Image("imessage")
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .frame(width: 40, height: 40)
-                                    .foregroundColor(.white)
-                            }
+							Image("imessage_for_sharing")
+								.resizable()
+								.aspectRatio(contentMode: .fit)
+								.frame(width: 64, height: 64)
                             Text("Message")
                                 .font(Font.custom("SF Pro Display", size: 14))
                                 .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
