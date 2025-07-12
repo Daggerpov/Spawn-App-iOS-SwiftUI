@@ -12,21 +12,22 @@ struct LoadingView: View {
         VStack {
             Spacer()
             
-            Image("spawn_branding_logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 200, height: 100)
-            
-            Spacer().frame(height: 24)
-            
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                .scaleEffect(1.5)
+            // Rive animation - falls back to static logo if .riv file not found
+            RiveAnimationView.loadingAnimation(fileName: "spawn_logo_animation")
+                .frame(width: 200, height: 200)
+                .background(
+                    // Fallback to static logo if Rive fails
+                    Image("spawn_branding_logo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 200, height: 100)
+                        .opacity(0) // Hidden when Rive is working
+                )
             
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(authPageBackgroundColor)
+        .background(Color.white) // Changed from authPageBackgroundColor to white
         .ignoresSafeArea()
     }
 }

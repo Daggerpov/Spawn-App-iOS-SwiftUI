@@ -487,6 +487,12 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                     message: "Start connecting with friends and activities",
                     type: .welcome
                 )
+            case .error:
+                InAppNotificationManager.shared.showNotification(
+                    title: "Error",
+                    message: "Something went wrong. Please try again.",
+                    type: .error
+                )
             }
         }
     }

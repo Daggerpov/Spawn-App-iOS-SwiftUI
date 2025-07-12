@@ -188,7 +188,11 @@ struct ActivityFeedView: View {
                     throw APIError.URLError
                 }
                 
-                let parameters = ["requestingUserId": user.id.uuidString]
+                // Add autoJoin parameter to automatically join the user to the activity
+                let parameters = [
+                    "requestingUserId": user.id.uuidString,
+                    "autoJoin": "true"
+                ]
                 let activity: FullFeedActivityDTO = try await apiService.fetchData(from: url, parameters: parameters)
                 
                 print("✅ ActivityFeedView: Successfully fetched deep linked activity: \(activity.title ?? "No title")")
