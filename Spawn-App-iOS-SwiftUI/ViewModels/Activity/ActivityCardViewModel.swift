@@ -18,15 +18,14 @@ class ActivityCardViewModel: ObservableObject {
 		self.apiService = apiService
 		self.userId = userId
 		self.activity = activity
+		// Initialize the participation status correctly
+		fetchIsParticipating()
 	}
 
-	/// returns whether the logged in app user is part of the activity's participants array
+	/// returns whether the logged in app user is participating in the activity
 	public func fetchIsParticipating() {
-		self.isParticipating =
-			((activity.participantUsers?.contains(where: { user in
-				user.id == userId
-			})) != nil)
-
+		// Use the participationStatus from the activity DTO instead of checking the participants array
+		self.isParticipating = activity.participationStatus == .participating
 	}
 
 	/// Toggles the user's participation status in the activity
@@ -50,7 +49,11 @@ class ActivityCardViewModel: ObservableObject {
 			// Update local state after a successful API call
 			await MainActor.run {
 				self.activity = updatedActivity
-				self.isParticipating.toggle()
+				// Derive the participation status from the updated activity instead of toggling
+				self.isParticipating = updatedActivity.participationStatus == .participating
+				
+				// Update the cache with the updated activity so all views stay in sync
+				AppCache.shared.addOrUpdateActivity(updatedActivity)
 			}
 		} catch {
 			await MainActor.run {
