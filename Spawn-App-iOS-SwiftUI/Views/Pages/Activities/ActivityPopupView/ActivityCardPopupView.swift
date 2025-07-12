@@ -274,6 +274,7 @@ struct ChatroomButtonView: View {
     let activityColor: Color
     @ObservedObject var activity: FullFeedActivityDTO
     @ObservedObject var viewModel: ChatViewModel
+    @State private var showingChatroom = false
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
@@ -283,7 +284,9 @@ struct ChatroomButtonView: View {
     
     
     var body: some View {
-        NavigationLink(destination: ChatroomView(activity: activity, backgroundColor: activityColor)) {
+        Button(action: {
+            showingChatroom = true
+        }) {
             HStack {
                 if viewModel.chats.isEmpty {
                     Image("EmptyDottedCircle")
@@ -306,12 +309,15 @@ struct ChatroomButtonView: View {
                             .font(.onestRegular(size: 15))
                     }
                 }
+                Spacer()
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 18)
-            .padding(.trailing, 47)
             .background(Color.black.opacity(0.2))
             .cornerRadius(12)
+        }
+        .sheet(isPresented: $showingChatroom) {
+            ChatroomView(activity: activity, backgroundColor: activityColor)
         }
     }
     

@@ -460,6 +460,11 @@ struct FriendRowView: View {
     // Helper methods for profile actions
     private func copyProfileURL(for user: Nameable) {
         let profileURL = "https://spawn.com/profile/\(user.username)"
+        
+        // Clear the pasteboard first to avoid any contamination
+        UIPasteboard.general.items = []
+        
+        // Set only the URL string to the pasteboard
         UIPasteboard.general.string = profileURL
         
         // Show a brief toast or notification that the URL was copied

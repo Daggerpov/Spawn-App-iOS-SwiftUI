@@ -41,6 +41,12 @@ struct MapView: View {
     @State private var showLocationError: Bool = false
     @State private var locationErrorMessage: String = ""
     
+    // Animation states for 3D effects on map control buttons
+    @State private var toggle3DPressed = false
+    @State private var toggle3DScale: CGFloat = 1.0
+    @State private var locationPressed = false
+    @State private var locationScale: CGFloat = 1.0
+    
     enum TimeFilter: String, CaseIterable {
         case lateNight = "Late Night"
         case evening = "Evening"
@@ -139,6 +145,10 @@ struct MapView: View {
                                 // 3D mode toggle button (iOS 17+ only)
                                 if #available(iOS 17.0, *) {
                                     Button(action: {
+                                        // Haptic feedback
+                                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                        impactGenerator.impactOccurred()
+                                        
                                         withAnimation(.easeInOut(duration: 0.3)) {
                                             is3DMode.toggle()
                                         }
@@ -150,11 +160,29 @@ struct MapView: View {
                                             .background(universalBackgroundColor)
                                             .clipShape(Circle())
                                             .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                            .scaleEffect(toggle3DScale)
                                     }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
+                                    .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
+                                    .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                                        toggle3DPressed = pressing
+                                        toggle3DScale = pressing ? 0.95 : 1.0
+                                        
+                                        // Additional haptic feedback for press down
+                                        if pressing {
+                                            let selectionGenerator = UISelectionFeedbackGenerator()
+                                            selectionGenerator.selectionChanged()
+                                        }
+                                    }, perform: {})
                                 }
                                 
                                 // Location button
                                 Button(action: {
+                                    // Haptic feedback
+                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                    impactGenerator.impactOccurred()
+                                    
                                     if let userLocation = locationManager.userLocation {
                                         withAnimation(.easeInOut(duration: 0.75)) {
                                             region = MKCoordinateRegion(
@@ -171,7 +199,21 @@ struct MapView: View {
                                         .background(universalBackgroundColor)
                                         .clipShape(Circle())
                                         .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                        .scaleEffect(locationScale)
                                 }
+                                .buttonStyle(PlainButtonStyle())
+                                .animation(.easeInOut(duration: 0.15), value: locationScale)
+                                .animation(.easeInOut(duration: 0.15), value: locationPressed)
+                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                                    locationPressed = pressing
+                                    locationScale = pressing ? 0.95 : 1.0
+                                    
+                                    // Additional haptic feedback for press down
+                                    if pressing {
+                                        let selectionGenerator = UISelectionFeedbackGenerator()
+                                        selectionGenerator.selectionChanged()
+                                    }
+                                }, perform: {})
                             }
                             .padding(.trailing, 16)
                         }

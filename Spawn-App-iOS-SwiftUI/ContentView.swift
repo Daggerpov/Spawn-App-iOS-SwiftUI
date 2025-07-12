@@ -174,9 +174,14 @@ struct ContentView: View {
         // Switch to home tab to show the activity in feed
         selectedTab = .home
         
-        // Set up the deep linked activity state
-        deepLinkedActivityId = activityId
-        shouldShowDeepLinkedActivity = true
+        // Add a small delay to ensure tab switching completes before setting deep link state
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Set up the deep linked activity state
+            deepLinkedActivityId = activityId
+            shouldShowDeepLinkedActivity = true
+            
+            print("🎯 ContentView: Set deep link state - activityId: \(activityId), shouldShow: \(shouldShowDeepLinkedActivity)")
+        }
         
         // Clear the deep link manager state
         deepLinkManager.clearPendingDeepLink()

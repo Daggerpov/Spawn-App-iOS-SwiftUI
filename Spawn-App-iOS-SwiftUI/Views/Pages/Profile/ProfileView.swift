@@ -810,6 +810,11 @@ struct ProfileView: View {
 
 	private func copyProfileURL() {
 		let profileURL = "https://spawnapp.com/profile/\(user.id)"
+		
+		// Clear the pasteboard first to avoid any contamination
+		UIPasteboard.general.items = []
+		
+		// Set only the URL string to the pasteboard
 		UIPasteboard.general.string = profileURL
 
 		// Show notification toast
