@@ -9,7 +9,9 @@ import SwiftUI
 
 struct UserToS: View {
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var userAuth = UserAuthViewModel.shared
     @State private var agreed: Bool = false
+    @State private var isSubmitting: Bool = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -66,16 +68,31 @@ struct UserToS: View {
             .padding(.bottom, 8)
             .frame(width: 364, alignment: .leading)
             // Continue Button
-            Button(action: { /* Enter Spawn action */ }) {
-                Text("Enter Spawn")
-                    .font(Font.custom("Onest-SemiBold", size: 20))
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 63)
-                    .background(agreed ? Color(red: 0.32, green: 0.42, blue: 0.93) : Color.gray.opacity(0.4))
-                    .cornerRadius(16)
+            Button(action: {
+                if agreed {
+                    isSubmitting = true
+                    Task {
+                        await userAuth.acceptTermsOfService()
+                        isSubmitting = false
+                    }
+                }
+            }) {
+                ZStack {
+                    Text("Enter Spawn")
+                        .font(Font.custom("Onest-SemiBold", size: 20))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 63)
+                        .background(agreed ? Color(red: 0.32, green: 0.42, blue: 0.93) : Color.gray.opacity(0.4))
+                        .cornerRadius(16)
+                    
+                    if isSubmitting {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    }
+                }
             }
-            .disabled(!agreed)
+            .disabled(!agreed || isSubmitting)
             .frame(width: 364)
             .padding(.bottom, 16)
         }

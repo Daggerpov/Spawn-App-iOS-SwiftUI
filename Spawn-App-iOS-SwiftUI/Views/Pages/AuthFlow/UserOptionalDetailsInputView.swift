@@ -5,6 +5,7 @@ struct UserOptionalDetailsInputView: View {
     @State private var name: String = ""
     @State private var selectedImage: UIImage? = nil
     @State private var showImagePicker: Bool = false
+    @State private var isLoading: Bool = false
     @ObservedObject var userAuth = UserAuthViewModel.shared
     
     private var isFormValid: Bool {
@@ -70,7 +71,9 @@ struct UserOptionalDetailsInputView: View {
                 // Navigation Bar
                 HStack {
                     Spacer()
-                    Button(action: { /* Handle skip action */ }) {
+                    Button(action: {
+                        userAuth.shouldNavigateToUserToS = true
+                    }) {
                         Text("Skip for now")
                             .font(Font.onestRegular(size: 16))
                             .foregroundColor(.secondary)
@@ -129,18 +132,36 @@ struct UserOptionalDetailsInputView: View {
                     }
                     .padding(.horizontal, 40)
                     
+                    // Error Message
+                    if let errorMessage = userAuth.errorMessage {
+                        Text(errorMessage)
+                            .font(.onestRegular(size: 15))
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                    }
+                    
                     // Continue Button
                     Button(action: {
-                        // Handle continue action
+                        Task {
+                            isLoading = true
+                            guard let user = userAuth.spawnUser else { return }
+                            await userAuth.updateOptionalDetails(
+                                id: user.id.uuidString,
+                                name: name,
+                                profileImage: selectedImage
+                            )
+                            isLoading = false
+                        }
                     }) {
-                        OnboardingButtonCoreView("Continue") {
+                        OnboardingButtonCoreView(isLoading ? "Updating..." : "Continue") {
                             isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
                         }
                     }
                     .padding(.top, -16)
                     .padding(.bottom, -30)
                     .padding(.horizontal, -22)
-                    .disabled(!isFormValid)
+                    .disabled(!isFormValid || isLoading)
                 }
                 
                 Spacer()
@@ -148,6 +169,9 @@ struct UserOptionalDetailsInputView: View {
             .background(Color(.systemBackground))
         }
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
+            UserToS()
+        }
     }
 }
 

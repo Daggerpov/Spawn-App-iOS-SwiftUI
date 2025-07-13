@@ -7,14 +7,14 @@
 
 struct LoginDTO: Codable, Hashable {
     static func == (lhs: LoginDTO, rhs: LoginDTO) -> Bool {
-        return lhs.username == rhs.username
+        return lhs.usernameOrEmail == rhs.usernameOrEmail
     }
     
-    let username: String
+    let usernameOrEmail: String
     let password: String
     
-    init(username: String, password: String) {
-        self.username = username
+    init(usernameOrEmail: String, password: String) {
+        self.usernameOrEmail = usernameOrEmail
         self.password = password
     }
 }

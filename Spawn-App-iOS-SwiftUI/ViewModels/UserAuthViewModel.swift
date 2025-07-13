@@ -59,6 +59,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     @Published var shouldNavigateToUserOptionalDetailsInputView: Bool = false
     
+    @Published var shouldNavigateToUserToS: Bool = false
+    
     private var isOnboarding: Bool = false
 
 	private init(apiService: IAPIService) {
@@ -474,6 +476,34 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	func setShouldNavigateToFeedView() {
 		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
 	}
+    
+    func acceptTermsOfService() async {
+        guard let userId = spawnUser?.id else {
+            print("Error: No user ID available for TOS acceptance")
+            return
+        }
+        
+        guard let url = URL(string: APIService.baseURL + "auth/accept-tos/\(userId)") else {
+            print("Error: Failed to create URL for TOS acceptance")
+            return
+        }
+        
+        do {
+            let updatedUser: BaseUserDTO = try await apiService.patchData(from: url, with: EmptyRequestBody()) as BaseUserDTO
+            
+            await MainActor.run {
+                self.spawnUser = updatedUser
+                self.shouldNavigateToFeedView = true
+                self.isLoggedIn = true
+                print("Successfully accepted Terms of Service for user: \(updatedUser.username)")
+            }
+        } catch {
+            await MainActor.run {
+                print("Error accepting Terms of Service: \(error)")
+                self.errorMessage = "Failed to accept Terms of Service. Please try again."
+            }
+        }
+    }
 
 	func deleteAccount() async {
 		guard let userId = spawnUser?.id else {
@@ -728,11 +758,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
     }
     
     // The username argument could be an email as well
-    func signInWithEmailOrUsername(username: String, password: String) async {
+    func signInWithEmailOrUsername(usernameOrEmail: String, password: String) async {
         print("Attempting email/username sign-in")
         do {
-            if let url: URL = URL(string: APIService.baseURL + "auth/register") {
-                let response: BaseUserDTO? = try await self.apiService.sendData(LoginDTO(username: username, password: password), to: url, parameters: nil)
+            if let url: URL = URL(string: APIService.baseURL + "auth/login") {
+                let response: BaseUserDTO? = try await self.apiService.sendData(LoginDTO(usernameOrEmail: usernameOrEmail, password: password), to: url, parameters: nil)
                 
                 guard let user: BaseUserDTO = response else {
                     print("Failed to login with email/username")
@@ -1002,6 +1032,46 @@ class UserAuthViewModel: NSObject, ObservableObject {
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to update user details."
+            }
+        }
+    }
+    
+    // Update optional user details (name and profile picture)
+    func updateOptionalDetails(id: String, name: String, profileImage: UIImage?) async {
+        do {
+            // Convert UIImage to Data if provided
+            var imageData: Data? = nil
+            if let image = profileImage {
+                imageData = image.jpegData(compressionQuality: 0.8)
+            }
+            
+            let dto = OptionalDetailsDTO(name: name, profilePictureData: imageData)
+            if let url = URL(string: APIService.baseURL + "users/\(id)/optional-details") {
+                let response: BaseUserDTO? = try await self.apiService.sendData(dto, to: url, parameters: nil)
+                await MainActor.run {
+                    if let user = response {
+                        self.spawnUser = user
+                        self.shouldNavigateToUserToS = true
+                        self.errorMessage = nil
+                    } else {
+                        self.errorMessage = "Failed to update optional details."
+                    }
+                }
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                switch error {
+                case .failedHTTPRequest(let description):
+                    self.errorMessage = description
+                case .invalidStatusCode(let statusCode):
+                    self.errorMessage = "Server error (\(statusCode))."
+                default:
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to update optional details."
             }
         }
     }

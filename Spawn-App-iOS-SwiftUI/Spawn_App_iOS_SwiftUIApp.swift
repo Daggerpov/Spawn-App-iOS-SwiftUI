@@ -79,7 +79,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
                         }
 				} else {
                     // User is not logged in or has no user data - show launch screen with login options
-                    LoginInputView()
+                    WelcomeView()
                         .onOpenURL { url in
                             GIDSignIn.sharedInstance.handle(url)
                         }

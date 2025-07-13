@@ -359,12 +359,28 @@ class MockAPIService: IAPIService {
 		from url: URL,
 		with object: T
 	) async throws -> U {
-		// Handle user profile updates
-		if url.absoluteString.contains("users/") {
-			if U.self == BaseUserDTO.self {
-				return BaseUserDTO.danielAgapov as! U
+		/// ProfileViewModel.swift - updateSocialMedia():
+		if url.absoluteString.contains("users/")
+			&& url.absoluteString.contains("/social-media")
+		{
+			if let socialMediaDTO = object as? UpdateUserSocialMediaDTO {
+				return UserSocialMediaDTO(
+					id: UUID(),
+					userId: userId ?? UUID(),
+					whatsappLink: socialMediaDTO.whatsappNumber != nil
+						? "https://wa.me/\(socialMediaDTO.whatsappNumber!)"
+						: nil,
+					instagramLink: socialMediaDTO.instagramUsername != nil
+						? "https://www.instagram.com/\(socialMediaDTO.instagramUsername!)"
+						: nil
+				) as! U
 			}
 		}
+        
+        // Handle Terms of Service acceptance
+        if url.absoluteString.contains("auth/accept-tos/") {
+            return BaseUserDTO.danielAgapov as! U
+        }
 
 		throw APIError.invalidData
 	}
