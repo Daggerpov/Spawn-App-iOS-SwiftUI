@@ -185,20 +185,28 @@ struct UserDetailsInputView: View {
                     }
                     // Continue Button
                     Button(action: {
-                        Task {
-                            guard let user = viewModel.spawnUser else { return }
-                            await viewModel.updateUserDetails(
-                                id: user.id.uuidString,
-                                username: username,
-                                phoneNumber: phoneNumber,
-                                password: isOAuthUser ? nil : password
-                            )
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
+                        // Execute action with slight delay for animation
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            Task {
+                                guard let user = viewModel.spawnUser else { return }
+                                await viewModel.updateUserDetails(
+                                    id: user.id.uuidString,
+                                    username: username,
+                                    phoneNumber: phoneNumber,
+                                    password: isOAuthUser ? nil : password
+                                )
+                            }
                         }
                     }) {
                         OnboardingButtonCoreView("Continue") {
                             isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
                         }
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.top, -16)
                     .padding(.bottom, -30)
                     .padding(.horizontal, -22)

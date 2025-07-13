@@ -92,12 +92,20 @@ struct CoreInputView: View {
                             }
                             // Continue Button
                             Button(action: {
-                                continueAction()
+                                // Haptic feedback
+                                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                impactGenerator.impactOccurred()
+                                
+                                // Execute action with slight delay for animation
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    continueAction()
+                                }
                             }) {
                                 OnboardingButtonCoreView("Continue") {
                                     isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
                                 }
                             }
+                            .buttonStyle(PlainButtonStyle())
                             .padding(.top, -16)
                             .padding(.bottom, -30)
                             .padding(.horizontal, -22)

@@ -10,6 +10,10 @@ import SwiftUI
 struct AuthProviderButtonView: View {
 	var authProviderType: AuthProviderType
     
+    // Animation states
+    @State private var isPressed = false
+    @State private var scale: CGFloat = 1.0
+    
     init(_ type: AuthProviderType) {
         self.authProviderType = type
     }
@@ -47,6 +51,25 @@ struct AuthProviderButtonView: View {
 			RoundedRectangle(cornerRadius: 16)
 				.fill(figmaAuthButtonGrey)
 		)
+        .scaleEffect(scale)
+        .shadow(
+            color: Color.black.opacity(0.15),
+            radius: isPressed ? 2 : 8,
+            x: 0,
+            y: isPressed ? 2 : 4
+        )
+        .animation(.easeInOut(duration: 0.15), value: scale)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+            scale = pressing ? 0.95 : 1.0
+            
+            // Haptic feedback on press
+            if pressing {
+                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                impactGenerator.impactOccurred()
+            }
+        }, perform: {})
 		
 	}
 

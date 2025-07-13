@@ -12,6 +12,8 @@ struct UserToS: View {
     @StateObject private var userAuth = UserAuthViewModel.shared
     @State private var agreed: Bool = false
     @State private var isSubmitting: Bool = false
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
@@ -19,12 +21,12 @@ struct UserToS: View {
             // Title and Subtitle
             VStack(alignment: .center, spacing: 20) {
                 Text("Just One More Thing")
-                    .font(Font.custom("Onest-SemiBold", size: 32))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .font(heading1)
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     .multilineTextAlignment(.center)
                 Text("By continuing, you agree to our Terms of Service and acknowledge our Privacy Policy.")
-                    .font(Font.custom("Onest-Regular", size: 20))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .font(body1)
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     .multilineTextAlignment(.center)
             }
             .frame(width: 364)
@@ -43,34 +45,34 @@ struct UserToS: View {
                 Button(action: { agreed.toggle() }) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 5)
-                            .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
+                            .fill(universalBackgroundColor(from: themeService, environment: colorScheme))
                             .frame(width: 36, height: 36)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 5)
-                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    .stroke(universalPlaceHolderTextColor(from: themeService, environment: colorScheme), lineWidth: 1)
                             )
                         if agreed {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.black)
+                                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         }
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
                 Text("I agree to the ")
-                    .font(Font.custom("Onest-Medium", size: 14))
-                    .foregroundColor(Color(red: 0.12, green: 0.12, blue: 0.12))
+                    .font(.onestMedium(size: 14))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 + Text("Terms")
-                    .font(Font.custom("Onest-Medium", size: 14))
+                    .font(.onestMedium(size: 14))
                     .underline()
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 + Text(" & ")
-                    .font(Font.custom("Onest-Medium", size: 14))
-                    .foregroundColor(Color(red: 0.12, green: 0.12, blue: 0.12))
+                    .font(.onestMedium(size: 14))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 + Text("Privacy Policy")
-                    .font(Font.custom("Onest-Medium", size: 14))
+                    .font(.onestMedium(size: 14))
                     .underline()
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
             }
             .padding(.top, 8)
             .padding(.bottom, 8)
@@ -87,11 +89,11 @@ struct UserToS: View {
             }) {
                 ZStack {
                     Text("Enter Spawn")
-                        .font(Font.custom("Onest-SemiBold", size: 20))
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 63)
-                        .background(agreed ? Color(red: 0.32, green: 0.42, blue: 0.93) : Color.gray.opacity(0.4))
+                        .background(agreed ? figmaIndigo : universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                         .cornerRadius(16)
                     
                     if isSubmitting {
@@ -105,7 +107,7 @@ struct UserToS: View {
             .padding(.bottom, 16)
         }
         .frame(width: 428, height: 926)
-        .background(Color.white)
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
     }

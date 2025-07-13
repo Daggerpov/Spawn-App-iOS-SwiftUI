@@ -18,6 +18,10 @@ struct LoginInputView: View {
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
     
+    // Animation states
+    @State private var isPressed = false
+    @State private var scale: CGFloat = 1.0
+    
     private var isFormValid: Bool {
         !usernameOrEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
         !password.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -83,8 +87,15 @@ struct LoginInputView: View {
                     
                     // Continue Button
                     Button(action: {
-                        Task {
-                            await performLogin()
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
+                        // Execute action with slight delay for animation
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            Task {
+                                await performLogin()
+                            }
                         }
                     }) {
                         ZStack {
@@ -102,7 +113,22 @@ struct LoginInputView: View {
                             }
                         }
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .disabled(!isFormValid || isLoading)
+                    .scaleEffect(scale)
+                    .shadow(
+                        color: (isFormValid && !isLoading) ? Color.black.opacity(0.15) : Color.clear,
+                        radius: isPressed ? 2 : 8,
+                        x: 0,
+                        y: isPressed ? 2 : 4
+                    )
+                    .animation(.easeInOut(duration: 0.15), value: scale)
+                    .animation(.easeInOut(duration: 0.15), value: isPressed)
+                    .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                        guard isFormValid && !isLoading else { return }
+                        isPressed = pressing
+                        scale = pressing ? 0.95 : 1.0
+                    }, perform: {})
                 }
                 .padding(.horizontal, 40)
                 
