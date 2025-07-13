@@ -9,6 +9,8 @@ import SwiftUI
 
 struct AuthProviderButtonView: View {
 	var authProviderType: AuthProviderType
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     // Animation states
     @State private var isPressed = false
@@ -28,6 +30,7 @@ struct AuthProviderButtonView: View {
 			case .apple:
 				Image(systemName: "applelogo")
 					.font(.onestMedium(size: 20))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 			case .google:
 				Image("google_logo")
 					.resizable()
@@ -41,15 +44,14 @@ struct AuthProviderButtonView: View {
 				"Continue with \(authProviderType == .google ? "Google" : "Apple")"
 			)
 			.font(.onestMedium(size: 16))
-            
+            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
 		}
 		.padding()
 		.frame(maxWidth: .infinity)
 		.cornerRadius(16)
-		.foregroundColor(.black)
 		.background(
 			RoundedRectangle(cornerRadius: 16)
-				.fill(figmaAuthButtonGrey)
+				.fill(getButtonBackgroundColor())
 		)
         .scaleEffect(scale)
         .shadow(
@@ -70,9 +72,19 @@ struct AuthProviderButtonView: View {
                 impactGenerator.impactOccurred()
             }
         }, perform: {})
-		
 	}
-
+    
+    private func getButtonBackgroundColor() -> Color {
+        let currentScheme = themeService.colorScheme
+        switch currentScheme {
+        case .light:
+            return figmaAuthButtonGrey
+        case .dark:
+            return Color(hex: "#2C2C2C")
+        case .system:
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+        }
+    }
 }
 
 @available(iOS 17, *)

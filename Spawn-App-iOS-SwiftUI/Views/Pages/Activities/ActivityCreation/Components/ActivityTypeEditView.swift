@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ActivityTypeEditView: View {
     let activityTypeDTO: ActivityTypeDTO
+    let onBack: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     
@@ -22,8 +23,9 @@ struct ActivityTypeEditView: View {
     // Debounced save timer
     @State private var saveTimer: Timer?
     
-    init(activityTypeDTO: ActivityTypeDTO) {
+    init(activityTypeDTO: ActivityTypeDTO, onBack: (() -> Void)? = nil) {
         self.activityTypeDTO = activityTypeDTO
+        self.onBack = onBack
         
         // Initialize the view model with userId
         let userId = UserAuthViewModel.shared.spawnUser?.id ?? UUID()
@@ -101,8 +103,11 @@ struct ActivityTypeEditView: View {
             universalBackgroundColor
                 .ignoresSafeArea()
             
-            circularContentView
-            actionButtonsView
+            VStack(spacing: 0) {
+                circularContentView
+                actionButtonsView
+                Spacer()
+            }
         }
     }
     
@@ -115,7 +120,7 @@ struct ActivityTypeEditView: View {
         .frame(width: 290, height: 290)
         .background(colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93))
         .cornerRadius(30)
-        .offset(x: 0, y: -150)
+        .padding(.top, 40)
     }
     
     private var iconPickerView: some View {
@@ -201,11 +206,16 @@ struct ActivityTypeEditView: View {
                 borderColor: Color(red: 0.15, green: 0.14, blue: 0.14),
                 isEnabled: !viewModel.isLoading
             ) {
-                dismiss()
+                if let onBack = onBack {
+                    onBack()
+                } else {
+                    dismiss()
+                }
             }
             .frame(width: 290)
         }
-        .padding(.top, 38)
+        .padding(.top, 60)
+        .padding(.bottom, 40)
     }
     
 
@@ -299,7 +309,7 @@ struct ActivityTypeEditView: View {
     @Previewable @StateObject var appCache = AppCache.shared
     
     NavigationView {
-        ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+        ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew(), onBack: nil)
             .environmentObject(appCache)
     }
 } 

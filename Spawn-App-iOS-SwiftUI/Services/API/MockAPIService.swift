@@ -565,6 +565,12 @@ class MockAPIService: IAPIService {
 			}
 		}
 
+		// Handle Terms of Service acceptance
+		if url.absoluteString.contains("auth/accept-tos/") {
+			print("🔍 MOCK: Terms of Service acceptance")
+			return BaseUserDTO.danielAgapov as! U?
+		}
+
 		throw APIError.invalidData
 	}
 
@@ -744,11 +750,6 @@ class MockAPIService: IAPIService {
 				) as! U
 			}
 		}
-        
-        // Handle Terms of Service acceptance
-        if url.absoluteString.contains("auth/accept-tos/") {
-            return BaseUserDTO.danielAgapov as! U
-        }
 
 		throw APIError.invalidData
 	}

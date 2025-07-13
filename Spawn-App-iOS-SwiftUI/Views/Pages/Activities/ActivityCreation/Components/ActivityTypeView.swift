@@ -87,7 +87,9 @@ struct ActivityTypeView: View {
                 }
             }
             .navigationDestination(isPresented: $navigateToCreateType) {
-                ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+                ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew()) {
+                    navigateToCreateType = false
+                }
             }
         }
     }
@@ -671,7 +673,8 @@ struct CreateNewActivityTypeCard: View {
                     .multilineTextAlignment(.center)
             }
             .padding(16)
-            .frame(maxWidth: .infinity)
+			.padding(.vertical, -4)
+			.frame(maxWidth: .infinity)
             .background(cardBackgroundColor)
             .cornerRadius(12)
             .overlay(

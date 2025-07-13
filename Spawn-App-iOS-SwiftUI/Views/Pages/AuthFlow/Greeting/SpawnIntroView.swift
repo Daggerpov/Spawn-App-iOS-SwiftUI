@@ -110,7 +110,7 @@ struct SpawnIntroView: View {
                                 .frame(width: 20, height: 6)
                         } else {
                             Circle()
-                                .fill(Color.gray.opacity(0.3))
+                                .fill(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                                 .frame(width: 6, height: 6)
                         }
                     }

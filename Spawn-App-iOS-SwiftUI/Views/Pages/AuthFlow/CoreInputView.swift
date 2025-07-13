@@ -163,7 +163,7 @@ struct CoreInputView: View {
                 
                 Spacer()
             }
-            .background(Color(.systemBackground))
+            .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         }
         .navigationBarHidden(true)
     }
