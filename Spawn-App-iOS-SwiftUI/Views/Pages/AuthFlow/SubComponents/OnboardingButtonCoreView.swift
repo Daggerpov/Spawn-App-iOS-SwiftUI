@@ -24,7 +24,7 @@ struct OnboardingButtonCoreView: View {
         HStack {
             Spacer()
             Text(buttonText)
-                .font(body1)
+				.font(.onestSemiBold(size: 20))
                 .foregroundColor(.white)
                 .padding(.vertical, 16)
                 .padding(.horizontal, 22)

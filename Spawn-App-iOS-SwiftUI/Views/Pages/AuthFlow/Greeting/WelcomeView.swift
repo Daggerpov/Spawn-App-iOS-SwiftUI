@@ -31,32 +31,33 @@ struct WelcomeView: View {
                             }
                         }
                 } else {
+					Spacer()
+					Spacer()
+					Spacer()
+					Spacer()
+					Spacer()
                     // Static logo after animation
                     Image("SpawnLogo")
                         .scaledToFit()
                         .transition(.opacity)
+						.padding(.bottom, 12)
                 }
                 
                 if animationCompleted {
-                    Text("Welcome to Spawn")
-                        .font(heading1)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                        .transition(.opacity)
                     Text("Spontaneity made easy.")
-                        .font(body1)
+						.font(.onestRegular(size: 20))
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         .transition(.opacity)
-                    
-                    Spacer()
-                    
+
                     // Skip onboarding for returning users
                     if userAuth.hasCompletedOnboarding {
                         OnboardingButtonView("Get Started", destination: SignInView())
                             .padding(.bottom, 12)
                             .transition(.opacity)
                     } else {
+						Spacer()
                         OnboardingButtonView("Get Started", destination: SpawnIntroView())
-                            .padding(.bottom, 12)
+							.padding(.top, 12)
                             .transition(.opacity)
                     }
                 }
