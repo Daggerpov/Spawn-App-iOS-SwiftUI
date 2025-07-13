@@ -15,16 +15,17 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var appCache = AppCache.shared
 	@StateObject var themeService = ThemeService.shared
+	@StateObject var deepLinkManager = DeepLinkManager.shared
     
     init() {
         // Register custom fonts
         Font.registerFonts()
         
-        // Create font instances for our custom fonts
-        let regularFont = UIFont(name: "Onest-Regular", size: 16)!
-        let mediumFont = UIFont(name: "Onest-Medium", size: 16)!
-        let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16)!
-        let boldFont = UIFont(name: "Onest-Bold", size: 16)!
+        // Create font instances for our custom fonts with fallbacks
+        let regularFont = UIFont(name: "Onest-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+        let mediumFont = UIFont(name: "Onest-Medium", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .medium)
+        let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .semibold)
+        let boldFont = UIFont(name: "Onest-Bold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .bold)
         
         // Set default appearance for common UI controls
         UILabel.appearance().font = regularFont
@@ -50,9 +51,9 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	var body: some Scene {
 		WindowGroup {
 			Group {
-				if userAuth.isLoggedIn && userAuth.spawnUser != nil {
+				if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
 					// User is logged in and user data exists - go to main content
-					ContentView(user: userAuth.spawnUser!)
+					ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
 						.onAppear {
 							// Connect the app delegate to the app
 							appDelegate.app = self
@@ -60,6 +61,17 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 							// Initialize and validate the cache
 							Task {
 								await appCache.validateCache()
+							}
+						}
+						.onOpenURL { url in
+							print("🔗 App: Received URL: \(url.absoluteString)")
+							// Handle Google Sign-In URLs
+							if url.scheme == "com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na" {
+								GIDSignIn.sharedInstance.handle(url)
+							}
+							// Handle Spawn deep links (both custom URL schemes and Universal Links)
+							else if url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") {
+								deepLinkManager.handleURL(url)
 							}
 						}
 						.onestFontTheme()

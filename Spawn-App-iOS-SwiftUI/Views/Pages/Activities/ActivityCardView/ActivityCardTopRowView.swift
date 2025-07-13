@@ -13,9 +13,13 @@ struct ActivityCardTopRowView: View {
     let subtitleColor: Color = .white.opacity(0.85)
     let viewModel: ActivityInfoViewModel
     
-    init(activity: FullFeedActivityDTO) {
+    // Optional binding to control tab selection for current user navigation
+    @Binding var selectedTab: TabType?
+    
+    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
         self.activity = activity
         self.viewModel = ActivityInfoViewModel(activity: activity)
+        self._selectedTab = selectedTab
     }
 
 	var body: some View {
@@ -27,7 +31,7 @@ struct ActivityCardTopRowView: View {
                 activitySubtitleView
             }
             Spacer()
-            ParticipantsImagesView(activity: activity)
+            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab)
         }
 	}
     

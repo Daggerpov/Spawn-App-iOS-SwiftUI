@@ -19,7 +19,7 @@ struct LaunchView: View {
 		NavigationStack {
 			VStack(spacing: 16) {
 				Spacer()
-				Image("spawn_new_logo")
+				Image("spawn_branding_logo")
 					.resizable()
 					.scaledToFit()
 					.frame(width: 200, height: 100)
@@ -49,6 +49,7 @@ struct LaunchView: View {
 			}
 			.background(authPageBackgroundColor)
 			.ignoresSafeArea()
+			.preferredColorScheme(.light)
 			.navigationDestination(
 				isPresented: $userAuth.shouldNavigateToUserInfoInputView
 			) {

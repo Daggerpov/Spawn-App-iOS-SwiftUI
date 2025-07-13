@@ -16,12 +16,11 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var selectedDate: Date = Date()
 	@Published var activity: ActivityCreationDTO
 	@Published var creationMessage: String = ""
-	@Published var selectedType: ActivityType?
+	@Published var selectedActivityType: ActivityTypeDTO?
 	@Published var selectedDuration: ActivityDuration = .indefinite
 	@Published var selectedLocation: Location?
 
 	@Published var selectedFriends: [FullFriendUserDTO] = []
-	@Published var selectedCategory: ActivityCategory = .general
 	
 	// Validation properties
 	@Published var isTitleValid: Bool = true
@@ -29,10 +28,59 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var isLocationValid: Bool = true
 	@Published var isFormValid: Bool = false
 	
+	// Loading state
+	@Published var isCreatingActivity: Bool = false
+	
 	private var apiService: IAPIService
 	
 	public static func reInitialize() {
-		shared = ActivityCreationViewModel()
+		shared.resetToDefaults()
+	}
+	
+	// Method to pre-select an activity type (e.g., when coming from feed view)
+	public static func initializeWithSelectedActivityType(_ activityTypeDTO: ActivityTypeDTO?) {
+		// Instead of creating a new instance, reset the existing one and set the type
+		shared.resetToDefaults()
+		shared.selectedActivityType = activityTypeDTO
+	}
+	
+	// Helper method to reset the current instance to defaults
+	private func resetToDefaults() {
+		
+		// Reset all properties to their default values
+		selectedDate = Date()
+		creationMessage = ""
+		selectedActivityType = nil
+		selectedDuration = .indefinite
+		selectedLocation = nil
+		selectedFriends = []
+		isTitleValid = true
+		isInvitesValid = true
+		isLocationValid = true
+		isFormValid = false
+		isCreatingActivity = false
+		
+		// Reset the activity DTO
+		let defaultStart = Date()
+		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
+		activity = ActivityCreationDTO(
+			id: UUID(),
+			title: "",
+			startTime: defaultStart,
+			endTime: defaultEnd,
+			location: nil,
+			icon: "⭐️",
+			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
+			invitedFriendUserIds: []
+		)
+		
+		// Reload friends
+		loadAllFriendsAsSelected()
+	}
+	
+	// Force reset method for debugging
+	public static func forceReset() {
+		shared.selectedActivityType = nil
 	}
 
 	// Private initializer to enforce singleton pattern
@@ -52,10 +100,12 @@ class ActivityCreationViewModel: ObservableObject {
 			endTime: defaultEnd,
 			location: nil,
 			icon: "⭐️",
-			category: .general,
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
 			invitedFriendUserIds: []
 		)
+		
+		// Ensure selectedActivityType starts as nil by default (no auto-selection)
+		self.selectedActivityType = nil
 		
 		// Automatically populate friends when initializing
 		loadAllFriendsAsSelected()
@@ -63,60 +113,69 @@ class ActivityCreationViewModel: ObservableObject {
 	
 	// Load all friends and automatically select them for invitation
 	private func loadAllFriendsAsSelected() {
-		// Check if we have cached friends
-		if !AppCache.shared.friends.isEmpty {
-			selectedFriends = AppCache.shared.friends
-		} else {
-			// If no cached friends, fetch them
-			Task {
-				await fetchAndSelectAllFriends()
-			}
+		Task {
+			await loadAllFriends()
 		}
 	}
 	
-	// Fetch all friends from API and select them
-	private func fetchAndSelectAllFriends() async {
-		guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-		
-		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)") {
-			do {
-				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
-				
+	// Load all friends from cache or API
+	private func loadAllFriends() async {
+		do {
+			// Try to get friends from cache first
+			let cachedFriends = AppCache.shared.friends
+			if !cachedFriends.isEmpty {
 				await MainActor.run {
-					self.selectedFriends = fetchedFriends
-					// Update the app cache as well
-					AppCache.shared.updateFriends(fetchedFriends)
+					selectedFriends = cachedFriends
 				}
-			} catch {
-				print("Error fetching friends for auto-invite: \(error.localizedDescription)")
+				return
+			}
+			
+			// If cache is empty, fetch from API
+			guard let url = URL(string: APIService.baseURL + "users/friends/\(UserAuthViewModel.shared.spawnUser?.id ?? UUID())") else {
+				await MainActor.run {
+					selectedFriends = []
+				}
+				return
+			}
+			
+			let friends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+			await MainActor.run {
+				selectedFriends = friends
+			}
+		} catch {
+			print("Error loading friends: \(error)")
+			await MainActor.run {
+				selectedFriends = []
 			}
 		}
 	}
 	
-	// Helper function to format the date for display
-	func formatDate(_ date: Date) -> String {
-		let calendar = Calendar.current
-		let now = Date()
-
-		// If the date is today, show "today" without time
-		if calendar.isDate(date, equalTo: now, toGranularity: .day) {
-			return "Today"
+	// Method to add a friend to the selected friends list
+	func addFriend(_ friend: FullFriendUserDTO) {
+		if !selectedFriends.contains(where: { $0.id == friend.id }) {
+			selectedFriends.append(friend)
 		}
-		
-		// If the date is tomorrow, show "tomorrow"
-		if let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
-           calendar.isDate(date, equalTo: tomorrow, toGranularity: .day) {
-			return "Tomorrow"
+	}
+	
+	// Method to remove a friend from the selected friends list
+	func removeFriend(_ friend: FullFriendUserDTO) {
+		selectedFriends.removeAll { $0.id == friend.id }
+	}
+	
+	// Method to toggle a friend's selection
+	func toggleFriendSelection(_ friend: FullFriendUserDTO) {
+		if selectedFriends.contains(where: { $0.id == friend.id }) {
+			removeFriend(friend)
+		} else {
+			addFriend(friend)
 		}
-
-		// Otherwise, return the formatted date
-		let formatter = DateFormatter()
-		formatter.dateStyle = .medium
-		formatter.timeStyle = .none
-		return formatter.string(from: date)
+	}
+	
+	// Method to check if a friend is selected
+	func isFriendSelected(_ friend: FullFriendUserDTO) -> Bool {
+		return selectedFriends.contains(where: { $0.id == friend.id })
 	}
 
-	// Validates all form fields and returns if the form is valid
 	func validateActivityForm() async {
         // Check title
         let trimmedTitle = activity.title?.trimmingCharacters(in: .whitespaces) ?? ""
@@ -136,11 +195,11 @@ class ActivityCreationViewModel: ObservableObject {
 
 	func updateActivityDuration() {
 		let startTime = selectedDate
-		let endTime: Date
+		let endTime: Date?
 		
 		switch selectedDuration {
 		case .indefinite:
-			endTime = Calendar.current.date(byAdding: .hour, value: 24, to: startTime) ?? startTime
+			endTime = nil // Set to nil for indefinite duration
 		case .twoHours:
 			endTime = Calendar.current.date(byAdding: .hour, value: 2, to: startTime) ?? startTime
 		case .oneHour:
@@ -154,11 +213,13 @@ class ActivityCreationViewModel: ObservableObject {
 	}
 	
 	func updateActivityType() {
-		guard let type = selectedType else { return }
+		guard let activityTypeDTO = selectedActivityType else { return }
 		
-		activity.title = type.rawValue
-		activity.icon = type.icon
-		activity.category = type.toActivityCategory()
+		// Don't overwrite the user's custom title with the activity type name
+		// Only set icon based on the selected activity type
+		activity.icon = activityTypeDTO.icon
+		
+		// Category is now handled by the back-end, so we don't need to infer it
 	}
 	
 	func setLocation(_ location: Location) {
@@ -167,47 +228,69 @@ class ActivityCreationViewModel: ObservableObject {
 	}
 
 	func createActivity() async {
-		// Update activity with final details
-		updateActivityType()
-		updateActivityDuration()
-		
-		// Populate the invited friend user IDs from selected friends
+		// Check if activity creation is already in progress
+		if isCreatingActivity {
+			return
+		}
+
+		await MainActor.run {
+			isCreatingActivity = true
+		}
+
+		// Map selected friends to their IDs
 		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
 		
-		if let url = URL(string: APIService.baseURL + "activities") {
-			do {
-				_ = try await self.apiService.sendData(
-					activity, to: url, parameters: nil)
-                
-                // Post notification to trigger reload of activities in FeedViewModel
-                await MainActor.run {
-                    NotificationCenter.default.post(name: .activityCreated, object: nil)
-                }
-			} catch {
+		// Update the activity with the current date and duration
+		updateActivityDuration()
+		updateActivityType()
+		
+		// Validate form before creating
+		await validateActivityForm()
+		
+		guard isFormValid else {
+			isCreatingActivity = false
+			return
+		}
+		
+		do {
+			guard let url = URL(string: APIService.baseURL + "activities") else {
 				await MainActor.run {
-					creationMessage =
-						"There was an error creating your activity. Please try again"
+					creationMessage = "Failed to create activity. Invalid URL."
 				}
+				isCreatingActivity = false
+				return
 			}
+			
+			let createdActivity: FullFeedActivityDTO? = try await apiService.sendData(activity, to: url, parameters: nil)
+			
+			if let createdActivity = createdActivity {
+				// Cache the created activity
+				AppCache.shared.addOrUpdateActivity(createdActivity)
+				
+				// Post notification for successful creation
+				NotificationCenter.default.post(
+					name: .activityCreated,
+					object: createdActivity
+				)
+				
+				creationMessage = "Activity created successfully!"
+			} else {
+				creationMessage = "Failed to create activity. Please try again."
+			}
+			
+		} catch {
+			print("Error creating activity: \(error)")
+			await MainActor.run {
+				creationMessage = "Failed to create activity. Please try again."
+			}
+		}
+		
+		await MainActor.run {
+			isCreatingActivity = false
 		}
 	}
 }
 
 // MARK: - Helper Extensions
 
-extension ActivityType {
-	func toActivityCategory() -> ActivityCategory {
-		switch self {
-		case .foodAndDrink:
-			return .foodAndDrink
-		case .active:
-			return .active
-		case .grind:
-			return .grind
-		case .chill:
-			return .chill
-		case .general:
-			return .general
-		}
-	}
-} 
+// ActivityType enum extension removed - now using ActivityTypeDTO directly 

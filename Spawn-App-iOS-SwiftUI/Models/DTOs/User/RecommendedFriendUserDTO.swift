@@ -20,6 +20,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var bio: String?
 	var email: String
     var mutualFriendCount: Int?
+    var sharedActivitiesCount: Int?
 
 	init(
 		id: UUID,
@@ -28,7 +29,8 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		name: String? = nil,
 		bio: String? = nil,
 		email: String,
-        mutualFriendCount: Int? = 0
+        mutualFriendCount: Int? = 0,
+        sharedActivitiesCount: Int? = 0
 	) {
 		self.id = id
 		self.username = username
@@ -37,6 +39,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.bio = bio
 		self.email = email
         self.mutualFriendCount = mutualFriendCount
+        self.sharedActivitiesCount = sharedActivitiesCount
 	}
 }
 
@@ -65,43 +68,18 @@ extension RecommendedFriendUserDTO {
 		)
 	}()
 
-	static var shannon: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
-		id: UUID(),
-		username: "shannonaurl",
-		profilePicture: "Shannon_pfp",
-		name: "Shannon",
-		bio: "This is my bio.",
-		email: "shannon@gmail.com"
-	)
-
-	static var jennifer: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
-		id: UUID(),
-		username: "jenntjen",
-		profilePicture: "Jennifer_pfp",
-		name: "Jennifer Tjen",
-		bio: "This is my bio.",
-		email: "jennifer@gmail.com"
-	)
-
-	static var michael: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
-		id: UUID(),
-		username: "michaeltham",
-		profilePicture: "Michael_pfp",
-		name: "Michael Tham",
-		bio: "This is my bio.",
-		email: "haley@gmail.com"
-	)
-
 	static var haley: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
 		id: UUID(),
 		username: "haleyusername",
 		profilePicture: "Haley_pfp",
 		name: "Haley",
 		bio: "This is my bio.",
-		email: "haley@gmail.com"
+		email: "haley@gmail.com",
+        mutualFriendCount: 0,
+        sharedActivitiesCount: 3
 	)
 
 	static let mockUsers: [RecommendedFriendUserDTO] = {
-		return [danielAgapov, shannon, jennifer, michael, haley]
+		return [danielAgapov, danielLee, haley]
 	}()
 }

@@ -14,6 +14,14 @@
 				<string>com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>spawn.activity.invite</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>spawn</string>
+			</array>
+		</dict>
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Spawn needs access to your photo library so you can select profile pictures and share images with friends.</string>

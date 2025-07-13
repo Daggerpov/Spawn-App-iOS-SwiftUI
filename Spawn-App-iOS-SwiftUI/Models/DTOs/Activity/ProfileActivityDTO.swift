@@ -19,7 +19,6 @@ class ProfileActivityDTO: FullFeedActivityDTO {
         location: Location? = nil,
         note: String? = nil,
         icon: String? = nil,
-        category: ActivityCategory = .general,
         creatorUser: BaseUserDTO,
         participantUsers: [BaseUserDTO]? = nil,
         invitedUsers: [BaseUserDTO]? = nil,
@@ -39,7 +38,6 @@ class ProfileActivityDTO: FullFeedActivityDTO {
             location: location,
             note: note,
             icon: icon,
-            category: category,
             creatorUser: creatorUser,
             participantUsers: participantUsers,
             invitedUsers: invitedUsers,
@@ -64,9 +62,9 @@ class ProfileActivityDTO: FullFeedActivityDTO {
     
     // Encoding method to handle the additional property
     override func encode(to encoder: Encoder) throws {
-        try super.encode(to: encoder)
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(isPastActivity, forKey: .isPastActivity)
+        try super.encode(to: encoder)
     }
     
     // Convert a FullFeedActivityDTO to a ProfileActivityDTO
@@ -79,7 +77,6 @@ class ProfileActivityDTO: FullFeedActivityDTO {
             location: fullFeedActivityDTO.location,
             note: fullFeedActivityDTO.note,
             icon: fullFeedActivityDTO.icon,
-            category: fullFeedActivityDTO.category,
             creatorUser: fullFeedActivityDTO.creatorUser,
             participantUsers: fullFeedActivityDTO.participantUsers,
             invitedUsers: fullFeedActivityDTO.invitedUsers,

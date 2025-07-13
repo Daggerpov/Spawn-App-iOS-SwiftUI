@@ -22,7 +22,7 @@ class FriendRequestViewModel: ObservableObject {
 
 	func friendRequestAction(action: FriendRequestAction) async {
 		do {
-			// full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
+			// full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject/cancel}
 			guard
 				let url = URL(
 					string: APIService.baseURL
@@ -34,11 +34,11 @@ class FriendRequestViewModel: ObservableObject {
 			let _: EmptyResponse = try await self.apiService.updateData(
 				EmptyRequestBody(), to: url,
 				parameters: ["friendRequestAction": action.rawValue])
-			print("accepted friend request at url: \(url.absoluteString)")
+			print("processed friend request at url: \(url.absoluteString)")
 		} catch {
 			await MainActor.run {
 				creationMessage =
-					"There was an error \(action == .accept ? "accepting" : "declining") the friend request. Please try again"
+					"There was an error \(action == .accept ? "accepting" : action == .cancel ? "canceling" : "declining") the friend request. Please try again"
 			}
 		}
 	}
@@ -47,4 +47,5 @@ class FriendRequestViewModel: ObservableObject {
 enum FriendRequestAction: String {
 	case accept = "accept"
 	case decline = "reject"
+	case cancel = "cancel"
 }

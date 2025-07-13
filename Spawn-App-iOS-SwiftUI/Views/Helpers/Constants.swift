@@ -12,17 +12,17 @@ let universalNewRectangleCornerRadius: CGFloat = 8
 
 // activity colors
 let activityRedHexCode: String = "#FD4E4C"
-let activityYellowHexCode: String = "#FBCD29"
+let activityOrangeHexCode: String = "#FF6B35"
 let activityIndigoHexCode: String = "#536AEE"
 let activityGreenHexCode: String = "#1AB979"
 let activityPinkHexCode: String = "#ED64A6"
 let activityTealHexCode: String = "#38B2AC"
-let activityBlueHexCode: String = "#1E86E8"
-let activityPurpleHexCode: String = "#713DE5"
+let activityBlueHexCode: String = "#1D85E7"
+let activityPurpleHexCode: String = "#703CE5"
 let activityIndigoDarkHexCode: String = "#242CBB"
 
 let activityColorHexCodes: [String] = [
-	activityRedHexCode, activityYellowHexCode, activityIndigoHexCode,
+	activityRedHexCode, activityOrangeHexCode, activityIndigoHexCode,
 	activityGreenHexCode, activityPinkHexCode, activityTealHexCode,
 	activityBlueHexCode, activityPurpleHexCode, activityIndigoDarkHexCode
 ]
@@ -30,22 +30,14 @@ let activityColors = activityColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
 }
 
-// Function to deterministically assign colors to activities based on their ID
+// Function to get evenly distributed colors for activities with caching
 func getActivityColor(for activityId: UUID) -> Color {
-	// Convert UUID to a consistent integer for indexing
-	let uuidString = activityId.uuidString
-	let hash = uuidString.hashValue
-	let index = abs(hash) % activityColors.count
-	print(index)
-	return activityColors[index]
+	return ActivityColorService.shared.getColorForActivity(activityId)
 }
 
 // Function to get the hex code for an activity color
 func getActivityColorHex(for activityId: UUID) -> String {
-	let uuidString = activityId.uuidString
-	let hash = uuidString.hashValue
-	let index = abs(hash) % activityColorHexCodes.count
-	return activityColorHexCodes[index]
+	return ActivityColorService.shared.getColorHexForActivity(activityId)
 }
 
 // MARK: - Dynamic Colors (Theme-aware)
@@ -162,6 +154,9 @@ let figmaGrey: Color = Color(hex: figmaGreyHex)
 
 let figmaLightGreyHex: String = "#F2F2F2"
 let figmaLightGrey: Color = Color(hex: figmaLightGreyHex)
+
+let figmaCalendarDayIconHex: String = "#DCD6D6"
+let figmaCalendarDayIcon: Color = Color(hex: figmaCalendarDayIconHex)
 
 let figmaGreyGradientColors: [Color] = [Color(hex: "#F0F0F0"), Color(hex: "#F1F1F1"), Color(hex: "#F2F2F2"), Color(hex: "#F3F3F3"), Color(hex: "#F4F4F4"), Color(hex: "#F5F5F5")]
 

@@ -9,7 +9,8 @@ import Foundation
 import Combine
 
 class FriendRequestsViewModel: ObservableObject {
-    @Published var friendRequests: [FetchFriendRequestDTO] = []
+    @Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var sentFriendRequests: [FetchFriendRequestDTO] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String = ""
     
@@ -21,7 +22,8 @@ class FriendRequestsViewModel: ObservableObject {
         self.apiService = apiService
         
         if MockAPIService.isMocking {
-            self.friendRequests = FetchFriendRequestDTO.mockFriendRequests
+            self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
+            self.sentFriendRequests = FetchFriendRequestDTO.mockSentFriendRequests
         }
     }
     
@@ -31,19 +33,29 @@ class FriendRequestsViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            // Correct API endpoint for getting incoming friend requests: /api/v1/friend-requests/incoming/{userId}
-            guard let url = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") else {
-                errorMessage = "Invalid URL"
+            // Fetch incoming friend requests
+            guard let incomingUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") else {
+                errorMessage = "Invalid URL for incoming requests"
                 return
             }
             
-            let fetchedRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            self.friendRequests = fetchedRequests
+            // Fetch sent friend requests
+            guard let sentUrl = URL(string: APIService.baseURL + "friend-requests/sent/\(userId)") else {
+                errorMessage = "Invalid URL for sent requests"
+                return
+            }
+            
+            let fetchedIncomingRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: incomingUrl, parameters: nil)
+            let fetchedSentRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: sentUrl, parameters: nil)
+            
+            self.incomingFriendRequests = fetchedIncomingRequests
+            self.sentFriendRequests = fetchedSentRequests
         } catch {
             errorMessage = "Failed to fetch friend requests: \(error.localizedDescription)"
             if !MockAPIService.isMocking {
                 // For development, load mock data if real API fails
-                self.friendRequests = FetchFriendRequestDTO.mockFriendRequests
+                self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
+                self.sentFriendRequests = FetchFriendRequestDTO.mockSentFriendRequests
             }
         }
     }
@@ -51,7 +63,7 @@ class FriendRequestsViewModel: ObservableObject {
     @MainActor
     func respondToFriendRequest(requestId: UUID, action: FriendRequestAction) async {
         do {
-            // API endpoint: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject}
+            // API endpoint: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject/cancel}
             guard let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)") else {
                 errorMessage = "Invalid URL"
                 return
@@ -63,15 +75,17 @@ class FriendRequestsViewModel: ObservableObject {
                 parameters: ["friendRequestAction": action.rawValue]
             )
             
-            // Remove the request from the list
-            self.friendRequests.removeAll { $0.id == requestId }
+            // Remove the request from both lists (it could be in either)
+            self.incomingFriendRequests.removeAll { $0.id == requestId }
+            self.sentFriendRequests.removeAll { $0.id == requestId }
             
         } catch {
-            errorMessage = "Failed to \(action == .accept ? "accept" : "decline") friend request: \(error.localizedDescription)"
+            errorMessage = "Failed to \(action == .accept ? "accept" : action == .cancel ? "cancel" : "decline") friend request: \(error.localizedDescription)"
             
             // For mock environment, simulate success
             if MockAPIService.isMocking {
-                self.friendRequests.removeAll { $0.id == requestId }
+                self.incomingFriendRequests.removeAll { $0.id == requestId }
+                self.sentFriendRequests.removeAll { $0.id == requestId }
             }
         }
     }

@@ -12,6 +12,9 @@ struct ServiceConstants {
     
     // MARK: - Share URL Generation
     static func generateActivityShareURL(for activityId: UUID) -> URL {
-        return URL(string: "\(URLs.shareBase)/activity/\(activityId.uuidString)")!
+        		guard let url = URL(string: "\(URLs.shareBase)/activity/\(activityId.uuidString)") else {
+			return URL(string: "https://spawnapp.com")!
+		}
+		return url
     }
 } 

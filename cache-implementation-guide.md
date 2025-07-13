@@ -44,6 +44,7 @@ The app makes a request to `/api/v1/cache/validate/:userId` on startup, sending 
 {
   "friends": "2025-04-01T10:00:00Z",
   "events": "2025-04-01T10:10:00Z",
+  "activityTypes": "2025-04-01T10:15:00Z",
   "notifications": "2025-04-01T10:05:00Z"
 }
 ```
@@ -61,6 +62,10 @@ The backend responds with which items need to be refreshed:
   },
   "events": {
     "invalidate": true
+  },
+  "activityTypes": {
+    "invalidate": true,
+    "updatedItems": [...] // Optional
   }
 }
 ```
@@ -71,6 +76,7 @@ The app listens for push notifications with specific types that indicate data ch
 
 - `friend-accepted`: When a friend request is accepted
 - `event-updated`: When an event is updated
+- `activity-type-updated`: When activity types are created, modified, or deleted
 - `new-notification`: When a new notification is created
 
 When these notifications are received, the app refreshes the relevant cached data.
