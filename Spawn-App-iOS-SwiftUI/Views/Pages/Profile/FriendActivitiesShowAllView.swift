@@ -66,6 +66,11 @@ struct FriendActivitiesShowAllView: View {
             onDismiss: {
                 // Reset navigation state when calendar view is dismissed
                 navigateToCalendar = false
+            },
+            onDayActivitiesSelected: { activities in
+                // Handle day activities selection for friend's calendar
+                // For now, just log it - could be implemented later if needed
+                print("Day activities selected: \(activities.count) activities")
             }
         )
     }

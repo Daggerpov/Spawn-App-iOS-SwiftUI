@@ -210,7 +210,7 @@ struct ProfileShareDrawer: View {
                     title: "Link copied to clipboard",
                     message: "Profile link has been copied to your clipboard",
                     type: .success,
-                    duration: 10.0
+                    duration: 5.0
                 )
             }
         }

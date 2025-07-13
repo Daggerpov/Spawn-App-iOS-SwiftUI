@@ -10,6 +10,14 @@ struct ActivityTypeView: View {
     @State private var navigateToCreateType = false
     @State private var selectedActivityTypeForManagement: ActivityTypeDTO?
     
+    // Drag and drop state
+    @State private var draggedItem: ActivityTypeDTO?
+    @State private var isDragging = false
+    @State private var dragOffset = CGSize.zero
+    @State private var showingDragFeedback = false
+    @State private var dragTargetIndex: Int?
+    @State private var dragOverItem: ActivityTypeDTO?
+    
     // Initialize the view model with userId
     init(selectedActivityType: Binding<ActivityTypeDTO?>, onNext: @escaping () -> Void) {
         self._selectedActivityType = selectedActivityType
@@ -120,38 +128,154 @@ struct ActivityTypeView: View {
     
     private var activityTypeGrid: some View {
         ScrollView {
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
+            LazyVGrid(columns: gridColumns, spacing: 16) {
                 ForEach(viewModel.sortedActivityTypes, id: \.id) { activityTypeDTO in
-                    ActivityTypeCard(
-                        activityTypeDTO: activityTypeDTO,
-                        selectedActivityType: $selectedActivityType,
-                        onPin: {
-                            Task {
-                                await viewModel.togglePin(for: activityTypeDTO)
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await viewModel.deleteActivityType(activityTypeDTO)
-                            }
-                        },
-                        onManage: {
-                            selectedActivityTypeForManagement = activityTypeDTO
-                            navigateToManageType = true
-                        }
-                    )
+                    activityTypeCardView(for: activityTypeDTO)
                 }
                 
-                // Create New Activity Button
-                CreateNewActivityTypeCard(onCreateNew: {
-                    navigateToCreateType = true
-                })
+                createNewActivityButton
             }
             .padding()
         }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.clearError()
+            }
+        } message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private var gridColumns: [GridItem] {
+        [
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ]
+    }
+    
+    private var createNewActivityButton: some View {
+        CreateNewActivityTypeCard(onCreateNew: {
+            navigateToCreateType = true
+        })
+    }
+    
+    private func activityTypeCardView(for activityTypeDTO: ActivityTypeDTO) -> some View {
+        let index = viewModel.sortedActivityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) ?? 0
+        let isDraggedItem = draggedItem?.id == activityTypeDTO.id
+        let isDropTarget = dragOverItem?.id == activityTypeDTO.id
+        
+        // Check if this would be an invalid drop target
+        let isInvalidDropTarget = isDropTarget && draggedItem != nil && 
+                                  !draggedItem!.isPinned && activityTypeDTO.isPinned
+        
+        return ActivityTypeCard(
+            activityTypeDTO: activityTypeDTO,
+            selectedActivityType: $selectedActivityType,
+            onPin: {
+                Task {
+                    await viewModel.togglePin(for: activityTypeDTO)
+                }
+            },
+            onDelete: {
+                Task {
+                    await viewModel.deleteActivityType(activityTypeDTO)
+                }
+            },
+            onManage: {
+                selectedActivityTypeForManagement = activityTypeDTO
+                navigateToManageType = true
+            },
+            isDragging: isDraggedItem,
+            isDropTarget: isDropTarget,
+            isInvalidDropTarget: isInvalidDropTarget,
+            onDragStart: {
+                handleDragStart(for: activityTypeDTO)
+            },
+            onDragEnd: {
+                handleDragEnd()
+            }
+        )
+        .scaleEffect(isDraggedItem ? 1.05 : 1.0)
+        .opacity(isDraggedItem ? 0.8 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: isDraggedItem)
+        .animation(.easeInOut(duration: 0.15), value: isDropTarget)
+        .onDrop(of: [.text], isTargeted: .constant(isDropTarget)) { providers, location in
+            return handleDrop(for: activityTypeDTO, at: index)
+        }
+        .onDrop(of: [.text], isTargeted: nil) { providers, location in
+            if !isDropTarget {
+                dragOverItem = activityTypeDTO
+            }
+            return false
+        }
+    }
+    
+    private func handleDragStart(for activityTypeDTO: ActivityTypeDTO) {
+        draggedItem = activityTypeDTO
+        isDragging = true
+        showingDragFeedback = true
+        dragOverItem = nil
+        
+        // Haptic feedback for drag start
+        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+        impactGenerator.impactOccurred()
+    }
+    
+    private func handleDragEnd() {
+        // Reset all drag states
+        draggedItem = nil
+        isDragging = false
+        showingDragFeedback = false
+        dragOffset = .zero
+        dragTargetIndex = nil
+        dragOverItem = nil
+    }
+    
+    private func handleDrop(for activityTypeDTO: ActivityTypeDTO, at index: Int) -> Bool {
+        guard let draggedItem = draggedItem else { return false }
+        
+        let sourceIndex = viewModel.sortedActivityTypes.firstIndex(where: { $0.id == draggedItem.id }) ?? 0
+        let destinationIndex = index
+        
+        // Don't perform reorder if indices are the same
+        guard sourceIndex != destinationIndex else { 
+            handleDragEnd()
+            return false 
+        }
+        
+        let destinationItem = viewModel.sortedActivityTypes[destinationIndex]
+        
+        // Validate constraints before allowing drop
+        if !draggedItem.isPinned && destinationItem.isPinned {
+            // Show error feedback
+            let errorGenerator = UINotificationFeedbackGenerator()
+            errorGenerator.notificationOccurred(.error)
+            
+            // Clear drag state
+            handleDragEnd()
+            
+            // Show error message
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                viewModel.showError("Unpinned activities cannot be moved before pinned activities")
+            }
+            return false
+        }
+        
+        // Success feedback
+        let successGenerator = UIImpactFeedbackGenerator(style: .light)
+        successGenerator.impactOccurred()
+        
+        // Perform the reorder
+        Task {
+            await viewModel.reorderActivityTypes(from: sourceIndex, to: destinationIndex)
+        }
+        
+        // Clear drag state
+        handleDragEnd()
+        
+        return true
     }
 }
 
@@ -162,9 +286,19 @@ struct ActivityTypeCard: View {
     let onDelete: () -> Void
     let onManage: () -> Void
     
+    // Drag and drop states
+    let isDragging: Bool
+    let isDropTarget: Bool
+    let isInvalidDropTarget: Bool
+    var onDragStart: (() -> Void)?
+    var onDragEnd: (() -> Void)?
+    
     // Animation states for 3D effect
     @State private var isPressed = false
     @State private var scale: CGFloat = 1.0
+    @State private var dragOffset = CGSize.zero
+    @State private var longPressActivated = false
+    @State private var wiggleOffset: CGFloat = 0
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -207,8 +341,73 @@ struct ActivityTypeCard: View {
         }
     }
 
+    // Computed properties to break down complex expressions
+    private var borderColor: Color {
+        if longPressActivated {
+            return Color.blue.opacity(0.5)
+        } else if isInvalidDropTarget {
+            return Color.red.opacity(0.8)
+        } else if isDropTarget {
+            return Color.blue.opacity(0.8)
+        } else if isSelected {
+            return universalSecondaryColor
+        } else {
+            return Color.clear
+        }
+    }
+    
+    private var borderWidth: CGFloat {
+        if longPressActivated || isDropTarget || isInvalidDropTarget {
+            return 2
+        } else if isSelected {
+            return 2
+        } else {
+            return 0
+        }
+    }
+    
+    private var shadowColor: Color {
+        let opacity = (longPressActivated || isDragging) ? 0.3 : 0.15
+        return Color.black.opacity(opacity)
+    }
+    
+    private var shadowRadius: CGFloat {
+        if longPressActivated || isDragging {
+            return 12
+        } else if isPressed {
+            return 2
+        } else {
+            return 8
+        }
+    }
+    
+    private var shadowOffset: CGFloat {
+        if longPressActivated || isDragging {
+            return 6
+        } else if isPressed {
+            return 2
+        } else {
+            return 4
+        }
+    }
+    
+    private var dropTargetFillColor: Color {
+        return isInvalidDropTarget ? Color.red.opacity(0.1) : Color.blue.opacity(0.1)
+    }
+    
+    private var dropTargetOpacity: Double {
+        return (isDropTarget || isInvalidDropTarget) ? 1 : 0
+    }
+    
+    private var backgroundFillColor: Color {
+        return longPressActivated ? adaptiveBackgroundColor.opacity(0.8) : adaptiveBackgroundColor
+    }
+
     var body: some View {
         Button(action: { 
+            // Only allow selection if not in drag mode
+            guard !longPressActivated else { return }
+            
             // Haptic feedback
             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
             impactGenerator.impactOccurred()
@@ -237,18 +436,25 @@ struct ActivityTypeCard: View {
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(adaptiveBackgroundColor)
+                        .fill(backgroundFillColor)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(isSelected ? universalSecondaryColor : Color.clear, lineWidth: 2)
+                                .stroke(borderColor, lineWidth: borderWidth)
                         )
                 )
                 .scaleEffect(scale)
                 .shadow(
-                    color: Color.black.opacity(0.15),
-                    radius: isPressed ? 2 : 8,
+                    color: shadowColor,
+                    radius: shadowRadius,
                     x: 0,
-                    y: isPressed ? 2 : 4
+                    y: shadowOffset
+                )
+                .overlay(
+                    // Drop target indicator
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(dropTargetFillColor)
+                        .opacity(dropTargetOpacity)
+                        .animation(.easeInOut(duration: 0.2), value: dropTargetOpacity)
                 )
                 
                 // Pin icon overlay
@@ -265,12 +471,49 @@ struct ActivityTypeCard: View {
                     }
                     .padding(8)
                 }
+                
+                // Drag indicator overlay when in drag mode
+                if longPressActivated {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "arrow.up.arrow.down")
+                                .foregroundColor(.blue)
+                                .font(.system(size: 12))
+                                .padding(.trailing, 8)
+                        }
+                        Spacer()
+                    }
+                    .padding(8)
+                }
             }
         }
         .buttonStyle(PlainButtonStyle())
+        .offset(x: dragOffset.width + wiggleOffset, y: dragOffset.height)
         .animation(.easeInOut(duration: 0.15), value: scale)
         .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+        .animation(.easeInOut(duration: 0.2), value: longPressActivated)
+        .onAppear {
+            // Start wiggle animation when in drag mode
+            if isDragging && !longPressActivated {
+                startWiggleAnimation()
+            }
+        }
+        .onChange(of: isDragging) { newValue in
+            if newValue && !longPressActivated {
+                startWiggleAnimation()
+            } else {
+                stopWiggleAnimation()
+            }
+        }
+        .onChange(of: isInvalidDropTarget) { newValue in
+            if newValue {
+                // Provide haptic feedback for invalid drop target
+                let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                impactGenerator.impactOccurred()
+            }
+        }
+        .onLongPressGesture(minimumDuration: 0.5, maximumDistance: .infinity, pressing: { pressing in
             isPressed = pressing
             scale = pressing ? 0.95 : 1.0
             
@@ -279,7 +522,38 @@ struct ActivityTypeCard: View {
                 let selectionGenerator = UISelectionFeedbackGenerator()
                 selectionGenerator.selectionChanged()
             }
-        }, perform: {})
+        }, perform: {
+            // Activate drag mode after long press
+            longPressActivated = true
+            
+            // Stronger haptic feedback for drag activation
+            let impactGenerator = UIImpactFeedbackGenerator(style: .heavy)
+            impactGenerator.impactOccurred()
+        })
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { value in
+                    // Only allow drag if long press was activated
+                    guard longPressActivated else { return }
+                    
+                    dragOffset = value.translation
+                    
+                    // Start drag operation if not already dragging and we've moved enough
+                    if !isDragging && 
+                       (abs(value.translation.width) > 10 || abs(value.translation.height) > 10) {
+                        onDragStart?()
+                    }
+                }
+                .onEnded { value in
+                    // Reset drag state
+                    longPressActivated = false
+                    dragOffset = .zero
+                    
+                    if isDragging {
+                        onDragEnd?()
+                    }
+                }
+        )
         .contextMenu {
             Button(action: onPin) {
                 Label(
@@ -296,6 +570,31 @@ struct ActivityTypeCard: View {
                 Label("Delete", systemImage: "trash")
             }
             .foregroundColor(.red)
+        }
+        .onDrag {
+            // Always return an NSItemProvider, but only populate it when drag is active
+            if longPressActivated {
+                // Start drag operation when SwiftUI drag begins
+                if !isDragging {
+                    onDragStart?()
+                }
+                return NSItemProvider(object: activityTypeDTO.id.uuidString as NSString)
+            } else {
+                return NSItemProvider()
+            }
+        }
+    }
+    
+    // MARK: - Wiggle Animation Methods
+    private func startWiggleAnimation() {
+        withAnimation(.easeInOut(duration: 0.1).repeatForever(autoreverses: true)) {
+            wiggleOffset = 1.0
+        }
+    }
+    
+    private func stopWiggleAnimation() {
+        withAnimation(.easeInOut(duration: 0.1)) {
+            wiggleOffset = 0
         }
     }
 }

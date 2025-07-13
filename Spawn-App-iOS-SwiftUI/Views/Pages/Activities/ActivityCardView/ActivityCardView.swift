@@ -11,6 +11,9 @@ struct ActivityCardView: View {
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
     
+    // State for delete confirmation dialog
+    @State private var showDeleteConfirmation = false
+    
     init(
         userId: UUID, activity: FullFeedActivityDTO, color: Color,
         locationManager: LocationManager,
@@ -85,6 +88,31 @@ struct ActivityCardView: View {
             }
             .onTapGesture {
                 callback(activity, color)
+            }
+            .contextMenu {
+                // Only show delete option if the current user is the creator of the activity
+                if viewModel.userId == activity.creatorUser.id {
+                    Button(action: {
+                        showDeleteConfirmation = true
+                    }) {
+                        Label("Delete", systemImage: "trash")
+                    }
+                    .foregroundColor(.red)
+                }
+            }
+            .alert("Delete Activity", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {}
+                Button("Delete", role: .destructive) {
+                    Task {
+                        do {
+                            try await viewModel.deleteActivity()
+                        } catch {
+                            print("Failed to delete activity: \(error.localizedDescription)")
+                        }
+                    }
+                }
+            } message: {
+                Text("Are you sure you want to delete this activity? This action cannot be undone.")
             }
 
             // Time Status Badge

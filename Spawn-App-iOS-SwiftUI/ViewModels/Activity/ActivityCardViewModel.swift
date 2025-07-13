@@ -69,6 +69,27 @@ class ActivityCardViewModel: ObservableObject {
 			}
 		}
 	}
+
+	/// Deletes the activity
+	@MainActor
+	public func deleteActivity() async throws {
+		let urlString = "\(APIService.baseURL)activities/\(activity.id)"
+		guard let url = URL(string: urlString) else {
+			throw NSError(domain: "Invalid URL", code: 0, userInfo: nil)
+		}
+
+		// Use the deleteData method from APIService
+		try await apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
+		
+		// Remove the activity from the cache after successful deletion
+		AppCache.shared.removeActivity(activity.id)
+		
+		// Post notification for activity deletion
+		NotificationCenter.default.post(
+			name: .activityDeleted,
+			object: activity.id
+		)
+	}
 }
 
 struct EmptyBody: Codable {} 

@@ -121,7 +121,7 @@ struct ActivityDescriptionView: View {
 			.background(color)
 			.cornerRadius(universalRectangleCornerRadius)
 		}
-		.sheet(isPresented: $showActivityEditView) {
+		.fullScreenCover(isPresented: $showActivityEditView) {
 			ActivityEditView(viewModel: viewModel)
 		}
 		.sheet(isPresented: $showAttendees) {

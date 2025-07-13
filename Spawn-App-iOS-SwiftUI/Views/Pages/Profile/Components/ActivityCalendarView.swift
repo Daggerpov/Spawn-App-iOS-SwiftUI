@@ -19,10 +19,9 @@ struct ActivityCalendarView: View {
     @State private var currentMonth = Date()
     @State private var scrollOffset: CGFloat = 0
     @State private var hasInitiallyScrolled = false
-    @State private var navigateToDayActivities = false
-    @State private var selectedDayActivities: [CalendarActivityDTO] = []
     
     var onDismiss: (() -> Void)?
+    var onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
     
     var body: some View {
         ZStack {
@@ -39,8 +38,7 @@ struct ActivityCalendarView: View {
                                     month: month,
                                     profileViewModel: profileViewModel,
                                     userAuth: userAuth,
-                                    navigateToDayActivities: $navigateToDayActivities,
-                                    selectedDayActivities: $selectedDayActivities
+                                    onDayActivitiesSelected: onDayActivitiesSelected
                                 )
                                 .id(month)
                             }
@@ -72,20 +70,6 @@ struct ActivityCalendarView: View {
         }
         .navigationTitle(calendarOwnerName != nil ? "\(calendarOwnerName!)'s Activity Calendar" : "Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $navigateToDayActivities) {
-            DayActivitiesPageView(
-                date: selectedDayActivities.first?.dateAsDate ?? Date(),
-                activities: selectedDayActivities,
-                onDismiss: {
-                    navigateToDayActivities = false
-                },
-                onActivitySelected: { activity in
-                    navigateToDayActivities = false
-                    handleActivitySelection(activity)
-                }
-            )
-            .presentationDetents([.medium, .large])
-        }
         .onAppear {
             // Fetch calendar data for current and upcoming months
             fetchCalendarData()
@@ -154,8 +138,7 @@ struct MonthCalendarView: View {
     let month: Date
     @StateObject var profileViewModel: ProfileViewModel
     @StateObject var userAuth: UserAuthViewModel
-    @Binding var navigateToDayActivities: Bool
-    @Binding var selectedDayActivities: [CalendarActivityDTO]
+    let onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
     
     @State private var showActivityDetails = false
     @State private var selectedActivity: CalendarActivityDTO?
@@ -185,8 +168,7 @@ struct MonthCalendarView: View {
                                         selectedActivity = activities.first!
                                         showActivityDetails = true
                                     } else if activities.count > 1 {
-                                        selectedDayActivities = activities
-                                        navigateToDayActivities = true
+                                        onDayActivitiesSelected(activities)
                                     }
                                 }
                             )
@@ -454,6 +436,7 @@ extension DateFormatter {
         profileViewModel: ProfileViewModel(userId: UUID()),
         userCreationDate: nil,
         calendarOwnerName: nil,
-        onDismiss: {}
+        onDismiss: {},
+        onDayActivitiesSelected: { _ in }
     )
 } 

@@ -15,9 +15,10 @@ struct ActivityCardPopupView: View {
     @ObservedObject var activity: FullFeedActivityDTO
     var activityColor: Color
     @State private var region: MKCoordinateRegion
+    @Binding var isExpanded: Bool
     
     
-    init(activity: FullFeedActivityDTO, activityColor: Color) {
+    init(activity: FullFeedActivityDTO, activityColor: Color, isExpanded: Binding<Bool>) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity, locationManager: LocationManager())
         let mapVM = MapViewModel(activity: activity)
@@ -25,6 +26,7 @@ struct ActivityCardPopupView: View {
         self._cardViewModel = StateObject(wrappedValue: ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity))
         self.activityColor = activityColor
         _region = State(initialValue: mapVM.initialRegion)
+        self._isExpanded = isExpanded
     }
     
     var body: some View {
@@ -32,8 +34,8 @@ struct ActivityCardPopupView: View {
             VStack(spacing: 0) {
                 // Handle bar
                 RoundedRectangle(cornerRadius: 2.5)
-                                            .fill(universalBackgroundColor.opacity(0.8))
-                    .frame(width: 40, height: 5)
+                    .fill(Color.white.opacity(0.6))
+                    .frame(width: 50, height: 4)
                     .padding(.top, 8)
                     .padding(.bottom, 16)
                 
@@ -50,29 +52,37 @@ struct ActivityCardPopupView: View {
                     // Spawn In button and attendees
                     ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
                     
-                    // Map view
-                    Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
-                        MapAnnotation(coordinate: pin.coordinate) {
-                            Image(systemName: "mappin")
-                                .font(.title)
-                                .foregroundColor(.red)
+                    // Map view - conditionally shown based on expansion state
+                    if isExpanded {
+                        Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
+                            MapAnnotation(coordinate: pin.coordinate) {
+                                Image(systemName: "mappin")
+                                    .font(.title)
+                                    .foregroundColor(.red)
+                            }
                         }
+                        .frame(height: 175)
+                        .cornerRadius(12)
+                        
+                        // Location details
+                        directionRow
                     }
-                    .frame(height: 175)
-                    .cornerRadius(12)
-                    
-                    // Location details
-                    directionRow
                     
                     // Chat section
                     ChatroomButtonView(activity: activity, activityColor: activityColor)
-                    Spacer(minLength: 20)
+                    
+                    // Additional spacing for collapsed state
+                    if !isExpanded {
+                        Spacer(minLength: 20)
+                    } else {
+                        Spacer(minLength: 40)
+                    }
                 }
                 .padding(.horizontal, 20)
             }
             .background(activityColor.opacity(0.97))
-            .cornerRadius(20)
-            .shadow(radius: 20)
+            .cornerRadius(isExpanded ? 0 : 20)
+            .shadow(radius: isExpanded ? 0 : 20)
             .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
         }
     }
@@ -292,7 +302,7 @@ struct ParticipationButtonView: View {
             Spacer()
             ParticipantsImagesView(activity: activity)
         }
-        .sheet(isPresented: $showingEditFlow) {
+        .fullScreenCover(isPresented: $showingEditFlow) {
             ActivityCreationView(
                 creatingUser: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
                 closeCallback: {
@@ -383,7 +393,7 @@ struct ChatroomButtonView: View {
 
 struct ActivityCardPopupView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue)
+        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue, isExpanded: .constant(false))
             
     }
 }

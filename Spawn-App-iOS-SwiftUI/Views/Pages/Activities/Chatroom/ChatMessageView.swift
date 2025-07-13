@@ -27,11 +27,10 @@ struct ChatMessageView: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(.trailing, 24)
         } else {
             // Other user's message (left aligned)
             VStack(alignment: .leading, spacing: 8) {
-                // User name and timestamp
+                // User name
                 HStack(alignment: .top, spacing: 8) {
                     Circle()
                         .foregroundColor(.clear)
@@ -48,7 +47,11 @@ struct ChatMessageView: View {
                 
                 // Message bubble with profile image
                 HStack(alignment: .bottom, spacing: 8) {
-                    ProfilePictureView(user: message.senderUser)
+                    Circle()
+                        .foregroundColor(.clear)
+                        .frame(width: 24, height: 24)
+                        .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+                        .shadow(color: Color.black.opacity(0.25), radius: 4.02, y: 1.61)
                     
                     HStack {
                         Text(message.content)
@@ -67,7 +70,6 @@ struct ChatMessageView: View {
                 .frame(maxWidth: 300)
             }
             .frame(maxWidth: 346, alignment: .leading)
-            .padding(.leading, 24)
         }
     }
 }
