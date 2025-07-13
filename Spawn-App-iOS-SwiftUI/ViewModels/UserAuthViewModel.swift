@@ -735,7 +735,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		await MainActor.run {
 			self.spawnUser = nil
 			self.isLoggedIn = false
-			self.isOnboardingComplete = false
+			self.hasCompletedOnboarding = false
 			
 			// Clear any cached data
 			AppCache.shared.clearAllCaches()
