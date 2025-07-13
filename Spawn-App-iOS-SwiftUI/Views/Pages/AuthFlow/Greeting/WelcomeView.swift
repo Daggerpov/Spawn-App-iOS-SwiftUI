@@ -23,10 +23,12 @@ struct WelcomeView: View {
                     RiveAnimationView.logoAnimation(fileName: "spawn_logo_animation")
                         .frame(width: 300, height: 300)
                         .onAppear {
+                            print("🎬 DEBUG: Starting logo animation in WelcomeView")
                             // Show content after animation completes
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     animationCompleted = true
+                                    print("🎬 DEBUG: Animation completed, showing Get Started button")
                                 }
                             }
                         }
@@ -54,11 +56,17 @@ struct WelcomeView: View {
                         OnboardingButtonView("Get Started", destination: SignInView())
                             .padding(.bottom, 12)
                             .transition(.opacity)
+                            .onAppear {
+                                print("🔘 DEBUG: Showing Get Started button (for returning users)")
+                            }
                     } else {
 						Spacer()
                         OnboardingButtonView("Get Started", destination: SpawnIntroView())
 							.padding(.top, 12)
                             .transition(.opacity)
+                            .onAppear {
+                                print("🔘 DEBUG: Showing Get Started button (for new users)")
+                            }
                     }
                 }
                 
@@ -66,6 +74,9 @@ struct WelcomeView: View {
             }
             .background(universalBackgroundColor(from: themeService, environment: colorScheme))
             .ignoresSafeArea(.all)
+            .onAppear {
+                print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
+            }
         }
     }
 }

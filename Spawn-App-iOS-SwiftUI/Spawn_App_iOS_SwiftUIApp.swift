@@ -48,63 +48,76 @@ struct Spawn_App_iOS_SwiftUIApp: App {
         ], for: .normal)
     }
 
+	private var rootView: some View {
+		Group {
+			if !userAuth.hasCheckedSpawnUserExistence && userAuth.isFirstLaunch {
+				// Show loading screen only on first launch
+				LoadingView()
+					.onAppear {
+						// Connect the app delegate to the app
+						appDelegate.app = self
+						
+						print("🔄 DEBUG: Showing LoadingView - hasCheckedSpawnUserExistence: \(userAuth.hasCheckedSpawnUserExistence), isFirstLaunch: \(userAuth.isFirstLaunch)")
+						
+						// If we're mocking, simulate a login with mock user
+						if MockAPIService.isMocking {
+							Task {
+								await userAuth.setMockUser()
+							}
+						}
+					}
+					.onOpenURL { url in
+						GIDSignIn.sharedInstance.handle(url)
+					}
+					.onestFontTheme()
+			} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
+				// User is logged in and user data exists - go to main content
+				ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
+					.onAppear {
+						print("🔄 DEBUG: Showing ContentView - User is logged in")
+						// Initialize and validate the cache
+						Task {
+							await appCache.validateCache()
+						}
+					}
+					.onOpenURL { url in
+						print("🔗 App: Received URL: \(url.absoluteString)")
+						// Handle Google Sign-In URLs
+						if url.scheme == "com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na" {
+							GIDSignIn.sharedInstance.handle(url)
+						}
+						// Handle Spawn deep links (both custom URL schemes and Universal Links)
+						else if url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") {
+							deepLinkManager.handleURL(url)
+						}
+					}
+					.onestFontTheme()
+			} else {
+				// User is not logged in or has no user data - show welcome screen
+				WelcomeView()
+					.onAppear {
+						print("🔄 DEBUG: Showing WelcomeView - hasCheckedSpawnUserExistence: \(userAuth.hasCheckedSpawnUserExistence), isLoggedIn: \(userAuth.isLoggedIn), spawnUser: \(userAuth.spawnUser?.id.uuidString ?? "nil")")
+						
+						// Connect the app delegate to the app
+						appDelegate.app = self
+						
+						// If not first launch, set hasCheckedSpawnUserExistence to true immediately
+						if !userAuth.isFirstLaunch {
+							userAuth.hasCheckedSpawnUserExistence = true
+						}
+					}
+					.onOpenURL { url in
+						GIDSignIn.sharedInstance.handle(url)
+					}
+					.onestFontTheme()
+			}
+		}
+	}
+	
 	var body: some Scene {
 		WindowGroup {
-			Group {
-				if !userAuth.hasCheckedSpawnUserExistence && userAuth.isFirstLaunch {
-					// Show loading screen only on first launch
-					LoadingView()
-						.onAppear {
-							// Connect the app delegate to the app
-							appDelegate.app = self
-							
-							// If we're mocking, simulate a login with mock user
-							if MockAPIService.isMocking {
-								Task {
-									await userAuth.setMockUser()
-								}
-							}
-						}
-				} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
-					// User is logged in and user data exists - go to main content
-					ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
-						.onAppear {
-							// Initialize and validate the cache
-							Task {
-								await appCache.validateCache()
-							}
-						}
-						.onOpenURL { url in
-							print("🔗 App: Received URL: \(url.absoluteString)")
-							// Handle Google Sign-In URLs
-							if url.scheme == "com.googleusercontent.apps.822760465266-hl53d2rku66uk4cljschig9ld0ur57na" {
-								GIDSignIn.sharedInstance.handle(url)
-							}
-							// Handle Spawn deep links (both custom URL schemes and Universal Links)
-							else if url.scheme == "spawn" || (url.scheme == "https" && url.host == "getspawn.com") {
-								deepLinkManager.handleURL(url)
-							}
-						}
-						.onestFontTheme()
-				} else {
-                    // User is not logged in or has no user data - show welcome screen
-                    WelcomeView()
-                        .onOpenURL { url in
-                            GIDSignIn.sharedInstance.handle(url)
-                        }
-                        .onAppear {
-                            // Connect the app delegate to the app
-                            appDelegate.app = self
-                            
-                            // If not first launch, set hasCheckedSpawnUserExistence to true immediately
-                            if !userAuth.isFirstLaunch {
-                                userAuth.hasCheckedSpawnUserExistence = true
-                            }
-                        }
-                        .onestFontTheme()
-                }
-            }
-            .preferredColorScheme(themeService.colorScheme.colorScheme)
+			rootView
+				.preferredColorScheme(themeService.colorScheme.colorScheme)
 		}
 	}
 }

@@ -39,7 +39,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var isFirstLaunch: Bool = true
 	
 	// Track onboarding completion
-	@Published var hasCompletedOnboarding: Bool = false
+	@Published var hasCompletedOnboarding: Bool = false {
+		didSet {
+			print("🔄 DEBUG: hasCompletedOnboarding changed to: \(hasCompletedOnboarding)")
+		}
+	}
 
 	@Published var name: String?
 	@Published var email: String?
@@ -77,18 +81,34 @@ class UserAuthViewModel: NSObject, ObservableObject {
     private var isOnboarding: Bool = false
 
 	private init(apiService: IAPIService) {
+		print("🔄 DEBUG: UserAuthViewModel.init() called")
         self.spawnUser = nil
 		self.apiService = apiService
 
 		super.init()  // Call super.init() before using `self`
 		
+		// Determine if this is truly a first launch
+		let hasLaunchedBefore = UserDefaults.standard.bool(forKey: "hasLaunchedBefore")
+		if !hasLaunchedBefore {
+			// This is a genuine first launch
+			self.isFirstLaunch = true
+			UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
+			print("🔄 DEBUG: First launch detected, marking hasLaunchedBefore as true")
+		} else {
+			// This is an app restart or upgrade
+			self.isFirstLaunch = false
+			print("🔄 DEBUG: App has launched before, setting isFirstLaunch to false")
+		}
+		
 		// Load onboarding completion status from UserDefaults
 		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+		print("🔄 DEBUG: Loaded hasCompletedOnboarding from UserDefaults: \(self.hasCompletedOnboarding)")
 
         // Start minimum loading timer
         Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             await MainActor.run {
+                print("🔄 DEBUG: Minimum loading timer completed")
                 self.minimumLoadingCompleted = true
                 self.checkLoadingCompletion()
             }
@@ -96,13 +116,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
         
         // Attempt quick login
         Task {
-            print("Attempting a quick login with stored tokens")
+            print("🔄 DEBUG: Starting quick login attempt")
             if MockAPIService.isMocking {
                 await setMockUser()
             } else {
                 await quickSignIn()
             }
             await MainActor.run {
+                print("🔄 DEBUG: Quick login attempt completed, setting authCheckCompleted = true")
                 self.authCheckCompleted = true
                 self.checkLoadingCompletion()
             }
@@ -111,8 +132,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	// Helper method to check if both auth and minimum loading time are completed
 	private func checkLoadingCompletion() {
+		print("🔄 DEBUG: checkLoadingCompletion called - minimumLoadingCompleted: \(minimumLoadingCompleted), authCheckCompleted: \(authCheckCompleted)")
 		if minimumLoadingCompleted && authCheckCompleted {
 			hasCheckedSpawnUserExistence = true
+			print("🔄 DEBUG: Setting hasCheckedSpawnUserExistence to true")
 		}
 	}
 	
@@ -154,6 +177,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			// Reset onboarding state on logout so user can see onboarding again
 			self.hasCompletedOnboarding = false
 			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+			
+			// Don't reset hasLaunchedBefore - app has already launched before
+			// This prevents the loading screen from showing again unnecessarily
 		}
 	}
 	
@@ -170,6 +196,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		Task { @MainActor in
 			hasCompletedOnboarding = false
 			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+		}
+	}
+	
+	// Reset launch state for testing/debugging purposes
+	func resetLaunchState() {
+		Task { @MainActor in
+			isFirstLaunch = true
+			UserDefaults.standard.set(false, forKey: "hasLaunchedBefore")
+			print("🔄 DEBUG: Reset launch state - will show loading screen on next restart")
 		}
 	}
 
@@ -813,12 +848,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     // Attempts a "quick" sign-in which sends access/refresh tokens to server to verify whether a user is logged in
     func quickSignIn() async {
-        print("Attempting quick sign-in")
+        print("🔄 DEBUG: quickSignIn() called - attempting quick sign-in")
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/quick-sign-in") {
                 let user: BaseUserDTO = try await self.apiService.fetchData(from: url, parameters: nil)
                 
-                print("Quick sign-in successful")
+                print("🔄 DEBUG: quickSignIn() - Quick sign-in successful")
                 await MainActor.run {
                     self.spawnUser = user
                     self.shouldNavigateToFeedView = true
@@ -826,7 +861,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 }
             }
         } catch {
-            print("Error performing quick-login. Re-login is required")
+            print("🔄 DEBUG: quickSignIn() - Error performing quick-login. Re-login is required")
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil

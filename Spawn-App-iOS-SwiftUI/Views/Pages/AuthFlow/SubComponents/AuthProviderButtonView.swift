@@ -7,14 +7,18 @@
 
 import SwiftUI
 
+struct AuthProviderButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
 struct AuthProviderButtonView: View {
 	var authProviderType: AuthProviderType
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
-    
-    // Animation states
-    @State private var isPressed = false
-    @State private var scale: CGFloat = 1.0
     
     init(_ type: AuthProviderType) {
         self.authProviderType = type
@@ -53,31 +57,11 @@ struct AuthProviderButtonView: View {
 			RoundedRectangle(cornerRadius: 16)
 				.fill(getButtonBackgroundColor())
 		)
-        .scaleEffect(scale)
         .shadow(
             color: Color.black.opacity(0.15),
-            radius: isPressed ? 2 : 8,
+            radius: 8,
             x: 0,
-            y: isPressed ? 2 : 4
-        )
-        .animation(.easeInOut(duration: 0.15), value: scale)
-        .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    if !isPressed {
-                        isPressed = true
-                        scale = 0.95
-                        
-                        // Haptic feedback on press
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                        impactGenerator.impactOccurred()
-                    }
-                }
-                .onEnded { _ in
-                    isPressed = false
-                    scale = 1.0
-                }
+            y: 4
         )
 	}
     
