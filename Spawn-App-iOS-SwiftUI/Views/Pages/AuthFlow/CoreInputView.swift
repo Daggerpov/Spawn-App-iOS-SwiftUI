@@ -11,6 +11,8 @@ struct CoreInputView: View {
     @ObservedObject private var viewModel: UserAuthViewModel = UserAuthViewModel.shared
     @State var input1 = ""
     @State var input2 = ""
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var heading: String
     var subtitle: String
@@ -41,7 +43,7 @@ struct CoreInputView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
-                            .foregroundColor(.primary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     }
                     Spacer()
                 }
@@ -56,11 +58,11 @@ struct CoreInputView: View {
                     VStack(spacing: 16) {
                         Text(heading)
                             .font(heading1)
-                            .foregroundColor(.primary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         Text(subtitle)
                             .font(.onestRegular(size: 16))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                     }
@@ -72,7 +74,7 @@ struct CoreInputView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(label1)
                                 .font(.onestRegular(size: 16))
-                                .foregroundColor(.primary)
+                                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                             
                             TextField(inputText1, text: $input1)
                                 .textFieldStyle(CustomTextFieldStyle())
@@ -83,19 +85,27 @@ struct CoreInputView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(label2)
                                     .font(.onestRegular(size: 16))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                                 
                                 SecureField(inputText2, text: $input2)
                                     .textFieldStyle(CustomTextFieldStyle())
                             }
                             // Continue Button
                             Button(action: {
-                                continueAction()
+                                // Haptic feedback
+                                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                impactGenerator.impactOccurred()
+                                
+                                // Execute action with slight delay for animation
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    continueAction()
+                                }
                             }) {
                                 OnboardingButtonCoreView("Continue") {
                                     isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
                                 }
                             }
+                            .buttonStyle(PlainButtonStyle())
                             .padding(.top, -16)
                             .padding(.bottom, -30)
                             .padding(.horizontal, -22)
@@ -120,7 +130,7 @@ struct CoreInputView: View {
                         
                         Text("or")
                             .font(.system(size: 16))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                             .padding(.horizontal, 16)
                         
                         Rectangle()
@@ -133,39 +143,139 @@ struct CoreInputView: View {
                     VStack(spacing: 16) {
                         // Continue with Apple
                         Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
                             viewModel.signInWithApple()
                         }) {
                             AuthProviderButtonView(.apple)
                         }
+                        .buttonStyle(AuthProviderButtonStyle())
                        
                         
                         // Continue with Google
                         Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
                             Task{
                                 await viewModel.loginWithGoogle()
                             }
                         }) {
                             AuthProviderButtonView(.google)
                         }
+                        .buttonStyle(AuthProviderButtonStyle())
                     }
                     .padding(.horizontal, 40)
                 }
                 
                 Spacer()
             }
-            .background(Color(.systemBackground))
+            .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         }
         .navigationBarHidden(true)
     }
 }
 
 struct CustomTextFieldStyle: TextFieldStyle {
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
+    
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .padding(.horizontal, 16)
             .padding(.vertical, 20)
-            .background(figmaAuthButtonGrey)
+            .background(getInputFieldBackgroundColor())
             .cornerRadius(16)
             .font(.onestRegular(size: 16))
+            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            .accentColor(universalAccentColor(from: themeService, environment: colorScheme))
+    }
+    
+    private func getInputFieldBackgroundColor() -> Color {
+        // Use a theme-aware background color for input fields
+        let currentScheme = themeService.colorScheme
+        switch currentScheme {
+        case .light:
+            return figmaAuthButtonGrey
+        case .dark:
+            return Color(hex: "#2C2C2C")
+        case .system:
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+        }
+    }
+}
+
+// Error-aware text field component with red borders
+struct ErrorTextFieldStyle: TextFieldStyle {
+    let hasError: Bool
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
+    
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
+            .background(getInputFieldBackgroundColor())
+            .cornerRadius(16)
+            .font(.onestRegular(size: 16))
+            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            .accentColor(universalAccentColor(from: themeService, environment: colorScheme))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .inset(by: 1)
+                    .stroke(hasError ? Color(red: 0.77, green: 0.19, blue: 0.19) : Color.clear, lineWidth: 1)
+            )
+    }
+    
+    private func getInputFieldBackgroundColor() -> Color {
+        // Use a theme-aware background color for input fields
+        let currentScheme = themeService.colorScheme
+        switch currentScheme {
+        case .light:
+            return figmaAuthButtonGrey
+        case .dark:
+            return Color(hex: "#2C2C2C")
+        case .system:
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+        }
+    }
+}
+
+// Error-aware secure field component with red borders
+struct ErrorSecureFieldStyle: TextFieldStyle {
+    let hasError: Bool
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
+    
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
+            .background(getInputFieldBackgroundColor())
+            .cornerRadius(16)
+            .font(.onestRegular(size: 16))
+            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            .accentColor(universalAccentColor(from: themeService, environment: colorScheme))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .inset(by: 1)
+                    .stroke(hasError ? Color(red: 0.77, green: 0.19, blue: 0.19) : Color.clear, lineWidth: 1)
+            )
+    }
+    
+    private func getInputFieldBackgroundColor() -> Color {
+        // Use a theme-aware background color for input fields
+        let currentScheme = themeService.colorScheme
+        switch currentScheme {
+        case .light:
+            return figmaAuthButtonGrey
+        case .dark:
+            return Color(hex: "#2C2C2C")
+        case .system:
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+        }
     }
 }

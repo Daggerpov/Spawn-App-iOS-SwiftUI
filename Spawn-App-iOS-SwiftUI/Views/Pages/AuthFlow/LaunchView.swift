@@ -59,20 +59,30 @@ struct LaunchView: View {
 				// Google Sign-In Button
 				if showAuthButtons {
 					Button(action: {
+						// Haptic feedback
+						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+						impactGenerator.impactOccurred()
+						
 						Task {
                             await userAuth.loginWithGoogle()
 						}
 					}) {
 						AuthProviderButtonView(authProviderType: .google)
 					}
+					.buttonStyle(AuthProviderButtonStyle())
 					.transition(.opacity)
 
 					// Apple Sign-In Button
 					Button(action: {
+						// Haptic feedback
+						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+						impactGenerator.impactOccurred()
+						
 						userAuth.signInWithApple()
 					}) {
 						AuthProviderButtonView(authProviderType: .apple)
 					}
+					.buttonStyle(AuthProviderButtonStyle())
 					.transition(.opacity)
 				}
 
@@ -84,6 +94,13 @@ struct LaunchView: View {
 				isPresented: $userAuth.shouldNavigateToUserInfoInputView
 			) {
 				UserInfoInputView()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}
+			.navigationDestination(
+				isPresented: $userAuth.shouldNavigateToUserDetailsView
+			) {
+				UserDetailsInputView(isOAuthUser: true)
 					.navigationBarTitle("")
 					.navigationBarHidden(true)
 			}

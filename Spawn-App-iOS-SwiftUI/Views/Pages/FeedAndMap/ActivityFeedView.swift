@@ -262,7 +262,7 @@ extension ActivityFeedView {
                     Text("No Activities Found")
                         .font(.onestSemiBold(size:32))
                         .foregroundColor(universalAccentColor)
-                    Text("We couldn't find any events nearby.\nStart one yourself and be spontaneous!")
+                    Text("We couldn't find any activities nearby.\nStart one yourself and be spontaneous!")
                         .font(.onestRegular(size: 16))
                         .multilineTextAlignment(.center)
                         .foregroundColor(figmaBlack300)

@@ -124,7 +124,9 @@ struct ActivityTypeManagementView: View {
             }
         }
         .fullScreenCover(isPresented: $showingEditView) {
-            ActivityTypeEditView(activityTypeDTO: displayActivityType)
+            ActivityTypeEditView(activityTypeDTO: displayActivityType) {
+                showingEditView = false
+            }
         }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {

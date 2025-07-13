@@ -435,7 +435,7 @@ struct InterestsSection: View {
                     GridItem(.flexible()),
                     GridItem(.flexible())
                 ], spacing: 8) {
-                    ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                    ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
                         InterestChipView(interest: interest) {
                             removeInterest(interest)
                         }
@@ -581,7 +581,7 @@ struct SocialMediaField: View {
             )
             
             // Add helpful hint text
-            Text(icon == "instagram" ? "Enter your Instagram handle (with or without @)" : "Enter your phone number with country code")
+            Text(icon == "instagram" ? "Enter your Instagram handle (with or without @)" : "Only for your friends to see")
                 .font(.caption)
                 .foregroundColor(.gray)
                 .padding(.leading, 2)

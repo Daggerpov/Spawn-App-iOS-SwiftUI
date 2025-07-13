@@ -65,6 +65,44 @@ class AppCache: ObservableObject {
         }
     }
     
+    /// Clear all cached data and reset the cache state
+    func clearAllCaches() {
+        // Clear all cached data
+        friends = []
+        activities = []
+        activityTypes = []
+        recommendedFriends = []
+        friendRequests = []
+        otherProfiles = [:]
+        
+        // Clear profile caches
+        profileStats = [:]
+        profileInterests = [:]
+        profileSocialMedia = [:]
+        profileActivities = [:]
+        
+        // Clear metadata
+        lastChecked = [:]
+        
+        // Clear UserDefaults data
+        UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.friends)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.events)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.recommendedFriends)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.otherProfiles)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.profileStats)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.profileInterests)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.profileSocialMedia)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.profileEvents)
+        
+        // Clear profile picture cache
+        ProfilePictureCache.shared.clearAllCache()
+        
+        print("All caches cleared successfully")
+    }
+    
     /// Validate cache with backend and refresh stale items
     func validateCache() async {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {

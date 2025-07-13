@@ -7,9 +7,21 @@ struct UserSetupView: View {
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
-        VStack {
-            Spacer()
-            Spacer()
+        VStack(spacing: 0) {
+            // Navigation Bar
+            HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
+            
             Spacer()
             
             // Onboarding graphic
@@ -31,18 +43,27 @@ struct UserSetupView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(.bottom, 60)
+            
             Spacer()
+            
             // Start button
             Button(action: {
-                isNavigating = true
+                // Haptic feedback
+                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                impactGenerator.impactOccurred()
+                
+                // Execute action with slight delay for animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isNavigating = true
+                }
             }) {
                 OnboardingButtonCoreView("Start") { figmaIndigo }
             }
+            .buttonStyle(PlainButtonStyle())
             .padding(.bottom, 40)
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .ignoresSafeArea()
-    
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $isNavigating, destination: {UserOptionalDetailsInputView()})
     }

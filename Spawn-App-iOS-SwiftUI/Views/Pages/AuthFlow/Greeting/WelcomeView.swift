@@ -23,41 +23,50 @@ struct WelcomeView: View {
                     RiveAnimationView.logoAnimation(fileName: "spawn_logo_animation")
                         .frame(width: 300, height: 300)
                         .onAppear {
+                            print("🎬 DEBUG: Starting logo animation in WelcomeView")
                             // Show content after animation completes
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     animationCompleted = true
+                                    print("🎬 DEBUG: Animation completed, showing Get Started button")
                                 }
                             }
                         }
                 } else {
+					Spacer()
+					Spacer()
+					Spacer()
+					Spacer()
+					Spacer()
                     // Static logo after animation
                     Image("SpawnLogo")
                         .scaledToFit()
                         .transition(.opacity)
+						.padding(.bottom, 12)
                 }
                 
                 if animationCompleted {
-                    Text("Welcome to Spawn")
-                        .font(heading1)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                        .transition(.opacity)
                     Text("Spontaneity made easy.")
-                        .font(body1)
+						.font(.onestRegular(size: 20))
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         .transition(.opacity)
-                    
-                    Spacer()
-                    
+
                     // Skip onboarding for returning users
                     if userAuth.hasCompletedOnboarding {
                         OnboardingButtonView("Get Started", destination: SignInView())
                             .padding(.bottom, 12)
                             .transition(.opacity)
+                            .onAppear {
+                                print("🔘 DEBUG: Showing Get Started button (for returning users)")
+                            }
                     } else {
+						Spacer()
                         OnboardingButtonView("Get Started", destination: SpawnIntroView())
-                            .padding(.bottom, 12)
+							.padding(.top, 12)
                             .transition(.opacity)
+                            .onAppear {
+                                print("🔘 DEBUG: Showing Get Started button (for new users)")
+                            }
                     }
                 }
                 
@@ -65,6 +74,9 @@ struct WelcomeView: View {
             }
             .background(universalBackgroundColor(from: themeService, environment: colorScheme))
             .ignoresSafeArea(.all)
+            .onAppear {
+                print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
+            }
         }
     }
 }

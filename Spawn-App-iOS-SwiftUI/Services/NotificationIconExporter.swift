@@ -3,8 +3,8 @@ import UIKit
 
 struct NotificationIconExporter {
     static func exportAppIconForNotifications() {
-        // First try to use the spawn_launch_logo from assets
-        if let image = UIImage(named: "spawn_launch_logo") ?? UIImage(named: "Spawn_Glow") {
+        // First try to use the SpawnLogo from assets
+        if let image = UIImage(named: "SpawnLogo") ?? UIImage(named: "Spawn_Glow") {
             exportImage(image, filename: "app_logo.png")
             return
         }

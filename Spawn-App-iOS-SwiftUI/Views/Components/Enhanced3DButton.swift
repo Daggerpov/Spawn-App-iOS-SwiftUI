@@ -66,18 +66,25 @@ struct Enhanced3DButton: View {
         .opacity(isEnabled ? 1.0 : 0.8)
         .animation(.easeInOut(duration: 0.15), value: scale)
         .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            if isEnabled {
-                isPressed = pressing
-                scale = pressing ? 0.95 : 1.0
-                
-                // Additional haptic feedback for press down
-                if pressing {
-                    let selectionGenerator = UISelectionFeedbackGenerator()
-                    selectionGenerator.selectionChanged()
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if isEnabled && !isPressed {
+                        isPressed = true
+                        scale = 0.95
+                        
+                        // Additional haptic feedback for press down
+                        let selectionGenerator = UISelectionFeedbackGenerator()
+                        selectionGenerator.selectionChanged()
+                    }
                 }
-            }
-        }, perform: {})
+                .onEnded { _ in
+                    if isEnabled {
+                        isPressed = false
+                        scale = 1.0
+                    }
+                }
+        )
     }
 }
 

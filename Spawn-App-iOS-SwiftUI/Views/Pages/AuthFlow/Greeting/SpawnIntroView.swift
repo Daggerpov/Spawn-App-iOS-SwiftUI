@@ -54,20 +54,19 @@ struct SpawnIntroView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Back button
+            // Navigation Bar
             HStack {
                 Button(action: {
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.title2)
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
-                .padding(.leading, 20)
-                .padding(.top, 20)
-                
                 Spacer()
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
             
             Spacer()
             
@@ -110,7 +109,7 @@ struct SpawnIntroView: View {
                                 .frame(width: 20, height: 6)
                         } else {
                             Circle()
-                                .fill(Color.gray.opacity(0.3))
+                                .fill(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                                 .frame(width: 6, height: 6)
                         }
                     }
@@ -121,17 +120,30 @@ struct SpawnIntroView: View {
                 // Next Button
                 if currentPage == pages.count - 1 {
                     OnboardingButtonView("Next", destination: SignInView())
+                        .animation(.easeInOut(duration: 0.3), value: currentPage)
                 } else {
-                    SpawnIntroButtonView("Next") {
+                    Button(action: {
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
                         if currentPage < pages.count - 1 {
                             currentPage += 1
                         }
+                    }) {
+                        OnboardingButtonCoreView("Next")
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .animation(.easeInOut(duration: 0.3), value: currentPage)
                 }
             }
+            .padding(.bottom, 20)
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
+        .ignoresSafeArea()
         .navigationBarHidden(true)
+        .onAppear {
+            currentPage = 0
+        }
     }
 }
 

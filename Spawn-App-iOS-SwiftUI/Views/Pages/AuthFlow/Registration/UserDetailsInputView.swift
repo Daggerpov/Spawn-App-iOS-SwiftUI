@@ -16,8 +16,12 @@ struct UserDetailsInputView: View {
     @State private var confirmPassword: String = ""
     @State private var usernameError: String? = nil
     @State private var passwordError: String? = nil
+    @State private var phoneError: String? = nil
     @State private var isUsernameTaken: Bool = false
     @State private var isPasswordMismatch: Bool = false
+    @State private var isPhoneNumberTaken: Bool = false
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     // New: Indicate if this is an OAuth user (passed in or set from view model)
     var isOAuthUser: Bool = false
@@ -60,7 +64,7 @@ struct UserDetailsInputView: View {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
                 Spacer()
             }
@@ -75,10 +79,10 @@ struct UserDetailsInputView: View {
                 VStack(spacing: 16) {
                     Text(isOAuthUser ? "Complete Your Profile" : "Create Your Account")
                         .font(heading1)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     Text(isOAuthUser ? "Add a username and phone number to complete your account." : "Just a few details to get started.")
                         .font(.onestRegular(size: 16))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 40)
@@ -91,14 +95,10 @@ struct UserDetailsInputView: View {
                             .font(.onestRegular(size: 16))
                             .foregroundColor(.primary)
                         TextField("Create a unique nickname", text: $username)
-                            .textFieldStyle(CustomTextFieldStyle())
+                            .textFieldStyle(ErrorTextFieldStyle(hasError: isUsernameTaken))
                             .autocapitalization(.none)
                             .textContentType(.username)
                             .disableAutocorrection(true)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(isUsernameTaken ? Color.red : Color.clear, lineWidth: 2)
-                            )
                             .onChange(of: username) { newValue in
                                 // Simulate username taken error for demo (replace with real check)
                                 if newValue == "dagapov" {
@@ -116,12 +116,20 @@ struct UserDetailsInputView: View {
                             .font(.onestRegular(size: 16))
                             .foregroundColor(.primary)
                         TextField("Enter your phone number", text: $phoneNumber)
-                            .textFieldStyle(CustomTextFieldStyle())
+                            .textFieldStyle(ErrorTextFieldStyle(hasError: isPhoneNumberTaken))
                             .keyboardType(.phonePad)
                             .onChange(of: phoneNumber) { newValue in
                                 let formatted = formatPhoneNumber(newValue)
                                 if formatted != newValue {
                                     phoneNumber = formatted
+                                }
+                                // Check for taken phone number (demo scenario)
+                                if formatted == "(778) 100-1000" {
+                                    isPhoneNumberTaken = true
+                                    phoneError = "This phone number has already been used. Try signing in instead."
+                                } else {
+                                    isPhoneNumberTaken = false
+                                    phoneError = nil
                                 }
                             }
                             .textContentType(.telephoneNumber)
@@ -133,7 +141,7 @@ struct UserDetailsInputView: View {
                                 .font(.onestRegular(size: 16))
                                 .foregroundColor(.primary)
                             SecureField("Enter a strong password", text: $password)
-                                .textFieldStyle(CustomTextFieldStyle())
+                                .textFieldStyle(ErrorSecureFieldStyle(hasError: isPasswordMismatch))
                                 .autocapitalization(.none)
                                 .textContentType(.newPassword)
                         }
@@ -142,11 +150,7 @@ struct UserDetailsInputView: View {
                                 .font(.onestRegular(size: 16))
                                 .foregroundColor(.primary)
                             SecureField("Re-enter password", text: $confirmPassword)
-                                .textFieldStyle(CustomTextFieldStyle())
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(isPasswordMismatch ? Color.red : Color.clear, lineWidth: 2)
-                                )
+                                .textFieldStyle(ErrorSecureFieldStyle(hasError: isPasswordMismatch))
                                 .onChange(of: confirmPassword) { newValue in
                                     isPasswordMismatch = password != newValue
                                     passwordError = isPasswordMismatch ? "Please ensure that your passwords match." : nil
@@ -160,45 +164,54 @@ struct UserDetailsInputView: View {
                         }
                     }
                     // Error Messages
-                    if let usernameError = usernameError, isUsernameTaken {
-                        HStack(spacing: 4) {
-                            Text(usernameError)
-                                .font(.onestRegular(size: 15))
-                                .foregroundColor(.red)
-                            Button(action: { /* Navigate to sign in */ }) {
-                                Text("Sign In.")
-                                    .underline()
-                                    .font(.onestRegular(size: 15))
-                                    .foregroundColor(.red)
-                            }
-                        }
+					if usernameError != nil, isUsernameTaken {
+                        Text("This username is taken. Existing users need to sign in.")
+                            .font(Font.custom("Onest", size: 14).weight(.medium))
+                            .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+                            .padding(.top, -16)
+                    }
+                    if let phoneError = phoneError, isPhoneNumberTaken {
+                        Text(phoneError)
+                            .font(Font.custom("Onest", size: 14).weight(.medium))
+                            .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+                            .padding(.top, -16)
                     }
                     if let passwordError = passwordError, isPasswordMismatch && !isOAuthUser {
                         Text(passwordError)
-                            .font(.onestRegular(size: 15))
-                            .foregroundColor(.red)
+                            .font(Font.custom("Onest", size: 14).weight(.medium))
+                            .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+                            .padding(.top, -16)
                     }
                     if let error = viewModel.errorMessage {
                         Text(error)
-                            .font(.onestRegular(size: 15))
-                            .foregroundColor(.red)
+                            .font(Font.custom("Onest", size: 14).weight(.medium))
+                            .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+                            .padding(.top, -16)
                     }
                     // Continue Button
                     Button(action: {
-                        Task {
-                            guard let user = viewModel.spawnUser else { return }
-                            await viewModel.updateUserDetails(
-                                id: user.id.uuidString,
-                                username: username,
-                                phoneNumber: phoneNumber,
-                                password: isOAuthUser ? nil : password
-                            )
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
+                        // Execute action with slight delay for animation
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            Task {
+                                guard let user = viewModel.spawnUser else { return }
+                                await viewModel.updateUserDetails(
+                                    id: user.id.uuidString,
+                                    username: username,
+                                    phoneNumber: phoneNumber,
+                                    password: isOAuthUser ? nil : password
+                                )
+                            }
                         }
                     }) {
                         OnboardingButtonCoreView("Continue") {
                             isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
                         }
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.top, -16)
                     .padding(.bottom, -30)
                     .padding(.horizontal, -22)
@@ -208,9 +221,9 @@ struct UserDetailsInputView: View {
             }
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationDestination(isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView) {
-            UserSetupView()
+            UserOptionalDetailsInputView()
         }
         .navigationBarHidden(true)
     }

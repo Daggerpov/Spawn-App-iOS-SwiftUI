@@ -7,11 +7,18 @@
 
 import SwiftUI
 
+struct OnboardingButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
 struct OnboardingButtonView<Destination: View>: View {
     let buttonText: String
     let destination: Destination
-    @State private var isPressed = false
-    
+    @State private var isNavigating = false
     
     init(_ buttonText: String, destination: Destination) {
         self.buttonText = buttonText
@@ -19,20 +26,30 @@ struct OnboardingButtonView<Destination: View>: View {
     }
     
     var body: some View {
-        NavigationLink(destination: destination) {
+        Button(action: {
+            print("🔘 DEBUG: '\(buttonText)' button tapped")
+            // Haptic feedback
+            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+            impactGenerator.impactOccurred()
+            
+            // Execute navigation with slight delay for animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isNavigating = true
+                print("🔘 DEBUG: Setting isNavigating to true for '\(buttonText)'")
+            }
+        }) {
             OnboardingButtonCoreView(buttonText)
-                .opacity(isPressed ? 0.4 : 1.0)
         }
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            withAnimation(.easeInOut(duration: 0.1)) {
-                isPressed = pressing
-            }
-            if pressing {
-                // Haptic feedback on press
-                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                impactFeedback.impactOccurred()
-            }
-        }, perform: {})
+        .buttonStyle(OnboardingButtonStyle())
+        .navigationDestination(isPresented: $isNavigating) {
+            destination
+                .onAppear {
+                    print("🔘 DEBUG: Navigation destination appeared for '\(buttonText)'")
+                }
+        }
+        .onAppear {
+            print("🔘 DEBUG: OnboardingButtonView appeared with text: '\(buttonText)'")
+        }
     }
 }
 

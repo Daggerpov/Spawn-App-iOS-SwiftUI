@@ -551,7 +551,6 @@ class APIService: IAPIService {
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
 		throws
 	{
-        print("Handling auth tokens...")
 		// Check if this is an auth endpoint
 		let authEndpoints = [
 			APIService.baseURL + "auth/sign-in",
@@ -561,40 +560,48 @@ class APIService: IAPIService {
             APIService.baseURL + "auth/user/details"
 		]
         guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
-            print("Not an auth endpoint that receives tokens. Skipping")
             return
         }
+        
         print("Checking for access token header")
-		guard let accessToken = response.allHeaderFields["Authorization"] as? String else {
+		guard let accessToken = response.allHeaderFields["Authorization"] as? String ?? 
+		                        response.allHeaderFields["authorization"] as? String else {
             print("ERROR: Could not locate access token header")
             return
         }
         print("Found access token header")
         
         print("Checking for refresh token header")
-        guard let refreshToken = response.allHeaderFields["x-refresh-token"] as? String
-		else {
+        // Try both cases for the refresh token header
+        let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String ?? 
+                          response.allHeaderFields["x-refresh-token"] as? String
+        
+        if refreshToken == nil {
             print("ERROR: Could not locate refresh token header")
-			return
-		}
-        print("Found refresh token header")
+            // For now, continue without refresh token to see if that's the main issue
+        } else {
+            print("Found refresh token header")
+            print("Refresh token: \(refreshToken!)")
+        }
         
         print("Access token: \(accessToken)")
-        print("Refresh token: \(refreshToken)")
 
 		// Remove "Bearer " prefix from access token
 		let cleanAccessToken = accessToken.replacingOccurrences(
 			of: "Bearer ", with: "")
 
-		// Store both tokens in keychain
-		if let accessTokenData = cleanAccessToken.data(using: .utf8),
-			let refreshTokenData = refreshToken.data(using: .utf8)
-		{
+		// Store access token in keychain
+		if let accessTokenData = cleanAccessToken.data(using: .utf8) {
 			if !KeychainService.shared.save(
 				key: "accessToken", data: accessTokenData)
 			{
 				throw APIError.failedTokenSaving(tokenType: "accessToken")
 			}
+		}
+		
+		// Store refresh token if present
+		if let refreshToken = refreshToken,
+		   let refreshTokenData = refreshToken.data(using: .utf8) {
 			if !KeychainService.shared.save(
 				key: "refreshToken", data: refreshTokenData)
 			{
@@ -613,7 +620,9 @@ class APIService: IAPIService {
 		let whitelistedEndpoints = [
 			"auth/register/verification/send",
 			"auth/register/oauth",
-            "auth/register/verification/check"
+            "auth/register/verification/check",
+			"auth/sign-in",
+			"auth/login"
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
@@ -914,7 +923,8 @@ class APIService: IAPIService {
         
 		if httpResponse.statusCode == 200 {
 			// Successfully refreshed token, save it to Keychain
-			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String {
+			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String ?? 
+			                        httpResponse.allHeaderFields["authorization"] as? String {
 				let cleanAccessToken = newAccessToken.replacingOccurrences(of: "Bearer ", with: "")
 
 				if let accessTokenData = cleanAccessToken.data(using: .utf8) {
