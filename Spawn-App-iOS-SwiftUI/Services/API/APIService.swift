@@ -562,6 +562,13 @@ class APIService: IAPIService {
         guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
             return
         }
+        // Debug: Print all headers received
+        print("=== DEBUG: ALL RESPONSE HEADERS ===")
+        for (key, value) in response.allHeaderFields {
+            print("Header: \(key) = \(value)")
+        }
+        print("=== END DEBUG HEADERS ===")
+        
         print("Checking for access token header")
 		guard let accessToken = response.allHeaderFields["Authorization"] as? String else {
             print("ERROR: Could not locate access token header")
@@ -570,29 +577,34 @@ class APIService: IAPIService {
         print("Found access token header")
         
         print("Checking for refresh token header")
-        guard let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String
-		else {
+        let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String
+        
+        if refreshToken == nil {
             print("ERROR: Could not locate refresh token header")
-			return
-		}
-        print("Found refresh token header")
+            // For now, continue without refresh token to see if that's the main issue
+        } else {
+            print("Found refresh token header")
+            print("Refresh token: \(refreshToken!)")
+        }
         
         print("Access token: \(accessToken)")
-        print("Refresh token: \(refreshToken)")
 
 		// Remove "Bearer " prefix from access token
 		let cleanAccessToken = accessToken.replacingOccurrences(
 			of: "Bearer ", with: "")
 
-		// Store both tokens in keychain
-		if let accessTokenData = cleanAccessToken.data(using: .utf8),
-			let refreshTokenData = refreshToken.data(using: .utf8)
-		{
+		// Store access token in keychain
+		if let accessTokenData = cleanAccessToken.data(using: .utf8) {
 			if !KeychainService.shared.save(
 				key: "accessToken", data: accessTokenData)
 			{
 				throw APIError.failedTokenSaving(tokenType: "accessToken")
 			}
+		}
+		
+		// Store refresh token if present
+		if let refreshToken = refreshToken,
+		   let refreshTokenData = refreshToken.data(using: .utf8) {
 			if !KeychainService.shared.save(
 				key: "refreshToken", data: refreshTokenData)
 			{
