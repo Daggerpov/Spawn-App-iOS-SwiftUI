@@ -149,20 +149,30 @@ struct RegisterInputView: View {
                 VStack(spacing: 16) {
                     // Continue with Apple
                     Button(action: {
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
                         viewModel.appleRegister()
                     }) {
                         AuthProviderButtonView(.apple)
                     }
+                    .buttonStyle(AuthProviderButtonStyle())
                    
                     
                     // Continue with Google
                     Button(action: {
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
                         Task{
                             await viewModel.googleRegister()
                         }
                     }) {
                         AuthProviderButtonView(.google)
                     }
+                    .buttonStyle(AuthProviderButtonStyle())
                 }
                 .padding(.horizontal, 40)
             }

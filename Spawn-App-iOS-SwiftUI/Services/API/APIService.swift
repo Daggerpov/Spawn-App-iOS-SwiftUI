@@ -570,7 +570,7 @@ class APIService: IAPIService {
         print("Found access token header")
         
         print("Checking for refresh token header")
-        guard let refreshToken = response.allHeaderFields["x-refresh-token"] as? String
+        guard let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String
 		else {
             print("ERROR: Could not locate refresh token header")
 			return

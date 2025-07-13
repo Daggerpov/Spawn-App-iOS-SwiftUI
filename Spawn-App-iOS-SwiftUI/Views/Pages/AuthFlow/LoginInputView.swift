@@ -177,19 +177,29 @@ struct LoginInputView: View {
                 VStack(spacing: 16) {
                     // Continue with Apple
                     Button(action: {
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
                         userAuth.signInWithApple()
                     }) {
                         AuthProviderButtonView(.apple)
                     }
+                    .buttonStyle(AuthProviderButtonStyle())
                    
                     // Continue with Google
                     Button(action: {
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
                         Task {
                             await userAuth.loginWithGoogle()
                         }
                     }) {
                         AuthProviderButtonView(.google)
                     }
+                    .buttonStyle(AuthProviderButtonStyle())
                 }
                 .padding(.horizontal, 40)
             }

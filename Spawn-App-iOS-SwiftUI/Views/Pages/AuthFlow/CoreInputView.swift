@@ -143,20 +143,30 @@ struct CoreInputView: View {
                     VStack(spacing: 16) {
                         // Continue with Apple
                         Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
                             viewModel.signInWithApple()
                         }) {
                             AuthProviderButtonView(.apple)
                         }
+                        .buttonStyle(AuthProviderButtonStyle())
                        
                         
                         // Continue with Google
                         Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
                             Task{
                                 await viewModel.loginWithGoogle()
                             }
                         }) {
                             AuthProviderButtonView(.google)
                         }
+                        .buttonStyle(AuthProviderButtonStyle())
                     }
                     .padding(.horizontal, 40)
                 }
