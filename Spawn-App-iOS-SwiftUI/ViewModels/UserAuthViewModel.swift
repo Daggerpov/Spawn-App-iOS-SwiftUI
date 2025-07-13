@@ -661,7 +661,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
-                await NotificationService.shared.unregisterDeviceToken()
+                // Try to unregister device token, but don't let it fail the account deletion
+                do {
+                    await NotificationService.shared.unregisterDeviceToken()
+                } catch {
+                    print("Failed to unregister device token during account deletion (continuing with deletion): \(error.localizedDescription)")
+                }
 
                 try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
 				
