@@ -71,7 +71,6 @@ struct ActivityFeedView: View {
                 ActivityListView(
                     viewModel: viewModel,
                     user: user,
-                    bound: 3,
                     callback: { activity, color in
                         activityInPopup = activity
                         colorInPopup = color
@@ -268,7 +267,7 @@ extension ActivityFeedView {
                         .multilineTextAlignment(.center)
                         .foregroundColor(figmaBlack300)
                 } else {
-                    ForEach(0..<min(3, viewModel.activities.count), id: \.self) { activityIndex in
+                    ForEach(0..<viewModel.activities.count, id: \.self) { activityIndex in
                         ActivityCardView(
                             userId: user.id,
                             activity: viewModel.activities[activityIndex],
