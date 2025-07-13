@@ -1,4 +1,74 @@
 import SwiftUI
+import UIKit
+
+struct BackspaceDetectingTextField: UIViewRepresentable {
+    @Binding var text: String
+    let onBackspace: () -> Void
+    var keyboardType: UIKeyboardType = .numberPad
+    var textAlignment: NSTextAlignment = .center
+    var font: UIFont = UIFont.systemFont(ofSize: 24)
+    var textColor: UIColor = .label
+    
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField()
+        textField.delegate = context.coordinator
+        textField.keyboardType = keyboardType
+        textField.textAlignment = textAlignment
+        textField.font = font
+        textField.textColor = textColor
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange), for: .editingChanged)
+        return textField
+    }
+    
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, UITextFieldDelegate {
+        let parent: BackspaceDetectingTextField
+        
+        init(_ parent: BackspaceDetectingTextField) {
+            self.parent = parent
+        }
+        
+        @objc func textDidChange(_ textField: UITextField) {
+            parent.text = textField.text ?? ""
+        }
+        
+        func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+            let currentText = textField.text ?? ""
+            
+            // Detect backspace on empty field
+            if string.isEmpty && currentText.isEmpty {
+                parent.onBackspace()
+                return false
+            }
+            
+            // Handle backspace on non-empty field
+            if string.isEmpty && !currentText.isEmpty {
+                return true
+            }
+            
+            // Only allow single digits
+            if string.count > 1 || (string.count == 1 && !string.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted)?.isEmpty == false) {
+                return false
+            }
+            
+            // Only allow single character
+            if currentText.count >= 1 && !string.isEmpty {
+                return false
+            }
+            
+            return true
+        }
+    }
+}
 
 struct VerificationCodeView: View {
     @ObservedObject var viewModel: UserAuthViewModel
@@ -114,16 +184,24 @@ struct VerificationCodeView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(viewModel.errorMessage != nil ? Color.red : Color.clear, lineWidth: 2)
                 )
-            TextField("", text: createBinding(for: index))
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.center)
-                .font(.onestRegular(size: 24))
-                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                .frame(width: 48, height: 56)
-                .focused($focusedIndex, equals: index)
-                .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
-                    handlePaste()
-                }
+            BackspaceDetectingTextField(
+                text: createBinding(for: index),
+                onBackspace: {
+                    handleBackspaceOnEmpty(at: index)
+                },
+                keyboardType: .numberPad,
+                textAlignment: .center,
+                font: UIFont(name: "Onest-Regular", size: 24) ?? UIFont.systemFont(ofSize: 24),
+                textColor: UIColor(universalAccentColor(from: themeService, environment: colorScheme))
+            )
+            .frame(width: 48, height: 56)
+            .focused($focusedIndex, equals: index)
+            .onChange(of: code[index]) { oldValue, newValue in
+                handleTextFieldChange(at: index, oldValue: oldValue, newValue: newValue)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+                handlePaste()
+            }
         }
         .onTapGesture {
             focusedIndex = index
@@ -134,16 +212,24 @@ struct VerificationCodeView: View {
         Binding(
             get: { code[index] },
             set: { newValue in
-                let previousValue = code[index]
-                
-                // Detect backspace: if previous value was not empty and new value is empty
-                if !previousValue.isEmpty && newValue.isEmpty {
-                    handleBackspace(at: index)
-                } else {
-                    handleTextChange(at: index, newValue: newValue)
-                }
+                // The custom text field handles validation, so just update the value
+                code[index] = newValue
             }
         )
+    }
+    
+    private func handleTextFieldChange(at index: Int, oldValue: String, newValue: String) {
+        // Handle forward navigation when a character is entered
+        if oldValue.isEmpty && !newValue.isEmpty {
+            // New character entered, move to next field
+            if index < 5 {
+                focusedIndex = index + 1
+            }
+        } else if !oldValue.isEmpty && newValue.isEmpty {
+            // Backspace pressed on field with content - just clear it and stay
+            // The custom text field already handles this
+            return
+        }
     }
     
     private var verifyButton: some View {
@@ -231,6 +317,15 @@ struct VerificationCodeView: View {
         } else {
             // If current box has content, just clear it
             code[index] = ""
+        }
+    }
+    
+    private func handleBackspaceOnEmpty(at index: Int) {
+        // This is called when backspace is pressed on an empty field
+        if index > 0 {
+            // Move to previous field and clear it
+            code[index - 1] = ""
+            focusedIndex = index - 1
         }
     }
     
