@@ -552,7 +552,9 @@ class APIService: IAPIService {
 		// Check if this is an auth endpoint
 		let authEndpoints = [
 			APIService.baseURL + "auth/sign-in",
-			APIService.baseURL + "auth/make-user",
+			APIService.baseURL + "auth/login",
+            APIService.baseURL + "auth/register/oauth",
+            APIService.baseURL + "auth/register/verification/check"
 		]
 
 		guard
