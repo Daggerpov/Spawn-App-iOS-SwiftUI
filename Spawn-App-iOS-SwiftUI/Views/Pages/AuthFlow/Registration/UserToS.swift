@@ -29,6 +29,14 @@ struct UserToS: View {
             }
             .frame(width: 364)
             .padding(.top, 40)
+            
+            // Onboarding graphic
+            Image("onboarding_terms")
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 300)
+                .padding(.vertical, 40)
+            
             Spacer()
             // Checkbox and label
             HStack(alignment: .center, spacing: 12) {

@@ -26,16 +26,31 @@ struct SpawnIntroView: View {
             description: "Know what your friends are up to—so you can jump in or start something new."
         ),
         OnboardingPage(
-            imageName: "Group 6820",
+            imageName: "Group 6813",
             title: "Set the Vibe",
             description: "Quick-start your plans with activity presets — or make one \nthat fits you."
         ),
         OnboardingPage(
-            imageName: "Group 6821",
+            imageName: "Group 6814",
             title: "What's Happening Near You",
             description: "Easily spot nearby hangouts, meetups, or last-minute plans worth joining."
         )
     ]
+    
+    private func getImageName(for pageIndex: Int) -> String {
+        // Use dark mode assets when in dark mode
+        if colorScheme == .dark {
+            switch pageIndex {
+            case 0: // "Stay in the Loop" page
+                return "onboarding_activity_cards_dark_mode"
+            case 1: // "Set the Vibe" page
+                return "onboarding_activity_types_dark_mode"
+            default:
+                return pages[pageIndex].imageName
+            }
+        }
+        return pages[pageIndex].imageName
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -59,10 +74,12 @@ struct SpawnIntroView: View {
             // Main content
             VStack(spacing: 32) {
                 // Image
-                Image(pages[currentPage].imageName)
+                Image(getImageName(for: currentPage))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 280, height: 280)
+					.frame(maxWidth: .infinity, maxHeight: 320)
+                    .padding(.horizontal, 20)
+                    .scaleEffect(currentPage == 0 ? 1.1 : 1.0)
                     .animation(.easeInOut(duration: 0.3), value: currentPage)
             }
             
