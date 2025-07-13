@@ -562,22 +562,19 @@ class APIService: IAPIService {
         guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
             return
         }
-        // Debug: Print all headers received
-        print("=== DEBUG: ALL RESPONSE HEADERS ===")
-        for (key, value) in response.allHeaderFields {
-            print("Header: \(key) = \(value)")
-        }
-        print("=== END DEBUG HEADERS ===")
         
         print("Checking for access token header")
-		guard let accessToken = response.allHeaderFields["Authorization"] as? String else {
+		guard let accessToken = response.allHeaderFields["Authorization"] as? String ?? 
+		                        response.allHeaderFields["authorization"] as? String else {
             print("ERROR: Could not locate access token header")
             return
         }
         print("Found access token header")
         
         print("Checking for refresh token header")
-        let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String
+        // Try both cases for the refresh token header
+        let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String ?? 
+                          response.allHeaderFields["x-refresh-token"] as? String
         
         if refreshToken == nil {
             print("ERROR: Could not locate refresh token header")
@@ -926,7 +923,8 @@ class APIService: IAPIService {
         
 		if httpResponse.statusCode == 200 {
 			// Successfully refreshed token, save it to Keychain
-			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String {
+			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String ?? 
+			                        httpResponse.allHeaderFields["authorization"] as? String {
 				let cleanAccessToken = newAccessToken.replacingOccurrences(of: "Bearer ", with: "")
 
 				if let accessTokenData = cleanAccessToken.data(using: .utf8) {
