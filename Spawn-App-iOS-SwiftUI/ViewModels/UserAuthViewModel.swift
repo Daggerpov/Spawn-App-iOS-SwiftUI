@@ -545,7 +545,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
         
         do {
-            let updatedUser: BaseUserDTO = try await apiService.patchData(from: url, with: EmptyBody()) as BaseUserDTO
+            let updatedUser: BaseUserDTO? = try await apiService.sendData(EmptyBody(), to: url, parameters: nil)
+            
+            guard let updatedUser = updatedUser else {
+                await MainActor.run {
+                    print("Error: No user data returned from TOS acceptance")
+                    self.errorMessage = "Failed to accept Terms of Service. Please try again."
+                }
+                return
+            }
             
             await MainActor.run {
                 self.spawnUser = updatedUser
