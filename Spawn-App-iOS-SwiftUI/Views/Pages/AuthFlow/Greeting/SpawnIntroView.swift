@@ -37,6 +37,21 @@ struct SpawnIntroView: View {
         )
     ]
     
+    private func getImageName(for pageIndex: Int) -> String {
+        // Use dark mode assets when in dark mode
+        if colorScheme == .dark {
+            switch pageIndex {
+            case 0: // "Stay in the Loop" page
+                return "onboarding_activity_cards_dark_mode"
+            case 1: // "Set the Vibe" page
+                return "onboarding_activity_types_dark_mode"
+            default:
+                return pages[pageIndex].imageName
+            }
+        }
+        return pages[pageIndex].imageName
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Back button
@@ -59,7 +74,7 @@ struct SpawnIntroView: View {
             // Main content
             VStack(spacing: 32) {
                 // Image
-                Image(pages[currentPage].imageName)
+                Image(getImageName(for: currentPage))
                     .resizable()
                     .scaledToFit()
 					.frame(maxWidth: .infinity, maxHeight: 320)
