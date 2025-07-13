@@ -53,7 +53,7 @@ struct ServiceConstants {
                 return
             }
             
-            let shareUrl = URL(string: "\(URLs.shareBase)/a/\(shareCode)")
+            let shareUrl = URL(string: "\(URLs.shareBase)/activity/\(shareCode)")
             completion(shareUrl)
         }.resume()
     }
@@ -81,7 +81,7 @@ struct ServiceConstants {
                 return
             }
             
-            let shareUrl = URL(string: "\(URLs.shareBase)/p/\(shareCode)")
+            let shareUrl = URL(string: "\(URLs.shareBase)/profile/\(shareCode)")
             completion(shareUrl)
         }.resume()
     }

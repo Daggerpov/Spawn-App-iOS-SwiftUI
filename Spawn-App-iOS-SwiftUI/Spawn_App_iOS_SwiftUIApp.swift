@@ -51,8 +51,8 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	var body: some Scene {
 		WindowGroup {
 			Group {
-				if !userAuth.hasCheckedSpawnUserExistence {
-					// Always show loading screen first - for both new and returning users
+				if !userAuth.hasCheckedSpawnUserExistence && userAuth.isFirstLaunch {
+					// Show loading screen only on first launch
 					LoadingView()
 						.onAppear {
 							// Connect the app delegate to the app
@@ -87,7 +87,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						}
 						.onestFontTheme()
 				} else {
-                    // User is not logged in or has no user data - show launch screen with login options
+                    // User is not logged in or has no user data - show welcome screen
                     WelcomeView()
                         .onOpenURL { url in
                             GIDSignIn.sharedInstance.handle(url)
@@ -95,6 +95,11 @@ struct Spawn_App_iOS_SwiftUIApp: App {
                         .onAppear {
                             // Connect the app delegate to the app
                             appDelegate.app = self
+                            
+                            // If not first launch, set hasCheckedSpawnUserExistence to true immediately
+                            if !userAuth.isFirstLaunch {
+                                userAuth.hasCheckedSpawnUserExistence = true
+                            }
                         }
                         .onestFontTheme()
                 }

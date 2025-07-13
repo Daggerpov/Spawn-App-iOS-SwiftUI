@@ -32,6 +32,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Minimum loading time for animation
 	private var minimumLoadingCompleted: Bool = false
 	private var authCheckCompleted: Bool = false
+	
+	// Track whether this is the first launch or a logout
+	@Published var isFirstLaunch: Bool = true
+	
+	// Track onboarding completion
+	@Published var hasCompletedOnboarding: Bool = false
 
 	@Published var name: String?
 	@Published var email: String?
@@ -72,10 +78,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.apiService = apiService
 
 		super.init()  // Call super.init() before using `self`
+		
+		// Load onboarding completion status from UserDefaults
+		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 
         // Start minimum loading timer
         Task {
-            try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
+            try? await Task.sleep(nanoseconds: 2_000_000_000) 
             await MainActor.run {
                 self.minimumLoadingCompleted = true
                 self.checkLoadingCompletion()
@@ -131,10 +140,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.defaultPfpFetchError = false
 		self.defaultPfpUrlString = nil
 		
-		// Reset loading state
+		// Reset loading state but mark as not first launch
 		self.minimumLoadingCompleted = false
 		self.authCheckCompleted = false
 		self.hasCheckedSpawnUserExistence = false
+		self.isFirstLaunch = false // This is no longer first launch
+		
+		// Don't reset hasCompletedOnboarding - once completed, it stays completed
+	}
+	
+	// Mark onboarding as completed
+	func markOnboardingCompleted() {
+		hasCompletedOnboarding = true
+		UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 	}
 
 	func handleAppleSignInResult(_ result: Result<ASAuthorization, Error>) {
@@ -292,27 +310,23 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		GIDSignIn.sharedInstance.signOut()
 
 		// Clear Apple Sign-In state
-		if let externalUserId = self.externalUserId {
+		if let externalUserId = self.externalUserId, authProvider == .apple {
 			// Invalidate Apple ID credential state (optional but recommended)
 			let appleIDProvider = ASAuthorizationAppleIDProvider()
 			appleIDProvider.getCredentialState(forUserID: externalUserId) {
 				credentialState, error in
 				if let error = error {
-					print(
-						"Failed to get Apple ID credential state: \(error.localizedDescription)"
-					)
+					print("ℹ️ Apple ID credential state check failed: \(error.localizedDescription)")
+					// This is not critical for sign-out, so we don't need to handle it
 					return
 				}
 				switch credentialState {
 				case .authorized:
-					// The user is still authorized. You can optionally revoke the token.
-					print("User is still authorized with Apple ID.")
+					print("ℹ️ User is still authorized with Apple ID.")
 				case .revoked:
-					// The user has revoked access. Clear local state.
-					print("User has revoked Apple ID access.")
+					print("ℹ️ User has revoked Apple ID access.")
 				case .notFound:
-					// The user not found. Clear local state.
-					print("User not found in Apple ID system.")
+					print("ℹ️ User not found in Apple ID system.")
 				default:
 					break
 				}
@@ -326,14 +340,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		// Clear Keychain
+		let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
+		let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
 		
-		var success = KeychainService.shared.delete(key: "accessToken")
-		if !success {
-			print("Failed to delete accessToken from Keychain")
-		}
-		success = KeychainService.shared.delete(key: "refreshToken")
-		if !success {
-			print("Failed to delete refreshToken from Keychain")
+		if accessTokenDeleted && refreshTokenDeleted {
+			print("✅ Successfully cleared auth tokens from Keychain")
+		} else {
+			print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
 		}
 
 		resetState()
@@ -515,7 +528,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
         
         do {
-            let updatedUser: BaseUserDTO = try await apiService.patchData(from: url, with: EmptyRequestBody()) as BaseUserDTO
+            let updatedUser: BaseUserDTO = try await apiService.patchData(from: url, with: EmptyBody()) as BaseUserDTO
             
             await MainActor.run {
                 self.spawnUser = updatedUser
@@ -543,7 +556,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			do {
                 await NotificationService.shared.unregisterDeviceToken()
 
-                try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
+                try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
 				
                 var success = KeychainService.shared.delete(key: "accessToken")
                 if !success {

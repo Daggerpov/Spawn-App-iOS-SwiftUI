@@ -8,10 +8,14 @@
 import SwiftUI
 
 struct SignInView: View {
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
+    @StateObject private var userAuth = UserAuthViewModel.shared
+    
     var body: some View {
         ZStack {
             // Background
-            Color.white
+            universalBackgroundColor(from: themeService, environment: colorScheme)
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
@@ -37,13 +41,14 @@ struct SignInView: View {
                     HStack(spacing: 4) {
                         Text("Have an account already?")
                             .font(.onestRegular(size: 14))
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                             
                         
                         NavigationLink(destination: LoginInputView()) {
                             // Handle log in action
                             Text("Log in")
                                 .font(.onestSemiBold(size: 14))
-                                .foregroundColor(.black)
+                                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                                 .underline()
                         }
                     }
@@ -53,6 +58,10 @@ struct SignInView: View {
             }
         }
         .navigationBarHidden(true)
+        .onAppear {
+            // Mark onboarding as completed when user reaches sign in
+            userAuth.markOnboardingCompleted()
+        }
     }
 }
 
