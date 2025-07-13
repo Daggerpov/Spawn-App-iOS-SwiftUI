@@ -916,6 +916,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.email = email
                         // Store the seconds until next attempt for the timer
                         self.secondsUntilNextVerificationAttempt = response.secondsUntilNextAttempt
+                        self.errorMessage = nil
                     } else {
                         // Handle error
                         self.errorMessage = "Failed to send verification email"
@@ -965,6 +966,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.spawnUser = user
                         self.shouldNavigateToUserDetailsView = true
                         self.email = user.email
+                        self.errorMessage = nil
                     } else {
                         // Handle error
                         self.errorMessage = "Failed to register with OAuth"
@@ -1007,6 +1009,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.spawnUser = user
                         self.shouldNavigateToUserDetailsView = true
                         self.email = user.email
+                        self.errorMessage = nil
                     } else {
                         // Handle error
                         self.errorMessage = "Invalid verification code"
