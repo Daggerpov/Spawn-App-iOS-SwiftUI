@@ -15,6 +15,9 @@ struct ActivityCardPopupView: View {
     @ObservedObject var activity: FullFeedActivityDTO
     var activityColor: Color
     @State private var region: MKCoordinateRegion
+    @State private var isExpanded = false
+    @State private var dragOffset = CGSize.zero
+    @State private var isDragging = false
     
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {
@@ -32,8 +35,8 @@ struct ActivityCardPopupView: View {
             VStack(spacing: 0) {
                 // Handle bar
                 RoundedRectangle(cornerRadius: 2.5)
-                                            .fill(universalBackgroundColor.opacity(0.8))
-                    .frame(width: 40, height: 5)
+                    .fill(Color.white.opacity(0.6))
+                    .frame(width: 50, height: 4)
                     .padding(.top, 8)
                     .padding(.bottom, 16)
                 
@@ -50,29 +53,66 @@ struct ActivityCardPopupView: View {
                     // Spawn In button and attendees
                     ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
                     
-                    // Map view
-                    Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
-                        MapAnnotation(coordinate: pin.coordinate) {
-                            Image(systemName: "mappin")
-                                .font(.title)
-                                .foregroundColor(.red)
+                    // Map view - conditionally shown based on expansion state
+                    if isExpanded {
+                        Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
+                            MapAnnotation(coordinate: pin.coordinate) {
+                                Image(systemName: "mappin")
+                                    .font(.title)
+                                    .foregroundColor(.red)
+                            }
                         }
+                        .frame(height: 175)
+                        .cornerRadius(12)
+                        
+                        // Location details
+                        directionRow
                     }
-                    .frame(height: 175)
-                    .cornerRadius(12)
-                    
-                    // Location details
-                    directionRow
                     
                     // Chat section
                     ChatroomButtonView(activity: activity, activityColor: activityColor)
-                    Spacer(minLength: 20)
+                    
+                    // Additional spacing for collapsed state
+                    if !isExpanded {
+                        Spacer(minLength: 20)
+                    }
                 }
                 .padding(.horizontal, 20)
+                .frame(maxHeight: isExpanded ? .infinity : 580)
             }
             .background(activityColor.opacity(0.97))
             .cornerRadius(20)
             .shadow(radius: 20)
+            .offset(y: dragOffset.height)
+            .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0), value: isExpanded)
+            .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0), value: dragOffset)
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        isDragging = true
+                        dragOffset = value.translation
+                    }
+                    .onEnded { value in
+                        isDragging = false
+                        
+                        // Determine if we should toggle the state based on drag direction and velocity
+                        let dragThreshold: CGFloat = 50
+                        let velocityThreshold: CGFloat = 500
+                        
+                        if abs(value.translation.height) > dragThreshold || abs(value.predictedEndTranslation.height) > velocityThreshold {
+                            if value.translation.height < 0 {
+                                // Dragged up - expand
+                                isExpanded = true
+                            } else {
+                                // Dragged down - collapse
+                                isExpanded = false
+                            }
+                        }
+                        
+                        // Reset drag offset
+                        dragOffset = .zero
+                    }
+            )
             .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
         }
     }

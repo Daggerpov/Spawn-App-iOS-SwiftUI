@@ -667,8 +667,10 @@ class ProfileViewModel: ObservableObject {
                 object: nil as EmptyRequestBody?
             )
             
+            // Update cache after successful API call
+            await AppCache.shared.refreshProfileInterests(userId)
+            
             await MainActor.run {
-                self.userInterests.removeAll { $0 == interest }
                 objectWillChange.send()
             }
         } catch {

@@ -10,6 +10,12 @@ struct ActivityTypeView: View {
     @State private var navigateToCreateType = false
     @State private var selectedActivityTypeForManagement: ActivityTypeDTO?
     
+    // Drag and drop state
+    @State private var draggedItem: ActivityTypeDTO?
+    @State private var isDragging = false
+    @State private var dragOffset = CGSize.zero
+    @State private var showingDragFeedback = false
+    
     // Initialize the view model with userId
     init(selectedActivityType: Binding<ActivityTypeDTO?>, onNext: @escaping () -> Void) {
         self._selectedActivityType = selectedActivityType
@@ -120,38 +126,106 @@ struct ActivityTypeView: View {
     
     private var activityTypeGrid: some View {
         ScrollView {
-            LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ], spacing: 16) {
+            LazyVGrid(columns: gridColumns, spacing: 16) {
                 ForEach(viewModel.sortedActivityTypes, id: \.id) { activityTypeDTO in
-                    ActivityTypeCard(
-                        activityTypeDTO: activityTypeDTO,
-                        selectedActivityType: $selectedActivityType,
-                        onPin: {
-                            Task {
-                                await viewModel.togglePin(for: activityTypeDTO)
-                            }
-                        },
-                        onDelete: {
-                            Task {
-                                await viewModel.deleteActivityType(activityTypeDTO)
-                            }
-                        },
-                        onManage: {
-                            selectedActivityTypeForManagement = activityTypeDTO
-                            navigateToManageType = true
-                        }
-                    )
+                    activityTypeCardView(for: activityTypeDTO)
                 }
                 
-                // Create New Activity Button
-                CreateNewActivityTypeCard(onCreateNew: {
-                    navigateToCreateType = true
-                })
+                createNewActivityButton
             }
             .padding()
         }
+        .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
+            Button("OK") {
+                viewModel.clearError()
+            }
+        } message: {
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+            }
+        }
+    }
+    
+    private var gridColumns: [GridItem] {
+        [
+            GridItem(.flexible()),
+            GridItem(.flexible())
+        ]
+    }
+    
+    private var createNewActivityButton: some View {
+        CreateNewActivityTypeCard(onCreateNew: {
+            navigateToCreateType = true
+        })
+    }
+    
+    private func activityTypeCardView(for activityTypeDTO: ActivityTypeDTO) -> some View {
+        let index = viewModel.sortedActivityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) ?? 0
+        
+        return ActivityTypeCard(
+            activityTypeDTO: activityTypeDTO,
+            selectedActivityType: $selectedActivityType,
+            onPin: {
+                Task {
+                    await viewModel.togglePin(for: activityTypeDTO)
+                }
+            },
+            onDelete: {
+                Task {
+                    await viewModel.deleteActivityType(activityTypeDTO)
+                }
+            },
+            onManage: {
+                selectedActivityTypeForManagement = activityTypeDTO
+                navigateToManageType = true
+            },
+            isDragging: draggedItem?.id == activityTypeDTO.id,
+            onDragStart: {
+                handleDragStart(for: activityTypeDTO)
+            },
+            onDragEnd: {
+                handleDragEnd()
+            }
+        )
+        .scaleEffect(draggedItem?.id == activityTypeDTO.id ? 1.05 : 1.0)
+        .animation(.easeInOut(duration: 0.2), value: draggedItem?.id == activityTypeDTO.id)
+        .onDrop(of: [.text], isTargeted: nil) { providers, location in
+            return handleDrop(for: activityTypeDTO, at: index)
+        }
+    }
+    
+    private func handleDragStart(for activityTypeDTO: ActivityTypeDTO) {
+        draggedItem = activityTypeDTO
+        isDragging = true
+        showingDragFeedback = true
+        
+        // Haptic feedback for drag start
+        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+        impactGenerator.impactOccurred()
+    }
+    
+    private func handleDragEnd() {
+        draggedItem = nil
+        isDragging = false
+        showingDragFeedback = false
+        dragOffset = .zero
+    }
+    
+    private func handleDrop(for activityTypeDTO: ActivityTypeDTO, at index: Int) -> Bool {
+        guard let draggedItem = draggedItem else { return false }
+        
+        let sourceIndex = viewModel.sortedActivityTypes.firstIndex(where: { $0.id == draggedItem.id }) ?? 0
+        let destinationIndex = index
+        
+        // Don't perform reorder if indices are the same
+        guard sourceIndex != destinationIndex else { return false }
+        
+        // Perform the reorder
+        Task {
+            await viewModel.reorderActivityTypes(from: sourceIndex, to: destinationIndex)
+        }
+        
+        return true
     }
 }
 
@@ -162,9 +236,16 @@ struct ActivityTypeCard: View {
     let onDelete: () -> Void
     let onManage: () -> Void
     
+    // Drag and drop states
+    let isDragging: Bool
+    var onDragStart: (() -> Void)?
+    var onDragEnd: (() -> Void)?
+    
     // Animation states for 3D effect
     @State private var isPressed = false
     @State private var scale: CGFloat = 1.0
+    @State private var dragOffset = CGSize.zero
+    @State private var longPressActivated = false
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -209,6 +290,9 @@ struct ActivityTypeCard: View {
 
     var body: some View {
         Button(action: { 
+            // Only allow selection if not in drag mode
+            guard !longPressActivated else { return }
+            
             // Haptic feedback
             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
             impactGenerator.impactOccurred()
@@ -237,18 +321,22 @@ struct ActivityTypeCard: View {
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(adaptiveBackgroundColor)
+                        .fill(longPressActivated ? adaptiveBackgroundColor.opacity(0.8) : adaptiveBackgroundColor)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(isSelected ? universalSecondaryColor : Color.clear, lineWidth: 2)
+                                .stroke(
+                                    longPressActivated ? Color.blue.opacity(0.5) : 
+                                    (isSelected ? universalSecondaryColor : Color.clear), 
+                                    lineWidth: longPressActivated ? 1 : 2
+                                )
                         )
                 )
                 .scaleEffect(scale)
                 .shadow(
-                    color: Color.black.opacity(0.15),
-                    radius: isPressed ? 2 : 8,
+                    color: Color.black.opacity(longPressActivated ? 0.3 : 0.15),
+                    radius: longPressActivated ? 12 : (isPressed ? 2 : 8),
                     x: 0,
-                    y: isPressed ? 2 : 4
+                    y: longPressActivated ? 6 : (isPressed ? 2 : 4)
                 )
                 
                 // Pin icon overlay
@@ -265,12 +353,29 @@ struct ActivityTypeCard: View {
                     }
                     .padding(8)
                 }
+                
+                // Drag indicator overlay when in drag mode
+                if longPressActivated {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "arrow.up.arrow.down")
+                                .foregroundColor(.blue)
+                                .font(.system(size: 12))
+                                .padding(.trailing, 8)
+                        }
+                        Spacer()
+                    }
+                    .padding(8)
+                }
             }
         }
         .buttonStyle(PlainButtonStyle())
+        .offset(dragOffset)
         .animation(.easeInOut(duration: 0.15), value: scale)
         .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+        .animation(.easeInOut(duration: 0.2), value: longPressActivated)
+        .onLongPressGesture(minimumDuration: 0.5, maximumDistance: .infinity, pressing: { pressing in
             isPressed = pressing
             scale = pressing ? 0.95 : 1.0
             
@@ -279,7 +384,37 @@ struct ActivityTypeCard: View {
                 let selectionGenerator = UISelectionFeedbackGenerator()
                 selectionGenerator.selectionChanged()
             }
-        }, perform: {})
+        }, perform: {
+            // Activate drag mode after long press
+            longPressActivated = true
+            
+            // Stronger haptic feedback for drag activation
+            let impactGenerator = UIImpactFeedbackGenerator(style: .heavy)
+            impactGenerator.impactOccurred()
+        })
+        .simultaneousGesture(
+            DragGesture()
+                .onChanged { value in
+                    // Only allow drag if long press was activated
+                    guard longPressActivated else { return }
+                    
+                    dragOffset = value.translation
+                    
+                    // Start drag operation if not already dragging
+                    if !isDragging {
+                        onDragStart?()
+                    }
+                }
+                .onEnded { value in
+                    // Reset drag state
+                    longPressActivated = false
+                    dragOffset = .zero
+                    
+                    if isDragging {
+                        onDragEnd?()
+                    }
+                }
+        )
         .contextMenu {
             Button(action: onPin) {
                 Label(
@@ -296,6 +431,14 @@ struct ActivityTypeCard: View {
                 Label("Delete", systemImage: "trash")
             }
             .foregroundColor(.red)
+        }
+        .onDrag {
+            // Always return an NSItemProvider, but only populate it when drag is active
+            if longPressActivated {
+                return NSItemProvider(object: activityTypeDTO.id.uuidString as NSString)
+            } else {
+                return NSItemProvider()
+            }
         }
     }
 }
