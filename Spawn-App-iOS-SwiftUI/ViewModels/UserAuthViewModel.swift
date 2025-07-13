@@ -580,6 +580,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	private func navigateBasedOnUserStatus(authResponse: AuthResponseDTO) {
 		// Reset all navigation flags
 		shouldNavigateToUserInfoInputView = false
+		shouldNavigateToUserDetailsView = false
 		shouldNavigateToUserToS = false
 		shouldNavigateToFeedView = false
 		isFormValid = false
@@ -598,9 +599,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			print("📍 User status: emailRegistered - navigating to user info input")
 			
 		case .emailVerified:
-			// Needs to input username and phone number
-			shouldNavigateToUserInfoInputView = true
-			print("📍 User status: emailVerified - navigating to user info input")
+			// Needs to input username, phone number, and password
+			shouldNavigateToUserDetailsView = true
+			print("📍 User status: emailVerified - navigating to user details input")
 			
 		case .usernameAndPhoneNumber:
 			// Only needs to accept Terms of Service
@@ -670,6 +671,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
                 try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
 				
+                // Clear tokens after successful account deletion
                 var success = KeychainService.shared.delete(key: "accessToken")
                 if !success {
                     print("Failed to delete accessToken from Keychain")
@@ -684,10 +686,59 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 			} catch {
 				print("Error deleting account: \(error.localizedDescription)")
+				
+				// Check if this is an authentication error (missing/invalid refresh token)
+				if let apiError = error as? APIError {
+					switch apiError {
+					case .failedTokenSaving(tokenType: "refreshToken"):
+						// Authentication failed due to missing refresh token
+						// Clear local data and log user out
+						print("Account deletion failed due to missing refresh token - clearing local data")
+						await clearLocalDataAndLogout()
+						await MainActor.run {
+							activeAlert = .deleteSuccess
+						}
+						return
+					case .invalidStatusCode(statusCode: 401):
+						// Authentication failed due to invalid/expired token
+						// Clear local data and log user out
+						print("Account deletion failed due to authentication error (401) - clearing local data")
+						await clearLocalDataAndLogout()
+						await MainActor.run {
+							activeAlert = .deleteSuccess
+						}
+						return
+					default:
+						break
+					}
+				}
+				
 				await MainActor.run {
 					activeAlert = .deleteError
 				}
 			}
+		}
+	}
+	
+	private func clearLocalDataAndLogout() async {
+		// Clear tokens
+		var success = KeychainService.shared.delete(key: "accessToken")
+		if !success {
+			print("Failed to delete accessToken from Keychain")
+		}
+		success = KeychainService.shared.delete(key: "refreshToken")
+		if !success {
+			print("Failed to delete refreshToken from Keychain")
+		}
+		
+		// Clear user data
+		await MainActor.run {
+			self.spawnUser = nil
+			self.isLoggedIn = false
+			self.isOnboardingComplete = false
+			
+			// Clear any cached data
+			AppCache.shared.clearAllCaches()
 		}
 	}
 

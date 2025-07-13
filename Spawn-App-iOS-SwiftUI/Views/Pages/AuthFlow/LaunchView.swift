@@ -98,6 +98,13 @@ struct LaunchView: View {
 					.navigationBarHidden(true)
 			}
 			.navigationDestination(
+				isPresented: $userAuth.shouldNavigateToUserDetailsView
+			) {
+				UserDetailsInputView(isOAuthUser: true)
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}
+			.navigationDestination(
 				isPresented: $userAuth.shouldNavigateToFeedView
 			) {
 				if let loggedInSpawnUser = userAuth.spawnUser {
