@@ -58,33 +58,13 @@ struct ProfileHeaderView: View {
                         .frame(width: 128, height: 128)
                         .clipShape(Circle())
                 } else {
-                    AsyncImage(url: URL(string: profilePictureString)) {
-                        phase in
-                        switch phase {
-                        case .empty:
-                            ProgressView()
-                                .frame(width: 128, height: 128)
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                                .frame(width: 128, height: 128)
-                                .clipShape(Circle())
-                                .transition(.opacity.animation(.easeInOut))
-                        case .failure:
-                            Image(systemName: "person.circle.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 128, height: 128)
-                                .foregroundColor(Color.gray.opacity(0.5))
-                        @unknown default:
-                            Image(systemName: "person.circle.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 128, height: 128)
-                                .foregroundColor(Color.gray.opacity(0.5))
-                        }
-                    }
+                    CachedProfileImageFlexible(
+                        userId: user.id,
+                        url: URL(string: profilePictureString),
+                        width: 128,
+                        height: 128
+                    )
+                    .transition(.opacity.animation(.easeInOut))
                     .id("profilePicture-\(profilePictureString)")
                 }
             } else {

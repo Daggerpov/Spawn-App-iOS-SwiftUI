@@ -6,104 +6,160 @@ struct NotificationSettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     
     var body: some View {
-        Form {
-            Section(header: Text("Notification Status")) {
-                HStack {
-                    Image(systemName: notificationService.isNotificationsEnabled ? "bell.fill" : "bell.slash.fill")
-                        .foregroundColor(notificationService.isNotificationsEnabled ? .green : .red)
-                        .font(.title2)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(notificationService.isNotificationsEnabled ? "Notifications Enabled" : "Notifications Disabled")
-                            .font(.headline)
-                        
-                        Text(notificationService.isNotificationsEnabled 
-                            ? "You will receive notifications from Spawn" 
-                            : "Enable notifications in your device settings")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.leading, 8)
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(universalAccentColor)
+                        .font(.title3)
                 }
-                .padding(.vertical, 8)
                 
-                if !notificationService.isNotificationsEnabled {
-                    Button("Enable Notifications") {
-                        requestPermission()
-                    }
+                Spacer()
+                
+                Text("Notifications")
+                    .font(.headline)
                     .foregroundColor(universalAccentColor)
-                }
+                
+                Spacer()
+                
+                // Empty view for balance
+                Color.clear.frame(width: 24, height: 24)
             }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .padding(.bottom, 16)
             
-            if notificationService.isNotificationsEnabled {
-                Section(header: Text("Notification Types")) {
-                    if notificationService.isLoadingPreferences {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle())
-                            Spacer()
+            // Content
+            Form {
+                Section(header: Text("Notification Status")) {
+                    HStack {
+                        Image(systemName: notificationService.isNotificationsEnabled ? "bell.fill" : "bell.slash.fill")
+                            .foregroundColor(notificationService.isNotificationsEnabled ? .green : .red)
+                            .font(.title2)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(notificationService.isNotificationsEnabled ? "Notifications Enabled" : "Notifications Disabled")
+                                .font(.headline)
+                            
+                            Text(notificationService.isNotificationsEnabled 
+                                ? "You will receive notifications from Spawn" 
+                                : "Enable notifications in your device settings")
+                                .font(.caption)
+                                .foregroundColor(.gray)
                         }
-                    } else {
-                        Toggle("Friend Requests", isOn: $notificationService.friendRequestsEnabled)
-                            .onChange(of: notificationService.friendRequestsEnabled) { _ in
-                                updatePreferences()
-                            }
-                        
-                        Toggle("Activity Invites", isOn: $notificationService.activityInvitesEnabled)
-                            .onChange(of: notificationService.activityInvitesEnabled) { _ in
-                                updatePreferences()
-                            }
-                        
-                        Toggle("Activity Updates", isOn: $notificationService.activityUpdatesEnabled)
-                            .onChange(of: notificationService.activityUpdatesEnabled) { _ in
-                                updatePreferences()
-                            }
-                        
-                        Toggle("Chat Messages", isOn: $notificationService.chatMessagesEnabled)
-                            .onChange(of: notificationService.chatMessagesEnabled) { _ in
-                                updatePreferences()
-                            }
+                        .padding(.leading, 8)
+                    }
+                    .padding(.vertical, 8)
+                    
+                    if !notificationService.isNotificationsEnabled {
+                        Button("Enable Notifications") {
+                            requestPermission()
+                        }
+                        .foregroundColor(universalAccentColor)
                     }
                 }
                 
-                #if DEBUG
-                Section(header: Text("Test Notifications (Debug)")) {
-                    Button("Test Friend Request Notification") {
-                        NotificationService.shared.sendTestNotification(type: "friendRequest")
+                if notificationService.isNotificationsEnabled {
+                    Section(header: Text("Notification Types")) {
+                        if notificationService.isLoadingPreferences {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle())
+                                Spacer()
+                            }
+                        } else {
+                            Toggle("Friend Requests", isOn: $notificationService.friendRequestsEnabled)
+                                .onChange(of: notificationService.friendRequestsEnabled) { _ in
+                                    updatePreferences()
+                                }
+                            
+                            Toggle("Activity Invites", isOn: $notificationService.activityInvitesEnabled)
+                                .onChange(of: notificationService.activityInvitesEnabled) { _ in
+                                    updatePreferences()
+                                }
+                            
+                            Toggle("Activity Updates", isOn: $notificationService.activityUpdatesEnabled)
+                                .onChange(of: notificationService.activityUpdatesEnabled) { _ in
+                                    updatePreferences()
+                                }
+                            
+                            Toggle("Chat Messages", isOn: $notificationService.chatMessagesEnabled)
+                                .onChange(of: notificationService.chatMessagesEnabled) { _ in
+                                    updatePreferences()
+                                }
+                        }
                     }
-                    .disabled(!notificationService.friendRequestsEnabled)
                     
-                    Button("Test Activity Invite Notification") {
-                        NotificationService.shared.sendTestNotification(type: "activityInvite")
+                    #if DEBUG
+                    Section(header: Text("Test Push Notifications (Debug)")) {
+                        Button("Test Friend Request Notification") {
+                            NotificationService.shared.sendTestNotification(type: "friendRequest")
+                        }
+                        .disabled(!notificationService.friendRequestsEnabled)
+                        
+                        Button("Test Activity Invite Notification") {
+                            NotificationService.shared.sendTestNotification(type: "activityInvite")
+                        }
+                        .disabled(!notificationService.activityInvitesEnabled)
+                        
+                        Button("Test Activity Update Notification") {
+                            NotificationService.shared.sendTestNotification(type: "activityUpdate")
+                        }
+                        .disabled(!notificationService.activityUpdatesEnabled)
+                        
+                        Button("Test Chat Message Notification") {
+                            NotificationService.shared.sendTestNotification(type: "chat")
+                        }
+                        .disabled(!notificationService.chatMessagesEnabled)
                     }
-                    .disabled(!notificationService.activityInvitesEnabled)
                     
-                    Button("Test Activity Update Notification") {
-                        NotificationService.shared.sendTestNotification(type: "activityUpdate")
+                    Section(header: Text("Test In-App Notifications (Debug)")) {
+                        Button("Test Friend Request In-App") {
+                            NotificationService.shared.testInAppNotification(type: .friendRequest)
+                        }
+                        .foregroundColor(.blue)
+                        
+                        Button("Test Activity Invite In-App") {
+                            NotificationService.shared.testInAppNotification(type: .activityInvite)
+                        }
+                        .foregroundColor(.orange)
+                        
+                        Button("Test Activity Update In-App") {
+                            NotificationService.shared.testInAppNotification(type: .activityUpdate)
+                        }
+                        .foregroundColor(.red)
+                        
+                        Button("Test Chat Message In-App") {
+                            NotificationService.shared.testInAppNotification(type: .chat)
+                        }
+                        .foregroundColor(.teal)
+                        
+                        Button("Test Welcome In-App") {
+                            NotificationService.shared.testInAppNotification(type: .welcome)
+                        }
+                        .foregroundColor(.purple)
                     }
-                    .disabled(!notificationService.activityUpdatesEnabled)
-                    
-                    Button("Test Chat Message Notification") {
-                        NotificationService.shared.sendTestNotification(type: "chat")
-                    }
-                    .disabled(!notificationService.chatMessagesEnabled)
+                    #endif
                 }
-                #endif
+            }
+            .onAppear {
+                notificationService.checkNotificationStatus()
+                Task {
+                    await notificationService.fetchNotificationPreferences()
+                }
+            }
+            .refreshable {
+                Task {
+                    await notificationService.fetchNotificationPreferences()
+                }
             }
         }
-        .navigationTitle("Notifications")
-        .onAppear {
-            notificationService.checkNotificationStatus()
-            Task {
-                await notificationService.fetchNotificationPreferences()
-            }
-        }
-        .refreshable {
-            Task {
-                await notificationService.fetchNotificationPreferences()
-            }
-        }
+        .background(universalBackgroundColor)
+        .navigationBarHidden(true)
         .alert(isPresented: $isShowingPermissionAlert) {
             Alert(
                 title: Text("Notification Permissions"),
@@ -114,9 +170,6 @@ struct NotificationSettingsView: View {
                 secondaryButton: .cancel()
             )
         }
-        .background(Color.clear)
-        .scrollContentBackground(.hidden)
-        .background(universalBackgroundColor)
     }
 
     private func requestPermission() {

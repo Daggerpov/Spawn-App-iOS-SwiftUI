@@ -13,6 +13,22 @@ struct ActivityListView: View {
     var bound: Int = .max
     let callback: (FullFeedActivityDTO, Color) -> Void
     
+    // Optional binding to control tab selection for current user navigation
+    @Binding var selectedTab: TabType?
+    
+    init(
+        viewModel: FeedViewModel,
+        user: BaseUserDTO,
+        bound: Int = .max,
+        callback: @escaping (FullFeedActivityDTO, Color) -> Void,
+        selectedTab: Binding<TabType?> = .constant(nil)
+    ) {
+        self.viewModel = viewModel
+        self.user = user
+        self.bound = bound
+        self.callback = callback
+        self._selectedTab = selectedTab
+    }
     
     var body: some View {
         ScrollView {
@@ -30,11 +46,18 @@ struct ActivityListView: View {
                         .foregroundColor(figmaBlack300)
                 } else {
                     ForEach(0..<min(bound, viewModel.activities.count), id: \.self) { activityIndex in
-                        ActivityCardView(userId: user.id, activity: viewModel.activities[activityIndex], color: figmaBlue, callback: callback)
+                        ActivityCardView(
+                            userId: user.id,
+                            activity: viewModel.activities[activityIndex],
+                            color: getActivityColor(for: viewModel.activities[activityIndex].id),
+                            callback: callback,
+                            selectedTab: $selectedTab
+                        )
                     }
                 }
             }
         }
+        .background(universalBackgroundColor)
         .padding(.horizontal)
         .refreshable {
             Task {

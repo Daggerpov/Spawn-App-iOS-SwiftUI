@@ -48,60 +48,90 @@ struct EditProfileView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    // Profile picture section
-                    ProfileImageSection(
-                        selectedImage: $selectedImage,
-                        showImagePicker: $showImagePicker,
-                        isImageLoading: $isImageLoading
-                    )
-                    
-                    // Name and username fields
-                    PersonalInfoSection(
-                        name: $name,
-                        username: $username
-                    )
-                    
-                    // Interests section
-                    InterestsSection(
-                        profileViewModel: profileViewModel,
-                        userId: userId,
-                        newInterest: $newInterest,
-                        maxInterests: maxInterests,
-                        showAlert: $showAlert,
-                        alertMessage: $alertMessage
-                    )
-                    
-                    // Third party apps section
-                    SocialMediaSection(
-                        whatsappLink: $whatsappLink,
-                        instagramLink: $instagramLink
+            VStack(spacing: 0) {
+                // Custom Header with Cancel and Save buttons
+                HStack {
+                    // Cancel Button
+                    Button("Cancel") {
+                        // Restore original interests
+                        profileViewModel.restoreOriginalInterests()
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(figmaBittersweetOrange)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(figmaBittersweetOrange, lineWidth: 1)
                     )
                     
                     Spacer()
-                }
-            }
-            .background(universalBackgroundColor)
-            .navigationTitle("Edit Profile")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                    .foregroundColor(.red)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
+                    
+                    // Title
+                    Text("Edit Profile")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(universalAccentColor)
+                    
+                    Spacer()
+                    
+                    // Save Button
                     Button("Save") {
                         saveProfile()
                     }
-                    .foregroundColor(universalAccentColor)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(isSaving ? .gray : .white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(isSaving ? Color.gray.opacity(0.3) : figmaSoftBlue)
+                    )
                     .disabled(isSaving)
-                    .opacity(isSaving ? 0.5 : 1.0)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
+                .background(universalBackgroundColor)
+                
+                // Content
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        // Profile picture section
+                        ProfileImageSection(
+                            selectedImage: $selectedImage,
+                            showImagePicker: $showImagePicker,
+                            isImageLoading: $isImageLoading
+                        )
+                        
+                        // Name and username fields
+                        PersonalInfoSection(
+                            name: $name,
+                            username: $username
+                        )
+                        
+                        // Interests section
+                        InterestsSection(
+                            profileViewModel: profileViewModel,
+                            userId: userId,
+                            newInterest: $newInterest,
+                            maxInterests: maxInterests,
+                            showAlert: $showAlert,
+                            alertMessage: $alertMessage
+                        )
+                        
+                        // Third party apps section
+                        SocialMediaSection(
+                            whatsappLink: $whatsappLink,
+                            instagramLink: $instagramLink
+                        )
+                        
+                        Spacer()
+                    }
                 }
             }
+            .background(universalBackgroundColor)
+            .navigationBarHidden(true)
             .sheet(isPresented: $showImagePicker) {
                 SwiftUIImagePicker(selectedImage: $selectedImage)
                     .ignoresSafeArea()
@@ -115,6 +145,24 @@ struct EditProfileView: View {
             }
         }
         .accentColor(universalAccentColor)
+        .onAppear {
+            // Save original interests for cancel functionality
+            profileViewModel.saveOriginalInterests()
+            
+            // Update text fields with current social media data if available
+            // This handles the case where data loads after view initialization
+            if let socialMedia = profileViewModel.userSocialMedia {
+                whatsappLink = socialMedia.whatsappNumber ?? ""
+                instagramLink = socialMedia.instagramUsername ?? ""
+            }
+        }
+        .onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
+            // Update text fields whenever social media data changes
+            if let socialMedia = newSocialMedia {
+                whatsappLink = socialMedia.whatsappNumber ?? ""
+                instagramLink = socialMedia.instagramUsername ?? ""
+            }
+        }
     }
     
     private func saveProfile() {
@@ -160,6 +208,8 @@ struct EditProfileView: View {
             // Update profile picture if selected
             if let newImage = selectedImage {
                 await userAuth.updateProfilePicture(newImage)
+                // Invalidate the cached profile picture since we have a new one
+                ProfilePictureCache.shared.removeCachedImage(for: userId)
             }
             
             // Refresh all profile data
@@ -205,17 +255,13 @@ struct ProfileImageSection: View {
                         .scaledToFill()
                         .frame(width: 110, height: 110)
                         .clipShape(Circle())
-                } else if let profilePicture = UserAuthViewModel.shared.spawnUser?.profilePicture {
-                    AsyncImage(url: URL(string: profilePicture)) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 110, height: 110)
-                            .clipShape(Circle())
-                    } placeholder: {
-                        ProgressView()
-                            .frame(width: 110, height: 110)
-                    }
+                } else if let profilePicture = UserAuthViewModel.shared.spawnUser?.profilePicture, let userId = UserAuthViewModel.shared.spawnUser?.id {
+                    CachedProfileImageFlexible(
+                        userId: userId,
+                        url: URL(string: profilePicture),
+                        width: 110,
+                        height: 110
+                    )
                 } else {
                     Image(systemName: "person.circle.fill")
                         .resizable()
@@ -317,44 +363,56 @@ struct InterestsSection: View {
     let maxInterests: Int
     @Binding var showAlert: Bool
     @Binding var alertMessage: String
+    @FocusState private var isTextFieldFocused: Bool
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Interests + Hobbies (Max \(maxInterests))")
-                .font(.subheadline)
-                .foregroundColor(.gray)
+                .font(.custom("Onest", size: 16).weight(.medium))
+                .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
             
-            TextField("Type and press enter to add...", text: $newInterest)
-                .font(.subheadline)
-                .padding()
-                .foregroundColor(universalAccentColor)
-                .cornerRadius(10)
-                .onSubmit {
-                    addInterest()
-                }
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: universalNewRectangleCornerRadius
-                    )
-                        .stroke(universalAccentColor, lineWidth: 1)
-                )
-                .placeholder(when: newInterest.isEmpty) {
+            // Text field with placeholder overlay
+            ZStack(alignment: .leading) {
+                // Background
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
+                    .frame(height: 48)
+                
+                // Placeholder text
+                if newInterest.isEmpty {
                     Text("Type and press enter to add...")
-                        .foregroundColor(universalAccentColor.opacity(0.7))
-                        .font(.subheadline)
-                        .padding(.leading)
+                        .font(.custom("Onest", size: 16))
+                        .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+                        .padding(.leading, 16)
                 }
-            
+                
+                // Text field
+                TextField("", text: $newInterest)
+                    .font(.custom("Onest", size: 16))
+                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .padding(.horizontal, 16)
+                    .focused($isTextFieldFocused)
+                    .onSubmit {
+                        addInterest()
+                    }
+                    .frame(height: 48)
+            }
             
             // Existing interests as chips
             if !profileViewModel.userInterests.isEmpty {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 8) {
+                // Flexible layout for interests that wraps to new lines
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 8) {
                     ForEach(profileViewModel.userInterests, id: \.self) { interest in
                         InterestChipView(interest: interest) {
                             removeInterest(interest)
                         }
                     }
                 }
+                .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
             }
         }
         .padding(.horizontal)
@@ -373,19 +431,29 @@ struct InterestsSection: View {
         // Don't add duplicates
         if !profileViewModel.userInterests.contains(interest) {
             Task {
-                await profileViewModel.addUserInterest(userId: userId, interest: interest)
+                let success = await profileViewModel.addUserInterest(userId: userId, interest: interest)
                 await MainActor.run {
-                    newInterest = ""
+                    if success {
+                        newInterest = ""
+                        isTextFieldFocused = false // Dismiss keyboard
+                        // Force UI update
+                        profileViewModel.objectWillChange.send()
+                    }
                 }
             }
         } else {
             newInterest = ""
+            isTextFieldFocused = false // Dismiss keyboard
         }
     }
     
     private func removeInterest(_ interest: String) {
         Task {
             await profileViewModel.removeUserInterest(userId: userId, interest: interest)
+            await MainActor.run {
+                // Force UI update
+                profileViewModel.objectWillChange.send()
+            }
         }
     }
 }
@@ -396,24 +464,20 @@ struct InterestChipView: View {
     let onRemove: () -> Void
     
     var body: some View {
-        HStack {
+        HStack(spacing: 8) {
             Text(interest)
-                .font(.caption)
-                .padding(.leading, 8)
-                .foregroundColor(universalAccentColor)
-            
-            Spacer()
+                .font(.custom("Onest", size: 14).weight(.medium))
+                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
             
             Button(action: onRemove) {
                 Image(systemName: "xmark")
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .padding(6)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Color(red: 0.88, green: 0.36, blue: 0.45))
             }
         }
-        .padding(.vertical, 4)
-        .background(Color.gray.opacity(0.2))
-        .cornerRadius(16)
+        .padding(12)
+        .background(Color(red: 0.86, green: 0.84, blue: 0.84))
+        .cornerRadius(100)
     }
 }
 
@@ -502,20 +566,6 @@ struct SocialMediaField: View {
                 .font(.caption)
                 .foregroundColor(.gray)
                 .padding(.leading, 2)
-        }
-    }
-}
-
-// Extension to support placeholders with custom styling
-extension View {
-    func placeholder<Content: View>(
-        when shouldShow: Bool,
-        alignment: Alignment = .leading,
-        @ViewBuilder placeholder: () -> Content) -> some View {
-        
-        ZStack(alignment: alignment) {
-            placeholder().opacity(shouldShow ? 1 : 0)
-            self
         }
     }
 }

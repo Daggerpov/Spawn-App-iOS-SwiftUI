@@ -31,13 +31,18 @@ struct ProfileView: View {
 	)
 	@State private var refreshFlag = false
 	@State private var showCalendarPopup: Bool = false
+	@State private var navigateToCalendar: Bool = false
 	@State private var showActivityDetails: Bool = false
-	@State private var showReportDialog: Bool = false
+	@State private var navigateToDayActivities: Bool = false
+	@State private var selectedDayActivities: [CalendarActivityDTO] = []
+	    	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
-	@State private var reportReason: String = ""
-	@State private var blockReason: String = ""
+    @State private var blockReason: String = ""
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showProfileMenu: Bool = false
+	@State private var showAddToActivityType: Bool = false
+	@State private var showSuccessDrawer: Bool = false
+	@State private var navigateToAddToActivityType: Bool = false
 
 	@StateObject var userAuth = UserAuthViewModel.shared
 	@StateObject var profileViewModel = ProfileViewModel()
@@ -47,6 +52,7 @@ struct ProfileView: View {
 
 	// For the back button
 	@State private var showBackButton: Bool = false
+
 
 	// Check if this is the current user's profile
 	private var isCurrentUserProfile: Bool {
@@ -67,11 +73,20 @@ struct ProfileView: View {
 	}
 
 	var body: some View {
-		NavigationStack {
-			profileContent
-				.background(universalBackgroundColor.ignoresSafeArea())
+		profileContent
+			.background(universalBackgroundColor.ignoresSafeArea())
+			.background(universalBackgroundColor)
+		.onChange(of: editingState) { newState in
+			switch newState {
+			case .save:
+				// Save original interests when entering edit mode
+				profileViewModel.saveOriginalInterests()
+			case .edit:
+				// This handles the case where editingState transitions back to .edit
+				// The cancel button should handle the restoration manually
+				break
+			}
 		}
-		.background(universalBackgroundColor)
 		.alert(item: $userAuth.activeAlert) { alertType in
 			switch alertType {
 			case .deleteConfirmation:
@@ -131,7 +146,6 @@ struct ProfileView: View {
 						currentUserId: currentUserId,
 						profileUserId: user.id
 					)
-					print("checked friendship status")
 
 					// If they're friends, fetch their activities
 					if profileViewModel.friendshipStatus == .friends {
@@ -168,6 +182,14 @@ struct ProfileView: View {
 				}
 			}
 		}
+		.onChange(of: navigateToDayActivities) { newValue in
+			if newValue {
+				// Ensure navigation happens on main thread
+				DispatchQueue.main.async {
+					// Navigation logic handled by the view
+				}
+			}
+		}
 		// Add a timer to periodically refresh data
 		.onReceive(
 			Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
@@ -186,61 +208,23 @@ struct ProfileView: View {
 	// Main content broken into a separate computed property to reduce complexity
 	private var profileContent: some View {
 		profileWithOverlay
-			.sheet(isPresented: $showCalendarPopup) {
-				calendarPopupView
-			}
-			.sheet(isPresented: $showImagePicker) {
-				if selectedImage != nil {
-					isImageLoading = true
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-						isImageLoading = false
-					}
-				}
-			} content: {
-				SwiftUIImagePicker(selectedImage: $selectedImage)
-					.ignoresSafeArea()
-			}
-			.onChange(of: selectedImage) { newImage in
-				if newImage != nil {
-					// Force UI update when image changes
-					DispatchQueue.main.async {
-						isImageLoading = true
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-							isImageLoading = false
-						}
-					}
-				}
-			}
-			.sheet(isPresented: $showActivityDetails) {
-				activityDetailsView
-			}
-			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation)
-		{
-			removeFriendConfirmationAlert
-		}
-			.alert("Report User", isPresented: $showReportDialog) {
-				reportUserAlert
-			}
-			.alert("Block User", isPresented: $showBlockDialog) {
-				blockUserAlert
-			} message: {
-				Text(
-					"Blocking this user will remove them from your friends list and they won't be able to see your profile or activities."
-				)
-			}
-			.sheet(isPresented: $showProfileMenu) {
-				ProfileMenuView(
-					user: user,
-					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-					showReportDialog: $showReportDialog,
-					showBlockDialog: $showBlockDialog,
-					isFriend: profileViewModel.friendshipStatus == .friends,
-					copyProfileURL: copyProfileURL,
-					shareProfile: shareProfile
-				)
-				.background(universalBackgroundColor)
-				.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 310 : 260)])
-			}
+			.modifier(ImagePickerModifier(
+				showImagePicker: $showImagePicker,
+				selectedImage: $selectedImage,
+				isImageLoading: $isImageLoading
+			))
+			.modifier(SheetsAndAlertsModifier(
+				showActivityDetails: $showActivityDetails,
+				activityDetailsView: AnyView(activityDetailsView),
+				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+				removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
+				showReportDialog: $showReportDialog,
+				reportUserDrawer: AnyView(reportUserDrawer),
+				showBlockDialog: $showBlockDialog,
+				blockUserAlert: AnyView(blockUserAlert),
+				showProfileMenu: $showProfileMenu,
+				profileMenuSheet: AnyView(profileMenuSheet)
+			))
 			.onTapGesture {
 				// Dismiss profile menu if it's showing
 				if showProfileMenu {
@@ -258,7 +242,7 @@ struct ProfileView: View {
 				profileInnerComponentsView
 					.padding(.horizontal)
 			}
-			.navigationBarBackButtonHidden(false)
+			.navigationBarBackButtonHidden(true)
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .navigationBarLeading) {
@@ -266,20 +250,18 @@ struct ProfileView: View {
 						Button(action: {
 							presentationMode.wrappedValue.dismiss()
 						}) {
-							Image(systemName: "chevron.left")
-								.foregroundColor(universalAccentColor)
+							HStack(spacing: 4) {
+								Image(systemName: "chevron.left")
+								Text("Back")
+							}
+							.foregroundColor(universalAccentColor)
 						}
 					}
 				}
 
 				ToolbarItem(placement: .principal) {
-					// Only show the ProfileNameView if it's not the current user's profile
-					if !isCurrentUserProfile {
-						ProfileNameView(
-							user: user,
-							refreshFlag: $refreshFlag
-						)
-					}
+					// Header text removed for other users' profiles
+					EmptyView()
 				}
 
 				// Add appropriate trailing button based on user profile type
@@ -301,9 +283,32 @@ struct ProfileView: View {
 					}
 				}
 			}
+			.navigationDestination(isPresented: $showAddToActivityType) {
+				AddToActivityTypeView(user: user)
+			}
+			.navigationDestination(isPresented: $navigateToAddToActivityType) {
+				AddToActivityTypeView(user: user)
+			}
+			.navigationDestination(isPresented: $navigateToCalendar) {
+				calendarFullScreenView
+			}
+			.navigationDestination(isPresented: $navigateToDayActivities) {
+				dayActivitiesPageView
+			}
 
 			// Overlay for profile menu
 			profileMenuOverlay
+			
+			// Success drawer overlay
+			if showSuccessDrawer {
+				FriendRequestSuccessDrawer(
+					friendUser: user as! BaseUserDTO,
+					isPresented: $showSuccessDrawer,
+					onAddToActivityType: {
+						navigateToAddToActivityType = true
+					}
+				)
+			}
 		}
 	}
 
@@ -321,6 +326,60 @@ struct ProfileView: View {
 
 			// Friendship badge (for other users' profiles)
 			friendshipBadge
+
+			// Friend Request Buttons (for incoming requests)
+			if !isCurrentUserProfile && profileViewModel.friendshipStatus == .requestReceived {
+				HStack(spacing: 10) {
+					Button(action: {
+						if let requestId = profileViewModel.pendingFriendRequestId {
+							Task {
+								await profileViewModel.acceptFriendRequest(requestId: requestId)
+								// Show success drawer after successful acceptance
+								showSuccessDrawer = true
+							}
+						}
+					}) {
+						HStack(spacing: 6) {
+							Image(systemName: "checkmark")
+								.font(.system(size: 14, weight: .semibold))
+							Text("Accept")
+								.font(.system(size: 14, weight: .semibold))
+						}
+						.foregroundColor(.white)
+						.padding(.vertical, 12)
+						.padding(.horizontal, 16)
+						.frame(maxWidth: .infinity)
+						.background(universalAccentColor)
+						.cornerRadius(10)
+					}
+
+					Button(action: {
+						if let requestId = profileViewModel.pendingFriendRequestId {
+							Task {
+								await profileViewModel.declineFriendRequest(requestId: requestId)
+							}
+						}
+					}) {
+						HStack(spacing: 6) {
+							Image(systemName: "xmark")
+								.font(.system(size: 14, weight: .semibold))
+							Text("Deny")
+								.font(.system(size: 14, weight: .semibold))
+						}
+						.foregroundColor(universalAccentColor)
+						.padding(.vertical, 12)
+						.padding(.horizontal, 16)
+						.frame(maxWidth: .infinity)
+						.background(Color.clear)
+						.overlay(
+							RoundedRectangle(cornerRadius: 10)
+								.stroke(universalAccentColor, lineWidth: 1.5)
+						)
+					}
+				}
+				.padding(.horizontal, 20)
+				.padding(.vertical, 10)
+			}
 
 			// Add Friend Button for non-friends or showing Friend Request Sent
 			if !isCurrentUserProfile && 
@@ -352,7 +411,7 @@ struct ProfileView: View {
 					.padding(.vertical, 10)
 					.padding(.horizontal, 20)
 					.frame(maxWidth: 200)
-					.background(universalAccentColor)
+					.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
 					.cornerRadius(12)
 				}
 				.disabled(profileViewModel.friendshipStatus == .requestSent)
@@ -389,6 +448,7 @@ struct ProfileView: View {
 				openSocialMediaLink: openSocialMediaLink,
 				removeInterest: removeInterest
 			)
+			.padding(.top, 20)
 			.padding(.bottom, 8)
 
 			// User Stats (only for current user or friends)
@@ -396,13 +456,20 @@ struct ProfileView: View {
 
 			// Calendar or Activities Section
 			if isCurrentUserProfile {
-				ProfileCalendarView(
-					profileViewModel: profileViewModel,
-					showCalendarPopup: $showCalendarPopup,
-					showActivityDetails: $showActivityDetails
-				)
-				.padding(.horizontal, 48)
-				.padding(.bottom, 15)
+				VStack(spacing: 0) {
+					ProfileCalendarView(
+						profileViewModel: profileViewModel,
+						showCalendarPopup: $showCalendarPopup,
+						showActivityDetails: $showActivityDetails,
+						navigateToCalendar: $navigateToCalendar,
+						navigateToDayActivities: $navigateToDayActivities,
+						selectedDayActivities: $selectedDayActivities
+					)
+					.padding(.horizontal, 16)
+					.padding(.bottom, 15)
+					
+					EmptyView()
+				}
 			} else {
 				// User Activities Section for other users (based on friendship status)
 				UserActivitiesSection(
@@ -410,7 +477,7 @@ struct ProfileView: View {
 					profileViewModel: profileViewModel,
 					showActivityDetails: $showActivityDetails
 				)
-				.padding(.horizontal, 48)
+				.padding(.horizontal, 16)
 				.padding(.bottom, 15)
 			}
 		}
@@ -450,6 +517,7 @@ struct ProfileView: View {
 				// Original action buttons for current user
 				ProfileActionButtonsView(
 					user: user,
+					profileViewModel: profileViewModel,
 					shareProfile: shareProfile
 				)
 			} else {
@@ -477,8 +545,40 @@ struct ProfileView: View {
 		InfiniteCalendarView(
 			activities: profileViewModel.allCalendarActivities,
 			isLoading: profileViewModel.isLoadingCalendar,
+			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
 			onDismiss: { showCalendarPopup = false },
 			onActivitySelected: { activity in
+				handleActivitySelection(activity)
+			}
+		)
+	}
+
+	private var calendarFullScreenView: some View {
+		ActivityCalendarView(
+			profileViewModel: profileViewModel,
+			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
+			calendarOwnerName: nil,
+			onDismiss: {
+				// Reset navigation state when calendar view is dismissed
+				navigateToCalendar = false
+			}
+		)
+	}
+	
+	private var dayActivitiesPageView: some View {
+		// Get the date from the first activity, or use today as fallback
+		let date = selectedDayActivities.first?.dateAsDate ?? Date()
+		
+		return DayActivitiesPageView(
+			date: date,
+			activities: selectedDayActivities,
+			onDismiss: {
+				// Reset navigation state when day activities view is dismissed
+				navigateToDayActivities = false
+			},
+			onActivitySelected: { activity in
+				// Reset navigation state and handle activity selection
+				navigateToDayActivities = false
 				handleActivitySelection(activity)
 			}
 		)
@@ -503,9 +603,49 @@ struct ProfileView: View {
 		}
 	}
 
+	// MARK: - Sub-expressions for better type checking
+	
+	private var reportUserDrawer: some View {
+		ReportUserDrawer(
+			user: user,
+			onReport: { reportType, description in
+				if let currentUser = userAuth.spawnUser {
+					Task {
+						await profileViewModel.reportUser(
+							reporterUserId: currentUser.id,
+							reportedUserId: user.id,
+							reportType: reportType,
+							description: description
+						)
+						
+						// Show success notification
+						notificationMessage = "User reported successfully"
+						showNotification = true
+					}
+				}
+			}
+		)
+		.presentationDetents([.medium, .large])
+		.presentationDragIndicator(.visible)
+	}
+	
+	private var profileMenuSheet: some View {
+		ProfileMenuView(
+			user: user,
+			showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+			showReportDialog: $showReportDialog,
+			showBlockDialog: $showBlockDialog,
+			showAddToActivityType: $showAddToActivityType,
+			isFriend: profileViewModel.friendshipStatus == .friends,
+			copyProfileURL: copyProfileURL,
+			shareProfile: shareProfile
+		)
+		.background(universalBackgroundColor)
+		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 276)])
+	}
+	
 	private var removeFriendConfirmationAlert: some View {
 		Group {
-			Button("Cancel", role: .cancel) {}
 			Button("Remove", role: .destructive) {
 				if let currentUserId = userAuth.spawnUser?.id {
 					Task {
@@ -513,36 +653,14 @@ struct ProfileView: View {
 							currentUserId: currentUserId,
 							profileUserId: user.id
 						)
-					}
-				}
-			}
-		}
-	}
-
-	private var reportUserAlert: some View {
-		Group {
-			TextField("Reason for report", text: $reportReason)
-			Button("Cancel", role: .cancel) {
-				reportReason = ""
-			}
-			Button("Report", role: .destructive) {
-				if let currentUserId = userAuth.spawnUser?.id,
-					!reportReason.isEmpty
-				{
-					Task {
-						await profileViewModel.reportUser(
-							reporterId: currentUserId,
-							reportedId: user.id,
-							reason: reportReason
-						)
-						reportReason = ""
-
+						
 						// Show success notification
-						notificationMessage = "User reported successfully"
+						notificationMessage = "Friend removed successfully"
 						showNotification = true
 					}
 				}
 			}
+			Button("Cancel", role: .cancel) { }
 		}
 	}
 
@@ -588,12 +706,14 @@ struct ProfileView: View {
 		guard !newInterest.isEmpty else { return }
 
 		Task {
-			await profileViewModel.addUserInterest(
+			let success = await profileViewModel.addUserInterest(
 				userId: user.id,
 				interest: newInterest
 			)
 			await MainActor.run {
-				newInterest = ""
+				if success {
+					newInterest = ""
+				}
 			}
 		}
 	}
@@ -702,26 +822,8 @@ struct ProfileView: View {
 		Group {
 			switch profileViewModel.friendshipStatus {
 			case .none:
-				// Share Profile button (same as for friends)
-				Button(action: {
-					shareProfile()
-				}) {
-					HStack {
-						Image(systemName: "square.and.arrow.up")
-						Text("Share Profile")
-							.bold()
-					}
-					.font(.caption)
-					.foregroundColor(universalSecondaryColor)
-					.padding(.vertical, 24)
-					.padding(.horizontal, 8)
-					.frame(height: 32)
-					.frame(maxWidth: .infinity)
-					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalSecondaryColor, lineWidth: 1)
-					)
-				}
+				// Share Profile button removed for other users
+				EmptyView()
 
 			case .requestSent:
 				// Request Sent (disabled button)
@@ -741,7 +843,7 @@ struct ProfileView: View {
 
 			case .requestReceived:
 				// Accept/Deny buttons
-				HStack(spacing: 12) {
+				HStack(spacing: 10) {
 					Button(action: {
 						if let requestId = profileViewModel
 							.pendingFriendRequestId
@@ -750,22 +852,24 @@ struct ProfileView: View {
 								await profileViewModel.acceptFriendRequest(
 									requestId: requestId
 								)
+								// Show success drawer after successful acceptance
+								showSuccessDrawer = true
 							}
 						}
 					}) {
-						HStack {
+						HStack(spacing: 4) {
 							Image(systemName: "checkmark")
-							Text("Accept Request")
-								.bold()
+								.font(.system(size: 12, weight: .semibold))
+							Text("Accept")
+								.font(.system(size: 12, weight: .semibold))
 						}
-						.font(.caption)
 						.foregroundColor(.white)
-						.padding(.vertical, 24)
-						.padding(.horizontal, 8)
+						.padding(.vertical, 8)
+						.padding(.horizontal, 12)
 						.frame(height: 32)
 						.frame(maxWidth: .infinity)
 						.background(universalAccentColor)
-						.cornerRadius(12)
+						.cornerRadius(8)
 					}
 
 					Button(action: {
@@ -779,45 +883,27 @@ struct ProfileView: View {
 							}
 						}
 					}) {
-						HStack {
+						HStack(spacing: 4) {
 							Image(systemName: "xmark")
+								.font(.system(size: 12, weight: .semibold))
 							Text("Deny")
-								.bold()
+								.font(.system(size: 12, weight: .semibold))
 						}
-						.font(.caption)
 						.foregroundColor(universalAccentColor)
-						.padding(.vertical, 24)
-						.padding(.horizontal, 8)
+						.padding(.vertical, 8)
+						.padding(.horizontal, 12)
 						.frame(height: 32)
 						.frame(maxWidth: .infinity)
 						.overlay(
-							RoundedRectangle(cornerRadius: 12)
+							RoundedRectangle(cornerRadius: 8)
 								.stroke(universalAccentColor, lineWidth: 1)
 						)
 					}
 				}
 
 			case .friends:
-				// Share Profile button (same as in the original view)
-				Button(action: {
-					shareProfile()
-				}) {
-					HStack {
-						Image(systemName: "square.and.arrow.up")
-						Text("Share Profile")
-							.bold()
-					}
-					.font(.caption)
-					.foregroundColor(universalSecondaryColor)
-					.padding(.vertical, 24)
-					.padding(.horizontal, 8)
-					.frame(height: 32)
-					.frame(maxWidth: .infinity)
-					.overlay(
-						RoundedRectangle(cornerRadius: 12)
-							.stroke(universalSecondaryColor, lineWidth: 1)
-					)
-				}
+				// Share Profile button removed for other users
+				EmptyView()
 
 			default:
 				EmptyView()
@@ -900,6 +986,10 @@ extension ProfileView {
 						instagramLink = socialMedia.instagramLink ?? ""
 					}
 				}
+				
+				// Restore original interests
+				profileViewModel.restoreOriginalInterests()
+				
 				editingState = .edit
 			}) {
 				Text("Cancel")
@@ -998,6 +1088,11 @@ extension ProfileView {
 			selectedImage = nil
 			isImageLoading = false
 			editingState = .edit
+			
+			// Invalidate the cached profile picture since we have a new one
+			if let userId = userAuth.spawnUser?.id {
+				ProfilePictureCache.shared.removeCachedImage(for: userId)
+			}
 		}
 	}
 }
@@ -1026,5 +1121,73 @@ struct RoundedCorner: Shape {
 @available(iOS 17, *)
 #Preview {
 	ProfileView(user: BaseUserDTO.danielAgapov)
+}
+
+// MARK: - View Modifiers for better organization
+
+struct ImagePickerModifier: ViewModifier {
+	@Binding var showImagePicker: Bool
+	@Binding var selectedImage: UIImage?
+	@Binding var isImageLoading: Bool
+	
+	func body(content: Content) -> some View {
+		content
+			.sheet(isPresented: $showImagePicker) {
+				if selectedImage != nil {
+					isImageLoading = true
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+						isImageLoading = false
+					}
+				}
+			} content: {
+				SwiftUIImagePicker(selectedImage: $selectedImage)
+					.ignoresSafeArea()
+			}
+			.onChange(of: selectedImage) { newImage in
+				if newImage != nil {
+					// Force UI update when image changes
+					DispatchQueue.main.async {
+						isImageLoading = true
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+							isImageLoading = false
+						}
+					}
+				}
+			}
+	}
+}
+
+struct SheetsAndAlertsModifier: ViewModifier {
+	@Binding var showActivityDetails: Bool
+	let activityDetailsView: AnyView
+	@Binding var showRemoveFriendConfirmation: Bool
+	let removeFriendConfirmationAlert: AnyView
+	@Binding var showReportDialog: Bool
+	let reportUserDrawer: AnyView
+	@Binding var showBlockDialog: Bool
+	let blockUserAlert: AnyView
+	@Binding var showProfileMenu: Bool
+	let profileMenuSheet: AnyView
+	
+	func body(content: Content) -> some View {
+		content
+			.sheet(isPresented: $showActivityDetails) {
+				activityDetailsView
+			}
+			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
+				removeFriendConfirmationAlert
+			}
+			.sheet(isPresented: $showReportDialog) {
+				reportUserDrawer
+			}
+			.alert("Block User", isPresented: $showBlockDialog) {
+				blockUserAlert
+			} message: {
+				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
+			}
+			.sheet(isPresented: $showProfileMenu) {
+				profileMenuSheet
+			}
+	}
 }
 

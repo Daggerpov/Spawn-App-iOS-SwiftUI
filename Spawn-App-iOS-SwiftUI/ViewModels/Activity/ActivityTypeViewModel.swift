@@ -12,16 +12,11 @@ class ActivityTypeViewModel: ObservableObject {
     @Published var activityTypes: [ActivityTypeDTO] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String?
-    @Published var hasUnsavedChanges: Bool = false
     
     private let apiService: IAPIService
     private let userId: UUID
     private var appCache: AppCache
     private var cancellables = Set<AnyCancellable>()
-    
-    // Track changes for batch update
-    private var originalActivityTypes: [ActivityTypeDTO] = []
-    private var deletedActivityTypeIds: Set<UUID> = []
     
     init(
         userId: UUID,
@@ -39,14 +34,14 @@ class ActivityTypeViewModel: ObservableObject {
         
         // Subscribe to cache updates if not mocking
         if !MockAPIService.isMocking {
-            // TODO: Implement cache subscription when activity types are added to AppCache
-            // appCache.$activityTypes
-            //     .sink { [weak self] cachedActivityTypes in
-            //         if !cachedActivityTypes.isEmpty {
-            //             self?.activityTypes = cachedActivityTypes
-            //         }
-            //     }
-            //     .store(in: &cancellables)
+            // Subscribe to cached activity types updates
+            appCache.$activityTypes
+                .sink { [weak self] cachedActivityTypes in
+                    if !cachedActivityTypes.isEmpty {
+                        self?.activityTypes = cachedActivityTypes
+                    }
+                }
+                .store(in: &cancellables)
         }
     }
     
@@ -73,18 +68,11 @@ class ActivityTypeViewModel: ObservableObject {
             )
             
             self.activityTypes = fetchedTypes
-            self.originalActivityTypes = fetchedTypes.map { ActivityTypeDTO(
-                id: $0.id,
-                title: $0.title,
-                icon: $0.icon,
-                associatedFriends: $0.associatedFriends,
-                orderNum: $0.orderNum,
-                isPinned: $0.isPinned
-            )}
-            self.deletedActivityTypeIds.removeAll()
-            self.hasUnsavedChanges = false
             
-            print("✅ Successfully fetched \(fetchedTypes.count) activity types")
+            // Update cache with fetched data
+            appCache.updateActivityTypes(fetchedTypes)
+            
+
             
         } catch {
             self.errorMessage = "Failed to load activity types"
@@ -92,13 +80,128 @@ class ActivityTypeViewModel: ObservableObject {
         }
     }
     
-    /// Sends all accumulated changes to the backend in one batch update
+
+    
+    // MARK: - Local State Manipulation Methods
+    
+    /// Toggles the pin status of an activity type via direct API call
     @MainActor
-    func saveBatchChanges() async {
-        guard hasUnsavedChanges else {
-            print("ℹ️ No unsaved changes to batch update")
-            return
+    func togglePin(for activityTypeDTO: ActivityTypeDTO) async {
+        // Check if we're already at the pin limit when trying to pin
+        if !activityTypeDTO.isPinned {
+            let currentPinnedCount = activityTypes.filter { $0.isPinned }.count
+            
+            if currentPinnedCount >= 3 {
+                print("❌ Cannot pin: Already at maximum of 3 pinned activity types")
+                await MainActor.run {
+                    errorMessage = "You can only pin up to 3 activity types"
+                }
+                return
+            }
         }
+        
+        let updatedActivityType = ActivityTypeDTO(
+            id: activityTypeDTO.id,
+            title: activityTypeDTO.title,
+            icon: activityTypeDTO.icon,
+            associatedFriends: activityTypeDTO.associatedFriends,
+            orderNum: activityTypeDTO.orderNum,
+            isPinned: !activityTypeDTO.isPinned
+        )
+        
+        await updateActivityType(updatedActivityType)
+    }
+    
+    /// Deletes an activity type via direct API call
+    @MainActor
+    func deleteActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
+        isLoading = true
+        errorMessage = nil
+        
+        defer { isLoading = false }
+        
+        do {
+            let endpoint = "\(userId)/activity-types"
+            guard let url = URL(string: APIService.baseURL + endpoint) else {
+                errorMessage = "Invalid URL"
+                return
+            }
+            
+            let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+                updatedActivityTypes: [],
+                deletedActivityTypeIds: [activityTypeDTO.id]
+            )
+            
+            let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
+                batchUpdateDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            // Update local state with confirmed data from API
+            self.activityTypes = updatedActivityTypes
+            
+            // Update cache with confirmed data
+            appCache.updateActivityTypes(updatedActivityTypes)
+            
+            // Post notification for UI updates
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            
+            print("✅ Successfully deleted activity type: \(activityTypeDTO.title)")
+            
+        } catch {
+            print("❌ Error deleting activity type: \(error)")
+            errorMessage = "Failed to delete activity type"
+        }
+    }
+    
+    /// Creates a new activity type via direct API call
+    @MainActor
+    func createActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
+        isLoading = true
+        errorMessage = nil
+        
+        defer { isLoading = false }
+        
+        do {
+            let endpoint = "\(userId)/activity-types"
+            guard let url = URL(string: APIService.baseURL + endpoint) else {
+                errorMessage = "Invalid URL"
+                return
+            }
+            
+            let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+                updatedActivityTypes: [activityTypeDTO],
+                deletedActivityTypeIds: []
+            )
+            
+            let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
+                batchUpdateDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            // Update local state with confirmed data from API
+            self.activityTypes = updatedActivityTypes
+            
+            // Update cache with confirmed data
+            appCache.updateActivityTypes(updatedActivityTypes)
+            
+            // Post notification for UI updates
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            
+            print("✅ Successfully created activity type: \(activityTypeDTO.title)")
+            
+        } catch {
+            print("❌ Error creating activity type: \(error)")
+            errorMessage = "Failed to create activity type"
+        }
+    }
+    
+    /// Updates an existing activity type via direct API call
+    @MainActor
+    func updateActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
+        print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
         
         isLoading = true
         errorMessage = nil
@@ -108,141 +211,74 @@ class ActivityTypeViewModel: ObservableObject {
         do {
             let endpoint = "\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
-                print("❌ Error: Invalid URL for batch update")
+                print("❌ Invalid URL for endpoint: \(endpoint)")
                 errorMessage = "Invalid URL"
                 return
             }
             
-            // Get all activity types that have been modified or are new
-            let updatedActivityTypes = activityTypes.filter { activityType in
-                // Check if this is a new activity type (not in original)
-                if !originalActivityTypes.contains(where: { $0.id == activityType.id }) {
-                    return true
-                }
-                
-                // Check if this activity type has been modified
-                if let original = originalActivityTypes.first(where: { $0.id == activityType.id }) {
-                    return original.title != activityType.title ||
-                           original.icon != activityType.icon ||
-                           original.orderNum != activityType.orderNum ||
-                           original.isPinned != activityType.isPinned ||
-                           !original.associatedFriends.elementsEqual(activityType.associatedFriends, by: { $0.id == $1.id })
-                }
-                
-                return false
-            }
+            print("📡 Making API call to: \(url.absoluteString)")
             
             let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-                updatedActivityTypes: updatedActivityTypes,
-                deletedActivityTypeIds: Array(deletedActivityTypeIds)
+                updatedActivityTypes: [activityTypeDTO],
+                deletedActivityTypeIds: []
             )
             
-            let updatedActivityTypesReturned: [ActivityTypeDTO] = try await apiService.updateData(
+            let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
                 batchUpdateDTO,
                 to: url,
                 parameters: nil
             )
             
-            // Update local state with the returned activity types from server
-            self.activityTypes = updatedActivityTypesReturned
-            self.originalActivityTypes = updatedActivityTypesReturned.map { ActivityTypeDTO(
-                id: $0.id,
-                title: $0.title,
-                icon: $0.icon,
-                associatedFriends: $0.associatedFriends,
-                orderNum: $0.orderNum,
-                isPinned: $0.isPinned
-            )}
-            self.deletedActivityTypeIds.removeAll()
-            self.hasUnsavedChanges = false
+            // Update local state with confirmed data from API
+            self.activityTypes = updatedActivityTypes
             
-            print("✅ Successfully saved batch changes: \(updatedActivityTypesReturned.count) total activity types returned")
+            // Update cache with confirmed data
+            appCache.updateActivityTypes(updatedActivityTypes)
+            
+            // Post notification for UI updates
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
             
         } catch {
-            print("❌ Error saving batch changes: \(error)")
-            errorMessage = "Failed to save changes"
-        }
-    }
-    
-    // MARK: - Local State Manipulation Methods
-    
-    /// Toggles the pin status of an activity type locally
-    @MainActor
-    func togglePin(for activityTypeDTO: ActivityTypeDTO) {
-        if let index = activityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) {
-            activityTypes[index].isPinned.toggle()
-            hasUnsavedChanges = true
-            print("🔄 Locally toggled pin status for: \(activityTypeDTO.title)")
-        }
-    }
-    
-    /// Deletes an activity type locally
-    @MainActor
-    func deleteActivityType(_ activityTypeDTO: ActivityTypeDTO) {
-        // Remove from local array
-        activityTypes.removeAll { $0.id == activityTypeDTO.id }
-        
-        // Track deletion if this was an existing activity type (not newly created)
-        if originalActivityTypes.contains(where: { $0.id == activityTypeDTO.id }) {
-            deletedActivityTypeIds.insert(activityTypeDTO.id)
-        }
-        
-        hasUnsavedChanges = true
-        print("🗑️ Locally deleted activity type: \(activityTypeDTO.title)")
-    }
-    
-    /// Creates a new activity type locally
-    @MainActor
-    func createActivityType(_ activityTypeDTO: ActivityTypeDTO) {
-        activityTypes.append(activityTypeDTO)
-        hasUnsavedChanges = true
-        print("➕ Locally created activity type: \(activityTypeDTO.title)")
-    }
-    
-    /// Updates an existing activity type locally
-    @MainActor
-    func updateActivityType(_ activityTypeDTO: ActivityTypeDTO) {
-        if let index = activityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) {
-            activityTypes[index] = activityTypeDTO
-            hasUnsavedChanges = true
-            print("📝 Locally updated activity type: \(activityTypeDTO.title)")
-        }
-    }
-    
-    /// Reorders activity types locally
-    @MainActor
-    func reorderActivityTypes(from source: IndexSet, to destination: Int) {
-        var sortedTypes = sortedActivityTypes
-        sortedTypes.move(fromOffsets: source, toOffset: destination)
-        
-        // Update order numbers
-        for (index, activityType) in sortedTypes.enumerated() {
-            if let originalIndex = activityTypes.firstIndex(where: { $0.id == activityType.id }) {
-                activityTypes[originalIndex].orderNum = index
+            print("❌ Error updating activity type: \(error)")
+            print("❌ Error details: \(error.localizedDescription)")
+            
+            // Enhanced error handling
+            if let error = error as? APIError {
+                switch error {
+                case .invalidStatusCode(let statusCode):
+                    errorMessage = "Server error (status \(statusCode)). Please try again."
+                case .invalidData:
+                    errorMessage = "Invalid response format. Please try again."
+                case .URLError:
+                    errorMessage = "Network error. Please check your connection."
+                case .failedHTTPRequest(let description):
+                    errorMessage = "Request failed: \(description)"
+                case .failedJSONParsing:
+                    errorMessage = "Failed to parse server response. Please try again."
+                case .unknownError(let error):
+                    errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
+                case .failedTokenSaving:
+                    errorMessage = "Authentication error. Please try logging in again."
+                }
+            } else {
+                errorMessage = "Failed to update activity type"
             }
-        }
-        
-        hasUnsavedChanges = true
-        print("🔄 Locally reordered activity types")
-    }
-    
-    /// Updates order numbers for all activity types based on current sort
-    @MainActor
-    func updateOrderNumbers() {
-        let sorted = sortedActivityTypes
-        for (index, activityType) in sorted.enumerated() {
-            if let originalIndex = activityTypes.firstIndex(where: { $0.id == activityType.id }) {
-                activityTypes[originalIndex].orderNum = index
+            
+            // Check if error is related to pinning limits
+            if error.localizedDescription.contains("pinned activity types") {
+                errorMessage = "You can only pin up to 3 activity types"
             }
+            
+            // Refresh from API to get correct state
+            await fetchActivityTypes()
         }
-        hasUnsavedChanges = true
     }
     
     // MARK: - Utility Methods
     
     /// Computed property to sort activity types with pinned ones first
     var sortedActivityTypes: [ActivityTypeDTO] {
-        activityTypes.sorted { first, second in
+        let sorted = activityTypes.sorted { first, second in
             // Pinned types come first
             if first.isPinned != second.isPinned {
                 return first.isPinned
@@ -250,22 +286,8 @@ class ActivityTypeViewModel: ObservableObject {
             // If both are pinned or both are not pinned, sort by orderNum
             return first.orderNum < second.orderNum
         }
-    }
-    
-    /// Discards all local changes and reverts to original state
-    @MainActor
-    func discardLocalChanges() {
-        activityTypes = originalActivityTypes.map { ActivityTypeDTO(
-            id: $0.id,
-            title: $0.title,
-            icon: $0.icon,
-            associatedFriends: $0.associatedFriends,
-            orderNum: $0.orderNum,
-            isPinned: $0.isPinned
-        )}
-        deletedActivityTypeIds.removeAll()
-        hasUnsavedChanges = false
-        print("↩️ Discarded all local changes")
+        
+        return sorted
     }
     
     /// Clears any error messages

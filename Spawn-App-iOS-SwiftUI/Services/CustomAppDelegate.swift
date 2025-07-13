@@ -88,7 +88,15 @@ extension CustomAppDelegate: UNUserNotificationCenterDelegate {
         print("[PUSH DEBUG] Will present notification in foreground: \(notification.request.content.title)")
         print("[PUSH DEBUG] Notification userInfo: \(notification.request.content.userInfo)")
         
-        // These options are used when displaying a notification with the app in the foreground
-        return [.badge, .banner, .list, .sound]
+        // Show in-app notification instead of system notification when app is in foreground
+        await MainActor.run {
+            InAppNotificationManager.shared.showNotificationFromPushData(notification.request.content.userInfo)
+        }
+        
+        // Process the notification data for cache updates
+        handleReceivedNotification(notification.request.content.userInfo)
+        
+        // Return badge and sound only (no banner since we're showing in-app notification)
+        return [.badge, .sound]
     }
 } 

@@ -21,7 +21,7 @@ struct ActivityPopupDrawer: View {
     }
     
     private var halfScreenOffset: CGFloat {
-        screenHeight * 0.20
+        screenHeight * 0.12
     }
     
     private var currentOffset: CGFloat {
@@ -34,17 +34,6 @@ struct ActivityPopupDrawer: View {
     
     var body: some View {
         ZStack {
-            // Background overlay
-//            Color.clear
-//                .background(
-//                    Rectangle()
-//                        .fill(Color.white.opacity(0.2)) // Very subtle overlay
-//                        .blur(radius: 50) // Gentle blur
-//                )
-//                .ignoresSafeArea()
-//                .onTapGesture {
-//                    dismissPopup()
-//                }
             VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
                     .ignoresSafeArea()
                     .onTapGesture {

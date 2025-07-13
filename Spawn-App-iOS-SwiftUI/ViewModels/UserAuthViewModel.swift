@@ -588,6 +588,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					self.spawnUser = updatedUser
 					// Force a UI update
 					self.objectWillChange.send()
+					// Invalidate the cached profile picture since we have a new one
+					ProfilePictureCache.shared.removeCachedImage(for: userId)
 					print("Profile successfully updated with new picture: \(updatedUser.profilePicture ?? "nil")")
 				}
 				return
@@ -617,11 +619,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Decode the response
 				let decoder = JSONDecoder()
 				if let updatedUser = try? decoder.decode(BaseUserDTO.self, from: data) {
-					await MainActor.run {
-						self.spawnUser = updatedUser
-						self.objectWillChange.send()
-						print("Fallback: Profile picture updated successfully with URL: \(updatedUser.profilePicture ?? "nil")")
-					}
+									await MainActor.run {
+					self.spawnUser = updatedUser
+					self.objectWillChange.send()
+					// Invalidate the cached profile picture since we have a new one
+					ProfilePictureCache.shared.removeCachedImage(for: userId)
+					print("Fallback: Profile picture updated successfully with URL: \(updatedUser.profilePicture ?? "nil")")
+				}
 				} else {
 					print("Failed to decode user data after profile picture update")
 				}

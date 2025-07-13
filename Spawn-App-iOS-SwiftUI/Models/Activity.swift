@@ -19,6 +19,7 @@ class Activity: Identifiable, Codable {
 	var createdAt: Date?
 
 	// MARK: Relations
+	var activityTypeId: UUID?
 	var creatorUser: UserDTO?
 
 	// tech note: I'll be able to check if current user is in an activity's partipants to determine which symbol to show in feed
@@ -33,6 +34,7 @@ class Activity: Identifiable, Codable {
 		startTime: Date? = nil,
 		endTime: Date? = nil,
 		location: Location? = nil,
+		activityTypeId: UUID? = nil,
 		note: String? = nil,
 		creatorUser: UserDTO? = UserDTO.danielAgapov,
 		participantUsers: [UserDTO]? = nil,
@@ -46,6 +48,7 @@ class Activity: Identifiable, Codable {
 		self.startTime = startTime
 		self.endTime = endTime
 		self.location = location
+		self.activityTypeId = activityTypeId
 		self.note = note
 		self.creatorUser = creatorUser
 		self.participantUsers = participantUsers
@@ -86,12 +89,12 @@ extension Activity {
 			id: UUID(), name: "Gather - Place Vanier",
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
-		creatorUser: UserDTO.jennifer,
+		creatorUser: UserDTO.danielAgapov,
 		participantUsers: [
 			UserDTO.danielLee,
 			UserDTO.haley,
-			UserDTO.jennifer,
-			UserDTO.michael,
+			UserDTO.danielAgapov,
+			UserDTO.haley,
 		]
 	)
 
@@ -106,7 +109,7 @@ extension Activity {
 				longitude: -123.23986523529379),
 			creatorUser: UserDTO.danielAgapov,
 			participantUsers: [
-				UserDTO.danielAgapov, UserDTO.jennifer, UserDTO.shannon, UserDTO.haley,
+				UserDTO.danielAgapov, UserDTO.danielAgapov, UserDTO.danielLee, UserDTO.haley,
 				UserDTO.danielLee,
 			],
 			chatMessages: [
@@ -144,7 +147,7 @@ extension Activity {
 			location: Location(
 				id: UUID(), name: "Ross Drive - Wesbrook Mall",
 				latitude: 49.25189587512135, longitude: -123.237051932404),
-			creatorUser: UserDTO.shannon,
+			creatorUser: UserDTO.danielLee,
 			participantUsers: [UserDTO.danielLee]
 		),
 		Activity(
@@ -175,7 +178,7 @@ extension Activity {
 			location: Location(
 				id: UUID(), name: "UBC Student Recreation Centre",
 				latitude: 49.2687302352351, longitude: -123.24897582888525),
-			creatorUser: UserDTO.michael
+			creatorUser: UserDTO.haley
 		),
 	]
 } 

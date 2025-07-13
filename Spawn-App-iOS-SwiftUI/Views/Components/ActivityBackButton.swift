@@ -5,18 +5,10 @@ struct ActivityBackButton: View {
     
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(universalAccentColor)
-                
-                Text("Back")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(universalAccentColor)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(Color.clear)
+            Image(systemName: "chevron.left")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(universalAccentColor)
+                .frame(width: 44, height: 44)
         }
         .buttonStyle(PlainButtonStyle())
     }

@@ -190,7 +190,7 @@ class APIService: IAPIService {
 			// Only attempt array handling if we're not already expecting an array type
 			if !isArrayType {
 				// Try to decode as an array of that type
-				print("Attempting to decode as array and extract the first item")
+				print("Attempting to decode as array and extract the first item for entity type '\(T.self)' from URL: \(finalURL)")
 				
 				do {
 					// Use JSONSerialization first to check if it's an array
@@ -260,8 +260,8 @@ class APIService: IAPIService {
 				description: "The HTTP request has failed.")
 		}
 
-		// 200 means success || 201 means created, which is also fine for a POST request
-		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201
+		// 200 means success || 201 means created || 204 means no content (successful operation with no response body)
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204
 		else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
@@ -275,6 +275,16 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
+		}
+
+		// Handle 204 No Content response
+		if httpResponse.statusCode == 204 {
+			// For 204 responses, return an EmptyResponse if that's what's expected
+			if U.self == EmptyResponse.self {
+				return EmptyResponse() as? U
+			}
+			// For optional types, return nil
+			return nil
 		}
 
 		if !data.isEmpty {
@@ -336,7 +346,7 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: message)
 		}
 
-		guard httpResponse.statusCode == 200 else {
+		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 204 else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
 				let newAccessToken: String = try await handleRefreshToken()
@@ -350,6 +360,16 @@ class APIService: IAPIService {
 			print(message)
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
+		}
+
+		// Handle 204 No Content response
+		if httpResponse.statusCode == 204 {
+			// For 204 responses, return an EmptyResponse if that's what's expected
+			if R.self == EmptyResponse.self {
+				return EmptyResponse() as! R
+			}
+			// This shouldn't happen for updateData since it should always return a decoded object
+			throw APIError.invalidData
 		}
 
 		// Decode the response into the expected type `R`
@@ -787,20 +807,30 @@ class APIService: IAPIService {
 		for (key, value) in formData {
 			if let data = value as? Data {
 				// Handle image data
-				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-				body.append("Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(using: .utf8)!)
-				body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-				body.append(data)
+				if let boundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8),
+				   let contentDispositionData = "Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(using: .utf8),
+				   let contentTypeData = "Content-Type: image/jpeg\r\n\r\n".data(using: .utf8) {
+					body.append(boundaryData)
+					body.append(contentDispositionData)
+					body.append(contentTypeData)
+					body.append(data)
+				}
 			} else {
 				// Handle text fields
-				body.append("\r\n--\(boundary)\r\n".data(using: .utf8)!)
-				body.append("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8)!)
-				body.append("\(value)".data(using: .utf8)!)
+				if let boundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8),
+				   let contentDispositionData = "Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8),
+				   let valueData = "\(value)".data(using: .utf8) {
+					body.append(boundaryData)
+					body.append(contentDispositionData)
+					body.append(valueData)
+				}
 			}
 		}
 		
 		// Add final boundary
-		body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+		if let finalBoundaryData = "\r\n--\(boundary)--\r\n".data(using: .utf8) {
+			body.append(finalBoundaryData)
+		}
 		
 		request.httpBody = body
 		
@@ -919,10 +949,18 @@ class APIService: IAPIService {
 			throw APIError.URLError
 		}
 		
-		// Convert the dictionary of cache items and their timestamps to JSON
+		// Create a wrapper structure that matches the backend DTO
+		struct CacheValidationRequest: Codable {
+			let timestamps: [String: Date]
+		}
+		
+		// Wrap the cache items in the expected structure
+		let requestBody = CacheValidationRequest(timestamps: cachedItems)
+		
+		// Convert to JSON
 		let encoder = JSONEncoder()
 		encoder.dateEncodingStrategy = .iso8601
-		let jsonData = try encoder.encode(cachedItems)
+		let jsonData = try encoder.encode(requestBody)
 		
 		// Create and configure the request
 		var urlRequest = URLRequest(url: url)
@@ -957,6 +995,45 @@ class APIService: IAPIService {
 		let validationResponse = try decoder.decode([String: CacheValidationResponse].self, from: data)
 		
 		return validationResponse
+	}
+	
+	/// Clear calendar caches on the backend
+	func clearCalendarCaches() async throws {
+		resetState()
+		
+		// Create the URL for the clear calendar caches endpoint
+		guard let url = URL(string: APIService.baseURL + "cache/clear-calendar-caches") else {
+			throw APIError.URLError
+		}
+		
+		// Create and configure the request
+		var urlRequest = URLRequest(url: url)
+		urlRequest.httpMethod = "POST"
+		urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+		setAuthHeader(request: &urlRequest)
+		
+		// Send the request
+		let (_, response) = try await URLSession.shared.data(for: urlRequest)
+
+		// Validate the response
+		guard let httpResponse = response as? HTTPURLResponse else {
+			errorMessage = "HTTP request failed for \(url)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+		}
+		
+		// Handle auth token refresh if needed
+		if httpResponse.statusCode == 401 {
+			let bearerAccessToken: String = try await handleRefreshToken()
+			_ = try await retryRequest(request: &urlRequest, bearerAccessToken: bearerAccessToken)
+		} else if httpResponse.statusCode != 200 {
+			errorStatusCode = httpResponse.statusCode
+			errorMessage = "Failed to clear calendar caches. Status code: \(httpResponse.statusCode)"
+			print(errorMessage ?? "no error message to log")
+			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+		}
+		
+		print("✅ Successfully cleared calendar caches on backend")
 	}
 }
 

@@ -10,92 +10,177 @@ import SwiftUI
 struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTab: TabType = .home
+    @StateObject private var friendsViewModel: FriendsTabViewModel
+    @StateObject private var inAppNotificationManager = InAppNotificationManager.shared
+    @ObservedObject var deepLinkManager: DeepLinkManager
+    
+    // Deep link state
+    @State private var shouldShowDeepLinkedActivity = false
+    @State private var deepLinkedActivityId: UUID?
+    
+    init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
+        self.user = user
+        self.deepLinkManager = deepLinkManager
+        let vm = FriendsTabViewModel(
+            userId: user.id,
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: user.id) : APIService())
+        self._friendsViewModel = StateObject(wrappedValue: vm)
+    }
 
 	var body: some View {
-		TabView(selection: $selectedTab) {
-            ActivityFeedView(user: user, selectedTab: $selectedTab)
-                .tag(TabType.home)
-				.tabItem {
-					Image(
-						uiImage: resizeImage(
-							UIImage(systemName: "house")!,
-							targetSize: CGSize(width: 30, height: 27)
-						)!
-					)
-				}
-			MapView(user: user)
-                .tag(TabType.map)
-				.tabItem {
-					Image(
-						uiImage: resizeImage(
-							UIImage(systemName: "location.circle")!,
-							targetSize: CGSize(width: 30, height: 27)
-						)!
-					)
-				}
-			ActivityCreationView(
-				creatingUser: user,
-				closeCallback: {
-					// Navigate back to home tab when closing
-                    selectedTab = .home
-				},
-				selectedTab: $selectedTab
-			)
-            .tag(TabType.creation)
-			.tabItem {
-				Image(
-					uiImage: resizeImage(
-						UIImage(named: "activities_icon")!,
-						targetSize: CGSize(width: 30, height: 27)
-					)!
-				)
-			}
-			FriendsView(user: user)
-                .tag(TabType.friends)
-				.tabItem {
-					Image(
-						uiImage: resizeImage(
-							UIImage(systemName: "list.bullet")!,
-							targetSize: CGSize(width: 30, height: 27)
-						)!
-					)
-				}
-			ProfileView(user: user)
-                .tag(TabType.profile)
-				.tabItem {
-					Image(
-						uiImage: resizeImage(
-							UIImage(systemName: "person.circle")!,
-							targetSize: CGSize(width: 30, height: 27)
-						)!
-					)
-				}
-		}
-		.onAppear {
-			// Configure tab bar appearance for theme compatibility
-			let appearance = UITabBarAppearance()
-			appearance.configureWithOpaqueBackground()
-			appearance.backgroundColor = UIColor { traitCollection in
-				switch traitCollection.userInterfaceStyle {
-				case .dark:
-					return UIColor.systemBackground.withAlphaComponent(0.9)
-				default:
-					return UIColor.systemBackground.withAlphaComponent(0.9)
-				}
-			}
-			
-			UITabBar.appearance().standardAppearance = appearance
-			UITabBar.appearance().scrollEdgeAppearance = appearance
-			UITabBar.appearance().unselectedItemTintColor = UIColor { traitCollection in
-				switch traitCollection.userInterfaceStyle {
-				case .dark:
-					return UIColor.label
-				default:
-					return UIColor.label
-				}
-			}
-		}
-	}
+        ZStack {
+            TabView(selection: $selectedTab) {
+                ActivityFeedView(
+                    user: user, 
+                    selectedTab: $selectedTab, 
+                    deepLinkedActivityId: $deepLinkedActivityId, 
+                    shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
+                )
+                    .tag(TabType.home)
+                    .tabItem {
+                        Image(
+                            uiImage: resizeImage(
+                                UIImage(named: "home_nav_icon")!,
+                                targetSize: CGSize(width: 30, height: 27)
+                            )!
+                        )
+                        Text("Home")
+                    }
+                MapView(user: user)
+                    .tag(TabType.map)
+                    .tabItem {
+                        Image(
+                            uiImage: resizeImage(
+                                UIImage(named: "map_nav_icon")!,
+                                targetSize: CGSize(width: 30, height: 27)
+                            )!
+                        )
+                        Text("Map")
+                    }
+                ActivityCreationView(
+                    creatingUser: user,
+                    closeCallback: {
+                        // Navigate back to home tab when closing
+                        selectedTab = .home
+                    },
+                    selectedTab: $selectedTab
+                )
+                .tag(TabType.creation)
+                .tabItem {
+                    Image(
+                        uiImage: resizeImage(
+                            UIImage(named: "activities_nav_icon")!,
+                            targetSize: CGSize(width: 30, height: 27)
+                        )!
+                    )
+                    Text("Activities")
+                }
+                FriendsView(user: user)
+                    .tag(TabType.friends)
+                    .tabItem {
+                        Image(
+                            uiImage: resizeImage(
+                                UIImage(named: "friends_nav_icon")!,
+                                targetSize: CGSize(width: 30, height: 27)
+                            )!
+                        )
+                        .withNotificationBadge(count: friendsViewModel.incomingFriendRequests.count)
+                        Text("Friends")
+                    }
+                
+                NavigationStack {
+                    ProfileView(user: user)
+                }
+                    .tag(TabType.profile)
+                    .tabItem {
+                        Image(
+                            uiImage: resizeImage(
+                                UIImage(named: "profile_nav_icon")!,
+                                targetSize: CGSize(width: 30, height: 27)
+                            )!
+                        )
+                        Text("Profile")
+                    }
+            }
+            .tint(universalSecondaryColor) // Set the tint color for selected tabs to purple
+            .onAppear {
+                // Configure tab bar appearance for theme compatibility
+                let appearance = UITabBarAppearance()
+                appearance.configureWithOpaqueBackground()
+                appearance.backgroundColor = UIColor { traitCollection in
+                    switch traitCollection.userInterfaceStyle {
+                    case .dark:
+                        return UIColor.systemBackground.withAlphaComponent(0.9)
+                    default:
+                        return UIColor.systemBackground.withAlphaComponent(0.9)
+                    }
+                }
+                
+                UITabBar.appearance().standardAppearance = appearance
+                UITabBar.appearance().scrollEdgeAppearance = appearance
+                UITabBar.appearance().unselectedItemTintColor = UIColor { traitCollection in
+                    switch traitCollection.userInterfaceStyle {
+                    case .dark:
+                        return UIColor.label
+                    default:
+                        return UIColor.label
+                    }
+                }
+                
+                // Fetch friend requests to show badge count
+                Task {
+                    await friendsViewModel.fetchIncomingFriendRequests()
+                }
+            }
+            .onChange(of: deepLinkManager.shouldShowActivity) { shouldShow in
+                if shouldShow, let activityId = deepLinkManager.activityToShow {
+                    handleDeepLinkActivity(activityId)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .deepLinkActivityReceived)) { notification in
+                if let activityId = notification.userInfo?["activityId"] as? UUID {
+                    handleDeepLinkActivity(activityId)
+                }
+            }
+            
+            // In-app notification overlay
+            VStack {
+                if inAppNotificationManager.isShowingNotification,
+                   let notification = inAppNotificationManager.currentNotification {
+                    InAppNotificationView(
+                        title: notification.title,
+                        message: notification.message,
+                        notificationType: notification.type,
+                        onDismiss: {
+                            inAppNotificationManager.dismissNotification()
+                        }
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .zIndex(1000)
+                }
+                
+                Spacer()
+            }
+        }
+    }
+    
+    // MARK: - Deep Link Handling
+    private func handleDeepLinkActivity(_ activityId: UUID) {
+        print("🎯 ContentView: Handling deep link for activity: \(activityId)")
+        
+        // Switch to home tab to show the activity in feed
+        selectedTab = .home
+        
+        // Set up the deep linked activity state
+        deepLinkedActivityId = activityId
+        shouldShowDeepLinkedActivity = true
+        
+        // Clear the deep link manager state
+        deepLinkManager.clearPendingDeepLink()
+    }
 }
 
 @available(iOS 17.0, *)

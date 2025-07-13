@@ -10,11 +10,13 @@ import Combine
 
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var outgoingFriendRequests: [FetchFriendRequestDTO] = []
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
 	@Published var friends: [FullFriendUserDTO] = []
     @Published var filteredFriends: [FullFriendUserDTO] = []
     @Published var filteredRecommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var filteredOutgoingFriendRequests: [FetchFriendRequestDTO] = []
     @Published var isSearching: Bool = false
     @Published var searchQuery: String = ""
     @Published var isLoading: Bool = false
@@ -48,6 +50,18 @@ class FriendsTabViewModel: ObservableObject {
 					}
 				}
 				.store(in: &cancellables)
+			
+			// Subscribe to AppCache recommended friends updates
+			appCache.$recommendedFriends
+				.sink { [weak self] cachedRecommendedFriends in
+					if !cachedRecommendedFriends.isEmpty {
+						self?.recommendedFriends = cachedRecommendedFriends
+						if !(self?.isSearching ?? false) {
+							self?.filteredRecommendedFriends = cachedRecommendedFriends
+						}
+					}
+				}
+				.store(in: &cancellables)
 		}
 	}
     
@@ -61,10 +75,14 @@ class FriendsTabViewModel: ObservableObject {
                     self?.filteredFriends = self?.friends ?? []
                     self?.filteredRecommendedFriends = self?.recommendedFriends ?? []
                     self?.filteredIncomingFriendRequests = self?.incomingFriendRequests ?? []
+                    self?.filteredOutgoingFriendRequests = self?.outgoingFriendRequests ?? []
+                    self?.searchResults = []
                 } else {
                     self?.isSearching = true
                     Task {
+                        // For friend search, we want to filter existing friends/recommended friends
                         await self?.fetchFilteredResults(query: query)
+                        // For general user search, we want to search all users
                         await self?.performSearch(searchText: query)
                     }
                 }
@@ -74,7 +92,12 @@ class FriendsTabViewModel: ObservableObject {
     
     func fetchFilteredResults(query: String) async {
         if query.isEmpty {
-            await fetchAllData()
+            await MainActor.run {
+                self.filteredFriends = self.friends
+                self.filteredRecommendedFriends = self.recommendedFriends
+                self.filteredIncomingFriendRequests = self.incomingFriendRequests
+                self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
+            }
             return
         }
         
@@ -88,9 +111,49 @@ class FriendsTabViewModel: ObservableObject {
                 let searchedUserResult: SearchedUserResult = try await self.apiService.fetchData(from: url, parameters: nil)
                 
                 await MainActor.run {
-                    self.filteredIncomingFriendRequests = searchedUserResult.incomingFriendRequests
-                    self.filteredRecommendedFriends = searchedUserResult.recommendedFriends
-                    self.filteredFriends = searchedUserResult.friends
+                    // Parse the unified results and separate by relationship type
+                    self.filteredIncomingFriendRequests = searchedUserResult.users
+                        .filter { $0.relationshipType == .incomingFriendRequest }
+                        .compactMap { result in
+                            guard let friendRequestId = result.friendRequestId else { return nil }
+                            return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
+                        }
+                    
+                    self.filteredOutgoingFriendRequests = searchedUserResult.users
+                        .filter { $0.relationshipType == .outgoingFriendRequest }
+                        .compactMap { result in
+                            guard let friendRequestId = result.friendRequestId else { return nil }
+                            // For outgoing requests, the user in the result is the receiver
+                            return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
+                        }
+                    
+                    self.filteredRecommendedFriends = searchedUserResult.users
+                        .filter { $0.relationshipType == .recommendedFriend }
+                        .map { result in
+                            RecommendedFriendUserDTO(
+                                id: result.user.id,
+                                username: result.user.username,
+                                profilePicture: result.user.profilePicture,
+                                name: result.user.name,
+                                bio: result.user.bio,
+                                email: result.user.email,
+                                mutualFriendCount: result.mutualFriendCount ?? 0
+                            )
+                        }
+                    
+                    self.filteredFriends = searchedUserResult.users
+                        .filter { $0.relationshipType == .friend }
+                        .map { result in
+                            FullFriendUserDTO(
+                                id: result.user.id,
+                                username: result.user.username,
+                                profilePicture: result.user.profilePicture,
+                                name: result.user.name,
+                                bio: result.user.bio,
+                                email: result.user.email
+                            )
+                        }
+                    
                     self.isLoading = false
                 }
             } catch {
@@ -102,6 +165,8 @@ class FriendsTabViewModel: ObservableObject {
                 }
             }
         } else {
+            print("Invalid URL for filtered search")
+            await localFilterResults(query: query)
             await MainActor.run {
                 self.isLoading = false
             }
@@ -137,7 +202,47 @@ class FriendsTabViewModel: ObservableObject {
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
             }
+            
+            self.filteredOutgoingFriendRequests = self.outgoingFriendRequests.filter { request in
+                let friend = request.senderUser
+                let name = friend.name?.lowercased() ?? ""
+                let username = friend.username.lowercased()
+                
+                return name.contains(lowercaseQuery) || 
+                       username.contains(lowercaseQuery)
+            }
         }
+    }
+
+    // Remove friend from recommended list after adding
+    @MainActor
+    func removeFromRecommended(friendId: UUID) {
+        recommendedFriends.removeAll { $0.id == friendId }
+        filteredRecommendedFriends.removeAll { $0.id == friendId }
+        // Update cache to reflect the change
+        appCache.updateRecommendedFriends(recommendedFriends)
+    }
+    
+    // Remove user from recently spawned with list after adding
+    @MainActor
+    func removeFromRecentlySpawnedWith(userId: UUID) {
+        recentlySpawnedWith.removeAll { $0.user.id == userId }
+    }
+    
+    // Remove user from search results after adding
+    @MainActor
+    func removeFromSearchResults(userId: UUID) {
+        searchResults.removeAll { $0.id == userId }
+    }
+    
+    // Method to get cached recommended friends for passing to other views
+    func getCachedRecommendedFriends() -> [RecommendedFriendUserDTO] {
+        return appCache.recommendedFriends
+    }
+    
+    // Method to refresh recommended friends cache
+    func refreshRecommendedFriendsCache() async {
+        await fetchRecommendedFriends()
     }
 
 	func fetchAllData() async {
@@ -148,7 +253,17 @@ class FriendsTabViewModel: ObservableObject {
         // Create a task group to run these in parallel
         await withTaskGroup(of: Void.self) { group in
             group.addTask { await self.fetchIncomingFriendRequests() }
-            group.addTask { await self.fetchRecommendedFriends() }
+            group.addTask { await self.fetchOutgoingFriendRequests() }
+            group.addTask { 
+                // Check cache first for recommended friends
+                if self.appCache.recommendedFriends.isEmpty {
+                    await self.fetchRecommendedFriends()
+                } else {
+                    await MainActor.run {
+                        self.recommendedFriends = self.appCache.recommendedFriends
+                    }
+                }
+            }
             group.addTask { await self.fetchFriends() }
             group.addTask { await self.fetchRecentlySpawnedWith() }
         }
@@ -158,6 +273,7 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredFriends = self.friends
             self.filteredRecommendedFriends = self.recommendedFriends
             self.filteredIncomingFriendRequests = self.incomingFriendRequests
+            self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
             self.isLoading = false
         }
 	}
@@ -184,6 +300,28 @@ class FriendsTabViewModel: ObservableObject {
 		}
 	}
 
+	internal func fetchOutgoingFriendRequests() async {
+		// full path: /api/v1/friend-requests/sent/{userId}
+		if let url = URL(
+			string: APIService.baseURL + "friend-requests/sent/\(userId)")
+		{
+			do {
+				let fetchedOutgoingFriendRequests: [FetchFriendRequestDTO] =
+					try await self.apiService.fetchData(
+						from: url, parameters: nil)
+
+				// Ensure updating on the main thread
+				await MainActor.run {
+					self.outgoingFriendRequests = fetchedOutgoingFriendRequests
+				}
+			} catch {
+				await MainActor.run {
+					self.outgoingFriendRequests = []
+				}
+			}
+		}
+	}
+
 	internal func fetchRecommendedFriends() async {
 		if let url = URL(
 			string: APIService.baseURL + "users/recommended-friends/\(userId)")
@@ -196,6 +334,8 @@ class FriendsTabViewModel: ObservableObject {
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.recommendedFriends = fetchedRecommendedFriends
+					// Update cache
+					AppCache.shared.updateRecommendedFriends(fetchedRecommendedFriends)
 				}
 			} catch {
 				await MainActor.run {
@@ -273,6 +413,38 @@ class FriendsTabViewModel: ObservableObject {
         }
 	}
 
+    func removeFriend(friendUserId: UUID) async {
+        await MainActor.run {
+            isLoading = true
+        }
+        
+        var requestSucceeded = false
+        
+        // API endpoint for removing friend: /api/v1/users/friends/{userId}/{friendId}
+        if let url = URL(string: APIService.baseURL + "users/friends/\(userId)/\(friendUserId)") {
+            do {
+                _ = try await self.apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
+                requestSucceeded = true
+            } catch {
+                print("Error removing friend: \(error.localizedDescription)")
+            }
+        }
+        
+        if requestSucceeded {
+            // Remove from local arrays and refresh data
+            await MainActor.run {
+                self.friends.removeAll { $0.id == friendUserId }
+                self.filteredFriends.removeAll { $0.id == friendUserId }
+                // Update cache
+                self.appCache.updateFriends(self.friends)
+            }
+        }
+        
+        await MainActor.run {
+            isLoading = false
+        }
+    }
+
     @MainActor
     func fetchRecentlySpawnedWith() async {
         isLoading = true
@@ -303,8 +475,7 @@ class FriendsTabViewModel: ObservableObject {
             return
         }
         
-        isLoading = true
-        defer { isLoading = false }
+        // Don't set isLoading here as it's already set in the search flow
         
         if MockAPIService.isMocking {
             // Filter mock data for testing
@@ -319,18 +490,35 @@ class FriendsTabViewModel: ObservableObject {
         }
         
         do {
-            // API endpoint for searching users: /api/v1/users/search?query={searchText}
+            // API endpoint for searching users: /api/v1/users/search?searchQuery={searchText}
             guard let url = URL(string: APIService.baseURL + "users/search") else {
+                print("Invalid URL for user search")
+                searchResults = []
                 return
             }
             
             let fetchedUsers: [BaseUserDTO] = try await apiService.fetchData(
                 from: url, 
-                parameters: ["query": searchText]
+                parameters: [
+                    "searchQuery": searchText,
+                    "requestingUserId": userId.uuidString
+                ]
             )
-            self.searchResults = fetchedUsers
+            
+            // Ensure updating on the main thread
+            await MainActor.run {
+                self.searchResults = fetchedUsers
+            }
         } catch {
-            // Handle error
+            print("Error performing user search: \(error.localizedDescription)")
+            await MainActor.run {
+                self.searchResults = []
+            }
         }
+    }
+    
+    // Method to check if a user is already a friend
+    func isFriend(userId: UUID) -> Bool {
+        return friends.contains { $0.id == userId }
     }
 }

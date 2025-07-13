@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import MCEmojiPicker
 
 struct ActivityCreationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
@@ -78,13 +77,18 @@ struct ActivityCreationView: View {
                 .animation(.easeInOut, value: currentStep)
         }
         .background(universalBackgroundColor)
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet()
-        }
         .onAppear {
             // Initialize activityTitle from view model if it exists
             if let title = viewModel.activity.title, !title.isEmpty {
                 activityTitle = title
+            }
+            
+            // If we're starting fresh (no pre-selected type), ensure absolutely clean state
+            if currentStep == .activityType && viewModel.selectedActivityType == nil {
+                // First try force reset
+                ActivityCreationViewModel.forceReset()
+                // Then full reinitialization to be absolutely sure
+                ActivityCreationViewModel.reInitialize()
             }
         }
         .onChange(of: selectedTab) { newTab in
@@ -104,6 +108,29 @@ struct ActivityCreationView: View {
                 selectedMinute = nextInterval.minute
                 isAM = nextInterval.isAM
             }
+            // Also reset when navigating to creation tab from other tabs (not from confirmation)
+            else if newTab == TabType.creation && currentStep != .confirmation {
+                currentStep = .activityType
+                // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
+                if viewModel.selectedActivityType == nil {
+                    ActivityCreationViewModel.reInitialize()
+                }
+                // Reset other state variables
+                if let title = viewModel.activity.title, !title.isEmpty {
+                    activityTitle = title
+                } else {
+                    activityTitle = ""
+                }
+                selectedDuration = .indefinite
+                showLocationPicker = false
+                showShareSheet = false
+                
+                // Reset time to next interval
+                let nextInterval = Self.calculateNextFifteenMinuteInterval()
+                selectedHour = nextInterval.hour
+                selectedMinute = nextInterval.minute
+                isAM = nextInterval.isAM
+            }
         }
     }
     
@@ -112,7 +139,7 @@ struct ActivityCreationView: View {
         switch currentStep {
         case .activityType:
             ActivityTypeView(
-                selectedType: $viewModel.selectedType,
+                selectedActivityType: $viewModel.selectedActivityType,
                 onNext: {
                     currentStep = .dateTime
                 }
@@ -126,13 +153,15 @@ struct ActivityCreationView: View {
                 selectedDuration: $selectedDuration,
                 onNext: {
                     // Sync the activity title with the view model before proceeding
-                    viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
+                    let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                     
                     // Validate the title is not empty
-                    if viewModel.activity.title?.isEmpty ?? true {
-                        // Show error or prevent progression
+                    if trimmedTitle.isEmpty {
+                        // The validation is handled in ActivityDateTimeView
                         return
                     }
+                    
+                    viewModel.activity.title = trimmedTitle
                     
                     // Sync selectedDate and selectedDuration with viewModel
                     let calendar = Calendar.current
@@ -182,6 +211,9 @@ struct ActivityCreationView: View {
                 onClose: {
                     ActivityCreationViewModel.reInitialize()
                     closeCallback()
+                },
+                onBack: {
+                    currentStep = currentStep.previous()
                 }
             )
         }

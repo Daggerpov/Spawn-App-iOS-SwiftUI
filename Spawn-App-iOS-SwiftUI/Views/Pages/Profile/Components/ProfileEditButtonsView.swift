@@ -38,6 +38,10 @@ struct ProfileEditButtonsView: View {
                         instagramLink = socialMedia.instagramLink ?? ""
                     }
                 }
+                
+                // Restore original interests
+                profileViewModel.restoreOriginalInterests()
+                
                 editingState = .edit
             }) {
                 Text("Cancel")

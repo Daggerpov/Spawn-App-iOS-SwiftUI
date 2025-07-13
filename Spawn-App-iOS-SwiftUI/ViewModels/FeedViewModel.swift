@@ -10,6 +10,7 @@ import Combine
 
 class FeedViewModel: ObservableObject {
     @Published var activities: [FullFeedActivityDTO] = []
+    @Published var activityTypes: [ActivityTypeDTO] = []
     
     // Use the ActivityTypeViewModel for managing activity types
     @Published var activityTypeViewModel: ActivityTypeViewModel
@@ -27,13 +28,21 @@ class FeedViewModel: ObservableObject {
         // Initialize the activity type view model
         self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, apiService: apiService)
         
+        // Subscribe to activity type changes to update the UI
+        activityTypeViewModel.$activityTypes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newActivityTypes in
+                self?.activityTypes = newActivityTypes
+            }
+            .store(in: &cancellables)
+        
         // Only subscribe to AppCache if not mocking
         if !MockAPIService.isMocking {
             // Subscribe to AppCache activities updates
             appCache.$activities
                 .sink { [weak self] cachedActivities in
                     if !cachedActivities.isEmpty {
-                        self?.activities = cachedActivities
+                        self?.activities = self?.filterExpiredIndefiniteActivities(cachedActivities) ?? []
                     }
                 }
                 .store(in: &cancellables)
@@ -44,6 +53,19 @@ class FeedViewModel: ObservableObject {
             .sink { [weak self] _ in
                 Task {
                     await self?.fetchActivitiesForUser()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Register for activity type changes for immediate UI refresh
+        NotificationCenter.default.publisher(for: .activityTypesChanged)
+            .sink { [weak self] _ in
+                // Force immediate UI refresh by updating activity types from the cache
+                if let self = self {
+                    Task { @MainActor in
+                        self.activityTypes = self.appCache.activityTypes
+                        self.objectWillChange.send()
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -58,7 +80,7 @@ class FeedViewModel: ObservableObject {
         // Check the cache first for unfiltered activities
         if !appCache.activities.isEmpty {
             await MainActor.run {
-                self.activities = appCache.activities
+                self.activities = self.filterExpiredIndefiniteActivities(appCache.activities)
             }
             return
         }
@@ -67,10 +89,7 @@ class FeedViewModel: ObservableObject {
         await fetchActivitiesFromAPI()
     }
     
-    /// Access to activity types through the view model
-    var activityTypes: [ActivityTypeDTO] {
-        return activityTypeViewModel.activityTypes
-    }
+
     
     private func fetchActivitiesFromAPI() async {
         // Path: /api/v1/activities/feedActivities/{requestingUserId}
@@ -84,25 +103,40 @@ class FeedViewModel: ObservableObject {
                 from: url, parameters: nil
             )
             
-            print("✅ DEBUG: Successfully fetched \(fetchedActivities.count) activities")
-            print("📍 DEBUG: Activities with locations: \(fetchedActivities.filter { $0.location != nil }.count)")
-            
-            // Print location details for debugging
-            fetchedActivities.forEach { activity in
-                print("🗺 DEBUG: Activity '\(activity.title ?? "Untitled")' location: \(activity.location?.latitude ?? 0), \(activity.location?.longitude ?? 0)")
-            }
-            
-            // Update the cache and view model
+            // Filter expired indefinite activities and update the cache and view model
+            let filteredActivities = self.filterExpiredIndefiniteActivities(fetchedActivities)
             await MainActor.run {
-                self.activities = fetchedActivities
-                print("📱 DEBUG: Updated ViewModel with \(self.activities.count) activities")
-                self.appCache.updateActivities(fetchedActivities)
+                self.activities = filteredActivities
+                self.appCache.updateActivities(fetchedActivities) // Keep original activities in cache
             }
         } catch {
             print("❌ DEBUG: Error fetching activities: \(error)")
             await MainActor.run {
                 self.activities = []
             }
+        }
+    }
+    
+    /// Filters out indefinite activities (null end time) that have a start time before the current client-side day
+    /// Indefinite activities 'expire' by midnight of the local time
+    private func filterExpiredIndefiniteActivities(_ activities: [FullFeedActivityDTO]) -> [FullFeedActivityDTO] {
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
+        
+        return activities.filter { activity in
+            // If the activity has an end time, keep it (let backend handle expiration)
+            if activity.endTime != nil {
+                return true
+            }
+            
+            // If the activity has no end time (indefinite), check if it started before today
+            guard let startTime = activity.startTime else {
+                return false // Remove activities with no start time
+            }
+            
+            // Keep indefinite activities that start today or in the future
+            return startTime >= startOfToday
         }
     }
 }
