@@ -299,22 +299,24 @@ struct FriendsTabView: View {
 
 	// Helper methods for profile actions
 	private func copyProfileURL(for user: Nameable) {
-		let profileURL = "https://spawn.com/profile/\(user.username)"
+		let profileURL = ServiceConstants.generateProfileShareURL(for: user.id)
 		
 		// Clear the pasteboard first to avoid any contamination
 		UIPasteboard.general.items = []
 		
 		// Set only the URL string to the pasteboard
-		UIPasteboard.general.string = profileURL
+		UIPasteboard.general.string = profileURL.absoluteString
 		
 		// Show a brief toast or notification that the URL was copied
 		// You might want to add a toast notification here
 	}
 	
 	private func shareProfile(for user: Nameable) {
-		let profileURL = "https://spawn.com/profile/\(user.username)"
+		let profileURL = ServiceConstants.generateProfileShareURL(for: user.id)
+		let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(profileURL.absoluteString)"
+		
 		let activityViewController = UIActivityViewController(
-			activityItems: [profileURL],
+			activityItems: [shareText],
 			applicationActivities: nil
 		)
 		

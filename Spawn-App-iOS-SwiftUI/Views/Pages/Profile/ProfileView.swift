@@ -43,6 +43,7 @@ struct ProfileView: View {
 	@State private var showAddToActivityType: Bool = false
 	@State private var showSuccessDrawer: Bool = false
 	@State private var navigateToAddToActivityType: Bool = false
+	@State private var showProfileShareSheet: Bool = false
 	
 	// Animation states for 3D effects
 	@State private var addFriendPressed = false
@@ -317,6 +318,14 @@ struct ProfileView: View {
 					}
 				)
 			}
+			
+			// Profile share drawer overlay
+			if showProfileShareSheet {
+				ProfileShareDrawer(
+					user: user,
+					showShareSheet: $showProfileShareSheet
+				)
+			}
 		}
 	}
 
@@ -550,7 +559,7 @@ struct ProfileView: View {
 			if isCurrentUserProfile {
 				// Original action buttons for current user
 				ProfileActionButtonsView(
-					user: user,
+					user: user as! BaseUserDTO,
 					profileViewModel: profileViewModel,
 					shareProfile: shareProfile
 				)
@@ -783,39 +792,18 @@ struct ProfileView: View {
 	}
 
 	private func shareProfile() {
-		// Create a URL to share (could be a deep link to the user's profile)
-		let profileURL = "https://spawnapp.com/profile/\(user.id)"
-		let shareText =
-			"Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn!"
-
-		let activityItems: [Any] = [shareText, profileURL]
-		let activityController = UIActivityViewController(
-			activityItems: activityItems,
-			applicationActivities: nil
-		)
-
-		// Present the activity controller
-		if let windowScene = UIApplication.shared.connectedScenes.first
-			as? UIWindowScene,
-			let rootViewController = windowScene.windows.first?
-				.rootViewController
-		{
-			rootViewController.present(
-				activityController,
-				animated: true,
-				completion: nil
-			)
-		}
+		// Show the custom profile share drawer
+		showProfileShareSheet = true
 	}
 
 	private func copyProfileURL() {
-		let profileURL = "https://spawnapp.com/profile/\(user.id)"
+		let profileURL = ServiceConstants.generateProfileShareURL(for: user.id)
 		
 		// Clear the pasteboard first to avoid any contamination
 		UIPasteboard.general.items = []
 		
 		// Set only the URL string to the pasteboard
-		UIPasteboard.general.string = profileURL
+		UIPasteboard.general.string = profileURL.absoluteString
 
 		// Show notification toast
 		notificationMessage = "Profile URL copied to clipboard"

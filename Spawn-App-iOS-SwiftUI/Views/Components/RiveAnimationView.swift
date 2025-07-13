@@ -57,8 +57,7 @@ struct RiveAnimationView: View {
             fileName: fileName,
             fit: fit,
             alignment: alignment,
-            autoPlay: autoPlay,
-            loop: loop
+            autoPlay: autoPlay
         )
         
         // If specific animation name is provided, play it
