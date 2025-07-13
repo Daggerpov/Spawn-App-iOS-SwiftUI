@@ -194,16 +194,16 @@ struct UserInfoInputView: View {
 											email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
 										)
 
-										// Show notification permission request after account creation
-										if userAuth.spawnUser != nil {
-											requestNotificationPermission()
-											// Only set navigation flag here after successful account creation
-											userAuth.isFormValid = true
-											userAuth.setShouldNavigateToFeedView()
-										} else {
-											errorMessage = "Failed to create user. Please try again."
-											showErrorAlert = true
-										}
+										                                        // Show notification permission request after account creation
+                                        if userAuth.spawnUser != nil {
+                                            requestNotificationPermission()
+                                            // Navigate to Terms of Service after successful account creation
+                                            userAuth.isFormValid = true
+                                            userAuth.shouldNavigateToUserToS = true
+                                        } else {
+                                            errorMessage = "Failed to create user. Please try again."
+                                            showErrorAlert = true
+                                        }
 
 										isSubmitting = false
 									}
@@ -242,13 +242,11 @@ struct UserInfoInputView: View {
 					}
 				}
 			}
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToFeedView) {
-				if let unwrappedSpawnUser = userAuth.spawnUser {
-					FeedView(user: unwrappedSpawnUser)
-						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				}
-			}
+			            .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
+                UserToS()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            }
 			.onAppear {
 				userAuth.objectWillChange.send()  // Trigger initial UI update
 				Task {

@@ -45,6 +45,19 @@ extension View {
     func toast(isShowing: Binding<Bool>, message: String, duration: Double = 2.0) -> some View {
         self.modifier(ToastModifier(isShowing: isShowing, message: message, duration: duration))
     }
+    
+    // Debug function to test in-app notifications
+    func testInAppNotification() -> some View {
+        self.onTapGesture(count: 3) {
+            print("🧪 [DEBUG] Testing in-app notification")
+            InAppNotificationManager.shared.showNotification(
+                title: "Test Notification",
+                message: "This is a test notification to debug timing issues",
+                type: .success,
+                duration: 15.0
+            )
+        }
+    }
 }
 
 @available(iOS 17.0, *)

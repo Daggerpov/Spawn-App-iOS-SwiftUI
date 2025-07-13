@@ -552,7 +552,9 @@ class APIService: IAPIService {
 		// Check if this is an auth endpoint
 		let authEndpoints = [
 			APIService.baseURL + "auth/sign-in",
-			APIService.baseURL + "auth/make-user",
+			APIService.baseURL + "auth/login",
+            APIService.baseURL + "auth/register/oauth",
+            APIService.baseURL + "auth/register/verification/check"
 		]
 
 		guard
@@ -594,8 +596,9 @@ class APIService: IAPIService {
 
 		// Check if auth headers are needed
 		let whitelistedEndpoints = [
-			"auth/sign-in",
-			"auth/make-user"
+			"auth/register/verification/send",
+			"auth/register/oauth",
+            "auth/register/verification/check"
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
@@ -1032,8 +1035,6 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
-		
-		print("✅ Successfully cleared calendar caches on backend")
 	}
 }
 

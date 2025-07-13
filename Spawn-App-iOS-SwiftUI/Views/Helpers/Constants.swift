@@ -162,6 +162,17 @@ let figmaGreyGradientColors: [Color] = [Color(hex: "#F0F0F0"), Color(hex: "#F1F1
 
 let figmaTransparentWhite: Color = Color.white.opacity(0.8)
 
+let figmaIndigoHex: String = "#536AEE"
+let figmaIndigo: Color = Color(hex: figmaIndigoHex)
+
+let figmaAuthButtonGreyHex: String = "#F5F5F5"
+let figmaAuthButtonGrey: Color = Color(hex: figmaAuthButtonGreyHex)
+
 // Default map location (UBC)
 let defaultMapLatitude: Double = 49.26468617023799
 let defaultMapLongitude: Double = -123.25859833051356
+
+// Figma Typography
+let heading1: Font = .onestSemiBold(size: 32)
+let heading2: Font = .onestSemiBold(size: 28)
+let body1: Font = .onestRegular(size: 20)

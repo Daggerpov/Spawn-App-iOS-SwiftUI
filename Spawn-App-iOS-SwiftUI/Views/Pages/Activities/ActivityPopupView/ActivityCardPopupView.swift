@@ -199,21 +199,40 @@ struct ParticipationButtonView: View {
     // Animation states for 3D effect
     @State private var isPressed = false
     @State private var scale: CGFloat = 1.0
+    @State private var showingEditFlow = false
     
     init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel) {
         self.activity = activity
         self.cardViewModel = cardViewModel
     }
+    
+    private var isUserCreator: Bool {
+        guard let currentUserId = UserAuthViewModel.shared.spawnUser?.id else { return false }
+        return activity.creatorUser.id == currentUserId
+    }
+    
     private var participationText: String {
-            cardViewModel.isParticipating ? "Going" : "Spawn In!"
+        if isUserCreator {
+            return "Edit"
+        } else {
+            return cardViewModel.isParticipating ? "Going" : "Spawn In!"
+        }
     }
     
     private var participationColor: Color {
-        cardViewModel.isParticipating ? figmaGreen : figmaSoftBlue
+        if isUserCreator {
+            return figmaBittersweetOrange
+        } else {
+            return cardViewModel.isParticipating ? figmaGreen : figmaSoftBlue
+        }
     }
     
     private var participationIcon: String {
-        cardViewModel.isParticipating ? "checkmark.circle" : "star.circle"
+        if isUserCreator {
+            return "pencil.circle"
+        } else {
+            return cardViewModel.isParticipating ? "checkmark.circle" : "star.circle"
+        }
     }
     
     var body: some View {
@@ -225,8 +244,14 @@ struct ParticipationButtonView: View {
                 
                 // Execute action with slight delay for animation
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    Task {
-                        await cardViewModel.toggleParticipation()
+                    if isUserCreator {
+                        // Initialize the creation view model with existing activity data
+                        ActivityCreationViewModel.initializeWithExistingActivity(activity)
+                        showingEditFlow = true
+                    } else {
+                        Task {
+                            await cardViewModel.toggleParticipation()
+                        }
                     }
                 }
             }) {
@@ -266,6 +291,16 @@ struct ParticipationButtonView: View {
             
             Spacer()
             ParticipantsImagesView(activity: activity)
+        }
+        .sheet(isPresented: $showingEditFlow) {
+            ActivityCreationView(
+                creatingUser: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
+                closeCallback: {
+                    showingEditFlow = false
+                },
+                selectedTab: .constant(.creation),
+                startingStep: .dateTime
+            )
         }
     }
 }

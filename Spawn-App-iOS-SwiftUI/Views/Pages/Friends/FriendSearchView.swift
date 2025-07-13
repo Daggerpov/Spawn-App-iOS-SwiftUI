@@ -459,31 +459,53 @@ struct FriendRowView: View {
     
     // Helper methods for profile actions
     private func copyProfileURL(for user: Nameable) {
-        let profileURL = ServiceConstants.generateProfileShareURL(for: user.id)
-        
-        // Clear the pasteboard first to avoid any contamination
-        UIPasteboard.general.items = []
-        
-        // Set only the URL string to the pasteboard
-        UIPasteboard.general.string = profileURL.absoluteString
-        
-        // Show a brief toast or notification that the URL was copied
-        // You might want to add a toast notification here
+        ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
+            let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
+            
+            // Clear the pasteboard first to avoid any contamination
+            UIPasteboard.general.items = []
+            
+            // Set only the URL string to the pasteboard
+            UIPasteboard.general.string = url.absoluteString
+            
+            // Show notification toast
+            DispatchQueue.main.async {
+                InAppNotificationManager.shared.showNotification(
+                    title: "Link copied to clipboard",
+                    message: "Profile link has been copied to your clipboard",
+                    type: .success,
+                    duration: 10.0
+                )
+            }
+        }
     }
     
     private func shareProfile(for user: Nameable) {
-        let profileURL = ServiceConstants.generateProfileShareURL(for: user.id)
-        let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(profileURL.absoluteString)"
-        
-        let activityViewController = UIActivityViewController(
-            activityItems: [shareText],
-            applicationActivities: nil
-        )
-        
-        // Present the share sheet
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            window.rootViewController?.present(activityViewController, animated: true, completion: nil)
+        ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
+            let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
+            let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
+            
+            let activityViewController = UIActivityViewController(
+                activityItems: [shareText],
+                applicationActivities: nil
+            )
+            
+            // Present the activity view controller
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                
+                var topController = window.rootViewController
+                while let presentedViewController = topController?.presentedViewController {
+                    topController = presentedViewController
+                }
+                
+                if let popover = activityViewController.popoverPresentationController {
+                    popover.sourceView = topController?.view
+                    popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+                }
+                
+                topController?.present(activityViewController, animated: true, completion: nil)
+            }
         }
     }
     

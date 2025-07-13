@@ -25,10 +25,13 @@ class InAppNotificationManager: ObservableObject {
         type: NotificationType,
         duration: TimeInterval = 4.0
     ) {
-        // Cancel any existing notification
-        dismissNotification()
+        print("📱 [InAppNotificationManager] Showing notification: \(title) - Duration: \(duration)s")
         
-        // Set new notification data
+        // Cancel any existing dismiss work
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
+        
+        // Set new notification data immediately
         currentNotification = InAppNotificationData(
             title: title,
             message: message,
@@ -40,9 +43,12 @@ class InAppNotificationManager: ObservableObject {
             isShowingNotification = true
         }
         
+        print("📱 [InAppNotificationManager] Notification shown, will dismiss in \(duration)s")
+        
         // Auto-dismiss after duration
         dismissWorkItem = DispatchWorkItem { [weak self] in
             Task { @MainActor in
+                print("📱 [InAppNotificationManager] Auto-dismissing notification")
                 self?.dismissNotification()
             }
         }
@@ -52,6 +58,8 @@ class InAppNotificationManager: ObservableObject {
     
     /// Dismiss the current notification
     func dismissNotification() {
+        print("📱 [InAppNotificationManager] Dismissing notification")
+        
         // Cancel any pending dismiss work
         dismissWorkItem?.cancel()
         dismissWorkItem = nil

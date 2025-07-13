@@ -72,7 +72,7 @@ struct ActivityCalendarView: View {
         }
         .navigationTitle(calendarOwnerName != nil ? "\(calendarOwnerName!)'s Activity Calendar" : "Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $navigateToDayActivities) {
+        .sheet(isPresented: $navigateToDayActivities) {
             DayActivitiesPageView(
                 date: selectedDayActivities.first?.dateAsDate ?? Date(),
                 activities: selectedDayActivities,
@@ -84,6 +84,7 @@ struct ActivityCalendarView: View {
                     handleActivitySelection(activity)
                 }
             )
+            .presentationDetents([.medium, .large])
         }
         .onAppear {
             // Fetch calendar data for current and upcoming months

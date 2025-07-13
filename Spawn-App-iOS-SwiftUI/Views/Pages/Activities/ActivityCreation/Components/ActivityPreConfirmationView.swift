@@ -48,13 +48,17 @@ struct ActivityPreConfirmationView: View {
                 StepIndicatorView(currentStep: 3, totalSteps: 3)
                     .padding(.bottom, 16)
                 
-                // Create Activity button
+                // Create/Update Activity button
                 ActivityNextStepButton(
-                    title: viewModel.isCreatingActivity ? "Creating..." : "Looks good to me!",
+                    title: viewModel.isCreatingActivity ? (viewModel.isEditingExistingActivity ? "Updating..." : "Creating...") : (viewModel.isEditingExistingActivity ? "Update Activity" : "Looks good to me!"),
                     isEnabled: !viewModel.isCreatingActivity
                 ) {
                     Task {
-                        await viewModel.createActivity()
+                        if viewModel.isEditingExistingActivity {
+                            await viewModel.updateActivity()
+                        } else {
+                            await viewModel.createActivity()
+                        }
                         await MainActor.run {
                             onCreateActivity()
                         }

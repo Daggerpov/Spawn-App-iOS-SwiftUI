@@ -31,7 +31,9 @@ struct ChatroomView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
+                // Small spacer to account for safe area
                 Spacer()
+                    .frame(height: 60)
                 
                 // Main chatroom container
                 VStack(spacing: 0) {
@@ -132,7 +134,7 @@ struct ChatroomView: View {
                         .padding(.horizontal, 24)
                         .padding(.bottom, 32)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: 588)
+                    .frame(maxWidth: .infinity)
                     .background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
                     .cornerRadius(20)
             }

@@ -13,6 +13,8 @@ import UserNotifications // Add this import for notifications
 
 struct LaunchView: View {
 	@StateObject var userAuth = UserAuthViewModel.shared
+	@ObservedObject var themeService = ThemeService.shared
+	@Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) private var dismiss
     @State private var showAuthButtons = false
     @State private var animationCompleted = false
@@ -58,7 +60,7 @@ struct LaunchView: View {
 				if showAuthButtons {
 					Button(action: {
 						Task {
-							await userAuth.signInWithGoogle()
+                            await userAuth.loginWithGoogle()
 						}
 					}) {
 						AuthProviderButtonView(authProviderType: .google)
@@ -76,9 +78,8 @@ struct LaunchView: View {
 
 				Spacer()
 			}
-			.background(Color.white) // White background to match animation
-			.ignoresSafeArea(.all) // Ignore all safe areas including top and bottom
-			.preferredColorScheme(.light) // Force light mode to ensure white background
+			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
+			.navigationBarHidden(true)
 			.navigationDestination(
 				isPresented: $userAuth.shouldNavigateToUserInfoInputView
 			) {
