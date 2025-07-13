@@ -13,6 +13,7 @@ struct ActivityDescriptionView: View {
 	var color: Color
 	@State private var showActivityEditView = false
 	@State private var showAttendees = false
+	@StateObject private var locationManager = LocationManager()
 
 	init(
 		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
@@ -32,11 +33,11 @@ struct ActivityDescriptionView: View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 20) {
 				// Title and Information
-				ActivityCardTopRowView(activity: viewModel.activity)
+				ActivityCardTopRowView(activity: viewModel.activity, locationManager: locationManager)
 				
 				// Username display
 				HStack {
-                    Text(ActivityInfoViewModel(activity: viewModel.activity).getDisplayString(activityInfoType: .time))
+                    Text(ActivityInfoViewModel(activity: viewModel.activity, locationManager: locationManager).getDisplayString(activityInfoType: .time))
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(.white)
                         .opacity(0.5)
@@ -60,12 +61,12 @@ struct ActivityDescriptionView: View {
 
 					HStack(spacing: 10) {
 						ActivityInfoView(
-							activity: viewModel.activity, activityInfoType: .time)
+							activity: viewModel.activity, activityInfoType: .time, locationManager: locationManager)
 						
 						// Only show location if it exists
 						if viewModel.activity.location?.name != nil && !(viewModel.activity.location?.name.isEmpty ?? true) {
 							ActivityInfoView(
-								activity: viewModel.activity, activityInfoType: .location)
+								activity: viewModel.activity, activityInfoType: .location, locationManager: locationManager)
 						}
 						
 						Spacer()

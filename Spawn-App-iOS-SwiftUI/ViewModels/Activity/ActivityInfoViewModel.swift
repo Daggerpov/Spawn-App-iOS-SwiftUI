@@ -13,9 +13,11 @@ class ActivityInfoViewModel: ObservableObject {
     private var distanceDisplayString: String?
     private var timeDisplayString: String
     @ObservedObject var activity: FullFeedActivityDTO
+    @ObservedObject var locationManager: LocationManager
 
-	init(activity: FullFeedActivityDTO) {
+	init(activity: FullFeedActivityDTO, locationManager: LocationManager) {
         self.activity = activity
+        self.locationManager = locationManager
         locationDisplayString = activity.location?.name ?? "No Location"
         timeDisplayString = FormatterService.shared.formatActivityTime(activity: activity)
 	}
@@ -27,11 +29,12 @@ class ActivityInfoViewModel: ObservableObject {
             case .time:
                 return timeDisplayString
             case .distance:
-                guard let distanceDisplayString = self.distanceDisplayString else {
-                    self.distanceDisplayString = FormatterService.shared.distanceString()
-                    return self.distanceDisplayString!
-                }
-                return distanceDisplayString
+                // Calculate distance dynamically using user location
+                let calculatedDistance = FormatterService.shared.distanceString(
+                    from: locationManager.userLocation,
+                    to: activity.location
+                )
+                return calculatedDistance
             
         }
     }

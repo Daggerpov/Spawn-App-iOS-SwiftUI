@@ -9,6 +9,7 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var viewModel: FeedViewModel
+    @StateObject private var locationManager = LocationManager()
     // Using AppCache as a singleton instead of environment object
 
     @Namespace private var animation: Namespace.ID
@@ -120,7 +121,8 @@ extension FeedView {
                         ActivityCardView(
                             userId: user.id,
                             activity: activity,
-                            color: getActivityColor(for: activity.id)
+                            color: getActivityColor(for: activity.id),
+                            locationManager: locationManager
                         )
                         { activity, color in
                             activityInPopup = activity

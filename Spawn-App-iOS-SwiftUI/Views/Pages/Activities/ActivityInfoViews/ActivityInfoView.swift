@@ -10,9 +10,9 @@ import SwiftUI
 struct ActivityInfoView: View {
 	@ObservedObject var viewModel: ActivityInfoViewModel
 
-	init(activity: FullFeedActivityDTO, activityInfoType: ActivityInfoType) {
+	init(activity: FullFeedActivityDTO, activityInfoType: ActivityInfoType, locationManager: LocationManager) {
 		self.viewModel = ActivityInfoViewModel(
-			activity: activity)
+			activity: activity, locationManager: locationManager)
 	}
 
 	var body: some View {
@@ -36,5 +36,6 @@ struct ActivityInfoView: View {
 @available(iOS 17, *)
 #Preview {
 	@Previewable @StateObject var appCache = AppCache.shared
-	ActivityInfoView(activity: FullFeedActivityDTO.mockDinnerActivity, activityInfoType: ActivityInfoType.location).environmentObject(appCache)
+	@Previewable @StateObject var locationManager = LocationManager()
+	ActivityInfoView(activity: FullFeedActivityDTO.mockDinnerActivity, activityInfoType: ActivityInfoType.location, locationManager: locationManager).environmentObject(appCache)
 }

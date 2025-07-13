@@ -161,56 +161,62 @@ struct ActivityTypeCard: View {
     let onPin: () -> Void
     let onDelete: () -> Void
     let onManage: () -> Void
+    
+    // Animation states for 3D effect
+    @State private var isPressed = false
+    @State private var scale: CGFloat = 1.0
+    
     @Environment(\.colorScheme) private var colorScheme
-    @State private var showDeleteConfirmation = false
     
     private var isSelected: Bool {
-        return selectedActivityType?.id == activityTypeDTO.id
+        selectedActivityType?.id == activityTypeDTO.id
     }
     
-    // Adaptive background color
+    // Adaptive background color for card
     private var adaptiveBackgroundColor: Color {
-        if isSelected {
-            return universalSecondaryColor.opacity(0.1)
-        } else {
-            switch colorScheme {
-            case .dark:
-                return Color.white.opacity(0.08)
-            case .light:
-                return Color.gray.opacity(0.05)
-            @unknown default:
-                return Color.gray.opacity(0.05)
-            }
-        }
-    }
-    
-    // Adaptive text color for people count
-    private var adaptiveSecondaryTextColor: Color {
         switch colorScheme {
         case .dark:
-            return Color.white.opacity(0.6)
+            return Color(red: 0.24, green: 0.23, blue: 0.23)
         case .light:
-            return figmaBlack300
+            return Color.white
         @unknown default:
-            return figmaBlack300
+            return Color.white
         }
     }
     
-    // Adaptive text color for title
+    // Adaptive text colors
     private var adaptiveTitleColor: Color {
         switch colorScheme {
         case .dark:
-            return Color.white
+            return .white
         case .light:
-            return universalAccentColor
+            return Color(red: 0.11, green: 0.11, blue: 0.11)
         @unknown default:
-            return universalAccentColor
+            return Color(red: 0.11, green: 0.11, blue: 0.11)
         }
     }
     
+    private var adaptiveSecondaryTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.82, green: 0.80, blue: 0.80)
+        case .light:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
+
     var body: some View {
         Button(action: { 
-            selectedActivityType = activityTypeDTO
+            // Haptic feedback
+            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+            impactGenerator.impactOccurred()
+            
+            // Execute action with slight delay for animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                selectedActivityType = activityTypeDTO
+            }
         }) {
             ZStack {
                 VStack(alignment: .leading, spacing: 8) {
@@ -237,6 +243,13 @@ struct ActivityTypeCard: View {
                                 .stroke(isSelected ? universalSecondaryColor : Color.clear, lineWidth: 2)
                         )
                 )
+                .scaleEffect(scale)
+                .shadow(
+                    color: Color.black.opacity(0.15),
+                    radius: isPressed ? 2 : 8,
+                    x: 0,
+                    y: isPressed ? 2 : 4
+                )
                 
                 // Pin icon overlay
                 if activityTypeDTO.isPinned {
@@ -254,32 +267,35 @@ struct ActivityTypeCard: View {
                 }
             }
         }
+        .buttonStyle(PlainButtonStyle())
+        .animation(.easeInOut(duration: 0.15), value: scale)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+            scale = pressing ? 0.95 : 1.0
+            
+            // Additional haptic feedback for press down
+            if pressing {
+                let selectionGenerator = UISelectionFeedbackGenerator()
+                selectionGenerator.selectionChanged()
+            }
+        }, perform: {})
         .contextMenu {
             Button(action: onPin) {
-                Label(activityTypeDTO.isPinned ? "Unpin Type" : "Pin Type", systemImage: "pin")
+                Label(
+                    activityTypeDTO.isPinned ? "Unpin" : "Pin",
+                    systemImage: activityTypeDTO.isPinned ? "pin.slash" : "pin"
+                )
             }
             
             Button(action: onManage) {
-                Label("Manage Type", systemImage: "slider.horizontal.3")
+                Label("Manage", systemImage: "gear")
             }
             
-            Button(action: { showDeleteConfirmation = true }) {
-                Label {
-                    Text("Delete Type")
-                        .foregroundColor(.red)
-                } icon: {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                }
+            Button(action: onDelete) {
+                Label("Delete", systemImage: "trash")
             }
-        }
-        .alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
-                onDelete()
-            }
-        } message: {
-            Text("Are you sure you want to delete '\(activityTypeDTO.title)'? This action cannot be undone.")
+            .foregroundColor(.red)
         }
     }
 }
@@ -287,6 +303,10 @@ struct ActivityTypeCard: View {
 struct CreateNewActivityTypeCard: View {
     let onCreateNew: () -> Void
     @Environment(\.colorScheme) private var colorScheme
+    
+    // Animation states for 3D effect
+    @State private var isPressed = false
+    @State private var scale: CGFloat = 1.0
     
     // Design colors based on Figma specifications
     private var cardBackgroundColor: Color {
@@ -323,7 +343,16 @@ struct CreateNewActivityTypeCard: View {
     }
     
     var body: some View {
-        Button(action: onCreateNew) {
+        Button(action: {
+            // Haptic feedback
+            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+            impactGenerator.impactOccurred()
+            
+            // Execute action with slight delay for animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                onCreateNew()
+            }
+        }) {
             VStack(spacing: 8) {
                 // Icon area - matches Figma dimensions with custom image
                 Rectangle()
@@ -350,8 +379,27 @@ struct CreateNewActivityTypeCard: View {
                 RoundedRectangle(cornerRadius: 12)
                     .stroke(borderColor, lineWidth: 0.5)
             )
+            .scaleEffect(scale)
+            .shadow(
+                color: Color.black.opacity(0.15),
+                radius: isPressed ? 2 : 8,
+                x: 0,
+                y: isPressed ? 2 : 4
+            )
         }
         .buttonStyle(PlainButtonStyle())
+        .animation(.easeInOut(duration: 0.15), value: scale)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+            scale = pressing ? 0.95 : 1.0
+            
+            // Additional haptic feedback for press down
+            if pressing {
+                let selectionGenerator = UISelectionFeedbackGenerator()
+                selectionGenerator.selectionChanged()
+            }
+        }, perform: {})
     }
 }
 

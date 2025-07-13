@@ -6,6 +6,7 @@ struct DayActivitiesView: View {
     let onActivitySelected: (CalendarActivityDTO) -> Void
     
     @StateObject private var viewModel: DayActivitiesViewModel
+    @StateObject private var locationManager = LocationManager()
     
     init(
         date: Date,
@@ -113,6 +114,7 @@ extension DayActivitiesView {
                             userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                             activity: fullActivity,
                             color: getColorForActivity(activity),
+                            locationManager: locationManager,
                             callback: { _, _ in
                                 onActivitySelected(activity)
                             }

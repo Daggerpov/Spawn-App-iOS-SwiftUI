@@ -4,6 +4,7 @@ import SwiftUI
 // MARK: - Deep Link Types
 enum DeepLinkType {
     case activity(UUID)
+    case profile(UUID)
     case unknown
 }
 
@@ -14,6 +15,8 @@ class DeepLinkManager: ObservableObject {
     @Published var pendingDeepLink: DeepLinkType?
     @Published var shouldShowActivity = false
     @Published var activityToShow: UUID?
+    @Published var shouldShowProfile = false
+    @Published var profileToShow: UUID?
     
     private init() {}
     
@@ -38,12 +41,12 @@ class DeepLinkManager: ObservableObject {
         
         print("🔗 DeepLinkManager: Parsing URL - Scheme: \(url.scheme ?? "nil"), Host: \(host), Path components: \(pathComponents)")
         
-        // Handle Universal Links: https://getspawn.com/activity/{activityId} or https://getspawn.com/invite/{activityId}
+        // Handle Universal Links: https://getspawn.com/activity/{activityId} or https://getspawn.com/profile/{profileId}
         if url.scheme == "https" && host == "getspawn.com" {
             return parseUniversalLink(pathComponents: pathComponents)
         }
         
-        // Handle custom URL schemes: spawn://activity/{activityId} or spawn://invite/{activityId}
+        // Handle custom URL schemes: spawn://activity/{activityId} or spawn://profile/{profileId}
         if url.scheme == "spawn" {
             return parseCustomURLScheme(host: host, pathComponents: pathComponents)
         }
@@ -55,26 +58,36 @@ class DeepLinkManager: ObservableObject {
     private func parseUniversalLink(pathComponents: [String]) -> DeepLinkType {
         print("🔗 DeepLinkManager: Parsing Universal Link with path components: \(pathComponents)")
         
-        // Universal Link format: /activity/{activityId}
-        if pathComponents.count >= 2 && pathComponents[0] == "activity" {
-            let activityIdString = pathComponents[1]
+        // Universal Link format: /activity/{activityId} or /profile/{profileId}
+        if pathComponents.count >= 2 {
+            let type = pathComponents[0]
+            let idString = pathComponents[1]
             
-            if let activityId = UUID(uuidString: activityIdString) {
-                print("✅ DeepLinkManager: Successfully parsed Universal Link activity ID: \(activityId)")
-                return .activity(activityId)
-            } else {
-                print("❌ DeepLinkManager: Failed to parse Universal Link activity ID from: \(activityIdString)")
+            if type == "activity" {
+                if let activityId = UUID(uuidString: idString) {
+                    print("✅ DeepLinkManager: Successfully parsed Universal Link activity ID: \(activityId)")
+                    return .activity(activityId)
+                } else {
+                    print("❌ DeepLinkManager: Failed to parse Universal Link activity ID from: \(idString)")
+                }
+            } else if type == "profile" {
+                if let profileId = UUID(uuidString: idString) {
+                    print("✅ DeepLinkManager: Successfully parsed Universal Link profile ID: \(profileId)")
+                    return .profile(profileId)
+                } else {
+                    print("❌ DeepLinkManager: Failed to parse Universal Link profile ID from: \(idString)")
+                }
             }
         }
         
-        print("❌ DeepLinkManager: Invalid Universal Link path format - expected /activity/{activityId}")
+        print("❌ DeepLinkManager: Invalid Universal Link path format - expected /activity/{activityId} or /profile/{profileId}")
         return .unknown
     }
     
     private func parseCustomURLScheme(host: String, pathComponents: [String]) -> DeepLinkType {
         print("🔗 DeepLinkManager: Parsing custom URL scheme with host: \(host), path components: \(pathComponents)")
         
-        // Custom URL scheme format: spawn://activity/{activityId}
+        // Custom URL scheme format: spawn://activity/{activityId} or spawn://profile/{profileId}
         if host == "activity" {
             // Host-based format: spawn://activity/{activityId}
             let activityIdString = pathComponents.first
@@ -86,19 +99,39 @@ class DeepLinkManager: ObservableObject {
             } else {
                 print("❌ DeepLinkManager: Failed to parse custom URL scheme activity ID from: \(activityIdString ?? "nil")")
             }
-        } else if pathComponents.count >= 2 && pathComponents[0] == "activity" {
-            // Path-based format: spawn://domain/activity/{activityId}
-            let activityIdString = pathComponents[1]
+        } else if host == "profile" {
+            // Host-based format: spawn://profile/{profileId}
+            let profileIdString = pathComponents.first
             
-            if let activityId = UUID(uuidString: activityIdString) {
-                print("✅ DeepLinkManager: Successfully parsed custom URL scheme path activity ID: \(activityId)")
-                return .activity(activityId)
+            if let profileIdString = profileIdString,
+               let profileId = UUID(uuidString: profileIdString) {
+                print("✅ DeepLinkManager: Successfully parsed custom URL scheme profile ID: \(profileId)")
+                return .profile(profileId)
             } else {
-                print("❌ DeepLinkManager: Failed to parse custom URL scheme path activity ID from: \(activityIdString)")
+                print("❌ DeepLinkManager: Failed to parse custom URL scheme profile ID from: \(profileIdString ?? "nil")")
+            }
+        } else if pathComponents.count >= 2 {
+            let type = pathComponents[0]
+            let idString = pathComponents[1]
+            
+            if type == "activity" {
+                if let activityId = UUID(uuidString: idString) {
+                    print("✅ DeepLinkManager: Successfully parsed custom URL scheme path activity ID: \(activityId)")
+                    return .activity(activityId)
+                } else {
+                    print("❌ DeepLinkManager: Failed to parse custom URL scheme path activity ID from: \(idString)")
+                }
+            } else if type == "profile" {
+                if let profileId = UUID(uuidString: idString) {
+                    print("✅ DeepLinkManager: Successfully parsed custom URL scheme path profile ID: \(profileId)")
+                    return .profile(profileId)
+                } else {
+                    print("❌ DeepLinkManager: Failed to parse custom URL scheme path profile ID from: \(idString)")
+                }
             }
         }
         
-        print("❌ DeepLinkManager: Invalid custom URL scheme format - expected spawn://activity/{activityId}")
+        print("❌ DeepLinkManager: Invalid custom URL scheme format - expected spawn://activity/{activityId} or spawn://profile/{profileId}")
         return .unknown
     }
     
@@ -119,11 +152,26 @@ class DeepLinkManager: ObservableObject {
                     userInfo: ["activityId": activityId]
                 )
                 
+            case .profile(let profileId):
+                print("🎯 DeepLinkManager: Processing profile deep link: \(profileId)")
+                self.pendingDeepLink = deepLink
+                self.profileToShow = profileId
+                self.shouldShowProfile = true
+                
+                // Post notification for other parts of the app to listen to
+                NotificationCenter.default.post(
+                    name: .deepLinkProfileReceived,
+                    object: nil,
+                    userInfo: ["profileId": profileId]
+                )
+                
             case .unknown:
                 print("❌ DeepLinkManager: Unknown deep link type, ignoring")
                 self.pendingDeepLink = nil
                 self.activityToShow = nil
                 self.shouldShowActivity = false
+                self.profileToShow = nil
+                self.shouldShowProfile = false
             }
         }
     }
@@ -135,6 +183,8 @@ class DeepLinkManager: ObservableObject {
             self.pendingDeepLink = nil
             self.activityToShow = nil
             self.shouldShowActivity = false
+            self.profileToShow = nil
+            self.shouldShowProfile = false
         }
     }
     
@@ -146,4 +196,5 @@ class DeepLinkManager: ObservableObject {
 // MARK: - Notification Names
 extension Notification.Name {
     static let deepLinkActivityReceived = Notification.Name("deepLinkActivityReceived")
+    static let deepLinkProfileReceived = Notification.Name("deepLinkProfileReceived")
 } 

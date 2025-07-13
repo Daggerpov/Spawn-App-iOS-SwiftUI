@@ -8,26 +8,34 @@
 import SwiftUI
 
 struct ProfileActionButtonsView: View {
-    let user: Nameable
-    @StateObject var userAuth = UserAuthViewModel.shared
+    var user: BaseUserDTO
     @ObservedObject var profileViewModel: ProfileViewModel
-    let shareProfile: () -> Void
-    @Environment(\.colorScheme) var colorScheme
+    @Environment(\.colorScheme) private var colorScheme
+    var shareProfile: () -> Void
     
-    // Check if this is the current user's profile
-    var isCurrentUserProfile: Bool {
-        if MockAPIService.isMocking {
-            return true
-        }
-        guard let currentUser = userAuth.spawnUser else { return false }
+    // Animation states for 3D effect
+    @State private var editButtonPressed = false
+    @State private var editButtonScale: CGFloat = 1.0
+    @State private var shareButtonPressed = false
+    @State private var shareButtonScale: CGFloat = 1.0
+    
+    // Computed property for current user profile
+    private var isCurrentUserProfile: Bool {
+        guard let currentUser = UserAuthViewModel.shared.spawnUser else { return false }
         return currentUser.id == user.id
     }
     
-    // Adaptive background color - white in light mode, dark gray in dark mode
     private var buttonBackgroundColor: Color {
-        .white
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.15, green: 0.15, blue: 0.15)
+        case .light:
+            return Color.white
+        @unknown default:
+            return Color.white
+        }
     }
-    
+
     var body: some View {
         HStack(spacing: 8) {
             if isCurrentUserProfile {
@@ -53,14 +61,44 @@ struct ProfileActionButtonsView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(universalSecondaryColor, lineWidth: 2)
                     )
+                    .scaleEffect(editButtonScale)
+                    .shadow(
+                        color: Color.black.opacity(0.15),
+                        radius: editButtonPressed ? 2 : 8,
+                        x: 0,
+                        y: editButtonPressed ? 2 : 4
+                    )
                 }
                 .navigationBarBackButtonHidden(true)
+                .animation(.easeInOut(duration: 0.15), value: editButtonScale)
+                .animation(.easeInOut(duration: 0.15), value: editButtonPressed)
+                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                    editButtonPressed = pressing
+                    editButtonScale = pressing ? 0.95 : 1.0
+                    
+                    // Haptic feedback for press down
+                    if pressing {
+                        let selectionGenerator = UISelectionFeedbackGenerator()
+                        selectionGenerator.selectionChanged()
+                    }
+                }, perform: {
+                    // Haptic feedback on tap
+                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                    impactGenerator.impactOccurred()
+                })
             }
 
             // Share Profile button removed for other users - only show for current user
             if isCurrentUserProfile {
                 Button(action: {
-                    shareProfile()
+                    // Haptic feedback
+                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                    impactGenerator.impactOccurred()
+                    
+                    // Execute action with slight delay for animation
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        shareProfile()
+                    }
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "square.and.arrow.up")
@@ -78,7 +116,27 @@ struct ProfileActionButtonsView: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(universalSecondaryColor, lineWidth: 2)
                     )
+                    .scaleEffect(shareButtonScale)
+                    .shadow(
+                        color: Color.black.opacity(0.15),
+                        radius: shareButtonPressed ? 2 : 8,
+                        x: 0,
+                        y: shareButtonPressed ? 2 : 4
+                    )
                 }
+                .buttonStyle(PlainButtonStyle())
+                .animation(.easeInOut(duration: 0.15), value: shareButtonScale)
+                .animation(.easeInOut(duration: 0.15), value: shareButtonPressed)
+                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                    shareButtonPressed = pressing
+                    shareButtonScale = pressing ? 0.95 : 1.0
+                    
+                    // Additional haptic feedback for press down
+                    if pressing {
+                        let selectionGenerator = UISelectionFeedbackGenerator()
+                        selectionGenerator.selectionChanged()
+                    }
+                }, perform: {})
             }
         }
     }

@@ -3,6 +3,7 @@ import SwiftUI
 struct UserActivitiesSection: View {
     var user: Nameable
     @ObservedObject var profileViewModel: ProfileViewModel
+    @StateObject private var locationManager = LocationManager()
     @Binding var showActivityDetails: Bool
     @State private var showFriendActivities: Bool = false
     
@@ -100,6 +101,7 @@ struct UserActivitiesSection: View {
                                 userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                                 activity: activity,
                                 color: activity.isSelfOwned == true ? universalAccentColor : getActivityColor(for: activity.id),
+                                locationManager: locationManager,
                                 callback: { selectedActivity, color in
                                     profileViewModel.selectedActivity = selectedActivity
                                     showActivityDetails = true
