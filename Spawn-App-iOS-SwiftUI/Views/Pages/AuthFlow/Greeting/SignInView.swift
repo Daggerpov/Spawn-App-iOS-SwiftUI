@@ -30,7 +30,7 @@ struct SignInView: View {
                 // Buttons
                 VStack {
                     // Create Account Button
-                    OnboardingButtonView("Create an Account", destination: LaunchView())
+                    OnboardingButtonView("Create an Account", destination: RegisterInputView())
                         .padding(.bottom, -16)
                     
                     // Log in text
@@ -39,7 +39,7 @@ struct SignInView: View {
                             .font(.onestRegular(size: 14))
                             
                         
-                        NavigationLink(destination: LaunchView()) {
+                        NavigationLink(destination: LoginInputView()) {
                             // Handle log in action
                             Text("Log in")
                                 .font(.onestSemiBold(size: 14))
@@ -52,6 +52,7 @@ struct SignInView: View {
                 .padding(.bottom, 60)
             }
         }
+        .navigationBarHidden(true)
     }
 }
 

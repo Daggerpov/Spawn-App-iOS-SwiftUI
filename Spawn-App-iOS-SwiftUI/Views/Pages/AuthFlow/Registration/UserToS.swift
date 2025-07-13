@@ -99,6 +99,7 @@ struct UserToS: View {
         .frame(width: 428, height: 926)
         .background(Color.white)
         .cornerRadius(44)
+        .navigationBarHidden(true)
     }
 }
 

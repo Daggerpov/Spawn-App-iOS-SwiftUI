@@ -848,29 +848,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
     }
     
-    func requestVerification(number: String) async {
-        do {
-            if let url: URL = URL(string: APIService.baseURL + "auth/verification") {
-                guard let userId = spawnUser?.id else {
-                    print("Cannot send verification request without user ID")
-                    return
-                }
-                let request = SendVerificationRequestDTO(phoneNumber: number, userId: userId.uuidString)
-                let response: BaseUserDTO? = try await self.apiService.sendData(request, to: url, parameters: nil)
-                guard let user: BaseUserDTO = response else {
-                    print("Failed to request verification code")
-                    return
-                }
-                
-                await MainActor.run {
-                    self.shouldNavigateToVerificationCodeView = true
-                }
-            }
-        } catch {
-            print("Error registering user")
-            self.shouldNavigateToPhoneNumberView = false
-        }
-    }
     
     // New method for sending email verification
     func sendEmailVerification(email: String) async {
@@ -968,7 +945,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
     func verifyEmailCode(email: String, code: String) async {
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/register/verification/check") {
-                let verificationDTO = EmailVerificationVerifyDTO(email: email, code: code)
+                let verificationDTO = EmailVerificationVerifyDTO(email: email, verificationCode: code)
                 let response: BaseUserDTO? = try await self.apiService.sendData(verificationDTO, to: url, parameters: nil)
                 
                 await MainActor.run {

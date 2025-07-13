@@ -39,7 +39,9 @@ struct SpawnIntroView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Button(action: {}) {
+                Button(action: {
+                    dismiss()
+                }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
                         .foregroundColor(.primary)
@@ -61,23 +63,6 @@ struct SpawnIntroView: View {
                     VStack(spacing: 20) {
                         Image(page.imageName)
                             .foregroundColor(.white.opacity(0.8))
-                        // Placeholder image
-//                        RoundedRectangle(cornerRadius: 20)
-//                            .fill(LinearGradient(
-//                                colors: [
-//                                    Color.blue.opacity(0.6),
-//                                    Color.purple.opacity(0.4)
-//                                ],
-//                                startPoint: .topLeading,
-//                                endPoint: .bottomTrailing
-//                            ))
-//                            .frame(width: 280, height: 200)
-//                            .overlay(
-//                                Image(page.imageName)
-//                                    .font(.system(size: 60))
-//                                    .foregroundColor(.white.opacity(0.8))
-//                            )
-//                            .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
                     }
                     .tag(index)
                 }
@@ -123,7 +108,7 @@ struct SpawnIntroView: View {
                 
                 // Next Button
                 if currentPage == pages.count - 1 {
-                    OnboardingButtonView("Next", destination: LaunchView())
+                    OnboardingButtonView("Next", destination: SignInView())
                 } else {
                     SpawnIntroButtonView("Next") {
                         if currentPage < pages.count - 1 {
@@ -134,6 +119,7 @@ struct SpawnIntroView: View {
             }
         }
         .background(Color(.systemBackground))
+        .navigationBarHidden(true)
     }
 }
 
