@@ -199,6 +199,9 @@ struct EditProfileView: View {
                 instagramLink: formattedInstagram.isEmpty ? nil : formattedInstagram
             )
             
+            // Handle interest changes
+            await saveInterestChanges()
+            
             // Add an explicit delay and refresh to ensure data is properly updated
             try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds delay
             
@@ -233,6 +236,32 @@ struct EditProfileView: View {
                     presentationMode.wrappedValue.dismiss()
                 }
             }
+        }
+    }
+    
+    private func saveInterestChanges() async {
+        let currentInterests = Set(profileViewModel.userInterests)
+        let originalInterests = Set(profileViewModel.originalUserInterests)
+        
+        // Find interests to add (in current but not in original)
+        let interestsToAdd = currentInterests.subtracting(originalInterests)
+        
+        // Find interests to remove (in original but not in current)
+        let interestsToRemove = originalInterests.subtracting(currentInterests)
+        
+        // Add new interests
+        for interest in interestsToAdd {
+            _ = await profileViewModel.addUserInterest(userId: userId, interest: interest)
+        }
+        
+        // Remove old interests using the edit-specific method that handles 404 as success
+        for interest in interestsToRemove {
+            await profileViewModel.removeUserInterestForEdit(userId: userId, interest: interest)
+        }
+        
+        // Update the original interests to match current state after saving
+        await MainActor.run {
+            profileViewModel.originalUserInterests = profileViewModel.userInterests
         }
     }
 }
@@ -430,17 +459,11 @@ struct InterestsSection: View {
         
         // Don't add duplicates
         if !profileViewModel.userInterests.contains(interest) {
-            Task {
-                let success = await profileViewModel.addUserInterest(userId: userId, interest: interest)
-                await MainActor.run {
-                    if success {
-                        newInterest = ""
-                        isTextFieldFocused = false // Dismiss keyboard
-                        // Force UI update
-                        profileViewModel.objectWillChange.send()
-                    }
-                }
-            }
+            // Only update local state - don't call API until save
+            profileViewModel.userInterests.append(interest)
+            profileViewModel.objectWillChange.send()
+            newInterest = ""
+            isTextFieldFocused = false // Dismiss keyboard
         } else {
             newInterest = ""
             isTextFieldFocused = false // Dismiss keyboard
@@ -448,13 +471,9 @@ struct InterestsSection: View {
     }
     
     private func removeInterest(_ interest: String) {
-        Task {
-            await profileViewModel.removeUserInterest(userId: userId, interest: interest)
-            await MainActor.run {
-                // Force UI update
-                profileViewModel.objectWillChange.send()
-            }
-        }
+        // Only update local state - don't call API until save
+        profileViewModel.userInterests.removeAll { $0 == interest }
+        profileViewModel.objectWillChange.send()
     }
 }
 

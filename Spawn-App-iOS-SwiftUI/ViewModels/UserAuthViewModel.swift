@@ -84,7 +84,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
         // Start minimum loading timer
         Task {
-            try? await Task.sleep(nanoseconds: 2_000_000_000) 
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
             await MainActor.run {
                 self.minimumLoadingCompleted = true
                 self.checkLoadingCompletion()
@@ -114,45 +114,49 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 	
 	func resetState() {
-		// Reset user state
-		self.errorMessage = nil
-		self.authProvider = nil
-		self.externalUserId = nil
-		self.idToken = nil
-		self.isLoggedIn = false
-		self.spawnUser = nil
+		Task { @MainActor in
+			// Reset user state
+			self.errorMessage = nil
+			self.authProvider = nil
+			self.externalUserId = nil
+			self.idToken = nil
+			self.isLoggedIn = false
+			self.spawnUser = nil
 
-		self.name = nil
-		self.email = nil
-		self.profilePicUrl = nil
+			self.name = nil
+			self.email = nil
+			self.profilePicUrl = nil
 
-		self.isFormValid = false
+			self.isFormValid = false
 
-		self.shouldNavigateToFeedView = false
-		self.shouldNavigateToUserInfoInputView = false
-		self.shouldNavigateToPhoneNumberView = false
-		self.shouldNavigateToVerificationCodeView = false
-		self.shouldNavigateToUserDetailsView = false
-		self.secondsUntilNextVerificationAttempt = 30
-		self.activeAlert = nil
-		self.authAlert = nil
+			self.shouldNavigateToFeedView = false
+			self.shouldNavigateToUserInfoInputView = false
+			self.shouldNavigateToPhoneNumberView = false
+			self.shouldNavigateToVerificationCodeView = false
+			self.shouldNavigateToUserDetailsView = false
+			self.secondsUntilNextVerificationAttempt = 30
+			self.activeAlert = nil
+			self.authAlert = nil
 
-		self.defaultPfpFetchError = false
-		self.defaultPfpUrlString = nil
-		
-		// Reset loading state but mark as not first launch
-		self.minimumLoadingCompleted = false
-		self.authCheckCompleted = false
-		self.hasCheckedSpawnUserExistence = false
-		self.isFirstLaunch = false // This is no longer first launch
-		
-		// Don't reset hasCompletedOnboarding - once completed, it stays completed
+			self.defaultPfpFetchError = false
+			self.defaultPfpUrlString = nil
+			
+			// Reset loading state but mark as not first launch
+			self.minimumLoadingCompleted = false
+			self.authCheckCompleted = false
+			self.hasCheckedSpawnUserExistence = false
+			self.isFirstLaunch = false // This is no longer first launch
+			
+			// Don't reset hasCompletedOnboarding - once completed, it stays completed
+		}
 	}
 	
 	// Mark onboarding as completed
 	func markOnboardingCompleted() {
-		hasCompletedOnboarding = true
-		UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+		Task { @MainActor in
+			hasCompletedOnboarding = true
+			UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+		}
 	}
 
 	func handleAppleSignInResult(_ result: Result<ASAuthorization, Error>) {
@@ -179,23 +183,25 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 
 				// Set user details
                 let userIdentifier = appleIDCredential.user
-                if let email = appleIDCredential.email {
-                    self.email = email
+                Task { @MainActor in
+                    if let email = appleIDCredential.email {
+                        self.email = email
+                    }
+                    if let givenName = appleIDCredential.fullName?.givenName,
+                       let familyName = appleIDCredential.fullName?.familyName {
+                        self.name = "\(givenName) \(familyName)"
+                    } else if let givenName = appleIDCredential.fullName?.givenName {
+                        self.name = givenName
+                    }
+                    self.isLoggedIn = true
+                    self.externalUserId = userIdentifier
+                    guard let idTokenData = appleIDCredential.identityToken else {
+                        print("Error fetching ID Token from Apple ID Credential")
+                        return
+                    }
+                    self.idToken = String(data: idTokenData, encoding: .utf8)
+                    self.authProvider = .apple
                 }
-				if let givenName = appleIDCredential.fullName?.givenName,
-                   let familyName = appleIDCredential.fullName?.familyName {
-                    self.name = "\(givenName) \(familyName)"
-                } else if let givenName = appleIDCredential.fullName?.givenName {
-                    self.name = givenName
-                }
-				self.isLoggedIn = true
-				self.externalUserId = userIdentifier
-                guard let idTokenData = appleIDCredential.identityToken else {
-                    print("Error fetching ID Token from Apple ID Credential")
-                    return
-                }
-                self.idToken = String(data: idTokenData, encoding: .utf8)
-                self.authProvider = .apple
 
 				// Check user existence AFTER setting credentials
 				Task { [weak self] in
@@ -204,9 +210,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				}
 			}
 		case .failure(let error):
-			self.errorMessage =
-				"Apple Sign-In failed: \(error.localizedDescription)"
-			print(self.errorMessage as Any)
+			Task { @MainActor in
+				self.errorMessage =
+					"Apple Sign-In failed: \(error.localizedDescription)"
+				print(self.errorMessage as Any)
+			}
 			// Check user existence AFTER setting credentials
 			Task { [weak self] in
 				guard let self = self else { return }
@@ -272,13 +280,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     }
                     
                     // Request a higher resolution image (400px instead of 100px)
-                    self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
-                    self.name = user.profile?.name
-                    self.email = user.profile?.email
-                    self.isLoggedIn = true
-                    self.externalUserId = user.userID
-                    self.authProvider = .google
-                    self.idToken = user.idToken?.tokenString
+                    Task { @MainActor in
+                        self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
+                        self.name = user.profile?.name
+                        self.email = user.profile?.email
+                        self.isLoggedIn = true
+                        self.externalUserId = user.userID
+                        self.authProvider = .google
+                        self.idToken = user.idToken?.tokenString
+                    }
 					
 					Task { [weak self] in
 						guard let self = self else { return }
@@ -302,7 +312,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		authorizationController.delegate = self  // Ensure delegate is set
 		authorizationController.performRequests()
 
-		self.authProvider = .apple
+		Task { @MainActor in
+			self.authProvider = .apple
+		}
 	}
 
 	func signOut() {
@@ -513,7 +525,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func setShouldNavigateToFeedView() {
-		shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
+		Task { @MainActor in
+			shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
+		}
 	}
     
     func acceptTermsOfService() async {

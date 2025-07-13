@@ -260,6 +260,13 @@ class AppCache: ObservableObject {
         saveToDisk()
     }
     
+    // Remove an activity from the cache
+    func removeActivity(_ activityId: UUID) {
+        activities.removeAll { $0.id == activityId }
+        lastChecked[CacheKeys.events] = Date()
+        saveToDisk()
+    }
+    
     /// Optimistically updates an activity in the cache
     func optimisticallyUpdateActivity(_ activity: FullFeedActivityDTO) {
         addOrUpdateActivity(activity)

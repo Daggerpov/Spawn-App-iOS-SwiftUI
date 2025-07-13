@@ -21,7 +21,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         super.init()
         self.locationManager.delegate = self
         self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        self.locationManager.distanceFilter = 10.0 // Update location every 10 meters
+        self.locationManager.distanceFilter = 5.0 // Update location every 10 meters
         
         // Check current authorization status
         self.authorizationStatus = locationManager.authorizationStatus

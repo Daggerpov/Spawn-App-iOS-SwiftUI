@@ -295,4 +295,105 @@ class ActivityTypeViewModel: ObservableObject {
     func clearError() {
         errorMessage = nil
     }
+    
+    /// Shows an error message
+    @MainActor
+    func showError(_ message: String) {
+        errorMessage = message
+    }
+    
+    /// Reorders activity types based on drag and drop, with validation for pinned/unpinned constraints
+    @MainActor
+    func reorderActivityTypes(from source: Int, to destination: Int) async {
+        guard source != destination else { return }
+        
+        let sortedTypes = sortedActivityTypes
+        guard source < sortedTypes.count && destination < sortedTypes.count else {
+            print("❌ Invalid indices for reordering")
+            return
+        }
+        
+        let sourceItem = sortedTypes[source]
+        let destinationItem = sortedTypes[destination]
+        
+        // Validation: Don't allow unpinned items to be moved before pinned items
+        if !sourceItem.isPinned && destinationItem.isPinned {
+            print("❌ Cannot move unpinned item before pinned item")
+            errorMessage = "Unpinned activities cannot be moved before pinned activities"
+            return
+        }
+        
+        // Create a mutable copy of the sorted types
+        var reorderedTypes = sortedTypes
+        
+        // Move the item from source to destination
+        let movedItem = reorderedTypes.remove(at: source)
+        reorderedTypes.insert(movedItem, at: destination)
+        
+        // Update orderNum for all affected items
+        var updatedTypes: [ActivityTypeDTO] = []
+        for (index, activityType) in reorderedTypes.enumerated() {
+            let updatedType = ActivityTypeDTO(
+                id: activityType.id,
+                title: activityType.title,
+                icon: activityType.icon,
+                associatedFriends: activityType.associatedFriends,
+                orderNum: index,
+                isPinned: activityType.isPinned
+            )
+            updatedTypes.append(updatedType)
+        }
+        
+        // Update the local state optimistically
+        self.activityTypes = updatedTypes
+        
+        // Save changes to the backend
+        await batchUpdateActivityTypes(updatedTypes)
+    }
+    
+    /// Performs a batch update of activity types
+    @MainActor
+    private func batchUpdateActivityTypes(_ activityTypes: [ActivityTypeDTO]) async {
+        isLoading = true
+        errorMessage = nil
+        
+        defer { isLoading = false }
+        
+        do {
+            let endpoint = "\(userId)/activity-types"
+            guard let url = URL(string: APIService.baseURL + endpoint) else {
+                errorMessage = "Invalid URL"
+                return
+            }
+            
+            let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+                updatedActivityTypes: activityTypes,
+                deletedActivityTypeIds: []
+            )
+            
+            let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
+                batchUpdateDTO,
+                to: url,
+                parameters: nil
+            )
+            
+            // Update local state with confirmed data from API
+            self.activityTypes = updatedActivityTypes
+            
+            // Update cache with confirmed data
+            appCache.updateActivityTypes(updatedActivityTypes)
+            
+            // Post notification for UI updates
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            
+            print("✅ Successfully reordered activity types")
+            
+        } catch {
+            print("❌ Error reordering activity types: \(error)")
+            errorMessage = "Failed to reorder activity types"
+            
+            // Refresh from API to get correct state
+            await fetchActivityTypes()
+        }
+    }
 } 

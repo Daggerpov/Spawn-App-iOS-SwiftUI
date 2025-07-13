@@ -44,11 +44,11 @@ struct ActivityPopupDrawer: View {
                     .opacity(0.65)
             // Popup content
             VStack(spacing: 0) {
-                ActivityCardPopupView(activity: activity, activityColor: activityColor)
+                ActivityCardPopupView(activity: activity, activityColor: activityColor, isExpanded: $isExpanded)
             }
             .background(activityColor.opacity(0.08))
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .cornerRadius(20, corners: [.topLeft, .topRight])
+            .frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)
+            .cornerRadius(isExpanded ? 0 : 20, corners: [.topLeft, .topRight])
             .offset(y: currentOffset)
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -62,6 +62,7 @@ struct ActivityPopupDrawer: View {
                         handleDragEnd(value: value)
                     }
             )
+            .ignoresSafeArea(isExpanded ? .all : .container, edges: isExpanded ? .all : .bottom)
         }
         .transition(.move(edge: .bottom))
         .onAppear {
@@ -73,8 +74,6 @@ struct ActivityPopupDrawer: View {
             }
         }
         .allowsHitTesting(isPresented)
-        //.background(Color.clear.blur(radius: 1).opacity(0.1))
-        .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
     }
     
     private func handleDragEnd(value: DragGesture.Value) {
@@ -88,8 +87,14 @@ struct ActivityPopupDrawer: View {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
                 if dragDistance > distanceThreshold || velocity > velocityThreshold {
                     // Dragging down
-                    dismissPopup()
-                    return
+                    if isExpanded {
+                        // If expanded, first collapse to half screen
+                        isExpanded = false
+                    } else {
+                        // If already collapsed, dismiss
+                        dismissPopup()
+                        return
+                    }
                 } else if dragDistance < -distanceThreshold || velocity < -velocityThreshold {
                     // Dragging up - expand to fullscreen
                     isExpanded = true
