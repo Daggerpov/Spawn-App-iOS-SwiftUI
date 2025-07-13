@@ -200,6 +200,9 @@ struct UserInfoInputView: View {
                                             // Navigate to Terms of Service after successful account creation
                                             userAuth.isFormValid = true
                                             userAuth.shouldNavigateToUserToS = true
+                                            
+                                            // Trigger tutorial for new user
+                                            userAuth.triggerTutorialForNewUser()
                                         } else {
                                             errorMessage = "Failed to create user. Please try again."
                                             showErrorAlert = true

@@ -67,7 +67,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						}
 				} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
 					// User is logged in and user data exists - go to main content
-					ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
+					TutorialContentView(user: spawnUser, deepLinkManager: deepLinkManager)
 						.onAppear {
 							// Initialize and validate the cache
 							Task {

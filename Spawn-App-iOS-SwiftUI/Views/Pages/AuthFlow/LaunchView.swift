@@ -91,7 +91,7 @@ struct LaunchView: View {
 				isPresented: $userAuth.shouldNavigateToFeedView
 			) {
 				if let loggedInSpawnUser = userAuth.spawnUser {
-					ContentView(user: loggedInSpawnUser)
+					TutorialContentView(user: loggedInSpawnUser)
 						.navigationBarTitle("")
 						.navigationBarHidden(true)
 				} else {
