@@ -7,6 +7,8 @@ struct UserOptionalDetailsInputView: View {
     @State private var showImagePicker: Bool = false
     @State private var isLoading: Bool = false
     @ObservedObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     private var isFormValid: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -70,6 +72,13 @@ struct UserOptionalDetailsInputView: View {
         VStack(spacing: 0) {
             // Navigation Bar
             HStack {
+                Button(action: {
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                }
                 Spacer()
 //                Button(action: {
 //                    userAuth.shouldNavigateToUserToS = true
@@ -90,10 +99,10 @@ struct UserOptionalDetailsInputView: View {
                 VStack(spacing: 16) {
                     Text("Make It Yours")
                         .font(heading1)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     Text("Add a name and photo so your friends can find you easily.")
                         .font(body1)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 40)
@@ -126,7 +135,7 @@ struct UserOptionalDetailsInputView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Name")
                         .font(Font.onestRegular(size: 16))
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     TextField("What should your friends call you?", text: $name)
                         .textFieldStyle(CustomTextFieldStyle())
                         .textContentType(.name)
@@ -168,7 +177,7 @@ struct UserOptionalDetailsInputView: View {
             
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
             UserToS()

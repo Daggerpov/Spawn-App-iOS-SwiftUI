@@ -568,18 +568,6 @@ struct SocialMediaField: View {
                             .font(.subheadline)
                     }
                 
-                // Clear button - only show if text is not empty
-                if !text.isEmpty {
-                    Button(action: {
-                        text = ""
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.red)
-                            .font(.system(size: 18))
-                    }
-                    .padding(.trailing, 4)
-                }
-                
                 Spacer()
             }
             .padding()
@@ -593,7 +581,7 @@ struct SocialMediaField: View {
             )
             
             // Add helpful hint text
-            Text(icon == "instagram" ? "Enter your Instagram handle (with or without @)" : "Enter your phone number with country code")
+            Text(icon == "instagram" ? "Enter your Instagram handle (with or without @)" : "Only for your friends to see")
                 .font(.caption)
                 .foregroundColor(.gray)
                 .padding(.leading, 2)

@@ -77,8 +77,10 @@ struct ProfileInterestsView: View {
 
     private var socialMediaIcons: some View {
         HStack(spacing: 10) {
+            // Only show WhatsApp if it's the current user's profile OR they are friends
             if let whatsappLink = profileViewModel.userSocialMedia?
-                .whatsappLink, !whatsappLink.isEmpty
+                .whatsappLink, !whatsappLink.isEmpty,
+               (isCurrentUserProfile || profileViewModel.friendshipStatus == .friends)
             {
                 Image("whatsapp")
                     .resizable()

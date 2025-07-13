@@ -58,6 +58,10 @@ struct SignInView: View {
             }
         }
         .navigationBarHidden(true)
+		.onAppear {
+			// Mark onboarding as completed when user reaches sign in
+			userAuth.markOnboardingCompleted()
+		}
     }
 }
 

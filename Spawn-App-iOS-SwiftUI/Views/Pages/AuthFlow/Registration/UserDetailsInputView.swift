@@ -18,6 +18,8 @@ struct UserDetailsInputView: View {
     @State private var passwordError: String? = nil
     @State private var isUsernameTaken: Bool = false
     @State private var isPasswordMismatch: Bool = false
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     // New: Indicate if this is an OAuth user (passed in or set from view model)
     var isOAuthUser: Bool = false
@@ -60,7 +62,7 @@ struct UserDetailsInputView: View {
                 Button(action: { dismiss() }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
                 Spacer()
             }
@@ -75,10 +77,10 @@ struct UserDetailsInputView: View {
                 VStack(spacing: 16) {
                     Text(isOAuthUser ? "Complete Your Profile" : "Create Your Account")
                         .font(heading1)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     Text(isOAuthUser ? "Add a username and phone number to complete your account." : "Just a few details to get started.")
                         .font(.onestRegular(size: 16))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal, 40)
@@ -216,9 +218,9 @@ struct UserDetailsInputView: View {
             }
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationDestination(isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView) {
-            UserSetupView()
+            UserOptionalDetailsInputView()
         }
         .navigationBarHidden(true)
     }
