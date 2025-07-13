@@ -96,6 +96,10 @@ class InAppNotificationManager: ObservableObject {
             return "New Message"
         case .welcome:
             return "Welcome!"
+        case .error:
+            return "Error"
+        case .success:
+            return "Success"
         }
     }
     
@@ -133,6 +137,18 @@ class InAppNotificationManager: ObservableObject {
             
         case .welcome:
             return "Welcome to Spawn! Start connecting with friends."
+            
+        case .error:
+            if let errorMessage = userInfo["errorMessage"] as? String {
+                return errorMessage
+            }
+            return "Something went wrong. Please try again."
+            
+        case .success:
+            if let successMessage = userInfo["successMessage"] as? String {
+                return successMessage
+            }
+            return "Action completed successfully"
         }
     }
 }

@@ -9,6 +9,7 @@ import SwiftUI
 struct ActivityFeedView: View {
     var user: BaseUserDTO
     @StateObject var viewModel: FeedViewModel
+    @StateObject private var locationManager = LocationManager()
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
@@ -117,6 +118,12 @@ struct ActivityFeedView: View {
                 handleDeepLinkedActivity(activityId)
             }
         }
+        .onAppear {
+            // Handle deep link if one is pending when view appears
+            if shouldShowDeepLinkedActivity, let activityId = deepLinkedActivityId {
+                handleDeepLinkedActivity(activityId)
+            }
+        }
     }
     
     var seeAllActivityTypesButton: some View {
@@ -161,7 +168,7 @@ struct ActivityFeedView: View {
             do {
                 // First check if the activity is already in our current activities list
                 if let existingActivity = viewModel.activities.first(where: { $0.id == activityId }) {
-                    print("✅ ActivityFeedView: Found activity in current feed, showing popup")
+                    print("✅ ActivityFeedView: Found activity in current feed: \(existingActivity.title ?? "No title")")
                     await MainActor.run {
                         activityInPopup = existingActivity
                         colorInPopup = getActivityColor(for: activityId)
@@ -169,6 +176,7 @@ struct ActivityFeedView: View {
                         shouldShowDeepLinkedActivity = false
                         deepLinkedActivityId = nil
                         isFetchingDeepLinkedActivity = false
+                        print("🎯 ActivityFeedView: Set popup state for existing activity - showing: \(showingActivityPopup), activity: \(existingActivity.title ?? "No title")")
                     }
                     return
                 }
@@ -181,10 +189,14 @@ struct ActivityFeedView: View {
                     throw APIError.URLError
                 }
                 
-                let parameters = ["requestingUserId": user.id.uuidString]
+                // Add autoJoin parameter to automatically join the user to the activity
+                let parameters = [
+                    "requestingUserId": user.id.uuidString,
+                    "autoJoin": "true"
+                ]
                 let activity: FullFeedActivityDTO = try await apiService.fetchData(from: url, parameters: parameters)
                 
-                print("✅ ActivityFeedView: Successfully fetched deep linked activity")
+                print("✅ ActivityFeedView: Successfully fetched deep linked activity: \(activity.title ?? "No title")")
                 await MainActor.run {
                     activityInPopup = activity
                     colorInPopup = getActivityColor(for: activityId)
@@ -192,18 +204,26 @@ struct ActivityFeedView: View {
                     shouldShowDeepLinkedActivity = false
                     deepLinkedActivityId = nil
                     isFetchingDeepLinkedActivity = false
+                    print("🎯 ActivityFeedView: Set popup state - showing: \(showingActivityPopup), activity: \(activity.title ?? "No title")")
                 }
                 
             } catch {
                 print("❌ ActivityFeedView: Failed to fetch deep linked activity: \(error)")
+                print("❌ ActivityFeedView: Error details - Activity ID: \(activityId), Error: \(error.localizedDescription)")
                 await MainActor.run {
                     shouldShowDeepLinkedActivity = false
                     deepLinkedActivityId = nil
                     isFetchingDeepLinkedActivity = false
                 }
                 
-                // Show error to user
-                // You could show an alert or toast here
+                // Show error to user via InAppNotificationManager
+                await MainActor.run {
+                    InAppNotificationManager.shared.showNotification(
+                        title: "Unable to open activity",
+                        message: "The activity you're trying to view might have been deleted or you might not have permission to view it.",
+                        type: .error
+                    )
+                }
             }
         }
     }
@@ -212,8 +232,8 @@ struct ActivityFeedView: View {
 extension ActivityFeedView {
     var activityTypeListView: some View {
         HStack(spacing: 8) {
-            // Show only first 4 activity types and make them tappable to pre-select
-            ForEach(Array(viewModel.activityTypes.prefix(4)), id: \.id) { activityType in
+            // Show only first 4 activity types (sorted with pinned first) and make them tappable to pre-select
+            ForEach(Array(viewModel.sortedActivityTypes.prefix(4)), id: \.id) { activityType in
                 ActivityTypeCardView(activityType: activityType) { selectedActivityTypeDTO in
                     // Pre-select the activity type and navigate to creation
                     print("🎯 ActivityFeedView: Activity type '\(selectedActivityTypeDTO.title)' selected")
@@ -253,6 +273,7 @@ extension ActivityFeedView {
                             userId: user.id,
                             activity: viewModel.activities[activityIndex],
                             color: figmaBlue,
+                            locationManager: locationManager,
                             callback: { activity, color in
                                 activityInPopup = activity
                                 colorInPopup = color

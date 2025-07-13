@@ -18,18 +18,7 @@ extension Circle {
 			.modifier(
 				CircularButtonStyling(
 					width: width, height: height, frameSize: frameSize,
-					source: source)
-			)
-			.overlay(
-				Button(action: {
-					buttonActionCallback()
-				}) {
-					Image(systemName: systemName)
-						.resizable()
-						.frame(width: width, height: height)
-						.shadow(radius: 20)
-						.foregroundColor(universalAccentColor)
-				}
+					source: source, buttonActionCallback: buttonActionCallback, systemName: systemName)
 			)
 	}
 }
@@ -39,6 +28,13 @@ struct CircularButtonStyling: ViewModifier {
 	var height: CGFloat?
 	var frameSize: CGFloat?
 	var source: String? = "default"
+	var buttonActionCallback: () -> Void
+	var systemName: String
+	
+	// Animation states for 3D effect
+	@State private var isPressed = false
+	@State private var scale: CGFloat = 1.0
+	
 	func body(content: Content) -> some View {
 		content
 			.frame(width: frameSize, height: frameSize)
@@ -59,6 +55,44 @@ struct CircularButtonStyling: ViewModifier {
 					}
 				}
 			)
+			.overlay(
+				Button(action: {
+					// Haptic feedback
+					let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+					impactGenerator.impactOccurred()
+					
+					// Execute action with slight delay for animation
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						buttonActionCallback()
+					}
+				}) {
+					Image(systemName: systemName)
+						.resizable()
+						.frame(width: width, height: height)
+						.shadow(radius: 20)
+						.foregroundColor(universalAccentColor)
+				}
+				.buttonStyle(PlainButtonStyle())
+			)
+			.scaleEffect(scale)
+			.shadow(
+				color: Color.black.opacity(0.15),
+				radius: isPressed ? 2 : 8,
+				x: 0,
+				y: isPressed ? 2 : 4
+			)
+			.animation(.easeInOut(duration: 0.15), value: scale)
+			.animation(.easeInOut(duration: 0.15), value: isPressed)
+			.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+				isPressed = pressing
+				scale = pressing ? 0.95 : 1.0
+				
+				// Additional haptic feedback for press down
+				if pressing {
+					let selectionGenerator = UISelectionFeedbackGenerator()
+					selectionGenerator.selectionChanged()
+				}
+			}, perform: {})
 	}
 }
 

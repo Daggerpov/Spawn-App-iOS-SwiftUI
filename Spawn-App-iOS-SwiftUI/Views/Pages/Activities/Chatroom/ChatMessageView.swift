@@ -11,56 +11,63 @@ struct ChatMessageView: View {
     let message: FullActivityChatMessageDTO
     let isFromCurrentUser: Bool
     
-    
     var body: some View {
-        HStack {
-            if isFromCurrentUser {
-                Spacer()
+        if isFromCurrentUser {
+            // Current user's message (right aligned)
+            VStack(alignment: .trailing, spacing: 8) {
+                HStack {
+                    Spacer()
+                    Text(message.content)
+                        .font(.onestMedium(size: 16))
+                        .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                        .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                        .frame(maxWidth: 251)
+                        .background(Color.white.opacity(0.60))
+                        .cornerRadius(12)
+                }
             }
-            
-            VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 4) {
-                if !isFromCurrentUser {
-                    HStack {
-                        Text("\(message.senderUser.name ?? message.senderUser.username) • \(FormatterService.shared.atTime(at: message.timestamp))")
-                            .font(.caption)
-                            .foregroundColor(figmaTransparentWhite)
-                            .padding(.leading, 20)
-                        Spacer()
-                    }
-                    .padding(.leading)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, 24)
+        } else {
+            // Other user's message (left aligned)
+            VStack(alignment: .leading, spacing: 8) {
+                // User name and timestamp
+                HStack(alignment: .top, spacing: 8) {
+                    Circle()
+                        .foregroundColor(.clear)
+                        .frame(width: 24, height: 14)
+                        .background(Color.white.opacity(0.80))
+                        .opacity(0)
+                    
+                    Text(message.senderUser.name ?? message.senderUser.username)
+                        .font(.onestMedium(size: 12))
+                        .foregroundColor(Color.white.opacity(0.80))
+                    
+                    Spacer()
                 }
                 
-                HStack(alignment: .center) {
-                    if !isFromCurrentUser {
-                        // Profile image placeholder for spacing
-                        ProfilePictureView(user: message.senderUser)
-                    }
+                // Message bubble with profile image
+                HStack(alignment: .bottom, spacing: 8) {
+                    ProfilePictureView(user: message.senderUser)
                     
-                    VStack(alignment: isFromCurrentUser ? .trailing : .leading, spacing: 2) {
-                        if isFromCurrentUser {
-                            Text("You • " + FormatterService.shared.atTime(at: message.timestamp))
-                                .font(.onestRegular(size: 12))
-                                .foregroundColor(.white.opacity(0.8))
-                                .padding(.trailing, 7)
-                        }
+                    HStack {
                         Text(message.content)
                             .font(.onestMedium(size: 16))
-                            .foregroundColor(isFromCurrentUser ? .white : .black)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .background(
-                                isFromCurrentUser ?
-                                Color.black.opacity(0.3) :
-                                    figmaTransparentWhite
-                            )
-                            .cornerRadius(18)
+                            .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                            .multilineTextAlignment(.leading)
+                        
+                        Spacer()
                     }
+                    .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                    .background(Color.white.opacity(0.80))
+                    .cornerRadius(12)
+                    
+                    Spacer()
                 }
+                .frame(maxWidth: 300)
             }
-            
-            if !isFromCurrentUser {
-                Spacer()
-            }
+            .frame(maxWidth: 346, alignment: .leading)
+            .padding(.leading, 24)
         }
     }
 }

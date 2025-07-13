@@ -16,6 +16,12 @@ enum NotificationType: String, Codable {
     
     /// Welcome notification
     case welcome = "welcome"
+    
+    /// Error notifications
+    case error = "error"
+    
+    /// Success notifications
+    case success = "success"
 }
 
 /// Utility for building notification data

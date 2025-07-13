@@ -325,6 +325,11 @@ struct ActivityConfirmationView: View {
     private func copyLink() {
         let activity = viewModel.activity
         let url = generateShareURL(for: activity)
+        
+        // Clear the pasteboard first to avoid any contamination
+        UIPasteboard.general.items = []
+        
+        // Set only the URL string to the pasteboard
         UIPasteboard.general.string = url.absoluteString
         
         // Provide haptic feedback

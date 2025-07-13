@@ -28,6 +28,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 		}
 	}
+	
+	// Minimum loading time for animation
+	private var minimumLoadingCompleted: Bool = false
+	private var authCheckCompleted: Bool = false
 
 	@Published var name: String?
 	@Published var email: String?
@@ -58,6 +62,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		super.init()  // Call super.init() before using `self`
 
+        // Start minimum loading timer
+        Task {
+            try? await Task.sleep(nanoseconds: 3_370_000_000) // 3.67 seconds
+            await MainActor.run {
+                self.minimumLoadingCompleted = true
+                self.checkLoadingCompletion()
+            }
+        }
+        
         // Attempt quick login
         Task {
             print("Attempting a quick login with stored tokens")
@@ -67,11 +80,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await quickSignIn()
             }
             await MainActor.run {
-                self.hasCheckedSpawnUserExistence = true
+                self.authCheckCompleted = true
+                self.checkLoadingCompletion()
             }
         }
 	}
 
+	// Helper method to check if both auth and minimum loading time are completed
+	private func checkLoadingCompletion() {
+		if minimumLoadingCompleted && authCheckCompleted {
+			hasCheckedSpawnUserExistence = true
+		}
+	}
+	
 	func resetState() {
 		// Reset user state
 		self.errorMessage = nil
@@ -94,6 +115,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		self.defaultPfpFetchError = false
 		self.defaultPfpUrlString = nil
+		
+		// Reset loading state
+		self.minimumLoadingCompleted = false
+		self.authCheckCompleted = false
+		self.hasCheckedSpawnUserExistence = false
 	}
 
 	func handleAppleSignInResult(_ result: Result<ASAuthorization, Error>) {

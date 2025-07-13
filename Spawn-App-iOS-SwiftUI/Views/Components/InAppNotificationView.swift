@@ -103,6 +103,10 @@ struct InAppNotificationView: View {
             return Color(red: 0.35, green: 0.93, blue: 0.88) // Teal
         case .welcome:
             return Color(red: 0.87, green: 0.61, blue: 1) // Purple
+        case .error:
+            return Color(red: 0.93, green: 0.26, blue: 0.26) // Red
+        case .success:
+            return Color(red: 0.22, green: 0.78, blue: 0.30) // Green
         }
     }
 }

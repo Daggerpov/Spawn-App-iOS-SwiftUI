@@ -1,10 +1,12 @@
 import SwiftUI
+import MapKit
 
 // MARK: - Activity Detail Modal View matching Figma design
 struct ActivityDetailModalView: View {
     let activity: FullFeedActivityDTO
     let activityColor: Color
     let onDismiss: () -> Void
+    @StateObject private var locationManager = LocationManager()
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
@@ -176,7 +178,7 @@ struct ActivityDetailModalView: View {
                         .font(.custom("Onest", size: 16).weight(.bold))
                         .foregroundColor(.white)
                     
-                    Text("2km away")
+                    Text(getDistanceText(location: location))
                         .font(.custom("Onest", size: 13).weight(.medium))
                         .foregroundColor(.white)
                 }
@@ -184,19 +186,23 @@ struct ActivityDetailModalView: View {
             
             Spacer()
             
-            HStack(spacing: 6) {
-                Image(systemName: "location.north.line")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(universalAccentColor)
-                
-                Text("Get Directions")
-                    .font(.custom("Onest", size: 13).weight(.semibold))
-                    .foregroundColor(universalAccentColor)
+            Button(action: {
+                openDirections(to: location)
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "location.north.line")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(universalAccentColor)
+                    
+                    Text("Get Directions")
+                        .font(.custom("Onest", size: 13).weight(.semibold))
+                        .foregroundColor(universalAccentColor)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.white)
+                .cornerRadius(12)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(.white)
-            .cornerRadius(12)
         }
         .padding(16)
         .background(Color.black.opacity(0.2))
@@ -210,16 +216,50 @@ struct ActivityDetailModalView: View {
         
         let formatter = DateFormatter()
         formatter.dateFormat = "h:mm a • MMMM d"
+        let now = Date()
+        
+        // Check if activity has started
+        let hasStarted = now >= startTime
         
         if let endTime = activity.endTime {
-            let startFormatter = DateFormatter()
-            startFormatter.dateFormat = "h:mm"
-            let endFormatter = DateFormatter()
-            endFormatter.dateFormat = "h:mm a • MMMM d"
+            let hasEnded = now >= endTime
+            let isSameDay = Calendar.current.isDate(startTime, inSameDayAs: endTime)
             
-            return "\(startFormatter.string(from: startTime)) - \(endFormatter.string(from: endTime))"
+            if hasEnded {
+                // Activity has completely ended
+                let endFormatter = DateFormatter()
+                endFormatter.dateFormat = "h:mm a • MMMM d"
+                return "Ended at \(endFormatter.string(from: endTime))"
+            } else if hasStarted {
+                // Activity is currently happening
+                if isSameDay {
+                    let startFormatter = DateFormatter()
+                    startFormatter.dateFormat = "h:mm a"
+                    let endFormatter = DateFormatter()
+                    endFormatter.dateFormat = "h:mm a • MMMM d"
+                    return "Started at \(startFormatter.string(from: startTime)) • Ends at \(endFormatter.string(from: endTime))"
+                } else {
+                    return "Started at \(formatter.string(from: startTime))"
+                }
+            } else {
+                // Activity hasn't started yet
+                if isSameDay {
+                    let startFormatter = DateFormatter()
+                    startFormatter.dateFormat = "h:mm"
+                    let endFormatter = DateFormatter()
+                    endFormatter.dateFormat = "h:mm a • MMMM d"
+                    return "\(startFormatter.string(from: startTime)) - \(endFormatter.string(from: endTime))"
+                } else {
+                    return "Starts at \(formatter.string(from: startTime))"
+                }
+            }
         } else {
-            return formatter.string(from: startTime)
+            // No end time specified
+            if hasStarted {
+                return "Started at \(formatter.string(from: startTime))"
+            } else {
+                return "Starts at \(formatter.string(from: startTime))"
+            }
         }
     }
     
@@ -229,14 +269,55 @@ struct ActivityDetailModalView: View {
         }
         
         let now = Date()
-        if startTime < now {
-            return "Event Passed"
+        let hasStarted = now >= startTime
+        
+        if let endTime = activity.endTime {
+            let hasEnded = now >= endTime
+            
+            if hasEnded {
+                return "Ended"
+            } else if hasStarted {
+                return "Happening Now"
+            } else {
+                return "Upcoming"
+            }
         } else {
-            return "Upcoming"
+            // No end time specified
+            if hasStarted {
+                return "Started"
+            } else {
+                return "Upcoming"
+            }
         }
     }
     
     private func getStatusOpacity() -> Double {
         return getActivityStatus() == "Event Passed" ? 0.4 : 1.0
+    }
+    
+    private func getDistanceText(location: Location) -> String {
+        return FormatterService.shared.distanceString(
+            from: locationManager.userLocation,
+            to: location
+        ) + " away"
+    }
+    
+    private func openDirections(to location: Location) {
+        let coordinate = CLLocationCoordinate2D(
+            latitude: location.latitude,
+            longitude: location.longitude
+        )
+        let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
+        mapItem.name = location.name
+        
+        let sourceMapItem = MKMapItem.forCurrentLocation()
+        
+        MKMapItem.openMaps(
+            with: [sourceMapItem, mapItem],
+            launchOptions: [
+                MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault,
+                MKLaunchOptionsShowsTrafficKey: true
+            ]
+        )
     }
 } 

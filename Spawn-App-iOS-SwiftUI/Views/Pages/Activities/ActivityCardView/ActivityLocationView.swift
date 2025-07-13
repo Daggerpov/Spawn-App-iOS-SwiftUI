@@ -13,9 +13,9 @@ struct ActivityLocationView: View {
     let font: Font = .onestSemiBold(size: fontSize)
     @Environment(\.colorScheme) private var colorScheme
 
-    init(activity: FullFeedActivityDTO) {
+    init(activity: FullFeedActivityDTO, locationManager: LocationManager) {
         self.viewModel = ActivityInfoViewModel(
-            activity: activity)
+            activity: activity, locationManager: locationManager)
     }
     
     // Theme-aware capsule background color
