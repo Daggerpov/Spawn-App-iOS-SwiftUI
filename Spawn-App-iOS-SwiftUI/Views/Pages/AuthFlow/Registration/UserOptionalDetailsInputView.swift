@@ -71,13 +71,13 @@ struct UserOptionalDetailsInputView: View {
             // Navigation Bar
             HStack {
                 Spacer()
-                Button(action: {
-                    userAuth.shouldNavigateToUserToS = true
-                }) {
-                    Text("Skip for now")
-                        .font(Font.onestRegular(size: 16))
-                        .foregroundColor(.secondary)
-                }
+//                Button(action: {
+//                    userAuth.shouldNavigateToUserToS = true
+//                }) {
+//                    Text("Skip for now")
+//                        .font(Font.onestRegular(size: 16))
+//                        .foregroundColor(.secondary)
+//                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
