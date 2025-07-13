@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct LoadingView: View {
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
         VStack {
             Spacer()
@@ -19,9 +22,8 @@ struct LoadingView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white) // White background to match animation
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .ignoresSafeArea(.all) // Ignore all safe areas including top and bottom
-        .preferredColorScheme(.light) // Force light mode to ensure white background
     }
 }
 

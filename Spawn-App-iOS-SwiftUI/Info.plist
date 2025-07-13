@@ -42,5 +42,16 @@
 		<string>Onest-Medium.ttf</string>
 		<string>Onest-SemiBold.ttf</string>
 	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackgroundColor</string>
+		<key>UIImageName</key>
+		<string>spawn_launch_logo</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
+		<key>UILaunchScreenMininumTime</key>
+		<real>0.0</real>
+	</dict>
 </dict>
 </plist>
