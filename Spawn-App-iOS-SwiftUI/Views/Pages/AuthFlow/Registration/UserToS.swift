@@ -100,10 +100,6 @@ struct UserToS: View {
         .background(Color.white)
         .cornerRadius(44)
         .navigationBarHidden(true)
-        .onAppear {
-            // Reset navigation state to prevent conflicts
-            userAuth.shouldNavigateToUserToS = false
-        }
     }
 }
 
