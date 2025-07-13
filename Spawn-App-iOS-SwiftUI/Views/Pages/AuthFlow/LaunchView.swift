@@ -60,7 +60,7 @@ struct LaunchView: View {
 				if showAuthButtons {
 					Button(action: {
 						Task {
-							await userAuth.signInWithGoogle()
+                            await userAuth.loginWithGoogle()
 						}
 					}) {
 						AuthProviderButtonView(authProviderType: .google)

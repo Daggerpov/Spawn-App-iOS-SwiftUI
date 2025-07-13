@@ -9,6 +9,14 @@ import SwiftUI
 
 struct AuthProviderButtonView: View {
 	var authProviderType: AuthProviderType
+    
+    init(_ type: AuthProviderType) {
+        self.authProviderType = type
+    }
+    
+    init(authProviderType: AuthProviderType) {
+        self.authProviderType = authProviderType
+    }
 
 	var body: some View {
 		HStack {
@@ -29,16 +37,17 @@ struct AuthProviderButtonView: View {
 				"Continue with \(authProviderType == .google ? "Google" : "Apple")"
 			)
 			.font(.onestMedium(size: 16))
+            
 		}
 		.padding()
 		.frame(maxWidth: .infinity)
-		.cornerRadius(8)
-		.foregroundColor(Color(hex: "#1D1D1D"))
+		.cornerRadius(16)
+		.foregroundColor(.black)
 		.background(
-			RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-				.fill(.white)
+			RoundedRectangle(cornerRadius: 16)
+				.fill(figmaAuthButtonGrey)
 		)
-		.padding(.horizontal, 32)
+		
 	}
 
 }

@@ -594,8 +594,9 @@ class APIService: IAPIService {
 
 		// Check if auth headers are needed
 		let whitelistedEndpoints = [
-			"auth/sign-in",
-			"auth/make-user"
+			"auth/register/verification/send",
+			"auth/register/oauth",
+            "auth/register/verification/check"
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
