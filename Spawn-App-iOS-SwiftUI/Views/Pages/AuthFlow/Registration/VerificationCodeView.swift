@@ -56,7 +56,16 @@ struct BackspaceDetectingTextField: UIViewRepresentable {
             }
             
             // Only allow single digits
-            if string.count > 1 || (string.count == 1 && !string.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted)?.isEmpty == false) {
+			if string.count > 1 || (
+				string.count == 1 && (
+					(
+						string
+							.rangeOfCharacter(
+								from: CharacterSet.decimalDigits.inverted
+							)?.isEmpty
+					) == nil
+				) == false
+			) {
                 return false
             }
             
@@ -73,6 +82,7 @@ struct BackspaceDetectingTextField: UIViewRepresentable {
 struct VerificationCodeView: View {
     @ObservedObject var viewModel: UserAuthViewModel
     @State private var code: [String] = Array(repeating: "", count: 6)
+    @State private var previousCode: [String] = Array(repeating: "", count: 6)
     @FocusState private var focusedIndex: Int?
     @State private var timer: Timer? = nil
     @State private var secondsRemaining: Int = 30
@@ -108,6 +118,7 @@ struct VerificationCodeView: View {
         .onAppear {
             startTimer()
             focusedIndex = 0
+            previousCode = code
         }
         .onDisappear {
             timer?.invalidate()
@@ -196,8 +207,9 @@ struct VerificationCodeView: View {
             )
             .frame(width: 48, height: 56)
             .focused($focusedIndex, equals: index)
-            .onChange(of: code[index]) { oldValue, newValue in
-                handleTextFieldChange(at: index, oldValue: oldValue, newValue: newValue)
+            .onChange(of: code[index]) { newValue in
+                handleTextFieldChange(at: index, oldValue: previousCode[index], newValue: newValue)
+                previousCode[index] = newValue
             }
             .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
                 handlePaste()
@@ -282,49 +294,14 @@ struct VerificationCodeView: View {
         }
     }
     
-    private func handleTextChange(at index: Int, newValue: String) {
-        // Handle pasting of multiple digits
-        if newValue.count > 1 {
-            let digits = newValue.filter { $0.isNumber }
-            let digitArray = Array(digits)
-            
-            // Fill the boxes starting from the current index
-            for i in 0..<min(digitArray.count, 6 - index) {
-                if index + i < 6 {
-                    code[index + i] = String(digitArray[i])
-                }
-            }
-            
-            // Move focus to the next empty box or the last box
-            let nextIndex = min(index + digitArray.count, 5)
-            focusedIndex = nextIndex
-        } else {
-            // Handle single character input
-            if newValue.count <= 1 && (newValue.isEmpty || newValue.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) == nil) {
-                code[index] = newValue
-                if !newValue.isEmpty && index < 5 {
-                    focusedIndex = index + 1
-                }
-            }
-        }
-    }
-    
-    private func handleBackspace(at index: Int) {
-        if code[index].isEmpty && index > 0 {
-            // If current box is empty, move to previous box and clear it
-            code[index - 1] = ""
-            focusedIndex = index - 1
-        } else {
-            // If current box has content, just clear it
-            code[index] = ""
-        }
-    }
+
     
     private func handleBackspaceOnEmpty(at index: Int) {
         // This is called when backspace is pressed on an empty field
         if index > 0 {
             // Move to previous field and clear it
             code[index - 1] = ""
+            previousCode[index - 1] = ""
             focusedIndex = index - 1
         }
     }
@@ -341,11 +318,13 @@ struct VerificationCodeView: View {
         if !digitArray.isEmpty {
             // Clear all boxes first
             code = Array(repeating: "", count: 6)
+            previousCode = Array(repeating: "", count: 6)
             
             // Fill boxes with pasted digits
             for (i, digit) in digitArray.enumerated() {
                 if i < 6 {
                     code[i] = String(digit)
+                    previousCode[i] = String(digit)
                 }
             }
             
