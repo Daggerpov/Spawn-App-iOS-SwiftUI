@@ -715,7 +715,9 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         }
         
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-            print("[PUSH DEBUG] Cannot unregister token: no user ID available")
+            print("[PUSH DEBUG] Cannot unregister token: no user ID available - clearing token locally")
+            // Clear the stored token locally since we can't unregister from backend
+            storedDeviceToken = nil
             return
         }
         
@@ -742,6 +744,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                 storedDeviceToken = nil
             } catch {
                 print("[PUSH DEBUG] Failed to unregister device token: \(error.localizedDescription)")
+                // Clear the stored token locally even if backend unregistration failed
+                storedDeviceToken = nil
             }
         }
     }

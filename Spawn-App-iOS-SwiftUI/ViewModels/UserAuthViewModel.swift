@@ -84,7 +84,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
         // Start minimum loading timer
         Task {
-            try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
+            try? await Task.sleep(nanoseconds: 2_000_000_000) 
             await MainActor.run {
                 self.minimumLoadingCompleted = true
                 self.checkLoadingCompletion()
@@ -310,27 +310,23 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		GIDSignIn.sharedInstance.signOut()
 
 		// Clear Apple Sign-In state
-		if let externalUserId = self.externalUserId {
+		if let externalUserId = self.externalUserId, authProvider == .apple {
 			// Invalidate Apple ID credential state (optional but recommended)
 			let appleIDProvider = ASAuthorizationAppleIDProvider()
 			appleIDProvider.getCredentialState(forUserID: externalUserId) {
 				credentialState, error in
 				if let error = error {
-					print(
-						"Failed to get Apple ID credential state: \(error.localizedDescription)"
-					)
+					print("ℹ️ Apple ID credential state check failed: \(error.localizedDescription)")
+					// This is not critical for sign-out, so we don't need to handle it
 					return
 				}
 				switch credentialState {
 				case .authorized:
-					// The user is still authorized. You can optionally revoke the token.
-					print("User is still authorized with Apple ID.")
+					print("ℹ️ User is still authorized with Apple ID.")
 				case .revoked:
-					// The user has revoked access. Clear local state.
-					print("User has revoked Apple ID access.")
+					print("ℹ️ User has revoked Apple ID access.")
 				case .notFound:
-					// The user not found. Clear local state.
-					print("User not found in Apple ID system.")
+					print("ℹ️ User not found in Apple ID system.")
 				default:
 					break
 				}
@@ -344,14 +340,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		// Clear Keychain
+		let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
+		let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
 		
-		var success = KeychainService.shared.delete(key: "accessToken")
-		if !success {
-			print("Failed to delete accessToken from Keychain")
-		}
-		success = KeychainService.shared.delete(key: "refreshToken")
-		if !success {
-			print("Failed to delete refreshToken from Keychain")
+		if accessTokenDeleted && refreshTokenDeleted {
+			print("✅ Successfully cleared auth tokens from Keychain")
+		} else {
+			print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
 		}
 
 		resetState()
