@@ -145,7 +145,7 @@ struct VerificationCodeView: View {
             Spacer()
         }
         .background(Color(.systemBackground))
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView()})
+        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView(isOAuthUser: false)})
         .onAppear {
             startTimer()
             focusedIndex = 0

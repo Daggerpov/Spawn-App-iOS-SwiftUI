@@ -138,7 +138,7 @@ struct RegisterInputView: View {
         }
         .background(Color(.systemBackground))
         .navigationDestination(isPresented: $viewModel.shouldNavigateToVerificationCodeView, destination: {VerificationCodeView(viewModel: viewModel)})
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView()})
+        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsViewOAuth, destination: {UserDetailsInputView(isOAuthUser: true)})
         .navigationBarHidden(true)
     }
 }

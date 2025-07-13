@@ -73,10 +73,10 @@ struct UserDetailsInputView: View {
             VStack(spacing: 32) {
                 // Title and Subtitle
                 VStack(spacing: 16) {
-                    Text("Create Your Account")
+                    Text(isOAuthUser ? "Complete Your Profile" : "Create Your Account")
                         .font(heading1)
                         .foregroundColor(.primary)
-                    Text("Just a few details to get started.")
+                    Text(isOAuthUser ? "Add a username and phone number to complete your account." : "Just a few details to get started.")
                         .font(.onestRegular(size: 16))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
