@@ -87,19 +87,19 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						}
 						.onestFontTheme()
 				} else {
-					// User is not logged in or has no user data - show launch screen with login options
-					LaunchView()
-						.onOpenURL { url in
-							GIDSignIn.sharedInstance.handle(url)
-						}
-						.onAppear {
-							// Connect the app delegate to the app
-							appDelegate.app = self
-						}
-						.onestFontTheme()
-				}
-			}
-			.preferredColorScheme(themeService.colorScheme.colorScheme)
+                    // User is not logged in or has no user data - show launch screen with login options
+                    WelcomeView()
+                        .onOpenURL { url in
+                            GIDSignIn.sharedInstance.handle(url)
+                        }
+                        .onAppear {
+                            // Connect the app delegate to the app
+                            appDelegate.app = self
+                        }
+                        .onestFontTheme()
+                }
+            }
+            .preferredColorScheme(themeService.colorScheme.colorScheme)
 		}
 	}
 }

@@ -1,5 +1,5 @@
 {
-  "originHash" : "29b92a2c0c0bfec29cff15a99257aa7b037b61d30ae17074121eb54aee7125ae",
+  "originHash" : "de18b280c0e58ed1255b7488e2a206094c3def1600a119946ea7106726dcf403",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -187,7 +187,7 @@
       "location" : "https://github.com/benedom/SwiftyCrop",
       "state" : {
         "branch" : "master",
-        "revision" : "4a3f3dfefb0581758638e24b46be0ac7c621e9a3"
+        "revision" : "ddf6ad7231187134ce132be87c8220a230c51838"
       }
     }
   ],
