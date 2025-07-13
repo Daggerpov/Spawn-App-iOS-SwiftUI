@@ -557,7 +557,8 @@ class APIService: IAPIService {
 			APIService.baseURL + "auth/sign-in",
 			APIService.baseURL + "auth/login",
             APIService.baseURL + "auth/register/oauth",
-            APIService.baseURL + "auth/register/verification/check"
+            APIService.baseURL + "auth/register/verification/check",
+            APIService.baseURL + "auth/user/details"
 		]
         guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
             print("Not an auth endpoint that receives tokens. Skipping")
