@@ -15,6 +15,8 @@ struct RegisterInputView: View {
         !emailInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(spacing: 0) {
@@ -26,7 +28,7 @@ struct RegisterInputView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
                 Spacer()
             }
@@ -41,11 +43,11 @@ struct RegisterInputView: View {
                 VStack(spacing: 16) {
                     Text("Create Your Account")
                         .font(heading1)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     
                     Text("Choose how you'd like to set up your account.")
                         .font(.onestRegular(size: 16))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                 }
@@ -57,7 +59,7 @@ struct RegisterInputView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Email")
                             .font(.onestRegular(size: 16))
-                            .foregroundColor(.primary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         TextField(placeholder, text: $emailInput)
                             .textFieldStyle(CustomTextFieldStyle())
@@ -91,7 +93,7 @@ struct RegisterInputView: View {
                     
                     Text("or")
                         .font(.system(size: 16))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                         .padding(.horizontal, 16)
                     
                     Rectangle()

@@ -11,6 +11,8 @@ struct CoreInputView: View {
     @ObservedObject private var viewModel: UserAuthViewModel = UserAuthViewModel.shared
     @State var input1 = ""
     @State var input2 = ""
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var heading: String
     var subtitle: String
@@ -41,7 +43,7 @@ struct CoreInputView: View {
                     }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
-                            .foregroundColor(.primary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     }
                     Spacer()
                 }
@@ -56,11 +58,11 @@ struct CoreInputView: View {
                     VStack(spacing: 16) {
                         Text(heading)
                             .font(heading1)
-                            .foregroundColor(.primary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         Text(subtitle)
                             .font(.onestRegular(size: 16))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                             .multilineTextAlignment(.center)
                             .lineLimit(2)
                     }
@@ -72,7 +74,7 @@ struct CoreInputView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(label1)
                                 .font(.onestRegular(size: 16))
-                                .foregroundColor(.primary)
+                                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                             
                             TextField(inputText1, text: $input1)
                                 .textFieldStyle(CustomTextFieldStyle())
@@ -83,7 +85,7 @@ struct CoreInputView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text(label2)
                                     .font(.onestRegular(size: 16))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                                 
                                 SecureField(inputText2, text: $input2)
                                     .textFieldStyle(CustomTextFieldStyle())
@@ -120,7 +122,7 @@ struct CoreInputView: View {
                         
                         Text("or")
                             .font(.system(size: 16))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                             .padding(.horizontal, 16)
                         
                         Rectangle()
@@ -160,12 +162,30 @@ struct CoreInputView: View {
 }
 
 struct CustomTextFieldStyle: TextFieldStyle {
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
+    
     func _body(configuration: TextField<Self._Label>) -> some View {
         configuration
             .padding(.horizontal, 16)
             .padding(.vertical, 20)
-            .background(figmaAuthButtonGrey)
+            .background(getInputFieldBackgroundColor())
             .cornerRadius(16)
             .font(.onestRegular(size: 16))
+            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            .accentColor(universalAccentColor(from: themeService, environment: colorScheme))
+    }
+    
+    private func getInputFieldBackgroundColor() -> Color {
+        // Use a theme-aware background color for input fields
+        let currentScheme = themeService.colorScheme
+        switch currentScheme {
+        case .light:
+            return figmaAuthButtonGrey
+        case .dark:
+            return Color(hex: "#2C2C2C")
+        case .system:
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+        }
     }
 }

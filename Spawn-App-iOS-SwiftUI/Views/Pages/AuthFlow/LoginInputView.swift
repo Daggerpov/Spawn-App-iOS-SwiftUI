@@ -15,6 +15,8 @@ struct LoginInputView: View {
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     private var isFormValid: Bool {
         !usernameOrEmail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
@@ -32,7 +34,7 @@ struct LoginInputView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
                 Spacer()
             }
@@ -47,11 +49,11 @@ struct LoginInputView: View {
                 VStack(spacing: 16) {
                     Text("Welcome Back")
                         .font(heading1)
-                        .foregroundColor(.primary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                     
                     Text("Your plans are waiting - time to spawn.")
                         .font(.onestRegular(size: 16))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                 }
@@ -63,7 +65,7 @@ struct LoginInputView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Email or Username")
                             .font(.onestRegular(size: 16))
-                            .foregroundColor(.primary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         TextField("Enter your email or username", text: $usernameOrEmail)
                             .textFieldStyle(CustomTextFieldStyle())
@@ -73,7 +75,7 @@ struct LoginInputView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Password")
                             .font(.onestRegular(size: 16))
-                            .foregroundColor(.primary)
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         SecureField("Enter your password", text: $password)
                             .textFieldStyle(CustomTextFieldStyle())
@@ -112,7 +114,7 @@ struct LoginInputView: View {
                     
                     Text("or")
                         .font(.system(size: 16))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                         .padding(.horizontal, 16)
                     
                     Rectangle()
