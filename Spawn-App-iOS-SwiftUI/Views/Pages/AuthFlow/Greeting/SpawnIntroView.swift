@@ -16,6 +16,8 @@ struct OnboardingPage {
 struct SpawnIntroView: View {
     @State private var currentPage = 0
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     let pages = [
         OnboardingPage(
@@ -30,60 +32,53 @@ struct SpawnIntroView: View {
         ),
         OnboardingPage(
             imageName: "Group 6821",
-            title: "What’s Happening Near You",
+            title: "What's Happening Near You",
             description: "Easily spot nearby hangouts, meetups, or last-minute plans worth joining."
         )
     ]
     
     var body: some View {
         VStack(spacing: 0) {
-            // Header
+            // Back button
             HStack {
                 Button(action: {
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .foregroundColor(.primary)
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
+                .padding(.leading, 20)
+                .padding(.top, 20)
+                
                 Spacer()
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            
-            
-            // Logo
-            Image("SpawnLogo")
-                .padding(.top, 10)
-                .padding(.bottom, 40)
-            
-            // Image Carousel
-            TabView(selection: $currentPage) {
-                ForEach(Array(pages.enumerated()), id: \.offset) { index, page in
-                    VStack(spacing: 20) {
-                        Image(page.imageName)
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-                    .tag(index)
-                }
-            }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .frame(height: 260)
-            .animation(.easeInOut(duration: 0.3), value: currentPage)
-            
             
             Spacer()
             
-            // Bottom Content
+            // Main content
+            VStack(spacing: 32) {
+                // Image
+                Image(pages[currentPage].imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 280, height: 280)
+                    .animation(.easeInOut(duration: 0.3), value: currentPage)
+            }
+            
+            Spacer()
+            
             VStack(spacing: 16) {
                 VStack(spacing: 8) {
                     Text(pages[currentPage].title)
                         .font(heading1)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         .multilineTextAlignment(.center)
                         .animation(.easeInOut(duration: 0.3), value: currentPage)
                     
                     Text(pages[currentPage].description)
                         .font(body1)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                         .animation(.easeInOut(duration: 0.3), value: currentPage)
@@ -118,17 +113,11 @@ struct SpawnIntroView: View {
                 }
             }
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
     }
 }
 
-struct SpawnOnboardingView_Previews: PreviewProvider {
-    static var previews: some View {
-        SpawnIntroView()
-            .preferredColorScheme(.light)
-        
-        SpawnIntroView()
-            .preferredColorScheme(.dark)
-    }
+#Preview {
+    SpawnIntroView()
 }

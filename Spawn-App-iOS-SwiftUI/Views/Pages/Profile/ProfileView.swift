@@ -797,17 +797,25 @@ struct ProfileView: View {
 	}
 
 	private func copyProfileURL() {
-		let profileURL = ServiceConstants.generateProfileShareURL(for: user.id)
-		
-		// Clear the pasteboard first to avoid any contamination
-		UIPasteboard.general.items = []
-		
-		// Set only the URL string to the pasteboard
-		UIPasteboard.general.string = profileURL.absoluteString
-
-		// Show notification toast
-		notificationMessage = "Profile URL copied to clipboard"
-		showNotification = true
+		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
+			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
+			
+			// Clear the pasteboard first to avoid any contamination
+			UIPasteboard.general.items = []
+			
+			// Set only the URL string to the pasteboard
+			UIPasteboard.general.string = url.absoluteString
+			
+			// Show notification toast
+			DispatchQueue.main.async {
+				InAppNotificationManager.shared.showNotification(
+					title: "Link copied to clipboard",
+					message: "Profile link has been copied to your clipboard",
+					type: .success,
+					duration: 10.0
+				)
+			}
+		}
 	}
 
 	private func removeInterest(_ interest: String) {

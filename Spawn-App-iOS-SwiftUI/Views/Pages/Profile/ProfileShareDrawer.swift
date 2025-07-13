@@ -71,7 +71,7 @@ struct ProfileShareDrawer: View {
                         Button(action: {
                             let impactGenerator = UIImpactFeedbackGenerator(style: .light)
                             impactGenerator.impactOccurred()
-                            copyLink()
+                            shareViaLink()
                             // Delay dismissing the sheet to allow notification to show
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                                 showShareSheet = false
@@ -118,7 +118,7 @@ struct ProfileShareDrawer: View {
                             let impactGenerator = UIImpactFeedbackGenerator(style: .light)
                             impactGenerator.impactOccurred()
                             showShareSheet = false
-                            shareViaIMessage()
+                            shareViaSMS()
                         }) {
                             VStack(spacing: 8) {
                                 Image("imessage_for_sharing")
@@ -174,91 +174,85 @@ struct ProfileShareDrawer: View {
     
     // MARK: - Share Functions
     private func shareViaSystem() {
-        let profileURL = generateShareURL(for: user)
-        let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(profileURL.absoluteString)"
-
-        let activityVC = UIActivityViewController(
-            activityItems: [shareText],
-            applicationActivities: nil
-        )
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
+        generateShareURL(for: user) { profileURL in
+            let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(profileURL.absoluteString)"
             
-            var topController = window.rootViewController
-            while let presentedViewController = topController?.presentedViewController {
-                topController = presentedViewController
+            let activityVC = UIActivityViewController(
+                activityItems: [shareText],
+                applicationActivities: nil
+            )
+            
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                
+                var topController = window.rootViewController
+                while let presentedViewController = topController?.presentedViewController {
+                    topController = presentedViewController
+                }
+                
+                if let popover = activityVC.popoverPresentationController {
+                    popover.sourceView = topController?.view
+                    popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+                }
+                
+                topController?.present(activityVC, animated: true, completion: nil)
             }
-            
-            if let popover = activityVC.popoverPresentationController {
-                popover.sourceView = topController?.view
-                popover.sourceRect = CGRect(x: window.bounds.midX, y: window.bounds.midY, width: 0, height: 0)
-                popover.permittedArrowDirections = []
-            }
-            
-            topController?.present(activityVC, animated: true)
         }
     }
     
-    private func copyLink() {
-        let url = generateShareURL(for: user)
-        
-        // Clear the pasteboard first to avoid any contamination
-        UIPasteboard.general.items = []
-        
-        // Set only the URL string to the pasteboard
-        UIPasteboard.general.string = url.absoluteString
-        
-        // Provide haptic feedback
-        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-        impactGenerator.impactOccurred()
-        
-        // Show notification toast with a small delay to ensure sheet dismissal doesn't interfere
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-            InAppNotificationManager.shared.showNotification(
-                title: "Link copied to clipboard",
-                message: "Profile link has been copied to your clipboard",
-                type: .success,
-                duration: 10.0
-            )
+    private func shareViaLink() {
+        generateShareURL(for: user) { url in
+            UIPasteboard.general.string = url.absoluteString
+            
+            // Show success notification
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                InAppNotificationManager.shared.showNotification(
+                    title: "Link copied to clipboard",
+                    message: "Profile link has been copied to your clipboard",
+                    type: .success,
+                    duration: 10.0
+                )
+            }
         }
     }
     
     private func shareViaWhatsApp() {
-        let url = generateShareURL(for: user)
-        let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
-        
-        if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-           let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)") {
+        generateShareURL(for: user) { url in
+            let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
             
-            if UIApplication.shared.canOpenURL(whatsappURL) {
-                UIApplication.shared.open(whatsappURL)
-            } else {
-                // WhatsApp not installed, fallback to share sheet
-                shareViaSystem()
+            if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+               let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)") {
+                
+                if UIApplication.shared.canOpenURL(whatsappURL) {
+                    UIApplication.shared.open(whatsappURL)
+                } else {
+                    print("WhatsApp not installed or URL scheme not supported")
+                }
             }
         }
     }
     
-    private func shareViaIMessage() {
-        let url = generateShareURL(for: user)
-        let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
-        
-        if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-           let smsURL = URL(string: "sms:&body=\(encodedText)") {
+    private func shareViaSMS() {
+        generateShareURL(for: user) { url in
+            let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
             
-            if UIApplication.shared.canOpenURL(smsURL) {
-                UIApplication.shared.open(smsURL)
-            } else {
-                // Messages not available, fallback to share sheet
-                shareViaSystem()
+            if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+               let smsURL = URL(string: "sms:?body=\(encodedText)") {
+                
+                if UIApplication.shared.canOpenURL(smsURL) {
+                    UIApplication.shared.open(smsURL)
+                } else {
+                    print("SMS not available")
+                }
             }
         }
     }
     
-    private func generateShareURL(for user: Nameable) -> URL {
-        // Use the centralized Constants for share URL generation
-        return ServiceConstants.generateProfileShareURL(for: user.id)
+    private func generateShareURL(for user: Nameable, completion: @escaping (URL) -> Void) {
+        // Use the centralized Constants for share URL generation with share codes
+        ServiceConstants.generateProfileShareCodeURL(for: user.id) { url in
+            completion(url ?? ServiceConstants.generateProfileShareURL(for: user.id))
+        }
     }
 }
 

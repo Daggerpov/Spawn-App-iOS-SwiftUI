@@ -32,6 +32,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Minimum loading time for animation
 	private var minimumLoadingCompleted: Bool = false
 	private var authCheckCompleted: Bool = false
+	
+	// Track whether this is the first launch or a logout
+	@Published var isFirstLaunch: Bool = true
+	
+	// Track onboarding completion
+	@Published var hasCompletedOnboarding: Bool = false
 
 	@Published var name: String?
 	@Published var email: String?
@@ -72,6 +78,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.apiService = apiService
 
 		super.init()  // Call super.init() before using `self`
+		
+		// Load onboarding completion status from UserDefaults
+		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 
         // Start minimum loading timer
         Task {
@@ -131,10 +140,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.defaultPfpFetchError = false
 		self.defaultPfpUrlString = nil
 		
-		// Reset loading state
+		// Reset loading state but mark as not first launch
 		self.minimumLoadingCompleted = false
 		self.authCheckCompleted = false
 		self.hasCheckedSpawnUserExistence = false
+		self.isFirstLaunch = false // This is no longer first launch
+		
+		// Don't reset hasCompletedOnboarding - once completed, it stays completed
+	}
+	
+	// Mark onboarding as completed
+	func markOnboardingCompleted() {
+		hasCompletedOnboarding = true
+		UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 	}
 
 	func handleAppleSignInResult(_ result: Result<ASAuthorization, Error>) {
@@ -515,7 +533,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
         
         do {
-            let updatedUser: BaseUserDTO = try await apiService.patchData(from: url, with: EmptyRequestBody()) as BaseUserDTO
+            let updatedUser: BaseUserDTO = try await apiService.patchData(from: url, with: EmptyBody()) as BaseUserDTO
             
             await MainActor.run {
                 self.spawnUser = updatedUser
@@ -543,7 +561,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			do {
                 await NotificationService.shared.unregisterDeviceToken()
 
-                try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyObject())
+                try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
 				
                 var success = KeychainService.shared.delete(key: "accessToken")
                 if !success {

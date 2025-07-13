@@ -9,6 +9,9 @@ import SwiftUI
 
 struct WelcomeView: View {
     @State private var animationCompleted = false
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
+    @StateObject private var userAuth = UserAuthViewModel.shared
     
     var body: some View {
         NavigationStack {
@@ -37,23 +40,31 @@ struct WelcomeView: View {
                 if animationCompleted {
                     Text("Welcome to Spawn")
                         .font(heading1)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         .transition(.opacity)
                     Text("Spontaneity made easy.")
                         .font(body1)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         .transition(.opacity)
                     
                     Spacer()
                     
-                    OnboardingButtonView("Get Started", destination: SpawnIntroView())
-                        .padding(.bottom, 12)
-                        .transition(.opacity)
+                    // Skip onboarding for returning users
+                    if userAuth.hasCompletedOnboarding {
+                        OnboardingButtonView("Get Started", destination: SignInView())
+                            .padding(.bottom, 12)
+                            .transition(.opacity)
+                    } else {
+                        OnboardingButtonView("Get Started", destination: SpawnIntroView())
+                            .padding(.bottom, 12)
+                            .transition(.opacity)
+                    }
                 }
                 
                 Spacer()
             }
-            .background(Color.white)
+            .background(universalBackgroundColor(from: themeService, environment: colorScheme))
             .ignoresSafeArea(.all)
-            .preferredColorScheme(.light)
         }
     }
 }
