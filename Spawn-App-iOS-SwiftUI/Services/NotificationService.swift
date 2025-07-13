@@ -267,7 +267,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         }
         
         // Fallback to bundled resources if export failed
-        if let url = Bundle.main.url(forResource: "spawn_launch_logo", withExtension: "png") ??
+        if let url = Bundle.main.url(forResource: "SpawnLogo", withExtension: "png") ??
            Bundle.main.url(forResource: "Spawn_Glow", withExtension: "png") {
             do {
                 return try UNNotificationAttachment(
