@@ -51,13 +51,24 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	var body: some Scene {
 		WindowGroup {
 			Group {
-				if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
-					// User is logged in and user data exists - go to main content
-					ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
+				if !userAuth.hasCheckedSpawnUserExistence {
+					// Always show loading screen first - for both new and returning users
+					LoadingView()
 						.onAppear {
 							// Connect the app delegate to the app
 							appDelegate.app = self
-
+							
+							// If we're mocking, simulate a login with mock user
+							if MockAPIService.isMocking {
+								Task {
+									await userAuth.setMockUser()
+								}
+							}
+						}
+				} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
+					// User is logged in and user data exists - go to main content
+					ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
+						.onAppear {
 							// Initialize and validate the cache
 							Task {
 								await appCache.validateCache()
@@ -75,34 +86,20 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 							}
 						}
 						.onestFontTheme()
-				} else if !userAuth.hasCheckedSpawnUserExistence {
-                    // Show loading screen while auth checks are in progress
-                    LoadingView()
-                        .onAppear {
-                            // Connect the app delegate to the app
-                            appDelegate.app = self
-                            
-                            // If we're mocking, simulate a login with mock user
-                            if MockAPIService.isMocking {
-                                Task {
-                                    await userAuth.setMockUser()
-                                }
-                            }
-                        }
 				} else {
-                    // User is not logged in or has no user data - show launch screen with login options
-                    LaunchView()
-                        .onOpenURL { url in
-                            GIDSignIn.sharedInstance.handle(url)
-                        }
-                        .onAppear {
-                            // Connect the app delegate to the app
-                            appDelegate.app = self
-                        }
-                        .onestFontTheme()
-                }
-            }
-            .preferredColorScheme(themeService.colorScheme.colorScheme)
+					// User is not logged in or has no user data - show launch screen with login options
+					LaunchView()
+						.onOpenURL { url in
+							GIDSignIn.sharedInstance.handle(url)
+						}
+						.onAppear {
+							// Connect the app delegate to the app
+							appDelegate.app = self
+						}
+						.onestFontTheme()
+				}
+			}
+			.preferredColorScheme(themeService.colorScheme.colorScheme)
 		}
 	}
 }

@@ -23,84 +23,118 @@ struct ChatroomView: View {
     
     var body: some View {
         ZStack {
-            LinearGradient(colors: [backgroundColor], startPoint: .top, endPoint: .bottom)
+            // Background overlay
+            Rectangle()
+                .foregroundColor(.clear)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white.opacity(0.60))
                 .ignoresSafeArea()
+            
             VStack(spacing: 0) {
-                // Navigation header
-                HStack {
-                    Button(action: {dismiss()}) {
-                        Image(systemName: "chevron.left")
-                            .foregroundColor(figmaTransparentWhite)
-                            .font(.onestMedium(size: 20))
-                    }
-                    
-                    Spacer()
-                    
-                    Text("Chatroom")
-                        .foregroundColor(figmaTransparentWhite)
-                        .font(.onestMedium(size: 20))
-                    
-                    Spacer()
-                    
-                    // Invisible spacer to balance the back button
-                    Image(systemName: "chevron.left")
-                        .foregroundColor(.clear)
-                        .font(.title2)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 14)
-                
-                // Messages list
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        ForEach(viewModel.chats, id: \.id) { message in
-                            ChatMessageView(message: message, isFromCurrentUser: message.senderUser == UserAuthViewModel.shared.spawnUser)
-                                .transition(.move(edge: .bottom))
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
-                }
-                .refreshable {
-                    Task {
-                        await viewModel.refreshChat()
-                    }
-                }
-                
                 Spacer()
                 
-                // Message input area
-                HStack(spacing: 12) {
-                    // Profile image
-//                    ProfilePictureView(user: user)
+                // Main chatroom container
+                VStack(spacing: 0) {
+                    // Top handle indicator
+                    Rectangle()
+                        .foregroundColor(.clear)
+                        .frame(width: 50, height: 4)
+                        .background(Color.white.opacity(0.60))
+                        .cornerRadius(100)
+                        .padding(.top, 8)
                     
-                    // Text field
+                    // Header
                     HStack {
-                        TextField("Send a message!", text: $messageText)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
-                            .font(.onestRegular(size: 16))
-                    }
-                    .background(universalBackgroundColor)
-                    .cornerRadius(25)
-                    .padding(.bottom, 6)
-                    
-                    // Send button
-                    Button(action: {
-                        Task {
-                            await viewModel.sendMessage(message: messageText)
+                        ActivityBackButton {
+                            dismiss()
                         }
-                        messageText = ""
-                    }) {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundColor(.white)
-                            .font(.system(size: 18))
+                        
+                        Spacer()
+                        
+                        Text("Chatroom")
+                            .font(.onestSemiBold(size: 20))
+                            .foregroundColor(Color.white.opacity(0.60))
+                        
+                        Spacer()
+                        
+                        // Invisible spacer for alignment
+                        Color.clear
                             .frame(width: 44, height: 44)
-                            .background(Color.blue.opacity(0.8))
-                            .clipShape(Circle())
                     }
-                }
-                .padding(.horizontal, 16)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16)
+                        
+                        // Messages area
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                                ForEach(viewModel.chats, id: \.id) { message in
+                                    ChatMessageView(message: message, isFromCurrentUser: message.senderUser == UserAuthViewModel.shared.spawnUser)
+                                        .transition(.move(edge: .bottom))
+                                }
+                            }
+                            .padding(.horizontal, 24)
+                            .padding(.top, 32)
+                        }
+                        .refreshable {
+                            Task {
+                                await viewModel.refreshChat()
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        // Error message display
+                        if let errorMessage = viewModel.creationMessage {
+                            Text(errorMessage)
+                                .font(.onestMedium(size: 14))
+                                .foregroundColor(.red)
+                                .padding(.horizontal, 24)
+                                .padding(.bottom, 8)
+                        }
+                        
+                        // Message input area
+                        HStack(alignment: .top, spacing: 8) {
+                            // Profile image
+                            ProfilePictureView(user: user)
+                            
+                            // Text field
+                            TextField("Send a message!", text: $messageText)
+                                .font(.onestMedium(size: 16))
+                                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                .padding(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
+                                .background(.white)
+                                .cornerRadius(100)
+                                .onChange(of: messageText) { _ in
+                                    // Clear error message when user starts typing
+                                    if viewModel.creationMessage != nil {
+                                        viewModel.creationMessage = nil
+                                    }
+                                }
+                            
+                            // Send button
+                            Button(action: {
+                                Task {
+                                    let messageToSend = messageText
+                                    await viewModel.sendMessage(message: messageToSend)
+                                    
+                                    // Only clear the text field if there's no error message
+                                    if viewModel.creationMessage == nil {
+                                        messageText = ""
+                                    }
+                                }
+                            }) {
+                                Image("chat_message_send_button")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 32, height: 32)
+                            }
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.bottom, 32)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: 588)
+                    .background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
+                    .cornerRadius(20)
             }
         }
         .navigationBarBackButtonHidden(true)

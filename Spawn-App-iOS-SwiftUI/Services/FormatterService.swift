@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CoreLocation
 
 class FormatterService {
 	static let shared: FormatterService = FormatterService()
@@ -170,9 +171,27 @@ class FormatterService {
         }
     }
     
-    func distanceString() -> String {
-        // TODO: Replace with real distance calculation if available
-        return "2km"
+    func distanceString(from userLocation: CLLocationCoordinate2D?, to activityLocation: Location?) -> String {
+        guard let userLocation = userLocation,
+              let activityLocation = activityLocation else {
+            return "Distance unavailable"
+        }
+        
+        let userCLLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
+        let activityCLLocation = CLLocation(latitude: activityLocation.latitude, longitude: activityLocation.longitude)
+        
+        let distance = userCLLocation.distance(from: activityCLLocation) // Distance in meters
+        
+        if distance < 1000 {
+            return "\(Int(distance))m"
+        } else {
+            let km = distance / 1000
+            if km < 10 {
+                return String(format: "%.1fkm", km)
+            } else {
+                return "\(Int(km))km"
+            }
+        }
     }
     
 }

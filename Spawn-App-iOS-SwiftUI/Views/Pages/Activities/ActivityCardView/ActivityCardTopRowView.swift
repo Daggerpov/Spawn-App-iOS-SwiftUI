@@ -16,9 +16,9 @@ struct ActivityCardTopRowView: View {
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
     
-    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
+    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil), locationManager: LocationManager) {
         self.activity = activity
-        self.viewModel = ActivityInfoViewModel(activity: activity)
+        self.viewModel = ActivityInfoViewModel(activity: activity, locationManager: locationManager)
         self._selectedTab = selectedTab
     }
 
@@ -67,5 +67,6 @@ extension ActivityCardTopRowView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
+    @Previewable @StateObject var locationManager = LocationManager()
+    ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity, locationManager: locationManager).environmentObject(appCache)
 }

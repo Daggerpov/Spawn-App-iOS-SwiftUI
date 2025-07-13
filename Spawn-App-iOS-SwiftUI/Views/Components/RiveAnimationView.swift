@@ -17,6 +17,7 @@ struct RiveAnimationView: View {
     let alignment: RiveAlignment
     
     @State private var riveViewModel: RiveViewModel?
+    @State private var loadingFailed = false
     
     init(
         fileName: String,
@@ -36,9 +37,14 @@ struct RiveAnimationView: View {
     
     var body: some View {
         Group {
-            if let viewModel = riveViewModel {
+            if let viewModel = riveViewModel, !loadingFailed {
                 viewModel.view()
                     .aspectRatio(contentMode: .fit)
+            } else if loadingFailed {
+                // Fallback when Rive fails to load
+                Image("spawn_branding_logo")
+                    .resizable()
+                    .scaledToFit()
             } else {
                 // Fallback while loading
                 ProgressView()
@@ -60,9 +66,24 @@ struct RiveAnimationView: View {
             autoPlay: autoPlay
         )
         
+        // Check if the view model was created successfully
+        guard let viewModel = riveViewModel else {
+            print("Failed to load Rive animation: \(fileName)")
+            loadingFailed = true
+            return
+        }
+        
         // If specific animation name is provided, play it
         if let animationName = animationName {
-            riveViewModel?.play(animationName: animationName)
+            viewModel.play(animationName: animationName)
+        }
+        
+        // Add a timeout to detect if Rive fails to load properly
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // If after 1 second the view model still hasn't loaded properly, show fallback
+            if self.riveViewModel == nil {
+                self.loadingFailed = true
+            }
         }
     }
 }
@@ -97,6 +118,6 @@ extension RiveAnimationView {
 
 #Preview {
     RiveAnimationView.loadingAnimation(fileName: "spawn_logo_animation")
-        .frame(width: 200, height: 200)
+        .frame(width: 300, height: 300)
         .background(Color.white)
 } 

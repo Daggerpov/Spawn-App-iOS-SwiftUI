@@ -25,15 +25,7 @@ struct LaunchView: View {
 				if !animationCompleted {
 					// Initial Rive animation for new users
 					RiveAnimationView.logoAnimation(fileName: "spawn_logo_animation")
-						.frame(width: 200, height: 200)
-						.background(
-							// Fallback to static logo if Rive fails
-							Image("spawn_branding_logo")
-								.resizable()
-								.scaledToFit()
-								.frame(width: 200, height: 100)
-								.opacity(0) // Hidden when Rive is working
-						)
+						.frame(width: 300, height: 300)
 						.onAppear {
 							// Show auth buttons after animation completes
 							DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -84,9 +76,9 @@ struct LaunchView: View {
 
 				Spacer()
 			}
-			.background(Color.white) // Changed from authPageBackgroundColor to white
-			.ignoresSafeArea()
-			.preferredColorScheme(.light)
+			.background(Color.white) // White background to match animation
+			.ignoresSafeArea(.all) // Ignore all safe areas including top and bottom
+			.preferredColorScheme(.light) // Force light mode to ensure white background
 			.navigationDestination(
 				isPresented: $userAuth.shouldNavigateToUserInfoInputView
 			) {

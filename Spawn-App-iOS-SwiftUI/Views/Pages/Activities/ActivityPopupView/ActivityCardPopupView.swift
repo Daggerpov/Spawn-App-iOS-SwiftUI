@@ -11,6 +11,7 @@ struct ActivityCardPopupView: View {
     private var viewModel: ActivityInfoViewModel
     @StateObject private var mapViewModel: MapViewModel
     @StateObject private var cardViewModel: ActivityCardViewModel
+    @StateObject private var locationManager = LocationManager()
     @ObservedObject var activity: FullFeedActivityDTO
     var activityColor: Color
     @State private var region: MKCoordinateRegion
@@ -18,7 +19,7 @@ struct ActivityCardPopupView: View {
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
-        viewModel = ActivityInfoViewModel(activity: activity)
+        viewModel = ActivityInfoViewModel(activity: activity, locationManager: LocationManager())
         let mapVM = MapViewModel(activity: activity)
         _mapViewModel = StateObject(wrappedValue: mapVM)
         self._cardViewModel = StateObject(wrappedValue: ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity))

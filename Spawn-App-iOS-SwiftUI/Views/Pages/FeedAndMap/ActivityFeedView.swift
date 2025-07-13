@@ -9,6 +9,7 @@ import SwiftUI
 struct ActivityFeedView: View {
     var user: BaseUserDTO
     @StateObject var viewModel: FeedViewModel
+    @StateObject private var locationManager = LocationManager()
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
@@ -272,6 +273,7 @@ extension ActivityFeedView {
                             userId: user.id,
                             activity: viewModel.activities[activityIndex],
                             color: figmaBlue,
+                            locationManager: locationManager,
                             callback: { activity, color in
                                 activityInPopup = activity
                                 colorInPopup = color

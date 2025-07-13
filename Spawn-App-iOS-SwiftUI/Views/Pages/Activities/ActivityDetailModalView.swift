@@ -1,10 +1,12 @@
 import SwiftUI
+import MapKit
 
 // MARK: - Activity Detail Modal View matching Figma design
 struct ActivityDetailModalView: View {
     let activity: FullFeedActivityDTO
     let activityColor: Color
     let onDismiss: () -> Void
+    @StateObject private var locationManager = LocationManager()
     
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.presentationMode) var presentationMode
@@ -176,7 +178,7 @@ struct ActivityDetailModalView: View {
                         .font(.custom("Onest", size: 16).weight(.bold))
                         .foregroundColor(.white)
                     
-                    Text("2km away")
+                    Text(getDistanceText(location: location))
                         .font(.custom("Onest", size: 13).weight(.medium))
                         .foregroundColor(.white)
                 }
@@ -184,19 +186,23 @@ struct ActivityDetailModalView: View {
             
             Spacer()
             
-            HStack(spacing: 6) {
-                Image(systemName: "location.north.line")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(universalAccentColor)
-                
-                Text("Get Directions")
-                    .font(.custom("Onest", size: 13).weight(.semibold))
-                    .foregroundColor(universalAccentColor)
+            Button(action: {
+                openDirections(to: location)
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "location.north.line")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(universalAccentColor)
+                    
+                    Text("Get Directions")
+                        .font(.custom("Onest", size: 13).weight(.semibold))
+                        .foregroundColor(universalAccentColor)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.white)
+                .cornerRadius(12)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(.white)
-            .cornerRadius(12)
         }
         .padding(16)
         .background(Color.black.opacity(0.2))
@@ -287,5 +293,31 @@ struct ActivityDetailModalView: View {
     
     private func getStatusOpacity() -> Double {
         return getActivityStatus() == "Event Passed" ? 0.4 : 1.0
+    }
+    
+    private func getDistanceText(location: Location) -> String {
+        return FormatterService.shared.distanceString(
+            from: locationManager.userLocation,
+            to: location
+        ) + " away"
+    }
+    
+    private func openDirections(to location: Location) {
+        let coordinate = CLLocationCoordinate2D(
+            latitude: location.latitude,
+            longitude: location.longitude
+        )
+        let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
+        mapItem.name = location.name
+        
+        let sourceMapItem = MKMapItem.forCurrentLocation()
+        
+        MKMapItem.openMaps(
+            with: [sourceMapItem, mapItem],
+            launchOptions: [
+                MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault,
+                MKLaunchOptionsShowsTrafficKey: true
+            ]
+        )
     }
 } 

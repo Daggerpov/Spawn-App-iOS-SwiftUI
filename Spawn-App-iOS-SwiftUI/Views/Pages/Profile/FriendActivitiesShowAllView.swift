@@ -11,6 +11,8 @@ struct FriendActivitiesShowAllView: View {
     // Add navigation state for full calendar view
     @State private var navigateToCalendar: Bool = false
     
+    @StateObject private var locationManager = LocationManager()
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -125,6 +127,7 @@ struct FriendActivitiesShowAllView: View {
                             userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                             activity: activity, // ProfileActivityDTO IS a FullFeedActivityDTO
                             color: activityColor,
+                            locationManager: locationManager,
                             callback: { selectedActivity, color in
                                 profileViewModel.selectedActivity = selectedActivity
                                 showActivityDetails = true

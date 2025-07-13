@@ -21,145 +21,150 @@ struct ProfileShareDrawer: View {
                     }
             }
             
-            // Share sheet
-            VStack(spacing: 16) {
-                // Drag handle
-                Rectangle()
-                    .foregroundColor(.clear)
-                    .frame(width: 134, height: 5)
-                    .background(Color(red: 0.56, green: 0.52, blue: 0.52))
-                    .cornerRadius(100)
-                    .padding(.top, 12)
+            // Drawer content positioned at bottom
+            VStack(spacing: 0) {
+                Spacer()
                 
-                // Title
-                Text("Share Profile")
-                    .font(.custom("Onest", size: 20).weight(.semibold))
-                    .foregroundColor(.white)
-                    .padding(.top, 8)
-                
-                // Share options
-                HStack(spacing: 32) {
-                    // Share via button
-                    Button(action: {
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                        impactGenerator.impactOccurred()
-                        showShareSheet = false
-                        shareViaSystem()
-                    }) {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
-                                    .frame(width: 64, height: 64)
-                                Image("share_via_button")
+                // Share sheet
+                VStack(spacing: 16) {
+                    // Drag handle
+                    Rectangle()
+                        .foregroundColor(.clear)
+                        .frame(width: 134, height: 5)
+                        .background(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        .cornerRadius(100)
+                        .padding(.top, 12)
+                    
+                    // Title
+                    Text("Share Profile")
+                        .font(.custom("Onest", size: 20).weight(.semibold))
+                        .foregroundColor(.white)
+                        .padding(.top, 8)
+                    
+                    // Share options
+                    HStack(spacing: 32) {
+                        // Share via button
+                        Button(action: {
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                            impactGenerator.impactOccurred()
+                            showShareSheet = false
+                            shareViaSystem()
+                        }) {
+                            VStack(spacing: 8) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                        .frame(width: 64, height: 64)
+                                    Image("share_via_button")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 40, height: 40)
+                                }
+                                Text("Share via")
+                                    .font(Font.custom("SF Pro Display", size: 14))
+                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                            }
+                            .frame(width: 64)
+                        }
+                        
+                        // Copy Link button
+                        Button(action: {
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                            impactGenerator.impactOccurred()
+                            showShareSheet = false
+                            copyLink()
+                        }) {
+                            VStack(spacing: 8) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                        .frame(width: 64, height: 64)
+                                    Image("copy_link_button")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: 40, height: 40)
+                                }
+                                Text("Copy Link")
+                                    .font(Font.custom("SF Pro Display", size: 14))
+                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                            }
+                            .frame(width: 68)
+                        }
+                        
+                        // WhatsApp button
+                        Button(action: {
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                            impactGenerator.impactOccurred()
+                            showShareSheet = false
+                            shareViaWhatsApp()
+                        }) {
+                            VStack(spacing: 8) {
+                                Image("whatsapp_logo_for_sharing")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
-                                    .frame(width: 40, height: 40)
-                            }
-                            Text("Share via")
-                                .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
-                        }
-                        .frame(width: 64)
-                    }
-                    
-                    // Copy Link button
-                    Button(action: {
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                        impactGenerator.impactOccurred()
-                        showShareSheet = false
-                        copyLink()
-                    }) {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
                                     .frame(width: 64, height: 64)
-                                Image("copy_link_button")
+                                Text("WhatsApp")
+                                    .font(Font.custom("SF Pro Display", size: 14))
+                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                            }
+                            .frame(width: 72)
+                        }
+                        
+                        // iMessage button
+                        Button(action: {
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                            impactGenerator.impactOccurred()
+                            showShareSheet = false
+                            shareViaIMessage()
+                        }) {
+                            VStack(spacing: 8) {
+                                Image("imessage_for_sharing")
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
-                                    .frame(width: 40, height: 40)
+                                    .frame(width: 64, height: 64)
+                                Text("Message")
+                                    .font(Font.custom("SF Pro Display", size: 14))
+                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
                             }
-                            Text("Copy Link")
-                                .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                            .frame(width: 65)
                         }
-                        .frame(width: 68)
                     }
-                    
-                    // WhatsApp button
-                    Button(action: {
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                        impactGenerator.impactOccurred()
-                        showShareSheet = false
-                        shareViaWhatsApp()
-                    }) {
-                        VStack(spacing: 8) {
-                            Image("whatsapp_logo_for_sharing")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 64, height: 64)
-                            Text("WhatsApp")
-                                .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
-                        }
-                        .frame(width: 72)
-                    }
-                    
-                    // iMessage button
-                    Button(action: {
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                        impactGenerator.impactOccurred()
-                        showShareSheet = false
-                        shareViaIMessage()
-                    }) {
-                        VStack(spacing: 8) {
-                            Image("imessage_for_sharing")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 64, height: 64)
-                            Text("Message")
-                                .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
-                        }
-                        .frame(width: 65)
-                    }
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 30)
                 }
-                .padding(.horizontal, 30)
-                .padding(.bottom, 30)
+                .frame(maxWidth: .infinity)
+                .frame(height: 236)
+                .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+                .cornerRadius(20)
+                .shadow(
+                    color: Color(red: 0, green: 0, blue: 0, opacity: 0.10), radius: 32
+                )
+                .offset(y: showShareSheet ? 0 : UIScreen.main.bounds.height)
+                .offset(y: max(0, dragOffset))
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            // Only allow dragging down
+                            if value.translation.height > 0 {
+                                dragOffset = value.translation.height
+                            }
+                        }
+                        .onEnded { value in
+                            // If dragged down enough, dismiss
+                            if value.translation.height > 100 {
+                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                    showShareSheet = false
+                                    dragOffset = 0
+                                }
+                            } else {
+                                // Snap back to position
+                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                    dragOffset = 0
+                                }
+                            }
+                        }
+                )
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 236)
-            .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-            .cornerRadius(20)
-            .shadow(
-                color: Color(red: 0, green: 0, blue: 0, opacity: 0.10), radius: 32
-            )
-            .offset(y: showShareSheet ? 0 : UIScreen.main.bounds.height)
-            .offset(y: max(0, dragOffset))
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        // Only allow dragging down
-                        if value.translation.height > 0 {
-                            dragOffset = value.translation.height
-                        }
-                    }
-                    .onEnded { value in
-                        // If dragged down enough, dismiss
-                        if value.translation.height > 100 {
-                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                showShareSheet = false
-                                dragOffset = 0
-                            }
-                        } else {
-                            // Snap back to position
-                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                dragOffset = 0
-                            }
-                        }
-                    }
-            )
         }
         .animation(.spring(response: 0.6, dampingFraction: 0.8), value: showShareSheet)
     }
@@ -255,8 +260,25 @@ struct ProfileShareDrawer: View {
 #Preview {
     @Previewable @State var showShareSheet: Bool = true
     
-    ProfileShareDrawer(
-        user: BaseUserDTO.danielAgapov,
-        showShareSheet: $showShareSheet
-    )
+    ZStack {
+        Color.black.ignoresSafeArea()
+        
+        VStack {
+            Button("Toggle Share Sheet") {
+                showShareSheet.toggle()
+            }
+            .padding()
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(10)
+            
+            Spacer()
+        }
+        .padding()
+        
+        ProfileShareDrawer(
+            user: BaseUserDTO.danielAgapov,
+            showShareSheet: $showShareSheet
+        )
+    }
 } 
