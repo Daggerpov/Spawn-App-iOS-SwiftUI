@@ -71,7 +71,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
     @Published var shouldNavigateToPhoneNumberView: Bool = false
     @Published var shouldNavigateToVerificationCodeView: Bool = false
     @Published var shouldNavigateToUserDetailsView: Bool = false
-    @Published var shouldNavigateToUserDetailsViewOAuth: Bool = false
     @Published var secondsUntilNextVerificationAttempt: Int = 30
     
     @Published var shouldNavigateToUserOptionalDetailsInputView: Bool = false
@@ -159,9 +158,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.shouldNavigateToUserInfoInputView = false
 			self.shouldNavigateToPhoneNumberView = false
 			self.shouldNavigateToVerificationCodeView = false
-			self.shouldNavigateToUserDetailsView = false
-			self.shouldNavigateToUserDetailsViewOAuth = false
-			self.secondsUntilNextVerificationAttempt = 30
+			        self.shouldNavigateToUserDetailsView = false
+        self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
 			self.authAlert = nil
 
@@ -438,17 +436,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				do {
                     let parameters: [String: String] = ["idToken": unwrappedIdToken, "email": emailToUse, "provider": unwrappedProvider.rawValue]
 						
-					let fetchedSpawnUser: BaseUserDTO = try await self.apiService
+					let authResponse: AuthResponseDTO = try await self.apiService
 						.fetchData(
 							from: url,
 							parameters: parameters
 						)
-							
+						
 					await MainActor.run {
-						self.spawnUser = fetchedSpawnUser
-						self.shouldNavigateToUserInfoInputView = false
-						self.isFormValid = true
-						self.setShouldNavigateToFeedView()
+						self.spawnUser = authResponse.toBaseUserDTO()
+						
+						// Navigate based on user status from AuthResponseDTO
+						self.navigateBasedOnUserStatus(authResponse: authResponse)
                         
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
@@ -576,6 +574,44 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	func setShouldNavigateToFeedView() {
 		Task { @MainActor in
 			shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
+		}
+	}
+	
+	private func navigateBasedOnUserStatus(authResponse: AuthResponseDTO) {
+		// Reset all navigation flags
+		shouldNavigateToUserInfoInputView = false
+		shouldNavigateToUserToS = false
+		shouldNavigateToFeedView = false
+		isFormValid = false
+		
+		guard let status = authResponse.status else {
+			// No status means legacy active user
+			isFormValid = true
+			setShouldNavigateToFeedView()
+			return
+		}
+		
+		switch status {
+		case .emailRegistered:
+			// Still needs email verification - shouldn't happen with OAuth
+			shouldNavigateToUserInfoInputView = true
+			print("📍 User status: emailRegistered - navigating to user info input")
+			
+		case .emailVerified:
+			// Needs to input username and phone number
+			shouldNavigateToUserInfoInputView = true
+			print("📍 User status: emailVerified - navigating to user info input")
+			
+		case .usernameAndPhoneNumber:
+			// Only needs to accept Terms of Service
+			shouldNavigateToUserToS = true
+			print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+			
+		case .active:
+			// Fully onboarded user - go to feed
+			isFormValid = true
+			setShouldNavigateToFeedView()
+			print("📍 User status: active - navigating to feed")
 		}
 	}
     
@@ -1015,20 +1051,20 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     profilePictureUrl: profilePictureUrl
                 )
                 
-                let response: BaseUserDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
-                
-                await MainActor.run {
-                    if let user = response {
-                        // Success - navigate to user details view for OAuth users
-                        self.spawnUser = user
-                        self.shouldNavigateToUserDetailsViewOAuth = true
-                        self.email = user.email
-                        self.errorMessage = nil
-                    } else {
-                        // Handle error
-                        self.errorMessage = "Failed to register with OAuth"
-                    }
+                            let response: AuthResponseDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
+            
+            await MainActor.run {
+                if let user = response {
+                    // Success - use status-based navigation for OAuth users
+                    self.spawnUser = user.toBaseUserDTO()
+					self.navigateBasedOnUserStatus(authResponse: user)
+                    self.email = user.email
+                    self.errorMessage = nil
+                } else {
+                    // Handle error
+                    self.errorMessage = "Failed to register with OAuth"
                 }
+            }
             }
         } catch let error as APIError {
             await MainActor.run {

@@ -7,6 +7,13 @@
 
 import Foundation
 
+enum UserStatus: Int, Codable, CaseIterable {
+    case emailRegistered = 0
+    case emailVerified = 1
+    case usernameAndPhoneNumber = 2
+    case active = 3
+}
+
 struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 	static func == (lhs: BaseUserDTO, rhs: BaseUserDTO) -> Bool {
 		return lhs.id == rhs.id
