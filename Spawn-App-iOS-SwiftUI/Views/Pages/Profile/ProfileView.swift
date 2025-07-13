@@ -210,7 +210,7 @@ struct ProfileView: View {
 		.toast(
 			isShowing: $showNotification,
 			message: notificationMessage,
-			duration: 3.0
+			duration: 10.0
 		)
 	}
 

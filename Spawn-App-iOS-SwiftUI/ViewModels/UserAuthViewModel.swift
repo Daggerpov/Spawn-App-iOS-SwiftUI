@@ -64,7 +64,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
         // Start minimum loading timer
         Task {
-            try? await Task.sleep(nanoseconds: 3_370_000_000) // 3.67 seconds
+            try? await Task.sleep(nanoseconds: 3_000_000_000) // 3 seconds
             await MainActor.run {
                 self.minimumLoadingCompleted = true
                 self.checkLoadingCompletion()
