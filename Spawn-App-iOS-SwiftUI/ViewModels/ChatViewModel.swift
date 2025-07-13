@@ -16,7 +16,7 @@ class ChatViewModel: ObservableObject {
     var chats: [FullActivityChatMessageDTO] {
         activity.chatMessages ?? []
     }
-    var creationMessage: String?
+    @Published var creationMessage: String?
     
     init(senderUserId: UUID, activity: FullFeedActivityDTO) {
         self.senderUserId = senderUserId
@@ -26,6 +26,11 @@ class ChatViewModel: ObservableObject {
     
     
     func sendMessage(message: String) async {
+        // Clear any previous error message
+        await MainActor.run {
+            creationMessage = nil
+        }
+        
         // Validate the message is not empty
         guard !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             print("Cannot send empty message")

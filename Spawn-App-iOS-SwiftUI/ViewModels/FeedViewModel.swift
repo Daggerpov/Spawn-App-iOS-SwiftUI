@@ -20,6 +20,20 @@ class FeedViewModel: ObservableObject {
     private var appCache: AppCache
     private var cancellables = Set<AnyCancellable>()
 
+    // MARK: - Computed Properties
+    
+    /// Returns activity types sorted with pinned ones first, then by orderNum
+    var sortedActivityTypes: [ActivityTypeDTO] {
+        return activityTypes.sorted { first, second in
+            // Pinned types come first
+            if first.isPinned != second.isPinned {
+                return first.isPinned
+            }
+            // If both are pinned or both are not pinned, sort by orderNum
+            return first.orderNum < second.orderNum
+        }
+    }
+
     init(apiService: IAPIService, userId: UUID) {
         self.apiService = apiService
         self.userId = userId

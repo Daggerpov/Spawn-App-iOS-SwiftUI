@@ -82,7 +82,7 @@ class FriendsTabViewModel: ObservableObject {
                     Task {
                         // For friend search, we want to filter existing friends/recommended friends
                         await self?.fetchFilteredResults(query: query)
-                        // For general user search, we want to search all users
+                        // For general user search, we want to search all users (run after filtered results)
                         await self?.performSearch(searchText: query)
                     }
                 }
@@ -445,14 +445,17 @@ class FriendsTabViewModel: ObservableObject {
         }
     }
 
-    @MainActor
     func fetchRecentlySpawnedWith() async {
-        isLoading = true
-        defer { isLoading = false }
+        await MainActor.run {
+            isLoading = true
+        }
         
         do {
             // API endpoint for getting recently spawned with users
             guard let url = URL(string: APIService.baseURL + "users/\(userId)/recent-users") else {
+                await MainActor.run {
+                    isLoading = false
+                }
                 return
             }
             
@@ -460,18 +463,23 @@ class FriendsTabViewModel: ObservableObject {
             
             await MainActor.run {
                 self.recentlySpawnedWith = fetchedUsers
+                self.isLoading = false
             }
         } catch {
             print("Error fetching recently spawned users: \(error.localizedDescription)")
             // If API fails, use empty array
-            self.recentlySpawnedWith = []
+            await MainActor.run {
+                self.recentlySpawnedWith = []
+                self.isLoading = false
+            }
         }
     }
     
-    @MainActor
     private func performSearch(searchText: String) async {
         if searchText.isEmpty {
-            searchResults = []
+            await MainActor.run {
+                searchResults = []
+            }
             return
         }
         
@@ -480,11 +488,14 @@ class FriendsTabViewModel: ObservableObject {
         if MockAPIService.isMocking {
             // Filter mock data for testing
             let lowercasedSearchText = searchText.lowercased()
-            searchResults = BaseUserDTO.mockUsers.filter { user in
+            let filteredResults = BaseUserDTO.mockUsers.filter { user in
                 let name = FormatterService.shared.formatName(user: user).lowercased()
                 let username = user.username.lowercased()
                 
                 return name.contains(lowercasedSearchText) || username.contains(lowercasedSearchText)
+            }
+            await MainActor.run {
+                searchResults = filteredResults
             }
             return
         }
@@ -493,7 +504,9 @@ class FriendsTabViewModel: ObservableObject {
             // API endpoint for searching users: /api/v1/users/search?searchQuery={searchText}
             guard let url = URL(string: APIService.baseURL + "users/search") else {
                 print("Invalid URL for user search")
-                searchResults = []
+                await MainActor.run {
+                    searchResults = []
+                }
                 return
             }
             

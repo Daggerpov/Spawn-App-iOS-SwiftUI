@@ -309,6 +309,12 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         case .welcome:
             print("[PUSH DEBUG] Received welcome notification")
             // No special handling needed
+        case .error:
+            print("[PUSH DEBUG] Received error notification")
+            // Error notifications are typically local app errors, not push notifications
+        case .success:
+            print("[PUSH DEBUG] Received success notification")
+            // Success notifications are typically local app confirmations, not push notifications
         }
     }
     
@@ -446,6 +452,16 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             title = "Welcome to Spawn!"
             body = "Thanks for joining. We'll keep you updated on activities and friends."
             userInfo = NotificationDataBuilder.welcome()
+            
+        case .error:
+            title = "Error"
+            body = "Something went wrong. Please try again."
+            userInfo = ["type": NotificationType.error.rawValue]
+            
+        case .success:
+            title = "Success"
+            body = "Action completed successfully"
+            userInfo = ["type": NotificationType.success.rawValue]
         }
         
         scheduleLocalNotification(title: title, body: body, userInfo: userInfo)
@@ -486,6 +502,18 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                     title: "Welcome to Spawn!",
                     message: "Start connecting with friends and activities",
                     type: .welcome
+                )
+            case .error:
+                InAppNotificationManager.shared.showNotification(
+                    title: "Error",
+                    message: "Something went wrong. Please try again.",
+                    type: .error
+                )
+            case .success:
+                InAppNotificationManager.shared.showNotification(
+                    title: "Success",
+                    message: "Action completed successfully",
+                    type: .success
                 )
             }
         }

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ActivityListView: View {
     @ObservedObject var viewModel: FeedViewModel
+    @StateObject private var locationManager = LocationManager()
     var user: BaseUserDTO
     var bound: Int = .max
     let callback: (FullFeedActivityDTO, Color) -> Void
@@ -50,6 +51,7 @@ struct ActivityListView: View {
                             userId: user.id,
                             activity: viewModel.activities[activityIndex],
                             color: getActivityColor(for: viewModel.activities[activityIndex].id),
+                            locationManager: locationManager,
                             callback: callback,
                             selectedTab: $selectedTab
                         )
@@ -65,5 +67,9 @@ struct ActivityListView: View {
                 await viewModel.fetchAllData()
             }
         }
+    }
+    
+    private func getActivityColor(for activityId: UUID) -> Color {
+        return ActivityColorService.shared.getColorForActivity(activityId)
     }
 }

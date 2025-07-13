@@ -11,6 +11,10 @@ struct ActivityTypeCardView: View {
     var onTap: ((ActivityTypeDTO) -> Void)? = nil
     @Environment(\.colorScheme) private var colorScheme
     
+    // Animation states for 3D effect
+    @State private var isPressed = false
+    @State private var scale: CGFloat = 1.0
+    
     // Adaptive background gradient for dark mode
     private var adaptiveBackgroundGradient: LinearGradient {
         switch colorScheme {
@@ -53,11 +57,18 @@ struct ActivityTypeCardView: View {
     
     var body: some View {
         Button(action: {
-            if let onTap = onTap {
-                print("🔘 ActivityTypeCardView '\(activityType.title)' button tapped")
-                onTap(activityType)
-            } else {
-                print("❌ ActivityTypeCardView '\(activityType.title)' button tapped but onTap is nil")
+            // Haptic feedback
+            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+            impactGenerator.impactOccurred()
+            
+            // Execute action with slight delay for animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if let onTap = onTap {
+                    print("🔘 ActivityTypeCardView '\(activityType.title)' button tapped")
+                    onTap(activityType)
+                } else {
+                    print("❌ ActivityTypeCardView '\(activityType.title)' button tapped but onTap is nil")
+                }
             }
         }) {
             ZStack {
@@ -72,6 +83,13 @@ struct ActivityTypeCardView: View {
                                 lineWidth: 1
                             )
                     )
+                    .scaleEffect(scale)
+                    .shadow(
+                        color: Color.black.opacity(0.15),
+                        radius: isPressed ? 2 : 8,
+                        x: 0,
+                        y: isPressed ? 2 : 4
+                    )
                 
                 VStack(spacing: 6) {
                     Text(activityType.icon)
@@ -85,6 +103,18 @@ struct ActivityTypeCardView: View {
         .buttonStyle(PlainButtonStyle())
         .frame(height: 100)
         .frame(maxWidth: .infinity)
+        .animation(.easeInOut(duration: 0.15), value: scale)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+            scale = pressing ? 0.95 : 1.0
+            
+            // Additional haptic feedback for press down
+            if pressing {
+                let selectionGenerator = UISelectionFeedbackGenerator()
+                selectionGenerator.selectionChanged()
+            }
+        }, perform: {})
     }
 }
 

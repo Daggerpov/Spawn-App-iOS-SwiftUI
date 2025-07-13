@@ -17,6 +17,8 @@ struct ContentView: View {
     // Deep link state
     @State private var shouldShowDeepLinkedActivity = false
     @State private var deepLinkedActivityId: UUID?
+    @State private var shouldShowDeepLinkedProfile = false
+    @State private var deepLinkedProfileId: UUID?
     
     init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
         self.user = user
@@ -76,7 +78,11 @@ struct ContentView: View {
                     )
                     Text("Activities")
                 }
-                FriendsView(user: user)
+                FriendsView(
+                    user: user,
+                    deepLinkedProfileId: $deepLinkedProfileId,
+                    shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
+                )
                     .tag(TabType.friends)
                     .tabItem {
                         Image(
@@ -138,9 +144,19 @@ struct ContentView: View {
                     handleDeepLinkActivity(activityId)
                 }
             }
+            .onChange(of: deepLinkManager.shouldShowProfile) { shouldShow in
+                if shouldShow, let profileId = deepLinkManager.profileToShow {
+                    handleDeepLinkProfile(profileId)
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: .deepLinkActivityReceived)) { notification in
                 if let activityId = notification.userInfo?["activityId"] as? UUID {
                     handleDeepLinkActivity(activityId)
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .deepLinkProfileReceived)) { notification in
+                if let profileId = notification.userInfo?["profileId"] as? UUID {
+                    handleDeepLinkProfile(profileId)
                 }
             }
             
@@ -174,9 +190,33 @@ struct ContentView: View {
         // Switch to home tab to show the activity in feed
         selectedTab = .home
         
-        // Set up the deep linked activity state
-        deepLinkedActivityId = activityId
-        shouldShowDeepLinkedActivity = true
+        // Add a small delay to ensure tab switching completes before setting deep link state
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Set up the deep linked activity state
+            deepLinkedActivityId = activityId
+            shouldShowDeepLinkedActivity = true
+            
+            print("🎯 ContentView: Set deep link state - activityId: \(activityId), shouldShow: \(shouldShowDeepLinkedActivity)")
+        }
+        
+        // Clear the deep link manager state
+        deepLinkManager.clearPendingDeepLink()
+    }
+    
+    private func handleDeepLinkProfile(_ profileId: UUID) {
+        print("🎯 ContentView: Handling deep link for profile: \(profileId)")
+        
+        // Switch to friends tab to show the profile
+        selectedTab = .friends
+        
+        // Add a small delay to ensure tab switching completes before setting deep link state
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Set up the deep linked profile state
+            deepLinkedProfileId = profileId
+            shouldShowDeepLinkedProfile = true
+            
+            print("🎯 ContentView: Set deep link state - profileId: \(profileId), shouldShow: \(shouldShowDeepLinkedProfile)")
+        }
         
         // Clear the deep link manager state
         deepLinkManager.clearPendingDeepLink()

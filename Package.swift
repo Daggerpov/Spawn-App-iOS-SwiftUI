@@ -4,7 +4,7 @@ import PackageDescription
 let package = Package(
     name: "Spawn-App-iOS-SwiftUI",
     platforms: [
-        .iOS(.v15)
+        .iOS(.v14)
     ],
     products: [
         .library(
@@ -13,13 +13,16 @@ let package = Package(
     ],
     dependencies: [
         // Elegant Emoji Picker for beautiful emoji selection
-        .package(url: "https://github.com/Finalet/Elegant-Emoji-Picker.git", from: "1.0.0")
+        .package(url: "https://github.com/Finalet/Elegant-Emoji-Picker.git", from: "1.0.0"),
+        // Rive for high-quality animations
+        .package(url: "https://github.com/rive-app/rive-ios.git", from: "6.0.0")
     ],
     targets: [
         .target(
             name: "Spawn-App-iOS-SwiftUI",
             dependencies: [
-                .product(name: "ElegantEmojiPicker", package: "Elegant-Emoji-Picker")
+                .product(name: "ElegantEmojiPicker", package: "Elegant-Emoji-Picker"),
+                .product(name: "RiveRuntime", package: "rive-ios")
             ]),
         .testTarget(
             name: "Spawn-App-iOS-SwiftUITests",

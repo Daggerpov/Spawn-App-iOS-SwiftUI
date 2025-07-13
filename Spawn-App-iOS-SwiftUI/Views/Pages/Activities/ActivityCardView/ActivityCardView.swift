@@ -3,6 +3,7 @@ import SwiftUI
 struct ActivityCardView: View {
     @ObservedObject var viewModel: ActivityCardViewModel
     @ObservedObject var activity: FullFeedActivityDTO
+    @ObservedObject var locationManager: LocationManager
     var color: Color
     var callback: (FullFeedActivityDTO, Color) -> Void
     @Environment(\.colorScheme) private var colorScheme
@@ -12,11 +13,13 @@ struct ActivityCardView: View {
     
     init(
         userId: UUID, activity: FullFeedActivityDTO, color: Color,
+        locationManager: LocationManager,
         callback: @escaping (FullFeedActivityDTO, Color) -> Void,
         selectedTab: Binding<TabType?> = .constant(nil)
     ) {
         self.activity = activity
         self.color = color
+        self.locationManager = locationManager
         self.viewModel = ActivityCardViewModel(
             apiService: MockAPIService.isMocking
                 ? MockAPIService(userId: userId) : APIService(), userId: userId,
@@ -59,9 +62,9 @@ struct ActivityCardView: View {
         ZStack(alignment: .bottomTrailing) {
             VStack(alignment: .leading, spacing: 16) {
                 // Top Row: Title, Participants
-                ActivityCardTopRowView(activity: activity, selectedTab: $selectedTab)
+                ActivityCardTopRowView(activity: activity, selectedTab: $selectedTab, locationManager: locationManager)
                 // Location Row
-                ActivityLocationView(activity: activity)
+                ActivityLocationView(activity: activity, locationManager: locationManager)
             }
             .padding(14)
             .background(
@@ -75,6 +78,10 @@ struct ActivityCardView: View {
             .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
             .onAppear {
                 viewModel.fetchIsParticipating()
+            }
+            .onChange(of: activity.participationStatus) { _ in
+                // Refresh participation status when the activity's participation status changes
+                viewModel.updateActivity(activity)
             }
             .onTapGesture {
                 callback(activity, color)
@@ -105,8 +112,10 @@ extension Color {
     ActivityCardView(
         userId: mockUserId,
         activity: .mockDinnerActivity,
-        color: figmaSoftBlue
-    ) { event, color in
-        print("Event tapped: \(event.title ?? "Untitled")")
-    }
+        color: figmaSoftBlue,
+        locationManager: LocationManager(),
+        callback: { event, color in
+            print("Event tapped: \(event.title ?? "Untitled")")
+        }
+    )
 }

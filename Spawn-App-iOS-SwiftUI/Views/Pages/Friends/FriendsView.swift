@@ -10,9 +10,16 @@ import SwiftUI
 struct FriendsView: View {
     let user: BaseUserDTO
     @StateObject private var viewModel: FriendsTabViewModel
-
-    init(user: BaseUserDTO) {
+    
+    // Deep link parameters
+    @Binding var deepLinkedProfileId: UUID?
+    @Binding var shouldShowDeepLinkedProfile: Bool
+    @State private var isFetchingDeepLinkedProfile = false
+    
+    init(user: BaseUserDTO, deepLinkedProfileId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedProfile: Binding<Bool> = .constant(false)) {
         self.user = user
+        self._deepLinkedProfileId = deepLinkedProfileId
+        self._shouldShowDeepLinkedProfile = shouldShowDeepLinkedProfile
         let vm = FriendsTabViewModel(
             userId: user.id,
             apiService: MockAPIService.isMocking
@@ -41,6 +48,87 @@ struct FriendsView: View {
         .onAppear {
             Task {
                 await viewModel.fetchIncomingFriendRequests()
+            }
+            
+            // Handle deep link if one is pending when view appears
+            if shouldShowDeepLinkedProfile, let profileId = deepLinkedProfileId {
+                handleDeepLinkedProfile(profileId)
+            }
+        }
+        .onChange(of: shouldShowDeepLinkedProfile) { shouldShow in
+            if shouldShow, let profileId = deepLinkedProfileId {
+                handleDeepLinkedProfile(profileId)
+            }
+        }
+    }
+    
+    // MARK: - Deep Link Handling
+    private func handleDeepLinkedProfile(_ profileId: UUID) {
+        print("🎯 FriendsView: Handling deep linked profile: \(profileId)")
+        
+        guard !isFetchingDeepLinkedProfile else {
+            print("⚠️ FriendsView: Already fetching deep linked profile, ignoring")
+            return
+        }
+        
+        isFetchingDeepLinkedProfile = true
+        
+        Task {
+            do {
+                // Fetch the profile from the API
+                print("🔄 FriendsView: Fetching profile from API")
+                let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService()
+                
+                guard let url = URL(string: "\(APIService.baseURL)users/\(profileId)") else {
+                    throw APIError.URLError
+                }
+                
+                let parameters = [
+                    "requestingUserId": user.id.uuidString
+                ]
+                let fetchedUser: BaseUserDTO = try await apiService.fetchData(from: url, parameters: parameters)
+                
+                print("✅ FriendsView: Successfully fetched deep linked profile: \(fetchedUser.name ?? fetchedUser.username)")
+                
+                // Navigate to the profile
+                await MainActor.run {
+                    let profileView = ProfileView(user: fetchedUser)
+                    
+                    // Get the current window and present the profile
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let window = windowScene.windows.first,
+                       let rootViewController = window.rootViewController {
+                        
+                        let hostingController = UIHostingController(rootView: profileView)
+                        rootViewController.present(hostingController, animated: true)
+                    }
+                    
+                    // Clean up deep link state
+                    shouldShowDeepLinkedProfile = false
+                    deepLinkedProfileId = nil
+                    isFetchingDeepLinkedProfile = false
+                    
+                    print("🎯 FriendsView: Successfully navigated to profile")
+                }
+                
+            } catch {
+                print("❌ FriendsView: Failed to fetch deep linked profile: \(error)")
+                print("❌ FriendsView: Error details - Profile ID: \(profileId), Error: \(error.localizedDescription)")
+                
+                await MainActor.run {
+                    shouldShowDeepLinkedProfile = false
+                    deepLinkedProfileId = nil
+                    isFetchingDeepLinkedProfile = false
+                }
+                
+                // Show error to user via InAppNotificationManager
+                await MainActor.run {
+                    InAppNotificationManager.shared.showNotification(
+                        title: "Unable to open profile",
+                        message: "The profile you're trying to view might not exist or you might not have permission to view it.",
+                        type: .error
+                    )
+                }
             }
         }
     }

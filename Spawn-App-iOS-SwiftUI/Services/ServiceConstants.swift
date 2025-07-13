@@ -17,4 +17,11 @@ struct ServiceConstants {
 		}
 		return url
     }
+    
+    static func generateProfileShareURL(for userId: UUID) -> URL {
+        guard let url = URL(string: "\(URLs.shareBase)/profile/\(userId.uuidString)") else {
+            return URL(string: "https://spawnapp.com")!
+        }
+        return url
+    }
 } 
