@@ -81,6 +81,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		
 		// Load onboarding completion status from UserDefaults
 		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+		self.hasCompletedOnboarding = false // TODO flip back to true
 
         // Start minimum loading timer
         Task {
@@ -154,8 +155,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Mark onboarding as completed
 	func markOnboardingCompleted() {
 		Task { @MainActor in
-			hasCompletedOnboarding = true
-			UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+			hasCompletedOnboarding = false // TODO flip back to true
+			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding") // TODO flip back to true
 		}
 	}
 

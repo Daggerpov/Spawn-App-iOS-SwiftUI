@@ -26,12 +26,12 @@ struct SpawnIntroView: View {
             description: "Know what your friends are up to—so you can jump in or start something new."
         ),
         OnboardingPage(
-            imageName: "Group 6820",
+            imageName: "Group 6813",
             title: "Set the Vibe",
             description: "Quick-start your plans with activity presets — or make one \nthat fits you."
         ),
         OnboardingPage(
-            imageName: "Group 6821",
+            imageName: "Group 6814",
             title: "What's Happening Near You",
             description: "Easily spot nearby hangouts, meetups, or last-minute plans worth joining."
         )
@@ -62,7 +62,9 @@ struct SpawnIntroView: View {
                 Image(pages[currentPage].imageName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 280, height: 280)
+					.frame(maxWidth: .infinity, maxHeight: 320)
+                    .padding(.horizontal, 20)
+                    .scaleEffect(currentPage == 0 ? 1.1 : 1.0)
                     .animation(.easeInOut(duration: 0.3), value: currentPage)
             }
             

@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "Group 6814.svg",
+      "filename" : "Map Activity Locations.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "Map Activity Locations (1).png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "Map Activity Locations (2).png",
       "idiom" : "universal",
       "scale" : "3x"
     }
