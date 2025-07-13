@@ -7,10 +7,9 @@ struct InfiniteCalendarView: View {
     let userCreationDate: Date?
     let onDismiss: () -> Void
     let onActivitySelected: (CalendarActivityDTO) -> Void
+    let onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
     
     @State private var currentDate = Date()
-    @State private var showingDayActivities: Bool = false
-    @State private var selectedDayActivities: [CalendarActivityDTO] = []
     
     private let calendar = Calendar.current
     private let today = Date()
@@ -61,18 +60,6 @@ struct InfiniteCalendarView: View {
         .navigationTitle("Your Activity Calendar")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(false)
-        .sheet(isPresented: $showingDayActivities) {
-            DayActivitiesPageView(
-                date: selectedDayActivities.first?.dateAsDate ?? Date(),
-                activities: selectedDayActivities,
-                onDismiss: { showingDayActivities = false },
-                onActivitySelected: { activity in
-                    showingDayActivities = false
-                    onActivitySelected(activity)
-                }
-            )
-            .presentationDetents([.medium, .large])
-        }
     }
     
     private var infiniteScrollCalendar: some View {
@@ -87,8 +74,7 @@ struct InfiniteCalendarView: View {
                                 if activities.count == 1 {
                                     onActivitySelected(activities.first!)
                                 } else if activities.count > 1 {
-                                    selectedDayActivities = activities
-                                    showingDayActivities = true
+                                    onDayActivitiesSelected(activities)
                                 }
                             }
                         )
@@ -360,6 +346,7 @@ extension DateFormatter {
         isLoading: false,
         userCreationDate: nil,
         onDismiss: {},
-        onActivitySelected: { _ in }
+        onActivitySelected: { _ in },
+        onDayActivitiesSelected: { _ in }
     )
 } 

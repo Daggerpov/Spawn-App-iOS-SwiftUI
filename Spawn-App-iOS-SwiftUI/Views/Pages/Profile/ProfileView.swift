@@ -592,6 +592,12 @@ struct ProfileView: View {
 			onDismiss: { showCalendarPopup = false },
 			onActivitySelected: { activity in
 				handleActivitySelection(activity)
+			},
+			onDayActivitiesSelected: { activities in
+				// Close the calendar popup and navigate to day activities
+				showCalendarPopup = false
+				selectedDayActivities = activities
+				navigateToDayActivities = true
 			}
 		)
 	}
@@ -604,6 +610,11 @@ struct ProfileView: View {
 			onDismiss: {
 				// Reset navigation state when calendar view is dismissed
 				navigateToCalendar = false
+			},
+			onDayActivitiesSelected: { activities in
+				// Set the selected activities and navigate to day activities
+				selectedDayActivities = activities
+				navigateToDayActivities = true
 			}
 		)
 	}

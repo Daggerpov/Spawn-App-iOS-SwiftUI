@@ -206,7 +206,14 @@ struct ActivityCreationView: View {
                     currentStep = .location
                 },
                 onBack: {
-                    currentStep = currentStep.previous()
+                    // If we're editing (startingStep is dateTime), close the edit flow
+                    // instead of navigating to activity types
+                    if startingStep == .dateTime {
+                        ActivityCreationViewModel.reInitialize()
+                        closeCallback()
+                    } else {
+                        currentStep = currentStep.previous()
+                    }
                 }
             )
         case .location:

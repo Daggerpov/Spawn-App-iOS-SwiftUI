@@ -15,12 +15,10 @@ struct ActivityCardPopupView: View {
     @ObservedObject var activity: FullFeedActivityDTO
     var activityColor: Color
     @State private var region: MKCoordinateRegion
-    @State private var isExpanded = false
-    @State private var dragOffset = CGSize.zero
-    @State private var isDragging = false
+    @Binding var isExpanded: Bool
     
     
-    init(activity: FullFeedActivityDTO, activityColor: Color) {
+    init(activity: FullFeedActivityDTO, activityColor: Color, isExpanded: Binding<Bool>) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity, locationManager: LocationManager())
         let mapVM = MapViewModel(activity: activity)
@@ -28,6 +26,7 @@ struct ActivityCardPopupView: View {
         self._cardViewModel = StateObject(wrappedValue: ActivityCardViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: UUID()) : APIService(), userId: UserAuthViewModel.shared.spawnUser!.id, activity: activity))
         self.activityColor = activityColor
         _region = State(initialValue: mapVM.initialRegion)
+        self._isExpanded = isExpanded
     }
     
     var body: some View {
@@ -75,44 +74,15 @@ struct ActivityCardPopupView: View {
                     // Additional spacing for collapsed state
                     if !isExpanded {
                         Spacer(minLength: 20)
+                    } else {
+                        Spacer(minLength: 40)
                     }
                 }
                 .padding(.horizontal, 20)
-                .frame(maxHeight: isExpanded ? .infinity : 580)
             }
             .background(activityColor.opacity(0.97))
-            .cornerRadius(20)
-            .shadow(radius: 20)
-            .offset(y: dragOffset.height)
-            .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0), value: isExpanded)
-            .animation(.interactiveSpring(response: 0.6, dampingFraction: 0.8, blendDuration: 0), value: dragOffset)
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        isDragging = true
-                        dragOffset = value.translation
-                    }
-                    .onEnded { value in
-                        isDragging = false
-                        
-                        // Determine if we should toggle the state based on drag direction and velocity
-                        let dragThreshold: CGFloat = 50
-                        let velocityThreshold: CGFloat = 500
-                        
-                        if abs(value.translation.height) > dragThreshold || abs(value.predictedEndTranslation.height) > velocityThreshold {
-                            if value.translation.height < 0 {
-                                // Dragged up - expand
-                                isExpanded = true
-                            } else {
-                                // Dragged down - collapse
-                                isExpanded = false
-                            }
-                        }
-                        
-                        // Reset drag offset
-                        dragOffset = .zero
-                    }
-            )
+            .cornerRadius(isExpanded ? 0 : 20)
+            .shadow(radius: isExpanded ? 0 : 20)
             .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
         }
     }
@@ -332,7 +302,7 @@ struct ParticipationButtonView: View {
             Spacer()
             ParticipantsImagesView(activity: activity)
         }
-        .sheet(isPresented: $showingEditFlow) {
+        .fullScreenCover(isPresented: $showingEditFlow) {
             ActivityCreationView(
                 creatingUser: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
                 closeCallback: {
@@ -423,7 +393,7 @@ struct ChatroomButtonView: View {
 
 struct ActivityCardPopupView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue)
+        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue, isExpanded: .constant(false))
             
     }
 }

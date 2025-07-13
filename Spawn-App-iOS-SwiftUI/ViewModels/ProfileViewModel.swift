@@ -694,6 +694,42 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    // Method for edit profile flow - doesn't revert local state on error
+    func removeUserInterestForEdit(userId: UUID, interest: String) async {
+        do {
+            // URL encode the interest name to handle spaces and special characters
+            guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+                print("❌ Failed to encode interest name: \(interest)")
+                return
+            }
+            
+            let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(encodedInterest)")!
+            
+            try await apiService.deleteData(
+                from: url,
+                parameters: nil,
+                object: nil as EmptyRequestBody?
+            )
+            
+            print("✅ Successfully removed interest: \(interest)")
+            
+        } catch {
+            let nsError = error as NSError
+            
+            // Treat 404 as success - the interest is already gone
+            if nsError.localizedDescription.contains("404") {
+                print("✅ Interest '\(interest)' was already removed (404 - treating as success)")
+            } else {
+                print("❌ Failed to remove interest '\(interest)': \(error.localizedDescription)")
+                // For other errors, we could show a warning but still keep the local state
+                // since the user explicitly wanted to remove it
+            }
+        }
+        
+        // Update cache after attempting to remove
+        await AppCache.shared.refreshProfileInterests(userId)
+    }
+    
     // MARK: - Activity Management
     
     func fetchActivityDetails(activityId: UUID) async -> FullFeedActivityDTO? {

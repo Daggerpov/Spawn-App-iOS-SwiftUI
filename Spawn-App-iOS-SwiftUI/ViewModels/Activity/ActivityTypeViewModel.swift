@@ -296,6 +296,12 @@ class ActivityTypeViewModel: ObservableObject {
         errorMessage = nil
     }
     
+    /// Shows an error message
+    @MainActor
+    func showError(_ message: String) {
+        errorMessage = message
+    }
+    
     /// Reorders activity types based on drag and drop, with validation for pinned/unpinned constraints
     @MainActor
     func reorderActivityTypes(from source: Int, to destination: Int) async {

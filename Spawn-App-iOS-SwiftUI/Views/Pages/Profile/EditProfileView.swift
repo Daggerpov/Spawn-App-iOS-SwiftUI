@@ -254,9 +254,9 @@ struct EditProfileView: View {
             _ = await profileViewModel.addUserInterest(userId: userId, interest: interest)
         }
         
-        // Remove old interests
+        // Remove old interests using the edit-specific method that handles 404 as success
         for interest in interestsToRemove {
-            await profileViewModel.removeUserInterest(userId: userId, interest: interest)
+            await profileViewModel.removeUserInterestForEdit(userId: userId, interest: interest)
         }
         
         // Update the original interests to match current state after saving
