@@ -164,7 +164,7 @@ struct UserDetailsInputView: View {
                         }
                     }
                     // Error Messages
-                    if let usernameError = usernameError, isUsernameTaken {
+					if usernameError != nil, isUsernameTaken {
                         Text("This username is taken. Existing users need to sign in.")
                             .font(Font.custom("Onest", size: 14).weight(.medium))
                             .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))

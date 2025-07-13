@@ -286,7 +286,7 @@ struct VerificationCodeView: View {
     
     @ViewBuilder
     private var errorSection: some View {
-        if let error = viewModel.errorMessage {
+        if viewModel.errorMessage != nil {
             Text("Invalid code. Try again.")
                 .font(Font.custom("Onest", size: 14).weight(.medium))
                 .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
