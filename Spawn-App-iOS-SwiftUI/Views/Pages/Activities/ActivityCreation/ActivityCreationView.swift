@@ -11,7 +11,7 @@ struct ActivityCreationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
     @Environment(\.dismiss) private var dismiss
     
-    @State private var currentStep: ActivityCreationStep = .activityType
+    @State private var currentStep: ActivityCreationStep
     @State private var selectedDuration: ActivityDuration = .indefinite
     @State private var showLocationPicker = false
     @State private var showShareSheet = false
@@ -25,17 +25,44 @@ struct ActivityCreationView: View {
     var creatingUser: BaseUserDTO
     var closeCallback: () -> Void
     @Binding var selectedTab: TabType
+    private var startingStep: ActivityCreationStep
     
-    init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void, selectedTab: Binding<TabType>) {
+    init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void, selectedTab: Binding<TabType>, startingStep: ActivityCreationStep = .activityType) {
         self.creatingUser = creatingUser
         self.closeCallback = closeCallback
         self._selectedTab = selectedTab
+        self.startingStep = startingStep
+        self._currentStep = State(initialValue: startingStep)
         
-        // Calculate the next 15-minute interval after current time
-        let nextInterval = Self.calculateNextFifteenMinuteInterval()
-        self._selectedHour = State(initialValue: nextInterval.hour)
-        self._selectedMinute = State(initialValue: nextInterval.minute)
-        self._isAM = State(initialValue: nextInterval.isAM)
+        // Initialize time values - either from existing activity or calculate next interval
+        if startingStep == .dateTime && ActivityCreationViewModel.shared.selectedDate != Date() {
+            // Use existing activity time
+            let activityDate = ActivityCreationViewModel.shared.selectedDate
+            let calendar = Calendar.current
+            let components = calendar.dateComponents([.hour, .minute], from: activityDate)
+            let hour24 = components.hour ?? 0
+            let minute = components.minute ?? 0
+            
+            // Convert to 12-hour format
+            let hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24)
+            let isAM = hour24 < 12
+            
+            self._selectedHour = State(initialValue: hour12)
+            self._selectedMinute = State(initialValue: minute)
+            self._isAM = State(initialValue: isAM)
+        } else {
+            // Calculate the next 15-minute interval after current time
+            let nextInterval = Self.calculateNextFifteenMinuteInterval()
+            self._selectedHour = State(initialValue: nextInterval.hour)
+            self._selectedMinute = State(initialValue: nextInterval.minute)
+            self._isAM = State(initialValue: nextInterval.isAM)
+        }
+        
+        // Initialize activity title from view model if editing
+        self._activityTitle = State(initialValue: ActivityCreationViewModel.shared.activity.title ?? "")
+        
+        // Initialize duration from view model if editing
+        self._selectedDuration = State(initialValue: ActivityCreationViewModel.shared.selectedDuration)
     }
     
     // Helper function to calculate the next 15-minute interval

@@ -10,6 +10,9 @@ extension Notification.Name {
     // Notification for activity creation
     static let activityCreated = Notification.Name("activityCreated")
     
+    // Notification for activity updates
+    static let activityUpdated = Notification.Name("activityUpdated")
+    
     // Notification for activity type changes (pin/unpin, edit, create, delete)
     static let activityTypesChanged = Notification.Name("activityTypesChanged")
 }
