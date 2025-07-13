@@ -28,136 +28,9 @@ struct VerificationCodeView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Navigation Bar
-            HStack {
-                Button(action: {
-                    // Back action
-                    dismiss()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            
+            navigationBar
             Spacer()
-            
-            // Main Content
-            VStack(spacing: 32) {
-                // Title and Subtitle
-                VStack(spacing: 16) {
-                    Text("Verify Your Email")
-                        .font(heading1)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                    Text("We've sent a 6-digit code to " + (viewModel.email ?? "your email"))
-                        .font(.onestRegular(size: 16))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 40)
-                
-                // Form Fields
-                VStack(spacing: 24) {
-                    // Verification Code Input
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Verification Code")
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                        HStack(spacing: 12) {
-                            ForEach(0..<6, id: \.self) { idx in
-                                ZStack {
-                                    Rectangle()
-                                        .fill(inputBackgroundColor)
-                                        .frame(width: 48, height: 56)
-                                        .cornerRadius(12)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(viewModel.errorMessage != nil ? Color.red : Color.clear, lineWidth: 2)
-                                        )
-                                    TextField("", text: Binding(
-                                        get: { code[idx] },
-                                        set: { newValue in
-                                            handleTextChange(at: idx, newValue: newValue)
-                                        }
-                                    ))
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.center)
-                                    .font(.onestRegular(size: 24))
-                                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                                    .frame(width: 48, height: 56)
-                                    .focused($focusedIndex, equals: idx)
-                                    .onKeyPress(.backspace) {
-                                        handleBackspace(at: idx)
-                                        return .handled
-                                    }
-                                    .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
-                                        handlePaste()
-                                    }
-                                }
-                                .onTapGesture {
-                                    focusedIndex = idx
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Verify Button
-                    Button(action: {
-                        Task {
-                            if let email = viewModel.email {
-                                await viewModel.verifyEmailCode(email: email, code: codeString)
-                            }
-                        }
-                    }) {
-                        OnboardingButtonCoreView("Verify") {
-                            isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
-                        }
-                    }
-                    .padding(.top, -16)
-                    .padding(.bottom, -30)
-                    .padding(.horizontal, -22)
-                    .disabled(!isFormValid)
-                }
-                .padding(.horizontal, 40)
-                
-                // Resend Code
-                HStack(spacing: 4) {
-                    Text("Didn't get it?")
-                        .font(.onestRegular(size: 16))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                    Button(action: {
-                        resendCode()
-                    }) {
-                        Text("Resend code")
-                            .underline()
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(isResendEnabled ? figmaIndigo : universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                    }
-                    .disabled(!isResendEnabled)
-                    Text("in \(String(format: "%02d", secondsRemaining))")
-                        .font(.onestRegular(size: 16))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                        .opacity(isResendEnabled ? 0 : 1)
-                }
-                .padding(.top, 8)
-                
-                // Error Message
-                if let error = viewModel.errorMessage {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundColor(.red)
-                        Text(error)
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(.red)
-                    }
-                    .padding(.top, 8)
-                }
-            }
-            .padding(.horizontal, 40)
-            
+            mainContent
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
@@ -170,6 +43,157 @@ struct VerificationCodeView: View {
             timer?.invalidate()
         }
         .navigationBarHidden(true)
+    }
+    
+    private var navigationBar: some View {
+        HStack {
+            Button(action: {
+                dismiss()
+            }) {
+                Image(systemName: "chevron.left")
+                    .font(.title2)
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+    }
+    
+    private var mainContent: some View {
+        VStack(spacing: 32) {
+            titleSection
+            formSection
+            resendSection
+            errorSection
+        }
+        .padding(.horizontal, 40)
+    }
+    
+    private var titleSection: some View {
+        VStack(spacing: 16) {
+            Text("Verify Your Email")
+                .font(heading1)
+                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            Text("We've sent a 6-digit code to " + (viewModel.email ?? "your email"))
+                .font(.onestRegular(size: 16))
+                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, 40)
+    }
+    
+    private var formSection: some View {
+        VStack(spacing: 24) {
+            verificationCodeInput
+            verifyButton
+        }
+        .padding(.horizontal, 40)
+    }
+    
+    private var verificationCodeInput: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Verification Code")
+                .font(.onestRegular(size: 16))
+                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            HStack(spacing: 12) {
+                ForEach(0..<6, id: \.self) { idx in
+                    codeInputField(at: idx)
+                }
+            }
+        }
+    }
+    
+    private func codeInputField(at index: Int) -> some View {
+        ZStack {
+            Rectangle()
+                .fill(inputBackgroundColor)
+                .frame(width: 48, height: 56)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(viewModel.errorMessage != nil ? Color.red : Color.clear, lineWidth: 2)
+                )
+            TextField("", text: createBinding(for: index))
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .font(.onestRegular(size: 24))
+                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                .frame(width: 48, height: 56)
+                .focused($focusedIndex, equals: index)
+                .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
+                    handlePaste()
+                }
+        }
+        .onTapGesture {
+            focusedIndex = index
+        }
+    }
+    
+    private func createBinding(for index: Int) -> Binding<String> {
+        Binding(
+            get: { code[index] },
+            set: { newValue in
+                let previousValue = code[index]
+                
+                // Detect backspace: if previous value was not empty and new value is empty
+                if !previousValue.isEmpty && newValue.isEmpty {
+                    handleBackspace(at: index)
+                } else {
+                    handleTextChange(at: index, newValue: newValue)
+                }
+            }
+        )
+    }
+    
+    private var verifyButton: some View {
+        Button(action: {
+            Task {
+                if let email = viewModel.email {
+                    await viewModel.verifyEmailCode(email: email, code: codeString)
+                }
+            }
+        }) {
+            OnboardingButtonCoreView("Verify") {
+                isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+            }
+        }
+        .padding(.top, -16)
+        .padding(.bottom, -30)
+        .padding(.horizontal, -22)
+        .disabled(!isFormValid)
+    }
+    
+    private var resendSection: some View {
+        HStack(spacing: 4) {
+            Text("Didn't get it?")
+                .font(.onestRegular(size: 16))
+                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            Button(action: {
+                resendCode()
+            }) {
+                Text("Resend code")
+                    .underline()
+                    .font(.onestRegular(size: 16))
+                    .foregroundColor(isResendEnabled ? figmaIndigo : universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
+            }
+            .disabled(!isResendEnabled)
+            Text("in \(String(format: "%02d", secondsRemaining))")
+                .font(.onestRegular(size: 16))
+                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
+                .opacity(isResendEnabled ? 0 : 1)
+        }
+        .padding(.top, 8)
+    }
+    
+    @ViewBuilder
+    private var errorSection: some View {
+        if let error = viewModel.errorMessage {
+            Text("Invalid code. Try again.")
+                .font(Font.custom("Onest", size: 14).weight(.medium))
+                .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+                .padding(.top, 8)
+        }
     }
     
     private func handleTextChange(at index: Int, newValue: String) {

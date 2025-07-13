@@ -14,6 +14,7 @@ struct LoginInputView: View {
     @State private var isLoading = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
+    @State private var hasLoginError = false
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
@@ -72,7 +73,10 @@ struct LoginInputView: View {
                             .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         TextField("Enter your email or username", text: $usernameOrEmail)
-                            .textFieldStyle(CustomTextFieldStyle())
+                            .textFieldStyle(ErrorTextFieldStyle(hasError: hasLoginError))
+                            .onChange(of: usernameOrEmail) { _ in
+                                hasLoginError = false
+                            }
                     }
                     
                     // Password Field
@@ -82,7 +86,10 @@ struct LoginInputView: View {
                             .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         SecureField("Enter your password", text: $password)
-                            .textFieldStyle(CustomTextFieldStyle())
+                            .textFieldStyle(ErrorSecureFieldStyle(hasError: hasLoginError))
+                            .onChange(of: password) { _ in
+                                hasLoginError = false
+                            }
                     }
                     
                     // Continue Button
@@ -139,6 +146,15 @@ struct LoginInputView: View {
                     )
                 }
                 .padding(.horizontal, 40)
+                
+                // Error Message
+                if hasLoginError {
+                    Text(errorMessage)
+                        .font(Font.custom("Onest", size: 14).weight(.medium))
+                        .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+                        .padding(.horizontal, 40)
+                        .padding(.top, -16)
+                }
                 
                 // Divider with "or"
                 HStack {
@@ -207,10 +223,12 @@ struct LoginInputView: View {
             // Check if login was successful
             if userAuth.spawnUser != nil {
                 // Login successful - navigation will be handled by the view model
+                hasLoginError = false
                 print("Login successful")
             } else {
                 // Login failed - show error message
                 errorMessage = userAuth.errorMessage ?? "Login failed. Please check your credentials and try again."
+                hasLoginError = true
                 showErrorAlert = true
             }
         }

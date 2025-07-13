@@ -10,6 +10,8 @@ import SwiftUI
 struct RegisterInputView: View {
     @ObservedObject var viewModel: UserAuthViewModel = .shared
     @State private var emailInput: String = ""
+    @State private var emailError: String? = nil
+    @State private var isEmailTaken: Bool = false
     var placeholder: String = "yourname@email.com"
     private var isFormValid: Bool {
         !emailInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -62,9 +64,30 @@ struct RegisterInputView: View {
                             .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                         
                         TextField(placeholder, text: $emailInput)
-                            .textFieldStyle(CustomTextFieldStyle())
+                            .textFieldStyle(ErrorTextFieldStyle(hasError: isEmailTaken))
                             .textContentType(.emailAddress)
                             .textInputAutocapitalization(.never)
+                            .onChange(of: emailInput) { newValue in
+                                // Simulate email taken error for demo (replace with real check)
+                                if newValue.lowercased() == "user@example.com" {
+                                    isEmailTaken = true
+                                    emailError = "This email has already been used. Try signing in instead."
+                                } else {
+                                    isEmailTaken = false
+                                    emailError = nil
+                                }
+                            }
+                    }
+                    
+                    // Email Error Message
+                    if let emailError = emailError, isEmailTaken {
+                        ZStack {
+                            Text(emailError)
+                                .font(Font.custom("Onest", size: 14).weight(.medium))
+                                .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
+                        }
+                        .frame(width: 363, height: 38)
+                        .padding(.top, -16)
                     }
                     
                     // Continue Button
