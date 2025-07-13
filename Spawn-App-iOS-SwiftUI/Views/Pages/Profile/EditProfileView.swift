@@ -435,7 +435,7 @@ struct InterestsSection: View {
                     GridItem(.flexible()),
                     GridItem(.flexible())
                 ], spacing: 8) {
-                    ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                    ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
                         InterestChipView(interest: interest) {
                             removeInterest(interest)
                         }
@@ -567,6 +567,18 @@ struct SocialMediaField: View {
                             .foregroundColor(universalAccentColor.opacity(0.7))
                             .font(.subheadline)
                     }
+                
+                // Clear button - only show if text is not empty
+                if !text.isEmpty {
+                    Button(action: {
+                        text = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.red)
+                            .font(.system(size: 18))
+                    }
+                    .padding(.trailing, 4)
+                }
                 
                 Spacer()
             }

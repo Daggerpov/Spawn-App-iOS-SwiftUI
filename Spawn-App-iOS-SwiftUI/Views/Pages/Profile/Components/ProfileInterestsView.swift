@@ -146,7 +146,7 @@ struct ProfileInterestsView: View {
                 } else {
                     // Interests as chips with flexible layout
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                        ForEach(profileViewModel.userInterests, id: \.self) { interest in
+                        ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
                             interestChip(interest: interest)
                         }
                     }
