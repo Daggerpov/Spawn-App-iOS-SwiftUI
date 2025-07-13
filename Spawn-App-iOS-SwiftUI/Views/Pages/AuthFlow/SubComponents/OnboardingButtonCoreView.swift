@@ -50,10 +50,19 @@ struct OnboardingButtonCoreView: View {
         )
         .animation(.easeInOut(duration: 0.15), value: scale)
         .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            isPressed = pressing
-            scale = pressing ? 0.95 : 1.0
-        }, perform: {})
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isPressed {
+                        isPressed = true
+                        scale = 0.95
+                    }
+                }
+                .onEnded { _ in
+                    isPressed = false
+                    scale = 1.0
+                }
+        )
     }
 }
 

@@ -262,17 +262,35 @@ class ActivityCreationViewModel: ObservableObject {
 	func validateActivityForm() async {
         // Check title
         let trimmedTitle = activity.title?.trimmingCharacters(in: .whitespaces) ?? ""
+        print("🔍 DEBUG: Validating form...")
+        print("🔍 DEBUG: - Raw title: '\(activity.title ?? "nil")'")
+        print("🔍 DEBUG: - Trimmed title: '\(trimmedTitle)'")
+        print("🔍 DEBUG: - Title is empty: \(trimmedTitle.isEmpty)")
+        
         await MainActor.run {
             isTitleValid = !trimmedTitle.isEmpty
+            print("🔍 DEBUG: - Title valid result: \(isTitleValid)")
+            
             // Check if at least one friend is invited
             isInvitesValid = !selectedFriends.isEmpty
+            print("🔍 DEBUG: - Selected friends count: \(selectedFriends.count)")
+            print("🔍 DEBUG: - Invites valid result: \(isInvitesValid)")
+            
             // Check if location is valid
-            isLocationValid = activity.location != nil && 
-                             !activity.location!.name.trimmingCharacters(in: .whitespaces).isEmpty && 
-                             (activity.location!.latitude != 0 || activity.location!.longitude != 0)
+            let hasLocation = activity.location != nil
+            let hasLocationName = activity.location?.name.trimmingCharacters(in: .whitespaces).isEmpty == false
+            let hasCoordinates = (activity.location?.latitude != 0 || activity.location?.longitude != 0)
+            
+            print("🔍 DEBUG: - Has location: \(hasLocation)")
+            print("🔍 DEBUG: - Has location name: \(hasLocationName)")
+            print("🔍 DEBUG: - Has coordinates: \(hasCoordinates)")
+            
+            isLocationValid = hasLocation && hasLocationName && hasCoordinates
+            print("🔍 DEBUG: - Location valid result: \(isLocationValid)")
             
             // Update overall form validity
             isFormValid = isTitleValid && isInvitesValid && isLocationValid
+            print("🔍 DEBUG: - Overall form valid: \(isFormValid)")
         }
 	}
 
@@ -313,30 +331,50 @@ class ActivityCreationViewModel: ObservableObject {
 	func createActivity() async {
 		// Check if activity creation is already in progress
 		if isCreatingActivity {
+			print("🔍 DEBUG: Activity creation already in progress, returning early")
 			return
 		}
 
+		print("🔍 DEBUG: Starting activity creation process")
 		await MainActor.run {
 			isCreatingActivity = true
 		}
 
 		// Map selected friends to their IDs
 		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
+		print("🔍 DEBUG: Selected friends count: \(selectedFriends.count)")
 		
 		// Update the activity with the current date and duration
 		updateActivityDuration()
 		updateActivityType()
 		
+		print("🔍 DEBUG: Activity title: '\(activity.title ?? "nil")'")
+		print("🔍 DEBUG: Activity location: \(activity.location?.name ?? "nil")")
+		print("🔍 DEBUG: Activity location coordinates: \(activity.location?.latitude ?? 0), \(activity.location?.longitude ?? 0)")
+		print("🔍 DEBUG: Selected activity type: \(selectedActivityType?.title ?? "nil")")
+		
 		// Validate form before creating
 		await validateActivityForm()
 		
+		print("🔍 DEBUG: Form validation results:")
+		print("🔍 DEBUG: - Title valid: \(isTitleValid)")
+		print("🔍 DEBUG: - Invites valid: \(isInvitesValid)")
+		print("🔍 DEBUG: - Location valid: \(isLocationValid)")
+		print("🔍 DEBUG: - Overall form valid: \(isFormValid)")
+		
 		guard isFormValid else {
-			isCreatingActivity = false
+			print("🔍 DEBUG: Form validation failed, not making API call")
+			await MainActor.run {
+				isCreatingActivity = false
+			}
 			return
 		}
 		
+		print("🔍 DEBUG: Form validation passed, making API call")
+		
 		do {
 			guard let url = URL(string: APIService.baseURL + "activities") else {
+				print("🔍 DEBUG: Invalid URL construction")
 				await MainActor.run {
 					creationMessage = "Failed to create activity. Invalid URL."
 				}
@@ -344,7 +382,13 @@ class ActivityCreationViewModel: ObservableObject {
 				return
 			}
 			
+			print("🔍 DEBUG: Making API call to: \(url.absoluteString)")
+			print("🔍 DEBUG: Using MockAPIService.isMocking: \(MockAPIService.isMocking)")
+			
 			let createdActivity: FullFeedActivityDTO? = try await apiService.sendData(activity, to: url, parameters: nil)
+			
+			print("🔍 DEBUG: API call completed")
+			print("🔍 DEBUG: Created activity: \(createdActivity != nil ? "success" : "nil")")
 			
 			if let createdActivity = createdActivity {
 				// Cache the created activity
@@ -357,12 +401,14 @@ class ActivityCreationViewModel: ObservableObject {
 				)
 				
 				creationMessage = "Activity created successfully!"
+				print("🔍 DEBUG: Activity creation successful")
 			} else {
 				creationMessage = "Failed to create activity. Please try again."
+				print("🔍 DEBUG: Activity creation failed - received nil response")
 			}
 			
 		} catch {
-			print("Error creating activity: \(error)")
+			print("🔍 DEBUG: API call threw error: \(error)")
 			await MainActor.run {
 				creationMessage = "Failed to create activity. Please try again."
 			}

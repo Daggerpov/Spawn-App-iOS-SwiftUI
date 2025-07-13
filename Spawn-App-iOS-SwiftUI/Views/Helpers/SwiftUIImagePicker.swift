@@ -89,18 +89,16 @@ struct SwiftUIImagePicker: View {
         
         // Check if image needs resizing
         if image.size.width > maxDimension || image.size.height > maxDimension {
-            print("🔍 Resizing image from \(image.size) to max dimension \(maxDimension)")
             let scale = maxDimension / max(image.size.width, image.size.height)
             let newWidth = image.size.width * scale
             let newHeight = image.size.height * scale
-            let newSize = CGSize(width: newWidth, height: newHeight)
+            let targetSize = CGSize(width: newWidth, height: newHeight)
             
-            UIGraphicsBeginImageContextWithOptions(newSize, false, 0.0)
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()!
-            UIGraphicsEndImageContext()
+            let renderer = UIGraphicsImageRenderer(size: targetSize)
+            let resizedImage = renderer.image { _ in
+                image.draw(in: CGRect(origin: .zero, size: targetSize))
+            }
             
-            print("🔍 Resized image to \(resizedImage.size)")
             return resizedImage
         }
         

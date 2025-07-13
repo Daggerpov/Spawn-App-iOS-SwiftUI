@@ -25,6 +25,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		didSet {
 			if spawnUser != nil {
 				shouldNavigateToFeedView = true
+				// Mark onboarding as completed when user successfully authenticates
+				markOnboardingCompleted()
 			}
 		}
 	}
@@ -82,7 +84,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		
 		// Load onboarding completion status from UserDefaults
 		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
-		self.hasCompletedOnboarding = false // TODO flip back to true
 
         // Start minimum loading timer
         Task {
@@ -150,15 +151,25 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.hasCheckedSpawnUserExistence = false
 			self.isFirstLaunch = false // This is no longer first launch
 			
-			// Don't reset hasCompletedOnboarding - once completed, it stays completed
+			// Reset onboarding state on logout so user can see onboarding again
+			self.hasCompletedOnboarding = false
+			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
 		}
 	}
 	
 	// Mark onboarding as completed
 	func markOnboardingCompleted() {
 		Task { @MainActor in
-			hasCompletedOnboarding = false // TODO flip back to true
-			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding") // TODO flip back to true
+			hasCompletedOnboarding = true
+			UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+		}
+	}
+	
+	// Reset onboarding state for testing/debugging purposes
+	func resetOnboardingState() {
+		Task { @MainActor in
+			hasCompletedOnboarding = false
+			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
 		}
 	}
 

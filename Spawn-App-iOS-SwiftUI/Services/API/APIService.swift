@@ -551,7 +551,6 @@ class APIService: IAPIService {
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
 		throws
 	{
-        print("Handling auth tokens...")
 		// Check if this is an auth endpoint
 		let authEndpoints = [
 			APIService.baseURL + "auth/sign-in",
@@ -561,7 +560,6 @@ class APIService: IAPIService {
             APIService.baseURL + "auth/user/details"
 		]
         guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
-            print("Not an auth endpoint that receives tokens. Skipping")
             return
         }
         print("Checking for access token header")
@@ -613,7 +611,9 @@ class APIService: IAPIService {
 		let whitelistedEndpoints = [
 			"auth/register/verification/send",
 			"auth/register/oauth",
-            "auth/register/verification/check"
+            "auth/register/verification/check",
+			"auth/sign-in",
+			"auth/login"
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints

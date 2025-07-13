@@ -62,16 +62,23 @@ struct AuthProviderButtonView: View {
         )
         .animation(.easeInOut(duration: 0.15), value: scale)
         .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            isPressed = pressing
-            scale = pressing ? 0.95 : 1.0
-            
-            // Haptic feedback on press
-            if pressing {
-                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                impactGenerator.impactOccurred()
-            }
-        }, perform: {})
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isPressed {
+                        isPressed = true
+                        scale = 0.95
+                        
+                        // Haptic feedback on press
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                    }
+                }
+                .onEnded { _ in
+                    isPressed = false
+                    scale = 1.0
+                }
+        )
 	}
     
     private func getButtonBackgroundColor() -> Color {

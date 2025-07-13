@@ -170,7 +170,7 @@ struct ActivityTypeView: View {
         
         // Check if this would be an invalid drop target
         let isInvalidDropTarget = isDropTarget && draggedItem != nil && 
-                                  !draggedItem!.isPinned && activityTypeDTO.isPinned
+                                  wouldBeInvalidDrop(draggedItem: draggedItem!, destinationIndex: index)
         
         return ActivityTypeCard(
             activityTypeDTO: activityTypeDTO,
@@ -235,6 +235,32 @@ struct ActivityTypeView: View {
         dragOverItem = nil
     }
     
+    private func wouldBeInvalidDrop(draggedItem: ActivityTypeDTO, destinationIndex: Int) -> Bool {
+        // If the dragged item is pinned, it can be moved anywhere among pinned items
+        if draggedItem.isPinned {
+            return false
+        }
+        
+        // If the dragged item is unpinned, check if the destination would place it before any pinned items
+        let sortedTypes = viewModel.sortedActivityTypes
+        
+        // Find the index of the last pinned item
+        var lastPinnedIndex = -1
+        for (index, item) in sortedTypes.enumerated() {
+            if item.isPinned {
+                lastPinnedIndex = index
+            }
+        }
+        
+        // If there are no pinned items, any position is valid
+        if lastPinnedIndex == -1 {
+            return false
+        }
+        
+        // If the destination is before or at the last pinned item position, it's invalid
+        return destinationIndex <= lastPinnedIndex
+    }
+    
     private func handleDrop(for activityTypeDTO: ActivityTypeDTO, at index: Int) -> Bool {
         guard let draggedItem = draggedItem else { return false }
         
@@ -247,10 +273,8 @@ struct ActivityTypeView: View {
             return false 
         }
         
-        let destinationItem = viewModel.sortedActivityTypes[destinationIndex]
-        
-        // Validate constraints before allowing drop
-        if !draggedItem.isPinned && destinationItem.isPinned {
+        // Validate constraints before allowing drop using the improved logic
+        if wouldBeInvalidDrop(draggedItem: draggedItem, destinationIndex: destinationIndex) {
             // Show error feedback
             let errorGenerator = UINotificationFeedbackGenerator()
             errorGenerator.notificationOccurred(.error)
