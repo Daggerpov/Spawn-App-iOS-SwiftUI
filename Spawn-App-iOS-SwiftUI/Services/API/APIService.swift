@@ -276,6 +276,8 @@ class APIService: IAPIService {
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
+        // Handle auth tokens if present
+        try handleAuthTokens(from: httpResponse, for: finalURL)
 
 		// Handle 204 No Content response
 		if httpResponse.statusCode == 204 {
@@ -549,23 +551,36 @@ class APIService: IAPIService {
 	private func handleAuthTokens(from response: HTTPURLResponse, for url: URL)
 		throws
 	{
+        print("Handling auth tokens...")
 		// Check if this is an auth endpoint
 		let authEndpoints = [
 			APIService.baseURL + "auth/sign-in",
 			APIService.baseURL + "auth/login",
             APIService.baseURL + "auth/register/oauth",
-            APIService.baseURL + "auth/register/verification/check"
+            APIService.baseURL + "auth/register/verification/check",
+            APIService.baseURL + "auth/user/details"
 		]
-
-		guard
-			authEndpoints.contains(where: { url.absoluteString.contains($0) }),
-			let accessToken = response.allHeaderFields["Authorization"]
-				as? String,
-			let refreshToken = response.allHeaderFields["x-refresh-token"]
-				as? String
+        guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
+            print("Not an auth endpoint that receives tokens. Skipping")
+            return
+        }
+        print("Checking for access token header")
+		guard let accessToken = response.allHeaderFields["Authorization"] as? String else {
+            print("ERROR: Could not locate access token header")
+            return
+        }
+        print("Found access token header")
+        
+        print("Checking for refresh token header")
+        guard let refreshToken = response.allHeaderFields["x-refresh-token"] as? String
 		else {
+            print("ERROR: Could not locate refresh token header")
 			return
 		}
+        print("Found refresh token header")
+        
+        print("Access token: \(accessToken)")
+        print("Refresh token: \(refreshToken)")
 
 		// Remove "Bearer " prefix from access token
 		let cleanAccessToken = accessToken.replacingOccurrences(

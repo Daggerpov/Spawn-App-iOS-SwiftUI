@@ -82,6 +82,18 @@ struct RegisterInputView: View {
                 }
                 .padding(.horizontal, 40)
                 
+                // Error Message
+                if let error = viewModel.errorMessage {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundColor(.red)
+                        Text(error)
+                            .font(.onestRegular(size: 16))
+                            .foregroundColor(.red)
+                    }
+                    .padding(.top, 8)
+                    .padding(.horizontal, 40)
+                }
                 
                 // Divider with "or"
                 HStack {
@@ -126,7 +138,7 @@ struct RegisterInputView: View {
         }
         .background(Color(.systemBackground))
         .navigationDestination(isPresented: $viewModel.shouldNavigateToVerificationCodeView, destination: {VerificationCodeView(viewModel: viewModel)})
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView()})
+        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsViewOAuth, destination: {UserDetailsInputView(isOAuthUser: true)})
         .navigationBarHidden(true)
     }
 }
