@@ -307,8 +307,15 @@ struct FriendsTabView: View {
 		// Set only the URL string to the pasteboard
 		UIPasteboard.general.string = profileURL.absoluteString
 		
-		// Show a brief toast or notification that the URL was copied
-		// You might want to add a toast notification here
+		// Show notification toast
+		DispatchQueue.main.async {
+			InAppNotificationManager.shared.showNotification(
+				title: "Link copied to clipboard",
+				message: "Profile link has been copied to your clipboard",
+				type: .success,
+				duration: 10.0
+			)
+		}
 	}
 	
 	private func shareProfile(for user: Nameable) {

@@ -19,13 +19,12 @@ struct HeaderView: View {
 						"Hey \(user.name?.components(separatedBy: " ").first ?? user.username)! 👋"
 					)
 					.font(.onestBold(size: 32))
-					.foregroundColor(.white)
+					.foregroundColor(universalAccentColor)
 					Spacer()
 				}
 				.font(.onestBold(size: 32))
 				Spacer().frame(height: 5)
 			}
-			.foregroundColor(universalAccentColor)
 			.frame(alignment: .leading)
 			Spacer()
 			Spacer()

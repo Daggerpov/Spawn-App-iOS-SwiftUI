@@ -1033,8 +1033,6 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
-		
-		print("✅ Successfully cleared calendar caches on backend")
 	}
 }
 

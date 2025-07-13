@@ -76,7 +76,6 @@ class AppCache: ObservableObject {
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
             try await apiService.clearCalendarCaches()
-            print("✅ Successfully cleared calendar caches on startup")
         } catch {
             print("⚠️ Failed to clear calendar caches on startup: \(error.localizedDescription)")
             // Don't block cache validation if this fails

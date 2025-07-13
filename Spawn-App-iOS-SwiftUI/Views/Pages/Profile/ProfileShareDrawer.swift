@@ -71,8 +71,11 @@ struct ProfileShareDrawer: View {
                         Button(action: {
                             let impactGenerator = UIImpactFeedbackGenerator(style: .light)
                             impactGenerator.impactOccurred()
-                            showShareSheet = false
                             copyLink()
+                            // Delay dismissing the sheet to allow notification to show
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                showShareSheet = false
+                            }
                         }) {
                             VStack(spacing: 8) {
                                 ZStack {
@@ -210,12 +213,15 @@ struct ProfileShareDrawer: View {
         let impactGenerator = UIImpactFeedbackGenerator(style: .light)
         impactGenerator.impactOccurred()
         
-        // Show notification toast
-        InAppNotificationManager.shared.showNotification(
-            title: "Link copied to clipboard",
-            message: "Profile link has been copied to your clipboard",
-            type: .success
-        )
+        // Show notification toast with a small delay to ensure sheet dismissal doesn't interfere
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            InAppNotificationManager.shared.showNotification(
+                title: "Link copied to clipboard",
+                message: "Profile link has been copied to your clipboard",
+                type: .success,
+                duration: 10.0
+            )
+        }
     }
     
     private func shareViaWhatsApp() {
