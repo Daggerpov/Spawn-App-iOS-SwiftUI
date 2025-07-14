@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FriendsTabView: View {
-	@StateObject private var viewModel: FriendsTabViewModel
+	@ObservedObject var viewModel: FriendsTabViewModel
 	@StateObject var userAuth = UserAuthViewModel.shared
 	let user: BaseUserDTO
 
@@ -31,13 +31,18 @@ struct FriendsTabView: View {
 	@State private var blockReason: String = ""
 	@State private var navigateToProfile: Bool = false
 
-	init(user: BaseUserDTO) {
+	init(user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil) {
 		self.user = user
-		let vm = FriendsTabViewModel(
-			userId: user.id,
-			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService())
-		self._viewModel = StateObject(wrappedValue: vm)
+		
+		if let existingViewModel = viewModel {
+			self.viewModel = existingViewModel
+		} else {
+			// Fallback for when no view model is provided (like in previews)
+			self.viewModel = FriendsTabViewModel(
+				userId: user.id,
+				apiService: MockAPIService.isMocking
+					? MockAPIService(userId: user.id) : APIService())
+		}
 	}
 
 	var body: some View {
@@ -192,7 +197,7 @@ struct FriendsTabView: View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.filteredFriends.count > 0 {
                 HStack{
-                    Text("Friends")
+                    Text("Your Friends (\(viewModel.filteredFriends.count))")
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()

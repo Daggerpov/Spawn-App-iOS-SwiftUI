@@ -9,22 +9,27 @@ import SwiftUI
 
 struct FriendsView: View {
     let user: BaseUserDTO
-    @StateObject private var viewModel: FriendsTabViewModel
+    @ObservedObject var viewModel: FriendsTabViewModel
     
     // Deep link parameters
     @Binding var deepLinkedProfileId: UUID?
     @Binding var shouldShowDeepLinkedProfile: Bool
     @State private var isFetchingDeepLinkedProfile = false
     
-    init(user: BaseUserDTO, deepLinkedProfileId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedProfile: Binding<Bool> = .constant(false)) {
+    init(user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil, deepLinkedProfileId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedProfile: Binding<Bool> = .constant(false)) {
         self.user = user
         self._deepLinkedProfileId = deepLinkedProfileId
         self._shouldShowDeepLinkedProfile = shouldShowDeepLinkedProfile
-        let vm = FriendsTabViewModel(
-            userId: user.id,
-            apiService: MockAPIService.isMocking
-                ? MockAPIService(userId: user.id) : APIService())
-        self._viewModel = StateObject(wrappedValue: vm)
+        
+        if let existingViewModel = viewModel {
+            self.viewModel = existingViewModel
+        } else {
+            // Fallback for when no view model is provided (like in previews)
+            self.viewModel = FriendsTabViewModel(
+                userId: user.id,
+                apiService: MockAPIService.isMocking
+                    ? MockAPIService(userId: user.id) : APIService())
+        }
     }
 
     var body: some View {
@@ -38,7 +43,7 @@ struct FriendsView: View {
                     }
                     .padding(.horizontal)
 
-                    FriendsTabView(user: user)
+                    FriendsTabView(user: user, viewModel: viewModel)
                 }
                 .padding()
                 .background(universalBackgroundColor)
