@@ -29,7 +29,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				if hasCompletedOnboarding {
 					shouldNavigateToFeedView = true
 				}
-				isLoggedIn = true
+				// Only set isLoggedIn for fully active users, not for users still in onboarding
+				// The isLoggedIn flag will be set explicitly in navigation logic for active users
 			}
 		}
 	}
@@ -1192,15 +1193,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/register/verification/check") {
                 let verificationDTO = EmailVerificationVerifyDTO(email: email, verificationCode: code)
-                let response: BaseUserDTO? = try await self.apiService.sendData(verificationDTO, to: url, parameters: nil)
+                let response: AuthResponseDTO? = try await self.apiService.sendData(verificationDTO, to: url, parameters: nil)
                 
                 await MainActor.run {
-                    if let user = response {
-                        // Success - navigate to user details view
-                        self.spawnUser = user
-                        self.shouldNavigateToUserDetailsView = true
-                        self.email = user.email
+                    if let authResponse = response {
+                        // Success - set user and navigate based on status
+                        self.spawnUser = authResponse.user
+                        self.email = authResponse.user.email
                         self.errorMessage = nil
+                        
+                        // Navigate based on user status
+                        self.navigateBasedOnUserStatus(authResponse: authResponse)
                     } else {
                         // Handle error
                         self.errorMessage = "Invalid verification code"
