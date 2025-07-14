@@ -44,15 +44,20 @@ struct BackspaceDetectingTextField: UIViewRepresentable {
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
             let currentText = textField.text ?? ""
             
-            // Detect backspace on empty field
-            if string.isEmpty && currentText.isEmpty {
-                parent.onBackspace()
-                return false
-            }
-            
-            // Handle backspace on non-empty field
-            if string.isEmpty && !currentText.isEmpty {
-                return true
+            // Detect backspace (replacement string is empty)
+            if string.isEmpty {
+                if currentText.isEmpty {
+                    // Backspace on empty field - move to previous field
+                    parent.onBackspace()
+                    return false
+                } else {
+                    // Backspace on non-empty field - clear current field and move to previous
+                    DispatchQueue.main.async {
+                        self.parent.text = ""
+                        self.parent.onBackspace()
+                    }
+                    return false
+                }
             }
             
             // Only allow single digits
@@ -198,7 +203,7 @@ struct VerificationCodeView: View {
             BackspaceDetectingTextField(
                 text: createBinding(for: index),
                 onBackspace: {
-                    handleBackspaceOnEmpty(at: index)
+                    handleBackspace(at: index)
                 },
                 keyboardType: .numberPad,
                 textAlignment: .center,
@@ -237,11 +242,8 @@ struct VerificationCodeView: View {
             if index < 5 {
                 focusedIndex = index + 1
             }
-        } else if !oldValue.isEmpty && newValue.isEmpty {
-            // Backspace pressed on field with content - just clear it and stay
-            // The custom text field already handles this
-            return
         }
+        // Note: Backspace behavior is now handled entirely in BackspaceDetectingTextField
     }
     
     private var verifyButton: some View {
@@ -296,12 +298,10 @@ struct VerificationCodeView: View {
     
 
     
-    private func handleBackspaceOnEmpty(at index: Int) {
-        // This is called when backspace is pressed on an empty field
+    private func handleBackspace(at index: Int) {
+        // This is called when backspace is pressed on any field
         if index > 0 {
-            // Move to previous field and clear it
-            code[index - 1] = ""
-            previousCode[index - 1] = ""
+            // Move focus to previous field
             focusedIndex = index - 1
         }
     }
