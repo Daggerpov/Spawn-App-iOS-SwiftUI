@@ -52,20 +52,36 @@ struct ActivityCardPopupView: View {
                     // Spawn In button and attendees
                     ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
                     
-                    // Map view - conditionally shown based on expansion state
-                    if isExpanded {
-                        Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
-                            MapAnnotation(coordinate: pin.coordinate) {
-                                Image(systemName: "mappin")
-                                    .font(.title)
-                                    .foregroundColor(.red)
+                    // Map and location info container - always visible
+                    if activity.location != nil {
+                        ZStack {
+                            // Map background
+                            Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
+                                MapAnnotation(coordinate: pin.coordinate) {
+                                    Image(systemName: "mappin")
+                                        .font(.title)
+                                        .foregroundColor(.red)
+                                }
+                            }
+                            .frame(height: 155)
+                            .cornerRadius(12)
+                            
+                            // Location info overlay positioned at bottom
+                            VStack {
+                                Spacer()
+                                locationInfoView
+                                    .padding(.horizontal, 8)
+                                    .padding(.bottom, 12)
                             }
                         }
-                        .frame(height: 175)
+                        .frame(height: 155)
+                        .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
                         .cornerRadius(12)
-                        
-                        // Location details
-                        directionRow
+                    }
+                    
+                    // Additional map details when expanded
+                    if isExpanded {
+                        // Any additional expanded content can go here
                     }
                     
                     // Chat section
@@ -199,6 +215,58 @@ extension ActivityCardPopupView {
         }
         .background(Color.black.opacity(0.2))
         .cornerRadius(12)
+    }
+    
+    var locationInfoView: some View {
+        HStack(spacing: 8) {
+            // Location info pill
+            HStack(spacing: 8) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                Text("\(viewModel.getDisplayString(activityInfoType: .location)) • \(viewModel.getDisplayString(activityInfoType: .distance)) away")
+                    .font(.custom("Onest", size: 14).weight(.medium))
+                    .foregroundColor(.white)
+            }
+            .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+            .background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
+            .cornerRadius(12)
+            
+            // View in Maps button
+            Button(action: {
+                // Create source map item from user's current location
+                let sourceMapItem = MKMapItem.forCurrentLocation()
+                
+                // Create destination map item from activity location
+                let destinationMapItem = mapViewModel.mapItem
+                
+                // Open Maps with directions from current location to activity location
+                MKMapItem.openMaps(
+                    with: [sourceMapItem, destinationMapItem],
+                    launchOptions: [
+                        MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault,
+                        MKLaunchOptionsShowsTrafficKey: true
+                    ]
+                )
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "map")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+                    Text("View in Maps")
+                        .font(.custom("Onest", size: 14).weight(.semibold))
+                        .foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+                }
+                .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                .background(.white)
+                .cornerRadius(12)
+                .shadow(
+                    color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 16, y: 4
+                )
+            }
+            
+            Spacer()
+        }
     }
 }
 
