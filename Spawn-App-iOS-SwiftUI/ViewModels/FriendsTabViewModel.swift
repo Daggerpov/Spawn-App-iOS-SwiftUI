@@ -62,6 +62,20 @@ class FriendsTabViewModel: ObservableObject {
 					}
 				}
 				.store(in: &cancellables)
+        
+        // Subscribe to AppCache friend requests updates
+        appCache.$friendRequests
+            .sink { [weak self] cachedFriendRequests in
+                guard let self = self else { return }
+                let userFriendRequests = cachedFriendRequests[self.userId] ?? []
+                if !userFriendRequests.isEmpty {
+                    self.incomingFriendRequests = userFriendRequests
+                    if !self.isSearching {
+                        self.filteredIncomingFriendRequests = userFriendRequests
+                    }
+                }
+            }
+            .store(in: &cancellables)
 		}
 	}
     
@@ -279,26 +293,37 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-		// full path: /api/v1/friend-requests/incoming/{userId}
-		if let url = URL(
-			string: APIService.baseURL + "friend-requests/incoming/\(userId)")
-		{
-			do {
-				let fetchedIncomingFriendRequests: [FetchFriendRequestDTO] =
-					try await self.apiService.fetchData(
-						from: url, parameters: nil)
+    // Check cache first
+    let cachedRequests = appCache.getCurrentUserFriendRequests()
+    if !cachedRequests.isEmpty {
+        await MainActor.run {
+            self.incomingFriendRequests = cachedRequests
+        }
+        return
+    }
+    
+    // full path: /api/v1/friend-requests/incoming/{userId}
+    if let url = URL(
+        string: APIService.baseURL + "friend-requests/incoming/\(userId)")
+    {
+        do {
+            let fetchedIncomingFriendRequests: [FetchFriendRequestDTO] =
+                try await self.apiService.fetchData(
+                    from: url, parameters: nil)
 
-				// Ensure updating on the main thread
-				await MainActor.run {
-					self.incomingFriendRequests = fetchedIncomingFriendRequests
-				}
-			} catch {
-				await MainActor.run {
-					self.incomingFriendRequests = []
-				}
-			}
-		}
-	}
+            // Ensure updating on the main thread
+            await MainActor.run {
+                self.incomingFriendRequests = fetchedIncomingFriendRequests
+                // Update the cache
+                self.appCache.updateFriendRequestsForUser(fetchedIncomingFriendRequests, userId: userId)
+            }
+        } catch {
+            await MainActor.run {
+                self.incomingFriendRequests = []
+            }
+        }
+    }
+}
 
 	internal func fetchOutgoingFriendRequests() async {
 		// full path: /api/v1/friend-requests/sent/{userId}
