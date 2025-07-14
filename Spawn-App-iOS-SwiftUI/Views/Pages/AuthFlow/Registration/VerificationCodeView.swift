@@ -4,6 +4,7 @@ import UIKit
 struct BackspaceDetectingTextField: UIViewRepresentable {
     @Binding var text: String
     let onBackspace: () -> Void
+    let onPaste: ((String) -> Void)?
     var keyboardType: UIKeyboardType = .numberPad
     var textAlignment: NSTextAlignment = .center
     var font: UIFont = UIFont.systemFont(ofSize: 24)
@@ -60,17 +61,18 @@ struct BackspaceDetectingTextField: UIViewRepresentable {
                 }
             }
             
-            // Only allow single digits
-			if string.count > 1 || (
-				string.count == 1 && (
-					(
-						string
-							.rangeOfCharacter(
-								from: CharacterSet.decimalDigits.inverted
-							)?.isEmpty
-					) == nil
-				) == false
-			) {
+            // Check if this is a paste operation (multiple characters)
+            if string.count > 1 {
+                // Filter to only digits
+                let digits = string.filter { $0.isNumber }
+                if !digits.isEmpty {
+                    parent.onPaste?(digits)
+                }
+                return false
+            }
+            
+            // Only allow single digits for regular input
+            if string.count == 1 && string.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) != nil {
                 return false
             }
             
@@ -205,6 +207,9 @@ struct VerificationCodeView: View {
                 onBackspace: {
                     handleBackspace(at: index)
                 },
+                onPaste: { pastedText in
+                    handlePaste(pastedText: pastedText, startingAt: index)
+                },
                 keyboardType: .numberPad,
                 textAlignment: .center,
                 font: UIFont(name: "Onest-Regular", size: 24) ?? UIFont.systemFont(ofSize: 24),
@@ -216,9 +221,7 @@ struct VerificationCodeView: View {
                 handleTextFieldChange(at: index, oldValue: previousCode[index], newValue: newValue)
                 previousCode[index] = newValue
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
-                handlePaste()
-            }
+
         }
         .onTapGesture {
             focusedIndex = index
@@ -306,13 +309,10 @@ struct VerificationCodeView: View {
         }
     }
     
-    private func handlePaste() {
-        // Get clipboard content
-        guard let pasteboardString = UIPasteboard.general.string else { return }
-        
-        // Filter to only digits and take first 6
-        let digits = pasteboardString.filter { $0.isNumber }
-        let digitArray = Array(digits.prefix(6))
+    private func handlePaste(pastedText: String, startingAt startIndex: Int) {
+        // Filter to only digits
+        let digits = pastedText.filter { $0.isNumber }
+        let digitArray = Array(digits)
         
         // Only handle if we have digits
         if !digitArray.isEmpty {
@@ -320,7 +320,7 @@ struct VerificationCodeView: View {
             code = Array(repeating: "", count: 6)
             previousCode = Array(repeating: "", count: 6)
             
-            // Fill boxes with pasted digits
+            // Fill boxes with pasted digits starting from the beginning
             for (i, digit) in digitArray.enumerated() {
                 if i < 6 {
                     code[i] = String(digit)

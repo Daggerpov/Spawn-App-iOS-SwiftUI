@@ -979,7 +979,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.markOnboardingCompleted()
                     }
                     self.determineSkipDestination(authResponse: authResponse)
-                    self.hasCheckedSpawnUserExistence = true
+                    // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
+                    // This ensures the minimum loading time is respected
                 }
             }
         } catch {
@@ -989,7 +990,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.spawnUser = nil
                 self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
-                self.hasCheckedSpawnUserExistence = true
+                // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
+                // This ensures the minimum loading time is respected
             }
         }
     }

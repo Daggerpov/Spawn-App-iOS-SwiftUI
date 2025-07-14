@@ -57,7 +57,16 @@ struct SpawnIntroView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    dismiss()
+                    let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+                    impactGenerator.impactOccurred()
+                    
+                    if currentPage > 0 {
+                        // Go back to previous page
+                        currentPage -= 1
+                    } else {
+                        // Exit onboarding from first page
+                        dismiss()
+                    }
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
