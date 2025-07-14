@@ -61,7 +61,11 @@ struct UserDetailsInputView: View {
         VStack(spacing: 0) {
             // Navigation Bar
             HStack {
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    // Reset auth flow state when backing out of user details
+                    viewModel.resetAuthFlow()
+                    dismiss() 
+                }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))

@@ -147,6 +147,23 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	
 	func resetState() {
 		Task { @MainActor in
+			print("🔄 DEBUG: Resetting authentication state")
+			
+			// Clear friend requests cache for current user before clearing user data
+			if let currentUserId = self.spawnUser?.id {
+				AppCache.shared.clearFriendRequestsForUser(currentUserId)
+			}
+
+			// Clear tokens from Keychain
+			let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
+			let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
+
+			if accessTokenDeleted && refreshTokenDeleted {
+				print("✅ Successfully cleared auth tokens from Keychain")
+			} else {
+				print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
+			}
+
 			// Reset user state
 			self.errorMessage = nil
 			self.authProvider = nil
@@ -165,8 +182,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.shouldNavigateToUserInfoInputView = false
 			self.shouldNavigateToPhoneNumberView = false
 			self.shouldNavigateToVerificationCodeView = false
-			        self.shouldNavigateToUserDetailsView = false
-        self.secondsUntilNextVerificationAttempt = 30
+			self.shouldNavigateToUserDetailsView = false
+			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
 			self.authAlert = nil
 
@@ -179,12 +196,53 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.hasCheckedSpawnUserExistence = false
 			self.isFirstLaunch = false // This is no longer first launch
 			
-			// Reset onboarding state on logout so user can see onboarding again
-			self.hasCompletedOnboarding = false
-			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+			// Don't reset onboarding state on logout - users who have completed onboarding
+			// should be able to go directly to sign-in, not back through onboarding
 			
 			// Don't reset hasLaunchedBefore - app has already launched before
 			// This prevents the loading screen from showing again unnecessarily
+		}
+	}
+	
+	// Reset authentication flow state when navigating back during onboarding
+	func resetAuthFlow() {
+		Task { @MainActor in
+			print("🔄 DEBUG: Resetting auth flow state for back navigation")
+			
+			// Reset user authentication data
+			self.errorMessage = nil
+			self.authProvider = nil
+			self.externalUserId = nil
+			self.idToken = nil
+			self.isLoggedIn = false
+			self.spawnUser = nil
+			
+			self.name = nil
+			self.email = nil
+			self.profilePicUrl = nil
+			
+			self.isFormValid = false
+			
+			// Reset all navigation flags
+			self.shouldNavigateToFeedView = false
+			self.shouldNavigateToUserInfoInputView = false
+			self.shouldNavigateToPhoneNumberView = false
+			self.shouldNavigateToVerificationCodeView = false
+			self.shouldNavigateToUserDetailsView = false
+			self.shouldNavigateToUserOptionalDetailsInputView = false
+			self.shouldNavigateToUserToS = false
+			self.shouldSkipAhead = false
+			self.skipDestination = .none
+			
+			self.secondsUntilNextVerificationAttempt = 30
+			self.activeAlert = nil
+			self.authAlert = nil
+			
+			self.defaultPfpFetchError = false
+			self.defaultPfpUrlString = nil
+			
+			// Keep hasCheckedSpawnUserExistence true to avoid showing loading screen again
+			// Keep isFirstLaunch and hasCompletedOnboarding as they were
 		}
 	}
 	
@@ -748,6 +806,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 	
 	private func clearLocalDataAndLogout() async {
+		// Clear friend requests cache for current user before clearing user data
+		if let currentUserId = self.spawnUser?.id {
+			AppCache.shared.clearFriendRequestsForUser(currentUserId)
+		}
+		
 		// Clear tokens
 		var success = KeychainService.shared.delete(key: "accessToken")
 		if !success {

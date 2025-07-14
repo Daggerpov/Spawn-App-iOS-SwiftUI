@@ -25,7 +25,8 @@ struct RegisterInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Back action
+                    // Reset auth flow state when going back to sign in
+                    viewModel.resetAuthFlow()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
