@@ -192,7 +192,7 @@ struct InviteView: View {
                             let searchText = searchViewModel.searchText.lowercased()
                             return friend.username.lowercased().contains(searchText) ||
                                 friend.name?.lowercased().contains(searchText) == true ||
-                                friend.email.lowercased().contains(searchText)
+                                friend.email?.lowercased().contains(searchText) == true
                         }
                     
                     if filteredFriends.isEmpty {

@@ -180,7 +180,12 @@ struct RegisterInputView: View {
             Spacer()
         }
         .background(Color(.systemBackground))
+        // Navigation for email verification flow
         .navigationDestination(isPresented: $viewModel.shouldNavigateToVerificationCodeView, destination: {VerificationCodeView(viewModel: viewModel)})
+        // Navigation for OAuth flow - skip verification and go directly to user details
+        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView) {
+            UserDetailsInputView(isOAuthUser: true)
+        }
         .navigationBarHidden(true)
     }
 }

@@ -18,7 +18,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var profilePicture: String?
 	var name: String?
 	var bio: String?
-	var email: String
+	var email: String?
     var mutualFriendCount: Int?
     var sharedActivitiesCount: Int?
 
@@ -28,7 +28,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		profilePicture: String? = nil,
 		name: String? = nil,
 		bio: String? = nil,
-		email: String,
+		email: String?,
         mutualFriendCount: Int? = 0,
         sharedActivitiesCount: Int? = 0
 	) {

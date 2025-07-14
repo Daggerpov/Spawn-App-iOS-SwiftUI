@@ -248,24 +248,16 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     }
                     self.idToken = String(data: idTokenData, encoding: .utf8)
                     self.authProvider = .apple
+                    
+                    // Check user existence AFTER setting credentials
+                    await self.spawnFetchUserIfAlreadyExists()
                 }
-
-				// Check user existence AFTER setting credentials
-				Task { [weak self] in
-					guard let self = self else { return }
-					await self.spawnFetchUserIfAlreadyExists()
-				}
 			}
 		case .failure(let error):
 			Task { @MainActor in
 				self.errorMessage =
 					"Apple Sign-In failed: \(error.localizedDescription)"
 				print(self.errorMessage as Any)
-			}
-			// Check user existence AFTER setting credentials
-			Task { [weak self] in
-				guard let self = self else { return }
-				await self.spawnFetchUserIfAlreadyExists()
 			}
 		}
 	}
@@ -443,7 +435,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						)
 						
 					await MainActor.run {
-						self.spawnUser = authResponse.toBaseUserDTO()
+						self.spawnUser = authResponse.user
+                        self.isLoggedIn = true
 						
 						// Navigate based on user status from AuthResponseDTO
 						self.navigateBasedOnUserStatus(authResponse: authResponse)
@@ -1107,14 +1100,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     profilePictureUrl: profilePictureUrl
                 )
                 
-                            let response: AuthResponseDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
+            let response: AuthResponseDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
             
             await MainActor.run {
-                if let user = response {
+                if let authResponse = response {
                     // Success - use status-based navigation for OAuth users
-                    self.spawnUser = user.toBaseUserDTO()
-					self.navigateBasedOnUserStatus(authResponse: user)
-                    self.email = user.email
+                    self.spawnUser = authResponse.user
+					self.navigateBasedOnUserStatus(authResponse: authResponse)
+                    self.email = authResponse.user.email
                     self.errorMessage = nil
                 } else {
                     // Handle error
