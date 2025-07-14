@@ -37,69 +37,129 @@ struct ActivityCardPopupView: View {
                     .fill(Color.white.opacity(0.6))
                     .frame(width: 50, height: 4)
                     .padding(.top, 8)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 12)
                 
                 // Main card content
-                VStack(alignment: .leading, spacing: 16) {
-                    // Header with arrow and title
-                    HStack {
-                        Spacer()
-                    }
-                    
-                    // Event title and time
-                    titleAndTime
-                    
-                    // Spawn In button and attendees
-                    ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
-                    
-                    // Map and location info container - always visible
-                    if activity.location != nil {
-                        ZStack {
-                            // Map background
-                            Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
-                                MapAnnotation(coordinate: pin.coordinate) {
-                                    Image(systemName: "mappin")
-                                        .font(.title)
-                                        .foregroundColor(.red)
-                                }
-                            }
-                            .frame(height: 155)
-                            .cornerRadius(12)
-                            
-                            // Location info overlay positioned at bottom
-                            VStack {
-                                Spacer()
-                                locationInfoView
-                                    .padding(.horizontal, 8)
-                                    .padding(.bottom, 12)
-                            }
-                        }
-                        .frame(height: 155)
-                        .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
-                        .cornerRadius(12)
-                    }
-                    
-                    // Additional map details when expanded
-                    if isExpanded {
-                        // Any additional expanded content can go here
-                    }
-                    
-                    // Chat section
-                    ChatroomButtonView(activity: activity, activityColor: activityColor)
-                    
-                    // Additional spacing for collapsed state
-                    if !isExpanded {
-                        Spacer(minLength: 20)
-                    } else {
-                        Spacer(minLength: 40)
-                    }
-                }
-                .padding(.horizontal, 20)
+                mainCardContent
             }
             .background(activityColor.opacity(0.97))
             .cornerRadius(isExpanded ? 0 : 20)
             .shadow(radius: isExpanded ? 0 : 20)
             .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
+        }
+    }
+    
+        var mainCardContent: some View {
+        VStack(alignment: .leading, spacing: 12){
+            // Header with arrow and title
+            HStack {
+                Spacer()
+            }
+            
+            // Event title and time
+            titleAndTime
+            
+            // Spawn In button and attendees
+            ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
+            
+            // Map and location info container - always visible
+            if activity.location != nil {
+                mapAndLocationView
+            }
+            
+            // Chat section
+            ChatroomButtonView(activity: activity, activityColor: activityColor)
+            
+            // Bottom spacing to match design
+            Spacer(minLength: 20)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 20)
+    }
+    
+    var mapAndLocationView: some View {
+        ZStack(alignment: .bottom) {
+            // Map background
+            Map(coordinateRegion: $region, annotationItems: [mapViewModel]) { pin in
+                MapAnnotation(coordinate: pin.coordinate) {
+                    Image(systemName: "mappin")
+                        .font(.title)
+                        .foregroundColor(.red)
+                }
+            }
+            .frame(height: 200)
+            .cornerRadius(12)
+            .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+            
+            // Location info overlay at bottom
+            locationOverlay
+        }
+    }
+    
+    var locationOverlay: some View {
+        HStack {
+            // Location info on left
+            locationInfoSection
+            
+            Spacer()
+            
+            // View in Maps button on right
+            viewInMapsButton
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 12)
+    }
+    
+    var locationInfoSection: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "mappin.and.ellipse")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white)
+            
+            Text("\(viewModel.getDisplayString(activityInfoType: .location)) • \(viewModel.getDisplayString(activityInfoType: .distance)) away")
+                .font(Font.custom("Onest", size: 14).weight(.medium))
+                .foregroundColor(.white)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
+        .background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
+        .cornerRadius(10)
+    }
+    
+    var viewInMapsButton: some View {
+        Button(action: {
+            guard let location = activity.location else { return }
+            
+            let coordinate = CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+            let destinationMapItem = MKMapItem(placemark: MKPlacemark(coordinate: coordinate))
+            destinationMapItem.name = location.name
+            
+            let sourceMapItem = MKMapItem.forCurrentLocation()
+            
+            MKMapItem.openMaps(
+                with: [sourceMapItem, destinationMapItem],
+                launchOptions: [
+                    MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault,
+                    MKLaunchOptionsShowsTrafficKey: true
+                ]
+            )
+        }) {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.triangle.turn.up.right.diamond")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+                
+                Text("View in Maps")
+                    .font(.onestSemiBold(size: 14))
+                    .foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+            }
+            .padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
+            .background(.white)
+            .cornerRadius(10)
         }
     }
 }
@@ -264,8 +324,6 @@ extension ActivityCardPopupView {
                     color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 16, y: 4
                 )
             }
-            
-            Spacer()
         }
     }
 }
@@ -341,8 +399,8 @@ struct ParticipationButtonView: View {
                         .font(.onestMedium(size: 18))
                         .foregroundColor(participationColor)
                 }
-                .padding(.horizontal, 30)
-                .padding(.vertical, 10)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 8)
                 .background(.white)
                 .cornerRadius(12)
                 .scaleEffect(scale)
@@ -425,8 +483,8 @@ struct ChatroomButtonView: View {
                 }
                 Spacer()
             }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 18)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
             .background(Color.black.opacity(0.2))
             .cornerRadius(12)
         }
@@ -437,25 +495,55 @@ struct ChatroomButtonView: View {
     
     var profilePictures: some View {
         HStack {
-            Circle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Image(systemName: "person.fill")
-                        .foregroundColor(.white)
-                        .font(.system(size: 16))
-                )
+            let uniqueSenders = getUniqueChatSenders()
             
-            Circle()
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 30, height: 30)
-                .overlay(
-                    Image(systemName: "person.fill")
-                        .foregroundColor(.white)
-                        .font(.system(size: 12))
-                )
-                .offset(x: -15)
+            ForEach(Array(uniqueSenders.prefix(2).enumerated()), id: \.offset) { index, sender in
+                Group {
+                    if let pfpUrl = sender.profilePicture {
+                        if MockAPIService.isMocking {
+                            Image(pfpUrl)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: index == 0 ? 40 : 30, height: index == 0 ? 40 : 30)
+                                .clipShape(Circle())
+                        } else {
+                            CachedProfileImage(
+                                userId: sender.id,
+                                url: URL(string: pfpUrl),
+                                imageType: .chatMessage
+                            )
+                            .frame(width: index == 0 ? 40 : 30, height: index == 0 ? 40 : 30)
+                        }
+                    } else {
+                        Circle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: index == 0 ? 40 : 30, height: index == 0 ? 40 : 30)
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .foregroundColor(.white)
+                                    .font(.system(size: index == 0 ? 16 : 12))
+                            )
+                    }
+                }
+                .offset(x: index == 1 ? -15 : 0)
+            }
         }
+    }
+    
+    // Helper function to get unique senders from chat messages
+    private func getUniqueChatSenders() -> [BaseUserDTO] {
+        var uniqueSenders: [BaseUserDTO] = []
+        var seenUserIds: Set<UUID> = []
+        
+        // Get senders from most recent messages first
+        for chat in viewModel.chats.reversed() {
+            if !seenUserIds.contains(chat.senderUser.id) {
+                uniqueSenders.append(chat.senderUser)
+                seenUserIds.insert(chat.senderUser.id)
+            }
+        }
+        
+        return uniqueSenders
     }
 }
 

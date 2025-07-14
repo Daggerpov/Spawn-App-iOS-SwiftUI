@@ -11,8 +11,8 @@ import SwiftUI
 struct ParticipantsImagesView: View {
 	var activity: FullFeedActivityDTO
     let maxCount: Int = 2
-    let width: CGFloat = 28
-    let height: CGFloat = 28
+    let width: CGFloat = 48
+    let height: CGFloat = 48
     
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
