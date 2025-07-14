@@ -979,6 +979,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     self.spawnUser = authResponse.user
                     self.determineSkipDestination(authResponse: authResponse)
+                    self.hasCheckedSpawnUserExistence = true
                 }
             }
         } catch {
@@ -988,6 +989,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.spawnUser = nil
                 self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
+                self.hasCheckedSpawnUserExistence = true
             }
         }
     }
