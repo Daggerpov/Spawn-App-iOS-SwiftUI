@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import Security
 
 // Protocol to help handle Optional types in a generic way
 protocol OptionalProtocol {
@@ -17,6 +18,11 @@ extension Optional: OptionalProtocol {
 	static var nilValue: Self {
 		return nil
 	}
+}
+
+// MARK: - Error Response Structure
+struct ErrorResponse: Codable {
+	let message: String
 }
 
 class APIService: IAPIService {
@@ -149,22 +155,7 @@ class APIService: IAPIService {
 			// Retry the request with the new access token
 			data = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 		} else if httpResponse.statusCode != 200 {
-			errorStatusCode = httpResponse.statusCode
-			errorMessage =
-				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
-
-			// Try to parse error message from response if possible
-			if let errorJson = try? JSONSerialization.jsonObject(with: data)
-				as? [String: Any]
-			{
-				print("Error Response: \(errorJson)")
-			} else if let errorString = String(data: data, encoding: .utf8) {
-				print("Error Response (non-JSON): \(errorString)")
-			}
-
-			print(errorMessage ?? "no error message to log")
-			throw APIError.invalidStatusCode(
-				statusCode: httpResponse.statusCode)
+			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
 		}
 		
 		// Handle empty responses
@@ -270,11 +261,7 @@ class APIService: IAPIService {
 				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
 				return try APIService.makeDecoder().decode(U.self, from: newData)
 			}
-			errorMessage =
-				"invalid status code \(httpResponse.statusCode) for \(finalURL)"
-			print(errorMessage ?? "no error message to log")
-			throw APIError.invalidStatusCode(
-				statusCode: httpResponse.statusCode)
+			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
 		}
         // Handle auth tokens if present
         try handleAuthTokens(from: httpResponse, for: finalURL)
@@ -517,32 +504,10 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: "HTTP request failed")
 		}
 
-		// Specifically check for 409 Conflict to handle email already exists case
-		if httpResponse.statusCode == 409 {
-			print("Conflict detected (409): Email or username likely already in use")
-			
-			// Try to parse error message from response
-			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-			   let message = errorJson["message"] as? String {
-				print("Error response: \(message)")
-				errorMessage = message
-			}
-			
-			throw APIError.invalidStatusCode(statusCode: 409)
-		}
-
 		// Check for success - 200 OK or 201 Created
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
 			errorStatusCode = httpResponse.statusCode
-			errorMessage = "Invalid status code \(httpResponse.statusCode) for user creation"
-			
-			// Try to parse error message from response
-			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-			   let errorMessage = errorJson["message"] as? String {
-				print("Error response: \(errorMessage)")
-			}
-			
-			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
+			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
 		}
 
 		// Parse the response
@@ -1062,6 +1027,41 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
+	}
+
+	// MARK: - Error Parsing Methods
+	private func parseErrorMessage(from data: Data) -> String? {
+		// Try to parse as ErrorResponse structure
+		if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+			return errorResponse.message
+		}
+		
+		// Try to parse as generic JSON with message field
+		if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+		   let message = errorJson["message"] as? String {
+			return message
+		}
+		
+		// Try to parse as string response
+		if let errorString = String(data: data, encoding: .utf8), !errorString.isEmpty {
+			return errorString
+		}
+		
+		return nil
+	}
+	
+	private func createAPIError(statusCode: Int, data: Data) -> APIError {
+		let errorMessage = parseErrorMessage(from: data)
+		
+		if let message = errorMessage {
+			// Store the error message for the view model to use
+			self.errorMessage = message
+			print("API Error (\(statusCode)): \(message)")
+		} else {
+			print("API Error (\(statusCode)): No message available")
+		}
+		
+		return APIError.invalidStatusCode(statusCode: statusCode)
 	}
 }
 

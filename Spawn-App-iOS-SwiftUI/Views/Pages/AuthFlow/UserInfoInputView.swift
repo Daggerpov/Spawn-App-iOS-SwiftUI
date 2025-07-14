@@ -23,6 +23,11 @@ struct UserInfoInputView: View {
 	@State private var showImagePicker: Bool = false
 	@State private var showErrorAlert: Bool = false
 	@State private var errorMessage: String = ""
+	
+	// Error states for input fields
+	@State private var nameErrorState = InputFieldState()
+	@State private var emailErrorState = InputFieldState()
+	@State private var usernameErrorState = InputFieldState()
 
 	fileprivate func ProfilePic() -> some View {
 		Group {
@@ -59,181 +64,141 @@ struct UserInfoInputView: View {
 		}
 	}
 
+	// MARK: - Subviews for better compilation
+	
+	private var backButtonView: some View {
+		HStack {
+			Button(action: {
+				userAuth.resetState()
+			}) {
+				HStack {
+					Image(systemName: "arrow.left")
+						.font(.system(size: 20, weight: .bold))
+					Text("Back")
+						.font(.system(size: 16, weight: .semibold))
+				}
+				.foregroundColor(.white)
+				.padding(.leading, 16)
+			}
+			Spacer()
+		}
+		.padding(.top, 8)
+	}
+	
+	private var titleView: some View {
+		Text("Help your friends recognize you")
+			.font(.system(size: 30, weight: .semibold))
+			.foregroundColor(.white)
+			.multilineTextAlignment(.center)
+			.padding(.top, 20)
+	}
+	
+	private var profilePictureSection: some View {
+		ZStack {
+			ProfilePic()
+
+			Circle()
+				.fill(Color.black)
+				.frame(width: 38, height: 38)
+				.overlay(
+					Image(systemName: "plus")
+						.foregroundColor(.white)
+						.font(.system(size: 16, weight: .bold))
+				)
+				.offset(x: 55, y: 55)
+				.shadow(radius: 3)
+		}
+		.onTapGesture {
+			showImagePicker = true
+		}
+		.sheet(isPresented: $showImagePicker) {
+			SwiftUIImagePicker(selectedImage: $selectedImage)
+		}
+	}
+	
+	private var inputFieldsSection: some View {
+		VStack(spacing: 16) {
+			ErrorInputField(
+				placeholder: "Name",
+				text: Binding(
+					get: { userAuth.name ?? "" },
+					set: { userAuth.name = $0 }
+				),
+				hasError: nameErrorState.hasError,
+				errorMessage: nameErrorState.errorMessage
+			)
+
+			// Always show email field for Apple sign-ins
+			if userAuth.authProvider == .apple {
+				ErrorInputField(
+					placeholder: "your@email.com",
+					text: $email,
+					hasError: emailErrorState.hasError,
+					errorMessage: emailErrorState.errorMessage
+				)
+			}
+
+			ErrorInputField(
+				placeholder: "@username",
+				text: $username,
+				hasError: usernameErrorState.hasError,
+				errorMessage: usernameErrorState.errorMessage
+			)
+			.onChange(of: username) { newValue in
+				handleUsernameChange(newValue)
+			}
+		}
+		.padding(.horizontal, 32)
+	}
+	
+	private var submitButtonView: some View {
+		Button(action: {
+			handleSubmitAction()
+		}) {
+			ZStack {
+				RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
+					.fill(Color.white)
+					.frame(height: 55)
+
+				if isSubmitting {
+					ProgressView()
+						.progressViewStyle(CircularProgressViewStyle(tint: authPageBackgroundColor))
+				} else {
+					HStack {
+						Text("Enter Spawn")
+							.font(.system(size: 20, weight: .semibold))
+
+						Image(systemName: "arrow.right")
+							.resizable()
+							.frame(width: 20, height: 20)
+					}
+					.foregroundColor(authPageBackgroundColor)
+				}
+			}
+		}
+		.disabled(isSubmitting || !isUsernameValid || username.isEmpty)
+		.padding(.horizontal, 32)
+		.padding(.top, 16)
+	}
+
 	var body: some View {
 		NavigationStack {
 			ZStack {
-				// Background color
 				authPageBackgroundColor
 					.ignoresSafeArea()
 
 				VStack {
-					// Back button at the top, but respecting safe area
-					HStack {
-						Button(action: {
-							// Reset auth state and navigate back to LaunchView
-							userAuth.resetState()
-						}) {
-							HStack {
-								Image(systemName: "arrow.left")
-									.font(.system(size: 20, weight: .bold))
-								Text("Back")
-									.font(.system(size: 16, weight: .semibold))
-							}
-							.foregroundColor(.white)
-							.padding(.leading, 16)
-						}
-						Spacer()
-					}
-					.padding(.top, 8)
+					backButtonView
 
-					// Main content
 					ScrollView {
 						VStack(spacing: 16) {
 							Spacer()
-
-							Text("Help your friends recognize you")
-								.font(.system(size: 30, weight: .semibold))
-								.foregroundColor(.white)
-								.multilineTextAlignment(.center)
-								.padding(.top, 20)
-
+							titleView
 							Spacer()
-
-							ZStack {
-								ProfilePic()
-
-								Circle()
-									.fill(Color.black)
-									.frame(width: 38, height: 38)
-									.overlay(
-										Image(systemName: "plus")
-											.foregroundColor(.white)
-											.font(.system(size: 16, weight: .bold))
-									)
-									.offset(x: 55, y: 55)
-									.shadow(radius: 3)
-							}
-							.onTapGesture {
-								showImagePicker = true
-							}
-							.sheet(isPresented: $showImagePicker) {
-								SwiftUIImagePicker(selectedImage: $selectedImage)
-							}
-
+							profilePictureSection
 							Spacer()
-
-							VStack(spacing: 16) {
-								InputFieldView(
-									label: "Name",
-                                    text: Binding(
-                                        get: { userAuth.name ?? "" },
-                                        set: { userAuth.name = $0 }
-                                    ),
-									isValid: $isNameValid,
-									placeholder: "Name"
-								)
-
-								// Always show email field for Apple sign-ins
-								if userAuth.authProvider == .apple {
-									InputFieldView(
-										label: "Email",
-										text: $email,
-										isValid: $isEmailValid,
-										placeholder: "your@email.com"
-									)
-								}
-
-								InputFieldView(
-									label: "Username",
-									text: $username,
-									isValid: $isUsernameValid,
-									placeholder: "@username"
-								)
-								.onChange(of: username) { newValue in
-									// Remove @ prefix if user types it
-									if newValue.hasPrefix("@") {
-										username = String(newValue.dropFirst())
-									}
-
-									// Validate username format
-									if !newValue.isEmpty {
-										isUsernameValid = newValue.allSatisfy {
-											$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
-										}
-									}
-									
-									// Reset the username alert if username changes
-									if userAuth.authAlert == .usernameAlreadyInUse {
-										userAuth.authAlert = nil
-									}
-								}
-
-								if !isUsernameValid && !username.isEmpty {
-									Text("Username can only contain letters, numbers, underscores, and periods")
-										.font(.caption)
-										.foregroundColor(.red)
-										.padding(.horizontal)
-										.transition(.opacity)
-								}
-							}
-							.padding(.horizontal, 32)
-
-							Button(action: {
-								validateFields()
-								if isFormValid {
-									isSubmitting = true
-									Task {
-										// If no image is selected but we have a profile picture URL from Google/Apple,
-										// we'll pass nil for profilePicture and let the backend use the URL
-										print("Profile picture URL from provider: \(userAuth.profilePicUrl ?? "none")")
-
-										await userAuth.spawnMakeUser(
-											username: username,
-											profilePicture: selectedImage, // Pass the selected image or nil
-											name: userAuth.name ?? "",
-											email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
-										)
-
-										                                        // Show notification permission request after account creation
-                                        if userAuth.spawnUser != nil {
-                                            requestNotificationPermission()
-                                            // Navigate to Terms of Service after successful account creation
-                                            userAuth.isFormValid = true
-                                            userAuth.shouldNavigateToUserToS = true
-                                        } else {
-                                            errorMessage = "Failed to create user. Please try again."
-                                            showErrorAlert = true
-                                        }
-
-										isSubmitting = false
-									}
-								}
-							}) {
-								ZStack {
-									RoundedRectangle(cornerRadius: universalRectangleCornerRadius)
-										.fill(Color.white)
-										.frame(height: 55)
-
-									if isSubmitting {
-										ProgressView()
-											.progressViewStyle(CircularProgressViewStyle(tint: authPageBackgroundColor))
-									} else {
-										HStack {
-											Text("Enter Spawn")
-												.font(.system(size: 20, weight: .semibold))
-
-											Image(systemName: "arrow.right")
-												.resizable()
-												.frame(width: 20, height: 20)
-										}
-										.foregroundColor(authPageBackgroundColor)
-									}
-								}
-							}
-							.disabled(isSubmitting || !isUsernameValid || username.isEmpty)
-							.padding(.horizontal, 32)
-							.padding(.top, 16)
-
+							inputFieldsSection
+							submitButtonView
 							Spacer()
 							Spacer()
 						}
@@ -242,13 +207,13 @@ struct UserInfoInputView: View {
 					}
 				}
 			}
-			            .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
-                UserToS()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            }
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
+				UserToS()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}
 			.onAppear {
-				userAuth.objectWillChange.send()  // Trigger initial UI update
+				userAuth.objectWillChange.send()
 				Task {
 					await userAuth.spawnFetchUserIfAlreadyExists()
 				}
@@ -258,17 +223,76 @@ struct UserInfoInputView: View {
 					title: Text(alertType.title),
 					message: Text(alertType.message),
 					dismissButton: .default(Text("OK")) {
-						// If provider mismatch, go back to launch view
 						if case .providerMismatch = alertType {
 							userAuth.resetState()
 						}
 					}
 				)
 			}
+			.onReceive(userAuth.$authAlert) { alert in
+				handleAuthAlert(alert)
+			}
 			.alert("Error", isPresented: $showErrorAlert) {
 				Button("OK", role: .cancel) { }
 			} message: {
 				Text(errorMessage)
+			}
+		}
+	}
+
+	// MARK: - Helper Methods
+	
+	private func handleUsernameChange(_ newValue: String) {
+		// Remove @ prefix if user types it
+		if newValue.hasPrefix("@") {
+			username = String(newValue.dropFirst())
+		}
+
+		// Validate username format
+		if !newValue.isEmpty {
+			isUsernameValid = newValue.allSatisfy {
+				$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
+			}
+			
+			if !isUsernameValid {
+				usernameErrorState.setError("Username can only contain letters, numbers, underscores, and periods")
+			} else {
+				usernameErrorState.clearError()
+			}
+		} else {
+			usernameErrorState.clearError()
+		}
+		
+		// Reset the username alert if username changes
+		if userAuth.authAlert == .usernameAlreadyInUse {
+			userAuth.authAlert = nil
+		}
+	}
+	
+	private func handleSubmitAction() {
+		validateFields()
+		if isFormValid {
+			isSubmitting = true
+			Task {
+				print("Profile picture URL from provider: \(userAuth.profilePicUrl ?? "none")")
+
+				await userAuth.spawnMakeUser(
+					username: username,
+					profilePicture: selectedImage,
+					name: userAuth.name ?? "",
+					email: userAuth.authProvider == .apple ? email : userAuth.email ?? ""
+				)
+
+				if userAuth.spawnUser != nil {
+					requestNotificationPermission()
+					userAuth.isFormValid = true
+					userAuth.shouldNavigateToUserToS = true
+				} else {
+					errorMessage = "Failed to create user. Please try again."
+					showErrorAlert = true
+				}
+
+				isSubmitting = false
 			}
 		}
 	}
@@ -282,6 +306,12 @@ struct UserInfoInputView: View {
         isNameValid = !(userAuth.name ?? "").trimmingCharacters(
 			in: .whitespacesAndNewlines
 		).isEmpty
+		
+		if !isNameValid {
+			nameErrorState.setError("Name is required")
+		} else {
+			nameErrorState.clearError()
+		}
 
 		// Check username
 		let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
@@ -289,15 +319,56 @@ struct UserInfoInputView: View {
 		trimmedUsername.allSatisfy {
 			$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
 		}
+		
+		if trimmedUsername.isEmpty {
+			usernameErrorState.setError("Username is required")
+		} else if !isUsernameValid {
+			usernameErrorState.setError("Username can only contain letters, numbers, underscores, and periods")
+		} else {
+			usernameErrorState.clearError()
+		}
 
 		// Check email for Apple sign-ins
 		if needsEmail {
 			let emailRegex = #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
 			isEmailValid = email.range(of: emailRegex, options: .regularExpression) != nil
+			
+			if email.isEmpty {
+				emailErrorState.setError("Email is required")
+			} else if !isEmailValid {
+				emailErrorState.setError("Please enter a valid email address")
+			} else {
+				emailErrorState.clearError()
+			}
 		}
 
 		// Only set form as valid if all required fields are valid
 		isFormValid = isNameValid && isUsernameValid && (!needsEmail || isEmailValid)
+	}
+	
+	private func handleAuthAlert(_ alert: AuthAlertType?) {
+		// Clear previous field errors when an auth alert occurs
+		nameErrorState.clearError()
+		emailErrorState.clearError()
+		usernameErrorState.clearError()
+		
+		guard let alert = alert else { return }
+		
+		// Set field-specific errors based on the alert type
+		switch alert {
+		case .emailAlreadyInUse:
+			if needsEmail {
+				emailErrorState.setError("This email is already in use")
+			}
+		case .usernameAlreadyInUse:
+			usernameErrorState.setError("This username is already taken")
+		case .phoneNumberAlreadyInUse:
+			// This would be handled in phone number view
+			break
+		default:
+			// For other errors, we'll let the alert handle them
+			break
+		}
 	}
 
 	private func requestNotificationPermission() {

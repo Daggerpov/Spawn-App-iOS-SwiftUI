@@ -271,8 +271,8 @@ class ActivityCreationViewModel: ObservableObject {
             isTitleValid = !trimmedTitle.isEmpty
             print("🔍 DEBUG: - Title valid result: \(isTitleValid)")
             
-            // Check if at least one friend is invited
-            isInvitesValid = !selectedFriends.isEmpty
+            // Invites are optional - users can create activities without inviting anyone
+            isInvitesValid = true
             print("🔍 DEBUG: - Selected friends count: \(selectedFriends.count)")
             print("🔍 DEBUG: - Invites valid result: \(isInvitesValid)")
             
