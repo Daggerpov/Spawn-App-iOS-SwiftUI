@@ -211,7 +211,7 @@ struct ActivityTypeFriendSelectionView: View {
     // MARK: - Computed Properties
     
     private var availableFriends: [FullFriendUserDTO] {
-        appCache.friends
+        appCache.getCurrentUserFriends()
     }
     
     private var filteredFriends: [FullFriendUserDTO] {
@@ -242,7 +242,7 @@ struct ActivityTypeFriendSelectionView: View {
         isLoading = true
         
         // Convert selected friend IDs to BaseUserDTO objects
-        let selectedFriendObjects = appCache.friends.compactMap { friend in
+        let selectedFriendObjects = appCache.getCurrentUserFriends().compactMap { friend in
             if selectedFriends.contains(friend.id) {
                 return BaseUserDTO.from(friendUser: friend)
             }

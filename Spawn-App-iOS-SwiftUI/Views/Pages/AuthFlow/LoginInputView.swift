@@ -34,7 +34,8 @@ struct LoginInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Back action
+                    // Reset auth flow state when going back to sign in
+                    UserAuthViewModel.shared.resetAuthFlow()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -206,7 +207,7 @@ struct LoginInputView: View {
             
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
         .onAppear {
             // Reset any previous error state

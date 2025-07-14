@@ -204,14 +204,14 @@ class ActivityCreationViewModel: ObservableObject {
 	// Load all friends from cache or API
 	private func loadAllFriends() async {
 		do {
-			// Try to get friends from cache first
-			let cachedFriends = AppCache.shared.friends
-			if !cachedFriends.isEmpty {
-				await MainActor.run {
-					selectedFriends = cachedFriends
-				}
-				return
+					// Try to get friends from cache first
+		let cachedFriends = AppCache.shared.getCurrentUserFriends()
+		if !cachedFriends.isEmpty {
+			await MainActor.run {
+				selectedFriends = cachedFriends
 			}
+			return
+		}
 			
 			// If cache is empty, fetch from API
 			guard let url = URL(string: APIService.baseURL + "users/friends/\(UserAuthViewModel.shared.spawnUser?.id ?? UUID())") else {
@@ -271,8 +271,8 @@ class ActivityCreationViewModel: ObservableObject {
             isTitleValid = !trimmedTitle.isEmpty
             print("🔍 DEBUG: - Title valid result: \(isTitleValid)")
             
-            // Check if at least one friend is invited
-            isInvitesValid = !selectedFriends.isEmpty
+            // Invites are optional - users can create activities without inviting anyone
+            isInvitesValid = true
             print("🔍 DEBUG: - Selected friends count: \(selectedFriends.count)")
             print("🔍 DEBUG: - Invites valid result: \(isInvitesValid)")
             

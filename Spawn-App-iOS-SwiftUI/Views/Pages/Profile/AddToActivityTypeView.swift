@@ -320,7 +320,7 @@ class AddToActivityTypeViewModel: ObservableObject {
         
         do {
             // Fetch activity types from the API
-            let endpoint = "\(userId)/activity-types"
+            let endpoint = "users/\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 await MainActor.run {
                     self.errorMessage = "Invalid URL"
@@ -400,7 +400,7 @@ class AddToActivityTypeViewModel: ObservableObject {
             
             if !updatedTypes.isEmpty {
                 // Use batch update to save the changes
-                let endpoint = "\(userId)/activity-types"
+                let endpoint = "users/\(userId)/activity-types"
                 guard let url = URL(string: APIService.baseURL + endpoint) else {
                     await MainActor.run {
                         self.errorMessage = "Invalid URL"

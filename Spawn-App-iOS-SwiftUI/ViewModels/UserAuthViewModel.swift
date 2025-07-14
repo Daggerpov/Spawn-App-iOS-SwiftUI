@@ -24,9 +24,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var spawnUser: BaseUserDTO? {
 		didSet {
 			if spawnUser != nil {
-				shouldNavigateToFeedView = true
-				// Mark onboarding as completed when user successfully authenticates
-				markOnboardingCompleted()
+				// Only set navigation to feed view if user has completed onboarding
+				// For new users going through onboarding, this will be handled separately
+				if hasCompletedOnboarding {
+					shouldNavigateToFeedView = true
+				}
+				// Only set isLoggedIn for fully active users, not for users still in onboarding
+				// The isLoggedIn flag will be set explicitly in navigation logic for active users
 			}
 		}
 	}
@@ -143,6 +147,23 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	
 	func resetState() {
 		Task { @MainActor in
+			print("🔄 DEBUG: Resetting authentication state")
+			
+			// Clear all cached data for current user before clearing user data
+			if let currentUserId = self.spawnUser?.id {
+				AppCache.shared.clearAllDataForUser(currentUserId)
+			}
+
+			// Clear tokens from Keychain
+			let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
+			let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
+
+			if accessTokenDeleted && refreshTokenDeleted {
+				print("✅ Successfully cleared auth tokens from Keychain")
+			} else {
+				print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
+			}
+
 			// Reset user state
 			self.errorMessage = nil
 			self.authProvider = nil
@@ -161,8 +182,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.shouldNavigateToUserInfoInputView = false
 			self.shouldNavigateToPhoneNumberView = false
 			self.shouldNavigateToVerificationCodeView = false
-			        self.shouldNavigateToUserDetailsView = false
-        self.secondsUntilNextVerificationAttempt = 30
+			self.shouldNavigateToUserDetailsView = false
+			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
 			self.authAlert = nil
 
@@ -170,17 +191,59 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.defaultPfpUrlString = nil
 			
 			// Reset loading state but mark as not first launch
-			self.minimumLoadingCompleted = false
-			self.authCheckCompleted = false
-			self.hasCheckedSpawnUserExistence = false
+			// For logout scenarios, we want to skip the loading screen since we already know the user is logged out
+			self.minimumLoadingCompleted = true
+			self.authCheckCompleted = true
+			self.hasCheckedSpawnUserExistence = true
 			self.isFirstLaunch = false // This is no longer first launch
 			
-			// Reset onboarding state on logout so user can see onboarding again
-			self.hasCompletedOnboarding = false
-			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+			// Don't reset onboarding state on logout - users who have completed onboarding
+			// should be able to go directly to sign-in, not back through onboarding
 			
 			// Don't reset hasLaunchedBefore - app has already launched before
 			// This prevents the loading screen from showing again unnecessarily
+		}
+	}
+	
+	// Reset authentication flow state when navigating back during onboarding
+	func resetAuthFlow() {
+		Task { @MainActor in
+			print("🔄 DEBUG: Resetting auth flow state for back navigation")
+			
+			// Reset user authentication data
+			self.errorMessage = nil
+			self.authProvider = nil
+			self.externalUserId = nil
+			self.idToken = nil
+			self.isLoggedIn = false
+			self.spawnUser = nil
+			
+			self.name = nil
+			self.email = nil
+			self.profilePicUrl = nil
+			
+			self.isFormValid = false
+			
+			// Reset all navigation flags
+			self.shouldNavigateToFeedView = false
+			self.shouldNavigateToUserInfoInputView = false
+			self.shouldNavigateToPhoneNumberView = false
+			self.shouldNavigateToVerificationCodeView = false
+			self.shouldNavigateToUserDetailsView = false
+			self.shouldNavigateToUserOptionalDetailsInputView = false
+			self.shouldNavigateToUserToS = false
+			self.shouldSkipAhead = false
+			self.skipDestination = .none
+			
+			self.secondsUntilNextVerificationAttempt = 30
+			self.activeAlert = nil
+			self.authAlert = nil
+			
+			self.defaultPfpFetchError = false
+			self.defaultPfpUrlString = nil
+			
+			// Keep hasCheckedSpawnUserExistence true to avoid showing loading screen again
+			// Keep isFirstLaunch and hasCompletedOnboarding as they were
 		}
 	}
 	
@@ -543,26 +606,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		} catch let error as APIError {
 			await MainActor.run {
-				if case .invalidStatusCode(let statusCode) = error, statusCode == 409 {
-					// Check if the error is due to email or username conflict
-					// MySQL error 1062 for duplicate key involves username
-					if let errorMessage = self.errorMessage, errorMessage.contains("username") || errorMessage.contains("Duplicate") {
-						print("Username is already taken: \(username)")
-						self.authAlert = .usernameAlreadyInUse
-					} else {
-						// Default to email conflict if we can't determine the exact cause
-						print("Email is already in use: \(email)")
-						self.authAlert = .emailAlreadyInUse
-					}
-				} else {
-					print("Error creating the user: \(error)")
-					self.authAlert = .createError
-				}
+				self.handleAccountCreationError(error)
 			}
 		} catch {
 			await MainActor.run {
 				print("Error creating the user: \(error)")
-				self.authAlert = .createError
+				self.authAlert = .unknownError(error.localizedDescription)
 			}
 		}
 	}
@@ -641,6 +690,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
             isFormValid = true
             isLoggedIn = true
             setShouldNavigateToFeedView()
+			// Mark onboarding as completed for active users
+			if !hasCompletedOnboarding {
+				markOnboardingCompleted()
+			}
             print("📍 User status: active - navigating to feed")
         }
     }
@@ -672,7 +725,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.spawnUser = updatedUser
                 self.shouldNavigateToFeedView = true
                 self.isLoggedIn = true
+                // Mark onboarding as completed when user accepts Terms of Service
+                self.markOnboardingCompleted()
                 print("Successfully accepted Terms of Service for user: \(updatedUser.username)")
+                print("🔄 DEBUG: Onboarding completed after accepting Terms of Service")
             }
         } catch {
             await MainActor.run {
@@ -751,6 +807,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 	
 	private func clearLocalDataAndLogout() async {
+		// Clear all cached data for current user before clearing user data
+		if let currentUserId = self.spawnUser?.id {
+			AppCache.shared.clearAllDataForUser(currentUserId)
+		}
+		
 		// Clear tokens
 		var success = KeychainService.shared.delete(key: "accessToken")
 		if !success {
@@ -978,8 +1039,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 print("🔄 DEBUG: quickSignIn() - Quick sign-in successful")
                 await MainActor.run {
                     self.spawnUser = authResponse.user
+                    // For existing users with quick sign-in, mark onboarding as completed
+                    if !self.hasCompletedOnboarding {
+                        self.markOnboardingCompleted()
+                    }
                     self.determineSkipDestination(authResponse: authResponse)
-                    self.hasCheckedSpawnUserExistence = true
+                    // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
+                    // This ensures the minimum loading time is respected
                 }
             }
         } catch {
@@ -989,7 +1055,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.spawnUser = nil
                 self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
-                self.hasCheckedSpawnUserExistence = true
+                // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
+                // This ensures the minimum loading time is respected
             }
         }
     }
@@ -1008,6 +1075,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 print("Email/username login successful")
                 await MainActor.run {
                     self.spawnUser = user
+                    // For existing users with email/username sign-in, mark onboarding as completed
+                    if !self.hasCompletedOnboarding {
+                        self.markOnboardingCompleted()
+                    }
                     self.shouldNavigateToFeedView = true
                     self.isLoggedIn = true
                 }
@@ -1037,6 +1108,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
         // Set the mock user directly
         self.spawnUser = BaseUserDTO.danielAgapov
         self.hasCheckedSpawnUserExistence = true
+        
+        // For mock users, mark onboarding as completed
+        if !self.hasCompletedOnboarding {
+            self.markOnboardingCompleted()
+        }
     }
     
     func googleRegister() async {
@@ -1181,15 +1257,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/register/verification/check") {
                 let verificationDTO = EmailVerificationVerifyDTO(email: email, verificationCode: code)
-                let response: BaseUserDTO? = try await self.apiService.sendData(verificationDTO, to: url, parameters: nil)
+                let response: AuthResponseDTO? = try await self.apiService.sendData(verificationDTO, to: url, parameters: nil)
                 
                 await MainActor.run {
-                    if let user = response {
-                        // Success - navigate to user details view
-                        self.spawnUser = user
-                        self.shouldNavigateToUserDetailsView = true
-                        self.email = user.email
+                    if let authResponse = response {
+                        // Success - set user and navigate based on status
+                        self.spawnUser = authResponse.user
+                        self.email = authResponse.user.email
                         self.errorMessage = nil
+                        
+                        // Navigate based on user status
+                        self.navigateBasedOnUserStatus(authResponse: authResponse)
                     } else {
                         // Handle error
                         self.errorMessage = "Invalid verification code"
@@ -1292,6 +1370,82 @@ class UserAuthViewModel: NSObject, ObservableObject {
             }
         }
     }
+    
+	// MARK: - Error Handling Methods
+	
+	private func handleAccountCreationError(_ error: APIError) {
+		if case .invalidStatusCode(let statusCode) = error {
+			switch statusCode {
+			case 409:
+				// Conflict - field already exists
+				self.authAlert = parseConflictError()
+			case 400:
+				// Bad request - typically email verification issues
+				self.authAlert = parseEmailVerificationError()
+			case 401:
+				// Unauthorized - token issues
+				self.authAlert = parseTokenError()
+			case 503:
+				// Service unavailable - OAuth provider issues
+				self.authAlert = .providerUnavailable
+			default:
+				// Network or other errors
+				if statusCode >= 500 {
+					self.authAlert = .networkError
+				} else {
+					self.authAlert = .unknownError(apiService.errorMessage ?? "An error occurred during account creation")
+				}
+			}
+		} else {
+			// Handle other APIError types
+			self.authAlert = .networkError
+		}
+	}
+	
+	private func parseConflictError() -> AuthAlertType {
+		guard let errorMessage = apiService.errorMessage else {
+			return .createError
+		}
+		
+		let message = errorMessage.lowercased()
+		if message.contains("username") || message.contains("duplicate") {
+			return .usernameAlreadyInUse
+		} else if message.contains("email") {
+			return .emailAlreadyInUse
+		} else if message.contains("phone") {
+			return .phoneNumberAlreadyInUse
+		} else if message.contains("provider") {
+			return .providerMismatch
+		} else {
+			return .createError
+		}
+	}
+	
+	private func parseEmailVerificationError() -> AuthAlertType {
+		guard let errorMessage = apiService.errorMessage else {
+			return .createError
+		}
+		
+		let message = errorMessage.lowercased()
+		if message.contains("verification") || message.contains("code") {
+			return .emailVerificationFailed
+		} else {
+			return .createError
+		}
+	}
+	
+	private func parseTokenError() -> AuthAlertType {
+		guard let errorMessage = apiService.errorMessage else {
+			return .invalidToken
+		}
+		
+		let message = errorMessage.lowercased()
+		if message.contains("expired") || message.contains("expire") {
+			return .tokenExpired
+		} else {
+			return .invalidToken
+		}
+	}
     
 }
 

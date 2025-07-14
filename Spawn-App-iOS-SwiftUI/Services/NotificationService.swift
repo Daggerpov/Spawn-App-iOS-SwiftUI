@@ -519,21 +519,45 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         }
     }
     
-    // Save preferences to UserDefaults as a fallback
+    // Save preferences to UserDefaults as a fallback (user-specific)
     private func loadPreferencesFromUserDefaults() {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id.uuidString else {
+            // If no user is logged in, use default values
+            friendRequestsEnabled = true
+            activityInvitesEnabled = true
+            activityUpdatesEnabled = true
+            chatMessagesEnabled = true
+            return
+        }
+        
         let defaults = UserDefaults.standard
-        friendRequestsEnabled = defaults.bool(forKey: "friendRequestsEnabled")
-        activityInvitesEnabled = defaults.bool(forKey: "activityInvitesEnabled")
-        activityUpdatesEnabled = defaults.bool(forKey: "activityUpdatesEnabled")
-        chatMessagesEnabled = defaults.bool(forKey: "chatMessagesEnabled")
+        friendRequestsEnabled = defaults.bool(forKey: "friendRequestsEnabled_\(userId)")
+        activityInvitesEnabled = defaults.bool(forKey: "activityInvitesEnabled_\(userId)")
+        activityUpdatesEnabled = defaults.bool(forKey: "activityUpdatesEnabled_\(userId)")
+        chatMessagesEnabled = defaults.bool(forKey: "chatMessagesEnabled_\(userId)")
     }
     
     private func savePreferencesToUserDefaults() {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id.uuidString else {
+            print("Cannot save notification preferences: no user logged in")
+            return
+        }
+        
         let defaults = UserDefaults.standard
-        defaults.set(friendRequestsEnabled, forKey: "friendRequestsEnabled")
-        defaults.set(activityInvitesEnabled, forKey: "activityInvitesEnabled")
-        defaults.set(activityUpdatesEnabled, forKey: "activityUpdatesEnabled")
-        defaults.set(chatMessagesEnabled, forKey: "chatMessagesEnabled")
+        defaults.set(friendRequestsEnabled, forKey: "friendRequestsEnabled_\(userId)")
+        defaults.set(activityInvitesEnabled, forKey: "activityInvitesEnabled_\(userId)")
+        defaults.set(activityUpdatesEnabled, forKey: "activityUpdatesEnabled_\(userId)")
+        defaults.set(chatMessagesEnabled, forKey: "chatMessagesEnabled_\(userId)")
+    }
+    
+    /// Clear notification preferences for a specific user (useful when user logs out)
+    func clearPreferencesForUser(_ userId: UUID) {
+        let userIdString = userId.uuidString
+        let defaults = UserDefaults.standard
+        defaults.removeObject(forKey: "friendRequestsEnabled_\(userIdString)")
+        defaults.removeObject(forKey: "activityInvitesEnabled_\(userIdString)")
+        defaults.removeObject(forKey: "activityUpdatesEnabled_\(userIdString)")
+        defaults.removeObject(forKey: "chatMessagesEnabled_\(userIdString)")
     }
     
     // Fetch notification preferences from the backend

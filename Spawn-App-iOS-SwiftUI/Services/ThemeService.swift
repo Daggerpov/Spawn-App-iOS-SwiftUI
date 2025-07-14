@@ -68,7 +68,7 @@ class ThemeService: ObservableObject {
         case .light:
             return Color(hex: "#FFFFFF")
         case .dark:
-            return Color(hex: "#000000")
+            return Color(hex: "#1C1C1E") // iOS system background dark color
         @unknown default:
             return Color(hex: "#FFFFFF")
         }

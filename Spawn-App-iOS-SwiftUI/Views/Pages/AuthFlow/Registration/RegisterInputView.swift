@@ -25,7 +25,8 @@ struct RegisterInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Back action
+                    // Reset auth flow state when going back to sign in
+                    viewModel.resetAuthFlow()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -179,7 +180,7 @@ struct RegisterInputView: View {
             
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         // Navigation for email verification flow
         .navigationDestination(isPresented: $viewModel.shouldNavigateToVerificationCodeView, destination: {VerificationCodeView(viewModel: viewModel)})
         // Navigation for OAuth flow - skip verification and go directly to user details

@@ -50,9 +50,9 @@ func universalBackgroundColor(from themeService: ThemeService, environment: Colo
     case .light:
         return Color(hex: "#FFFFFF")
     case .dark:
-        return Color(hex: "#000000")
+        return Color(hex: "#1C1C1E") // iOS system background dark color
     case .system:
-        return environment == .dark ? Color(hex: "#000000") : Color(hex: "#FFFFFF")
+        return environment == .dark ? Color(hex: "#1C1C1E") : Color(hex: "#FFFFFF")
     }
 }
 
@@ -88,7 +88,7 @@ var universalBackgroundColor: Color {
     Color(UIColor { traitCollection in
         switch traitCollection.userInterfaceStyle {
         case .dark:
-            return UIColor(Color(hex: "#000000"))
+            return UIColor(Color(hex: "#1C1C1E")) // iOS system background dark color
         default:
             return UIColor(Color(hex: "#FFFFFF"))
         }

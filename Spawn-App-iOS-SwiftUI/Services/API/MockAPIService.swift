@@ -42,7 +42,7 @@ class MockAPIService: IAPIService {
 		}
         
         if let userIdForUrl = userId {
-            if url.absoluteString == APIService.baseURL + "\(userIdForUrl)/activity-types" {
+            if url.absoluteString == APIService.baseURL + "users/\(userIdForUrl)/activity-types" {
                 print("🔍 MOCK: Fetching activity types for user: \(userIdForUrl)")
                 return [
                     ActivityTypeDTO.mockChillActivityType,

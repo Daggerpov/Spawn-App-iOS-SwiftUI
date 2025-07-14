@@ -80,6 +80,7 @@ struct ContentView: View {
                 }
                 FriendsView(
                     user: user,
+                    viewModel: friendsViewModel,
                     deepLinkedProfileId: $deepLinkedProfileId,
                     shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
                 )
@@ -91,7 +92,10 @@ struct ContentView: View {
                                 targetSize: CGSize(width: 30, height: 27)
                             )!
                         )
-                        .withNotificationBadge(count: friendsViewModel.incomingFriendRequests.count)
+                        .withNotificationBadge(
+                            count: friendsViewModel.incomingFriendRequests.count,
+                            offset: CGPoint(x: 10, y: -8)
+                        )
                         Text("Friends")
                     }
                 

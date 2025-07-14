@@ -5,13 +5,17 @@ struct FriendRequestSuccessDrawer: View {
     @Binding var isPresented: Bool
     let onAddToActivityType: () -> Void
     
+    // Drag state tracking
+    @State private var dragOffset: CGFloat = 0
+    @State private var isDragging: Bool = false
+    
     var body: some View {
         ZStack {
             // Background overlay
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .onTapGesture {
-                    isPresented = false
+                    dismissDrawer()
                 }
             
             // Drawer content
@@ -48,7 +52,7 @@ struct FriendRequestSuccessDrawer: View {
                     
                     // Add to Activity Type button
                     Button(action: {
-                        isPresented = false
+                        dismissDrawer()
                         onAddToActivityType()
                     }) {
                         HStack(spacing: 12) {
@@ -78,9 +82,42 @@ struct FriendRequestSuccessDrawer: View {
                         .stroke(Color(red: 0.52, green: 0.49, blue: 0.49), lineWidth: 0.5)
                 )
                 .shadow(color: Color.black.opacity(0.1), radius: 32)
+                .offset(y: dragOffset)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            isDragging = true
+                            // Only allow dragging down
+                            if value.translation.height > 0 {
+                                dragOffset = value.translation.height
+                            }
+                        }
+                        .onEnded { value in
+                            isDragging = false
+                            
+                            // Dismiss threshold - if dragged down enough, dismiss
+                            let dismissThreshold: CGFloat = 100
+                            
+                            if value.translation.height > dismissThreshold {
+                                dismissDrawer()
+                            } else {
+                                // Snap back to position
+                                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                    dragOffset = 0
+                                }
+                            }
+                        }
+                )
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: isPresented)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isPresented)
+    }
+    
+    private func dismissDrawer() {
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            isPresented = false
+            dragOffset = 0
+        }
     }
 }
 

@@ -61,7 +61,11 @@ struct UserDetailsInputView: View {
         VStack(spacing: 0) {
             // Navigation Bar
             HStack {
-                Button(action: { dismiss() }) {
+                Button(action: { 
+                    // Reset auth flow state when backing out of user details
+                    viewModel.resetAuthFlow()
+                    dismiss() 
+                }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
@@ -111,28 +115,24 @@ struct UserDetailsInputView: View {
                             }
                     }
                     // Phone Number Field
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Phone Number")
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(.primary)
-                        TextField("Enter your phone number", text: $phoneNumber)
-                            .textFieldStyle(ErrorTextFieldStyle(hasError: isPhoneNumberTaken))
-                            .keyboardType(.phonePad)
-                            .onChange(of: phoneNumber) { newValue in
-                                let formatted = formatPhoneNumber(newValue)
-                                if formatted != newValue {
-                                    phoneNumber = formatted
-                                }
-                                // Check for taken phone number (demo scenario)
-                                if formatted == "(778) 100-1000" {
-                                    isPhoneNumberTaken = true
-                                    phoneError = "This phone number has already been used. Try signing in instead."
-                                } else {
-                                    isPhoneNumberTaken = false
-                                    phoneError = nil
-                                }
-                            }
-                            .textContentType(.telephoneNumber)
+                    PhoneNumberInputField(
+                        phoneNumber: $phoneNumber,
+                        hasError: isPhoneNumberTaken,
+                        errorMessage: phoneError
+                    )
+                    .onChange(of: phoneNumber) { newValue in
+                        let formatted = formatPhoneNumber(newValue)
+                        if formatted != newValue {
+                            phoneNumber = formatted
+                        }
+                        // Check for taken phone number (demo scenario)
+                        if formatted == "(778) 100-1000" {
+                            isPhoneNumberTaken = true
+                            phoneError = "This phone number has already been used. Try signing in instead."
+                        } else {
+                            isPhoneNumberTaken = false
+                            phoneError = nil
+                        }
                     }
                     // Password Fields (only if not OAuth)
                     if !isOAuthUser {

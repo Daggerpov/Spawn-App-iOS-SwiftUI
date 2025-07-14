@@ -8,8 +8,8 @@ import SwiftUI
 
 struct ProfilePictureView: View {
     let user: BaseUserDTO
-    let width: CGFloat = 28
-    let height: CGFloat = 28
+    let width: CGFloat = 48
+    let height: CGFloat = 48
     @State var showProfile = false
     
     // Optional binding to control tab selection for current user navigation

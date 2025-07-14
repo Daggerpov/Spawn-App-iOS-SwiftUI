@@ -73,6 +73,8 @@ struct UserOptionalDetailsInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
+                    // Reset auth flow state when backing out of optional details
+                    userAuth.resetAuthFlow()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")

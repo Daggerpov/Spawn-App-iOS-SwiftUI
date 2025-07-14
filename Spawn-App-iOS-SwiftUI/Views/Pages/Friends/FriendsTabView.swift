@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FriendsTabView: View {
-	@StateObject private var viewModel: FriendsTabViewModel
+	@ObservedObject var viewModel: FriendsTabViewModel
 	@StateObject var userAuth = UserAuthViewModel.shared
 	let user: BaseUserDTO
 
@@ -25,20 +25,24 @@ struct FriendsTabView: View {
 
 	// Profile menu state variables
 	@State private var showProfileMenu: Bool = false
-	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
-	@State private var showAddToActivityType: Bool = false
 	@State private var selectedFriend: FullFriendUserDTO?
 	@State private var blockReason: String = ""
+	@State private var navigateToProfile: Bool = false
 
-	init(user: BaseUserDTO) {
+	init(user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil) {
 		self.user = user
-		let vm = FriendsTabViewModel(
-			userId: user.id,
-			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService())
-		self._viewModel = StateObject(wrappedValue: vm)
+		
+		if let existingViewModel = viewModel {
+			self.viewModel = existingViewModel
+		} else {
+			// Fallback for when no view model is provided (like in previews)
+			self.viewModel = FriendsTabViewModel(
+				userId: user.id,
+				apiService: MockAPIService.isMocking
+					? MockAPIService(userId: user.id) : APIService())
+		}
 	}
 
 	var body: some View {
@@ -76,32 +80,18 @@ struct FriendsTabView: View {
             }
 			.sheet(isPresented: $showProfileMenu) {
 				if let selectedFriend = selectedFriend {
-					ProfileMenuView(
+					FriendsTabMenuView(
 						user: selectedFriend,
-						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
 						showReportDialog: $showReportDialog,
 						showBlockDialog: $showBlockDialog,
-						showAddToActivityType: $showAddToActivityType,
-						isFriend: true,
 						copyProfileURL: { copyProfileURL(for: selectedFriend) },
-						shareProfile: { shareProfile(for: selectedFriend) }
+						shareProfile: { shareProfile(for: selectedFriend) },
+						navigateToProfile: { navigateToProfile = true }
 					)
-					.background(universalBackgroundColor)
-					.presentationDetents([.height(364)])
+					.presentationDetents([.height(220)])
 				}
 			}
-			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
-				Button("Cancel", role: .cancel) {}
-				Button("Remove", role: .destructive) {
-					if let friendToRemove = selectedFriend {
-						Task {
-							await viewModel.removeFriend(friendUserId: friendToRemove.id)
-						}
-					}
-				}
-			} message: {
-				Text("Are you sure you want to remove this friend?")
-			}
+
 					.sheet(isPresented: $showReportDialog) {
 			ReportUserDrawer(
 				user: selectedFriend ?? BaseUserDTO.danielAgapov,
@@ -131,9 +121,9 @@ struct FriendsTabView: View {
 			} message: {
 				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
 			}
-			.navigationDestination(isPresented: $showAddToActivityType) {
+			.navigationDestination(isPresented: $navigateToProfile) {
 				if let friend = selectedFriend {
-					AddToActivityTypeView(user: friend)
+					ProfileView(user: friend)
 				}
 			}
 		}

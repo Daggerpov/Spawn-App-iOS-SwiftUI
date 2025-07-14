@@ -4,6 +4,7 @@ import UIKit
 struct BackspaceDetectingTextField: UIViewRepresentable {
     @Binding var text: String
     let onBackspace: () -> Void
+    let onPaste: ((String) -> Void)?
     var keyboardType: UIKeyboardType = .numberPad
     var textAlignment: NSTextAlignment = .center
     var font: UIFont = UIFont.systemFont(ofSize: 24)
@@ -44,28 +45,34 @@ struct BackspaceDetectingTextField: UIViewRepresentable {
         func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
             let currentText = textField.text ?? ""
             
-            // Detect backspace on empty field
-            if string.isEmpty && currentText.isEmpty {
-                parent.onBackspace()
+            // Detect backspace (replacement string is empty)
+            if string.isEmpty {
+                if currentText.isEmpty {
+                    // Backspace on empty field - move to previous field
+                    parent.onBackspace()
+                    return false
+                } else {
+                    // Backspace on non-empty field - clear current field and move to previous
+                    DispatchQueue.main.async {
+                        self.parent.text = ""
+                        self.parent.onBackspace()
+                    }
+                    return false
+                }
+            }
+            
+            // Check if this is a paste operation (multiple characters)
+            if string.count > 1 {
+                // Filter to only digits
+                let digits = string.filter { $0.isNumber }
+                if !digits.isEmpty {
+                    parent.onPaste?(digits)
+                }
                 return false
             }
             
-            // Handle backspace on non-empty field
-            if string.isEmpty && !currentText.isEmpty {
-                return true
-            }
-            
-            // Only allow single digits
-			if string.count > 1 || (
-				string.count == 1 && (
-					(
-						string
-							.rangeOfCharacter(
-								from: CharacterSet.decimalDigits.inverted
-							)?.isEmpty
-					) == nil
-				) == false
-			) {
+            // Only allow single digits for regular input
+            if string.count == 1 && string.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) != nil {
                 return false
             }
             
@@ -129,6 +136,8 @@ struct VerificationCodeView: View {
     private var navigationBar: some View {
         HStack {
             Button(action: {
+                // Reset auth flow state when backing out of verification
+                viewModel.resetAuthFlow()
                 dismiss()
             }) {
                 Image(systemName: "chevron.left")
@@ -198,7 +207,10 @@ struct VerificationCodeView: View {
             BackspaceDetectingTextField(
                 text: createBinding(for: index),
                 onBackspace: {
-                    handleBackspaceOnEmpty(at: index)
+                    handleBackspace(at: index)
+                },
+                onPaste: { pastedText in
+                    handlePaste(pastedText: pastedText, startingAt: index)
                 },
                 keyboardType: .numberPad,
                 textAlignment: .center,
@@ -211,9 +223,7 @@ struct VerificationCodeView: View {
                 handleTextFieldChange(at: index, oldValue: previousCode[index], newValue: newValue)
                 previousCode[index] = newValue
             }
-            .onReceive(NotificationCenter.default.publisher(for: UIPasteboard.changedNotification)) { _ in
-                handlePaste()
-            }
+
         }
         .onTapGesture {
             focusedIndex = index
@@ -237,11 +247,8 @@ struct VerificationCodeView: View {
             if index < 5 {
                 focusedIndex = index + 1
             }
-        } else if !oldValue.isEmpty && newValue.isEmpty {
-            // Backspace pressed on field with content - just clear it and stay
-            // The custom text field already handles this
-            return
         }
+        // Note: Backspace behavior is now handled entirely in BackspaceDetectingTextField
     }
     
     private var verifyButton: some View {
@@ -296,23 +303,18 @@ struct VerificationCodeView: View {
     
 
     
-    private func handleBackspaceOnEmpty(at index: Int) {
-        // This is called when backspace is pressed on an empty field
+    private func handleBackspace(at index: Int) {
+        // This is called when backspace is pressed on any field
         if index > 0 {
-            // Move to previous field and clear it
-            code[index - 1] = ""
-            previousCode[index - 1] = ""
+            // Move focus to previous field
             focusedIndex = index - 1
         }
     }
     
-    private func handlePaste() {
-        // Get clipboard content
-        guard let pasteboardString = UIPasteboard.general.string else { return }
-        
-        // Filter to only digits and take first 6
-        let digits = pasteboardString.filter { $0.isNumber }
-        let digitArray = Array(digits.prefix(6))
+    private func handlePaste(pastedText: String, startingAt startIndex: Int) {
+        // Filter to only digits
+        let digits = pastedText.filter { $0.isNumber }
+        let digitArray = Array(digits)
         
         // Only handle if we have digits
         if !digitArray.isEmpty {
@@ -320,7 +322,7 @@ struct VerificationCodeView: View {
             code = Array(repeating: "", count: 6)
             previousCode = Array(repeating: "", count: 6)
             
-            // Fill boxes with pasted digits
+            // Fill boxes with pasted digits starting from the beginning
             for (i, digit) in digitArray.enumerated() {
                 if i < 6 {
                     code[i] = String(digit)

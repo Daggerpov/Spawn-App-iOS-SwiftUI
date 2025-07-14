@@ -55,8 +55,10 @@ class FeedViewModel: ObservableObject {
             // Subscribe to AppCache activities updates
             appCache.$activities
                 .sink { [weak self] cachedActivities in
-                    if !cachedActivities.isEmpty {
-                        self?.activities = self?.filterExpiredIndefiniteActivities(cachedActivities) ?? []
+                    guard let self = self else { return }
+                    let userActivities = cachedActivities[self.userId] ?? []
+                    if !userActivities.isEmpty {
+                        self.activities = self.filterExpiredIndefiniteActivities(userActivities)
                     }
                 }
                 .store(in: &cancellables)
@@ -91,10 +93,11 @@ class FeedViewModel: ObservableObject {
     }
 
     func fetchActivitiesForUser() async {
-        // Check the cache first for unfiltered activities
-        if !appCache.activities.isEmpty {
+        // Check the cache first for current user's activities
+        let currentUserActivities = appCache.getCurrentUserActivities()
+        if !currentUserActivities.isEmpty {
             await MainActor.run {
-                self.activities = self.filterExpiredIndefiniteActivities(appCache.activities)
+                self.activities = self.filterExpiredIndefiniteActivities(currentUserActivities)
             }
             return
         }
@@ -106,6 +109,12 @@ class FeedViewModel: ObservableObject {
 
     
     private func fetchActivitiesFromAPI() async {
+        // Check if user is still authenticated before making API call
+        guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot fetch activities: User is not logged in")
+            return
+        }
+        
         // Path: /api/v1/activities/feedActivities/{requestingUserId}
         guard let url = URL(string: APIService.baseURL + "activities/feedActivities/\(userId)") else {
             print("❌ DEBUG: Failed to construct URL for activities")
@@ -121,7 +130,7 @@ class FeedViewModel: ObservableObject {
             let filteredActivities = self.filterExpiredIndefiniteActivities(fetchedActivities)
             await MainActor.run {
                 self.activities = filteredActivities
-                self.appCache.updateActivities(fetchedActivities) // Keep original activities in cache
+                self.appCache.updateActivitiesForUser(fetchedActivities, userId: self.userId) // Keep original activities in cache
             }
         } catch {
             print("❌ DEBUG: Error fetching activities: \(error)")

@@ -42,11 +42,11 @@ class FriendsTabViewModel: ObservableObject {
 			// Subscribe to AppCache friends updates
 			appCache.$friends
 				.sink { [weak self] cachedFriends in
-					if !cachedFriends.isEmpty {
-						self?.friends = cachedFriends
-						if !(self?.isSearching ?? false) {
-							self?.filteredFriends = cachedFriends
-						}
+					guard let self = self else { return }
+					let userFriends = cachedFriends[self.userId] ?? []
+					self.friends = userFriends
+					if !self.isSearching {
+						self.filteredFriends = userFriends
 					}
 				}
 				.store(in: &cancellables)
@@ -54,14 +54,26 @@ class FriendsTabViewModel: ObservableObject {
 			// Subscribe to AppCache recommended friends updates
 			appCache.$recommendedFriends
 				.sink { [weak self] cachedRecommendedFriends in
-					if !cachedRecommendedFriends.isEmpty {
-						self?.recommendedFriends = cachedRecommendedFriends
-						if !(self?.isSearching ?? false) {
-							self?.filteredRecommendedFriends = cachedRecommendedFriends
-						}
+					guard let self = self else { return }
+					let userRecommendedFriends = cachedRecommendedFriends[self.userId] ?? []
+					self.recommendedFriends = userRecommendedFriends
+					if !self.isSearching {
+						self.filteredRecommendedFriends = userRecommendedFriends
 					}
 				}
 				.store(in: &cancellables)
+        
+        // Subscribe to AppCache friend requests updates
+        appCache.$friendRequests
+            .sink { [weak self] cachedFriendRequests in
+                guard let self = self else { return }
+                let userFriendRequests = cachedFriendRequests[self.userId] ?? []
+                self.incomingFriendRequests = userFriendRequests
+                if !self.isSearching {
+                    self.filteredIncomingFriendRequests = userFriendRequests
+                }
+            }
+            .store(in: &cancellables)
 		}
 	}
     
@@ -220,7 +232,7 @@ class FriendsTabViewModel: ObservableObject {
         recommendedFriends.removeAll { $0.id == friendId }
         filteredRecommendedFriends.removeAll { $0.id == friendId }
         // Update cache to reflect the change
-        appCache.updateRecommendedFriends(recommendedFriends)
+        appCache.updateRecommendedFriendsForUser(recommendedFriends, userId: userId)
     }
     
     // Remove user from recently spawned with list after adding
@@ -237,7 +249,7 @@ class FriendsTabViewModel: ObservableObject {
     
     // Method to get cached recommended friends for passing to other views
     func getCachedRecommendedFriends() -> [RecommendedFriendUserDTO] {
-        return appCache.recommendedFriends
+        return appCache.getCurrentUserRecommendedFriends()
     }
     
     // Method to refresh recommended friends cache
@@ -256,11 +268,12 @@ class FriendsTabViewModel: ObservableObject {
             group.addTask { await self.fetchOutgoingFriendRequests() }
             group.addTask { 
                 // Check cache first for recommended friends
-                if self.appCache.recommendedFriends.isEmpty {
+                let cachedUserRecommendedFriends = self.appCache.getCurrentUserRecommendedFriends()
+                if cachedUserRecommendedFriends.isEmpty {
                     await self.fetchRecommendedFriends()
                 } else {
                     await MainActor.run {
-                        self.recommendedFriends = self.appCache.recommendedFriends
+                        self.recommendedFriends = cachedUserRecommendedFriends
                     }
                 }
             }
@@ -279,26 +292,37 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-		// full path: /api/v1/friend-requests/incoming/{userId}
-		if let url = URL(
-			string: APIService.baseURL + "friend-requests/incoming/\(userId)")
-		{
-			do {
-				let fetchedIncomingFriendRequests: [FetchFriendRequestDTO] =
-					try await self.apiService.fetchData(
-						from: url, parameters: nil)
+    // Check cache first
+    let cachedRequests = appCache.getCurrentUserFriendRequests()
+    if !cachedRequests.isEmpty {
+        await MainActor.run {
+            self.incomingFriendRequests = cachedRequests
+        }
+        return
+    }
+    
+    // full path: /api/v1/friend-requests/incoming/{userId}
+    if let url = URL(
+        string: APIService.baseURL + "friend-requests/incoming/\(userId)")
+    {
+        do {
+            let fetchedIncomingFriendRequests: [FetchFriendRequestDTO] =
+                try await self.apiService.fetchData(
+                    from: url, parameters: nil)
 
-				// Ensure updating on the main thread
-				await MainActor.run {
-					self.incomingFriendRequests = fetchedIncomingFriendRequests
-				}
-			} catch {
-				await MainActor.run {
-					self.incomingFriendRequests = []
-				}
-			}
-		}
-	}
+            // Ensure updating on the main thread
+            await MainActor.run {
+                self.incomingFriendRequests = fetchedIncomingFriendRequests
+                // Update the cache
+                self.appCache.updateFriendRequestsForUser(fetchedIncomingFriendRequests, userId: userId)
+            }
+        } catch {
+            await MainActor.run {
+                self.incomingFriendRequests = []
+            }
+        }
+    }
+}
 
 	internal func fetchOutgoingFriendRequests() async {
 		// full path: /api/v1/friend-requests/sent/{userId}
@@ -334,8 +358,8 @@ class FriendsTabViewModel: ObservableObject {
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.recommendedFriends = fetchedRecommendedFriends
-					// Update cache
-					AppCache.shared.updateRecommendedFriends(fetchedRecommendedFriends)
+					// Update cache with user-specific method
+					self.appCache.updateRecommendedFriendsForUser(fetchedRecommendedFriends, userId: self.userId)
 				}
 			} catch {
 				await MainActor.run {
@@ -347,10 +371,11 @@ class FriendsTabViewModel: ObservableObject {
 
 	func fetchFriends() async {
 		// First check the cache
-        if !appCache.friends.isEmpty {
+        let cachedUserFriends = appCache.getCurrentUserFriends()
+        if !cachedUserFriends.isEmpty {
             await MainActor.run {
                 // Use cached data if available
-                self.friends = appCache.friends
+                self.friends = cachedUserFriends
                 return
             }
         }
@@ -366,7 +391,7 @@ class FriendsTabViewModel: ObservableObject {
 				await MainActor.run {
 					self.friends = fetchedFriends
                     // Update the cache
-                    self.appCache.updateFriends(fetchedFriends)
+                    self.appCache.updateFriendsForUser(fetchedFriends, userId: self.userId)
 				}
 			} catch {
 				await MainActor.run {
@@ -436,7 +461,7 @@ class FriendsTabViewModel: ObservableObject {
                 self.friends.removeAll { $0.id == friendUserId }
                 self.filteredFriends.removeAll { $0.id == friendUserId }
                 // Update cache
-                self.appCache.updateFriends(self.friends)
+                self.appCache.updateFriendsForUser(self.friends, userId: self.userId)
             }
         }
         
@@ -446,6 +471,15 @@ class FriendsTabViewModel: ObservableObject {
     }
 
     func fetchRecentlySpawnedWith() async {
+        // Check if user is still authenticated before making API call
+        guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot fetch recently spawned users: User is not logged in")
+            await MainActor.run {
+                self.isLoading = false
+            }
+            return
+        }
+        
         await MainActor.run {
             isLoading = true
         }

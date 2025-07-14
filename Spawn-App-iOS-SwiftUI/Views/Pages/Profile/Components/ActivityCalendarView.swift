@@ -43,7 +43,7 @@ struct ActivityCalendarView: View {
                                 .id(month)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 8)
                         .padding(.bottom, 100) // Safe area padding
                         .onAppear {
                             // Only scroll to current month on first appearance
@@ -149,12 +149,12 @@ struct MonthCalendarView: View {
             Text(monthYearString())
                 .font(.onestMedium(size: 16))
                 .foregroundColor(figmaBlack300)
-                .padding(.leading, 4)
+                .padding(.leading, 8)
             
             // Calendar grid - 4 days per row
-            VStack(spacing: 12) {
+            VStack(spacing: 8) {
                 ForEach(0..<numberOfRows, id: \.self) { rowIndex in
-                    HStack(spacing: 12) {
+                    HStack(spacing: 8) {
                         ForEach(0..<4, id: \.self) { dayIndex in
                             let dayOffset = rowIndex * 4 + dayIndex
                             let day = dayForOffset(dayOffset)
@@ -163,6 +163,7 @@ struct MonthCalendarView: View {
                                 day: day,
                                 activities: getActivitiesForDay(day),
                                 isCurrentMonth: isCurrentMonth(day),
+                                tileSize: 86.4, // Fixed tile size matching Figma specs
                                 onDayTapped: { activities in
                                     if activities.count == 1 {
                                         selectedActivity = activities.first!
@@ -176,8 +177,9 @@ struct MonthCalendarView: View {
                     }
                 }
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 8)
         }
+        .frame(maxWidth: .infinity)
         .sheet(isPresented: $showActivityDetails) {
             if let activity = selectedActivity {
                 ActivityDetailsSheet(activity: activity, userAuth: userAuth)
@@ -235,9 +237,9 @@ struct CalendarDayTile: View {
     let day: Date
     let activities: [CalendarActivityDTO]
     let isCurrentMonth: Bool
+    let tileSize: CGFloat
     let onDayTapped: ([CalendarActivityDTO]) -> Void
     
-    private let tileSize: CGFloat = 86.4
     private let cornerRadius: CGFloat = 12.34
     
     private var dayNumber: String {
@@ -264,18 +266,18 @@ struct CalendarDayTile: View {
                             if activities.count == 1 {
                                 // Single activity emoji
                                 activityEmoji(for: activities[0])
-                                    .font(.onestMedium(size: 49.37))
+                                    .font(.onestMedium(size: tileSize * 0.57)) // Scale based on tile size
                                     .foregroundColor(figmaBlack300)
                             } else if activities.count > 1 {
                                 // Multiple activities - show first two emojis
                                 HStack(spacing: 2) {
                                     activityEmoji(for: activities[0])
-                                        .font(.onestMedium(size: 37.03))
+                                        .font(.onestMedium(size: tileSize * 0.43)) // Scale based on tile size
                                         .foregroundColor(figmaBlack300)
                                     
                                     if activities.count > 1 {
                                         activityEmoji(for: activities[1])
-                                            .font(.onestMedium(size: 37.03))
+                                            .font(.onestMedium(size: tileSize * 0.43)) // Scale based on tile size
                                             .foregroundColor(figmaBlack300)
                                     }
                                 }
@@ -288,7 +290,7 @@ struct CalendarDayTile: View {
                             HStack {
                                 Spacer()
                                 Text(dayNumber)
-                                    .font(.onestMedium(size: 10))
+                                    .font(.onestMedium(size: max(10, tileSize * 0.12))) // Scale based on tile size with minimum
                                     .foregroundColor(.black)
                                     .padding(4)
                                     .background(Color.white.opacity(0.9))
@@ -304,8 +306,6 @@ struct CalendarDayTile: View {
                             onDayTapped(activities)
                         }
                     }
-                
-
             } else {
                 // Days outside current month - invisible
                 Color.clear
