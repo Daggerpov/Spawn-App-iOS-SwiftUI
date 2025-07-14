@@ -78,6 +78,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
     @Published var shouldNavigateToUserToS: Bool = false
     
     private var isOnboarding: Bool = false
+    
+    @Published var shouldSkipAhead: Bool = false
+    @Published var skipDestination: SkipDestination = .none
 
 	private init(apiService: IAPIService) {
 		print("🔄 DEBUG: UserAuthViewModel.init() called")
@@ -580,34 +583,68 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		
 		guard let status = authResponse.status else {
 			// No status means legacy active user
-			isFormValid = true
-			setShouldNavigateToFeedView()
+            print("Error: User has no status")
 			return
 		}
 		
 		switch status {
-		case .emailRegistered:
-			// Still needs email verification - shouldn't happen with OAuth
-			shouldNavigateToUserInfoInputView = true
-			print("📍 User status: emailRegistered - navigating to user info input")
-			
 		case .emailVerified:
 			// Needs to input username, phone number, and password
 			shouldNavigateToUserDetailsView = true
 			print("📍 User status: emailVerified - navigating to user details input")
-			
 		case .usernameAndPhoneNumber:
 			// Only needs to accept Terms of Service
-			shouldNavigateToUserToS = true
+			shouldNavigateToUserOptionalDetailsInputView = true
 			print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
-			
+        case .nameAndPhoto:
+            shouldNavigateToUserToS = true
 		case .active:
 			// Fully onboarded user - go to feed
 			isFormValid = true
+            isLoggedIn = true
 			setShouldNavigateToFeedView()
 			print("📍 User status: active - navigating to feed")
 		}
 	}
+    
+    private func determineSkipDestination(authResponse: AuthResponseDTO) {
+        print("Determining skip destination")
+        guard let status = authResponse.status else {
+            // No status means legacy active user
+            print("Error: User has no status")
+            return
+        }
+        
+        if status != .active {
+            shouldSkipAhead = true
+        }
+        
+        switch status {
+        case .emailVerified:
+            // Needs to input username, phone number, and password
+            shouldNavigateToUserDetailsView = true
+            skipDestination = .userDetailsInput
+            print("📍 User status: emailVerified - navigating to user details input")
+            
+        case .usernameAndPhoneNumber:
+            // Only needs to accept Terms of Service
+            shouldNavigateToUserOptionalDetailsInputView = true
+            skipDestination = .userOptionalDetailsInput
+            print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+        
+        case .nameAndPhoto:
+            shouldNavigateToUserToS = true
+            skipDestination = .userToS
+        case .active:
+            // Fully onboarded user - go to feed
+            shouldSkipAhead = true
+            isFormValid = true
+            isLoggedIn = true
+            setShouldNavigateToFeedView()
+            print("📍 User status: active - navigating to feed")
+        }
+    }
+    
     
     func acceptTermsOfService() async {
         guard let userId = spawnUser?.id else {
@@ -936,13 +973,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
         print("🔄 DEBUG: quickSignIn() called - attempting quick sign-in")
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/quick-sign-in") {
-                let user: BaseUserDTO = try await self.apiService.fetchData(from: url, parameters: nil)
+                let authResponse: AuthResponseDTO = try await self.apiService.fetchData(from: url, parameters: nil)
                 
                 print("🔄 DEBUG: quickSignIn() - Quick sign-in successful")
                 await MainActor.run {
-                    self.spawnUser = user
-                    self.shouldNavigateToFeedView = true
-                    self.isLoggedIn = true
+                    self.spawnUser = authResponse.user
+                    self.determineSkipDestination(authResponse: authResponse)
                 }
             }
         } catch {
