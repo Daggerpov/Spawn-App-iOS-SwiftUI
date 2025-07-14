@@ -218,6 +218,18 @@ struct LoginInputView: View {
         } message: {
             Text(errorMessage)
         }
+        .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
+            switch userAuth.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView()
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
     }
     
     private func performLogin() async {

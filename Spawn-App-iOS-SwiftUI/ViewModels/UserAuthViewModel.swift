@@ -306,7 +306,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     } else if let givenName = appleIDCredential.fullName?.givenName {
                         self.name = givenName
                     }
-                    self.isLoggedIn = true
                     self.externalUserId = userIdentifier
                     guard let idTokenData = appleIDCredential.identityToken else {
                         print("Error fetching ID Token from Apple ID Credential")
@@ -389,7 +388,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
                         self.name = user.profile?.name
                         self.email = user.profile?.email
-                        self.isLoggedIn = true
                         self.externalUserId = user.userID
                         self.authProvider = .google
                         self.idToken = user.idToken?.tokenString
@@ -502,10 +500,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						
 					await MainActor.run {
 						self.spawnUser = authResponse.user
-                        self.isLoggedIn = true
-						
 						// Navigate based on user status from AuthResponseDTO
-						self.navigateBasedOnUserStatus(authResponse: authResponse)
+						self.determineSkipDestination(authResponse: authResponse)
                         
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
@@ -513,7 +509,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				} catch {
 					await MainActor.run {
 						self.spawnUser = nil
-						self.shouldNavigateToUserInfoInputView = true
 						print("Error fetching user data: \(error.localizedDescription)")
 					}
 				}
