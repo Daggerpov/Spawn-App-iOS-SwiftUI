@@ -8,9 +8,9 @@
 import Foundation
 
 enum UserStatus: String, Codable, CaseIterable {
-    case emailRegistered = "EMAIL_REGISTERED"
     case emailVerified = "EMAIL_VERIFIED"
     case usernameAndPhoneNumber = "USERNAME_AND_PHONE_NUMBER"
+    case nameAndPhoto = "NAME_AND_PHOTO"
     case active = "ACTIVE"
 }
 

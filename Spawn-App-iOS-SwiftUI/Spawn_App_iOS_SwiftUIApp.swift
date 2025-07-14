@@ -50,8 +50,8 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 
 	private var rootView: some View {
 		Group {
-			if !userAuth.hasCheckedSpawnUserExistence && userAuth.isFirstLaunch {
-				// Show loading screen only on first launch
+			if !userAuth.hasCheckedSpawnUserExistence {
+				// Show loading screen while checking user existence
 				LoadingView()
 					.onAppear {
 						// Connect the app delegate to the app
@@ -100,11 +100,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						
 						// Connect the app delegate to the app
 						appDelegate.app = self
-						
-						// If not first launch, set hasCheckedSpawnUserExistence to true immediately
-						if !userAuth.isFirstLaunch {
-							userAuth.hasCheckedSpawnUserExistence = true
-						}
 					}
 					.onOpenURL { url in
 						GIDSignIn.sharedInstance.handle(url)
