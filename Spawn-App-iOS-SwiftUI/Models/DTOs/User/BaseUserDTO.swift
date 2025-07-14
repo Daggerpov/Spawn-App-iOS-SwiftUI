@@ -7,11 +7,11 @@
 
 import Foundation
 
-enum UserStatus: Int, Codable, CaseIterable {
-    case emailRegistered = 0
-    case emailVerified = 1
-    case usernameAndPhoneNumber = 2
-    case active = 3
+enum UserStatus: String, Codable, CaseIterable {
+    case emailRegistered = "EMAIL_REGISTERED"
+    case emailVerified = "EMAIL_VERIFIED"
+    case usernameAndPhoneNumber = "USERNAME_AND_PHONE_NUMBER"
+    case active = "ACTIVE"
 }
 
 struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
@@ -24,7 +24,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var profilePicture: String?
 	var name: String?
 	var bio: String?
-	var email: String
+	var email: String?
 
 	init(
 		id: UUID,
@@ -32,7 +32,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 		profilePicture: String? = nil,
 		name: String? = nil,
 		bio: String? = nil,
-		email: String
+		email: String? = nil
 	) {
 		self.id = id
 		self.username = username

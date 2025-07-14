@@ -288,9 +288,11 @@ class APIService: IAPIService {
 			// For optional types, return nil
 			return nil
 		}
-
 		if !data.isEmpty {
 			do {
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("🔄 DEBUG: Raw response data: \(responseString)")
+                }
 				let decoder = JSONDecoder()
 				decoder.dateDecodingStrategy = .iso8601
 				let decodedData = try decoder.decode(U.self, from: data)
