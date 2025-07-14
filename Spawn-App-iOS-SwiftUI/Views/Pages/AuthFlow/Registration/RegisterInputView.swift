@@ -179,7 +179,7 @@ struct RegisterInputView: View {
             
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         // Navigation for email verification flow
         .navigationDestination(isPresented: $viewModel.shouldNavigateToVerificationCodeView, destination: {VerificationCodeView(viewModel: viewModel)})
         // Navigation for OAuth flow - skip verification and go directly to user details

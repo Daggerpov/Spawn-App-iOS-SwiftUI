@@ -206,7 +206,7 @@ struct LoginInputView: View {
             
             Spacer()
         }
-        .background(Color(.systemBackground))
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
         .onAppear {
             // Reset any previous error state
