@@ -363,7 +363,7 @@ class AppCache: ObservableObject {
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "\(userId)/activity-types") else { return }
+            guard let url = URL(string: APIService.baseURL + "users/\(userId)/activity-types") else { return }
             
             let fetchedActivityTypes: [ActivityTypeDTO] = try await apiService.fetchData(from: url, parameters: nil)
             

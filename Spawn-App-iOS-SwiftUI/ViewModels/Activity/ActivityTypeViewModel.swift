@@ -62,7 +62,7 @@ class ActivityTypeViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let endpoint = "\(userId)/activity-types"
+            let endpoint = "users/\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 errorMessage = "Invalid URL"
                 return
@@ -127,7 +127,7 @@ class ActivityTypeViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let endpoint = "\(userId)/activity-types"
+            let endpoint = "users/\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 errorMessage = "Invalid URL"
                 return
@@ -170,7 +170,7 @@ class ActivityTypeViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let endpoint = "\(userId)/activity-types"
+            let endpoint = "users/\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 errorMessage = "Invalid URL"
                 return
@@ -215,7 +215,7 @@ class ActivityTypeViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let endpoint = "\(userId)/activity-types"
+            let endpoint = "users/\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 print("❌ Invalid URL for endpoint: \(endpoint)")
                 errorMessage = "Invalid URL"
@@ -366,7 +366,7 @@ class ActivityTypeViewModel: ObservableObject {
         defer { isLoading = false }
         
         do {
-            let endpoint = "\(userId)/activity-types"
+            let endpoint = "users/\(userId)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 errorMessage = "Invalid URL"
                 return

@@ -327,7 +327,7 @@ struct ManagePeopleView: View {
         
         do {
             // Make direct API call to update the activity type
-            let endpoint = "\(user.id)/activity-types"
+            let endpoint = "users/\(user.id)/activity-types"
             guard let url = URL(string: APIService.baseURL + endpoint) else {
                 print("❌ Invalid URL for activity type update")
                 isLoading = false
