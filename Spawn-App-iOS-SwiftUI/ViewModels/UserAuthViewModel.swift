@@ -191,9 +191,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.defaultPfpUrlString = nil
 			
 			// Reset loading state but mark as not first launch
-			self.minimumLoadingCompleted = false
-			self.authCheckCompleted = false
-			self.hasCheckedSpawnUserExistence = false
+			// For logout scenarios, we want to skip the loading screen since we already know the user is logged out
+			self.minimumLoadingCompleted = true
+			self.authCheckCompleted = true
+			self.hasCheckedSpawnUserExistence = true
 			self.isFirstLaunch = false // This is no longer first launch
 			
 			// Don't reset onboarding state on logout - users who have completed onboarding

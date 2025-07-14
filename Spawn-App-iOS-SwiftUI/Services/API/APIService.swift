@@ -100,6 +100,17 @@ class APIService: IAPIService {
 		parameters: [String: String]? = nil
 	) async throws -> T where T: Decodable {
 		resetState()
+		
+		// Check if user is authenticated for non-auth endpoints
+		let urlString = url.absoluteString
+		let isAuthEndpoint = urlString.contains("/auth/") || urlString.contains("/quick-sign-in")
+		
+		if !isAuthEndpoint {
+			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+				print("❌ Cannot make API call to \(urlString): User is not logged in")
+				throw APIError.invalidStatusCode(statusCode: 401)
+			}
+		}
 
 		// Create a URLComponents object from the URL
 		var urlComponents = URLComponents(
@@ -215,6 +226,17 @@ class APIService: IAPIService {
 		parameters: [String: String]? = nil
 	) async throws -> U? {
 		resetState()
+		
+		// Check if user is authenticated for non-auth endpoints
+		let urlString = url.absoluteString
+		let isAuthEndpoint = urlString.contains("/auth/") || urlString.contains("/quick-sign-in")
+		
+		if !isAuthEndpoint {
+			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+				print("❌ Cannot make API call to \(urlString): User is not logged in")
+				throw APIError.invalidStatusCode(statusCode: 401)
+			}
+		}
 
 		// Create a URLComponents object from the URL
 		var urlComponents = URLComponents(
@@ -869,7 +891,11 @@ class APIService: IAPIService {
 		    let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
 		    let refreshToken = String(data: refreshTokenData, encoding: .utf8) 
 		else {
-			print("❌ ERROR: Missing refresh token in Keychain")
+			print("❌ ERROR: Missing refresh token in Keychain - logging out user")
+			// If refresh token is missing, immediately log out the user to prevent endless retry loops
+			await MainActor.run {
+				UserAuthViewModel.shared.signOut()
+			}
 			throw APIError.failedTokenSaving(tokenType: "refreshToken")
 		}
 
@@ -886,7 +912,11 @@ class APIService: IAPIService {
 		}
         if httpResponse.statusCode == 401 {
             // Refresh token didn't work so logout
-            UserAuthViewModel.shared.signOut()
+            print("❌ ERROR: Refresh token invalid (401) - logging out user")
+            await MainActor.run {
+                UserAuthViewModel.shared.signOut()
+            }
+            throw APIError.invalidStatusCode(statusCode: 401)
         }
         
 		if httpResponse.statusCode == 200 {

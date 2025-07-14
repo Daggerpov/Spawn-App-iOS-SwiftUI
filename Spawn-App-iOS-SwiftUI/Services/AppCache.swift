@@ -110,6 +110,12 @@ class AppCache: ObservableObject {
             return
         }
         
+        // Double-check authentication state before proceeding
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot validate cache: User is not logged in")
+            return
+        }
+        
         // Clear calendar caches due to data format changes (CalendarActivityDTO date field changed from Date to String)
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
@@ -225,7 +231,15 @@ class AppCache: ObservableObject {
     }
     
     func refreshFriends() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh friends: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh friends: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
@@ -262,7 +276,15 @@ class AppCache: ObservableObject {
     }
     
     func refreshActivities() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh activities: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh activities: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
@@ -329,7 +351,15 @@ class AppCache: ObservableObject {
     }
     
     func refreshActivityTypes() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh activity types: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh activity types: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
@@ -380,7 +410,15 @@ class AppCache: ObservableObject {
     func refreshOtherProfiles() async {
         // Since this is a collection of individual profiles,
         // we'll refresh all the profiles we currently have cached
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh other profiles: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh other profiles: User is not logged in")
+            return
+        }
         
         let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
         
@@ -431,7 +469,15 @@ class AppCache: ObservableObject {
     }
     
     func refreshRecommendedFriends() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh recommended friends: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh recommended friends: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
@@ -479,7 +525,15 @@ class AppCache: ObservableObject {
     }
 
     func refreshFriendRequests() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh friend requests: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh friend requests: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
@@ -712,7 +766,15 @@ class AppCache: ObservableObject {
     }
     
     func refreshProfileStats(_ userId: UUID) async {
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh profile stats: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh profile stats: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
@@ -729,7 +791,15 @@ class AppCache: ObservableObject {
     }
     
     func refreshProfileInterests(_ userId: UUID) async {
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh profile interests: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh profile interests: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
@@ -746,7 +816,15 @@ class AppCache: ObservableObject {
     }
     
     func refreshProfileSocialMedia(_ userId: UUID) async {
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh profile social media: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh profile social media: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
@@ -765,7 +843,15 @@ class AppCache: ObservableObject {
 
     
     func refreshProfileActivities(_ userId: UUID) async {
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh profile activities: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh profile activities: User is not logged in")
+            return
+        }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()

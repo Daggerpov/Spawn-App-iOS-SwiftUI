@@ -50,6 +50,12 @@ class ActivityTypeViewModel: ObservableObject {
     /// Fetches all activity types for the user from the backend
     @MainActor
     func fetchActivityTypes() async {
+        // Check if user is still authenticated before making API call
+        guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot fetch activity types: User is not logged in")
+            return
+        }
+        
         isLoading = true
         errorMessage = nil
         

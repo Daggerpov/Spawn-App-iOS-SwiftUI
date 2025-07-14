@@ -109,6 +109,12 @@ class FeedViewModel: ObservableObject {
 
     
     private func fetchActivitiesFromAPI() async {
+        // Check if user is still authenticated before making API call
+        guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot fetch activities: User is not logged in")
+            return
+        }
+        
         // Path: /api/v1/activities/feedActivities/{requestingUserId}
         guard let url = URL(string: APIService.baseURL + "activities/feedActivities/\(userId)") else {
             print("❌ DEBUG: Failed to construct URL for activities")

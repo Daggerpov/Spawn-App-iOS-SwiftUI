@@ -50,6 +50,15 @@ class ProfileViewModel: ObservableObject {
     }
     
     func fetchUserStats(userId: UUID) async {
+        // Check if user is still authenticated before making API call
+        guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot fetch user stats: User is not logged in")
+            await MainActor.run {
+                self.isLoadingStats = false
+            }
+            return
+        }
+        
         await MainActor.run { self.isLoadingStats = true }
         
         // Check cache first
@@ -225,6 +234,15 @@ class ProfileViewModel: ObservableObject {
     }
     
     func fetchUserProfileInfo(userId: UUID) async {
+        // Check if user is still authenticated before making API call
+        guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot fetch profile info: User is not logged in")
+            await MainActor.run {
+                self.isLoadingProfileInfo = false
+            }
+            return
+        }
+        
         await MainActor.run { self.isLoadingProfileInfo = true }
         
         do {

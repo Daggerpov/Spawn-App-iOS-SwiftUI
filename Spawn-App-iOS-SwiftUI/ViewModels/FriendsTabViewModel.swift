@@ -471,6 +471,15 @@ class FriendsTabViewModel: ObservableObject {
     }
 
     func fetchRecentlySpawnedWith() async {
+        // Check if user is still authenticated before making API call
+        guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot fetch recently spawned users: User is not logged in")
+            await MainActor.run {
+                self.isLoading = false
+            }
+            return
+        }
+        
         await MainActor.run {
             isLoading = true
         }
