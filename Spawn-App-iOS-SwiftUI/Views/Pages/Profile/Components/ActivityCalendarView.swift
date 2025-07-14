@@ -144,73 +144,47 @@ struct MonthCalendarView: View {
     @State private var selectedActivity: CalendarActivityDTO?
     
     var body: some View {
-        GeometryReader { geometry in
-            VStack(alignment: .leading, spacing: 16) {
-                // Month header
-                Text(monthYearString())
-                    .font(.onestMedium(size: 16))
-                    .foregroundColor(figmaBlack300)
-                    .padding(.leading, 8)
-                
-                // Calendar grid - 4 days per row
-                VStack(spacing: calculateSpacing(for: geometry.size.width)) {
-                    ForEach(0..<numberOfRows, id: \.self) { rowIndex in
-                        HStack(spacing: calculateSpacing(for: geometry.size.width)) {
-                            ForEach(0..<4, id: \.self) { dayIndex in
-                                let dayOffset = rowIndex * 4 + dayIndex
-                                let day = dayForOffset(dayOffset)
-                                
-                                CalendarDayTile(
-                                    day: day,
-                                    activities: getActivitiesForDay(day),
-                                    isCurrentMonth: isCurrentMonth(day),
-                                    tileSize: calculateTileSize(for: geometry.size.width),
-                                    onDayTapped: { activities in
-                                        if activities.count == 1 {
-                                            selectedActivity = activities.first!
-                                            showActivityDetails = true
-                                        } else if activities.count > 1 {
-                                            onDayActivitiesSelected(activities)
-                                        }
+        VStack(alignment: .leading, spacing: 16) {
+            // Month header
+            Text(monthYearString())
+                .font(.onestMedium(size: 16))
+                .foregroundColor(figmaBlack300)
+                .padding(.leading, 8)
+            
+            // Calendar grid - 4 days per row
+            VStack(spacing: 8) {
+                ForEach(0..<numberOfRows, id: \.self) { rowIndex in
+                    HStack(spacing: 8) {
+                        ForEach(0..<4, id: \.self) { dayIndex in
+                            let dayOffset = rowIndex * 4 + dayIndex
+                            let day = dayForOffset(dayOffset)
+                            
+                            CalendarDayTile(
+                                day: day,
+                                activities: getActivitiesForDay(day),
+                                isCurrentMonth: isCurrentMonth(day),
+                                tileSize: 86.4, // Fixed tile size matching Figma specs
+                                onDayTapped: { activities in
+                                    if activities.count == 1 {
+                                        selectedActivity = activities.first!
+                                        showActivityDetails = true
+                                    } else if activities.count > 1 {
+                                        onDayActivitiesSelected(activities)
                                     }
-                                )
-                            }
+                                }
+                            )
                         }
                     }
                 }
-                .padding(.horizontal, 8)
             }
+            .padding(.horizontal, 8)
         }
+        .frame(maxWidth: .infinity)
         .sheet(isPresented: $showActivityDetails) {
             if let activity = selectedActivity {
                 ActivityDetailsSheet(activity: activity, userAuth: userAuth)
             }
         }
-    }
-    
-    private func calculateTileSize(for width: CGFloat) -> CGFloat {
-        // Available width after padding (8 on each side = 16 total)
-        let availableWidth = width - 16
-        
-        // Calculate tile size based on available width
-        // We need 4 tiles and 3 spacings
-        let minSpacing: CGFloat = 8
-        let maxSpacing: CGFloat = 16
-        
-        // Calculate spacing based on screen width
-        let spacing = min(maxSpacing, max(minSpacing, availableWidth * 0.03))
-        
-        // Calculate tile size
-        let totalSpacing = spacing * 3
-        let tileSize = (availableWidth - totalSpacing) / 4
-        
-        // Ensure minimum tile size for usability
-        return max(tileSize, 70)
-    }
-    
-    private func calculateSpacing(for width: CGFloat) -> CGFloat {
-        let availableWidth = width - 16
-        return min(16, max(8, availableWidth * 0.03))
     }
     
     private var numberOfRows: Int {
@@ -332,8 +306,6 @@ struct CalendarDayTile: View {
                             onDayTapped(activities)
                         }
                     }
-                
-
             } else {
                 // Days outside current month - invisible
                 Color.clear
