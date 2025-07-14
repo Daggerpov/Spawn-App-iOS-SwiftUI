@@ -33,9 +33,7 @@ class FriendRequestsViewModel: ObservableObject {
                 .sink { [weak self] cachedFriendRequests in
                     guard let self = self else { return }
                     let userFriendRequests = cachedFriendRequests[self.userId] ?? []
-                    if !userFriendRequests.isEmpty {
-                        self.incomingFriendRequests = userFriendRequests
-                    }
+                    self.incomingFriendRequests = userFriendRequests
                 }
                 .store(in: &cancellables)
         }

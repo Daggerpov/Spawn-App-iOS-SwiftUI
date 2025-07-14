@@ -117,7 +117,7 @@ class ActivityColorService: ObservableObject {
     
     /// Load cached color assignments from UserDefaults
     private func loadFromCache() {
-        // Load activity colors
+        // Load activity colors (global, since activity UUIDs are unique)
         if let colorsData = UserDefaults.standard.data(forKey: CacheKeys.activityColors),
            let colorDict = try? JSONDecoder().decode([String: String].self, from: colorsData) {
             for (uuidString, hexString) in colorDict {
@@ -127,21 +127,31 @@ class ActivityColorService: ObservableObject {
             }
         }
         
-        // Load color usage count
-        if let usageData = UserDefaults.standard.data(forKey: CacheKeys.colorUsageCount),
+        // Load user-specific color usage count and next color index
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id.uuidString else {
+            // If no user is logged in, use defaults
+            colorUsageCount = [:]
+            nextColorIndex = 0
+            return
+        }
+        
+        // Load color usage count for current user
+        let usageKey = "\(CacheKeys.colorUsageCount)_\(userId)"
+        if let usageData = UserDefaults.standard.data(forKey: usageKey),
            let usageDict = try? JSONDecoder().decode([String: Int].self, from: usageData) {
             for (hexString, count) in usageDict {
                 colorUsageCount[Color(hex: hexString)] = count
             }
         }
         
-        // Load next color index
-        nextColorIndex = UserDefaults.standard.integer(forKey: CacheKeys.nextColorIndex)
+        // Load next color index for current user
+        let indexKey = "\(CacheKeys.nextColorIndex)_\(userId)"
+        nextColorIndex = UserDefaults.standard.integer(forKey: indexKey)
     }
     
     /// Save color assignments to UserDefaults
     private func saveToCache() {
-        // Save activity colors
+        // Save activity colors (global, since activity UUIDs are unique)
         var colorDict: [String: String] = [:]
         for (uuid, color) in activityColors {
             colorDict[uuid.uuidString] = color.toHex()
@@ -150,17 +160,35 @@ class ActivityColorService: ObservableObject {
             UserDefaults.standard.set(colorsData, forKey: CacheKeys.activityColors)
         }
         
-        // Save color usage count
+        // Save user-specific color usage count and next color index
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id.uuidString else {
+            print("Cannot save color preferences: no user logged in")
+            return
+        }
+        
+        // Save color usage count for current user
         var usageDict: [String: Int] = [:]
         for (color, count) in colorUsageCount {
             usageDict[color.toHex()] = count
         }
         if let usageData = try? JSONEncoder().encode(usageDict) {
-            UserDefaults.standard.set(usageData, forKey: CacheKeys.colorUsageCount)
+            let usageKey = "\(CacheKeys.colorUsageCount)_\(userId)"
+            UserDefaults.standard.set(usageData, forKey: usageKey)
         }
         
-        // Save next color index
-        UserDefaults.standard.set(nextColorIndex, forKey: CacheKeys.nextColorIndex)
+        // Save next color index for current user
+        let indexKey = "\(CacheKeys.nextColorIndex)_\(userId)"
+        UserDefaults.standard.set(nextColorIndex, forKey: indexKey)
+    }
+    
+    /// Clear color preferences for a specific user (useful when user logs out)
+    func clearColorPreferencesForUser(_ userId: UUID) {
+        let userIdString = userId.uuidString
+        let usageKey = "\(CacheKeys.colorUsageCount)_\(userIdString)"
+        let indexKey = "\(CacheKeys.nextColorIndex)_\(userIdString)"
+        
+        UserDefaults.standard.removeObject(forKey: usageKey)
+        UserDefaults.standard.removeObject(forKey: indexKey)
     }
 }
 

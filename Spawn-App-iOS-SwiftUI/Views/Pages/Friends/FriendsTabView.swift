@@ -192,7 +192,7 @@ struct FriendsTabView: View {
 		VStack(alignment: .leading, spacing: 16) {
 			if viewModel.filteredFriends.count > 0 {
                 HStack{
-                    Text("Your Friends (\(viewModel.filteredFriends.count))")
+                    Text("Friends")
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()

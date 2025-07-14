@@ -96,9 +96,9 @@ struct InviteView: View {
                         await friendsViewModel.fetchAllData()
                     }
                 } else {
-                    // Use cached friends data
-                    friendsViewModel.friends = appCache.friends
-                    friendsViewModel.filteredFriends = appCache.friends
+                                    // Use cached friends data
+                friendsViewModel.friends = appCache.getCurrentUserFriends()
+                friendsViewModel.filteredFriends = appCache.getCurrentUserFriends()
                 }
             }
         }

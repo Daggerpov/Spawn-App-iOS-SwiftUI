@@ -149,9 +149,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		Task { @MainActor in
 			print("🔄 DEBUG: Resetting authentication state")
 			
-			// Clear friend requests cache for current user before clearing user data
+			// Clear all cached data for current user before clearing user data
 			if let currentUserId = self.spawnUser?.id {
-				AppCache.shared.clearFriendRequestsForUser(currentUserId)
+				AppCache.shared.clearAllDataForUser(currentUserId)
 			}
 
 			// Clear tokens from Keychain
@@ -806,9 +806,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 	
 	private func clearLocalDataAndLogout() async {
-		// Clear friend requests cache for current user before clearing user data
+		// Clear all cached data for current user before clearing user data
 		if let currentUserId = self.spawnUser?.id {
-			AppCache.shared.clearFriendRequestsForUser(currentUserId)
+			AppCache.shared.clearAllDataForUser(currentUserId)
 		}
 		
 		// Clear tokens
