@@ -38,44 +38,73 @@ struct WelcomeView: View {
 					Spacer()
 					Spacer()
 					Spacer()
-                    // Static logo after animation
+                    // Static logo after animation with debug border
                     Image("SpawnLogo")
                         .scaledToFit()
                         .transition(.opacity)
 						.padding(.bottom, 12)
+                        .border(Color.red, width: 2) // DEBUG: Add visible border
+                        .onAppear {
+                            print("🖼️ DEBUG: SpawnLogo image appeared")
+                        }
                 }
                 
                 if animationCompleted {
+                    // DEBUG: Use hardcoded visible colors
                     Text("Spontaneity made easy.")
 						.font(.onestRegular(size: 20))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                        .foregroundColor(colorScheme == .dark ? .white : .black) // DEBUG: Hardcoded colors
                         .transition(.opacity)
+                        .border(Color.blue, width: 1) // DEBUG: Add visible border
+                        .onAppear {
+                            print("📝 DEBUG: 'Spontaneity made easy' text appeared")
+                        }
 
                     // Skip onboarding for returning users
                     if userAuth.hasCompletedOnboarding {
-                        OnboardingButtonView("Get Started", destination: SignInView())
-                            .padding(.bottom, 12)
-                            .transition(.opacity)
-                            .onAppear {
-                                print("🔘 DEBUG: Showing Get Started button (for returning users)")
-                            }
+                        // DEBUG: Replace OnboardingButtonView with simple NavigationLink
+                        NavigationLink(destination: SignInView()) {
+                            Text("Get Started")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(16)
+                        }
+                        .padding(.bottom, 12)
+                        .transition(.opacity)
+                        .border(Color.green, width: 2) // DEBUG: Add visible border
+                        .onAppear {
+                            print("🔘 DEBUG: Hardcoded Get Started button appeared (for returning users)")
+                        }
                     } else {
 						Spacer()
-                        OnboardingButtonView("Get Started", destination: SpawnIntroView())
-							.padding(.top, 12)
-                            .transition(.opacity)
-                            .onAppear {
-                                print("🔘 DEBUG: Showing Get Started button (for new users)")
-                            }
+                        // DEBUG: Replace OnboardingButtonView with simple NavigationLink
+                        NavigationLink(destination: SpawnIntroView()) {
+                            Text("Get Started")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.blue)
+                                .cornerRadius(16)
+                        }
+                        .padding(.top, 12)
+                        .transition(.opacity)
+                        .border(Color.orange, width: 2) // DEBUG: Add visible border
+                        .onAppear {
+                            print("🔘 DEBUG: Hardcoded Get Started button appeared (for new users)")
+                        }
                     }
                 }
                 
                 Spacer()
             }
-            .background(universalBackgroundColor(from: themeService, environment: colorScheme))
+            .background(colorScheme == .dark ? Color.black : Color.white) // DEBUG: Hardcoded background
             .ignoresSafeArea(.all)
             .onAppear {
                 print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
+                print("🎨 DEBUG: Current colorScheme: \(colorScheme)")
+                print("🎨 DEBUG: ThemeService colorScheme: \(themeService.colorScheme)")
             }
             .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
                 switch userAuth.skipDestination {
@@ -83,6 +112,8 @@ struct WelcomeView: View {
                     UserDetailsInputView()
                 case .userOptionalDetailsInput:
                     UserOptionalDetailsInputView()
+                case .contactImport:
+                    ContactImportView()
                 case .userToS:
                     UserToS()
                 case .none:

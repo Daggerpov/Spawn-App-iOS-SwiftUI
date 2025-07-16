@@ -181,8 +181,8 @@ struct UserOptionalDetailsInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
-            UserToS()
+        .navigationDestination(isPresented: $userAuth.shouldNavigateToContactImportView) {
+            ContactImportView()
         }
     }
 }

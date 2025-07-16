@@ -31,6 +31,8 @@
 	<string>Spawn would like to save photos to your photo library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Spawn needs access to your location to show you your current location on the map.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Spawn needs access to your contacts to help you find friends who are already using the app.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

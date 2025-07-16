@@ -79,6 +79,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     @Published var shouldNavigateToUserOptionalDetailsInputView: Bool = false
     
+    @Published var shouldNavigateToContactImportView: Bool = false
+    
     @Published var shouldNavigateToUserToS: Bool = false
     
     private var isOnboarding: Bool = false
@@ -210,6 +212,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		Task { @MainActor in
 			print("🔄 DEBUG: Resetting auth flow state for back navigation")
 			
+			// Log current state for debugging
+			if let user = self.spawnUser {
+				print("🔄 DEBUG: Clearing incomplete user state - ID: \(user.id), Email: \(user.email ?? "nil")")
+			}
+			
 			// Reset user authentication data
 			self.errorMessage = nil
 			self.authProvider = nil
@@ -231,6 +238,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.shouldNavigateToVerificationCodeView = false
 			self.shouldNavigateToUserDetailsView = false
 			self.shouldNavigateToUserOptionalDetailsInputView = false
+			self.shouldNavigateToContactImportView = false
 			self.shouldNavigateToUserToS = false
 			self.shouldSkipAhead = false
 			self.skipDestination = .none
@@ -642,9 +650,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			shouldNavigateToUserDetailsView = true
 			print("📍 User status: emailVerified - navigating to user details input")
 		case .usernameAndPhoneNumber:
-			// Only needs to accept Terms of Service
+			// Needs to complete name and photo details
 			shouldNavigateToUserOptionalDetailsInputView = true
-			print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+			print("📍 User status: usernameAndPhoneNumber - navigating to name and photo input")
         case .nameAndPhoto:
             shouldNavigateToUserToS = true
 		case .active:
@@ -676,10 +684,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
             print("📍 User status: emailVerified - navigating to user details input")
             
         case .usernameAndPhoneNumber:
-            // Only needs to accept Terms of Service
+            // Needs to complete name and photo details
             shouldNavigateToUserOptionalDetailsInputView = true
             skipDestination = .userOptionalDetailsInput
-            print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+            print("📍 User status: usernameAndPhoneNumber - navigating to name and photo input")
         
         case .nameAndPhoto:
             shouldNavigateToUserToS = true
@@ -1346,7 +1354,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
-                        self.shouldNavigateToUserToS = true
+                        self.shouldNavigateToContactImportView = true
                         self.errorMessage = nil
                     } else {
                         self.errorMessage = "Failed to update optional details."
