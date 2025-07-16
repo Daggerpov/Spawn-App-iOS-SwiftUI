@@ -104,8 +104,9 @@ class APIService: IAPIService {
 		// Check if user is authenticated for non-auth endpoints
 		let urlString = url.absoluteString
 		let isAuthEndpoint = urlString.contains("/auth/") || urlString.contains("/quick-sign-in")
+		let isWhitelistedEndpoint = urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
 		
-		if !isAuthEndpoint {
+		if !isAuthEndpoint && !isWhitelistedEndpoint {
 			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 				print("❌ Cannot make API call to \(urlString): User is not logged in")
 				throw APIError.invalidStatusCode(statusCode: 401)
@@ -230,8 +231,9 @@ class APIService: IAPIService {
 		// Check if user is authenticated for non-auth endpoints
 		let urlString = url.absoluteString
 		let isAuthEndpoint = urlString.contains("/auth/") || urlString.contains("/quick-sign-in")
+		let isWhitelistedEndpoint = urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
 		
-		if !isAuthEndpoint {
+		if !isAuthEndpoint && !isWhitelistedEndpoint {
 			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 				print("❌ Cannot make API call to \(urlString): User is not logged in")
 				throw APIError.invalidStatusCode(statusCode: 401)
@@ -612,7 +614,9 @@ class APIService: IAPIService {
 			"auth/register/oauth",
             "auth/register/verification/check",
 			"auth/sign-in",
-			"auth/login"
+			"auth/login",
+			"optional-details",
+			"contacts/cross-reference"
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
