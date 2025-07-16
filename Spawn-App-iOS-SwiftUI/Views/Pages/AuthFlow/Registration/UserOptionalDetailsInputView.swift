@@ -73,8 +73,7 @@ struct UserOptionalDetailsInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Reset auth flow state when backing out of optional details
-                    userAuth.resetAuthFlow()
+                    // Go back one step in the onboarding flow
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -171,9 +170,6 @@ struct UserOptionalDetailsInputView: View {
                         isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
                     }
                 }
-                .padding(.top, -16)
-                .padding(.bottom, -30)
-                .padding(.horizontal, -22)
                 .disabled(!isFormValid || isLoading)
             }
             

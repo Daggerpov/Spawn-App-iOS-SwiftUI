@@ -136,8 +136,7 @@ struct VerificationCodeView: View {
     private var navigationBar: some View {
         HStack {
             Button(action: {
-                // Reset auth flow state when backing out of verification
-                viewModel.resetAuthFlow()
+                // Go back one step in the onboarding flow
                 dismiss()
             }) {
                 Image(systemName: "chevron.left")

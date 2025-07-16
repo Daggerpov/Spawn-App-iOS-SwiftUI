@@ -62,8 +62,7 @@ struct UserDetailsInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: { 
-                    // Reset auth flow state when backing out of user details
-                    viewModel.resetAuthFlow()
+                    // Go back one step in the onboarding flow
                     dismiss() 
                 }) {
                     Image(systemName: "chevron.left")
