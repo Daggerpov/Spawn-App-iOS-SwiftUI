@@ -74,6 +74,18 @@ class FriendsTabViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        // Subscribe to AppCache sent friend requests updates  
+        appCache.$sentFriendRequests
+            .sink { [weak self] cachedSentFriendRequests in
+                guard let self = self else { return }
+                let userSentFriendRequests = cachedSentFriendRequests[self.userId] ?? []
+                self.outgoingFriendRequests = userSentFriendRequests
+                if !self.isSearching {
+                    self.filteredOutgoingFriendRequests = userSentFriendRequests
+                }
+            }
+            .store(in: &cancellables)
 		}
 	}
     
@@ -325,6 +337,15 @@ class FriendsTabViewModel: ObservableObject {
 }
 
 	internal func fetchOutgoingFriendRequests() async {
+        // Check cache first
+        let cachedSentRequests = appCache.getCurrentUserSentFriendRequests()
+        if !cachedSentRequests.isEmpty {
+            await MainActor.run {
+                self.outgoingFriendRequests = cachedSentRequests
+            }
+            return
+        }
+        
 		// full path: /api/v1/friend-requests/sent/{userId}
 		if let url = URL(
 			string: APIService.baseURL + "friend-requests/sent/\(userId)")
@@ -337,6 +358,8 @@ class FriendsTabViewModel: ObservableObject {
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.outgoingFriendRequests = fetchedOutgoingFriendRequests
+                    // Update the cache
+                    self.appCache.updateSentFriendRequestsForUser(fetchedOutgoingFriendRequests, userId: self.userId)
 				}
 			} catch {
 				await MainActor.run {

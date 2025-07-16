@@ -79,7 +79,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     @Published var shouldNavigateToUserOptionalDetailsInputView: Bool = false
     
+    @Published var shouldNavigateToContactImportView: Bool = false
+    
     @Published var shouldNavigateToUserToS: Bool = false
+    
+    @Published var shouldShowOnboardingContinuation: Bool = false
     
     private var isOnboarding: Bool = false
     
@@ -210,6 +214,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		Task { @MainActor in
 			print("🔄 DEBUG: Resetting auth flow state for back navigation")
 			
+			// Log current state for debugging
+			if let user = self.spawnUser {
+				print("🔄 DEBUG: Clearing incomplete user state - ID: \(user.id), Email: \(user.email ?? "nil")")
+			}
+			
 			// Reset user authentication data
 			self.errorMessage = nil
 			self.authProvider = nil
@@ -231,7 +240,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.shouldNavigateToVerificationCodeView = false
 			self.shouldNavigateToUserDetailsView = false
 			self.shouldNavigateToUserOptionalDetailsInputView = false
+			self.shouldNavigateToContactImportView = false
 			self.shouldNavigateToUserToS = false
+			self.shouldShowOnboardingContinuation = false
 			self.shouldSkipAhead = false
 			self.skipDestination = .none
 			
@@ -255,13 +266,22 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 	
-	// Reset onboarding state for testing/debugging purposes
-	func resetOnboardingState() {
-		Task { @MainActor in
-			hasCompletedOnboarding = false
-			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-		}
-	}
+	    // Reset onboarding state for testing/debugging purposes
+    func resetOnboardingState() {
+        Task { @MainActor in
+            hasCompletedOnboarding = false
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        }
+    }
+    
+    // Continue onboarding from where the user left off
+    func continueOnboarding() {
+        Task { @MainActor in
+            shouldShowOnboardingContinuation = false
+            shouldSkipAhead = true
+            print("📍 Continuing onboarding to: \(skipDestination)")
+        }
+    }
 	
 	// Reset launch state for testing/debugging purposes
 	func resetLaunchState() {
@@ -642,9 +662,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			shouldNavigateToUserDetailsView = true
 			print("📍 User status: emailVerified - navigating to user details input")
 		case .usernameAndPhoneNumber:
-			// Only needs to accept Terms of Service
+			// Needs to complete name and photo details
 			shouldNavigateToUserOptionalDetailsInputView = true
-			print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+			print("📍 User status: usernameAndPhoneNumber - navigating to name and photo input")
         case .nameAndPhoto:
             shouldNavigateToUserToS = true
 		case .active:
@@ -664,29 +684,26 @@ class UserAuthViewModel: NSObject, ObservableObject {
             return
         }
         
-        if status != .active {
-            shouldSkipAhead = true
-        }
-        
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
-            shouldNavigateToUserDetailsView = true
             skipDestination = .userDetailsInput
-            print("📍 User status: emailVerified - navigating to user details input")
+            shouldShowOnboardingContinuation = true
+            print("📍 User status: emailVerified - showing continuation popup")
             
         case .usernameAndPhoneNumber:
-            // Only needs to accept Terms of Service
-            shouldNavigateToUserOptionalDetailsInputView = true
+            // Needs to complete name and photo details
             skipDestination = .userOptionalDetailsInput
-            print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+            shouldShowOnboardingContinuation = true
+            print("📍 User status: usernameAndPhoneNumber - showing continuation popup")
         
         case .nameAndPhoto:
-            shouldNavigateToUserToS = true
             skipDestination = .userToS
+            shouldShowOnboardingContinuation = true
+            print("📍 User status: nameAndPhoto - showing continuation popup")
+            
         case .active:
             // Fully onboarded user - go to feed
-            shouldSkipAhead = true
             isFormValid = true
             isLoggedIn = true
             setShouldNavigateToFeedView()
@@ -1346,7 +1363,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
-                        self.shouldNavigateToUserToS = true
+                        self.shouldNavigateToContactImportView = true
                         self.errorMessage = nil
                     } else {
                         self.errorMessage = "Failed to update optional details."

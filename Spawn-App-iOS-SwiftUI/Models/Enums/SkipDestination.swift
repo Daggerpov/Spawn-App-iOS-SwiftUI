@@ -8,6 +8,7 @@
 enum SkipDestination {
     case userDetailsInput
     case userOptionalDetailsInput
+    case contactImport
     case userToS
     case none
 }

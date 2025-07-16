@@ -83,6 +83,8 @@ struct WelcomeView: View {
                     UserDetailsInputView()
                 case .userOptionalDetailsInput:
                     UserOptionalDetailsInputView()
+                case .contactImport:
+                    ContactImportView()
                 case .userToS:
                     UserToS()
                 case .none:
