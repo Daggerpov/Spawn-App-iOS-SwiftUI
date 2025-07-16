@@ -19,6 +19,7 @@ class AppCache: ObservableObject {
     @Published var activityTypes: [ActivityTypeDTO] = []
     @Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]  // Changed to be user-specific
     @Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // Already user-specific
+    @Published var sentFriendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // User-specific sent friend requests
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     
     // Profile caches
@@ -39,6 +40,7 @@ class AppCache: ObservableObject {
         static let activityTypes = "activityTypes"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
+        static let sentFriendRequests = "sentFriendRequests"
         static let otherProfiles = "otherProfiles"
         static let profileStats = "profileStats"
         static let profileInterests = "profileInterests"
@@ -73,6 +75,7 @@ class AppCache: ObservableObject {
         activityTypes = []
         recommendedFriends = [:]
         friendRequests = [:] // Clear user-specific friend requests
+        sentFriendRequests = [:] // Clear user-specific sent friend requests
         otherProfiles = [:]
         
         // Clear profile caches
@@ -91,6 +94,7 @@ class AppCache: ObservableObject {
         UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
         UserDefaults.standard.removeObject(forKey: CacheKeys.recommendedFriends)
         UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.sentFriendRequests)
         UserDefaults.standard.removeObject(forKey: CacheKeys.otherProfiles)
         UserDefaults.standard.removeObject(forKey: CacheKeys.profileStats)
         UserDefaults.standard.removeObject(forKey: CacheKeys.profileInterests)
@@ -206,6 +210,18 @@ class AppCache: ObservableObject {
                     } else {
                         Task {
                             await refreshFriendRequests()
+                        }
+                    }
+                }
+                
+                // Sent Friend Requests Cache
+                if let sentFriendRequestsResponse = result[CacheKeys.sentFriendRequests], sentFriendRequestsResponse.invalidate {
+                    if let updatedItems = sentFriendRequestsResponse.updatedItems,
+                       let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: updatedItems) {
+                        updateSentFriendRequests(updatedSentFriendRequests)
+                    } else {
+                        Task {
+                            await refreshSentFriendRequests()
                         }
                     }
                 }
@@ -552,6 +568,68 @@ class AppCache: ObservableObject {
     /// Clear friend requests for a specific user (useful when user logs out or switches)
     func clearFriendRequestsForUser(_ userId: UUID) {
         friendRequests.removeValue(forKey: userId)
+        saveToDisk()
+    }
+    
+    // MARK: - Sent Friend Requests Methods
+
+    /// Get sent friend requests for the current user
+    func getCurrentUserSentFriendRequests() -> [FetchFriendRequestDTO] {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
+        return sentFriendRequests[userId] ?? []
+    }
+
+    /// Update sent friend requests for a specific user
+    func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
+        sentFriendRequests[userId] = newSentFriendRequests
+        lastChecked[CacheKeys.sentFriendRequests] = Date()
+        saveToDisk()
+        
+        // Preload profile pictures for sent friend request receivers
+        Task {
+            await preloadProfilePicturesForFriendRequests([userId: newSentFriendRequests])
+        }
+    }
+
+    func updateSentFriendRequests(_ newSentFriendRequests: [UUID: [FetchFriendRequestDTO]]) {
+        sentFriendRequests = newSentFriendRequests
+        lastChecked[CacheKeys.sentFriendRequests] = Date()
+        saveToDisk()
+        
+        // Preload profile pictures for sent friend request receivers
+        Task {
+            await preloadProfilePicturesForFriendRequests(newSentFriendRequests)
+        }
+    }
+
+    func refreshSentFriendRequests() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("Cannot refresh sent friend requests: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh sent friend requests: User is not logged in")
+            return
+        }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "friend-requests/sent/\(userId)") else { return }
+            
+            let fetchedSentFriendRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            await MainActor.run {
+                updateSentFriendRequestsForUser(fetchedSentFriendRequests, userId: userId)
+            }
+        } catch {
+            print("Failed to refresh sent friend requests: \(error.localizedDescription)")
+        }
+    }
+
+    /// Clear sent friend requests for a specific user (useful when user logs out or switches)
+    func clearSentFriendRequestsForUser(_ userId: UUID) {
+        sentFriendRequests.removeValue(forKey: userId)
         saveToDisk()
     }
     
@@ -915,6 +993,12 @@ class AppCache: ObservableObject {
             friendRequests = loadedRequests
         }
         
+        // Load sent friend requests
+        if let sentRequestsData = UserDefaults.standard.data(forKey: CacheKeys.sentFriendRequests),
+           let loadedSentRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: sentRequestsData) {
+            sentFriendRequests = loadedSentRequests
+        }
+        
         // Load profile stats
         if let statsData = UserDefaults.standard.data(forKey: CacheKeys.profileStats),
            let loadedStats = try? JSONDecoder().decode([UUID: UserStatsDTO].self, from: statsData) {
@@ -978,6 +1062,11 @@ class AppCache: ObservableObject {
         // Save friend requests
         if let requestsData = try? JSONEncoder().encode(friendRequests) {
             UserDefaults.standard.set(requestsData, forKey: CacheKeys.friendRequests)
+        }
+        
+        // Save sent friend requests
+        if let sentRequestsData = try? JSONEncoder().encode(sentFriendRequests) {
+            UserDefaults.standard.set(sentRequestsData, forKey: CacheKeys.sentFriendRequests)
         }
         
         // Save profile stats

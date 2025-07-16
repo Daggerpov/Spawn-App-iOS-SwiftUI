@@ -36,6 +36,15 @@ class FriendRequestsViewModel: ObservableObject {
                     self.incomingFriendRequests = userFriendRequests
                 }
                 .store(in: &cancellables)
+            
+            // Subscribe to cache updates for this user's sent friend requests
+            appCache.$sentFriendRequests
+                .sink { [weak self] cachedSentFriendRequests in
+                    guard let self = self else { return }
+                    let userSentFriendRequests = cachedSentFriendRequests[self.userId] ?? []
+                    self.sentFriendRequests = userSentFriendRequests
+                }
+                .store(in: &cancellables)
         }
     }
     
@@ -44,10 +53,13 @@ class FriendRequestsViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // Check cache first for incoming requests
+        // Check cache first for both incoming and sent requests
         let cachedIncoming = appCache.getCurrentUserFriendRequests()
-        if !cachedIncoming.isEmpty {
+        let cachedSent = appCache.getCurrentUserSentFriendRequests()
+        
+        if !cachedIncoming.isEmpty || !cachedSent.isEmpty {
             self.incomingFriendRequests = cachedIncoming
+            self.sentFriendRequests = cachedSent
         }
         
         do {
@@ -69,8 +81,9 @@ class FriendRequestsViewModel: ObservableObject {
             self.incomingFriendRequests = fetchedIncomingRequests
             self.sentFriendRequests = fetchedSentRequests
             
-            // Update cache for incoming requests
+            // Update cache for both incoming and sent requests
             appCache.updateFriendRequestsForUser(fetchedIncomingRequests, userId: userId)
+            appCache.updateSentFriendRequestsForUser(fetchedSentRequests, userId: userId)
             
         } catch {
             errorMessage = "Failed to fetch friend requests: \(error.localizedDescription)"
@@ -103,6 +116,7 @@ class FriendRequestsViewModel: ObservableObject {
             
             // Update the cache with the modified friend requests
             appCache.updateFriendRequestsForUser(self.incomingFriendRequests, userId: userId)
+            appCache.updateSentFriendRequestsForUser(self.sentFriendRequests, userId: userId)
             
         } catch {
             errorMessage = "Failed to \(action == .accept ? "accept" : action == .cancel ? "cancel" : "decline") friend request: \(error.localizedDescription)"
@@ -114,6 +128,7 @@ class FriendRequestsViewModel: ObservableObject {
                 
                 // Update the cache for mock environment too
                 appCache.updateFriendRequestsForUser(self.incomingFriendRequests, userId: userId)
+                appCache.updateSentFriendRequestsForUser(self.sentFriendRequests, userId: userId)
             }
         }
     }
