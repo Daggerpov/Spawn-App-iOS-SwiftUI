@@ -46,6 +46,14 @@ struct ContactImportView: View {
         }
     }
     
+    var groupedRegularContacts: [(String, [Contact])] {
+        let contacts = filteredRegularContacts
+        let grouped = Dictionary(grouping: contacts) { contact in
+            String(contact.name.prefix(1).uppercased())
+        }
+        return grouped.sorted { $0.key < $1.key }
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Navigation
@@ -167,14 +175,31 @@ struct ContactImportView: View {
                             .buttonStyle(PlainButtonStyle())
                             
                             if showSuggestedContactsSection {
-                                ForEach(filteredRegularContacts, id: \.id) { contact in
-                                    InviteContactRow(
-                                        contact: contact,
-                                        isInvited: invitedContacts.contains(contact.id),
-                                        onInvite: {
-                                            invitedContacts.insert(contact.id)
+                                ForEach(groupedRegularContacts, id: \.0) { letter, contactsInSection in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        // Section header
+                                        HStack {
+                                            Text(letter)
+                                                .font(Font.custom("Onest", size: 18).weight(.semibold))
+                                                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                            
+                                            Rectangle()
+                                                .fill(Color(red: 0.40, green: 0.38, blue: 0.38).opacity(0.3))
+                                                .frame(height: 1)
                                         }
-                                    )
+                                        .padding(.top, letter == groupedRegularContacts.first?.0 ? 0 : 12)
+                                        
+                                        // Contacts in this section
+                                        ForEach(contactsInSection, id: \.id) { contact in
+                                            InviteContactRow(
+                                                contact: contact,
+                                                isInvited: invitedContacts.contains(contact.id),
+                                                onInvite: {
+                                                    invitedContacts.insert(contact.id)
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
