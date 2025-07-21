@@ -121,16 +121,13 @@ struct ActivityDetailModalView: View {
         }
         .background(Color.clear)
         .navigationBarHidden(true)
-        .sheet(isPresented: $showAttendees) {
-            AttendeeListView(
+        .fullScreenCover(isPresented: $showAttendees) {
+            ActivityParticipantsView(
                 activity: activity,
-                activityColor: activityColor,
                 onDismiss: {
                     showAttendees = false
                 }
             )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
         }
     }
     

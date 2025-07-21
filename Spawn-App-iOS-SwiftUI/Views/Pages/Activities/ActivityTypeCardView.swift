@@ -15,31 +15,15 @@ struct ActivityTypeCardView: View {
     @State private var isPressed = false
     @State private var scale: CGFloat = 1.0
     
-    // Adaptive background gradient for dark mode
-    private var adaptiveBackgroundGradient: LinearGradient {
+    // Adaptive background color (solid colors instead of gradients)
+    private var adaptiveBackgroundColor: Color {
         switch colorScheme {
         case .dark:
-            return LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(hex: "#2C2C2C"), 
-                    Color(hex: "#3A3A3A"), 
-                    Color(hex: "#404040")
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            return Color(hex: "#2C2C2C")
         case .light:
-            return LinearGradient(
-                gradient: Gradient(colors: figmaGreyGradientColors.reversed()),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            return Color(red: 0.95, green: 0.93, blue: 0.93)
         @unknown default:
-            return LinearGradient(
-                gradient: Gradient(colors: figmaGreyGradientColors.reversed()),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            return Color(red: 0.95, green: 0.93, blue: 0.93)
         }
     }
     
@@ -49,12 +33,12 @@ struct ActivityTypeCardView: View {
         case .dark:
             return Color.white
         case .light:
-            return universalAccentColor
+            return Color(red: 0.07, green: 0.07, blue: 0.07)
         @unknown default:
-            return universalAccentColor
+            return Color(red: 0.07, green: 0.07, blue: 0.07)
         }
     }
-    
+
     var body: some View {
         Button(action: {
             // Haptic feedback
@@ -71,9 +55,19 @@ struct ActivityTypeCardView: View {
                 }
             }
         }) {
-            ZStack {
+            VStack(spacing: 4) {
+                Text(activityType.icon)
+                    .font(Font.custom("Onest", size: 34).weight(.bold))
+                    .foregroundColor(adaptiveTextColor)
+                Text(activityType.title)
+                    .font(Font.custom("Onest", size: 16).weight(.semibold))
+                    .foregroundColor(adaptiveTextColor)
+            }
+            .padding(16)
+            .frame(width: 85, height: 115)
+            .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(adaptiveBackgroundGradient)
+                    .fill(adaptiveBackgroundColor)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(
@@ -83,26 +77,16 @@ struct ActivityTypeCardView: View {
                                 lineWidth: 1
                             )
                     )
-                    .scaleEffect(scale)
-                    .shadow(
-                        color: Color.black.opacity(0.15),
-                        radius: isPressed ? 2 : 8,
-                        x: 0,
-                        y: isPressed ? 2 : 4
-                    )
-                
-                VStack(spacing: 6) {
-                    Text(activityType.icon)
-                        .font(.system(size: 22))
-                    Text(activityType.title)
-                        .font(.onestRegular(size: 12))
-                        .foregroundColor(adaptiveTextColor)
-                }
-            }
+            )
+            .scaleEffect(scale)
+            .shadow(
+                color: Color.black.opacity(0.15),
+                radius: isPressed ? 2 : 8,
+                x: 0,
+                y: isPressed ? 2 : 4
+            )
         }
         .buttonStyle(PlainButtonStyle())
-        .frame(height: 100)
-        .frame(maxWidth: .infinity)
         .animation(.easeInOut(duration: 0.15), value: scale)
         .animation(.easeInOut(duration: 0.15), value: isPressed)
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in

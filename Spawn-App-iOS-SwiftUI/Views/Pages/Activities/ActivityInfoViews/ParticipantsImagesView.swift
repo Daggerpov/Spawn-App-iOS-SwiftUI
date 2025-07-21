@@ -46,7 +46,7 @@ struct ParticipantsImagesView: View {
 				id: \.self
 			) { participantIndex in
                 let participant: BaseUserDTO = participants[participantIndex]
-				ProfilePictureView(user: participant, selectedTab: $selectedTab)
+				ProfilePictureView(user: participant, selectedTab: $selectedTab, allowsNavigation: false)
 			}
             
             if participants.count > maxCount {
