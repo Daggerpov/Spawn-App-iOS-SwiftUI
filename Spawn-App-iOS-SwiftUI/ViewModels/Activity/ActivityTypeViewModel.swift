@@ -315,12 +315,14 @@ class ActivityTypeViewModel: ObservableObject {
         
         let sortedTypes = sortedActivityTypes
         guard source < sortedTypes.count && destination < sortedTypes.count else {
-            print("❌ Invalid indices for reordering")
+            print("❌ Invalid indices for reordering: source=\(source), destination=\(destination), count=\(sortedTypes.count)")
             return
         }
         
         let sourceItem = sortedTypes[source]
         let destinationItem = sortedTypes[destination]
+        
+        print("🔄 Reordering: '\(sourceItem.title)' from position \(source) to position \(destination)")
         
         // Validation: Don't allow unpinned items to be moved before pinned items
         if !sourceItem.isPinned && destinationItem.isPinned {
@@ -336,70 +338,78 @@ class ActivityTypeViewModel: ObservableObject {
         let movedItem = reorderedTypes.remove(at: source)
         reorderedTypes.insert(movedItem, at: destination)
         
-        // Update orderNum for all affected items
+        // Update orderNum for all items to maintain proper sequencing
+        // Keep the original orderNum structure but adjust based on new positions
         var updatedTypes: [ActivityTypeDTO] = []
-        for (index, activityType) in reorderedTypes.enumerated() {
+        
+        for (newIndex, activityType) in reorderedTypes.enumerated() {
+            // Create a new DTO with updated orderNum
             let updatedType = ActivityTypeDTO(
                 id: activityType.id,
                 title: activityType.title,
                 icon: activityType.icon,
                 associatedFriends: activityType.associatedFriends,
-                orderNum: index,
+                orderNum: newIndex, // Set orderNum to the new position
                 isPinned: activityType.isPinned
             )
             updatedTypes.append(updatedType)
+            print("📋 Updated '\(updatedType.title)': orderNum=\(updatedType.orderNum), isPinned=\(updatedType.isPinned)")
         }
         
         // Update the local state optimistically
+        let originalTypes = self.activityTypes
         self.activityTypes = updatedTypes
         
+        print("🚀 Calling batch update with \(updatedTypes.count) activity types")
+        
         // Save changes to the backend
-        await batchUpdateActivityTypes(updatedTypes)
+        do {
+            try await batchUpdateActivityTypes(updatedTypes)
+            print("✅ Successfully reordered activity types")
+        } catch {
+            print("❌ Failed to reorder activity types, reverting: \(error)")
+            // Revert on failure
+            self.activityTypes = originalTypes
+            errorMessage = "Failed to reorder activity types: \(error.localizedDescription)"
+        }
     }
     
     /// Performs a batch update of activity types
     @MainActor
-    private func batchUpdateActivityTypes(_ activityTypes: [ActivityTypeDTO]) async {
+    private func batchUpdateActivityTypes(_ activityTypes: [ActivityTypeDTO]) async throws {
         isLoading = true
         errorMessage = nil
         
         defer { isLoading = false }
         
-        do {
-            let endpoint = "users/\(userId)/activity-types"
-            guard let url = URL(string: APIService.baseURL + endpoint) else {
-                errorMessage = "Invalid URL"
-                return
-            }
-            
-            let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-                updatedActivityTypes: activityTypes,
-                deletedActivityTypeIds: []
-            )
-            
-            let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
-                batchUpdateDTO,
-                to: url,
-                parameters: nil
-            )
-            
-            // Update local state with confirmed data from API
-            self.activityTypes = updatedActivityTypes
-            
-            // Update cache with confirmed data
-            appCache.updateActivityTypes(updatedActivityTypes)
-            
-            // Post notification for UI updates
-            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
-            
-            print("✅ Successfully reordered activity types")
-            
-        } catch {
-            print("❌ Error reordering activity types: \(error)")
-            errorMessage = "Failed to reorder activity types"
-            
-            // Refresh from API to get correct state
-            await fetchActivityTypes()
+        let endpoint = "users/\(userId)/activity-types"
+        guard let url = URL(string: APIService.baseURL + endpoint) else {
+            throw APIError.URLError
         }
+        
+        let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+            updatedActivityTypes: activityTypes,
+            deletedActivityTypeIds: []
+        )
+        
+        print("🌐 Sending PUT request to: \(url)")
+        print("📦 Batch update payload: \(activityTypes.count) updated types, 0 deleted types")
+        
+        let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
+            batchUpdateDTO,
+            to: url,
+            parameters: nil
+        )
+        
+        // Update local state with confirmed data from API
+        self.activityTypes = updatedActivityTypes
+        
+        // Update cache with confirmed data
+        appCache.updateActivityTypes(updatedActivityTypes)
+        
+        // Post notification for UI updates
+        NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+        
+        print("✅ Successfully updated \(updatedActivityTypes.count) activity types from server")
     }
 } 
