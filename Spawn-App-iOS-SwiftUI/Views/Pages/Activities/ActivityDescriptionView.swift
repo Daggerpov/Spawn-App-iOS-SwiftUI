@@ -124,16 +124,13 @@ struct ActivityDescriptionView: View {
 		.fullScreenCover(isPresented: $showActivityEditView) {
 			ActivityEditView(viewModel: viewModel)
 		}
-		.sheet(isPresented: $showAttendees) {
-			AttendeeListView(
+		.fullScreenCover(isPresented: $showAttendees) {
+			ActivityParticipantsView(
 				activity: viewModel.activity,
-				activityColor: color,
 				onDismiss: {
 					showAttendees = false
 				}
 			)
-			.presentationDetents([.large])
-			.presentationDragIndicator(.visible)
 		}
 	}
 	

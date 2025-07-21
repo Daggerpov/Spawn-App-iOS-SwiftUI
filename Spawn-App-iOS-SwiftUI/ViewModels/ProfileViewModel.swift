@@ -882,6 +882,11 @@ class ProfileViewModel: ObservableObject {
             
             await MainActor.run {
                 self.friendshipStatus = .requestSent
+                
+                // Remove the user from recommended friends cache so they disappear from the friends tab
+                let currentRecommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
+                let updatedRecommendedFriends = currentRecommendedFriends.filter { $0.id != toUserId }
+                AppCache.shared.updateRecommendedFriendsForUser(updatedRecommendedFriends, userId: fromUserId)
             }
         } catch {
             await MainActor.run {

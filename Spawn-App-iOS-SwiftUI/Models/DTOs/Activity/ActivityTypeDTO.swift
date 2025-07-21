@@ -6,7 +6,7 @@
 //
 import Foundation
 
-class ActivityTypeDTO: Identifiable, Codable {
+class ActivityTypeDTO: Identifiable, Codable, Equatable {
     var id: UUID
     var title: String
     var icon: String
@@ -22,6 +22,11 @@ class ActivityTypeDTO: Identifiable, Codable {
         self.associatedFriends = associatedFriends
         self.orderNum = orderNum
         self.isPinned = isPinned
+    }
+    
+    // MARK: - Equatable
+    static func == (lhs: ActivityTypeDTO, rhs: ActivityTypeDTO) -> Bool {
+        return lhs.id == rhs.id
     }
 }
 

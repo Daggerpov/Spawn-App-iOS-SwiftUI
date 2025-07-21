@@ -158,12 +158,12 @@ class AppCache: ObservableObject {
             // Request fresh data for all standard cache types
             await MainActor.run {
                 Task {
-                    async let friendsTask = refreshFriends()
-                    async let activitiesTask = refreshActivities()
-                    async let activityTypesTask = refreshActivityTypes()
-                    async let recommendedFriendsTask = refreshRecommendedFriends()
-                    async let friendRequestsTask = refreshFriendRequests()
-                    async let sentFriendRequestsTask = refreshSentFriendRequests()
+					async let friendsTask: () = refreshFriends()
+					async let activitiesTask: () = refreshActivities()
+                    async let activityTypesTask: () = refreshActivityTypes()
+                    async let recommendedFriendsTask: () = refreshRecommendedFriends()
+                    async let friendRequestsTask: () = refreshFriendRequests()
+                    async let sentFriendRequestsTask: () = refreshSentFriendRequests()
                     
                     // Wait for all tasks to complete
                     await friendsTask
