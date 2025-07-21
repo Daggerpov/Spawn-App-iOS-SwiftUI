@@ -130,16 +130,24 @@ extension ActivityTypeView {
     }
     
     private var activityTypeGrid: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 8) {
+        ScrollView {
+            LazyVGrid(columns: gridColumns, spacing: 16) {
                 ForEach(viewModel.sortedActivityTypes, id: \.id) { activityTypeDTO in
                     activityTypeCardView(for: activityTypeDTO)
                 }
                 
                 createNewActivityButton
             }
-            .padding(.horizontal)
+            .padding()
         }
+    }
+    
+    private var gridColumns: [GridItem] {
+        [
+            GridItem(.fixed(116), spacing: 8),
+            GridItem(.fixed(116), spacing: 8),
+            GridItem(.fixed(116), spacing: 8)
+        ]
     }
     
     private var createNewActivityButton: some View {
@@ -497,11 +505,10 @@ struct CreateNewActivityTypeCard: View {
     
     var body: some View {
         Button(action: onCreateNew) {
-            VStack(spacing: 8) {
-                Rectangle()
-                    .foregroundColor(.clear)
-                    .frame(width: 54, height: 47)
-                    .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+            VStack(spacing: 12) {
+                Image("CreateNewActivityIcon")
+                    .resizable()
+                    .frame(width: 32, height: 32)
                 
                 Text("Create New Activity")
                     .font(Font.custom("Onest", size: 12).weight(.medium))
