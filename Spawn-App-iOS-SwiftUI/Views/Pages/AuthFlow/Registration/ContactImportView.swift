@@ -15,118 +15,204 @@ struct ContactImportView: View {
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
     
-    @State private var isLoading: Bool = false
+    @State private var searchText: String = ""
+    @State private var addedFriends: Set<UUID> = []
+    @State private var invitedContacts: Set<String> = []
     @State private var showPermissionDeniedAlert: Bool = false
+    @State private var showSpawnContactsSection: Bool = true
+    @State private var showSuggestedContactsSection: Bool = true
+    
+    var filteredSpawnContacts: [ContactsOnSpawn] {
+        let contacts = contactsService.contactsOnSpawn
+        if searchText.isEmpty {
+            return contacts.sorted { $0.contact.name.localizedCaseInsensitiveCompare($1.contact.name) == .orderedAscending }
+        } else {
+            return contacts
+                .filter { $0.contact.name.localizedCaseInsensitiveContains(searchText) }
+                .sorted { $0.contact.name.localizedCaseInsensitiveCompare($1.contact.name) == .orderedAscending }
+        }
+    }
+    
+    var filteredRegularContacts: [Contact] {
+        let spawnContactIds = Set(contactsService.contactsOnSpawn.map { $0.contact.id })
+        let regularContacts = contactsService.contacts.filter { !spawnContactIds.contains($0.id) }
+        
+        if searchText.isEmpty {
+            return regularContacts.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        } else {
+            return regularContacts
+                .filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+                .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
-            // Navigation Bar
+            // Navigation
             HStack {
                 Button(action: {
-                    userAuth.resetAuthFlow()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                        .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
                 }
+                
                 Spacer()
                 
-                // Skip button
                 Button(action: {
                     userAuth.shouldNavigateToUserToS = true
                 }) {
-                    Text("Skip")
-                        .font(.onestRegular(size: 16))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                    Text("Skip for now")
+                        .font(Font.custom("Onest", size: 14).weight(.bold))
+                        .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 24)
             .padding(.top, 10)
             
-            Spacer()
+            // Title Section
+            VStack(alignment: .leading, spacing: 20) {
+                Text("Bring your Friends")
+                    .font(Font.custom("Onest", size: 32).weight(.bold))
+                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                
+                Text("Import your contacts to invite friends directly to Spawn.")
+                    .font(Font.custom("Onest", size: 20))
+                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 32)
+            .padding(.top, 40)
             
-            // Main Content
-            VStack(spacing: 32) {
-                // Title and Subtitle
-                VStack(spacing: 16) {
-                    Text("Find Your Friends")
-                        .font(heading1)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                        .multilineTextAlignment(.center)
+            // Search Bar
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16))
+                    .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                
+                TextField("Search contacts", text: $searchText)
+                    .font(Font.custom("Onest", size: 16).weight(.medium))
+                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+            }
+            .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+            .background(Color.white)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color(red: 0.56, green: 0.52, blue: 0.52), lineWidth: 0.50)
+            )
+            .padding(.horizontal, 26)
+            .padding(.top, 32)
+            
+            // Contacts List
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    // Already on Spawn Section
+                    if !filteredSpawnContacts.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showSpawnContactsSection.toggle()
+                                }
+                            }) {
+                                HStack {
+                                    Text("Already on Spawn")
+                                        .font(Font.custom("Onest", size: 16).weight(.medium))
+                                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: showSpawnContactsSection ? "chevron.up" : "chevron.down")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.black)
+                                }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            if showSpawnContactsSection {
+                                ForEach(filteredSpawnContacts, id: \.contact.id) { contactOnSpawn in
+                                    SpawnContactRow(
+                                        contactOnSpawn: contactOnSpawn,
+                                        isAdded: addedFriends.contains(contactOnSpawn.spawnUser.id),
+                                        onAdd: {
+                                            addedFriends.insert(contactOnSpawn.spawnUser.id)
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                     
-                    Text("Let's see who from your contacts is already on Spawn so you can connect with them.")
-                        .font(body1)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 40)
-                
-                // Contacts Icon or Results
-                if contactsService.contactsOnSpawn.isEmpty && !contactsService.isLoading {
-                    // Show contacts icon
-                    VStack(spacing: 20) {
-                        Image(systemName: "person.2.fill")
-                            .font(.system(size: 80))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.6))
-                        
-                        Text("Tap below to find friends who are already using Spawn")
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.8))
-                            .multilineTextAlignment(.center)
-                    }
-                } else if contactsService.isLoading {
-                    // Show loading state
-                    VStack(spacing: 20) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: universalAccentColor(from: themeService, environment: colorScheme)))
-                            .scaleEffect(1.5)
-                        
-                        Text("Checking your contacts...")
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.8))
-                    }
-                } else {
-                    // Show results
-                    ContactsResultsView(contactsOnSpawn: contactsService.contactsOnSpawn)
-                }
-                
-                // Error Message
-                if let errorMessage = contactsService.errorMessage {
-                    Text(errorMessage)
-                        .font(.onestRegular(size: 15))
-                        .foregroundColor(.red)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                }
-                
-                // Import Contacts or Continue Button
-                if contactsService.contactsOnSpawn.isEmpty && !contactsService.isLoading {
-                    Button(action: {
-                        importContacts()
-                    }) {
-                        OnboardingButtonCoreView("Import Contacts") {
-                            figmaIndigo
+                    // Suggested/Invite Section
+                    if !filteredRegularContacts.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Button(action: {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    showSuggestedContactsSection.toggle()
+                                }
+                            }) {
+                                HStack {
+                                    Text(filteredSpawnContacts.isEmpty ? "Suggested" : "Invite to Spawn")
+                                        .font(Font.custom("Onest", size: 16).weight(.medium))
+                                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: showSuggestedContactsSection ? "chevron.up" : "chevron.down")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.black)
+                                }
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            
+                            if showSuggestedContactsSection {
+                                ForEach(filteredRegularContacts, id: \.id) { contact in
+                                    InviteContactRow(
+                                        contact: contact,
+                                        isInvited: invitedContacts.contains(contact.id),
+                                        onInvite: {
+                                            invitedContacts.insert(contact.id)
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
-                    .padding(.top, -16)
-                    .padding(.horizontal, -22)
-                } else if !contactsService.contactsOnSpawn.isEmpty {
-                    Button(action: {
-                        userAuth.shouldNavigateToUserToS = true
-                    }) {
-                        OnboardingButtonCoreView("Continue") {
-                            figmaIndigo
-                        }
-                    }
-                    .padding(.top, -16)
-                    .padding(.horizontal, -22)
                 }
+                .padding(.horizontal, 26)
+                .padding(.top, 24)
+                .padding(.bottom, 120) // Space for continue button
             }
             
             Spacer()
         }
-        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
+        .background(Color.white)
+        .overlay(
+            // Continue Button - Fixed at bottom
+            VStack {
+                Spacer()
+                
+                Button(action: {
+                    userAuth.shouldNavigateToUserToS = true
+                }) {
+                    OnboardingButtonCoreView("Continue") {
+                        figmaIndigo
+                    }
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal, 10)
+                .padding(.bottom, 34)
+                .background(
+                    LinearGradient(
+                        gradient: Gradient(colors: [Color.white.opacity(0), Color.white]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 80)
+                )
+            }
+        )
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
             UserToS()
@@ -142,21 +228,14 @@ struct ContactImportView: View {
             Text("To find friends on Spawn, we need access to your contacts. You can enable this in Settings.")
         }
         .onAppear {
-            // Check if we already have permission
-            if contactsService.authorizationStatus == .authorized {
-                Task {
-                    await loadAndCrossReferenceContacts()
-                }
-            }
+            requestContactsAndLoad()
         }
     }
     
     // MARK: - Helper Methods
     
-    private func importContacts() {
+    private func requestContactsAndLoad() {
         Task {
-            isLoading = true
-            
             // Request permission first
             let granted = await contactsService.requestContactsPermission()
             
@@ -165,8 +244,6 @@ struct ContactImportView: View {
             } else {
                 showPermissionDeniedAlert = true
             }
-            
-            isLoading = false
         }
     }
     
@@ -188,65 +265,12 @@ struct ContactImportView: View {
     }
 }
 
-// MARK: - Contacts Results View
+// MARK: - Contact Row Components
 
-struct ContactsResultsView: View {
-    let contactsOnSpawn: [ContactsOnSpawn]
-    @ObservedObject var themeService = ThemeService.shared
-    @Environment(\.colorScheme) var colorScheme
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            if contactsOnSpawn.isEmpty {
-                VStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass")
-                        .font(.system(size: 50))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.6))
-                    
-                    Text("No friends found")
-                        .font(.onestSemiBold(size: 18))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                    
-                    Text("None of your contacts are on Spawn yet. Invite them to join!")
-                        .font(.onestRegular(size: 14))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                        .multilineTextAlignment(.center)
-                }
-            } else {
-                VStack(spacing: 16) {
-                    // Header
-                    VStack(spacing: 8) {
-                        Text("Found \(contactsOnSpawn.count) friend\(contactsOnSpawn.count == 1 ? "" : "s")")
-                            .font(.onestSemiBold(size: 18))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                        
-                        Text("These contacts are already on Spawn")
-                            .font(.onestRegular(size: 14))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                    }
-                    
-                    // Contacts List
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            ForEach(contactsOnSpawn, id: \.contact.id) { contactOnSpawn in
-                                ContactRowView(contactOnSpawn: contactOnSpawn)
-                            }
-                        }
-                        .padding(.horizontal, 20)
-                    }
-                    .frame(maxHeight: 200)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Contact Row View
-
-struct ContactRowView: View {
+struct SpawnContactRow: View {
     let contactOnSpawn: ContactsOnSpawn
-    @ObservedObject var themeService = ThemeService.shared
-    @Environment(\.colorScheme) var colorScheme
+    let isAdded: Bool
+    let onAdd: () -> Void
     
     var body: some View {
         HStack(spacing: 12) {
@@ -257,40 +281,121 @@ struct ContactRowView: View {
                     .scaledToFill()
             } placeholder: {
                 Circle()
-                    .fill(Color.gray.opacity(0.3))
+                    .fill(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
                     .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.gray)
+                        Text(String(contactOnSpawn.contact.name.prefix(1)))
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
                     )
             }
-            .frame(width: 40, height: 40)
+            .frame(width: 36, height: 36)
             .clipShape(Circle())
+            .shadow(color: Color.black.opacity(0.25), radius: 4.06, y: 1.62)
             
-            // Names
             VStack(alignment: .leading, spacing: 2) {
                 Text(contactOnSpawn.contact.name)
-                    .font(.onestSemiBold(size: 16))
-                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                    .font(Font.custom("Onest", size: 14).weight(.semibold))
+                    .foregroundColor(.black)
                 
                 Text("@\(contactOnSpawn.spawnUser.username)")
-                    .font(.onestRegular(size: 14))
-                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
+                    .font(Font.custom("Onest", size: 12))
+                    .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
             }
             
             Spacer()
             
-            // Checkmark
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 20))
-                .foregroundColor(.green)
+            Button(action: onAdd) {
+                if isAdded {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.green)
+                } else {
+                    Image(systemName: "plus.circle")
+                        .font(.system(size: 24))
+                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                }
+            }
+            .disabled(isAdded)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.05))
-        )
+        .padding(.vertical, 8)
+    }
+}
+
+struct InviteContactRow: View {
+    let contact: Contact
+    let isInvited: Bool
+    let onInvite: () -> Void
+    @State private var isAnimating: Bool = false
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Profile Picture Placeholder
+            Circle()
+                .fill(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+                .overlay(
+                    Text(String(contact.name.prefix(1)))
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                )
+                .frame(width: 36, height: 36)
+                .shadow(color: Color.black.opacity(0.25), radius: 4.06, y: 1.62)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(contact.name)
+                    .font(Font.custom("Onest", size: 14).weight(.semibold))
+                    .foregroundColor(.black)
+                
+                if let phoneNumber = contact.phoneNumbers.first {
+                    Text(phoneNumber)
+                        .font(Font.custom("Onest", size: 12))
+                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                }
+            }
+            
+            Spacer()
+            
+            Button(action: {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    isAnimating = true
+                }
+                
+                // Trigger the invite action after animation starts
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    onInvite()
+                }
+            }) {
+                HStack(spacing: 6) {
+                    if isInvited {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 12))
+                        Text("Invite")
+                            .font(.onestMedium(size: 14))
+                    }
+                }
+                .foregroundColor(isInvited ? .white : Color(red: 0.40, green: 0.38, blue: 0.38))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isInvited ? .green : Color.clear)
+                        .animation(.easeInOut(duration: 0.3), value: isInvited)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isInvited ? .green : Color(red: 0.40, green: 0.38, blue: 0.38), lineWidth: 1)
+                        .animation(.easeInOut(duration: 0.3), value: isInvited)
+                )
+                .scaleEffect(isAnimating && !isInvited ? 0.95 : 1.0)
+            }
+            .disabled(isInvited)
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.vertical, 8)
     }
 }
 
