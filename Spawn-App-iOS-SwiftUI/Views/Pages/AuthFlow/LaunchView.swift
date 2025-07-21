@@ -115,6 +115,23 @@ struct LaunchView: View {
 					EmptyView() // This should never happen
 				}
 			}
+			.navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
+				OnboardingContinuationView()
+			}
+			.navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
+				switch userAuth.skipDestination {
+				case .userDetailsInput:
+					UserDetailsInputView(isOAuthUser: true)
+				case .userOptionalDetailsInput:
+					UserOptionalDetailsInputView()
+				case .contactImport:
+					ContactImportView()
+				case .userToS:
+					UserToS()
+				case .none:
+					EmptyView()
+				}
+			}
 		}
 	}
 }

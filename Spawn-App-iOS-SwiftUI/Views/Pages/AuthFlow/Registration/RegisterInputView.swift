@@ -187,6 +187,25 @@ struct RegisterInputView: View {
         .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView) {
             UserDetailsInputView(isOAuthUser: true)
         }
+        // Navigation for existing user onboarding continuation
+        .navigationDestination(isPresented: $viewModel.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        // Navigation for skipping ahead based on user status
+        .navigationDestination(isPresented: $viewModel.shouldSkipAhead) {
+            switch viewModel.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
         .navigationBarHidden(true)
     }
 }

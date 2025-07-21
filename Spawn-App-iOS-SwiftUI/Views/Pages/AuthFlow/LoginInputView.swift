@@ -209,6 +209,23 @@ struct LoginInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
+            switch userAuth.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
         .onAppear {
             // Reset any previous error state
             userAuth.errorMessage = nil
