@@ -113,13 +113,17 @@ struct ActivityFeedView: View {
             }
         }
         .onChange(of: shouldShowDeepLinkedActivity) { shouldShow in
+            print("🔗 ActivityFeedView onChange: shouldShowDeepLinkedActivity changed to \(shouldShow), activityId: \(deepLinkedActivityId?.uuidString ?? "nil")")
             if shouldShow, let activityId = deepLinkedActivityId {
+                print("🔗 ActivityFeedView onChange: Calling handleDeepLinkedActivity with \(activityId)")
                 handleDeepLinkedActivity(activityId)
             }
         }
         .onAppear {
+            print("🔗 ActivityFeedView onAppear: shouldShowDeepLinkedActivity = \(shouldShowDeepLinkedActivity), activityId: \(deepLinkedActivityId?.uuidString ?? "nil")")
             // Handle deep link if one is pending when view appears
             if shouldShowDeepLinkedActivity, let activityId = deepLinkedActivityId {
+                print("🔗 ActivityFeedView onAppear: Calling handleDeepLinkedActivity with \(activityId)")
                 handleDeepLinkedActivity(activityId)
             }
         }
@@ -170,7 +174,7 @@ struct ActivityFeedView: View {
                     print("✅ ActivityFeedView: Found activity in current feed: \(existingActivity.title ?? "No title")")
                     await MainActor.run {
                         activityInPopup = existingActivity
-                        colorInPopup = getActivityColor(for: activityId)
+                        colorInPopup = ActivityColorService.shared.getColorForActivity(activityId)
                         showingActivityPopup = true
                         shouldShowDeepLinkedActivity = false
                         deepLinkedActivityId = nil
@@ -196,14 +200,22 @@ struct ActivityFeedView: View {
                 let activity: FullFeedActivityDTO = try await apiService.fetchData(from: url, parameters: parameters)
                 
                 print("✅ ActivityFeedView: Successfully fetched deep linked activity: \(activity.title ?? "No title")")
+                
                 await MainActor.run {
+                    // Ensure we're setting all required state atomically
                     activityInPopup = activity
-                    colorInPopup = getActivityColor(for: activityId)
-                    showingActivityPopup = true
+                    colorInPopup = ActivityColorService.shared.getColorForActivity(activityId)
+                    
+                    // Clear deep link state first
                     shouldShowDeepLinkedActivity = false
                     deepLinkedActivityId = nil
                     isFetchingDeepLinkedActivity = false
-                    print("🎯 ActivityFeedView: Set popup state - showing: \(showingActivityPopup), activity: \(activity.title ?? "No title")")
+                    
+                    // Force a small delay to ensure UI is ready, then show popup
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        showingActivityPopup = true
+                        print("🎯 ActivityFeedView: Set popup state - showing: \(showingActivityPopup), activity: \(activity.title ?? "No title")")
+                    }
                 }
                 
             } catch {
@@ -247,7 +259,7 @@ extension ActivityFeedView {
                 }
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal)
     }
 }
 
