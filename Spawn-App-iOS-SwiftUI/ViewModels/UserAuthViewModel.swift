@@ -1254,7 +1254,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     case 400:
                         self.errorMessage = "Invalid OAuth credentials"
                     case 409:
-                        self.errorMessage = "Account already exists"
+                        // User already exists - attempt to sign them in instead
+                        print("📍 User already exists (409), attempting OAuth sign-in")
+                        Task {
+                            await self.signInWithOAuth(idToken: idToken, provider: provider, email: email)
+                        }
+                        return
+                    case 500:
+                        // Server error - might also indicate existing user, try sign-in as fallback
+                        print("📍 Server error (500), attempting OAuth sign-in as fallback")
+                        Task {
+                            await self.signInWithOAuth(idToken: idToken, provider: provider, email: email)
+                        }
+                        return
                     default:
                         self.errorMessage = "Failed to register with OAuth"
                     }
@@ -1265,6 +1277,50 @@ class UserAuthViewModel: NSObject, ObservableObject {
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to register with OAuth"
+            }
+        }
+    }
+    
+    // New method for OAuth sign-in (for existing users)
+    private func signInWithOAuth(idToken: String, provider: AuthProviderType, email: String?) async {
+        // Set the OAuth credentials for the sign-in attempt
+        await MainActor.run {
+            self.authProvider = provider
+            self.idToken = idToken
+            self.email = email
+        }
+        
+        guard let url = URL(string: APIService.baseURL + "auth/sign-in") else {
+            await MainActor.run {
+                self.errorMessage = "Failed to create sign-in URL"
+            }
+            return
+        }
+        
+        let emailToUse = email ?? ""
+        let parameters: [String: String] = [
+            "idToken": idToken,
+            "email": emailToUse,
+            "provider": provider.rawValue
+        ]
+        
+        do {
+            let authResponse: AuthResponseDTO = try await self.apiService.fetchData(from: url, parameters: parameters)
+            
+            await MainActor.run {
+                self.spawnUser = authResponse.user
+                self.email = authResponse.user.email
+                self.errorMessage = nil
+                
+                // Use the skip destination logic for existing users
+                self.determineSkipDestination(authResponse: authResponse)
+                
+                print("📍 OAuth sign-in successful for existing user with status: \(authResponse.status?.rawValue ?? "unknown")")
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Failed to sign in existing user. Please try again or contact support."
+                print("Error signing in existing OAuth user: \(error.localizedDescription)")
             }
         }
     }
