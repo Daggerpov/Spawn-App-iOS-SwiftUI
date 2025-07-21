@@ -2,8 +2,52 @@ import SwiftUI
 
 struct ActivityPreConfirmationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     let onCreateActivity: () -> Void
     let onBack: (() -> Void)?
+    
+    // MARK: - Adaptive Colors
+    private var adaptiveBackgroundColor: Color {
+        universalBackgroundColor(from: themeService, environment: colorScheme)
+    }
+    
+    private var adaptiveTextColor: Color {
+        universalAccentColor(from: themeService, environment: colorScheme)
+    }
+    
+    private var adaptiveSecondaryTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.56, green: 0.52, blue: 0.52)
+        case .light:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.24, green: 0.23, blue: 0.23)
+        case .light:
+            return Color(red: 0.95, green: 0.93, blue: 0.93)
+        @unknown default:
+            return Color(red: 0.95, green: 0.93, blue: 0.93)
+        }
+    }
+    
+    private var adaptiveLoadingTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.56, green: 0.52, blue: 0.52)
+        case .light:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
     
     var body: some View {
         VStack(spacing: 0) {
@@ -21,7 +65,7 @@ struct ActivityPreConfirmationView: View {
                 // Activity title
                 Text(viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Morning Stroll"))
                     .font(.onestSemiBold(size: 32))
-                    .foregroundColor(.white)
+                    .foregroundColor(adaptiveTextColor)
                     .multilineTextAlignment(.center)
                     .padding(.top, 24)
                 
@@ -38,7 +82,7 @@ struct ActivityPreConfirmationView: View {
                     Text(formatTime(viewModel.selectedDate))
                 }
                 .font(.onestMedium(size: 20))
-                .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                .foregroundColor(adaptiveSecondaryTextColor)
                 .padding(.top, 12)
                 .padding(.horizontal, 16)
                 
@@ -69,19 +113,19 @@ struct ActivityPreConfirmationView: View {
                 if viewModel.isCreatingActivity {
                     HStack {
                         ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .progressViewStyle(CircularProgressViewStyle(tint: adaptiveTextColor))
                             .scaleEffect(0.8)
                         
                         Text("Creating your activity...")
                             .font(.onestMedium(size: 14))
-                            .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                            .foregroundColor(adaptiveLoadingTextColor)
                     }
                     .padding(.top, 16)
                 }
             }
         }
         .padding(.bottom, 80)
-        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+        .background(adaptiveBackgroundColor)
         .ignoresSafeArea()
     }
     
@@ -101,7 +145,7 @@ struct ActivityPreConfirmationView: View {
             // Title
             Text("Confirm")
                 .font(.onestSemiBold(size: 20))
-                .foregroundColor(.white)
+                .foregroundColor(adaptiveTextColor)
             
             Spacer()
             
@@ -122,7 +166,7 @@ struct ActivityPreConfirmationView: View {
             // Activity icon
             ZStack {
                 Circle()
-                    .fill(Color(red: 0.24, green: 0.23, blue: 0.23))
+                    .fill(adaptiveCardBackgroundColor)
                     .frame(width: 48, height: 48)
                 
                 Text(viewModel.selectedActivityType?.icon ?? "🥾")
@@ -133,16 +177,16 @@ struct ActivityPreConfirmationView: View {
             VStack(spacing: 12) {
                 Text(viewModel.selectedActivityType?.title ?? "Hike")
                     .font(.onestMedium(size: 24))
-                    .foregroundColor(.white)
+                    .foregroundColor(adaptiveTextColor)
                 
                 Text("\(viewModel.selectedActivityType?.associatedFriends.count ?? 14) people")
                     .font(.onestRegular(size: 18))
-                    .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+                    .foregroundColor(adaptiveSecondaryTextColor)
             }
         }
         .padding(24)
         .frame(width: 150, height: 150)
-        .background(Color(red: 0.24, green: 0.23, blue: 0.23))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(18)
     }
     

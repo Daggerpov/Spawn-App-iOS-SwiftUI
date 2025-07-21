@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ActivityConfirmationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
+    @ObservedObject var themeService = ThemeService.shared
     @Binding var showShareSheet: Bool
     @Environment(\.colorScheme) private var colorScheme
     let onClose: () -> Void
@@ -9,6 +10,103 @@ struct ActivityConfirmationView: View {
     
     // State for drag gesture
     @State private var dragOffset: CGFloat = 0
+    
+    // MARK: - Adaptive Colors
+    private var adaptiveBackgroundColor: Color {
+        universalBackgroundColor(from: themeService, environment: colorScheme)
+    }
+    
+    private var adaptiveTextColor: Color {
+        universalAccentColor(from: themeService, environment: colorScheme)
+    }
+    
+    private var adaptiveSecondaryTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        case .light:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
+    
+    private var adaptiveButtonBorderColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.82, green: 0.80, blue: 0.80)
+        case .light:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
+    
+    private var adaptiveReturnButtonTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.82, green: 0.80, blue: 0.80)
+        case .light:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
+    
+    private var adaptiveOverlayColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color.black.opacity(0.60)
+        case .light:
+            return Color.black.opacity(0.40)
+        @unknown default:
+            return Color.black.opacity(0.40)
+        }
+    }
+    
+    private var adaptiveShareDrawerBackground: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.12, green: 0.12, blue: 0.12)
+        case .light:
+            return Color(red: 0.95, green: 0.93, blue: 0.93)
+        @unknown default:
+            return Color(red: 0.95, green: 0.93, blue: 0.93)
+        }
+    }
+    
+    private var adaptiveShareDrawerHandleColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.56, green: 0.52, blue: 0.52)
+        case .light:
+            return Color(red: 0.70, green: 0.67, blue: 0.67)
+        @unknown default:
+            return Color(red: 0.70, green: 0.67, blue: 0.67)
+        }
+    }
+    
+    private var adaptiveShareButtonBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        case .light:
+            return Color(red: 0.85, green: 0.82, blue: 0.82)
+        @unknown default:
+            return Color(red: 0.85, green: 0.82, blue: 0.82)
+        }
+    }
+    
+    private var adaptiveShareButtonTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(red: 0.82, green: 0.80, blue: 0.80)
+        case .light:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default:
+            return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
     
     private var activityTitle: String {
         return viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Activity")
@@ -32,10 +130,10 @@ struct ActivityConfirmationView: View {
                         
                         Text("Success!")
                             .font(Font.custom("Onest", size: 48).weight(.semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(adaptiveTextColor)
                         Text("You've spawned in and \"\(activityTitle)\" is now live for your friends.")
                             .font(Font.custom("Onest", size: 16).weight(.medium))
-                            .foregroundColor(Color(red: 0.52, green: 0.49, blue: 0.49))
+                            .foregroundColor(adaptiveSecondaryTextColor)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                     }
@@ -67,7 +165,7 @@ struct ActivityConfirmationView: View {
                         HStack(spacing: 8) {
                             Text("Return to Home")
                                 .font(Font.custom("Onest", size: 16).weight(.medium))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                .foregroundColor(adaptiveReturnButtonTextColor)
                         }
                         .padding(EdgeInsets(top: 16, leading: 24, bottom: 16, trailing: 24))
                         .frame(height: 43)
@@ -75,7 +173,7 @@ struct ActivityConfirmationView: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: 100)
                                 .inset(by: 1)
-                                .stroke(Color(red: 0.82, green: 0.80, blue: 0.80), lineWidth: 1)
+                                .stroke(adaptiveButtonBorderColor, lineWidth: 1)
                         )
                     }
                     .shadow(
@@ -90,7 +188,7 @@ struct ActivityConfirmationView: View {
                 shareDrawerOverlay
             }
         }
-        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+        .background(adaptiveBackgroundColor)
         .ignoresSafeArea()
     }
     
@@ -110,7 +208,7 @@ struct ActivityConfirmationView: View {
             // Title
             Text("Confirm")
                 .font(.onestSemiBold(size: 20))
-                .foregroundColor(.white)
+                .foregroundColor(adaptiveTextColor)
             
             Spacer()
             
@@ -132,7 +230,7 @@ struct ActivityConfirmationView: View {
             Rectangle()
                 .foregroundColor(.clear)
                 .frame(width: 428, height: 926)
-                .background(Color(red: 0, green: 0, blue: 0).opacity(0.60))
+                .background(adaptiveOverlayColor)
                 .offset(x: 0, y: 0)
                 .onTapGesture {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -145,14 +243,14 @@ struct ActivityConfirmationView: View {
                 Rectangle()
                     .foregroundColor(.clear)
                     .frame(width: 50, height: 4)
-                    .background(Color(red: 0.56, green: 0.52, blue: 0.52))
+                    .background(adaptiveShareDrawerHandleColor)
                     .cornerRadius(100)
                     .offset(x: 0, y: -104)
                 HStack(spacing: 32) {
                     Text("Share this Spawn")
                         .font(Font.custom("Onest", size: 20).weight(.semibold))
                         .lineSpacing(24)
-                        .foregroundColor(.white)
+                        .foregroundColor(adaptiveTextColor)
                 }
                 .frame(width: 375)
                 .offset(x: 2.50, y: -65)
@@ -160,7 +258,7 @@ struct ActivityConfirmationView: View {
                     Rectangle()
                         .foregroundColor(.clear)
                         .frame(width: 134, height: 5)
-                        .background(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        .background(adaptiveShareDrawerHandleColor)
                         .cornerRadius(100)
                 }
                 .padding(EdgeInsets(top: 8, leading: 147, bottom: 8, trailing: 147))
@@ -177,7 +275,7 @@ struct ActivityConfirmationView: View {
                         VStack(spacing: 8) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                    .fill(adaptiveShareButtonBackgroundColor)
                                     .frame(width: 64, height: 64)
                                 Image("share_via_button")
                                     .resizable()
@@ -186,7 +284,7 @@ struct ActivityConfirmationView: View {
                             }
                             Text("Share via")
                                 .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 64)
                     }
@@ -204,7 +302,7 @@ struct ActivityConfirmationView: View {
                         VStack(spacing: 8) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                    .fill(adaptiveShareButtonBackgroundColor)
                                     .frame(width: 64, height: 64)
                                 Image("copy_link_button")
                                     .resizable()
@@ -213,7 +311,7 @@ struct ActivityConfirmationView: View {
                             }
                             Text("Copy Link")
                                 .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 68)
                     }
@@ -232,7 +330,7 @@ struct ActivityConfirmationView: View {
                                 .frame(width: 64, height: 64)
                             Text("WhatsApp")
                                 .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 72)
                     }
@@ -251,7 +349,7 @@ struct ActivityConfirmationView: View {
 								.frame(width: 64, height: 64)
                             Text("Message")
                                 .font(Font.custom("SF Pro Display", size: 14))
-                                .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 65)
                     }
@@ -260,7 +358,7 @@ struct ActivityConfirmationView: View {
                 .offset(x: -1, y: 17.50)
             }
             .frame(width: 428, height: 236)
-            .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+            .background(adaptiveShareDrawerBackground)
             .cornerRadius(20)
             .shadow(
                 color: Color(red: 0, green: 0, blue: 0, opacity: 0.10), radius: 32
