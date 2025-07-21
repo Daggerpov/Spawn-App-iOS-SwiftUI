@@ -156,7 +156,7 @@ class AppCache: ObservableObject {
         if userLastChecked.isEmpty {
             print("No cached items to validate, requesting fresh data for all cache types")
             // Request fresh data for all standard cache types
-            await MainActor.run {
+            let _ = await MainActor.run {
                 Task {
 					async let friendsTask: () = refreshFriends()
 					async let activitiesTask: () = refreshActivities()
@@ -164,7 +164,7 @@ class AppCache: ObservableObject {
                     async let recommendedFriendsTask: () = refreshRecommendedFriends()
                     async let friendRequestsTask: () = refreshFriendRequests()
                     async let sentFriendRequestsTask: () = refreshSentFriendRequests()
-                    
+
                     // Wait for all tasks to complete
                     await friendsTask
                     await activitiesTask
@@ -742,8 +742,8 @@ class AppCache: ObservableObject {
     /// Force refresh both incoming and sent friend requests (bypasses cache)
     func forceRefreshAllFriendRequests() async {
         print("🔄 [CACHE] Force refreshing all friend request data")
-        async let incomingTask = refreshFriendRequests()
-        async let sentTask = refreshSentFriendRequests()
+		async let incomingTask: () = refreshFriendRequests()
+		async let sentTask: () = refreshSentFriendRequests()
         
         await incomingTask
         await sentTask
