@@ -21,6 +21,7 @@ struct ContactImportView: View {
     @State private var showPermissionDeniedAlert: Bool = false
     @State private var showSpawnContactsSection: Bool = true
     @State private var showSuggestedContactsSection: Bool = true
+    @State private var isCompletingContactImport: Bool = false
     
     var filteredSpawnContacts: [ContactsOnSpawn] {
         let contacts = contactsService.contactsOnSpawn
@@ -69,12 +70,17 @@ struct ContactImportView: View {
                 Spacer()
                 
                 Button(action: {
-                    userAuth.shouldNavigateToUserToS = true
+                    Task {
+                        isCompletingContactImport = true
+                        await userAuth.completeContactImport()
+                        isCompletingContactImport = false
+                    }
                 }) {
                     Text("Skip for now")
                         .font(Font.custom("Onest", size: 14).weight(.bold))
                         .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
                 }
+                .disabled(isCompletingContactImport)
             }
             .padding(.horizontal, 24)
             .padding(.top, 10)
@@ -219,13 +225,18 @@ struct ContactImportView: View {
                 Spacer()
                 
                 Button(action: {
-                    userAuth.shouldNavigateToUserToS = true
+                    Task {
+                        isCompletingContactImport = true
+                        await userAuth.completeContactImport()
+                        isCompletingContactImport = false
+                    }
                 }) {
                     OnboardingButtonCoreView("Continue") {
-                        figmaIndigo
+                        isCompletingContactImport ? Color.gray : figmaIndigo
                     }
                 }
                 .buttonStyle(PlainButtonStyle())
+                .disabled(isCompletingContactImport)
                 .padding(.horizontal, 10)
                 .padding(.bottom, 34)
                 .background(
@@ -247,7 +258,11 @@ struct ContactImportView: View {
                 openAppSettings()
             }
             Button("Skip", role: .cancel) {
-                userAuth.shouldNavigateToUserToS = true
+                Task {
+                    isCompletingContactImport = true
+                    await userAuth.completeContactImport()
+                    isCompletingContactImport = false
+                }
             }
         } message: {
             Text("To find friends on Spawn, we need access to your contacts. You can enable this in Settings.")

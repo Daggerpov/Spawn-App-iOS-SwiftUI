@@ -98,6 +98,13 @@ struct LaunchView: View {
 					.navigationBarHidden(true)
 			}
 			.navigationDestination(
+				isPresented: $userAuth.shouldNavigateToAccountNotFoundView
+			) {
+				AccountNotFoundView()
+					.navigationBarTitle("")
+					.navigationBarHidden(true)
+			}
+			.navigationDestination(
 				isPresented: $userAuth.shouldNavigateToUserDetailsView
 			) {
 				UserDetailsInputView(isOAuthUser: true)

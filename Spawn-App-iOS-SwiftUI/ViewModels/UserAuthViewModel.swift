@@ -57,6 +57,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
 	@Published var shouldNavigateToFeedView: Bool = false
 	@Published var shouldNavigateToUserInfoInputView: Bool = false  // New property for navigation
+	@Published var shouldNavigateToAccountNotFoundView: Bool = false  // New property for account not found
 
 	@Published var isLoading: Bool = false
 
@@ -184,6 +185,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 			self.shouldNavigateToFeedView = false
 			self.shouldNavigateToUserInfoInputView = false
+			self.shouldNavigateToAccountNotFoundView = false
 			self.shouldNavigateToPhoneNumberView = false
 			self.shouldNavigateToVerificationCodeView = false
 			self.shouldNavigateToUserDetailsView = false
@@ -236,6 +238,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			// Reset all navigation flags
 			self.shouldNavigateToFeedView = false
 			self.shouldNavigateToUserInfoInputView = false
+			self.shouldNavigateToAccountNotFoundView = false
 			self.shouldNavigateToPhoneNumberView = false
 			self.shouldNavigateToVerificationCodeView = false
 			self.shouldNavigateToUserDetailsView = false
@@ -533,7 +536,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				} catch {
 					await MainActor.run {
 						self.spawnUser = nil
-						self.shouldNavigateToUserInfoInputView = true
+						self.shouldNavigateToAccountNotFoundView = true
 						print("Error fetching user data: \(error.localizedDescription)")
 					}
 				}
@@ -545,14 +548,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	
 	// Helper method to handle API errors consistently
 	private func handleApiError(_ error: APIError) {
-		// For 404 errors (user doesn't exist), just direct to user info input without showing an error
+		// For 404 errors (user doesn't exist), direct to account not found view without showing an error
 		if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
 			self.spawnUser = nil
-			self.shouldNavigateToUserInfoInputView = true
-			print("User does not exist yet in Spawn database - directing to user info input")
+			self.shouldNavigateToAccountNotFoundView = true
+			print("User does not exist yet in Spawn database - directing to account not found view")
 		} else {
 			self.spawnUser = nil
-			self.shouldNavigateToUserInfoInputView = true
+			self.shouldNavigateToAccountNotFoundView = true
 			self.errorMessage = "Failed to fetch user: \(error.localizedDescription)"
 			print(self.errorMessage as Any)
 		}
@@ -666,7 +669,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			shouldNavigateToUserOptionalDetailsInputView = true
 			print("📍 User status: usernameAndPhoneNumber - navigating to name and photo input")
         case .nameAndPhoto:
+            shouldNavigateToContactImportView = true
+            print("📍 User status: nameAndPhoto - navigating to contact import")
+        case .contactImport:
             shouldNavigateToUserToS = true
+            print("📍 User status: contactImport - navigating to terms of service")
 		case .active:
 			// Fully onboarded user - go to feed
 			isFormValid = true
@@ -698,9 +705,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
             print("📍 User status: usernameAndPhoneNumber - showing continuation popup")
         
         case .nameAndPhoto:
+            skipDestination = .contactImport
+            shouldShowOnboardingContinuation = true
+            print("📍 User status: nameAndPhoto - showing continuation popup for contact import")
+        
+        case .contactImport:
             skipDestination = .userToS
             shouldShowOnboardingContinuation = true
-            print("📍 User status: nameAndPhoto - showing continuation popup")
+            print("📍 User status: contactImport - showing continuation popup for terms of service")
             
         case .active:
             // Fully onboarded user - go to feed
@@ -715,6 +727,41 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
     }
     
+    
+    func completeContactImport() async {
+        guard let userId = spawnUser?.id else {
+            print("Error: No user ID available for contact import completion")
+            return
+        }
+        
+        guard let url = URL(string: APIService.baseURL + "auth/complete-contact-import/\(userId)") else {
+            print("Error: Failed to create URL for contact import completion")
+            return
+        }
+        
+        do {
+            let updatedUser: BaseUserDTO? = try await apiService.sendData(EmptyBody(), to: url, parameters: nil)
+            
+            guard let updatedUser = updatedUser else {
+                await MainActor.run {
+                    print("Error: No user data returned from contact import completion")
+                    self.errorMessage = "Failed to complete contact import. Please try again."
+                }
+                return
+            }
+            
+            await MainActor.run {
+                self.spawnUser = updatedUser
+                self.shouldNavigateToUserToS = true
+                print("Successfully completed contact import for user: \(updatedUser.username)")
+            }
+        } catch {
+            await MainActor.run {
+                print("Error completing contact import: \(error.localizedDescription)")
+                self.errorMessage = "Failed to complete contact import. Please try again."
+            }
+        }
+    }
     
     func acceptTermsOfService() async {
         guard let userId = spawnUser?.id else {
@@ -1233,18 +1280,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 
             let response: AuthResponseDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
             
-            await MainActor.run {
-                if let authResponse = response {
-                    // Success - use status-based navigation for OAuth users
-                    self.spawnUser = authResponse.user
-					self.navigateBasedOnUserStatus(authResponse: authResponse)
-                    self.email = authResponse.user.email
-                    self.errorMessage = nil
-                } else {
-                    // Handle error
-                    self.errorMessage = "Failed to register with OAuth"
-                }
+                    await MainActor.run {
+            if let authResponse = response {
+                // Success - use status-based navigation for OAuth users
+                self.spawnUser = authResponse.user
+				self.navigateBasedOnUserStatus(authResponse: authResponse)
+                self.email = authResponse.user.email
+                self.errorMessage = nil
+            } else {
+                // Handle error
+                self.shouldNavigateToAccountNotFoundView = true
+                self.errorMessage = "Failed to register with OAuth"
             }
+        }
             }
         } catch let error as APIError {
             await MainActor.run {
@@ -1268,14 +1316,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         }
                         return
                     default:
+                        self.shouldNavigateToAccountNotFoundView = true
                         self.errorMessage = "Failed to register with OAuth"
                     }
                 } else {
+                    self.shouldNavigateToAccountNotFoundView = true
                     self.errorMessage = "Failed to register with OAuth"
                 }
             }
         } catch {
             await MainActor.run {
+                self.shouldNavigateToAccountNotFoundView = true
                 self.errorMessage = "Failed to register with OAuth"
             }
         }
@@ -1319,6 +1370,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             }
         } catch {
             await MainActor.run {
+                self.shouldNavigateToAccountNotFoundView = true
                 self.errorMessage = "Failed to sign in existing user. Please try again or contact support."
                 print("Error signing in existing OAuth user: \(error.localizedDescription)")
             }

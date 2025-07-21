@@ -11,6 +11,7 @@ enum UserStatus: String, Codable, CaseIterable {
     case emailVerified = "EMAIL_VERIFIED"
     case usernameAndPhoneNumber = "USERNAME_AND_PHONE_NUMBER"
     case nameAndPhoto = "NAME_AND_PHOTO"
+    case contactImport = "CONTACT_IMPORT"
     case active = "ACTIVE"
 }
 

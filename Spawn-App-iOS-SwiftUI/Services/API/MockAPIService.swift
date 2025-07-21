@@ -571,6 +571,12 @@ class MockAPIService: IAPIService {
 			return BaseUserDTO.danielAgapov as! U?
 		}
 
+		// Handle Contact Import completion
+		if url.absoluteString.contains("auth/complete-contact-import/") {
+			print("🔍 MOCK: Contact import completion")
+			return BaseUserDTO.danielAgapov as! U?
+		}
+
 		throw APIError.invalidData
 	}
 
