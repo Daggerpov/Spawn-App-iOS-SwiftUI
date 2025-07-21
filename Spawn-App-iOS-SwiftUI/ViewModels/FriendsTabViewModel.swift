@@ -304,15 +304,13 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-    // Check cache first
+    // Show cached data immediately if available
     let cachedRequests = appCache.getCurrentUserFriendRequests()
-    if !cachedRequests.isEmpty {
-        await MainActor.run {
-            self.incomingFriendRequests = cachedRequests
-        }
-        return
+    await MainActor.run {
+        self.incomingFriendRequests = cachedRequests
     }
     
+    // Always fetch fresh data from API to ensure we have the latest information
     // full path: /api/v1/friend-requests/incoming/{userId}
     if let url = URL(
         string: APIService.baseURL + "friend-requests/incoming/\(userId)")
@@ -337,15 +335,13 @@ class FriendsTabViewModel: ObservableObject {
 }
 
 	internal func fetchOutgoingFriendRequests() async {
-        // Check cache first
+        // Show cached data immediately if available
         let cachedSentRequests = appCache.getCurrentUserSentFriendRequests()
-        if !cachedSentRequests.isEmpty {
-            await MainActor.run {
-                self.outgoingFriendRequests = cachedSentRequests
-            }
-            return
+        await MainActor.run {
+            self.outgoingFriendRequests = cachedSentRequests
         }
         
+        // Always fetch fresh data from API to ensure we have the latest information
 		// full path: /api/v1/friend-requests/sent/{userId}
 		if let url = URL(
 			string: APIService.baseURL + "friend-requests/sent/\(userId)")

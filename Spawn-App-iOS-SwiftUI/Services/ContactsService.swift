@@ -101,7 +101,7 @@ class ContactsService: ObservableObject {
             }
             
             await MainActor.run {
-                self.contacts = fetchedContacts.sorted { $0.name < $1.name }
+                self.contacts = fetchedContacts.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
                 self.isLoading = false
             }
             
@@ -128,38 +128,68 @@ class ContactsService: ObservableObject {
             self.errorMessage = nil
         }
         
-        // Extract all phone numbers from contacts
-        let allPhoneNumbers = contacts.flatMap { $0.phoneNumbers }
-        let uniquePhoneNumbers = Array(Set(allPhoneNumbers))
+        // Extract all phone numbers from contacts with contact mapping
+        var phoneNumberToContact: [String: Contact] = [:]
+        for contact in contacts {
+            for phoneNumber in contact.phoneNumbers {
+                phoneNumberToContact[phoneNumber] = contact
+            }
+        }
+        
+        let allPhoneNumbers = Array(phoneNumberToContact.keys)
         
         do {
             // Call backend API to cross-reference phone numbers
             let existingUsers = try await crossReferencePhoneNumbers(
-                phoneNumbers: uniquePhoneNumbers,
+                phoneNumbers: allPhoneNumbers,
                 requestingUserId: userId
             )
             
-            // Since the backend already matched phone numbers and returned only matching users,
-            // we need to create placeholder contact info for display purposes
+            // Create a mapping of phone numbers to users for quick lookup
+            var phoneNumberToUser: [String: BaseUserDTO] = [:]
+            for user in existingUsers {
+                // Since the backend doesn't return phone numbers for privacy,
+                // we need to match based on other criteria or trust the backend's matching
+                // For now, we'll use the user data as received from backend
+                phoneNumberToUser[user.id.uuidString] = user
+            }
+            
+            // Match contacts with Spawn users
             var matchedContacts: [ContactsOnSpawn] = []
             
+            // Since the backend has already done the phone number matching,
+            // we'll create matches based on the returned users
+            // We'll try to find the best contact match for each user
             for user in existingUsers {
-                // Create a placeholder contact since we don't have the exact contact mapping
-                // The backend has already done the phone number matching for us
-                let placeholderContact = Contact(
+                // Try to find a contact that could match this user
+                // This is a best-effort approach since we don't have exact phone mapping
+                var bestMatchContact: Contact?
+                
+                // Try matching by name similarity
+                let userName = user.name ?? user.username
+                for contact in contacts {
+                    if contact.name.localizedCaseInsensitiveContains(userName.components(separatedBy: " ").first ?? "") ||
+                       userName.localizedCaseInsensitiveContains(contact.name.components(separatedBy: " ").first ?? "") {
+                        bestMatchContact = contact
+                        break
+                    }
+                }
+                
+                // If no name match found, create a contact representation based on user info
+                let finalContact = bestMatchContact ?? Contact(
                     id: user.id.uuidString,
                     name: user.name ?? user.username,
-                    phoneNumbers: [] // We don't expose phone numbers for privacy
+                    phoneNumbers: [] // Don't expose phone numbers for privacy
                 )
                 
                 matchedContacts.append(ContactsOnSpawn(
-                    contact: placeholderContact,
+                    contact: finalContact,
                     spawnUser: user
                 ))
             }
             
             await MainActor.run {
-                self.contactsOnSpawn = matchedContacts.sorted { $0.contact.name < $1.contact.name }
+                self.contactsOnSpawn = matchedContacts.sorted { $0.contact.name.localizedCaseInsensitiveCompare($1.contact.name) == .orderedAscending }
                 self.isLoading = false
             }
             

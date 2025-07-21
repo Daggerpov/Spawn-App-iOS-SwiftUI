@@ -53,15 +53,14 @@ class FriendRequestsViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // Check cache first for both incoming and sent requests
+        // Show cached data immediately if available
         let cachedIncoming = appCache.getCurrentUserFriendRequests()
         let cachedSent = appCache.getCurrentUserSentFriendRequests()
         
-        if !cachedIncoming.isEmpty || !cachedSent.isEmpty {
-            self.incomingFriendRequests = cachedIncoming
-            self.sentFriendRequests = cachedSent
-        }
+        self.incomingFriendRequests = cachedIncoming
+        self.sentFriendRequests = cachedSent
         
+        // Always fetch fresh data from API to ensure we have the latest information
         do {
             // Fetch incoming friend requests
             guard let incomingUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") else {
