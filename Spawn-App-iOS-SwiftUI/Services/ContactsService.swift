@@ -159,50 +159,52 @@ class ContactsService: ObservableObject {
 				requestingUserId: userId
 			)
 
-			// Create a mapping of phone numbers to users for quick lookup
-			var phoneNumberToUser: [String: BaseUserDTO] = [:]
-			for user in existingUsers {
-				// Since the backend doesn't return phone numbers for privacy,
-				// we need to match based on other criteria or trust the backend's matching
-				// For now, we'll use the user data as received from backend
-				phoneNumberToUser[user.id.uuidString] = user
-			}
-
-			// Match contacts with Spawn users
+			// Since the backend has successfully matched phone numbers to users,
+			// but doesn't return the phone numbers for privacy, we need to
+			// create ContactsOnSpawn entries. We'll use a simple approach:
+			// each matched user gets a contact entry with their Spawn profile info
 			var matchedContacts: [ContactsOnSpawn] = []
 
-			// Since the backend has already done the phone number matching,
-			// we'll create matches based on the returned users
-			// We'll try to find the best contact match for each user
 			for user in existingUsers {
-				// Try to find a contact that could match this user
-				// This is a best-effort approach since we don't have exact phone mapping
+				// Try to find the best matching contact by name similarity
 				var bestMatchContact: Contact?
-
-				// Try matching by name similarity
-				let userName = user.name ?? user.username
+				var bestMatchScore: Double = 0.0
+				
+				let userName = (user.name ?? user.username).lowercased()
+				let userFirstName = userName.components(separatedBy: " ").first ?? ""
+				
 				for contact in contacts {
-					if contact.name.localizedCaseInsensitiveContains(
-						userName.components(separatedBy: " ").first ?? ""
-					)
-						|| userName.localizedCaseInsensitiveContains(
-							contact.name.components(separatedBy: " ").first
-								?? ""
-						)
-					{
+					let contactName = contact.name.lowercased()
+					let contactFirstName = contactName.components(separatedBy: " ").first ?? ""
+					
+					// Calculate similarity score
+					var score: Double = 0.0
+					
+					// Exact name match gets highest score
+					if contactName == userName {
+						score = 1.0
+					}
+					// First name match gets good score
+					else if contactFirstName == userFirstName && !userFirstName.isEmpty {
+						score = 0.8
+					}
+					// Partial name match gets moderate score
+					else if contactName.contains(userFirstName) || userName.contains(contactFirstName) {
+						score = 0.6
+					}
+					
+					if score > bestMatchScore {
+						bestMatchScore = score
 						bestMatchContact = contact
-						break
 					}
 				}
 
-				// If no name match found, create a contact representation based on user info
-				let finalContact =
-					bestMatchContact
-					?? Contact(
-						id: user.id.uuidString,
-						name: user.name ?? user.username,
-						phoneNumbers: []  // Don't expose phone numbers for privacy
-					)
+				// Create contact entry - use matched contact if found, otherwise create one
+				let finalContact = bestMatchContact ?? Contact(
+					id: user.id.uuidString,
+					name: user.name ?? user.username,
+					phoneNumbers: []  // Don't expose phone numbers for privacy
+				)
 
 				matchedContacts.append(
 					ContactsOnSpawn(
@@ -233,17 +235,28 @@ class ContactsService: ObservableObject {
 	// MARK: - Helper Methods
 
 	private func cleanPhoneNumber(_ phoneNumber: String) -> String {
-		// Remove all non-numeric characters
+		// Remove all non-numeric characters except +
 		let cleaned = phoneNumber.components(
 			separatedBy: CharacterSet.decimalDigits.inverted
 		).joined()
 
-		// If it starts with 1 and has 11 digits, remove the 1 (US country code)
-		if cleaned.count == 11 && cleaned.hasPrefix("1") {
-			return String(cleaned.dropFirst())
+		// If no country code, assume it's a local number and add +1 (US country code)
+		if !phoneNumber.contains("+") && cleaned.count == 10 {
+			return "+1" + cleaned
 		}
 
-		return cleaned
+		// If it starts with 1 and has 11 digits (US number without +), add the +
+		if cleaned.count == 11 && cleaned.hasPrefix("1") && !phoneNumber.contains("+") {
+			return "+1" + String(cleaned.dropFirst())
+		}
+
+		// If it already has proper format, just ensure it has the + prefix
+		if cleaned.count >= 10 && !phoneNumber.contains("+") {
+			return "+1" + cleaned
+		}
+
+		// Return the original cleaned phone number if it already has + prefix
+		return phoneNumber.replacingOccurrences(of: "[^+\\d]", with: "", options: .regularExpression)
 	}
 
 	// MARK: - API Calls

@@ -184,7 +184,7 @@ struct ContactImportView: View {
                                 }
                             }) {
                                 HStack {
-                                    Text(filteredSpawnContacts.isEmpty ? "Suggested" : "Invite to Spawn")
+                                    Text(filteredSpawnContacts.isEmpty ? "Bring onto Spawn" : "Invite to Spawn")
                                         .font(Font.custom("Onest", size: 16).weight(.medium))
                                         .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                                     
@@ -330,6 +330,7 @@ struct SpawnContactRow: View {
     let onAdd: () -> Void
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
+    @State private var isAnimatingAdd: Bool = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -363,18 +364,41 @@ struct SpawnContactRow: View {
             
             Spacer()
             
-            Button(action: onAdd) {
-                if isAdded {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 24))
-                        .foregroundColor(.green)
-                } else {
-                    Image(systemName: "plus.circle")
-                        .font(.system(size: 24))
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+            // Add button with friends tab styling
+            Button(action: {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    isAnimatingAdd = true
                 }
+                onAdd()
+            }) {
+                HStack(spacing: 6) {
+                    if isAdded {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Text("Add +")
+                            .font(Font.custom("Onest", size: 14).weight(.medium))
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .foregroundColor(isAdded ? .white : .gray)
+                .padding(12)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(isAdded ? universalAccentColor(from: themeService, environment: colorScheme) : Color.clear)
+                        .animation(.easeInOut(duration: 0.3), value: isAdded)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isAdded ? universalAccentColor(from: themeService, environment: colorScheme) : .gray, lineWidth: 1)
+                        .animation(.easeInOut(duration: 0.3), value: isAdded)
+                )
+                .frame(minHeight: 46, maxHeight: 46)
             }
             .buttonStyle(PlainButtonStyle())
+            .disabled(isAdded)
         }
         .padding(.vertical, 8)
     }
