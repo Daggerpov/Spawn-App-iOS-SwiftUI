@@ -64,7 +64,7 @@ struct ContactImportView: View {
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                 }
                 
                 Spacer()
@@ -78,7 +78,7 @@ struct ContactImportView: View {
                 }) {
                     Text("Skip for now")
                         .font(Font.custom("Onest", size: 14).weight(.bold))
-                        .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                 }
                 .disabled(isCompletingContactImport)
             }
@@ -89,11 +89,11 @@ struct ContactImportView: View {
             VStack(alignment: .leading, spacing: 20) {
                 Text("Bring your Friends")
                     .font(Font.custom("Onest", size: 32).weight(.bold))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 
                 Text("Import your contacts to invite friends directly to Spawn.")
                     .font(Font.custom("Onest", size: 20))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 32)
@@ -103,18 +103,18 @@ struct ContactImportView: View {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 16))
-                    .foregroundColor(Color(red: 0.56, green: 0.52, blue: 0.52))
+                    .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                 
                 TextField("Search contacts", text: $searchText)
                     .font(Font.custom("Onest", size: 16).weight(.medium))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
             }
             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-            .background(Color.white)
+            .background(universalBackgroundColor(from: themeService, environment: colorScheme))
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color(red: 0.56, green: 0.52, blue: 0.52), lineWidth: 0.50)
+                    .stroke(universalPlaceHolderTextColor(from: themeService, environment: colorScheme), lineWidth: 0.50)
             )
             .padding(.horizontal, 26)
             .padding(.top, 32)
@@ -133,13 +133,13 @@ struct ContactImportView: View {
                                 HStack {
                                     Text("Already on Spawn")
                                         .font(Font.custom("Onest", size: 16).weight(.medium))
-                                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                                        .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                                     
                                     Spacer()
                                     
                                     Image(systemName: showSpawnContactsSection ? "chevron.up" : "chevron.down")
                                         .font(.system(size: 14))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                                 }
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -169,13 +169,13 @@ struct ContactImportView: View {
                                 HStack {
                                     Text(filteredSpawnContacts.isEmpty ? "Suggested" : "Invite to Spawn")
                                         .font(Font.custom("Onest", size: 16).weight(.medium))
-                                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                                        .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                                     
                                     Spacer()
                                     
                                     Image(systemName: showSuggestedContactsSection ? "chevron.up" : "chevron.down")
                                         .font(.system(size: 14))
-                                        .foregroundColor(.black)
+                                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                                 }
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -187,10 +187,10 @@ struct ContactImportView: View {
                                         HStack {
                                             Text(letter)
                                                 .font(Font.custom("Onest", size: 18).weight(.semibold))
-                                                .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                                                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                                             
                                             Rectangle()
-                                                .fill(Color(red: 0.40, green: 0.38, blue: 0.38).opacity(0.3))
+                                                .fill(universalPlaceHolderTextColor(from: themeService, environment: colorScheme).opacity(0.3))
                                                 .frame(height: 1)
                                         }
                                         .padding(.top, letter == groupedRegularContacts.first?.0 ? 0 : 12)
@@ -218,7 +218,7 @@ struct ContactImportView: View {
             
             Spacer()
         }
-        .background(Color.white)
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .overlay(
             // Continue Button - Fixed at bottom
             VStack {
@@ -241,7 +241,7 @@ struct ContactImportView: View {
                 .padding(.bottom, 34)
                 .background(
                     LinearGradient(
-                        gradient: Gradient(colors: [Color.white.opacity(0), Color.white]),
+                        gradient: Gradient(colors: [universalBackgroundColor(from: themeService, environment: colorScheme).opacity(0), universalBackgroundColor(from: themeService, environment: colorScheme)]),
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -311,6 +311,8 @@ struct SpawnContactRow: View {
     let contactOnSpawn: ContactsOnSpawn
     let isAdded: Bool
     let onAdd: () -> Void
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         HStack(spacing: 12) {
@@ -335,11 +337,11 @@ struct SpawnContactRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(contactOnSpawn.contact.name)
                     .font(Font.custom("Onest", size: 14).weight(.semibold))
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 
                 Text("@\(contactOnSpawn.spawnUser.username)")
                     .font(Font.custom("Onest", size: 12))
-                    .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                    .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
             }
             
             Spacer()
@@ -352,10 +354,10 @@ struct SpawnContactRow: View {
                 } else {
                     Image(systemName: "plus.circle")
                         .font(.system(size: 24))
-                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
             }
-            .disabled(isAdded)
+            .buttonStyle(PlainButtonStyle())
         }
         .padding(.vertical, 8)
     }
@@ -365,74 +367,55 @@ struct InviteContactRow: View {
     let contact: Contact
     let isInvited: Bool
     let onInvite: () -> Void
-    @State private var isAnimating: Bool = false
+    @ObservedObject var themeService = ThemeService.shared
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         HStack(spacing: 12) {
             // Profile Picture Placeholder
             Circle()
                 .fill(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+                .frame(width: 36, height: 36)
                 .overlay(
                     Text(String(contact.name.prefix(1)))
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.white)
                 )
-                .frame(width: 36, height: 36)
                 .shadow(color: Color.black.opacity(0.25), radius: 4.06, y: 1.62)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(contact.name)
                     .font(Font.custom("Onest", size: 14).weight(.semibold))
-                    .foregroundColor(.black)
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 
-                if let phoneNumber = contact.phoneNumbers.first {
-                    Text(phoneNumber)
+                if let firstPhoneNumber = contact.phoneNumbers.first {
+                    Text(firstPhoneNumber)
                         .font(Font.custom("Onest", size: 12))
-                        .foregroundColor(Color(red: 0.40, green: 0.38, blue: 0.38))
+                        .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
                 }
             }
             
             Spacer()
             
-            Button(action: {
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    isAnimating = true
+            Button(action: onInvite) {
+                if isInvited {
+                    Text("Invited")
+                        .font(Font.custom("Onest", size: 12).weight(.medium))
+                        .foregroundColor(.green)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.green.opacity(0.1))
+                        .cornerRadius(12)
+                } else {
+                    Text("Invite")
+                        .font(Font.custom("Onest", size: 12).weight(.medium))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(red: 0.42, green: 0.51, blue: 0.98))
+                        .cornerRadius(12)
                 }
-                
-                // Trigger the invite action after animation starts
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    onInvite()
-                }
-            }) {
-                HStack(spacing: 6) {
-                    if isInvited {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                            .transition(.scale.combined(with: .opacity))
-                    } else {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 12))
-                        Text("Invite")
-                            .font(.onestMedium(size: 14))
-                    }
-                }
-                .foregroundColor(isInvited ? .white : Color(red: 0.40, green: 0.38, blue: 0.38))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(isInvited ? .green : Color.clear)
-                        .animation(.easeInOut(duration: 0.3), value: isInvited)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isInvited ? .green : Color(red: 0.40, green: 0.38, blue: 0.38), lineWidth: 1)
-                        .animation(.easeInOut(duration: 0.3), value: isInvited)
-                )
-                .scaleEffect(isAnimating && !isInvited ? 0.95 : 1.0)
             }
-            .disabled(isInvited)
             .buttonStyle(PlainButtonStyle())
         }
         .padding(.vertical, 8)

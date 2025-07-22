@@ -15,7 +15,7 @@ struct AccountNotFoundView: View {
                     Text("9:41")
                         .font(Font.custom("SF Pro Text", size: 20).weight(.semibold))
                         .lineSpacing(20)
-                        .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
                 .padding(EdgeInsets(top: 1, leading: 0, bottom: 0, trailing: 0))
                 .frame(width: 77.14)
@@ -25,7 +25,7 @@ struct AccountNotFoundView: View {
                     Rectangle()
                         .foregroundColor(.clear)
                         .frame(width: 192)
-                        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+                        .background(universalAccentColor(from: themeService, environment: colorScheme))
                         .cornerRadius(30)
                 }
                 
@@ -51,11 +51,11 @@ struct AccountNotFoundView: View {
             VStack(spacing: 20) {
                 Text("We couldn't find you!")
                     .font(Font.custom("Onest", size: 32).weight(.bold))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 
                 Text("Would you like to make an account?")
                     .font(Font.custom("Onest", size: 20))
-                    .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
+                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
             }
             .frame(width: 364)
             .offset(x: 0, y: 6.50)
@@ -95,7 +95,7 @@ struct AccountNotFoundView: View {
             .offset(x: 0, y: 124)
         }
         .frame(width: 428, height: 926)
-        .background(.white)
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
         .navigationDestination(isPresented: $shouldReturnToLogin) {
