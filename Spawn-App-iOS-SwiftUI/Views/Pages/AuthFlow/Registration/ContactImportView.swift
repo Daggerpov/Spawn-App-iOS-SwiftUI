@@ -52,7 +52,24 @@ struct ContactImportView: View {
         let grouped = Dictionary(grouping: contacts) { contact in
             String(contact.name.prefix(1).uppercased())
         }
-        return grouped.sorted { $0.key < $1.key }
+        return grouped.sorted { first, second in
+            let firstChar = first.key
+            let secondChar = second.key
+            
+            // Check if characters are alphabetic
+            let firstIsAlpha = firstChar.rangeOfCharacter(from: CharacterSet.letters) != nil
+            let secondIsAlpha = secondChar.rangeOfCharacter(from: CharacterSet.letters) != nil
+            
+            // If one is alphabetic and the other isn't, alphabetic comes first
+            if firstIsAlpha && !secondIsAlpha {
+                return true
+            } else if !firstIsAlpha && secondIsAlpha {
+                return false
+            } else {
+                // Both are alphabetic or both are non-alphabetic, use normal comparison
+                return firstChar < secondChar
+            }
+        }
     }
     
     var body: some View {
