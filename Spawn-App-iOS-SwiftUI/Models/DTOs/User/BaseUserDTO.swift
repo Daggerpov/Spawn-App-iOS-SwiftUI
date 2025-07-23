@@ -21,7 +21,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 	}
 
 	var id: UUID
-	var username: String
+	var username: String?
 	var profilePicture: String?
 	var name: String?
 	var bio: String?
@@ -29,7 +29,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 
 	init(
 		id: UUID,
-		username: String,
+		username: String? = nil,
 		profilePicture: String? = nil,
 		name: String? = nil,
 		bio: String? = nil,

@@ -20,6 +20,8 @@ struct UserToS: View {
             // Navigation Bar
             HStack {
                 Button(action: {
+                    // Clear any error states when going back
+                    userAuth.clearAllErrors()
                     // Go back one step in the onboarding flow
                     dismiss()
                 }) {
@@ -94,6 +96,16 @@ struct UserToS: View {
                 }
                 .padding(.horizontal, 40)
                 
+                // Error Message Display
+                if let errorMessage = userAuth.errorMessage {
+                    Text(errorMessage)
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 16)
+                }
+                
                 // Continue Button
                 Button(action: {
                     if agreed {
@@ -125,6 +137,10 @@ struct UserToS: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
+        .onAppear {
+            // Clear any previous error state when this view appears
+            userAuth.clearAllErrors()
+        }
     }
 }
 

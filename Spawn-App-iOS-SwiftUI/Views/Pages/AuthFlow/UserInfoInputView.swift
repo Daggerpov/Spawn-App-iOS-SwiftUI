@@ -69,6 +69,8 @@ struct UserInfoInputView: View {
 	private var backButtonView: some View {
 		HStack {
 			Button(action: {
+				// Clear any error states when going back  
+				userAuth.clearAllErrors()
 				userAuth.resetState()
 			}) {
 				HStack {
@@ -207,12 +209,9 @@ struct UserInfoInputView: View {
 					}
 				}
 			}
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
-				UserToS()
-					.navigationBarTitle("")
-					.navigationBarHidden(true)
-			}
 			.onAppear {
+				// Clear any previous error state when this view appears
+				userAuth.clearAllErrors()
 				userAuth.objectWillChange.send()
 				Task {
 					await userAuth.spawnFetchUserIfAlreadyExists()

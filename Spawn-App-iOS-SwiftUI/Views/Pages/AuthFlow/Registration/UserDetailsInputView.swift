@@ -61,9 +61,10 @@ struct UserDetailsInputView: View {
         VStack(spacing: 0) {
             // Navigation Bar
             HStack {
-                Button(action: { 
-                    // Go back one step in the onboarding flow
-                    dismiss() 
+                Button(action: {
+                    // Clear any error states when going back
+                    viewModel.clearAllErrors()
+                    dismiss()
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
@@ -221,10 +222,11 @@ struct UserDetailsInputView: View {
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView) {
-            UserOptionalDetailsInputView()
-        }
         .navigationBarHidden(true)
+        .onAppear {
+            // Clear any previous error state when this view appears
+            viewModel.clearAllErrors()
+        }
     }
 }
 

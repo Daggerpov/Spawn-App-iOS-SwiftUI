@@ -77,7 +77,7 @@ struct ProfileView: View {
 		self._profileViewModel = StateObject(
 			wrappedValue: ProfileViewModel(userId: user.id)
 		)
-		self.username = user.username
+		self.username = user.username ?? ""
 		self.name = user.name ?? ""
 	}
 
@@ -841,7 +841,7 @@ struct ProfileView: View {
 	// Add a function to refresh user data from UserAuthViewModel
 	private func refreshUserData() {
 		if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
-			username = currentUser.username
+			username = currentUser.username ?? ""
 			name = currentUser.name ?? ""
 		}
 	}
@@ -1068,7 +1068,7 @@ extension ProfileView {
 			Button(action: {
 				// Revert to original values from userAuth.spawnUser
 				if let currentUser = userAuth.spawnUser {
-					username = currentUser.username
+					username = currentUser.username ?? ""
 					name = currentUser.name ?? ""
 					selectedImage = nil
 
@@ -1169,7 +1169,7 @@ extension ProfileView {
 		}
 
 		if let updatedUser = userAuth.spawnUser {
-			username = updatedUser.username
+			username = updatedUser.username ?? ""
 			name = updatedUser.name ?? ""
 		}
 

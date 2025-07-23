@@ -84,29 +84,40 @@ class ContactsService: ObservableObject {
 		]
 
 		let request = CNContactFetchRequest(keysToFetch: keysToFetch)
-		var fetchedContacts: [Contact] = []
 
 		do {
-			try contactStore.enumerateContacts(with: request) {
-				(contact, stop) in
-				let phoneNumbers = contact.phoneNumbers.compactMap {
-					phoneNumber in
-					self.cleanPhoneNumber(phoneNumber.value.stringValue)
-				}.filter { !$0.isEmpty }
+			// Move contacts enumeration to background thread to avoid blocking UI
+			let fetchedContacts = try await withCheckedThrowingContinuation { continuation in
+				Task.detached {
+					var contacts: [Contact] = []
+					
+					do {
+						try await self.contactStore.enumerateContacts(with: request) {
+							(contact, stop) in
+							let phoneNumbers = contact.phoneNumbers.compactMap {
+								phoneNumber in
+								self.cleanPhoneNumber(phoneNumber.value.stringValue)
+							}.filter { !$0.isEmpty }
 
-				// Only include contacts that have phone numbers
-				if !phoneNumbers.isEmpty {
-					let fullName = "\(contact.givenName) \(contact.familyName)"
-						.trimmingCharacters(in: .whitespacesAndNewlines)
-					let displayName =
-						fullName.isEmpty ? "Unknown Contact" : fullName
+							// Only include contacts that have phone numbers
+							if !phoneNumbers.isEmpty {
+								let fullName = "\(contact.givenName) \(contact.familyName)"
+									.trimmingCharacters(in: .whitespacesAndNewlines)
+								let displayName =
+									fullName.isEmpty ? "Unknown Contact" : fullName
 
-					let contactItem = Contact(
-						id: contact.identifier,
-						name: displayName,
-						phoneNumbers: phoneNumbers
-					)
-					fetchedContacts.append(contactItem)
+								let contactItem = Contact(
+									id: contact.identifier,
+									name: displayName,
+									phoneNumbers: phoneNumbers
+								)
+								contacts.append(contactItem)
+							}
+						}
+						continuation.resume(returning: contacts)
+					} catch {
+						continuation.resume(throwing: error)
+					}
 				}
 			}
 
@@ -145,12 +156,18 @@ class ContactsService: ObservableObject {
 		// Extract all phone numbers from contacts with contact mapping
 		var phoneNumberToContact: [String: Contact] = [:]
 		for contact in contacts {
+			print("📱 CONTACT: \(contact.name)")
 			for phoneNumber in contact.phoneNumbers {
+				print("  📞 Original phone: '\(phoneNumber)'")
 				phoneNumberToContact[phoneNumber] = contact
 			}
 		}
 
 		let allPhoneNumbers = Array(phoneNumberToContact.keys)
+		print("🔄 TOTAL PHONE NUMBERS TO SEND: \(allPhoneNumbers.count)")
+		for (index, phoneNumber) in allPhoneNumbers.enumerated() {
+			print("  [\(index)] '\(phoneNumber)'")
+		}
 
 		do {
 			// Call backend API to cross-reference phone numbers
@@ -158,6 +175,11 @@ class ContactsService: ObservableObject {
 				phoneNumbers: allPhoneNumbers,
 				requestingUserId: userId
 			)
+
+			print("✅ BACKEND RETURNED \(existingUsers.count) USERS")
+			for user in existingUsers {
+				print("  - \(user.username ?? "No username") (\(user.name ?? "No name"))")
+			}
 
 			// Since the backend has successfully matched phone numbers to users,
 			// but doesn't return the phone numbers for privacy, we need to
@@ -170,7 +192,7 @@ class ContactsService: ObservableObject {
 				var bestMatchContact: Contact?
 				var bestMatchScore: Double = 0.0
 				
-				let userName = (user.name ?? user.username).lowercased()
+				let userName = (user.name ?? user.username ?? "Unknown").lowercased()
 				let userFirstName = userName.components(separatedBy: " ").first ?? ""
 				
 				for contact in contacts {
@@ -202,7 +224,7 @@ class ContactsService: ObservableObject {
 				// Create contact entry - use matched contact if found, otherwise create one
 				let finalContact = bestMatchContact ?? Contact(
 					id: user.id.uuidString,
-					name: user.name ?? user.username,
+					                name: user.name ?? user.username ?? "Unknown User",
 					phoneNumbers: []  // Don't expose phone numbers for privacy
 				)
 
@@ -235,28 +257,39 @@ class ContactsService: ObservableObject {
 	// MARK: - Helper Methods
 
 	private func cleanPhoneNumber(_ phoneNumber: String) -> String {
+		print("🧹 CLEANING PHONE: '\(phoneNumber)'")
+		
 		// Remove all non-numeric characters except +
 		let cleaned = phoneNumber.components(
 			separatedBy: CharacterSet.decimalDigits.inverted
 		).joined()
+		print("  Step 1 - digits only: '\(cleaned)'")
 
 		// If no country code, assume it's a local number and add +1 (US country code)
 		if !phoneNumber.contains("+") && cleaned.count == 10 {
-			return "+1" + cleaned
+			let result = "+1" + cleaned
+			print("  Step 2a - 10 digits, no +: '\(result)'")
+			return result
 		}
 
 		// If it starts with 1 and has 11 digits (US number without +), add the +
 		if cleaned.count == 11 && cleaned.hasPrefix("1") && !phoneNumber.contains("+") {
-			return "+1" + String(cleaned.dropFirst())
+			let result = "+1" + String(cleaned.dropFirst())
+			print("  Step 2b - 11 digits starting with 1, no +: '\(result)'")
+			return result
 		}
 
 		// If it already has proper format, just ensure it has the + prefix
 		if cleaned.count >= 10 && !phoneNumber.contains("+") {
-			return "+1" + cleaned
+			let result = "+1" + cleaned
+			print("  Step 2c - 10+ digits, no +: '\(result)'")
+			return result
 		}
 
 		// Return the original cleaned phone number if it already has + prefix
-		return phoneNumber.replacingOccurrences(of: "[^+\\d]", with: "", options: .regularExpression)
+		let result = phoneNumber.replacingOccurrences(of: "[^+\\d]", with: "", options: .regularExpression)
+		print("  Step 2d - already has + or fallback: '\(result)'")
+		return result
 	}
 
 	// MARK: - API Calls
@@ -265,6 +298,13 @@ class ContactsService: ObservableObject {
 		phoneNumbers: [String],
 		requestingUserId: UUID
 	) async throws -> [BaseUserDTO] {
+		print("🌐 CALLING CROSS-REFERENCE API")
+		print("  📞 Phone numbers to send: \(phoneNumbers.count)")
+		for (index, phone) in phoneNumbers.enumerated() {
+			print("    [\(index)] '\(phone)'")
+		}
+		print("  👤 Requesting user ID: \(requestingUserId)")
+		
 		// Create the request body
 		let requestBody = ContactCrossReferenceRequestDTO(
 			phoneNumbers: phoneNumbers,
@@ -279,6 +319,8 @@ class ContactsService: ObservableObject {
 			throw APIError.URLError
 		}
 
+		print("🔗 API URL: \(url)")
+		
 		let result: ContactCrossReferenceResponseDTO? =
 			try await apiService.sendData(
 				requestBody,
@@ -287,9 +329,11 @@ class ContactsService: ObservableObject {
 			)
 
 		guard let result = result else {
+			print("❌ API returned nil result")
 			throw APIError.invalidData
 		}
 
+		print("✅ API SUCCESS: Returned \(result.users.count) users")
 		return result.users
 	}
 }

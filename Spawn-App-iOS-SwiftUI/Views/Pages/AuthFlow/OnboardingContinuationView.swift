@@ -4,7 +4,6 @@ struct OnboardingContinuationView: View {
     @StateObject private var userAuth = UserAuthViewModel.shared
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
-    @State private var shouldReturnToLogin = false
     
     var body: some View {
         ZStack {
@@ -81,7 +80,7 @@ struct OnboardingContinuationView: View {
                 Button(action: {
                     let impactGenerator = UIImpactFeedbackGenerator(style: .light)
                     impactGenerator.impactOccurred()
-                    shouldReturnToLogin = true
+                    userAuth.shouldNavigateToSignInView = true
                 }) {
                     Text("Return to Login")
                         .font(Font.custom("Onest", size: 17).weight(.medium))
@@ -97,12 +96,6 @@ struct OnboardingContinuationView: View {
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $shouldReturnToLogin) {
-            SignInView()
-                .onAppear {
-                    userAuth.resetAuthFlow()
-                }
-        }
     }
 }
 

@@ -53,7 +53,7 @@ extension ActivityCardTopRowView {
         Text("By ")
             .font(.onestRegular(size: subtitleFontSize))
             .foregroundColor(subtitleColor) +
-        Text(activity.creatorUser.name ?? activity.creatorUser.username)
+        Text(activity.creatorUser.name ?? activity.creatorUser.username ?? "User")
             .font(.onestSemiBold(size: subtitleFontSize))
             .foregroundColor(subtitleColor) +
         Text(" • \(viewModel.getDisplayString(activityInfoType: .time))")

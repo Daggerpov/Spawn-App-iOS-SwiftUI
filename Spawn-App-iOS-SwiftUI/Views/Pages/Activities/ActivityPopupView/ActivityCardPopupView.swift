@@ -191,7 +191,7 @@ struct MapHelper: Identifiable {
 extension ActivityCardPopupView {
     var titleAndTime: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(activity.title ?? (activity.creatorUser.name ?? activity.creatorUser.username) + "'s activity")
+            Text(activity.title ?? "\(activity.creatorUser.name ?? activity.creatorUser.username ?? "User")'s activity")
                 .font(.onestSemiBold(size: 32))
                 .foregroundColor(.white)
             Text(FormatterService.shared.timeUntil(activity.startTime) + " • " + viewModel.getDisplayString(activityInfoType: .time))
@@ -451,7 +451,8 @@ struct ChatroomButtonView: View {
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
         self.activityColor = activityColor
-        viewModel = ChatViewModel(senderUserId: user.id, activity: activity)
+        let currentUser = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
+        viewModel = ChatViewModel(senderUserId: currentUser.id, activity: activity)
     }
     
     
@@ -476,7 +477,9 @@ struct ChatroomButtonView: View {
                             .font(.onestRegular(size: 15))
                     } else if !viewModel.chats.isEmpty {
                         let sender = viewModel.chats[0].senderUser
-                        Text((sender == user ? "You:" : sender.name ?? sender.username) + " " + viewModel.chats[0].content)
+                        let senderName = sender == user ? "You:" : (sender.name ?? sender.username ?? "User")
+                        let messageText = senderName + " " + viewModel.chats[0].content
+                        Text(messageText)
                             .foregroundColor(.white.opacity(0.8))
                             .font(.onestRegular(size: 15))
                     }

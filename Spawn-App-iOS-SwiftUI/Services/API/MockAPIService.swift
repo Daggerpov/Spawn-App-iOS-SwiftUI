@@ -157,7 +157,7 @@ class MockAPIService: IAPIService {
 			filteredUsers = filteredUsers.filter { user in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: user).lowercased()
-				let username = user.username.lowercased()
+				let username = (user.username ?? "").lowercased()
 				return name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
@@ -176,7 +176,7 @@ class MockAPIService: IAPIService {
 			let filteredFriends = FullFriendUserDTO.mockUsers.filter { user in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: user).lowercased()
-				let username = user.username.lowercased()
+				let username = (user.username ?? "").lowercased()
 				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
@@ -200,7 +200,7 @@ class MockAPIService: IAPIService {
 			let filteredRecommended = RecommendedFriendUserDTO.mockUsers.filter { user in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: user).lowercased()
-				let username = user.username.lowercased()
+				let username = (user.username ?? "").lowercased()
 				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
@@ -224,7 +224,7 @@ class MockAPIService: IAPIService {
 			let filteredRequests = FetchFriendRequestDTO.mockFriendRequests.filter { request in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
-				let username = request.senderUser.username.lowercased()
+				let username = (request.senderUser.username ?? "").lowercased()
 				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
@@ -241,7 +241,7 @@ class MockAPIService: IAPIService {
 			let filteredOutgoingRequests = FetchFriendRequestDTO.mockOutgoingFriendRequests.filter { request in
 				let lowercasedQuery = searchQuery.lowercased()
 				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
-				let username = request.senderUser.username.lowercased()
+				let username = (request.senderUser.username ?? "").lowercased()
 				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
 			}
 			
@@ -436,7 +436,7 @@ class MockAPIService: IAPIService {
 						return UserProfileInfoDTO(
 							userId: mockUser.id,
 							name: mockUser.name ?? "",
-							username: mockUser.username,
+							username: mockUser.username ?? "",
 							bio: mockUser.bio,
 							profilePicture: mockUser.profilePicture,
 							dateCreated: sixMonthsAgo

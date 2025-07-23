@@ -77,23 +77,6 @@ struct WelcomeView: View {
             .onAppear {
                 print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
             }
-            .navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
-                OnboardingContinuationView()
-            }
-            .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
-                switch userAuth.skipDestination {
-                case .userDetailsInput:
-                    UserDetailsInputView()
-                case .userOptionalDetailsInput:
-                    UserOptionalDetailsInputView()
-                case .contactImport:
-                    ContactImportView()
-                case .userToS:
-                    UserToS()
-                case .none:
-                    EmptyView()
-                }
-            }
         }
         
     }

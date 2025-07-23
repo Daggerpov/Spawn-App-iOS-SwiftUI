@@ -139,9 +139,10 @@ struct ActivityDescriptionView: View {
 		let invitedCount = viewModel.activity.invitedUsers?.count ?? 0
 		let totalCount = participantCount + invitedCount
 		
+		let creatorUsername = viewModel.activity.creatorUser.username ?? "user"
 		let displayText = (viewModel.activity.isSelfOwned == true) 
 			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
-			: "@\(viewModel.activity.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(creatorUsername)\(totalCount > 0 ? " + \(totalCount) more" : "")"
 		
 		return Text(displayText)
 			.foregroundColor(.white)
@@ -170,7 +171,7 @@ struct ActivityDescriptionView: View {
 									)
 									.clipShape(Circle())
 								} else {
-									Text(String(participant.name?.prefix(1) ?? participant.username.prefix(1)))
+									Text(String(participant.name?.prefix(1) ?? participant.username?.prefix(1) ?? "U"))
 										.foregroundColor(.white)
 										.font(.system(size: 16, weight: .semibold))
 								}
@@ -266,7 +267,7 @@ extension ActivityDescriptionView {
 							.scaledToFit()
 							.frame(width: 15, height: 15)
 							.foregroundColor(universalAccentColor)
-						Text(chatMessage.senderUser.username)
+						Text(chatMessage.senderUser.username ?? "User")
 							.foregroundColor(universalAccentColor)
 							.bold()
 							.font(.caption)

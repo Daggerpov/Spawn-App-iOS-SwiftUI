@@ -16,7 +16,7 @@ struct HeaderView: View {
 			VStack {
 				HStack {
 					Text(
-						"Hey \(user.name?.components(separatedBy: " ").first ?? user.username)! 👋"
+						"Hey \(user.name?.components(separatedBy: " ").first ?? user.username ?? "User")! 👋"
 					)
 					.font(.onestBold(size: 32))
 					.foregroundColor(universalAccentColor)

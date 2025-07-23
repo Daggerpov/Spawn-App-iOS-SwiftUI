@@ -70,6 +70,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Auth alerts for authentication-related errors
 	@Published var authAlert: AuthAlertType?
 
+	// Track whether user is being automatically signed in after trying to register with existing account
+	@Published var isAutoSigningIn: Bool = false
+	
+	// For handling terms of service acceptance
 	@Published var defaultPfpFetchError: Bool = false
 	@Published var defaultPfpUrlString: String? = nil
     
@@ -83,6 +87,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
     @Published var shouldNavigateToContactImportView: Bool = false
     
     @Published var shouldNavigateToUserToS: Bool = false
+    
+    @Published var shouldNavigateToSignInView: Bool = false
+    @Published var shouldNavigateToRegisterInputView: Bool = false
     
     @Published var shouldShowOnboardingContinuation: Bool = false
     
@@ -192,6 +199,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
 			self.authAlert = nil
+			self.isAutoSigningIn = false
 
 			self.defaultPfpFetchError = false
 			self.defaultPfpUrlString = nil
@@ -211,6 +219,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 	
+	// Clear all error states - use this when navigating between auth screens
+	func clearAllErrors() {
+		Task { @MainActor in
+			self.errorMessage = nil
+			self.authAlert = nil
+			self.isAutoSigningIn = false
+		}
+	}
+	
 	// Reset authentication flow state when navigating back during onboarding
 	func resetAuthFlow() {
 		Task { @MainActor in
@@ -221,8 +238,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				print("🔄 DEBUG: Clearing incomplete user state - ID: \(user.id), Email: \(user.email ?? "nil")")
 			}
 			
-			// Reset user authentication data
+			// Clear all error states first
 			self.errorMessage = nil
+			self.authAlert = nil
+			self.isAutoSigningIn = false
+			
+			// Reset user authentication data
 			self.authProvider = nil
 			self.externalUserId = nil
 			self.idToken = nil
@@ -245,13 +266,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.shouldNavigateToUserOptionalDetailsInputView = false
 			self.shouldNavigateToContactImportView = false
 			self.shouldNavigateToUserToS = false
+			self.shouldNavigateToSignInView = false
+			self.shouldNavigateToRegisterInputView = false
 			self.shouldShowOnboardingContinuation = false
 			self.shouldSkipAhead = false
 			self.skipDestination = .none
 			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
-			self.authAlert = nil
 			
 			self.defaultPfpFetchError = false
 			self.defaultPfpUrlString = nil
@@ -766,11 +788,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
     func acceptTermsOfService() async {
         guard let userId = spawnUser?.id else {
             print("Error: No user ID available for TOS acceptance")
+            await MainActor.run {
+                self.errorMessage = "Unable to proceed. Please try signing in again."
+            }
             return
         }
         
         guard let url = URL(string: APIService.baseURL + "auth/accept-tos/\(userId)") else {
             print("Error: Failed to create URL for TOS acceptance")
+            await MainActor.run {
+                self.errorMessage = "Unable to proceed at this time. Please try again."
+            }
             return
         }
         
@@ -780,7 +808,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             guard let updatedUser = updatedUser else {
                 await MainActor.run {
                     print("Error: No user data returned from TOS acceptance")
-                    self.errorMessage = "Failed to accept Terms of Service. Please try again."
+                    self.errorMessage = "Unable to complete setup. Please try again."
                 }
                 return
             }
@@ -789,15 +817,36 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.spawnUser = updatedUser
                 self.shouldNavigateToFeedView = true
                 self.isLoggedIn = true
+                self.errorMessage = nil // Clear any previous errors on success
                 // Mark onboarding as completed when user accepts Terms of Service
                 self.markOnboardingCompleted()
                 print("Successfully accepted Terms of Service for user: \(updatedUser.username)")
-                print("🔄 DEBUG: Onboarding completed after accepting Terms of Service")
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                // Provide user-friendly error messages based on API error
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 400:
+                        self.errorMessage = "Unable to complete setup. Please try again."
+                    case 401:
+                        self.errorMessage = "Your session has expired. Please sign in again."
+                    case 429:
+                        self.errorMessage = "Too many attempts. Please wait a few minutes and try again."
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
+                    default:
+                        self.errorMessage = "Unable to complete setup. Please try again."
+                    }
+                } else {
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
+                }
+                print("Error accepting Terms of Service: \(error.localizedDescription)")
             }
         } catch {
             await MainActor.run {
-                print("Error accepting Terms of Service: \(error)")
-                self.errorMessage = "Failed to accept Terms of Service. Please try again."
+                self.errorMessage = "Unable to complete setup. Please try again."
+                print("Error accepting Terms of Service: \(error.localizedDescription)")
             }
         }
     }
@@ -1134,6 +1183,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 
                 guard let user: BaseUserDTO = response else {
                     print("Failed to login with email/username")
+                    await MainActor.run {
+                        self.isLoggedIn = false
+                        self.spawnUser = nil
+                        self.shouldNavigateToFeedView = false
+                        self.shouldNavigateToUserInfoInputView = false
+                        self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
+                    }
                     return
                 }
                 print("Email/username login successful")
@@ -1145,16 +1201,43 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     }
                     self.shouldNavigateToFeedView = true
                     self.isLoggedIn = true
+                    self.errorMessage = nil // Clear any previous errors on success
                 }
             }
-        } catch {
-            print("Failed to login with email/username")
+        } catch let error as APIError {
+            print("Failed to login with email/username: \(error)")
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
                 self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
-                self.errorMessage = "Incorrect email/username or password"
+                
+                // Provide user-friendly error messages based on API error
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 401:
+                        self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
+                    case 404:
+                        self.errorMessage = "Account not found. Please check your email/username or create a new account."
+                    case 429:
+                        self.errorMessage = "Too many login attempts. Please wait a few minutes and try again."
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
+                    default:
+                        self.errorMessage = "Unable to sign in at this time. Please try again later."
+                    }
+                } else {
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
+                }
+            }
+        } catch {
+            print("Failed to login with email/username: \(error)")
+            await MainActor.run {
+                self.isLoggedIn = false
+                self.spawnUser = nil
+                self.shouldNavigateToFeedView = false
+                self.shouldNavigateToUserInfoInputView = false
+                self.errorMessage = "Unable to sign in at this time. Please try again later."
             }
         }
     }
@@ -1239,29 +1322,33 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.errorMessage = nil
                     } else {
                         // Handle error
-                        self.errorMessage = "Failed to send verification email"
+                        self.errorMessage = "Unable to send verification email. Please try again."
                     }
                 }
             }
         } catch let error as APIError {
             await MainActor.run {
-                // Handle specific API errors
+                // Handle specific API errors with user-friendly messages
                 if case .invalidStatusCode(let statusCode) = error {
                     switch statusCode {
                     case 400:
-                        self.errorMessage = "Invalid email address"
+                        self.errorMessage = "Please enter a valid email address."
                     case 409:
-                        self.errorMessage = "Email already registered"
+                        self.errorMessage = "This email is already registered. Please try signing in instead."
+                    case 429:
+                        self.errorMessage = "Too many verification attempts. Please wait a few minutes and try again."
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
                     default:
-                        self.errorMessage = "Failed to send verification email"
+                        self.errorMessage = "Unable to send verification email. Please try again."
                     }
                 } else {
-                    self.errorMessage = "Failed to send verification email"
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
                 }
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to send verification email"
+                self.errorMessage = "Unable to send verification email. Please try again."
             }
         }
     }
@@ -1290,44 +1377,52 @@ class UserAuthViewModel: NSObject, ObservableObject {
             } else {
                 // Handle error
                 self.shouldNavigateToAccountNotFoundView = true
-                self.errorMessage = "Failed to register with OAuth"
+                self.errorMessage = "Unable to create account with this sign-in method. Please try again."
             }
         }
             }
         } catch let error as APIError {
             await MainActor.run {
-                // Handle specific API errors
+                // Handle specific API errors with user-friendly messages
                 if case .invalidStatusCode(let statusCode) = error {
                     switch statusCode {
                     case 400:
-                        self.errorMessage = "Invalid OAuth credentials"
+                        self.errorMessage = "Invalid sign-in credentials. Please try again."
                     case 409:
                         // User already exists - attempt to sign them in instead
                         print("📍 User already exists (409), attempting OAuth sign-in")
+                        self.isAutoSigningIn = true
+                        self.authAlert = .accountFoundSigningIn
                         Task {
                             await self.signInWithOAuth(idToken: idToken, provider: provider, email: email)
                         }
                         return
+                    case 429:
+                        self.errorMessage = "Too many registration attempts. Please wait a few minutes and try again."
                     case 500:
                         // Server error - might also indicate existing user, try sign-in as fallback
                         print("📍 Server error (500), attempting OAuth sign-in as fallback")
+                        self.isAutoSigningIn = true
+                        self.authAlert = .accountFoundSigningIn
                         Task {
                             await self.signInWithOAuth(idToken: idToken, provider: provider, email: email)
                         }
                         return
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
                     default:
                         self.shouldNavigateToAccountNotFoundView = true
-                        self.errorMessage = "Failed to register with OAuth"
+                        self.errorMessage = "Unable to create account. Please try again."
                     }
                 } else {
                     self.shouldNavigateToAccountNotFoundView = true
-                    self.errorMessage = "Failed to register with OAuth"
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
                 }
             }
         } catch {
             await MainActor.run {
                 self.shouldNavigateToAccountNotFoundView = true
-                self.errorMessage = "Failed to register with OAuth"
+                self.errorMessage = "Unable to create account. Please try again."
             }
         }
     }
@@ -1363,6 +1458,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.email = authResponse.user.email
                 self.errorMessage = nil
                 
+                // Clear auto sign-in state and alert on successful sign-in
+                self.isAutoSigningIn = false
+                self.authAlert = nil
+                
                 // Use the skip destination logic for existing users
                 self.determineSkipDestination(authResponse: authResponse)
                 
@@ -1371,7 +1470,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
         } catch {
             await MainActor.run {
                 self.shouldNavigateToAccountNotFoundView = true
-                self.errorMessage = "Failed to sign in existing user. Please try again or contact support."
+                self.errorMessage = "Unable to sign in. Please try again or contact support if the problem persists."
+                
+                // Clear auto sign-in state on failure
+                self.isAutoSigningIn = false
+                self.authAlert = nil
+                
                 print("Error signing in existing OAuth user: \(error.localizedDescription)")
             }
         }

@@ -74,32 +74,20 @@ struct ContactImportView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Navigation
+            // Navigation Bar
             HStack {
                 Button(action: {
+                    // Clear any error states when going back
+                    userAuth.clearAllErrors()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
-                        .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
-                
                 Spacer()
-                
-                Button(action: {
-                    Task {
-                        isCompletingContactImport = true
-                        await userAuth.completeContactImport()
-                        isCompletingContactImport = false
-                    }
-                }) {
-                    Text("Skip for now")
-                        .font(Font.custom("Onest", size: 14).weight(.bold))
-                        .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
-                }
-                .disabled(isCompletingContactImport)
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
             .padding(.top, 10)
             
             // Title Section
@@ -267,9 +255,6 @@ struct ContactImportView: View {
             }
         )
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
-            UserToS()
-        }
         .alert("Contacts Permission Denied", isPresented: $showPermissionDeniedAlert) {
             Button("Settings") {
                 openAppSettings()
@@ -285,6 +270,8 @@ struct ContactImportView: View {
             Text("To find friends on Spawn, we need access to your contacts. You can enable this in Settings.")
         }
         .onAppear {
+            // Clear any previous error state when this view appears
+            userAuth.clearAllErrors()
             requestContactsAndLoad()
         }
     }

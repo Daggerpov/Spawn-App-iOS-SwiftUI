@@ -221,7 +221,7 @@ struct ActivityTypeFriendSelectionView: View {
         
         return availableFriends.filter { friend in
             let name = friend.name?.lowercased() ?? ""
-            let username = friend.username.lowercased()
+            let username = (friend.username ?? "").lowercased()
             let search = searchText.lowercased()
             
             return name.contains(search) || username.contains(search)

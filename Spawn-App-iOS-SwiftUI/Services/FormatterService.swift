@@ -22,7 +22,7 @@ class FormatterService {
 			}
 		}
 		// Fallback to username if no name available
-		return user.username
+		return user.username ?? "User"
 	}
 
 	// Format name from a user object

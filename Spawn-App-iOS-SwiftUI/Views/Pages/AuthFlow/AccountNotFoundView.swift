@@ -4,8 +4,6 @@ struct AccountNotFoundView: View {
     @StateObject private var userAuth = UserAuthViewModel.shared
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
-    @State private var shouldReturnToLogin = false
-    @State private var shouldNavigateToRegister = false
     
     var body: some View {
         ZStack {
@@ -65,7 +63,7 @@ struct AccountNotFoundView: View {
                 Button(action: {
                     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                     impactGenerator.impactOccurred()
-                    shouldNavigateToRegister = true
+                    userAuth.shouldNavigateToRegisterInputView = true
                 }) {
                     HStack(spacing: 10) {
                         Text("Register Now")
@@ -82,7 +80,7 @@ struct AccountNotFoundView: View {
                 Button(action: {
                     let impactGenerator = UIImpactFeedbackGenerator(style: .light)
                     impactGenerator.impactOccurred()
-                    shouldReturnToLogin = true
+                    userAuth.shouldNavigateToSignInView = true
                 }) {
                     Text("Return to Login")
                         .font(Font.custom("Onest", size: 17).weight(.medium))
@@ -98,17 +96,9 @@ struct AccountNotFoundView: View {
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $shouldReturnToLogin) {
-            SignInView()
-                .onAppear {
-                    userAuth.resetAuthFlow()
-                }
-        }
-        .navigationDestination(isPresented: $shouldNavigateToRegister) {
-            RegisterInputView()
-                .onAppear {
-                    userAuth.resetAuthFlow()
-                }
+        .onAppear {
+            // Clear any previous error state when this view appears
+            userAuth.clearAllErrors()
         }
     }
 }

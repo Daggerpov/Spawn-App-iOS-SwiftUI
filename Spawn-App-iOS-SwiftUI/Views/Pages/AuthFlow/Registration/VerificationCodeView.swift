@@ -121,11 +121,12 @@ struct VerificationCodeView: View {
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView(isOAuthUser: false)})
         .onAppear {
             startTimer()
             focusedIndex = 0
             previousCode = code
+            // Clear any previous error state when this view appears
+            viewModel.clearAllErrors()
         }
         .onDisappear {
             timer?.invalidate()

@@ -109,13 +109,13 @@ struct ActivityParticipantsView: View {
                             .frame(width: 36, height: 36)
                             .shadow(color: Color.black.opacity(0.25), radius: 4.02, y: 1.61)
                             .overlay(
-                                Text(String(creator.name?.prefix(1) ?? creator.username.prefix(1)))
+                                Text(String(creator.name?.prefix(1) ?? creator.username?.prefix(1) ?? "U"))
                                     .foregroundColor(.white)
                                     .font(.system(size: 16, weight: .semibold))
                             )
                     }
                     
-                    Text("\(creator.name ?? "Unknown")\n@\(creator.username)")
+                                            Text("\(creator.name ?? "Unknown")\n@\(creator.username ?? "username")")
                         .font(.custom("Onest", size: 16).weight(.bold))
                         .lineSpacing(25.60)
                         .foregroundColor(.white)
@@ -171,13 +171,13 @@ struct ActivityParticipantsView: View {
                         .frame(width: 36, height: 36)
                         .shadow(color: Color.black.opacity(0.25), radius: 4.06, y: 1.62)
                         .overlay(
-                            Text(String(participant.name?.prefix(1) ?? participant.username.prefix(1)))
+                            Text(String(participant.name?.prefix(1) ?? participant.username?.prefix(1) ?? "U"))
                                 .foregroundColor(.white)
                                 .font(.system(size: 16, weight: .semibold))
                         )
                 }
                 
-                Text("\(participant.name ?? "Unknown")\n@\(participant.username)")
+                                        Text("\(participant.name ?? "Unknown")\n@\(participant.username ?? "username")")
                     .font(.custom("Onest", size: 16).weight(.bold))
                     .lineSpacing(25.60)
                     .foregroundColor(.white)

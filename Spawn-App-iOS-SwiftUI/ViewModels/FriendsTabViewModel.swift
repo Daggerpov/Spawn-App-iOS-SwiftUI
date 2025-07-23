@@ -204,7 +204,7 @@ class FriendsTabViewModel: ObservableObject {
         await MainActor.run {
             self.filteredFriends = self.friends.filter { friend in
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -212,7 +212,7 @@ class FriendsTabViewModel: ObservableObject {
             
             self.filteredRecommendedFriends = self.recommendedFriends.filter { friend in
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -221,7 +221,7 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredIncomingFriendRequests = self.incomingFriendRequests.filter { request in
                 let friend = request.senderUser
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -230,7 +230,7 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredOutgoingFriendRequests = self.outgoingFriendRequests.filter { request in
                 let friend = request.senderUser
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -543,7 +543,7 @@ class FriendsTabViewModel: ObservableObject {
             let lowercasedSearchText = searchText.lowercased()
             let filteredResults = BaseUserDTO.mockUsers.filter { user in
                 let name = FormatterService.shared.formatName(user: user).lowercased()
-                let username = user.username.lowercased()
+                let username = (user.username ?? "").lowercased()
                 
                 return name.contains(lowercasedSearchText) || username.contains(lowercasedSearchText)
             }

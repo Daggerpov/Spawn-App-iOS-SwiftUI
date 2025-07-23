@@ -143,12 +143,12 @@ struct InviteView: View {
                                 
                                 // Use FormatterService to display name
                                 if let displayName = friend.name {
-                                    Text(displayName.isEmpty ? friend.username : displayName)
+                                    Text(displayName.isEmpty ? (friend.username ?? "User") : displayName)
                                     .font(.subheadline)
                                     .foregroundColor(.white)
                                     .lineLimit(1)
                                 } else {
-                                    Text(friend.username)
+                                    Text(friend.username ?? "User")
                                         .font(.subheadline)
                                         .foregroundColor(.white)
                                         .lineLimit(1)
@@ -190,9 +190,9 @@ struct InviteView: View {
                         friendsViewModel.friends : 
                         friendsViewModel.friends.filter { friend in
                             let searchText = searchViewModel.searchText.lowercased()
-                            return friend.username.lowercased().contains(searchText) ||
-                                friend.name?.lowercased().contains(searchText) == true ||
-                                friend.email?.lowercased().contains(searchText) == true
+                            return (friend.username ?? "").lowercased().contains(searchText) ||
+                                (friend.name?.lowercased().contains(searchText) ?? false) ||
+                                (friend.email?.lowercased().contains(searchText) ?? false)
                         }
                     
                     if filteredFriends.isEmpty {
@@ -257,11 +257,11 @@ struct FriendListRow: View {
             VStack(alignment: .leading) {
                 // Use FormatterService to format the name
                 let fullName = FormatterService.shared.formatName(user: friend)
-                Text(fullName.isEmpty ? friend.username : fullName)
+                Text(fullName == "No Name" ? (friend.username ?? "User") : fullName)
                     .font(.headline)
                     .foregroundColor(universalAccentColor)
 
-                Text("@\(friend.username)")
+                Text("@\(friend.username ?? "username")")
                     .font(.subheadline)
                     .foregroundColor(.gray)
             }

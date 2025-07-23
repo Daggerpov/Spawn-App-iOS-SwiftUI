@@ -57,7 +57,7 @@ struct LaunchView: View {
 				}
 
 				// Google Sign-In Button
-				if showAuthButtons {
+				if showAuthButtons && !userAuth.isAutoSigningIn {
 					Button(action: {
 						// Haptic feedback
 						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
@@ -83,6 +83,22 @@ struct LaunchView: View {
 						AuthProviderButtonView(authProviderType: .apple)
 					}
 					.buttonStyle(AuthProviderButtonStyle())
+					.transition(.opacity)
+				}
+				
+				// Auto Sign-In Loading State
+				if userAuth.isAutoSigningIn {
+					VStack(spacing: 16) {
+						ProgressView()
+							.progressViewStyle(CircularProgressViewStyle(tint: universalAccentColor(from: themeService, environment: colorScheme)))
+							.scaleEffect(1.2)
+						
+						Text("Account found! Signing you in...")
+							.font(.onestMedium(size: 16))
+							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+							.multilineTextAlignment(.center)
+					}
+					.padding(.horizontal, 40)
 					.transition(.opacity)
 				}
 
@@ -138,6 +154,31 @@ struct LaunchView: View {
 				case .none:
 					EmptyView()
 				}
+			}
+			// Additional navigation destinations for AuthFlow views
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToVerificationCodeView) {
+				VerificationCodeView(viewModel: userAuth)
+			}
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToUserOptionalDetailsInputView) {
+				UserOptionalDetailsInputView()
+			}
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToContactImportView) {
+				ContactImportView()
+			}
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
+				UserToS()
+			}
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToSignInView) {
+				SignInView()
+					.onAppear {
+						userAuth.resetAuthFlow()
+					}
+			}
+			.navigationDestination(isPresented: $userAuth.shouldNavigateToRegisterInputView) {
+				RegisterInputView()
+					.onAppear {
+						userAuth.resetAuthFlow()
+					}
 			}
 		}
 	}

@@ -38,7 +38,7 @@ struct ChatMessageView: View {
                         .background(Color.white.opacity(0.80))
                         .opacity(0)
                     
-                    Text(message.senderUser.name ?? message.senderUser.username)
+                    Text(message.senderUser.name ?? message.senderUser.username ?? "User")
                         .font(.onestMedium(size: 12))
                         .foregroundColor(Color.white.opacity(0.80))
                     

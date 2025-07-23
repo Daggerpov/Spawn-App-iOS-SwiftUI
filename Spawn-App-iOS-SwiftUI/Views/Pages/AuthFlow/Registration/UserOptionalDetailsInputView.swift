@@ -73,7 +73,8 @@ struct UserOptionalDetailsInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Go back one step in the onboarding flow
+                    // Clear any error states when going back
+                    userAuth.clearAllErrors()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -177,8 +178,9 @@ struct UserOptionalDetailsInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $userAuth.shouldNavigateToContactImportView) {
-            ContactImportView()
+        .onAppear {
+            // Clear any previous error state when this view appears
+            userAuth.clearAllErrors()
         }
     }
 }

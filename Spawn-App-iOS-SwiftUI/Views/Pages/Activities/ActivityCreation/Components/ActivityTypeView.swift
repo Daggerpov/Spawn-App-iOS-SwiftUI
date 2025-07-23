@@ -140,6 +140,13 @@ extension ActivityTypeView {
             }
             .padding()
         }
+        .onTapGesture {
+            // Clear any residual drag state when tapping outside cards
+            if draggedItem != nil {
+                draggedItem = nil
+                targetItem = nil
+            }
+        }
     }
     
     private var gridColumns: [GridItem] {
@@ -181,8 +188,8 @@ extension ActivityTypeView {
         .scaleEffect(draggedItem?.id == activityTypeDTO.id ? 0.8 : targetItem?.id == activityTypeDTO.id ? 1.1 : 1)
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         .onDrag {
-            // Only set draggedItem if it's not already set (prevents re-setting it after drop)
-            draggedItem = draggedItem == nil ? activityTypeDTO : nil
+            // Always set draggedItem to the current item being dragged
+            draggedItem = activityTypeDTO
             return NSItemProvider(object: activityTypeDTO.id.uuidString as NSString)
         }
         .onDrop(

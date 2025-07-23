@@ -65,7 +65,6 @@ struct UserSetupView: View {
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .ignoresSafeArea()
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $isNavigating, destination: {UserOptionalDetailsInputView()})
     }
 }
 
