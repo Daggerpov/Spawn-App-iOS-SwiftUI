@@ -293,17 +293,37 @@ class MockAPIService: IAPIService {
 			let urlComponents = url.absoluteString.components(separatedBy: "/")
 			if let incomingIndex = urlComponents.firstIndex(of: "incoming"),
 			   incomingIndex + 1 < urlComponents.count {
-				let receiverUserId = urlComponents[incomingIndex + 1]
-				let receiverUsername = getUsernameFromMockUsers(receiverUserId)
+				let receiverUserIdString = urlComponents[incomingIndex + 1]
+				guard let receiverUserId = UUID(uuidString: receiverUserIdString) else {
+					return [] as! T
+				}
 				
-				// For demo purposes, simulate that some users have incoming friend requests
-				let incomingRequests: [String: [FetchFriendRequestDTO]] = [
-					"daggerpov": [], // Daniel Agapov has no incoming requests
-					"uhdlee": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)], // Daniel Lee has request from Daniel Agapov
-					"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielLee)] // Haley has request from Daniel Lee
-				]
+				// Use the app cache to get current friend requests for this user
+				// This ensures we return the actual current state, not hardcoded data
+				let cachedRequests = AppCache.shared.friendRequests[receiverUserId] ?? []
 				
-				return (incomingRequests[receiverUsername] ?? []) as! T
+				// If cache is empty and this is the initial load, return appropriate mock data
+				if cachedRequests.isEmpty {
+					let receiverUsername = getUsernameFromMockUsers(receiverUserIdString)
+					
+					// For demo purposes, simulate that some users have incoming friend requests
+					let incomingRequests: [String: [FetchFriendRequestDTO]] = [
+						"daggerpov": [], // Daniel Agapov has no incoming requests
+						"uhdlee": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)], // Daniel Lee has request from Daniel Agapov
+						"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielLee)] // Haley has request from Daniel Lee
+					]
+					
+					let mockRequests = incomingRequests[receiverUsername] ?? []
+					
+					// Update cache with initial mock data if it was empty
+					if !mockRequests.isEmpty {
+						AppCache.shared.updateFriendRequestsForUser(mockRequests, userId: receiverUserId)
+					}
+					
+					return mockRequests as! T
+				}
+				
+				return cachedRequests as! T
 			}
 			return [] as! T
 		}
@@ -314,17 +334,37 @@ class MockAPIService: IAPIService {
 			let urlComponents = url.absoluteString.components(separatedBy: "/")
 			if let sentIndex = urlComponents.firstIndex(of: "sent"),
 			   sentIndex + 1 < urlComponents.count {
-				let senderUserId = urlComponents[sentIndex + 1]
-				let senderUsername = getUsernameFromMockUsers(senderUserId)
+				let senderUserIdString = urlComponents[sentIndex + 1]
+				guard let senderUserId = UUID(uuidString: senderUserIdString) else {
+					return [] as! T
+				}
 				
-				// For demo purposes, simulate that some users have sent friend requests
-				let sentRequests: [String: [FetchFriendRequestDTO]] = [
-					"daggerpov": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.haley)], // Daniel Agapov sent request to Haley
-					"uhdlee": [], // Daniel Lee has no sent requests
-					"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)] // Haley sent request to Daniel Agapov
-				]
+				// Use the app cache to get current sent friend requests for this user
+				// This ensures we return the actual current state, not hardcoded data
+				let cachedSentRequests = AppCache.shared.sentFriendRequests[senderUserId] ?? []
 				
-				return (sentRequests[senderUsername] ?? []) as! T
+				// If cache is empty and this is the initial load, return appropriate mock data
+				if cachedSentRequests.isEmpty {
+					let senderUsername = getUsernameFromMockUsers(senderUserIdString)
+					
+					// For demo purposes, simulate that some users have sent friend requests
+					let sentRequests: [String: [FetchFriendRequestDTO]] = [
+						"daggerpov": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.haley)], // Daniel Agapov sent request to Haley
+						"uhdlee": [], // Daniel Lee has no sent requests
+						"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)] // Haley sent request to Daniel Agapov
+					]
+					
+					let mockSentRequests = sentRequests[senderUsername] ?? []
+					
+					// Update cache with initial mock data if it was empty
+					if !mockSentRequests.isEmpty {
+						AppCache.shared.updateSentFriendRequestsForUser(mockSentRequests, userId: senderUserId)
+					}
+					
+					return mockSentRequests as! T
+				}
+				
+				return cachedSentRequests as! T
 			}
 			return [] as! T
 		}
