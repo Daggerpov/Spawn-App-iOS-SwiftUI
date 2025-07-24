@@ -555,51 +555,86 @@ class APIService: IAPIService {
             return
         }
         
-        print("Checking for access token header")
+        print("🔐 Processing auth tokens from response headers for: \(url.absoluteString)")
+        
+        // Extract access token
 		guard let accessToken = response.allHeaderFields["Authorization"] as? String ?? 
 		                        response.allHeaderFields["authorization"] as? String else {
-            print("ERROR: Could not locate access token header")
+            print("⚠️ WARNING: No access token found in response headers")
             return
         }
-        print("Found access token header")
         
-        print("Checking for refresh token header")
-        // Try both cases for the refresh token header
+        // Extract refresh token  
         let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String ?? 
                           response.allHeaderFields["x-refresh-token"] as? String
         
         if refreshToken == nil {
-            print("ERROR: Could not locate refresh token header")
-            // For now, continue without refresh token to see if that's the main issue
-        } else {
-            print("Found refresh token header")
-            print("Refresh token: \(refreshToken!)")
+            print("⚠️ WARNING: No refresh token found in response headers")
+            // Don't throw error here - some endpoints might only return access tokens
         }
         
-        print("Access token: \(accessToken)")
+        print("🔐 Found access token in headers")
+        if refreshToken != nil {
+            print("🔐 Found refresh token in headers")
+        }
 
 		// Remove "Bearer " prefix from access token
-		let cleanAccessToken = accessToken.replacingOccurrences(
-			of: "Bearer ", with: "")
+		let cleanAccessToken = accessToken.replacingOccurrences(of: "Bearer ", with: "")
 
-		// Store access token in keychain
+		// Store access token in keychain with retry logic
 		if let accessTokenData = cleanAccessToken.data(using: .utf8) {
-			if !KeychainService.shared.save(
-				key: "accessToken", data: accessTokenData)
-			{
-				throw APIError.failedTokenSaving(tokenType: "accessToken")
-			}
+            var saveAttempts = 0
+            let maxSaveAttempts = 3
+            var saveSuccessful = false
+            
+            while saveAttempts < maxSaveAttempts && !saveSuccessful {
+                saveSuccessful = KeychainService.shared.save(key: "accessToken", data: accessTokenData)
+                if !saveSuccessful {
+                    saveAttempts += 1
+                    print("⚠️ Access token save attempt \(saveAttempts) failed")
+                    if saveAttempts < maxSaveAttempts {
+                        // Brief delay before retry
+                        Thread.sleep(forTimeInterval: 0.1)
+                    }
+                }
+            }
+            
+            if !saveSuccessful {
+                print("❌ ERROR: Failed to save access token to keychain after \(maxSaveAttempts) attempts")
+                throw APIError.failedTokenSaving(tokenType: "accessToken")
+            } else {
+                print("✅ Access token saved to keychain successfully")
+            }
 		}
 		
 		// Store refresh token if present
 		if let refreshToken = refreshToken,
 		   let refreshTokenData = refreshToken.data(using: .utf8) {
-			if !KeychainService.shared.save(
-				key: "refreshToken", data: refreshTokenData)
-			{
-				throw APIError.failedTokenSaving(tokenType: "refreshToken")
-			}
+            var saveAttempts = 0
+            let maxSaveAttempts = 3
+            var saveSuccessful = false
+            
+            while saveAttempts < maxSaveAttempts && !saveSuccessful {
+                saveSuccessful = KeychainService.shared.save(key: "refreshToken", data: refreshTokenData)
+                if !saveSuccessful {
+                    saveAttempts += 1
+                    print("⚠️ Refresh token save attempt \(saveAttempts) failed")
+                    if saveAttempts < maxSaveAttempts {
+                        // Brief delay before retry
+                        Thread.sleep(forTimeInterval: 0.1)
+                    }
+                }
+            }
+            
+            if !saveSuccessful {
+                print("❌ ERROR: Failed to save refresh token to keychain after \(maxSaveAttempts) attempts")
+                throw APIError.failedTokenSaving(tokenType: "refreshToken")
+            } else {
+                print("✅ Refresh token saved to keychain successfully")
+            }
 		}
+        
+        print("🔐 Token processing completed successfully")
 	}
 
 	fileprivate func setAuthHeader(request: inout URLRequest) {
@@ -620,32 +655,37 @@ class APIService: IAPIService {
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
+			print("🔓 Endpoint \(url.absoluteString) is whitelisted - no auth required")
 			return
 		}
+		
+		print("🔐 Setting auth headers for: \(url.absoluteString)")
 		
 		// Get the access token from keychain
         guard
             let accessTokenData = KeychainService.shared.load(key: "accessToken"),
             let accessToken = String(data: accessTokenData, encoding: .utf8)
-		else {
-			// If we have a refresh token, we can try to refresh the access token
+        else {
+			print("⚠️ Missing access token for authenticated endpoint: \(url.absoluteString)")
+			
+			// Check if we have a refresh token available
 			if let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
 			   let _ = String(data: refreshTokenData, encoding: .utf8) {
 				// We have a refresh token, but we'll let the API call handle the refresh
 				// This will happen in the 401 handler in fetchData/sendData methods
-				print("⚠️ Missing access token but refresh token exists - will refresh during API call for \(url.absoluteString)")
+				print("🔄 Missing access token but refresh token exists - will refresh during API call")
 			} else {
-				print("❌ ERROR: Missing access token and refresh token in Keychain for \(url.absoluteString)")
-				// User might need to be logged out due to expired/missing tokens
-				DispatchQueue.main.async {
-					UserAuthViewModel.shared.signOut()
-				}
+				print("❌ ERROR: Missing both access token and refresh token in Keychain")
+				print("🔄 Will let API call fail and higher-level error handling manage re-authentication")
+				// Don't immediately sign out - let the API call fail and higher-level error handling
+				// manage re-authentication. This preserves OAuth credentials during onboarding.
 			}
 			return
 		}
 
 		// Set the auth headers
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+		print("✅ Authorization header set successfully")
 	} 
 	 
 
@@ -886,8 +926,9 @@ class APIService: IAPIService {
 
     /// Refresh Token
 	fileprivate func handleRefreshToken() async throws -> String {
-		print("Refreshing access token...")
+		print("🔄 Attempting to refresh access token...")
 		guard let url = URL(string: APIService.baseURL + "auth/refresh-token") else {
+		    print("❌ ERROR: Failed to create refresh token URL")
 		    throw APIError.URLError
 		}
 		
@@ -895,7 +936,8 @@ class APIService: IAPIService {
 		    let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
 		    let refreshToken = String(data: refreshTokenData, encoding: .utf8) 
 		else {
-			print("❌ ERROR: Missing refresh token in Keychain - logging out user")
+			print("❌ ERROR: Missing refresh token in Keychain - cannot refresh")
+			print("🔄 Logging out user due to missing refresh token")
 			// If refresh token is missing, immediately log out the user to prevent endless retry loops
 			await MainActor.run {
 				UserAuthViewModel.shared.signOut()
@@ -903,44 +945,69 @@ class APIService: IAPIService {
 			throw APIError.failedTokenSaving(tokenType: "refreshToken")
 		}
 
+		print("🔄 Making refresh token request...")
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
 		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "Authorization")
 		
-        let (_, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await URLSession.shared.data(for: request)
 		
 		guard let httpResponse = response as? HTTPURLResponse else {
-			errorMessage = "HTTP request failed for \(url)"
-			print(errorMessage ?? "no error message to log")
-			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
+			let message = "HTTP request failed for refresh token endpoint"
+			print("❌ ERROR: \(message)")
+			throw APIError.failedHTTPRequest(description: message)
 		}
+		
+		print("🔄 Refresh token response status: \(httpResponse.statusCode)")
+		
         if httpResponse.statusCode == 401 {
-            // Refresh token didn't work so logout
-            print("❌ ERROR: Refresh token invalid (401) - logging out user")
-            await MainActor.run {
-                UserAuthViewModel.shared.signOut()
-            }
+            // Refresh token is invalid/expired
+            print("❌ ERROR: Refresh token invalid (401) - token may be expired")
+            print("🔄 Clearing invalid tokens but preserving OAuth credentials for potential re-authentication")
+            
+            // Clear the invalid tokens
+            let _ = KeychainService.shared.delete(key: "accessToken")
+            let _ = KeychainService.shared.delete(key: "refreshToken")
+            
+            // Don't call signOut() here - let the calling code handle re-authentication
+            // This preserves OAuth credentials for potential re-authentication during onboarding
             throw APIError.invalidStatusCode(statusCode: 401)
         }
         
 		if httpResponse.statusCode == 200 {
-			// Successfully refreshed token, save it to Keychain
+			print("✅ Refresh token request successful")
+			
+			// Successfully refreshed token, extract and save it to Keychain
 			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String ?? 
 			                        httpResponse.allHeaderFields["authorization"] as? String {
 				let cleanAccessToken = newAccessToken.replacingOccurrences(of: "Bearer ", with: "")
+				print("🔐 Received new access token, saving to keychain...")
 
 				if let accessTokenData = cleanAccessToken.data(using: .utf8) {
 				    if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
+				        print("❌ ERROR: Failed to save refreshed access token to keychain")
 				        throw APIError.failedTokenSaving(tokenType: "accessToken")
 				    }
+				    print("✅ New access token saved successfully")
 				    return "Bearer \(cleanAccessToken)"
 				} else {
+				    print("❌ ERROR: Failed to convert access token to data")
 				    throw APIError.failedTokenSaving(tokenType: "accessToken")
 				}
+			} else {
+			    print("❌ ERROR: No access token found in refresh response headers")
+			    throw APIError.failedHTTPRequest(description: "No access token in refresh response")
 			}
 		}
 		
-		throw APIError.failedHTTPRequest(description: "Failed to refresh token")
+		print("❌ ERROR: Unexpected status code \(httpResponse.statusCode) from refresh endpoint")
+		
+		// Log response body for debugging
+		if let responseBody = String(data: data, encoding: .utf8) {
+		    print("🔍 Refresh response body: \(responseBody)")
+		}
+		
+		throw APIError.failedHTTPRequest(description: "Failed to refresh token - status \(httpResponse.statusCode)")
 	}
 	
 	fileprivate func retryRequest(request: inout URLRequest, bearerAccessToken: String) async throws -> Data {
@@ -1105,3 +1172,5 @@ struct EmptyRequestBody: Codable {}
 // for empty responses from requests:
 struct EmptyResponse: Codable {}
 struct EmptyObject: Codable {}
+
+
