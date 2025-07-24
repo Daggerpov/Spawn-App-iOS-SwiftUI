@@ -163,6 +163,16 @@ struct ContentView: View {
                     handleDeepLinkProfile(profileId)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowActivityFullAlert"))) { notification in
+                if let message = notification.userInfo?["message"] as? String {
+                    inAppNotificationManager.showNotification(
+                        title: "Activity Full",
+                        message: message,
+                        type: .error,
+                        duration: 4.0
+                    )
+                }
+            }
             
             // In-app notification overlay
             VStack {

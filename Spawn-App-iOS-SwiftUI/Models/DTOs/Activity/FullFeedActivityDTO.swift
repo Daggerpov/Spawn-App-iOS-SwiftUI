@@ -24,6 +24,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
+	var participantLimit: Int? // nil means unlimited participants
 	var createdAt: Date?
 
 	// MARK: Relations
@@ -46,6 +47,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		activityTypeId: UUID? = nil,
 		note: String? = nil,
 		icon: String? = nil,
+		participantLimit: Int? = nil,
 		creatorUser: BaseUserDTO,
 		participantUsers: [BaseUserDTO]? = nil,
 		invitedUsers: [BaseUserDTO]? = nil,
@@ -62,6 +64,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		self.activityTypeId = activityTypeId
 		self.note = note
 		self.icon = icon
+		self.participantLimit = participantLimit
 		self.creatorUser = creatorUser
 		self.participantUsers = participantUsers
 		self.invitedUsers = invitedUsers
@@ -73,7 +76,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
     
     // CodingKeys for all properties (including @Published ones)
     enum CodingKeys: String, CodingKey {
-        case id, title, startTime, endTime, location, activityTypeId, note, icon
+        case id, title, startTime, endTime, location, activityTypeId, note, icon, participantLimit
         case createdAt, creatorUser, invitedUsers
         case participantUsers, chatMessages, participationStatus, isSelfOwned
     }
@@ -90,6 +93,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         activityTypeId = try container.decodeIfPresent(UUID.self, forKey: .activityTypeId)
         note = try container.decodeIfPresent(String.self, forKey: .note)
         icon = try container.decodeIfPresent(String.self, forKey: .icon)
+        participantLimit = try container.decodeIfPresent(Int.self, forKey: .participantLimit)
         createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
         creatorUser = try container.decode(BaseUserDTO.self, forKey: .creatorUser)
         invitedUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .invitedUsers)
@@ -113,6 +117,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         try container.encodeIfPresent(activityTypeId, forKey: .activityTypeId)
         try container.encodeIfPresent(note, forKey: .note)
         try container.encodeIfPresent(icon, forKey: .icon)
+        try container.encodeIfPresent(participantLimit, forKey: .participantLimit)
         try container.encodeIfPresent(createdAt, forKey: .createdAt)
         try container.encode(creatorUser, forKey: .creatorUser)
         try container.encodeIfPresent(invitedUsers, forKey: .invitedUsers)

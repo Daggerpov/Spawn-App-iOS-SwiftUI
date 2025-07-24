@@ -16,6 +16,7 @@ class Activity: Identifiable, Codable {
 	var endTime: Date?
 	var location: Location?
 	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in activity
+	var participantLimit: Int? // nil means unlimited participants
 	var createdAt: Date?
 
 	// MARK: Relations
@@ -36,6 +37,7 @@ class Activity: Identifiable, Codable {
 		location: Location? = nil,
 		activityTypeId: UUID? = nil,
 		note: String? = nil,
+		participantLimit: Int? = nil,
 		creatorUser: UserDTO? = UserDTO.danielAgapov,
 		participantUsers: [UserDTO]? = nil,
 		invitedUsers: [UserDTO]? = nil,
@@ -50,6 +52,7 @@ class Activity: Identifiable, Codable {
 		self.location = location
 		self.activityTypeId = activityTypeId
 		self.note = note
+		self.participantLimit = participantLimit
 		self.creatorUser = creatorUser
 		self.participantUsers = participantUsers
 		self.invitedUsers = invitedUsers
@@ -89,6 +92,7 @@ extension Activity {
 			id: UUID(), name: "Gather - Place Vanier",
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
+		participantLimit: 5,
 		creatorUser: UserDTO.danielAgapov,
 		participantUsers: [
 			UserDTO.danielLee,

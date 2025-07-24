@@ -21,6 +21,7 @@ class ActivityCreationDTO: Identifiable, Codable {
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
+	var participantLimit: Int? // nil means unlimited participants
 
 	// MARK: Relations
 	var activityTypeId: UUID?
@@ -36,6 +37,7 @@ class ActivityCreationDTO: Identifiable, Codable {
 		activityTypeId: UUID? = nil,
 		note: String? = nil,
 		icon: String? = nil,
+		participantLimit: Int? = nil,
 		creatorUserId: UUID,
 		invitedFriendUserIds: [UUID]? = nil
 	) {
@@ -47,6 +49,7 @@ class ActivityCreationDTO: Identifiable, Codable {
 		self.activityTypeId = activityTypeId
 		self.note = note
 		self.icon = icon
+		self.participantLimit = participantLimit
 		self.creatorUserId = creatorUserId
 		self.invitedFriendUserIds = invitedFriendUserIds
 	}

@@ -61,6 +61,24 @@ class ActivityCardViewModel: ObservableObject {
 				// Update the cache with the updated activity so all views stay in sync
 				AppCache.shared.addOrUpdateActivity(updatedActivity)
 			}
+		} catch let error as APIError {
+			await MainActor.run {
+				// Handle specific API errors
+				if case .invalidStatusCode(let statusCode) = error {
+					if statusCode == 400 {
+						// Activity is full
+						NotificationCenter.default.post(
+							name: NSNotification.Name("ShowActivityFullAlert"),
+							object: nil,
+							userInfo: ["message": "Sorry, this activity is full"]
+						)
+					} else {
+						print("Error toggling participation (status \(statusCode)): \(error.localizedDescription)")
+					}
+				} else {
+					print("Error toggling participation: \(error.localizedDescription)")
+				}
+			}
 		} catch {
 			await MainActor.run {
 				print(
