@@ -26,6 +26,9 @@ struct ActivityDateTimeView: View {
     // Validation state
     @State private var showTitleError: Bool = false
     
+    // State for comprehensive changes confirmation
+    @State private var showSaveConfirmation: Bool = false
+    
     // Available options for the pickers
     private let hours = Array(1...12)
     private let minutes = [0, 15, 30, 45]
@@ -150,7 +153,14 @@ struct ActivityDateTimeView: View {
             if let onBack = onBack {
                 HStack {
                     ActivityBackButton {
-                        onBack()
+                        // Sync current values to view model before checking changes
+                        syncCurrentValuesToViewModel()
+                        
+                        if viewModel.hasAnyChanges {
+                            showSaveConfirmation = true
+                        } else {
+                            onBack()
+                        }
                     }
                     .padding(.leading, 24)
                     
@@ -219,6 +229,7 @@ struct ActivityDateTimeView: View {
                                         isAM = tomorrowIsAM
                                     }
                                     updateSelectedDate()
+                                    syncCurrentValuesToViewModel()
                                 }
                                 
                                 // Hour picker
@@ -238,6 +249,7 @@ struct ActivityDateTimeView: View {
                                         tomorrowHour = selectedHour
                                     }
                                     updateSelectedDate()
+                                    syncCurrentValuesToViewModel()
                                 }
                                 
                                 // Minute picker
@@ -257,6 +269,7 @@ struct ActivityDateTimeView: View {
                                         tomorrowMinute = selectedMinute
                                     }
                                     updateSelectedDate()
+                                    syncCurrentValuesToViewModel()
                                 }
                                 
                                 // AM/PM picker
@@ -278,6 +291,7 @@ struct ActivityDateTimeView: View {
                                         tomorrowIsAM = isAM
                                     }
                                     updateSelectedDate()
+                                    syncCurrentValuesToViewModel()
                                 }
                             }
                             .offset(x: 4, y: 1.13)
@@ -323,6 +337,7 @@ struct ActivityDateTimeView: View {
                                 if !newValue.trimmingCharacters(in: .whitespaces).isEmpty {
                                     showTitleError = false
                                 }
+                                syncCurrentValuesToViewModel()
                             }
                         
                         if showTitleError {
@@ -348,6 +363,7 @@ struct ActivityDateTimeView: View {
                                 Button(action: { 
                                     selectedDuration = duration
                                     viewModel.selectedDuration = duration
+                                    syncCurrentValuesToViewModel()
                                 }) {
                                     Text(duration.title)
                                         .font(.custom("Onest", size: 16).weight(selectedDuration == duration ? .bold : .medium))
@@ -386,7 +402,7 @@ struct ActivityDateTimeView: View {
                     return
                 }
                 showTitleError = false
-                updateSelectedDate()
+                syncCurrentValuesToViewModel()
                 onNext()
             }
             .padding(.horizontal, 20)
@@ -410,9 +426,55 @@ struct ActivityDateTimeView: View {
         .onAppear {
             initializeDateAndTime()
         }
+        .alert("Save All Changes?", isPresented: $showSaveConfirmation) {
+            Button("Don't Save", role: .destructive) {
+                // Reset to original values and go back without saving
+                viewModel.resetToOriginalValues()
+                onBack?()
+            }
+            Button("Save All Changes", role: .default) {
+                // Save changes by calling onNext to proceed through the flow
+                let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+                if trimmedTitle.isEmpty {
+                    showTitleError = true
+                    return
+                }
+                showTitleError = false
+                syncCurrentValuesToViewModel()
+                
+                // For editing flow, we need to save ALL changes and close the flow
+                // This means updating the activity with all the accumulated changes
+                Task {
+                    await viewModel.updateActivity()
+                    await MainActor.run {
+                        onBack?()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                // Stay on the current screen
+            }
+        } message: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("You have unsaved changes across multiple screens:")
+                Text(viewModel.getChangesSummaryText())
+            }
+        }
     }
     
     // MARK: - Helper Methods
+    
+    private func syncCurrentValuesToViewModel() {
+        // Update activity title
+        let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+        viewModel.activity.title = trimmedTitle.isEmpty ? nil : trimmedTitle
+        
+        // Update selected date
+        updateSelectedDate()
+        
+        // Update duration
+        viewModel.selectedDuration = selectedDuration
+    }
     
     private func updateSelectedDate() {
         let calendar = Calendar.current
