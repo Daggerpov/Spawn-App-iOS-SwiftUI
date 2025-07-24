@@ -240,4 +240,22 @@ class ActivityDescriptionViewModel: ObservableObject {
 			}
 		}
 	}
+	
+	/// Reports the activity for inappropriate content
+	func reportActivity(reporterUserId: UUID, reportType: ReportType, description: String) async {
+		do {
+			let reportingService = ReportingService(apiService: self.apiService)
+			try await reportingService.reportActivity(
+				reporterUserId: reporterUserId,
+				activityId: activity.id,
+				reportType: reportType,
+				description: description
+			)
+			print("Activity reported successfully")
+		} catch {
+			await MainActor.run {
+				errorMessage = "Failed to report activity: \(error.localizedDescription)"
+			}
+		}
+	}
 } 

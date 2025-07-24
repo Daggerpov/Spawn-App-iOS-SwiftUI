@@ -512,7 +512,7 @@ struct FriendRowView: View {
     // Block user functionality
     private func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
         do {
-            let reportingService = UserReportingService()
+            let reportingService = ReportingService()
             try await reportingService.blockUser(
                 blockerId: blockerId,
                 blockedId: blockedId,
