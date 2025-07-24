@@ -63,24 +63,16 @@ struct AccountNotFoundView: View {
                 Button(action: {
                     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                     impactGenerator.impactOccurred()
-                    userAuth.shouldNavigateToRegisterInputView = true
+                    userAuth.navigateTo(.register)
                 }) {
-                    HStack(spacing: 10) {
-                        Text("Register Now")
-                            .font(Font.custom("Onest", size: 20).weight(.semibold))
-                            .foregroundColor(.white)
-                    }
-                    .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                    .frame(height: 63)
-                    .background(Color(red: 0.42, green: 0.51, blue: 0.98))
-                    .cornerRadius(16)
+                    OnboardingButtonCoreView("Register Now")
                 }
                 .buttonStyle(PlainButtonStyle())
                 
                 Button(action: {
                     let impactGenerator = UIImpactFeedbackGenerator(style: .light)
                     impactGenerator.impactOccurred()
-                    userAuth.shouldNavigateToSignInView = true
+                    userAuth.navigateTo(.signIn)
                 }) {
                     Text("Return to Login")
                         .font(Font.custom("Onest", size: 17).weight(.medium))
@@ -89,13 +81,33 @@ struct AccountNotFoundView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
             }
-            .frame(width: 364)
+            .padding(.horizontal, 22)
             .offset(x: 0, y: 124)
         }
         .frame(width: 428, height: 926)
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: .constant(userAuth.navigationState != .none)) {
+            switch userAuth.navigationState {
+            case .signIn:
+                SignInView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            case .register:
+                RegisterInputView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            default:
+                EmptyView()
+            }
+        }
         .onAppear {
             // Clear any previous error state when this view appears
             userAuth.clearAllErrors()

@@ -47,7 +47,8 @@ struct RegisterInputView: View {
                     Text("Create Your Account")
                         .font(heading1)
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                    
+						.multilineTextAlignment(.center)
+
                     Text("Choose how you'd like to set up your account.")
                         .font(.onestRegular(size: 16))
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
@@ -198,6 +199,69 @@ struct RegisterInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserDetailsView
+        ) {
+            UserDetailsInputView(isOAuthUser: true)
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView
+        ) {
+            UserOptionalDetailsInputView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToContactImportView
+        ) {
+            ContactImportView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserToS
+        ) {
+            UserToS()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToAccountNotFoundView
+        ) {
+            AccountNotFoundView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToFeedView
+        ) {
+            if let loggedInSpawnUser = viewModel.spawnUser {
+                ContentView(user: loggedInSpawnUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            } else {
+                EmptyView() // This should never happen
+            }
+        }
+        .navigationDestination(isPresented: $viewModel.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        .navigationDestination(isPresented: $viewModel.shouldSkipAhead) {
+            switch viewModel.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()

@@ -5,6 +5,9 @@ struct OnboardingContinuationView: View {
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
     
+    // Add state to prevent multiple button taps
+    @State private var isProcessing: Bool = false
+    
     var body: some View {
         ZStack {
             // Status Bar
@@ -61,26 +64,45 @@ struct OnboardingContinuationView: View {
             // Action buttons
             VStack(spacing: 27) {
                 Button(action: {
+                    // Prevent multiple taps
+                    guard !isProcessing else { return }
+                    
+                    isProcessing = true
                     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                     impactGenerator.impactOccurred()
-                    userAuth.continueOnboarding()
-                }) {
-                    HStack(spacing: 10) {
-                        Text("Continue")
-                            .font(Font.custom("Onest", size: 20).weight(.semibold))
-                            .foregroundColor(.white)
+                    
+                    // Add a small delay to prevent rapid taps
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        userAuth.continueOnboarding()
+                        
+                        // Reset processing state after a delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            isProcessing = false
+                        }
                     }
-                    .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-                    .frame(height: 63)
-                    .background(Color(red: 0.42, green: 0.51, blue: 0.98))
-                    .cornerRadius(16)
+                }) {
+                    OnboardingButtonCoreView("Continue")
                 }
                 .buttonStyle(PlainButtonStyle())
+                .disabled(isProcessing)
                 
                 Button(action: {
+                    // Prevent multiple taps
+                    guard !isProcessing else { return }
+                    
+                    isProcessing = true
                     let impactGenerator = UIImpactFeedbackGenerator(style: .light)
                     impactGenerator.impactOccurred()
-                    userAuth.shouldNavigateToSignInView = true
+                    
+                    // Add a small delay to prevent rapid taps
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        userAuth.navigateTo(.signIn)
+                        
+                        // Reset processing state after a delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            isProcessing = false
+                        }
+                    }
                 }) {
                     Text("Return to Login")
                         .font(Font.custom("Onest", size: 17).weight(.medium))
@@ -88,14 +110,67 @@ struct OnboardingContinuationView: View {
                         .foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
                 }
                 .buttonStyle(PlainButtonStyle())
+                .disabled(isProcessing)
             }
-            .frame(width: 364)
+            .padding(.horizontal, 22)
             .offset(x: 0, y: 124)
         }
         .frame(width: 428, height: 926)
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
+        .navigationDestination(isPresented: .constant(userAuth.navigationState != .none)) {
+            switch userAuth.navigationState {
+            case .signIn:
+                SignInView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none // Reset after navigation
+                    }
+            case .userDetailsInput(let isOAuthUser):
+                UserDetailsInputView(isOAuthUser: isOAuthUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none // Reset after navigation
+                    }
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none // Reset after navigation
+                    }
+            case .contactImport:
+                ContactImportView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none // Reset after navigation
+                    }
+            case .userTermsOfService:
+                UserToS()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none // Reset after navigation
+                    }
+            case .feedView:
+                if let loggedInSpawnUser = userAuth.spawnUser {
+                    ContentView(user: loggedInSpawnUser)
+                        .navigationBarTitle("")
+                        .navigationBarHidden(true)
+                        .onAppear {
+                            userAuth.navigationState = .none // Reset after navigation
+                        }
+                } else {
+                    EmptyView()
+                }
+            default:
+                EmptyView()
+            }
+        }
     }
 }
 

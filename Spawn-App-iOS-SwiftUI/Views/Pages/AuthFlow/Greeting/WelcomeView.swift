@@ -78,6 +78,63 @@ struct WelcomeView: View {
                 print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
             }
         }
+        .navigationDestination(isPresented: .constant(userAuth.navigationState != .none)) {
+            switch userAuth.navigationState {
+            case .userDetailsInput(let isOAuthUser):
+                UserDetailsInputView(isOAuthUser: isOAuthUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            case .contactImport:
+                ContactImportView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            case .userTermsOfService:
+                UserToS()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            case .feedView:
+                if let loggedInSpawnUser = userAuth.spawnUser {
+                    ContentView(user: loggedInSpawnUser)
+                        .navigationBarTitle("")
+                        .navigationBarHidden(true)
+                        .onAppear {
+                            userAuth.navigationState = .none
+                        }
+                } else {
+                    EmptyView()
+                }
+            case .accountNotFound:
+                AccountNotFoundView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            case .onboardingContinuation:
+                OnboardingContinuationView()
+                    .onAppear {
+                        userAuth.navigationState = .none
+                    }
+            default:
+                EmptyView()
+            }
+        }
         
     }
 }

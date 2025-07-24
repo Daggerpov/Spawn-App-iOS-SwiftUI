@@ -255,6 +255,41 @@ struct ContactImportView: View {
             }
         )
         .navigationBarHidden(true)
+        .navigationDestination(
+            isPresented: $userAuth.shouldNavigateToUserToS
+        ) {
+            UserToS()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $userAuth.shouldNavigateToFeedView
+        ) {
+            if let loggedInSpawnUser = userAuth.spawnUser {
+                ContentView(user: loggedInSpawnUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            } else {
+                EmptyView() // This should never happen
+            }
+        }
+        .navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
+            switch userAuth.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
         .alert("Contacts Permission Denied", isPresented: $showPermissionDeniedAlert) {
             Button("Settings") {
                 openAppSettings()
@@ -344,7 +379,7 @@ struct SpawnContactRow: View {
                     .font(Font.custom("Onest", size: 14).weight(.semibold))
                     .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 
-                Text("@\(contactOnSpawn.spawnUser.username)")
+                Text("@\(contactOnSpawn.spawnUser.username ?? "username")")
                     .font(Font.custom("Onest", size: 12))
                     .foregroundColor(universalPlaceHolderTextColor(from: themeService, environment: colorScheme))
             }
