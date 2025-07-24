@@ -333,7 +333,7 @@ struct PeopleRowView: View {
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(adaptiveNameColor)
                     
-                    Text("@\(friend.username)")
+                    Text("@\(friend.username ?? "username")")
                         .font(.onestSemiBold(size: 14))
                         .foregroundColor(adaptiveNameColor)
                 }

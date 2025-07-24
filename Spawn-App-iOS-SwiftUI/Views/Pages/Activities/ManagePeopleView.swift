@@ -232,7 +232,7 @@ struct ManagePeopleView: View {
                             .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
                         
-                        Text("@\(friend.username)")
+                        Text("@\(friend.username ?? "username")")
                             .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
                     }
