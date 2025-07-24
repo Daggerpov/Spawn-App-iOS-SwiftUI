@@ -259,37 +259,35 @@ class ContactsService: ObservableObject {
 	private func cleanPhoneNumber(_ phoneNumber: String) -> String {
 		print("🧹 CLEANING PHONE: '\(phoneNumber)'")
 		
+		// Check if it's obviously not a phone number
+		if phoneNumber.contains("@") || 
+		   phoneNumber.contains("-") && phoneNumber.count > 20 ||
+		   phoneNumber.range(of: "[a-zA-Z]", options: .regularExpression) != nil && !phoneNumber.contains("@") {
+			print("  REJECTED: Not a valid phone number format")
+			return ""
+		}
+		
 		// Remove all non-numeric characters except +
-		let cleaned = phoneNumber.components(
-			separatedBy: CharacterSet.decimalDigits.inverted
-		).joined()
-		print("  Step 1 - digits only: '\(cleaned)'")
-
-		// If no country code, assume it's a local number and add +1 (US country code)
-		if !phoneNumber.contains("+") && cleaned.count == 10 {
-			let result = "+1" + cleaned
-			print("  Step 2a - 10 digits, no +: '\(result)'")
-			return result
+		let cleaned = phoneNumber.replacingOccurrences(of: "[^+\\d]", with: "", options: .regularExpression)
+		print("  Step 1 - cleaned format: '\(cleaned)'")
+		
+		// Check minimum length
+		let digitsOnly = cleaned.replacingOccurrences(of: "+", with: "")
+		if digitsOnly.count < 7 || digitsOnly.count > 15 {
+			print("  REJECTED: Invalid digit count (\(digitsOnly.count))")
+			return ""
 		}
-
-		// If it starts with 1 and has 11 digits (US number without +), add the +
-		if cleaned.count == 11 && cleaned.hasPrefix("1") && !phoneNumber.contains("+") {
-			let result = "+1" + String(cleaned.dropFirst())
-			print("  Step 2b - 11 digits starting with 1, no +: '\(result)'")
-			return result
+		
+		// If it already has a + prefix, keep it as-is
+		if cleaned.hasPrefix("+") {
+			print("  RESULT: Keeping international format: '\(cleaned)'")
+			return cleaned
 		}
-
-		// If it already has proper format, just ensure it has the + prefix
-		if cleaned.count >= 10 && !phoneNumber.contains("+") {
-			let result = "+1" + cleaned
-			print("  Step 2c - 10+ digits, no +: '\(result)'")
-			return result
-		}
-
-		// Return the original cleaned phone number if it already has + prefix
-		let result = phoneNumber.replacingOccurrences(of: "[^+\\d]", with: "", options: .regularExpression)
-		print("  Step 2d - already has + or fallback: '\(result)'")
-		return result
+		
+		// For numbers without + prefix, preserve them as entered but clean formatting
+		// Don't assume any country code - let the backend handle matching flexibility
+		print("  RESULT: Preserving without country assumption: '\(digitsOnly)'")
+		return digitsOnly
 	}
 
 	// MARK: - API Calls
