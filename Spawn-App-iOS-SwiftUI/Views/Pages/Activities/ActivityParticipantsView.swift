@@ -37,8 +37,8 @@ struct ActivityParticipantsView: View {
                         .offset(x: 0, y: -280)
                     
                     // Back button
-                    Text("􀆉")
-                        .font(Font.custom("SF Pro Display", size: 20).weight(.semibold))
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
                         .offset(x: -178, y: -241)
                         .onTapGesture {
@@ -127,8 +127,8 @@ struct ActivityParticipantsView: View {
                                     .foregroundColor(.white)
                             }
                             
-                            Text("􀍠")
-                                .font(Font.custom("SF Pro Display", size: 20))
+                            Image(systemName: "plus")
+                                .font(.system(size: 20, weight: .medium))
                                 .foregroundColor(.white)
                         }
                         .padding(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -176,8 +176,8 @@ struct ActivityParticipantsView: View {
                                             .foregroundColor(.white)
                                     }
                                     
-                                    Text("􀍠")
-                                        .font(Font.custom("SF Pro Display", size: 20))
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 20, weight: .medium))
                                         .foregroundColor(.white)
                                 }
                                 .padding(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
@@ -203,8 +203,8 @@ struct ActivityParticipantsView: View {
                                             .foregroundColor(.white)
                                     }
                                     
-                                    Text("􀍠")
-                                        .font(Font.custom("SF Pro Display", size: 20))
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 20, weight: .medium))
                                         .foregroundColor(.white)
                                 }
                                 .padding(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))

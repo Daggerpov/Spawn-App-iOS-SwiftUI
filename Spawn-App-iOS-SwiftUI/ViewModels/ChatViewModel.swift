@@ -51,25 +51,34 @@ class ChatViewModel: ObservableObject {
             do {
                 let response: FullActivityChatMessageDTO? = try await self.apiService.sendData(chatMessage, to: url, parameters: nil)
                 
-                // After successfully sending the message, fetch the updated activity data
-                guard let newChatMessage = response else {
-                    print("Error: No chat received from API after creating chat message")
-                    creationMessage = "Error sending message"
-                    return
-                }
-                
+                // After successfully sending the message, handle the response
                 await MainActor.run {
-                    if activity.chatMessages == nil {
-                        activity.chatMessages = []
+                    guard let newChatMessage = response else {
+                        print("Error: No chat received from API after creating chat message")
+                        creationMessage = "Error sending message. Please try again."
+                        return
                     }
-                    activity.chatMessages?.append(newChatMessage)
+                    
+                    // Check if this message already exists to prevent duplicates
+                    if let existingMessages = activity.chatMessages,
+                       !existingMessages.contains(where: { $0.id == newChatMessage.id }) {
+                        activity.chatMessages?.append(newChatMessage)
+                    } else if activity.chatMessages == nil {
+                        activity.chatMessages = [newChatMessage]
+                    }
+                    
+                    // Clear error message on success
                     creationMessage = nil
                 }
             } catch {
                 print("Error sending message: \(error)")
                 await MainActor.run {
-                    creationMessage = "There was an error sending your chat message. Please try again"
+                    creationMessage = "There was an error sending your chat message. Please try again."
                 }
+            }
+        } else {
+            await MainActor.run {
+                creationMessage = "Invalid server configuration. Please contact support."
             }
         }
     }
@@ -79,14 +88,28 @@ class ChatViewModel: ObservableObject {
             do {
                 let chats: [FullActivityChatMessageDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
                 await MainActor.run {
-                    activity.chatMessages = chats
+                    // Only update if we actually got data
+                    if !chats.isEmpty || activity.chatMessages?.isEmpty == true {
+                        activity.chatMessages = chats
+                    }
+                    // Clear any error messages on successful refresh
+                    if creationMessage != nil {
+                        creationMessage = nil
+                    }
                 }
               
             } catch {
                 print("Error refreshing chats: \(error)")
                 await MainActor.run {
-                    creationMessage = "There was an error refreshing the chatroom. Please try again"
+                    // Only show refresh error if there are no existing messages
+                    if activity.chatMessages?.isEmpty != false {
+                        creationMessage = "Unable to load messages. Please try again."
+                    }
                 }
+            }
+        } else {
+            await MainActor.run {
+                creationMessage = "Invalid server configuration. Please contact support."
             }
         }
     }

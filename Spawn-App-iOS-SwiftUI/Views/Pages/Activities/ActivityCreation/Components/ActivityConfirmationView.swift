@@ -283,7 +283,7 @@ struct ActivityConfirmationView: View {
                                     .frame(width: 40, height: 40)
                             }
                             Text("Share via")
-                                .font(Font.custom("SF Pro Display", size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 64)
@@ -310,7 +310,7 @@ struct ActivityConfirmationView: View {
                                     .frame(width: 40, height: 40)
                             }
                             Text("Copy Link")
-                                .font(Font.custom("SF Pro Display", size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 68)
@@ -329,7 +329,7 @@ struct ActivityConfirmationView: View {
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 64, height: 64)
                             Text("WhatsApp")
-                                .font(Font.custom("SF Pro Display", size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 72)
@@ -348,7 +348,7 @@ struct ActivityConfirmationView: View {
 								.aspectRatio(contentMode: .fit)
 								.frame(width: 64, height: 64)
                             Text("Message")
-                                .font(Font.custom("SF Pro Display", size: 14))
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(adaptiveShareButtonTextColor)
                         }
                         .frame(width: 65)

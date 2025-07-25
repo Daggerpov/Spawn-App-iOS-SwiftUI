@@ -375,15 +375,19 @@ class AppCache: ObservableObject {
     // Add or update an activity in the cache
     func addOrUpdateActivity(_ activity: FullFeedActivityDTO) {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
-        if var userActivities = activities[userId] {
-            if let index = userActivities.firstIndex(where: { $0.id == activity.id }) {
-                userActivities[index] = activity
+        
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if var userActivities = self.activities[userId] {
+                if let index = userActivities.firstIndex(where: { $0.id == activity.id }) {
+                    userActivities[index] = activity
+                } else {
+                    userActivities.append(activity)
+                }
+                self.activities[userId] = userActivities
             } else {
-                userActivities.append(activity)
+                self.activities[userId] = [activity]
             }
-            activities[userId] = userActivities
-        } else {
-            activities[userId] = [activity]
         }
         
         // Ensure color is assigned for the activity

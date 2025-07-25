@@ -587,9 +587,13 @@ class ActivityCreationViewModel: ObservableObject {
 					object: updatedActivity
 				)
 				
-				creationMessage = "Activity updated successfully!"
+				await MainActor.run {
+					creationMessage = "Activity updated successfully!"
+				}
 			} else {
-				creationMessage = "Failed to update activity. Please try again."
+				await MainActor.run {
+					creationMessage = "Failed to update activity. Please try again."
+				}
 			}
 			
 		} catch {

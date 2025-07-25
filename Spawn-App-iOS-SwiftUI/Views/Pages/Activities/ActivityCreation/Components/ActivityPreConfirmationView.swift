@@ -179,7 +179,7 @@ struct ActivityPreConfirmationView: View {
                     .font(.onestMedium(size: 24))
                     .foregroundColor(adaptiveTextColor)
                 
-                Text("\(viewModel.selectedActivityType?.associatedFriends.count ?? 14) people")
+                Text("\(viewModel.selectedActivityType?.associatedFriends.count ?? 0) people")
                     .font(.onestRegular(size: 18))
                     .foregroundColor(adaptiveSecondaryTextColor)
             }
