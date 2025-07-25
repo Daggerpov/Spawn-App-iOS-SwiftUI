@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ActivityCreationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
+    @ObservedObject var tutorialViewModel = TutorialViewModel.shared
     @Environment(\.dismiss) private var dismiss
     
     @State private var currentStep: ActivityCreationStep
@@ -108,6 +109,14 @@ struct ActivityCreationView: View {
             // Initialize activityTitle from view model if it exists
             if let title = viewModel.activity.title, !title.isEmpty {
                 activityTitle = title
+            }
+            
+            // Handle tutorial mode - skip to dateTime if user has no friends
+            if case .activityCreation = tutorialViewModel.tutorialState {
+                if !tutorialViewModel.userHasFriends() {
+                    // Skip to dateTime step for tutorial users with no friends
+                    currentStep = .dateTime
+                }
             }
             
             // If we're starting fresh (no pre-selected type), ensure absolutely clean state
@@ -239,10 +248,19 @@ struct ActivityCreationView: View {
                     currentStep = currentStep.previous()
                 }
             )
+            .navigationBarBackButtonHidden(
+                // Hide three dots menu during tutorial
+                tutorialViewModel.tutorialState.isActive
+            )
         case .confirmation:
             ActivityConfirmationView(
                 showShareSheet: $showShareSheet,
                 onClose: {
+                    // Handle tutorial completion
+                    if case .activityCreation = tutorialViewModel.tutorialState {
+                        tutorialViewModel.handleActivityCreationComplete()
+                    }
+                    
                     ActivityCreationViewModel.reInitialize()
                     closeCallback()
                 },

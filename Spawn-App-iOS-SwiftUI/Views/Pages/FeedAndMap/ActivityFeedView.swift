@@ -10,6 +10,7 @@ struct ActivityFeedView: View {
     var user: BaseUserDTO
     @StateObject var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
+    @StateObject private var tutorialViewModel = TutorialViewModel.shared
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
@@ -23,6 +24,10 @@ struct ActivityFeedView: View {
     @Binding var deepLinkedActivityId: UUID?
     @Binding var shouldShowDeepLinkedActivity: Bool
     @State private var isFetchingDeepLinkedActivity = false
+    
+    // Tutorial state
+    @State private var showTutorialPreConfirmation = false
+    @State private var tutorialSelectedActivityType: ActivityTypeDTO?
     
     init(user: BaseUserDTO, selectedTab: Binding<TabType>, deepLinkedActivityId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedActivity: Binding<Bool> = .constant(false)) {
         self.user = user
@@ -103,6 +108,43 @@ struct ActivityFeedView: View {
                 }
             }
         )
+        .overlay(
+            // Tutorial overlay
+            TutorialOverlayView()
+        )
+        .overlay(
+            // Tutorial pre-confirmation popup
+            Group {
+                if showTutorialPreConfirmation, let activityType = tutorialSelectedActivityType {
+                    TutorialActivityPreConfirmationView(
+                        activityType: activityType.title,
+                        onContinue: {
+                            showTutorialPreConfirmation = false
+                            
+                            // Navigate to creation view
+                            selectedTab = TabType.creation
+                            
+                            // Initialize with selected activity type and skip people management if no friends
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                if tutorialViewModel.userHasFriends() {
+                                    // Has friends - go through normal flow
+                                    ActivityCreationViewModel.initializeWithSelectedActivityType(activityType)
+                                } else {
+                                    // No friends - skip to date/time selection
+                                    ActivityCreationViewModel.initializeWithSelectedActivityType(activityType)
+                                    // Set to start at dateTime step instead of activityType
+                                    // This will be handled in ActivityCreationView
+                                }
+                            }
+                        },
+                        onCancel: {
+                            showTutorialPreConfirmation = false
+                            tutorialSelectedActivityType = nil
+                        }
+                    )
+                }
+            }
+        )
         .onChange(of: showingActivityPopup) { isShowing in
             if !isShowing {
                 // Clean up when popup is dismissed
@@ -121,6 +163,15 @@ struct ActivityFeedView: View {
         }
         .onAppear {
             print("🔗 ActivityFeedView onAppear: shouldShowDeepLinkedActivity = \(shouldShowDeepLinkedActivity), activityId: \(deepLinkedActivityId?.uuidString ?? "nil")")
+            
+            // Check if tutorial should start
+            if tutorialViewModel.tutorialState == .notStarted {
+                let hasCompleted = UserDefaults.standard.bool(forKey: "HasCompletedFirstActivityTutorial")
+                if !hasCompleted && UserAuthViewModel.shared.hasCompletedOnboarding {
+                    tutorialViewModel.startTutorial()
+                }
+            }
+            
             // Handle deep link if one is pending when view appears
             if shouldShowDeepLinkedActivity, let activityId = deepLinkedActivityId {
                 print("🔗 ActivityFeedView onAppear: Calling handleDeepLinkedActivity with \(activityId)")
@@ -246,20 +297,41 @@ extension ActivityFeedView {
             // Show only first 4 activity types (sorted with pinned first) and make them tappable to pre-select
             ForEach(Array(viewModel.sortedActivityTypes.prefix(4)), id: \.id) { activityType in
                 ActivityTypeCardView(activityType: activityType) { selectedActivityTypeDTO in
-                    // Pre-select the activity type and navigate to creation
-                    print("🎯 ActivityFeedView: Activity type '\(selectedActivityTypeDTO.title)' selected")
-                    
-                    // First set the tab to trigger the view change
-                    selectedTab = TabType.creation
-                    
-                    // Then set the pre-selection with a small delay to ensure the tab change happens first
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
-                    }
+                    handleActivityTypeSelection(selectedActivityTypeDTO)
                 }
+                .tutorialHighlight(
+                    isHighlighted: tutorialViewModel.tutorialState.shouldShowTutorialOverlay,
+                    cornerRadius: 12
+                )
+                .allowsHitTesting(
+                    !tutorialViewModel.tutorialState.shouldRestrictNavigation || 
+                    tutorialViewModel.tutorialState.shouldShowTutorialOverlay
+                )
             }
         }
         .padding(.horizontal)
+    }
+    
+    private func handleActivityTypeSelection(_ selectedActivityTypeDTO: ActivityTypeDTO) {
+        print("🎯 ActivityFeedView: Activity type '\(selectedActivityTypeDTO.title)' selected")
+        
+        // Check if we're in tutorial mode
+        if case .activityTypeSelection = tutorialViewModel.tutorialState {
+            // Tutorial flow
+            tutorialSelectedActivityType = selectedActivityTypeDTO
+            tutorialViewModel.handleActivityTypeSelection(selectedActivityTypeDTO)
+            
+            // Show the "You're about to..." popup
+            showTutorialPreConfirmation = true
+            
+        } else {
+            // Normal flow
+            selectedTab = TabType.creation
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
+            }
+        }
     }
 }
 

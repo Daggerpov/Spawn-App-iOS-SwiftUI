@@ -188,7 +188,9 @@ extension ActivityTypeView {
         .scaleEffect(draggedItem?.id == activityTypeDTO.id ? 0.8 : targetItem?.id == activityTypeDTO.id ? 1.1 : 1)
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
         .onDrag {
-            // Always set draggedItem to the current item being dragged
+            // Clear any previous drag states first
+            targetItem = nil
+            // Set draggedItem to the current item being dragged
             draggedItem = activityTypeDTO
             return NSItemProvider(object: activityTypeDTO.id.uuidString as NSString)
         }
@@ -259,18 +261,33 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
             return false
         }
         
+        // Validation: Don't allow pinned items to be moved after unpinned items
+        if draggedItem.isPinned && !item.isPinned {
+            // Show error feedback
+            let errorGenerator = UINotificationFeedbackGenerator()
+            errorGenerator.notificationOccurred(.error)
+            
+            Task { @MainActor in
+                viewModel.showError("Pinned activities cannot be moved after unpinned activities")
+            }
+            
+            self.draggedItem = nil
+            targetItem = nil
+            return false
+        }
+        
         // Success feedback
         let successGenerator = UIImpactFeedbackGenerator(style: .light)
         successGenerator.impactOccurred()
+        
+        // Clear drag state immediately to prevent UI deformation
+        self.draggedItem = nil
+        targetItem = nil
         
         // Perform the reorder
         Task {
             await viewModel.reorderActivityTypes(from: fromIndex, to: toIndex)
         }
-        
-        // Clear drag state
-        self.draggedItem = nil
-        targetItem = nil
         
         return true
     }
