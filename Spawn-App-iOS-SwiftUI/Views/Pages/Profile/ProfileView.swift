@@ -646,13 +646,11 @@ struct ProfileView: View {
 					activity.isSelfOwned == true
 					? universalAccentColor : getActivityColor(for: activity.id)
 
-				ActivityDescriptionView(
+				ActivityPopupDrawer(
 					activity: activity,
-					users: activity.participantUsers,
-					color: activityColor,
-					userId: userAuth.spawnUser?.id ?? UUID()
+					activityColor: activityColor,
+					isPresented: $showActivityDetails
 				)
-				.presentationDetents([.medium, .large])
 			}
 		}
 	}
@@ -1265,9 +1263,14 @@ struct SheetsAndAlertsModifier: ViewModifier {
 	
 	func body(content: Content) -> some View {
 		content
-			.sheet(isPresented: $showActivityDetails) {
-				activityDetailsView
-			}
+			.overlay(
+				// Use overlay instead of sheet for ActivityPopupDrawer consistency
+				Group {
+					if showActivityDetails {
+						activityDetailsView
+					}
+				}
+			)
 			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
 				removeFriendConfirmationAlert
 			}
