@@ -140,7 +140,7 @@ struct AttendeeListView: View {
                             .frame(width: 36, height: 36)
                             .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                             .overlay(
-                                Text(String(creator.name?.prefix(1) ?? creator.username.prefix(1)))
+                                					Text(String(creator.name?.prefix(1) ?? creator.username?.prefix(1) ?? "U"))
                                     .foregroundColor(.white)
                                     .font(.system(size: 16, weight: .semibold))
                             )
@@ -151,7 +151,7 @@ struct AttendeeListView: View {
                             .font(.onestBold(size: 16))
                             .foregroundColor(.white)
                         
-                        Text("@\(creator.username)")
+                        				Text("@\(creator.username ?? "username")")
                             .font(.onestBold(size: 16))
                             .foregroundColor(.white)
                     }
@@ -205,7 +205,7 @@ struct AttendeeListView: View {
                         .frame(width: 36, height: 36)
                         .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                         .overlay(
-                            Text(String(participant.name?.prefix(1) ?? participant.username.prefix(1)))
+                            					Text(String(participant.name?.prefix(1) ?? participant.username?.prefix(1) ?? "U"))
                                 .foregroundColor(.white)
                                 .font(.system(size: 16, weight: .semibold))
                         )
@@ -216,7 +216,7 @@ struct AttendeeListView: View {
                         .font(.onestBold(size: 16))
                         .foregroundColor(.white)
                     
-                    Text("@\(participant.username)")
+                    				Text("@\(participant.username ?? "username")")
                         .font(.onestBold(size: 16))
                         .foregroundColor(.white)
                 }

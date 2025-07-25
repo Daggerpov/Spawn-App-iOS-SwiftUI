@@ -73,8 +73,8 @@ struct UserOptionalDetailsInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Reset auth flow state when backing out of optional details
-                    userAuth.resetAuthFlow()
+                    // Clear any error states when going back
+                    userAuth.clearAllErrors()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -171,9 +171,6 @@ struct UserOptionalDetailsInputView: View {
                         isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
                     }
                 }
-                .padding(.top, -16)
-                .padding(.bottom, -30)
-                .padding(.horizontal, -22)
                 .disabled(!isFormValid || isLoading)
             }
             
@@ -181,8 +178,55 @@ struct UserOptionalDetailsInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
+        .navigationDestination(
+            isPresented: $userAuth.shouldNavigateToContactImportView
+        ) {
+            ContactImportView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $userAuth.shouldNavigateToUserToS
+        ) {
             UserToS()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $userAuth.shouldNavigateToFeedView
+        ) {
+            if let loggedInSpawnUser = userAuth.spawnUser {
+                ContentView(user: loggedInSpawnUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            } else {
+                EmptyView() // This should never happen
+            }
+        }
+        .navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
+            switch userAuth.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
+        .onAppear {
+            // Clear any previous error state when this view appears
+            userAuth.clearAllErrors()
+            // Pre-populate the name field with the user's current name
+            if let currentName = userAuth.spawnUser?.name, !currentName.isEmpty {
+                name = currentName
+            }
         }
     }
 }

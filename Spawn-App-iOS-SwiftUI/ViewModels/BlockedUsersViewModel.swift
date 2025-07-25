@@ -7,9 +7,9 @@ class BlockedUsersViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    private let reportingService: UserReportingService
+    private let reportingService: ReportingService
     
-    init(reportingService: UserReportingService = UserReportingService()) {
+    init(reportingService: ReportingService = ReportingService()) {
         self.reportingService = reportingService
     }
     

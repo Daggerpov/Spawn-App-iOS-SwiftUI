@@ -106,7 +106,7 @@ struct InviteFriendsView: View {
 										.frame(width: 30, height: 30)
 								}
 								
-								Text(friend.name ?? friend.username)
+								Text(friend.name ?? friend.username ?? "User")
 									.font(.subheadline)
 									.foregroundColor(.white)
 									.lineLimit(1)
@@ -214,7 +214,7 @@ struct IndividualFriendView: View {
 					HStack {
 						Image(systemName: "star.fill")
 							.font(.callout)
-						Text(friend.username)
+						Text(friend.username ?? "Username")
 							.font(.system(size: 16, weight: .bold))
 					}
 					.foregroundColor(isSelected ? .white : universalAccentColor)

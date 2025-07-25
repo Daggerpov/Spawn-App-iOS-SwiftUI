@@ -121,11 +121,12 @@ struct VerificationCodeView: View {
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView, destination: {UserDetailsInputView(isOAuthUser: false)})
         .onAppear {
             startTimer()
             focusedIndex = 0
             previousCode = code
+            // Clear any previous error state when this view appears
+            viewModel.clearAllErrors()
         }
         .onDisappear {
             timer?.invalidate()
@@ -136,8 +137,7 @@ struct VerificationCodeView: View {
     private var navigationBar: some View {
         HStack {
             Button(action: {
-                // Reset auth flow state when backing out of verification
-                viewModel.resetAuthFlow()
+                // Go back one step in the onboarding flow
                 dismiss()
             }) {
                 Image(systemName: "chevron.left")

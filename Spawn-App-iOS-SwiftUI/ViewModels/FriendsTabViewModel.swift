@@ -74,6 +74,18 @@ class FriendsTabViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        // Subscribe to AppCache sent friend requests updates  
+        appCache.$sentFriendRequests
+            .sink { [weak self] cachedSentFriendRequests in
+                guard let self = self else { return }
+                let userSentFriendRequests = cachedSentFriendRequests[self.userId] ?? []
+                self.outgoingFriendRequests = userSentFriendRequests
+                if !self.isSearching {
+                    self.filteredOutgoingFriendRequests = userSentFriendRequests
+                }
+            }
+            .store(in: &cancellables)
 		}
 	}
     
@@ -125,14 +137,14 @@ class FriendsTabViewModel: ObservableObject {
                 await MainActor.run {
                     // Parse the unified results and separate by relationship type
                     self.filteredIncomingFriendRequests = searchedUserResult.users
-                        .filter { $0.relationshipType == .incomingFriendRequest }
+                        .filter { $0.relationshipType == UserRelationshipType.incomingFriendRequest }
                         .compactMap { result in
                             guard let friendRequestId = result.friendRequestId else { return nil }
                             return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
                         }
                     
                     self.filteredOutgoingFriendRequests = searchedUserResult.users
-                        .filter { $0.relationshipType == .outgoingFriendRequest }
+                        .filter { $0.relationshipType == UserRelationshipType.outgoingFriendRequest }
                         .compactMap { result in
                             guard let friendRequestId = result.friendRequestId else { return nil }
                             // For outgoing requests, the user in the result is the receiver
@@ -140,7 +152,7 @@ class FriendsTabViewModel: ObservableObject {
                         }
                     
                     self.filteredRecommendedFriends = searchedUserResult.users
-                        .filter { $0.relationshipType == .recommendedFriend }
+                        .filter { $0.relationshipType == UserRelationshipType.recommendedFriend }
                         .map { result in
                             RecommendedFriendUserDTO(
                                 id: result.user.id,
@@ -154,7 +166,7 @@ class FriendsTabViewModel: ObservableObject {
                         }
                     
                     self.filteredFriends = searchedUserResult.users
-                        .filter { $0.relationshipType == .friend }
+                        .filter { $0.relationshipType == UserRelationshipType.friend }
                         .map { result in
                             FullFriendUserDTO(
                                 id: result.user.id,
@@ -192,7 +204,7 @@ class FriendsTabViewModel: ObservableObject {
         await MainActor.run {
             self.filteredFriends = self.friends.filter { friend in
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -200,7 +212,7 @@ class FriendsTabViewModel: ObservableObject {
             
             self.filteredRecommendedFriends = self.recommendedFriends.filter { friend in
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -209,7 +221,7 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredIncomingFriendRequests = self.incomingFriendRequests.filter { request in
                 let friend = request.senderUser
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -218,7 +230,7 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredOutgoingFriendRequests = self.outgoingFriendRequests.filter { request in
                 let friend = request.senderUser
                 let name = friend.name?.lowercased() ?? ""
-                let username = friend.username.lowercased()
+                let username = (friend.username ?? "").lowercased()
                 
                 return name.contains(lowercaseQuery) || 
                        username.contains(lowercaseQuery)
@@ -292,15 +304,13 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-    // Check cache first
+    // Show cached data immediately if available
     let cachedRequests = appCache.getCurrentUserFriendRequests()
-    if !cachedRequests.isEmpty {
-        await MainActor.run {
-            self.incomingFriendRequests = cachedRequests
-        }
-        return
+    await MainActor.run {
+        self.incomingFriendRequests = cachedRequests
     }
     
+    // Always fetch fresh data from API to ensure we have the latest information
     // full path: /api/v1/friend-requests/incoming/{userId}
     if let url = URL(
         string: APIService.baseURL + "friend-requests/incoming/\(userId)")
@@ -325,6 +335,13 @@ class FriendsTabViewModel: ObservableObject {
 }
 
 	internal func fetchOutgoingFriendRequests() async {
+        // Show cached data immediately if available
+        let cachedSentRequests = appCache.getCurrentUserSentFriendRequests()
+        await MainActor.run {
+            self.outgoingFriendRequests = cachedSentRequests
+        }
+        
+        // Always fetch fresh data from API to ensure we have the latest information
 		// full path: /api/v1/friend-requests/sent/{userId}
 		if let url = URL(
 			string: APIService.baseURL + "friend-requests/sent/\(userId)")
@@ -337,6 +354,8 @@ class FriendsTabViewModel: ObservableObject {
 				// Ensure updating on the main thread
 				await MainActor.run {
 					self.outgoingFriendRequests = fetchedOutgoingFriendRequests
+                    // Update the cache
+                    self.appCache.updateSentFriendRequestsForUser(fetchedOutgoingFriendRequests, userId: self.userId)
 				}
 			} catch {
 				await MainActor.run {
@@ -524,7 +543,7 @@ class FriendsTabViewModel: ObservableObject {
             let lowercasedSearchText = searchText.lowercased()
             let filteredResults = BaseUserDTO.mockUsers.filter { user in
                 let name = FormatterService.shared.formatName(user: user).lowercased()
-                let username = user.username.lowercased()
+                let username = (user.username ?? "").lowercased()
                 
                 return name.contains(lowercasedSearchText) || username.contains(lowercasedSearchText)
             }

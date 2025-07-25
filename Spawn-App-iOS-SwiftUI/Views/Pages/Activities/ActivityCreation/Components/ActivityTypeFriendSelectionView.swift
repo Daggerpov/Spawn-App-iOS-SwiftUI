@@ -172,7 +172,7 @@ struct ActivityTypeFriendSelectionView: View {
                             .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
                         
-                        Text("@\(friend.username)")
+                        Text("@\(friend.username ?? "username")")
                             .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
                     }
@@ -221,7 +221,7 @@ struct ActivityTypeFriendSelectionView: View {
         
         return availableFriends.filter { friend in
             let name = friend.name?.lowercased() ?? ""
-            let username = friend.username.lowercased()
+            let username = (friend.username ?? "").lowercased()
             let search = searchText.lowercased()
             
             return name.contains(search) || username.contains(search)

@@ -20,8 +20,9 @@ struct UserToS: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Reset auth flow state when backing out of Terms of Service
-                    userAuth.resetAuthFlow()
+                    // Clear any error states when going back
+                    userAuth.clearAllErrors()
+                    // Go back one step in the onboarding flow
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -95,6 +96,16 @@ struct UserToS: View {
                 }
                 .padding(.horizontal, 40)
                 
+                // Error Message Display
+                if let errorMessage = userAuth.errorMessage {
+                    Text(errorMessage)
+                        .font(.onestRegular(size: 14))
+                        .foregroundColor(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                        .padding(.top, 16)
+                }
+                
                 // Continue Button
                 Button(action: {
                     if agreed {
@@ -126,6 +137,38 @@ struct UserToS: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
+        .navigationDestination(
+            isPresented: $userAuth.shouldNavigateToFeedView
+        ) {
+            if let loggedInSpawnUser = userAuth.spawnUser {
+                ContentView(user: loggedInSpawnUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            } else {
+                EmptyView() // This should never happen
+            }
+        }
+        .navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
+            switch userAuth.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
+        .onAppear {
+            // Clear any previous error state when this view appears
+            userAuth.clearAllErrors()
+        }
     }
 }
 

@@ -882,6 +882,11 @@ class ProfileViewModel: ObservableObject {
             
             await MainActor.run {
                 self.friendshipStatus = .requestSent
+                
+                // Remove the user from recommended friends cache so they disappear from the friends tab
+                let currentRecommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
+                let updatedRecommendedFriends = currentRecommendedFriends.filter { $0.id != toUserId }
+                AppCache.shared.updateRecommendedFriendsForUser(updatedRecommendedFriends, userId: fromUserId)
             }
         } catch {
             await MainActor.run {
@@ -1048,7 +1053,7 @@ class ProfileViewModel: ObservableObject {
     
     func reportUser(reporterUserId: UUID, reportedUserId: UUID, reportType: ReportType, description: String) async {
         do {
-            let reportingService = UserReportingService(apiService: self.apiService)
+            let reportingService = ReportingService(apiService: self.apiService)
             try await reportingService.reportUser(
                 reporterUserId: reporterUserId,
                 reportedUserId: reportedUserId,
@@ -1080,7 +1085,7 @@ class ProfileViewModel: ObservableObject {
     
     func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
         do {
-            let reportingService = UserReportingService(apiService: self.apiService)
+            let reportingService = ReportingService(apiService: self.apiService)
             try await reportingService.blockUser(
                 blockerId: blockerId,
                 blockedId: blockedId,
@@ -1104,7 +1109,7 @@ class ProfileViewModel: ObservableObject {
     
     func unblockUser(blockerId: UUID, blockedId: UUID) async {
         do {
-            let reportingService = UserReportingService(apiService: self.apiService)
+            let reportingService = ReportingService(apiService: self.apiService)
             try await reportingService.unblockUser(
                 blockerId: blockerId,
                 blockedId: blockedId
@@ -1127,7 +1132,7 @@ class ProfileViewModel: ObservableObject {
     
     func checkIfUserBlocked(blockerId: UUID, blockedId: UUID) async -> Bool {
         do {
-            let reportingService = UserReportingService(apiService: self.apiService)
+            let reportingService = ReportingService(apiService: self.apiService)
             return try await reportingService.isUserBlocked(
                 blockerId: blockerId,
                 blockedId: blockedId

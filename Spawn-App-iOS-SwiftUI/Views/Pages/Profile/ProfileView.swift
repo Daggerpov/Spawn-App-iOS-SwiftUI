@@ -77,7 +77,7 @@ struct ProfileView: View {
 		self._profileViewModel = StateObject(
 			wrappedValue: ProfileViewModel(userId: user.id)
 		)
-		self.username = user.username
+		self.username = user.username ?? ""
 		self.name = user.name ?? ""
 	}
 
@@ -646,13 +646,11 @@ struct ProfileView: View {
 					activity.isSelfOwned == true
 					? universalAccentColor : getActivityColor(for: activity.id)
 
-				ActivityDescriptionView(
+				ActivityPopupDrawer(
 					activity: activity,
-					users: activity.participantUsers,
-					color: activityColor,
-					userId: userAuth.spawnUser?.id ?? UUID()
+					activityColor: activityColor,
+					isPresented: $showActivityDetails
 				)
-				.presentationDetents([.medium, .large])
 			}
 		}
 	}
@@ -841,7 +839,7 @@ struct ProfileView: View {
 	// Add a function to refresh user data from UserAuthViewModel
 	private func refreshUserData() {
 		if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
-			username = currentUser.username
+			username = currentUser.username ?? ""
 			name = currentUser.name ?? ""
 		}
 	}
@@ -1068,7 +1066,7 @@ extension ProfileView {
 			Button(action: {
 				// Revert to original values from userAuth.spawnUser
 				if let currentUser = userAuth.spawnUser {
-					username = currentUser.username
+					username = currentUser.username ?? ""
 					name = currentUser.name ?? ""
 					selectedImage = nil
 
@@ -1169,7 +1167,7 @@ extension ProfileView {
 		}
 
 		if let updatedUser = userAuth.spawnUser {
-			username = updatedUser.username
+			username = updatedUser.username ?? ""
 			name = updatedUser.name ?? ""
 		}
 
@@ -1265,9 +1263,14 @@ struct SheetsAndAlertsModifier: ViewModifier {
 	
 	func body(content: Content) -> some View {
 		content
-			.sheet(isPresented: $showActivityDetails) {
-				activityDetailsView
-			}
+			.overlay(
+				// Use overlay instead of sheet for ActivityPopupDrawer consistency
+				Group {
+					if showActivityDetails {
+						activityDetailsView
+					}
+				}
+			)
 			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
 				removeFriendConfirmationAlert
 			}

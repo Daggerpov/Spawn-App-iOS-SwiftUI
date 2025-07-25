@@ -61,10 +61,10 @@ struct UserDetailsInputView: View {
         VStack(spacing: 0) {
             // Navigation Bar
             HStack {
-                Button(action: { 
-                    // Reset auth flow state when backing out of user details
-                    viewModel.resetAuthFlow()
-                    dismiss() 
+                Button(action: {
+                    // Clear any error states when going back
+                    viewModel.clearAllErrors()
+                    dismiss()
                 }) {
                     Image(systemName: "chevron.left")
                         .font(.title2)
@@ -222,10 +222,60 @@ struct UserDetailsInputView: View {
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView) {
-            UserOptionalDetailsInputView()
-        }
         .navigationBarHidden(true)
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView
+        ) {
+            UserOptionalDetailsInputView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToContactImportView
+        ) {
+            ContactImportView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserToS
+        ) {
+            UserToS()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToFeedView
+        ) {
+            if let loggedInSpawnUser = viewModel.spawnUser {
+                ContentView(user: loggedInSpawnUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            } else {
+                EmptyView() // This should never happen
+            }
+        }
+        .navigationDestination(isPresented: $viewModel.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        .navigationDestination(isPresented: $viewModel.shouldSkipAhead) {
+            switch viewModel.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
+        .onAppear {
+            // Clear any previous error state when this view appears
+            viewModel.clearAllErrors()
+        }
     }
 }
 

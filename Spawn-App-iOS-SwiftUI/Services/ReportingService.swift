@@ -1,6 +1,6 @@
 import Foundation
 
-class UserReportingService {
+class ReportingService {
     private let apiService: IAPIService
     
     init(apiService: IAPIService = APIService()) {
@@ -106,6 +106,50 @@ class UserReportingService {
             reporterUserId: reporterUserId,
             contentId: reportedUserId,
             contentType: .user,
+            reportType: reportType,
+            description: description
+        )
+        
+        let _: EmptyResponse? = try await apiService.sendData(reportDTO, to: url, parameters: nil)
+    }
+    
+    // MARK: - Reporting Chat Messages
+    
+    func reportChatMessage(
+        reporterUserId: UUID,
+        chatMessageId: UUID,
+        reportType: ReportType,
+        description: String
+    ) async throws {
+        guard let url = URL(string: APIService.baseURL + "reports/create") else {
+            throw APIError.URLError
+        }
+        let reportDTO = CreateReportedContentDTO(
+            reporterUserId: reporterUserId,
+            contentId: chatMessageId,
+            contentType: .chatMessage,
+            reportType: reportType,
+            description: description
+        )
+        
+        let _: EmptyResponse? = try await apiService.sendData(reportDTO, to: url, parameters: nil)
+    }
+    
+    // MARK: - Reporting Activities
+    
+    func reportActivity(
+        reporterUserId: UUID,
+        activityId: UUID,
+        reportType: ReportType,
+        description: String
+    ) async throws {
+        guard let url = URL(string: APIService.baseURL + "reports/create") else {
+            throw APIError.URLError
+        }
+        let reportDTO = CreateReportedContentDTO(
+            reporterUserId: reporterUserId,
+            contentId: activityId,
+            contentType: .activity,
             reportType: reportType,
             description: description
         )

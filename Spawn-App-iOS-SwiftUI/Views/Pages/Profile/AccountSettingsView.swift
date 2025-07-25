@@ -36,6 +36,46 @@ struct AccountSettingsView: View {
             // Settings sections
             ScrollView {
                 VStack(spacing: 24) {
+                    // Account Information section
+                    SettingsSection(title: "Account Information") {
+                        // User Email with Provider Icon
+                        HStack {
+                            // Provider Icon
+                            Group {
+                                switch userAuth.authProvider {
+                                case .google:
+                                    Image("google_logo")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 18, height: 18)
+                                case .apple:
+                                    Image(systemName: "applelogo")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                case .email, .none:
+                                    Image(systemName: "envelope.circle")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                }
+                            }
+                            .frame(width: 24, height: 24)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(userAuth.spawnUser?.email ?? userAuth.email ?? "No email")
+                                    .font(.body)
+                                    .foregroundColor(universalAccentColor)
+                                
+                                Text(providerDisplayName)
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .frame(height: 44)
+                    }
+                    
                     // Authentication section
                     SettingsSection(title: "Authentication") {
                         // Only show change password option for email-based accounts
@@ -129,6 +169,20 @@ struct AccountSettingsView: View {
             }
         } message: {
             Text("Are you sure you want to log out of your account?")
+        }
+    }
+    
+    // Helper computed property for provider display name
+    private var providerDisplayName: String {
+        switch userAuth.authProvider {
+        case .google:
+            return "Google Account"
+        case .apple:
+            return "Apple ID"
+        case .email:
+            return "Email Account"
+        case .none:
+            return "Unknown Provider"
         }
     }
 }

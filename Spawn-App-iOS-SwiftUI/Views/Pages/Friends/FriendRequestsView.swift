@@ -205,7 +205,7 @@ struct FriendRequestItemView: View {
                             .font(.headline)
                             .foregroundColor(universalAccentColor)
                         
-                        Text("@\(friendRequest.senderUser.username)")
+                        Text("@\(friendRequest.senderUser.username ?? "username")")
                             .font(.subheadline)
                             .foregroundColor(.gray)
                     }

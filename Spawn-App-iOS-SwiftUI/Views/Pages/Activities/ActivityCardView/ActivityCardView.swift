@@ -14,6 +14,11 @@ struct ActivityCardView: View {
     // State for delete confirmation dialog
     @State private var showDeleteConfirmation = false
     
+    // State for activity reporting
+    @State private var showActivityMenu: Bool = false
+    @State private var showReportDialog: Bool = false
+    @StateObject private var userAuth = UserAuthViewModel.shared
+    
     init(
         userId: UUID, activity: FullFeedActivityDTO, color: Color,
         locationManager: LocationManager,
@@ -89,6 +94,14 @@ struct ActivityCardView: View {
             .onTapGesture {
                 callback(activity, color)
             }
+            .onLongPressGesture(minimumDuration: 0.5) {
+                // Only allow reporting other users' activities
+                if viewModel.userId != activity.creatorUser.id {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
+                    showActivityMenu = true
+                }
+            }
             .contextMenu {
                 // Only show delete option if the current user is the creator of the activity
                 if viewModel.userId == activity.creatorUser.id {
@@ -99,6 +112,26 @@ struct ActivityCardView: View {
                     }
                     .foregroundColor(.red)
                 }
+            }
+            .sheet(isPresented: $showActivityMenu) {
+                ActivityMenuView(
+                    activity: activity,
+                    showReportDialog: $showReportDialog
+                )
+                .presentationDetents([.height(200)])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showReportDialog) {
+                ReportActivityDrawer(
+                    activity: activity,
+                    onReport: { reportType, description in
+                        Task {
+                            await reportActivity(reportType: reportType, description: description)
+                        }
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
             .alert("Delete Activity", isPresented: $showDeleteConfirmation) {
                 Button("Cancel", role: .cancel) {}
@@ -118,6 +151,16 @@ struct ActivityCardView: View {
             // Time Status Badge
             ActivityStatusView(activity: activity)
         }
+    }
+    
+    private func reportActivity(reportType: ReportType, description: String) async {
+        guard let currentUserId = userAuth.spawnUser?.id else { return }
+        
+        await viewModel.reportActivity(
+            reporterUserId: currentUserId,
+            reportType: reportType,
+            description: description
+        )
     }
 }
 

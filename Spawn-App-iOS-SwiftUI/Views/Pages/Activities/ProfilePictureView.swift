@@ -10,6 +10,7 @@ struct ProfilePictureView: View {
     let user: BaseUserDTO
     let width: CGFloat = 48
     let height: CGFloat = 48
+    let allowsNavigation: Bool
     @State var showProfile = false
     
     // Optional binding to control tab selection for current user navigation
@@ -21,9 +22,10 @@ struct ProfilePictureView: View {
         return currentUser.id == user.id
     }
     
-    init(user: BaseUserDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
+    init(user: BaseUserDTO, selectedTab: Binding<TabType?> = .constant(nil), allowsNavigation: Bool = true) {
         self.user = user
         self._selectedTab = selectedTab
+        self.allowsNavigation = allowsNavigation
     }
     
     var body: some View {
@@ -46,6 +48,8 @@ struct ProfilePictureView: View {
             }
         }
         .onTapGesture {
+            guard allowsNavigation else { return }
+            
             if isCurrentUser && selectedTab != nil {
                 // Navigate to profile tab for current user
                 selectedTab = .profile

@@ -19,6 +19,7 @@ class AppCache: ObservableObject {
     @Published var activityTypes: [ActivityTypeDTO] = []
     @Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]  // Changed to be user-specific
     @Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // Already user-specific
+    @Published var sentFriendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // User-specific sent friend requests
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     
     // Profile caches
@@ -28,7 +29,7 @@ class AppCache: ObservableObject {
     @Published var profileActivities: [UUID: [ProfileActivityDTO]] = [:]
     
     // MARK: - Cache Metadata
-    private var lastChecked: [String: Date] = [:]
+    private var lastChecked: [UUID: [String: Date]] = [:] // User-specific cache timestamps
     private var isInitialized = false
     
     // MARK: - Constants
@@ -39,6 +40,7 @@ class AppCache: ObservableObject {
         static let activityTypes = "activityTypes"
         static let recommendedFriends = "recommendedFriends"
         static let friendRequests = "friendRequests"
+        static let sentFriendRequests = "sentFriendRequests"
         static let otherProfiles = "otherProfiles"
         static let profileStats = "profileStats"
         static let profileInterests = "profileInterests"
@@ -53,6 +55,26 @@ class AppCache: ObservableObject {
         Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             self?.saveToDisk()
         }
+    }
+    
+    // MARK: - Cache Timestamp Helpers
+    
+    /// Get cache timestamps for a specific user
+    private func getLastCheckedForUser(_ userId: UUID) -> [String: Date] {
+        return lastChecked[userId] ?? [:]
+    }
+    
+    /// Set cache timestamp for a specific user and cache type
+    private func setLastCheckedForUser(_ userId: UUID, cacheType: String, date: Date) {
+        if lastChecked[userId] == nil {
+            lastChecked[userId] = [:]
+        }
+        lastChecked[userId]![cacheType] = date
+    }
+    
+    /// Clear cache timestamps for a specific user
+    private func clearLastCheckedForUser(_ userId: UUID) {
+        lastChecked.removeValue(forKey: userId)
     }
     
     // MARK: - Public Methods
@@ -73,6 +95,7 @@ class AppCache: ObservableObject {
         activityTypes = []
         recommendedFriends = [:]
         friendRequests = [:] // Clear user-specific friend requests
+        sentFriendRequests = [:] // Clear user-specific sent friend requests
         otherProfiles = [:]
         
         // Clear profile caches
@@ -91,6 +114,7 @@ class AppCache: ObservableObject {
         UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
         UserDefaults.standard.removeObject(forKey: CacheKeys.recommendedFriends)
         UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
+        UserDefaults.standard.removeObject(forKey: CacheKeys.sentFriendRequests)
         UserDefaults.standard.removeObject(forKey: CacheKeys.otherProfiles)
         UserDefaults.standard.removeObject(forKey: CacheKeys.profileStats)
         UserDefaults.standard.removeObject(forKey: CacheKeys.profileInterests)
@@ -125,15 +149,37 @@ class AppCache: ObservableObject {
             // Don't block cache validation if this fails
         }
         
-        // Don't send validation request if we have no cached items to validate
-        if lastChecked.isEmpty {
-            print("No cached items to validate, skipping cache validation")
+        // Get user-specific cache timestamps
+        let userLastChecked = getLastCheckedForUser(userId)
+        
+        // If we have no cached items to validate for this user, request fresh data for all cache types
+        if userLastChecked.isEmpty {
+            print("No cached items to validate, requesting fresh data for all cache types")
+            // Request fresh data for all standard cache types
+            let _ = await MainActor.run {
+                Task {
+					async let friendsTask: () = refreshFriends()
+					async let activitiesTask: () = refreshActivities()
+                    async let activityTypesTask: () = refreshActivityTypes()
+                    async let recommendedFriendsTask: () = refreshRecommendedFriends()
+                    async let friendRequestsTask: () = refreshFriendRequests()
+                    async let sentFriendRequestsTask: () = refreshSentFriendRequests()
+
+                    // Wait for all tasks to complete
+                    await friendsTask
+                    await activitiesTask
+                    await activityTypesTask
+                    await recommendedFriendsTask
+                    await friendRequestsTask
+                    await sentFriendRequestsTask
+                }
+            }
             return
         }
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            let result = try await apiService.validateCache(lastChecked)
+            let result = try await apiService.validateCache(userLastChecked)
             
             await MainActor.run {
                 // Update each collection based on invalidation results
@@ -209,6 +255,18 @@ class AppCache: ObservableObject {
                         }
                     }
                 }
+                
+                // Sent Friend Requests Cache
+                if let sentFriendRequestsResponse = result[CacheKeys.sentFriendRequests], sentFriendRequestsResponse.invalidate {
+                    if let updatedItems = sentFriendRequestsResponse.updatedItems,
+                       let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: updatedItems) {
+                        updateSentFriendRequests(updatedSentFriendRequests)
+                    } else {
+                        Task {
+                            await refreshSentFriendRequests()
+                        }
+                    }
+                }
             }
             
         } catch {
@@ -221,7 +279,12 @@ class AppCache: ObservableObject {
     
     func updateFriends(_ newFriends: [UUID: [FullFriendUserDTO]]) {
         friends = newFriends
-        lastChecked[CacheKeys.friends] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.friends, date: Date())
+        }
+        
         saveToDisk()
         
         // Preload profile pictures for friends
@@ -261,7 +324,11 @@ class AppCache: ObservableObject {
     
     func updateActivities(_ newActivities: [UUID: [FullFeedActivityDTO]]) {
         activities = newActivities
-        lastChecked[CacheKeys.events] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
+        }
         
         // Pre-assign colors for even distribution
         let activityIds = newActivities.values.flatMap { $0 }.map { $0.id }
@@ -322,7 +389,10 @@ class AppCache: ObservableObject {
         // Ensure color is assigned for the activity
         ActivityColorService.shared.assignColorsForActivities([activity.id])
         
-        lastChecked[CacheKeys.events] = Date()
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
+        }
         saveToDisk()
     }
     
@@ -333,7 +403,11 @@ class AppCache: ObservableObject {
             userActivities.removeAll { $0.id == activityId }
             activities[userId] = userActivities
         }
-        lastChecked[CacheKeys.events] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
+        }
         saveToDisk()
     }
     
@@ -346,7 +420,12 @@ class AppCache: ObservableObject {
     
     func updateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
         activityTypes = newActivityTypes
-        lastChecked[CacheKeys.activityTypes] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
+        }
+        
         saveToDisk()
     }
     
@@ -384,7 +463,12 @@ class AppCache: ObservableObject {
     // Add or update activity types in the cache
     func addOrUpdateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
         activityTypes = newActivityTypes
-        lastChecked[CacheKeys.activityTypes] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
+        }
+        
         saveToDisk()
     }
     
@@ -395,7 +479,12 @@ class AppCache: ObservableObject {
         } else {
             activityTypes.append(activityTypeDTO)
         }
-        lastChecked[CacheKeys.activityTypes] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
+        }
+        
         saveToDisk()
     }
     
@@ -403,7 +492,12 @@ class AppCache: ObservableObject {
     
     func updateOtherProfile(_ userId: UUID, _ profile: BaseUserDTO) {
         otherProfiles[userId] = profile
-        lastChecked[CacheKeys.otherProfiles] = Date()
+        
+        // Update timestamp for current user
+        if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(currentUserId, cacheType: CacheKeys.otherProfiles, date: Date())
+        }
+        
         saveToDisk()
     }
     
@@ -450,7 +544,10 @@ class AppCache: ObservableObject {
 		}
 
         await MainActor.run {
-            lastChecked[CacheKeys.otherProfiles] = Date()
+            // Update timestamp for current user
+            if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+                setLastCheckedForUser(currentUserId, cacheType: CacheKeys.otherProfiles, date: Date())
+            }
             saveToDisk()
         }
     }
@@ -459,7 +556,12 @@ class AppCache: ObservableObject {
     
     func updateRecommendedFriends(_ newRecommendedFriends: [UUID: [RecommendedFriendUserDTO]]) {
         recommendedFriends = newRecommendedFriends
-        lastChecked[CacheKeys.recommendedFriends] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.recommendedFriends, date: Date())
+        }
+        
         saveToDisk()
         
         // Preload profile pictures for recommended friends
@@ -503,8 +605,9 @@ class AppCache: ObservableObject {
 
     /// Update friend requests for a specific user
     func updateFriendRequestsForUser(_ newFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
+        print("💾 [CACHE] Updating incoming friend requests cache for user \(userId): \(newFriendRequests.count) requests")
         friendRequests[userId] = newFriendRequests
-        lastChecked[CacheKeys.friendRequests] = Date()
+        setLastCheckedForUser(userId, cacheType: CacheKeys.friendRequests, date: Date())
         saveToDisk()
         
         // Preload profile pictures for friend request senders
@@ -515,7 +618,12 @@ class AppCache: ObservableObject {
 
     func updateFriendRequests(_ newFriendRequests: [UUID: [FetchFriendRequestDTO]]) {
         friendRequests = newFriendRequests
-        lastChecked[CacheKeys.friendRequests] = Date()
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.friendRequests, date: Date())
+        }
+        
         saveToDisk()
         
         // Preload profile pictures for friend request senders
@@ -526,14 +634,16 @@ class AppCache: ObservableObject {
 
     func refreshFriendRequests() async {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
-            print("Cannot refresh friend requests: No logged in user")
+            print("🔄 [CACHE] Cannot refresh friend requests: No logged in user")
             return 
         }
         
         guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh friend requests: User is not logged in")
+            print("🔄 [CACHE] Cannot refresh friend requests: User is not logged in")
             return
         }
+        
+        print("🔄 [CACHE] Refreshing incoming friend requests for user: \(userId)")
         
         do {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
@@ -541,11 +651,13 @@ class AppCache: ObservableObject {
             
             let fetchedFriendRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
+            print("🔄 [CACHE] Retrieved \(fetchedFriendRequests.count) incoming friend requests from API")
+            
             await MainActor.run {
                 updateFriendRequestsForUser(fetchedFriendRequests, userId: userId)
             }
         } catch {
-            print("Failed to refresh friend requests: \(error.localizedDescription)")
+            print("❌ [CACHE] Failed to refresh friend requests: \(error.localizedDescription)")
         }
     }
 
@@ -553,6 +665,89 @@ class AppCache: ObservableObject {
     func clearFriendRequestsForUser(_ userId: UUID) {
         friendRequests.removeValue(forKey: userId)
         saveToDisk()
+    }
+    
+    // MARK: - Sent Friend Requests Methods
+
+    /// Get sent friend requests for the current user
+    func getCurrentUserSentFriendRequests() -> [FetchFriendRequestDTO] {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
+        return sentFriendRequests[userId] ?? []
+    }
+
+    /// Update sent friend requests for a specific user
+    func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
+        print("💾 [CACHE] Updating sent friend requests cache for user \(userId): \(newSentFriendRequests.count) requests")
+        sentFriendRequests[userId] = newSentFriendRequests
+        setLastCheckedForUser(userId, cacheType: CacheKeys.sentFriendRequests, date: Date())
+        saveToDisk()
+        
+        // Preload profile pictures for sent friend request receivers
+        Task {
+            await preloadProfilePicturesForFriendRequests([userId: newSentFriendRequests])
+        }
+    }
+
+    func updateSentFriendRequests(_ newSentFriendRequests: [UUID: [FetchFriendRequestDTO]]) {
+        sentFriendRequests = newSentFriendRequests
+        
+        // Update timestamp for current user
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: CacheKeys.sentFriendRequests, date: Date())
+        }
+        
+        saveToDisk()
+        
+        // Preload profile pictures for sent friend request receivers
+        Task {
+            await preloadProfilePicturesForFriendRequests(newSentFriendRequests)
+        }
+    }
+
+    func refreshSentFriendRequests() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("🔄 [CACHE] Cannot refresh sent friend requests: No logged in user")
+            return 
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("🔄 [CACHE] Cannot refresh sent friend requests: User is not logged in")
+            return
+        }
+        
+        print("🔄 [CACHE] Refreshing sent friend requests for user: \(userId)")
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            guard let url = URL(string: APIService.baseURL + "friend-requests/sent/\(userId)") else { return }
+            
+            let fetchedSentFriendRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            
+            print("🔄 [CACHE] Retrieved \(fetchedSentFriendRequests.count) sent friend requests from API")
+            
+            await MainActor.run {
+                updateSentFriendRequestsForUser(fetchedSentFriendRequests, userId: userId)
+            }
+        } catch {
+            print("❌ [CACHE] Failed to refresh sent friend requests: \(error.localizedDescription)")
+        }
+    }
+
+    /// Clear sent friend requests for a specific user (useful when user logs out or switches)
+    func clearSentFriendRequestsForUser(_ userId: UUID) {
+        sentFriendRequests.removeValue(forKey: userId)
+        saveToDisk()
+    }
+    
+    /// Force refresh both incoming and sent friend requests (bypasses cache)
+    func forceRefreshAllFriendRequests() async {
+        print("🔄 [CACHE] Force refreshing all friend request data")
+		async let incomingTask: () = refreshFriendRequests()
+		async let sentTask: () = refreshSentFriendRequests()
+        
+        await incomingTask
+        await sentTask
+        print("✅ [CACHE] Force refresh of friend requests completed")
     }
     
     // MARK: - User-Specific Data Helper Methods
@@ -566,7 +761,7 @@ class AppCache: ObservableObject {
     /// Update friends for a specific user
     func updateFriendsForUser(_ newFriends: [FullFriendUserDTO], userId: UUID) {
         friends[userId] = newFriends
-        lastChecked[CacheKeys.friends] = Date()
+        setLastCheckedForUser(userId, cacheType: CacheKeys.friends, date: Date())
         saveToDisk()
         
         // Preload profile pictures for friends
@@ -590,7 +785,7 @@ class AppCache: ObservableObject {
     /// Update activities for a specific user
     func updateActivitiesForUser(_ newActivities: [FullFeedActivityDTO], userId: UUID) {
         activities[userId] = newActivities
-        lastChecked[CacheKeys.events] = Date()
+        setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
         
         // Pre-assign colors for even distribution
         let activityIds = newActivities.map { $0.id }
@@ -619,7 +814,7 @@ class AppCache: ObservableObject {
     /// Update recommended friends for a specific user
     func updateRecommendedFriendsForUser(_ newRecommendedFriends: [RecommendedFriendUserDTO], userId: UUID) {
         recommendedFriends[userId] = newRecommendedFriends
-        lastChecked[CacheKeys.recommendedFriends] = Date()
+        setLastCheckedForUser(userId, cacheType: CacheKeys.recommendedFriends, date: Date())
         saveToDisk()
         
         // Preload profile pictures for recommended friends
@@ -641,32 +836,63 @@ class AppCache: ObservableObject {
         clearRecommendedFriendsForUser(userId)
         clearFriendRequestsForUser(userId)
         
+        // Clear profile-specific data
+        profileStats.removeValue(forKey: userId)
+        profileInterests.removeValue(forKey: userId)
+        profileSocialMedia.removeValue(forKey: userId)
+        profileActivities.removeValue(forKey: userId)
+        
+        // Clear profile picture cache for this user
+        ProfilePictureCache.shared.removeCachedImage(for: userId)
+        
+        // Clear other profiles cache to prevent data leakage between users
+        otherProfiles.removeAll()
+        
         // Clear notification preferences
         NotificationService.shared.clearPreferencesForUser(userId)
         
         // Clear activity color preferences
         ActivityColorService.shared.clearColorPreferencesForUser(userId)
         
-        print("Cleared all cached data and preferences for user \(userId)")
+        // Clear cache timestamps for this user
+        clearLastCheckedForUser(userId)
+        
+        print("💾 [CACHE] Cleared all cached data and preferences for user \(userId)")
+        saveToDisk()
     }
     
     // MARK: - Profile Methods
     
     func updateProfileStats(_ userId: UUID, _ stats: UserStatsDTO) {
         profileStats[userId] = stats
-        lastChecked[CacheKeys.profileStats] = Date()
+        
+        // Update timestamp for current user
+        if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileStats, date: Date())
+        }
+        
         saveToDisk()
     }
     
     func updateProfileInterests(_ userId: UUID, _ interests: [String]) {
         profileInterests[userId] = interests
-        lastChecked[CacheKeys.profileInterests] = Date()
+        
+        // Update timestamp for current user
+        if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileInterests, date: Date())
+        }
+        
         saveToDisk()
     }
     
     func updateProfileSocialMedia(_ userId: UUID, _ socialMedia: UserSocialMediaDTO) {
         profileSocialMedia[userId] = socialMedia
-        lastChecked[CacheKeys.profileSocialMedia] = Date()
+        
+        // Update timestamp for current user
+        if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileSocialMedia, date: Date())
+        }
+        
         saveToDisk()
     }
     
@@ -679,7 +905,11 @@ class AppCache: ObservableObject {
         let activityIds = activities.map { $0.id }
         ActivityColorService.shared.assignColorsForActivities(activityIds)
         
-        lastChecked[CacheKeys.profileEvents] = Date()
+        // Update timestamp for current user
+        if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileEvents, date: Date())
+        }
+        
         saveToDisk()
     }
     
@@ -871,9 +1101,9 @@ class AppCache: ObservableObject {
     // MARK: - Persistence
     
     private func loadFromDisk() {
-        // Load cache timestamps
+        // Load cache timestamps (user-specific)
         if let timestampsData = UserDefaults.standard.data(forKey: CacheKeys.lastChecked),
-           let loadedTimestamps = try? JSONDecoder().decode([String: Date].self, from: timestampsData) {
+           let loadedTimestamps = try? JSONDecoder().decode([UUID: [String: Date]].self, from: timestampsData) {
             lastChecked = loadedTimestamps
         }
         
@@ -915,6 +1145,12 @@ class AppCache: ObservableObject {
             friendRequests = loadedRequests
         }
         
+        // Load sent friend requests
+        if let sentRequestsData = UserDefaults.standard.data(forKey: CacheKeys.sentFriendRequests),
+           let loadedSentRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: sentRequestsData) {
+            sentFriendRequests = loadedSentRequests
+        }
+        
         // Load profile stats
         if let statsData = UserDefaults.standard.data(forKey: CacheKeys.profileStats),
            let loadedStats = try? JSONDecoder().decode([UUID: UserStatsDTO].self, from: statsData) {
@@ -943,7 +1179,7 @@ class AppCache: ObservableObject {
     }
     
     private func saveToDisk() {
-        // Save cache timestamps
+        // Save cache timestamps (user-specific)
         if let timestampsData = try? JSONEncoder().encode(lastChecked) {
             UserDefaults.standard.set(timestampsData, forKey: CacheKeys.lastChecked)
         }
@@ -978,6 +1214,11 @@ class AppCache: ObservableObject {
         // Save friend requests
         if let requestsData = try? JSONEncoder().encode(friendRequests) {
             UserDefaults.standard.set(requestsData, forKey: CacheKeys.friendRequests)
+        }
+        
+        // Save sent friend requests
+        if let sentRequestsData = try? JSONEncoder().encode(sentFriendRequests) {
+            UserDefaults.standard.set(sentRequestsData, forKey: CacheKeys.sentFriendRequests)
         }
         
         // Save profile stats

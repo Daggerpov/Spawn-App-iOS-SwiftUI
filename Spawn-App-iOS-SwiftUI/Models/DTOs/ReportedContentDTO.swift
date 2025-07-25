@@ -37,7 +37,6 @@ enum EntityType: String, Codable, CaseIterable {
     case chatMessage = "ChatMessage"
     case activity = "Activity"
     case activityType = "ActivityType"
-    case friendTag = "FriendTag"
     case user = "User"
     case friendRequest = "FriendRequest"
     case betaAccessSignUp = "BetaAccessSignUp"
@@ -56,8 +55,6 @@ enum EntityType: String, Codable, CaseIterable {
             return "Activity"
         case .activityType:
             return "Activity Type"
-        case .friendTag:
-            return "Friend Tag"
         case .user:
             return "User"
         case .friendRequest:

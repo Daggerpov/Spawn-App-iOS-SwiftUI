@@ -107,7 +107,7 @@ struct ProfileHeaderView: View {
 				.font(.onestBold(size: 24))
 				.foregroundColor(universalAccentColor)
 
-				Text("@\(currentUser.username)")
+									Text("@\(currentUser.username ?? "username")")
 					.font(.onestRegular(size: 16))
 					.foregroundColor(figmaBlack400)
 					.padding(.bottom, 5)
@@ -121,7 +121,7 @@ struct ProfileHeaderView: View {
 				.font(.onestBold(size: 24))
                 .foregroundColor(universalAccentColor)
 
-                Text("@\(user.username)")
+                					Text("@\(user.username ?? "username")")
 					.font(.onestRegular(size: 16))
 					.foregroundColor(figmaBlack400)
                     .padding(.bottom, 5)

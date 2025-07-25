@@ -18,9 +18,9 @@ struct FriendsTabMenuView: View {
     
     private var firstName: String {
         if let name = user.name, !name.isEmpty {
-            return name.components(separatedBy: " ").first ?? user.username
+            		return name.components(separatedBy: " ").first ?? user.username ?? "User"
         }
-        return user.username
+        		return user.username ?? "User"
     }
     
     var body: some View {

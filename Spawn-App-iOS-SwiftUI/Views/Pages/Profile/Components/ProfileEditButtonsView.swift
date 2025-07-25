@@ -28,7 +28,7 @@ struct ProfileEditButtonsView: View {
             Button(action: {
                 // Revert to original values from userAuth.spawnUser
                 if let currentUser = userAuth.spawnUser {
-                    username = currentUser.username
+                    			username = currentUser.username ?? ""
                     name = currentUser.name ?? ""
                     selectedImage = nil
 

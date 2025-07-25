@@ -26,6 +26,9 @@ struct ActivityDateTimeView: View {
     // Validation state
     @State private var showTitleError: Bool = false
     
+    // State for comprehensive changes confirmation
+    @State private var showSaveConfirmation: Bool = false
+    
     // Available options for the pickers
     private let hours = Array(1...12)
     private let minutes = [0, 15, 30, 45]
@@ -144,13 +147,138 @@ struct ActivityDateTimeView: View {
         }
     }
     
+    // MARK: - Picker Views
+    
+    private var dayPickerView: some View {
+        Picker("Day", selection: $selectedDay) {
+            ForEach(DayOption.allCases, id: \.self) { day in
+                Text(day.title)
+                    .font(Font.custom("Onest", size: 22))
+                    .foregroundColor(pickerTextColor)
+                    .tag(day)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 130)
+        .clipped()
+        .onChange(of: selectedDay) { _ in
+            if selectedDay == .tomorrow {
+                selectedHour = tomorrowHour
+                selectedMinute = tomorrowMinute
+                isAM = tomorrowIsAM
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private var hourPickerView: some View {
+        Picker("Hour", selection: $selectedHour) {
+            ForEach(hours, id: \.self) { h in
+                Text("\(h)")
+                    .font(.custom("Onest", size: 26))
+                    .foregroundColor(pickerTextColor)
+                    .tag(h)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 50)
+        .clipped()
+        .onChange(of: selectedHour) { _ in
+            if selectedDay == .tomorrow {
+                tomorrowHour = selectedHour
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private var minutePickerView: some View {
+        Picker("Minute", selection: $selectedMinute) {
+            ForEach(minutes, id: \.self) { m in
+                Text(String(format: "%02d", m))
+                    .font(.custom("Onest", size: 26))
+                    .foregroundColor(pickerTextColor)
+                    .tag(m)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 60)
+        .clipped()
+        .onChange(of: selectedMinute) { _ in
+            if selectedDay == .tomorrow {
+                tomorrowMinute = selectedMinute
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private var amPmPickerView: some View {
+        Picker("AM/PM", selection: $isAM) {
+            Text("AM")
+                .font(.custom("Onest", size: 26))
+                .foregroundColor(pickerTextColor)
+                .tag(true)
+            Text("PM")
+                .font(.custom("Onest", size: 26))
+                .foregroundColor(pickerTextColor)
+                .tag(false)
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 60)
+        .clipped()
+        .onChange(of: isAM) { _ in
+            if selectedDay == .tomorrow {
+                tomorrowIsAM = isAM
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private func durationButton(for duration: ActivityDuration) -> some View {
+        let isSelected = selectedDuration == duration
+        let borderColor = Color(red: 0.33, green: 0.42, blue: 0.93)
+        
+        return Button(action: { 
+            selectedDuration = duration
+            viewModel.selectedDuration = duration
+            syncCurrentValuesToViewModel()
+        }) {
+            Text(duration.title)
+                .font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
+                .foregroundColor(isSelected ? borderColor : secondaryTextColor)
+                .padding(12)
+                .background(durationButtonBackground(isSelected: isSelected, borderColor: borderColor))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private func durationButtonBackground(isSelected: Bool, borderColor: Color) -> some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .inset(by: isSelected ? 1 : 0.5)
+                    .stroke(borderColor, lineWidth: isSelected ? 1 : 0.5)
+            )
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Back button at the top
             if let onBack = onBack {
                 HStack {
                     ActivityBackButton {
-                        onBack()
+                        // Sync current values to view model before checking changes
+                        syncCurrentValuesToViewModel()
+                        
+                        if viewModel.hasAnyChanges {
+                            showSaveConfirmation = true
+                        } else {
+                            onBack()
+                        }
                     }
                     .padding(.leading, 24)
                     
@@ -200,85 +328,10 @@ struct ActivityDateTimeView: View {
                             
                             // Picker content
                             HStack(spacing: 24) {
-                                // Day picker (Today/Tomorrow)
-                                Picker("Day", selection: $selectedDay) {
-                                    ForEach(DayOption.allCases, id: \.self) { day in
-                                        Text(day.title)
-                                            .font(Font.custom("Onest", size: 22))
-                                            .foregroundColor(pickerTextColor)
-                                            .tag(day)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 130)
-                                .clipped()
-                                .onChange(of: selectedDay) { _ in
-                                    if selectedDay == .tomorrow {
-                                        selectedHour = tomorrowHour
-                                        selectedMinute = tomorrowMinute
-                                        isAM = tomorrowIsAM
-                                    }
-                                    updateSelectedDate()
-                                }
-                                
-                                // Hour picker
-                                Picker("Hour", selection: $selectedHour) {
-                                    ForEach(hours, id: \.self) { h in
-                                        Text("\(h)")
-                                            .font(.custom("Onest", size: 26))
-                                            .foregroundColor(pickerTextColor)
-                                            .tag(h)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 50)
-                                .clipped()
-                                .onChange(of: selectedHour) { _ in
-                                    if selectedDay == .tomorrow {
-                                        tomorrowHour = selectedHour
-                                    }
-                                    updateSelectedDate()
-                                }
-                                
-                                // Minute picker
-                                Picker("Minute", selection: $selectedMinute) {
-                                    ForEach(minutes, id: \.self) { m in
-                                        Text(String(format: "%02d", m))
-                                            .font(.custom("Onest", size: 26))
-                                            .foregroundColor(pickerTextColor)
-                                            .tag(m)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 60)
-                                .clipped()
-                                .onChange(of: selectedMinute) { _ in
-                                    if selectedDay == .tomorrow {
-                                        tomorrowMinute = selectedMinute
-                                    }
-                                    updateSelectedDate()
-                                }
-                                
-                                // AM/PM picker
-                                Picker("AM/PM", selection: $isAM) {
-                                    Text("AM")
-                                        .font(.custom("Onest", size: 26))
-                                        .foregroundColor(pickerTextColor)
-                                        .tag(true)
-                                    Text("PM")
-                                        .font(.custom("Onest", size: 26))
-                                        .foregroundColor(pickerTextColor)
-                                        .tag(false)
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 60)
-                                .clipped()
-                                .onChange(of: isAM) { _ in
-                                    if selectedDay == .tomorrow {
-                                        tomorrowIsAM = isAM
-                                    }
-                                    updateSelectedDate()
-                                }
+                                dayPickerView
+                                hourPickerView
+                                minutePickerView
+                                amPmPickerView
                             }
                             .offset(x: 4, y: 1.13)
                         }
@@ -323,6 +376,7 @@ struct ActivityDateTimeView: View {
                                 if !newValue.trimmingCharacters(in: .whitespaces).isEmpty {
                                     showTitleError = false
                                 }
+                                syncCurrentValuesToViewModel()
                             }
                         
                         if showTitleError {
@@ -345,28 +399,7 @@ struct ActivityDateTimeView: View {
                         // Duration buttons - horizontal layout with Figma styling
                         HStack(spacing: 8) {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
-                                Button(action: { 
-                                    selectedDuration = duration
-                                    viewModel.selectedDuration = duration
-                                }) {
-                                    Text(duration.title)
-                                        .font(.custom("Onest", size: 16).weight(selectedDuration == duration ? .bold : .medium))
-                                        .foregroundColor(selectedDuration == duration ? 
-                                                       Color(red: 0.33, green: 0.42, blue: 0.93) : 
-                                                       secondaryTextColor)
-                                        .padding(12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(.clear)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .inset(by: selectedDuration == duration ? 1 : 0.5)
-                                                        .stroke(Color(red: 0.33, green: 0.42, blue: 0.93), 
-                                                               lineWidth: selectedDuration == duration ? 1 : 0.5)
-                                                )
-                                        )
-                                }
-                                .buttonStyle(PlainButtonStyle())
+                                durationButton(for: duration)
                             }
                             Spacer()
                         }
@@ -386,7 +419,7 @@ struct ActivityDateTimeView: View {
                     return
                 }
                 showTitleError = false
-                updateSelectedDate()
+                syncCurrentValuesToViewModel()
                 onNext()
             }
             .padding(.horizontal, 20)
@@ -410,9 +443,55 @@ struct ActivityDateTimeView: View {
         .onAppear {
             initializeDateAndTime()
         }
+        .alert("Save All Changes?", isPresented: $showSaveConfirmation) {
+            Button("Don't Save", role: .destructive) {
+                // Reset to original values and go back without saving
+                viewModel.resetToOriginalValues()
+                onBack?()
+            }
+			Button("Save All Changes") {
+                // Save changes by calling onNext to proceed through the flow
+                let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+                if trimmedTitle.isEmpty {
+                    showTitleError = true
+                    return
+                }
+                showTitleError = false
+                syncCurrentValuesToViewModel()
+                
+                // For editing flow, we need to save ALL changes and close the flow
+                // This means updating the activity with all the accumulated changes
+                Task {
+                    await viewModel.updateActivity()
+                    await MainActor.run {
+                        onBack?()
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                // Stay on the current screen
+            }
+        } message: {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("You have unsaved changes across multiple screens:")
+                Text(viewModel.getChangesSummaryText())
+            }
+        }
     }
     
     // MARK: - Helper Methods
+    
+    private func syncCurrentValuesToViewModel() {
+        // Update activity title
+        let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+        viewModel.activity.title = trimmedTitle.isEmpty ? nil : trimmedTitle
+        
+        // Update selected date
+        updateSelectedDate()
+        
+        // Update duration
+        viewModel.selectedDuration = selectedDuration
+    }
     
     private func updateSelectedDate() {
         let calendar = Calendar.current

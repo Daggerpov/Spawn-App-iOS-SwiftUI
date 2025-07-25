@@ -22,7 +22,7 @@ class FormatterService {
 			}
 		}
 		// Fallback to username if no name available
-		return user.username
+		return user.username ?? "User"
 	}
 
 	// Format name from a user object
@@ -171,7 +171,7 @@ class FormatterService {
         }
     }
     
-    func distanceString(from userLocation: CLLocationCoordinate2D?, to activityLocation: Location?) -> String {
+    func distanceString(from userLocation: CLLocationCoordinate2D?, to activityLocation: LocationDTO?) -> String {
         guard let userLocation = userLocation,
               let activityLocation = activityLocation else {
             return "Distance unavailable"

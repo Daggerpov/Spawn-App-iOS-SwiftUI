@@ -47,7 +47,8 @@ struct RegisterInputView: View {
                     Text("Create Your Account")
                         .font(heading1)
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                    
+						.multilineTextAlignment(.center)
+
                     Text("Choose how you'd like to set up your account.")
                         .font(.onestRegular(size: 16))
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
@@ -146,48 +147,125 @@ struct RegisterInputView: View {
                 }
                 .padding(.horizontal, 40)
                 
-                // External Login Buttons
-                VStack(spacing: 16) {
-                    // Continue with Apple
-                    Button(action: {
-                        // Haptic feedback
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                        impactGenerator.impactOccurred()
-                        
-                        viewModel.appleRegister()
-                    }) {
-                        AuthProviderButtonView(.apple)
-                    }
-                    .buttonStyle(AuthProviderButtonStyle())
-                   
-                    
-                    // Continue with Google
-                    Button(action: {
-                        // Haptic feedback
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                        impactGenerator.impactOccurred()
-                        
-                        Task{
-                            await viewModel.googleRegister()
+                // External Login Buttons or Auto Sign-In State
+                if !viewModel.isAutoSigningIn {
+                    VStack(spacing: 16) {
+                        // Continue with Apple
+                        Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
+                            viewModel.appleRegister()
+                        }) {
+                            AuthProviderButtonView(.apple)
                         }
-                    }) {
-                        AuthProviderButtonView(.google)
+                        .buttonStyle(AuthProviderButtonStyle())
+                       
+                        
+                        // Continue with Google
+                        Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
+                            Task{
+                                await viewModel.googleRegister()
+                            }
+                        }) {
+                            AuthProviderButtonView(.google)
+                        }
+                        .buttonStyle(AuthProviderButtonStyle())
                     }
-                    .buttonStyle(AuthProviderButtonStyle())
+                    .padding(.horizontal, 40)
+                } else {
+                    // Auto Sign-In Loading State
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: universalAccentColor(from: themeService, environment: colorScheme)))
+                            .scaleEffect(1.2)
+                        
+                        Text("Account found! Signing you in...")
+                            .font(.onestMedium(size: 16))
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 40)
+                    .transition(.opacity)
                 }
-                .padding(.horizontal, 40)
             }
             
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
-        // Navigation for email verification flow
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToVerificationCodeView, destination: {VerificationCodeView(viewModel: viewModel)})
-        // Navigation for OAuth flow - skip verification and go directly to user details
-        .navigationDestination(isPresented: $viewModel.shouldNavigateToUserDetailsView) {
-            UserDetailsInputView(isOAuthUser: true)
-        }
         .navigationBarHidden(true)
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserDetailsView
+        ) {
+            UserDetailsInputView(isOAuthUser: true)
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView
+        ) {
+            UserOptionalDetailsInputView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToContactImportView
+        ) {
+            ContactImportView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToUserToS
+        ) {
+            UserToS()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToAccountNotFoundView
+        ) {
+            AccountNotFoundView()
+                .navigationBarTitle("")
+                .navigationBarHidden(true)
+        }
+        .navigationDestination(
+            isPresented: $viewModel.shouldNavigateToFeedView
+        ) {
+            if let loggedInSpawnUser = viewModel.spawnUser {
+                ContentView(user: loggedInSpawnUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            } else {
+                EmptyView() // This should never happen
+            }
+        }
+        .navigationDestination(isPresented: $viewModel.shouldShowOnboardingContinuation) {
+            OnboardingContinuationView()
+        }
+        .navigationDestination(isPresented: $viewModel.shouldSkipAhead) {
+            switch viewModel.skipDestination {
+            case .userDetailsInput:
+                UserDetailsInputView(isOAuthUser: true)
+            case .userOptionalDetailsInput:
+                UserOptionalDetailsInputView()
+            case .contactImport:
+                ContactImportView()
+            case .userToS:
+                UserToS()
+            case .none:
+                EmptyView()
+            }
+        }
+        .onAppear {
+            // Clear any previous error state when this view appears
+            viewModel.clearAllErrors()
+        }
     }
 }
 

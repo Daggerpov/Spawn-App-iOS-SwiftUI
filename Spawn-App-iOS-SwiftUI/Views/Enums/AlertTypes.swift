@@ -33,6 +33,7 @@ enum AuthAlertType: Identifiable, Equatable {
 	case invalidToken
 	case networkError
 	case unknownError(String)
+	case accountFoundSigningIn // New case for graceful OAuth handling
 	
 	var id: Int {
 		switch self {
@@ -47,6 +48,7 @@ enum AuthAlertType: Identifiable, Equatable {
 			case .invalidToken: return 8
 			case .networkError: return 9
 			case .unknownError: return 10
+			case .accountFoundSigningIn: return 11
 		}
 	}
 	
@@ -74,6 +76,8 @@ enum AuthAlertType: Identifiable, Equatable {
 				return "Network Error"
 			case .unknownError:
 				return "Unexpected Error"
+			case .accountFoundSigningIn:
+				return "Account Found"
 		}
 	}
 	
@@ -101,6 +105,8 @@ enum AuthAlertType: Identifiable, Equatable {
 				return "Unable to connect to the server. Please check your internet connection and try again."
 			case .unknownError(let message):
 				return message.isEmpty ? "An unexpected error occurred. Please try again." : message
+			case .accountFoundSigningIn:
+				return "We found your existing account and are signing you in automatically."
 		}
 	}
 }

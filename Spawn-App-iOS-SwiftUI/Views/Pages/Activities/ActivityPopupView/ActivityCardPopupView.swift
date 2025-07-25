@@ -17,6 +17,10 @@ struct ActivityCardPopupView: View {
     @State private var region: MKCoordinateRegion
     @Binding var isExpanded: Bool
     
+    // State for activity reporting
+    @State private var showActivityMenu: Bool = false
+    @State private var showReportDialog: Bool = false
+    
     
     init(activity: FullFeedActivityDTO, activityColor: Color, isExpanded: Binding<Bool>) {
         self.activity = activity
@@ -46,6 +50,43 @@ struct ActivityCardPopupView: View {
             .cornerRadius(isExpanded ? 0 : 20)
             .shadow(radius: isExpanded ? 0 : 20)
             .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
+            .sheet(isPresented: $showActivityMenu) {
+                ActivityMenuView(
+                    activity: activity,
+                    showReportDialog: $showReportDialog
+                )
+                .presentationDetents([.height(200)])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showReportDialog) {
+                ReportActivityDrawer(
+                    activity: activity,
+                    onReport: { reportType, description in
+                        Task {
+                            await self.reportActivity(reportType: reportType, description: description)
+                        }
+                    }
+                )
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+            }
+        }
+    }
+    
+    private func reportActivity(reportType: ReportType, description: String) async {
+        guard let currentUserId = UserAuthViewModel.shared.spawnUser?.id else { return }
+        
+        do {
+            let reportingService = ReportingService()
+            try await reportingService.reportActivity(
+                reporterUserId: currentUserId,
+                activityId: activity.id,
+                reportType: reportType,
+                description: description
+            )
+            print("Activity reported successfully")
+        } catch {
+            print("Error reporting activity: \(error)")
         }
     }
     
@@ -54,6 +95,19 @@ struct ActivityCardPopupView: View {
             // Header with arrow and title
             HStack {
                 Spacer()
+                
+                // Only show menu for activities not owned by current user
+                if let currentUserId = UserAuthViewModel.shared.spawnUser?.id,
+                   currentUserId != activity.creatorUser.id {
+                    Button(action: {
+                        showActivityMenu = true
+                    }) {
+                        Image(systemName: "ellipsis")
+                            .foregroundColor(.white)
+                            .font(.title3)
+                            .padding(8)
+                    }
+                }
             }
             
             // Event title and time
@@ -191,7 +245,7 @@ struct MapHelper: Identifiable {
 extension ActivityCardPopupView {
     var titleAndTime: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(activity.title ?? (activity.creatorUser.name ?? activity.creatorUser.username) + "'s activity")
+            Text(activity.title ?? "\(activity.creatorUser.name ?? activity.creatorUser.username ?? "User")'s activity")
                 .font(.onestSemiBold(size: 32))
                 .foregroundColor(.white)
             Text(FormatterService.shared.timeUntil(activity.startTime) + " • " + viewModel.getDisplayString(activityInfoType: .time))
@@ -451,7 +505,8 @@ struct ChatroomButtonView: View {
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
         self.activityColor = activityColor
-        viewModel = ChatViewModel(senderUserId: user.id, activity: activity)
+        let currentUser = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
+        viewModel = ChatViewModel(senderUserId: currentUser.id, activity: activity)
     }
     
     
@@ -476,7 +531,9 @@ struct ChatroomButtonView: View {
                             .font(.onestRegular(size: 15))
                     } else if !viewModel.chats.isEmpty {
                         let sender = viewModel.chats[0].senderUser
-                        Text((sender == user ? "You:" : sender.name ?? sender.username) + " " + viewModel.chats[0].content)
+                        let senderName = sender == user ? "You:" : (sender.name ?? sender.username ?? "User")
+                        let messageText = senderName + " " + viewModel.chats[0].content
+                        Text(messageText)
                             .foregroundColor(.white.opacity(0.8))
                             .font(.onestRegular(size: 15))
                     }

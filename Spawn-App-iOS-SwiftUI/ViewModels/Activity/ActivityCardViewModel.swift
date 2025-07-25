@@ -34,6 +34,22 @@ class ActivityCardViewModel: ObservableObject {
 		fetchIsParticipating()
 	}
 
+	/// Reports the activity for inappropriate content
+	func reportActivity(reporterUserId: UUID, reportType: ReportType, description: String) async {
+		do {
+			let reportingService = ReportingService(apiService: self.apiService)
+			try await reportingService.reportActivity(
+				reporterUserId: reporterUserId,
+				activityId: activity.id,
+				reportType: reportType,
+				description: description
+			)
+			print("Activity reported successfully")
+		} catch {
+			print("Error reporting activity: \(error)")
+		}
+	}
+	
 	/// Toggles the user's participation status in the activity
 	public func toggleParticipation() async {
         if userId == activity.creatorUser.id {
@@ -60,6 +76,24 @@ class ActivityCardViewModel: ObservableObject {
 				
 				// Update the cache with the updated activity so all views stay in sync
 				AppCache.shared.addOrUpdateActivity(updatedActivity)
+			}
+		} catch let error as APIError {
+			await MainActor.run {
+				// Handle specific API errors
+				if case .invalidStatusCode(let statusCode) = error {
+					if statusCode == 400 {
+						// Activity is full
+						NotificationCenter.default.post(
+							name: NSNotification.Name("ShowActivityFullAlert"),
+							object: nil,
+							userInfo: ["message": "Sorry, this activity is full"]
+						)
+					} else {
+						print("Error toggling participation (status \(statusCode)): \(error.localizedDescription)")
+					}
+				} else {
+					print("Error toggling participation: \(error.localizedDescription)")
+				}
 			}
 		} catch {
 			await MainActor.run {

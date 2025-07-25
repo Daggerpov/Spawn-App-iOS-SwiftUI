@@ -702,16 +702,22 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         Task {
             switch type {
             case "friend-accepted":
-                // When a friend request is accepted, refresh friends
+                // When a friend request is accepted, refresh friends and friend requests
+                print("🔄 [CACHE] Friend request accepted - refreshing friends and friend requests")
                 await appCache.refreshFriends()
+                await appCache.refreshFriendRequests()
+                await appCache.refreshSentFriendRequests()
                 
             case "activity-updated":
                 // When an activity is updated, refresh activities
+                print("🔄 [CACHE] Activity updated - refreshing activities")
                 await appCache.refreshActivities()
                 
             case "friend-request":
-                // When a new friend request is received, refresh friend requests
+                // When a new friend request is received/sent, refresh both incoming and sent friend requests
+                print("🔄 [CACHE] Friend request received/sent - refreshing friend requests")
                 await appCache.refreshFriendRequests()
+                await appCache.refreshSentFriendRequests()
             
             case "profile-updated":
                 // When a friend's profile is updated, refresh other profiles
@@ -719,12 +725,13 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
                    let uuid = UUID(uuidString: userId) {
                     // Check if this is a profile we already have cached
                     if appCache.otherProfiles[uuid] != nil {
+                        print("🔄 [CACHE] Profile updated - refreshing other profiles")
                         await appCache.refreshOtherProfiles()
                     }
                 }
                 
             default:
-                print("Unknown notification type: \(type)")
+                print("Unknown notification type: \(type) - triggering full cache validation")
                 // For unknown notification types, validate the entire cache
                 await appCache.validateCache()
             }

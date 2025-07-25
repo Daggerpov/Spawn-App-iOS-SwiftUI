@@ -1,5 +1,5 @@
 //
-//  Location.swift
+//  LocationDTO.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 11/6/24.
@@ -7,8 +7,8 @@
 
 import Foundation
 
-class Location: Identifiable, Codable, Equatable {
-    static func == (lhs: Location, rhs: Location) -> Bool {
+class LocationDTO: Identifiable, Codable, Equatable {
+    static func == (lhs: LocationDTO, rhs: LocationDTO) -> Bool {
         lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude && lhs.name == rhs.name
     }
 
@@ -25,14 +25,14 @@ class Location: Identifiable, Codable, Equatable {
 	}
 }
 
-extension Location {
-	static let goldsGym = Location(
+extension LocationDTO {
+	static let goldsGym = LocationDTO(
 		id: UUID(), name: "Gold's Gym", latitude: 49.26629781435629,
 		longitude: -123.24236920903301)
-	static let amsNest = Location(
+	static let amsNest = LocationDTO(
 		id: UUID(), name: "AMS Nest", latitude: 49.26672332535917,
 		longitude: -123.2500705312989)
-	static let ikbLibrary = Location(
+	static let ikbLibrary = LocationDTO(
 		id: UUID(), name: "IKB Library", latitude: 49.26764036247616,
 		longitude: -123.25272383355049)
-}
+} 

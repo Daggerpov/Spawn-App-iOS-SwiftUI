@@ -306,21 +306,21 @@ struct FriendRowView: View {
                         Text(FormatterService.shared.formatName(user: user))
                             .font(.onestRegular(size: 14))
                             .foregroundColor(universalAccentColor)
-                        Text("@\(user.username)")
+                        Text("@\(user.username ?? "username")")
                             .font(.onestRegular(size: 14))
                             .foregroundColor(Color.gray)
                     } else if let friend = friend {
                         Text(FormatterService.shared.formatName(user: friend))
                             .font(.onestRegular(size: 14))
                             .foregroundColor(universalAccentColor)
-                        Text("@\(friend.username)")
+                        Text("@\(friend.username ?? "username")")
                             .font(.onestRegular(size: 14))
                             .foregroundColor(Color.gray)
                     } else if let recommendedFriend = recommendedFriend {
                         Text(FormatterService.shared.formatName(user: recommendedFriend))
                             .font(.onestRegular(size: 14))
                             .foregroundColor(universalAccentColor)
-                        Text("@\(recommendedFriend.username)")
+                        Text("@\(recommendedFriend.username ?? "username")")
                             .font(.onestRegular(size: 14))
                             .foregroundColor(Color.gray)
                         // Show mutual friends count if available
@@ -512,7 +512,7 @@ struct FriendRowView: View {
     // Block user functionality
     private func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
         do {
-            let reportingService = UserReportingService()
+            let reportingService = ReportingService()
             try await reportingService.blockUser(
                 blockerId: blockerId,
                 blockedId: blockedId,

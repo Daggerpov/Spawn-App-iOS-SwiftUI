@@ -244,11 +244,11 @@ struct FriendsTabView: View {
                                     // Friend info
                                     NavigationLink(destination: ProfileView(user: friend)) {
                                         VStack(alignment: .leading, spacing: 4) {
-                                            Text(friend.name ?? friend.username)
+                                            Text(friend.name ?? friend.username ?? "User")
                                                 .font(.onestMedium(size: 16))
                                                 .foregroundColor(universalAccentColor)
                                                 .lineLimit(1)
-                                            Text("@\(friend.username)")
+                                            Text("@\(friend.username ?? "username")")
                                                 .font(.onestRegular(size: 12))
                                                 .foregroundColor(Color.gray)
                                                 .lineLimit(1)
@@ -342,7 +342,7 @@ struct FriendsTabView: View {
 	// Block user functionality
 	private func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
 		do {
-			let reportingService = UserReportingService()
+			let reportingService = ReportingService()
 			try await reportingService.blockUser(
 				blockerId: blockerId,
 				blockedId: blockedId,
@@ -399,7 +399,7 @@ struct RecommendedFriendView: View {
                     Text(FormatterService.shared.formatName(user: friend))
                         .font(.onestBold(size: 14))
                         .foregroundColor(universalAccentColor)
-                    Text("@\(friend.username)")
+                    Text("@\(friend.username ?? "username")")
                         .font(.onestRegular(size: 12))
                         .foregroundColor(Color.gray)
                     // Show mutual friends count if available
@@ -513,7 +513,7 @@ struct RecentlySpawnedView: View {
                     Text(FormatterService.shared.formatName(user: recentUser.user))
                         .font(.onestBold(size: 14))
                         .foregroundColor(universalAccentColor)
-                    Text("@\(recentUser.user.username)")
+                    Text("@\(recentUser.user.username ?? "username")")
                         .font(.onestRegular(size: 12))
                         .foregroundColor(Color.gray)
                 }

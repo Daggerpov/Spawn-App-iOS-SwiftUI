@@ -174,41 +174,58 @@ struct LoginInputView: View {
                 }
                 .padding(.horizontal, 40)
                 
-                // External Login Buttons
-                VStack(spacing: 16) {
-                    // Continue with Apple
-                    Button(action: {
-                        // Haptic feedback
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                        impactGenerator.impactOccurred()
-                        
-                        userAuth.signInWithApple()
-                    }) {
-                        AuthProviderButtonView(.apple)
-                    }
-                    .buttonStyle(AuthProviderButtonStyle())
-                   
-                    // Continue with Google
-                    Button(action: {
-                        // Haptic feedback
-                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                        impactGenerator.impactOccurred()
-                        
-                        Task {
-                            await userAuth.loginWithGoogle()
+                // External Login Buttons or Auto Sign-In State
+                if !userAuth.isAutoSigningIn {
+                    VStack(spacing: 16) {
+                        // Continue with Apple
+                        Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
+                            userAuth.signInWithApple()
+                        }) {
+                            AuthProviderButtonView(.apple)
                         }
-                    }) {
-                        AuthProviderButtonView(.google)
+                        .buttonStyle(AuthProviderButtonStyle())
+                       
+                        // Continue with Google
+                        Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
+                            Task {
+                                await userAuth.loginWithGoogle()
+                            }
+                        }) {
+                            AuthProviderButtonView(.google)
+                        }
+                        .buttonStyle(AuthProviderButtonStyle())
                     }
-                    .buttonStyle(AuthProviderButtonStyle())
+                    .padding(.horizontal, 40)
+                } else {
+                    // Auto Sign-In Loading State
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: universalAccentColor(from: themeService, environment: colorScheme)))
+                            .scaleEffect(1.2)
+                        
+                        Text("Account found! Signing you in...")
+                            .font(.onestMedium(size: 16))
+                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 40)
+                    .transition(.opacity)
                 }
-                .padding(.horizontal, 40)
             }
             
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
+        .withAuthNavigation(userAuth)
         .onAppear {
             // Reset any previous error state
             userAuth.errorMessage = nil

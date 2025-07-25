@@ -56,11 +56,14 @@ struct SignInView: View {
                 .padding(.horizontal, 32)
                 .padding(.bottom, 60)
             }
+            .padding(.horizontal)
         }
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
+        .withAuthNavigation(userAuth)
 		.onAppear {
-			// Mark onboarding as completed when user reaches sign in
-			userAuth.markOnboardingCompleted()
+            // Clear any previous error state when returning to main auth screen
+            userAuth.clearAllErrors()
 		}
     }
 }

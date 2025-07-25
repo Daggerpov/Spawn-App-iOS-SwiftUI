@@ -14,7 +14,7 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	}
 
 	var id: UUID
-	var username: String
+	var username: String?
 	var profilePicture: String?
 	var name: String?
 	var bio: String?
@@ -22,11 +22,11 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 
 	init(
 		id: UUID,
-		username: String,
+		username: String? = nil,
 		profilePicture: String? = nil,
 		name: String? = nil,
 		bio: String? = nil,
-		email: String?,
+		email: String?
 	) {
 		self.id = id
 		self.username = username

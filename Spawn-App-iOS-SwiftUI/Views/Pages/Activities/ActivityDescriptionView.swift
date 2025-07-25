@@ -14,6 +14,11 @@ struct ActivityDescriptionView: View {
 	@State private var showActivityEditView = false
 	@State private var showAttendees = false
 	@StateObject private var locationManager = LocationManager()
+	
+	// State for activity reporting
+	@State private var showActivityMenu: Bool = false
+	@State private var showReportDialog: Bool = false
+	@StateObject private var userAuth = UserAuthViewModel.shared
 
 	init(
 		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
@@ -32,8 +37,27 @@ struct ActivityDescriptionView: View {
 	var body: some View {
 		ScrollView {
 			VStack(alignment: .leading, spacing: 20) {
-				// Title and Information
-				ActivityCardTopRowView(activity: viewModel.activity, locationManager: locationManager)
+				// Title and Information with menu button
+				HStack {
+					VStack(alignment: .leading) {
+						ActivityCardTopRowView(activity: viewModel.activity, locationManager: locationManager)
+					}
+					
+					Spacer()
+					
+					// Only show menu for activities not owned by current user
+					if let currentUserId = userAuth.spawnUser?.id,
+					   currentUserId != viewModel.activity.creatorUser.id {
+						Button(action: {
+							showActivityMenu = true
+						}) {
+							Image(systemName: "ellipsis")
+								.foregroundColor(.white)
+								.font(.title3)
+								.padding(8)
+						}
+					}
+				}
 				
 				// Username display
 				HStack {
@@ -124,15 +148,32 @@ struct ActivityDescriptionView: View {
 		.fullScreenCover(isPresented: $showActivityEditView) {
 			ActivityEditView(viewModel: viewModel)
 		}
-		.sheet(isPresented: $showAttendees) {
-			AttendeeListView(
+		.fullScreenCover(isPresented: $showAttendees) {
+			ActivityParticipantsView(
 				activity: viewModel.activity,
-				activityColor: color,
 				onDismiss: {
 					showAttendees = false
 				}
 			)
-			.presentationDetents([.large])
+		}
+		.sheet(isPresented: $showActivityMenu) {
+			ActivityMenuView(
+				activity: viewModel.activity,
+				showReportDialog: $showReportDialog
+			)
+			.presentationDetents([.height(200)])
+			.presentationDragIndicator(.visible)
+		}
+		.sheet(isPresented: $showReportDialog) {
+			ReportActivityDrawer(
+				activity: viewModel.activity,
+				onReport: { reportType, description in
+					Task {
+						await reportActivity(reportType: reportType, description: description)
+					}
+				}
+			)
+			.presentationDetents([.medium, .large])
 			.presentationDragIndicator(.visible)
 		}
 	}
@@ -142,9 +183,10 @@ struct ActivityDescriptionView: View {
 		let invitedCount = viewModel.activity.invitedUsers?.count ?? 0
 		let totalCount = participantCount + invitedCount
 		
+		let creatorUsername = viewModel.activity.creatorUser.username ?? "user"
 		let displayText = (viewModel.activity.isSelfOwned == true) 
 			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
-			: "@\(viewModel.activity.creatorUser.username)\(totalCount > 0 ? " + \(totalCount) more" : "")"
+			: "@\(creatorUsername)\(totalCount > 0 ? " + \(totalCount) more" : "")"
 		
 		return Text(displayText)
 			.foregroundColor(.white)
@@ -173,7 +215,7 @@ struct ActivityDescriptionView: View {
 									)
 									.clipShape(Circle())
 								} else {
-									Text(String(participant.name?.prefix(1) ?? participant.username.prefix(1)))
+									Text(String(participant.name?.prefix(1) ?? participant.username?.prefix(1) ?? "U"))
 										.foregroundColor(.white)
 										.font(.system(size: 16, weight: .semibold))
 								}
@@ -232,6 +274,9 @@ extension ActivityDescriptionView {
 
 	struct ChatMessageRow: View {
 		let chatMessage: FullActivityChatMessageDTO
+		@State private var showMessageMenu: Bool = false
+		@State private var showReportDialog: Bool = false
+		@StateObject private var userAuth = UserAuthViewModel.shared
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [
@@ -246,6 +291,11 @@ extension ActivityDescriptionView {
 					of: full, with: abbreviation)
 			}
 			return result
+		}
+
+		private var isFromCurrentUser: Bool {
+			guard let currentUser = userAuth.spawnUser else { return false }
+			return chatMessage.senderUser.id == currentUser.id
 		}
 
 		var body: some View {
@@ -269,7 +319,7 @@ extension ActivityDescriptionView {
 							.scaledToFit()
 							.frame(width: 15, height: 15)
 							.foregroundColor(universalAccentColor)
-						Text(chatMessage.senderUser.username)
+						Text(chatMessage.senderUser.username ?? "User")
 							.foregroundColor(universalAccentColor)
 							.bold()
 							.font(.caption)
@@ -288,6 +338,51 @@ extension ActivityDescriptionView {
 			}
 			.padding(.vertical, 5)
 			.padding(.horizontal, 30)
+			.onLongPressGesture(minimumDuration: 0.5) {
+				// Only allow reporting other users' messages
+				if !isFromCurrentUser {
+					let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+					impactFeedback.impactOccurred()
+					showMessageMenu = true
+				}
+			}
+			.sheet(isPresented: $showMessageMenu) {
+				ChatMessageMenuView(
+					chatMessage: chatMessage,
+					showReportDialog: $showReportDialog
+				)
+				.presentationDetents([.height(200)])
+				.presentationDragIndicator(.visible)
+			}
+			.sheet(isPresented: $showReportDialog) {
+				ReportChatMessageDrawer(
+					chatMessage: chatMessage,
+					onReport: { reportType, description in
+						Task {
+							await reportChatMessage(reportType: reportType, description: description)
+						}
+					}
+				)
+				.presentationDetents([.medium, .large])
+				.presentationDragIndicator(.visible)
+			}
+		}
+		
+		private func reportChatMessage(reportType: ReportType, description: String) async {
+			guard let currentUserId = userAuth.spawnUser?.id else { return }
+			
+			do {
+				let reportingService = ReportingService()
+				try await reportingService.reportChatMessage(
+					reporterUserId: currentUserId,
+					chatMessageId: chatMessage.id,
+					reportType: reportType,
+					description: description
+				)
+				print("Chat message reported successfully")
+			} catch {
+				print("Error reporting chat message: \(error)")
+			}
 		}
 	}
 
@@ -327,6 +422,16 @@ extension ActivityDescriptionView {
 		.background(universalBackgroundColor)
 		.cornerRadius(universalRectangleCornerRadius)
 		.padding(.horizontal, 15)
+	}
+	
+	private func reportActivity(reportType: ReportType, description: String) async {
+		guard let currentUserId = userAuth.spawnUser?.id else { return }
+		
+		await viewModel.reportActivity(
+			reporterUserId: currentUserId,
+			reportType: reportType,
+			description: description
+		)
 	}
 }
 

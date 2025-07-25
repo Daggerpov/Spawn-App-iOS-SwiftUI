@@ -21,13 +21,22 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var idToken: String?  // ID token for authentication
 	@Published var isLoggedIn: Bool = false
 	@Published var hasCheckedSpawnUserExistence: Bool = false
+	
+	// Add separate OAuth credential storage for account completion
+	private var storedOAuthProvider: AuthProviderType?
+	private var storedIdToken: String?
+	private var storedEmail: String?
+	
+	// Add flag to prevent multiple concurrent re-authentication attempts
+	private var isReauthenticating: Bool = false
+	
 	@Published var spawnUser: BaseUserDTO? {
 		didSet {
 			if spawnUser != nil {
 				// Only set navigation to feed view if user has completed onboarding
 				// For new users going through onboarding, this will be handled separately
 				if hasCompletedOnboarding {
-					shouldNavigateToFeedView = true
+					navigationState = .feedView
 				}
 				// Only set isLoggedIn for fully active users, not for users still in onboarding
 				// The isLoggedIn flag will be set explicitly in navigation logic for active users
@@ -55,8 +64,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var isFormValid: Bool = false
     
+	// Replace all individual navigation flags with a single navigation state
+	@Published var navigationState: NavigationState = .none
+	
+	// Keep these for backwards compatibility during transition
 	@Published var shouldNavigateToFeedView: Bool = false
 	@Published var shouldNavigateToUserInfoInputView: Bool = false  // New property for navigation
+	@Published var shouldNavigateToAccountNotFoundView: Bool = false  // New property for account not found
 
 	@Published var isLoading: Bool = false
 
@@ -69,6 +83,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Auth alerts for authentication-related errors
 	@Published var authAlert: AuthAlertType?
 
+	// Track whether user is being automatically signed in after trying to register with existing account
+	@Published var isAutoSigningIn: Bool = false
+	
+	// For handling terms of service acceptance
 	@Published var defaultPfpFetchError: Bool = false
 	@Published var defaultPfpUrlString: String? = nil
     
@@ -79,12 +97,50 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     @Published var shouldNavigateToUserOptionalDetailsInputView: Bool = false
     
+    @Published var shouldNavigateToContactImportView: Bool = false
+    
     @Published var shouldNavigateToUserToS: Bool = false
+    
+    @Published var shouldNavigateToSignInView: Bool = false
+    @Published var shouldNavigateToRegisterInputView: Bool = false
+    
+    @Published var shouldShowOnboardingContinuation: Bool = false
     
     private var isOnboarding: Bool = false
     
     @Published var shouldSkipAhead: Bool = false
     @Published var skipDestination: SkipDestination = .none
+    
+    // Add flag to prevent multiple concurrent navigation updates
+    private var isNavigating: Bool = false
+    
+    // MARK: - Navigation Helper Methods
+    
+    /// Safely navigate to a new state with proper debouncing and protection
+    func navigateTo(_ state: NavigationState, delay: TimeInterval = 0.1) {
+        // Prevent multiple concurrent navigation attempts
+        guard !isNavigating else {
+            print("🚫 DEBUG: Navigation already in progress, ignoring navigateTo(\(state.description)) call")
+            return
+        }
+        
+        Task { @MainActor in
+            self.isNavigating = true
+            
+            // Small delay to ensure UI state is settled
+            if delay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            }
+            
+            print("📍 Navigating to: \(state.description)")
+            self.navigationState = state
+            
+            // Reset the navigation lock after a short delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.isNavigating = false
+            }
+        }
+    }
 
 	private init(apiService: IAPIService) {
 		print("🔄 DEBUG: UserAuthViewModel.init() called")
@@ -163,6 +219,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			} else {
 				print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
 			}
+			
+			// Preserve OAuth credentials during onboarding logout
+			let wasOnboarding = !self.hasCompletedOnboarding && self.spawnUser != nil
+			if wasOnboarding {
+				print("🔄 Preserving OAuth credentials during onboarding reset")
+				self.storedOAuthProvider = self.authProvider
+				self.storedIdToken = self.idToken
+				self.storedEmail = self.email
+			}
 
 			// Reset user state
 			self.errorMessage = nil
@@ -178,30 +243,51 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 			self.isFormValid = false
 
+			self.navigationState = .none
 			self.shouldNavigateToFeedView = false
 			self.shouldNavigateToUserInfoInputView = false
+			self.shouldNavigateToAccountNotFoundView = false
 			self.shouldNavigateToPhoneNumberView = false
 			self.shouldNavigateToVerificationCodeView = false
 			self.shouldNavigateToUserDetailsView = false
+			self.shouldNavigateToUserOptionalDetailsInputView = false
+			self.shouldNavigateToContactImportView = false
+			self.shouldNavigateToUserToS = false
+			self.shouldNavigateToSignInView = false
+			self.shouldNavigateToRegisterInputView = false
+			self.shouldShowOnboardingContinuation = false
+			self.shouldSkipAhead = false
+			self.skipDestination = .none
+			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
-			self.authAlert = nil
-
+			
 			self.defaultPfpFetchError = false
 			self.defaultPfpUrlString = nil
 			
+			// Restore OAuth credentials if this was an onboarding reset
+			if wasOnboarding {
+				print("🔄 Restoring OAuth credentials after onboarding reset")
+				self.authProvider = self.storedOAuthProvider
+				self.idToken = self.storedIdToken
+				self.email = self.storedEmail
+			}
+			
 			// Reset loading state but mark as not first launch
-			// For logout scenarios, we want to skip the loading screen since we already know the user is logged out
-			self.minimumLoadingCompleted = true
-			self.authCheckCompleted = true
 			self.hasCheckedSpawnUserExistence = true
 			self.isFirstLaunch = false // This is no longer first launch
 			
 			// Don't reset onboarding state on logout - users who have completed onboarding
-			// should be able to go directly to sign-in, not back through onboarding
-			
-			// Don't reset hasLaunchedBefore - app has already launched before
-			// This prevents the loading screen from showing again unnecessarily
+			// should stay marked as having completed onboarding
+		}
+	}
+	
+	// Clear all error states - use this when navigating between auth screens
+	func clearAllErrors() {
+		Task { @MainActor in
+			self.errorMessage = nil
+			self.authAlert = nil
+			self.isAutoSigningIn = false
 		}
 	}
 	
@@ -210,8 +296,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		Task { @MainActor in
 			print("🔄 DEBUG: Resetting auth flow state for back navigation")
 			
-			// Reset user authentication data
+			// Log current state for debugging
+			if let user = self.spawnUser {
+				print("🔄 DEBUG: Clearing incomplete user state - ID: \(user.id), Email: \(user.email ?? "nil")")
+			}
+			
+			// Clear all error states first
 			self.errorMessage = nil
+			self.authAlert = nil
+			self.isAutoSigningIn = false
+			
+			// Reset user authentication data
 			self.authProvider = nil
 			self.externalUserId = nil
 			self.idToken = nil
@@ -225,22 +320,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.isFormValid = false
 			
 			// Reset all navigation flags
+			self.navigationState = .none
 			self.shouldNavigateToFeedView = false
 			self.shouldNavigateToUserInfoInputView = false
+			self.shouldNavigateToAccountNotFoundView = false
 			self.shouldNavigateToPhoneNumberView = false
 			self.shouldNavigateToVerificationCodeView = false
 			self.shouldNavigateToUserDetailsView = false
 			self.shouldNavigateToUserOptionalDetailsInputView = false
+			self.shouldNavigateToContactImportView = false
 			self.shouldNavigateToUserToS = false
+			self.shouldNavigateToSignInView = false
+			self.shouldNavigateToRegisterInputView = false
+			self.shouldShowOnboardingContinuation = false
 			self.shouldSkipAhead = false
 			self.skipDestination = .none
 			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
-			self.authAlert = nil
 			
 			self.defaultPfpFetchError = false
 			self.defaultPfpUrlString = nil
+			
+			// Reset navigation lock
+			self.isNavigating = false
 			
 			// Keep hasCheckedSpawnUserExistence true to avoid showing loading screen again
 			// Keep isFirstLaunch and hasCompletedOnboarding as they were
@@ -255,13 +358,43 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 	
-	// Reset onboarding state for testing/debugging purposes
-	func resetOnboardingState() {
-		Task { @MainActor in
-			hasCompletedOnboarding = false
-			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-		}
-	}
+	    // Reset onboarding state for testing/debugging purposes
+    func resetOnboardingState() {
+        Task { @MainActor in
+            hasCompletedOnboarding = false
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+        }
+    }
+    
+    // Continue onboarding from where the user left off
+    func continueOnboarding() {
+        print("📍 Continuing onboarding from: \(skipDestination)")
+        
+        // Convert skipDestination to NavigationState
+        let targetState: NavigationState
+        switch skipDestination {
+        case .userDetailsInput:
+            targetState = .userDetailsInput(isOAuthUser: true)
+        case .userOptionalDetailsInput:
+            targetState = .userOptionalDetailsInput
+        case .contactImport:
+            targetState = .contactImport
+        case .userToS:
+            targetState = .userTermsOfService
+        case .none:
+            targetState = .none
+        }
+        
+        // First clear the continuation state, then navigate to the target
+        Task { @MainActor in
+            self.shouldShowOnboardingContinuation = false
+            
+            // Wait a brief moment for the UI to update, then navigate
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.navigateTo(targetState)
+            }
+        }
+    }
 	
 	// Reset launch state for testing/debugging purposes
 	func resetLaunchState() {
@@ -329,8 +462,42 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
     
     func loginWithGoogle() async {
+        // Clear any stale tokens before OAuth attempt to prevent interference
+        await clearStaleTokensIfNeeded()
+        
         self.isOnboarding = false
         await signInWithGoogle()
+    }
+    
+    // Clear stale tokens that might interfere with OAuth authentication
+    private func clearStaleTokensIfNeeded() async {
+        // Only clear tokens if we're not in an active session
+        guard !isLoggedIn || spawnUser == nil else {
+            return
+        }
+        
+        // Check if we have cached tokens
+        let hasAccessToken = KeychainService.shared.load(key: "accessToken") != nil
+        let hasRefreshToken = KeychainService.shared.load(key: "refreshToken") != nil
+        
+        if hasAccessToken || hasRefreshToken {
+            print("🔄 DEBUG: Clearing potentially stale cached tokens before OAuth attempt")
+            
+            // Clear the tokens from keychain
+            let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
+            let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
+            
+            if accessTokenDeleted || refreshTokenDeleted {
+                print("✅ Cleared stale tokens from Keychain before OAuth")
+            }
+            
+            // Reset any authentication state that might interfere
+            await MainActor.run {
+                self.isLoggedIn = false
+                self.spawnUser = nil
+                self.errorMessage = nil
+            }
+        }
     }
 
 	private func signInWithGoogle() async {
@@ -405,6 +572,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func signInWithApple() {
+        // Clear any stale tokens before OAuth attempt to prevent interference
+        Task {
+            await clearStaleTokensIfNeeded()
+        }
+        
         self.isOnboarding = false
         
 		let appleIDProvider = ASAuthorizationAppleIDProvider()
@@ -465,6 +637,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		} else {
 			print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
 		}
+		
+		// Clear stored OAuth credentials for complete logout
+		self.storedOAuthProvider = nil
+		self.storedIdToken = nil
+		self.storedEmail = nil
+		print("🔄 Cleared stored OAuth credentials for complete logout")
 
 		resetState()
 	}
@@ -510,11 +688,37 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
 					}
+				} catch let error as APIError {
+					await MainActor.run {
+						// Handle specific API errors
+						if case .invalidStatusCode(let statusCode) = error {
+							if statusCode == 404 {
+								// User doesn't exist in Spawn database - direct to account not found view
+								print("📍 User not found in Spawn database (404) - directing to AccountNotFoundView")
+								self.spawnUser = nil
+								self.navigateTo(.accountNotFound)
+							} else {
+								// Other status codes (401, 500, etc.) - something went wrong with the request
+								print("❌ Authentication error (\(statusCode)) during OAuth sign-in: \(error.localizedDescription)")
+								self.spawnUser = nil
+								self.navigateTo(.accountNotFound)
+								self.errorMessage = "Authentication failed. Please try again."
+							}
+						} else {
+							// Other API errors (network, parsing, etc.)
+							print("❌ API error during OAuth sign-in: \(error.localizedDescription)")
+							self.spawnUser = nil
+							self.navigateTo(.accountNotFound)
+							self.errorMessage = "Unable to sign in. Please check your connection and try again."
+						}
+					}
 				} catch {
 					await MainActor.run {
+						// Generic error handling
+						print("❌ Unexpected error during OAuth sign-in: \(error.localizedDescription)")
 						self.spawnUser = nil
-						self.shouldNavigateToUserInfoInputView = true
-						print("Error fetching user data: \(error.localizedDescription)")
+						self.navigateTo(.accountNotFound)
+						self.errorMessage = "An unexpected error occurred. Please try again."
 					}
 				}
 			await MainActor.run {
@@ -525,14 +729,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	
 	// Helper method to handle API errors consistently
 	private func handleApiError(_ error: APIError) {
-		// For 404 errors (user doesn't exist), just direct to user info input without showing an error
+		// For 404 errors (user doesn't exist), direct to account not found view without showing an error
 		if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
 			self.spawnUser = nil
-			self.shouldNavigateToUserInfoInputView = true
-			print("User does not exist yet in Spawn database - directing to user info input")
+			self.navigateTo(.accountNotFound)
+			print("User does not exist yet in Spawn database - directing to account not found view")
 		} else {
 			self.spawnUser = nil
-			self.shouldNavigateToUserInfoInputView = true
+			self.navigateTo(.accountNotFound)
 			self.errorMessage = "Failed to fetch user: \(error.localizedDescription)"
 			print(self.errorMessage as Any)
 		}
@@ -546,7 +750,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	) async {
 		// Reset any previous navigation flags to prevent automatic navigation
 		await MainActor.run {
-			self.shouldNavigateToFeedView = false
+			self.navigationState = .none
 			self.isFormValid = false
 		}
 		
@@ -617,17 +821,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
 
 	func setShouldNavigateToFeedView() {
-		Task { @MainActor in
-			shouldNavigateToFeedView = isLoggedIn && spawnUser != nil && isFormValid
-		}
+		navigateTo(.feedView, delay: 0.05)
 	}
 	
 	private func navigateBasedOnUserStatus(authResponse: AuthResponseDTO) {
-		// Reset all navigation flags
-		shouldNavigateToUserInfoInputView = false
-		shouldNavigateToUserDetailsView = false
-		shouldNavigateToUserToS = false
-		shouldNavigateToFeedView = false
+		// Reset navigation state
+		navigationState = .none
 		isFormValid = false
 		
 		guard let status = authResponse.status else {
@@ -639,19 +838,23 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		switch status {
 		case .emailVerified:
 			// Needs to input username, phone number, and password
-			shouldNavigateToUserDetailsView = true
+			navigateTo(.userDetailsInput(isOAuthUser: true))
 			print("📍 User status: emailVerified - navigating to user details input")
 		case .usernameAndPhoneNumber:
-			// Only needs to accept Terms of Service
-			shouldNavigateToUserOptionalDetailsInputView = true
-			print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+			// Needs to complete name and photo details
+			navigateTo(.userOptionalDetailsInput)
+			print("📍 User status: usernameAndPhoneNumber - navigating to name and photo input")
         case .nameAndPhoto:
-            shouldNavigateToUserToS = true
+            navigateTo(.contactImport)
+            print("📍 User status: nameAndPhoto - navigating to contact import")
+        case .contactImport:
+            navigateTo(.userTermsOfService)
+            print("📍 User status: contactImport - navigating to terms of service")
 		case .active:
 			// Fully onboarded user - go to feed
 			isFormValid = true
             isLoggedIn = true
-			setShouldNavigateToFeedView()
+			navigateTo(.feedView)
 			print("📍 User status: active - navigating to feed")
 		}
 	}
@@ -664,32 +867,34 @@ class UserAuthViewModel: NSObject, ObservableObject {
             return
         }
         
-        if status != .active {
-            shouldSkipAhead = true
-        }
-        
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
-            shouldNavigateToUserDetailsView = true
             skipDestination = .userDetailsInput
-            print("📍 User status: emailVerified - navigating to user details input")
+            navigateTo(.onboardingContinuation)
+            print("📍 User status: emailVerified - showing continuation popup")
             
         case .usernameAndPhoneNumber:
-            // Only needs to accept Terms of Service
-            shouldNavigateToUserOptionalDetailsInputView = true
+            // Needs to complete name and photo details
             skipDestination = .userOptionalDetailsInput
-            print("📍 User status: usernameAndPhoneNumber - navigating to Terms of Service")
+            navigateTo(.onboardingContinuation)
+            print("📍 User status: usernameAndPhoneNumber - showing continuation popup")
         
         case .nameAndPhoto:
-            shouldNavigateToUserToS = true
+            skipDestination = .contactImport
+            navigateTo(.onboardingContinuation)
+            print("📍 User status: nameAndPhoto - showing continuation popup for contact import")
+        
+        case .contactImport:
             skipDestination = .userToS
+            navigateTo(.onboardingContinuation)
+            print("📍 User status: contactImport - showing continuation popup for terms of service")
+            
         case .active:
             // Fully onboarded user - go to feed
-            shouldSkipAhead = true
             isFormValid = true
             isLoggedIn = true
-            setShouldNavigateToFeedView()
+            navigateTo(.feedView)
 			// Mark onboarding as completed for active users
 			if !hasCompletedOnboarding {
 				markOnboardingCompleted()
@@ -699,14 +904,55 @@ class UserAuthViewModel: NSObject, ObservableObject {
     }
     
     
+    func completeContactImport() async {
+        guard let userId = spawnUser?.id else {
+            print("Error: No user ID available for contact import completion")
+            return
+        }
+        
+        guard let url = URL(string: APIService.baseURL + "auth/complete-contact-import/\(userId)") else {
+            print("Error: Failed to create URL for contact import completion")
+            return
+        }
+        
+        do {
+            let updatedUser: BaseUserDTO? = try await apiService.sendData(EmptyBody(), to: url, parameters: nil)
+            
+            guard let updatedUser = updatedUser else {
+                await MainActor.run {
+                    print("Error: No user data returned from contact import completion")
+                    self.errorMessage = "Failed to complete contact import. Please try again."
+                }
+                return
+            }
+            
+            await MainActor.run {
+                self.spawnUser = updatedUser
+                self.shouldNavigateToUserToS = true
+                print("Successfully completed contact import for user: \(updatedUser.username)")
+            }
+        } catch {
+            await MainActor.run {
+                print("Error completing contact import: \(error.localizedDescription)")
+                self.errorMessage = "Failed to complete contact import. Please try again."
+            }
+        }
+    }
+    
     func acceptTermsOfService() async {
         guard let userId = spawnUser?.id else {
             print("Error: No user ID available for TOS acceptance")
+            await MainActor.run {
+                self.errorMessage = "Unable to proceed. Please try signing in again."
+            }
             return
         }
         
         guard let url = URL(string: APIService.baseURL + "auth/accept-tos/\(userId)") else {
             print("Error: Failed to create URL for TOS acceptance")
+            await MainActor.run {
+                self.errorMessage = "Unable to proceed at this time. Please try again."
+            }
             return
         }
         
@@ -716,24 +962,45 @@ class UserAuthViewModel: NSObject, ObservableObject {
             guard let updatedUser = updatedUser else {
                 await MainActor.run {
                     print("Error: No user data returned from TOS acceptance")
-                    self.errorMessage = "Failed to accept Terms of Service. Please try again."
+                    self.errorMessage = "Unable to complete setup. Please try again."
                 }
                 return
             }
             
             await MainActor.run {
                 self.spawnUser = updatedUser
-                self.shouldNavigateToFeedView = true
+                self.navigateTo(.feedView)
                 self.isLoggedIn = true
+                self.errorMessage = nil // Clear any previous errors on success
                 // Mark onboarding as completed when user accepts Terms of Service
                 self.markOnboardingCompleted()
                 print("Successfully accepted Terms of Service for user: \(updatedUser.username)")
-                print("🔄 DEBUG: Onboarding completed after accepting Terms of Service")
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                // Provide user-friendly error messages based on API error
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 400:
+                        self.errorMessage = "Unable to complete setup. Please try again."
+                    case 401:
+                        self.errorMessage = "Your session has expired. Please sign in again."
+                    case 429:
+                        self.errorMessage = "Too many attempts. Please wait a few minutes and try again."
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
+                    default:
+                        self.errorMessage = "Unable to complete setup. Please try again."
+                    }
+                } else {
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
+                }
+                print("Error accepting Terms of Service: \(error.localizedDescription)")
             }
         } catch {
             await MainActor.run {
-                print("Error accepting Terms of Service: \(error)")
-                self.errorMessage = "Failed to accept Terms of Service. Please try again."
+                self.errorMessage = "Unable to complete setup. Please try again."
+                print("Error accepting Terms of Service: \(error.localizedDescription)")
             }
         }
     }
@@ -871,6 +1138,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			print("Starting profile picture update for user \(userId) with image data size: \(imageData.count) bytes")
 		}
 		
+		// Immediately update the UI with the selected image for better UX
+		await MainActor.run {
+			// Create a temporary updated user with the selected image for immediate UI feedback
+			if var currentUser = self.spawnUser {
+				// We'll update this with the actual URL once uploaded
+				self.objectWillChange.send()
+			}
+		}
+		
 		// Use our new dedicated method for profile picture updates
 		do {
 			// Try to use the new method which has better error handling
@@ -884,6 +1160,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					// Invalidate the cached profile picture since we have a new one
 					ProfilePictureCache.shared.removeCachedImage(for: userId)
 					print("Profile successfully updated with new picture: \(updatedUser.profilePicture ?? "nil")")
+					
+					// Post notification for profile update to trigger hot-reload across the app
+					NotificationCenter.default.post(
+						name: .profileUpdated,
+						object: nil,
+						userInfo: ["updatedUser": updatedUser, "updateType": "profilePicture"]
+					)
 				}
 				return
 			}
@@ -912,13 +1195,20 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Decode the response
 				let decoder = JSONDecoder()
 				if let updatedUser = try? decoder.decode(BaseUserDTO.self, from: data) {
-									await MainActor.run {
-					self.spawnUser = updatedUser
-					self.objectWillChange.send()
-					// Invalidate the cached profile picture since we have a new one
-					ProfilePictureCache.shared.removeCachedImage(for: userId)
-					print("Fallback: Profile picture updated successfully with URL: \(updatedUser.profilePicture ?? "nil")")
-				}
+					await MainActor.run {
+						self.spawnUser = updatedUser
+						self.objectWillChange.send()
+						// Invalidate the cached profile picture since we have a new one
+						ProfilePictureCache.shared.removeCachedImage(for: userId)
+						print("Fallback: Profile picture updated successfully with URL: \(updatedUser.profilePicture ?? "nil")")
+						
+						// Post notification for profile update to trigger hot-reload across the app
+						NotificationCenter.default.post(
+							name: .profileUpdated,
+							object: nil,
+							userInfo: ["updatedUser": updatedUser, "updateType": "profilePicture"]
+						)
+					}
 				} else {
 					print("Failed to decode user data after profile picture update")
 				}
@@ -961,6 +1251,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					self.objectWillChange.send()
 					
 					print("Profile updated successfully: \(updatedUser.username)")
+					
+					// Post notification for profile update to trigger hot-reload across the app
+					NotificationCenter.default.post(
+						name: .profileUpdated,
+						object: nil,
+						userInfo: ["updatedUser": updatedUser, "updateType": "nameAndUsername"]
+					)
 				}
 			} catch {
 				print("Error updating profile: \(error.localizedDescription)")
@@ -1039,10 +1336,16 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 print("🔄 DEBUG: quickSignIn() - Quick sign-in successful")
                 await MainActor.run {
                     self.spawnUser = authResponse.user
-                    // For existing users with quick sign-in, mark onboarding as completed
-                    if !self.hasCompletedOnboarding {
+                    // Set isLoggedIn to true for successful authentication, regardless of onboarding status
+                    // This matches the behavior of other authentication methods
+                    self.isLoggedIn = true
+                    
+                    // Only mark onboarding as completed for users with 'active' status
+                    // Users with other statuses still need to complete onboarding steps
+                    if authResponse.status == .active && !self.hasCompletedOnboarding {
                         self.markOnboardingCompleted()
                     }
+                    
                     self.determineSkipDestination(authResponse: authResponse)
                     // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
                     // This ensures the minimum loading time is respected
@@ -1070,6 +1373,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 
                 guard let user: BaseUserDTO = response else {
                     print("Failed to login with email/username")
+                    await MainActor.run {
+                        self.isLoggedIn = false
+                        self.spawnUser = nil
+                        self.shouldNavigateToFeedView = false
+                        self.shouldNavigateToUserInfoInputView = false
+                        self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
+                    }
                     return
                 }
                 print("Email/username login successful")
@@ -1079,18 +1389,45 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     if !self.hasCompletedOnboarding {
                         self.markOnboardingCompleted()
                     }
-                    self.shouldNavigateToFeedView = true
+                    self.navigateTo(.feedView)
                     self.isLoggedIn = true
+                    self.errorMessage = nil // Clear any previous errors on success
                 }
             }
-        } catch {
-            print("Failed to login with email/username")
+        } catch let error as APIError {
+            print("Failed to login with email/username: \(error)")
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
                 self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
-                self.errorMessage = "Incorrect email/username or password"
+                
+                // Provide user-friendly error messages based on API error
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 401:
+                        self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
+                    case 404:
+                        self.errorMessage = "Account not found. Please check your email/username or create a new account."
+                    case 429:
+                        self.errorMessage = "Too many login attempts. Please wait a few minutes and try again."
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
+                    default:
+                        self.errorMessage = "Unable to sign in at this time. Please try again later."
+                    }
+                } else {
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
+                }
+            }
+        } catch {
+            print("Failed to login with email/username: \(error)")
+            await MainActor.run {
+                self.isLoggedIn = false
+                self.spawnUser = nil
+                self.shouldNavigateToFeedView = false
+                self.shouldNavigateToUserInfoInputView = false
+                self.errorMessage = "Unable to sign in at this time. Please try again later."
             }
         }
     }
@@ -1133,31 +1470,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
         authorizationController.performRequests()
     }
     
-    
-    func register(email: String?, idToken: String?, provider: AuthProviderType?) async {
-        do {
-            if let url: URL = URL(string: APIService.baseURL + "auth/registration") {
-                let registration: RegistrationDTO = RegistrationDTO(email: email, idToken: idToken, provider: provider?.rawValue)
-                let response: BaseUserDTO? = try await self.apiService.sendData(registration, to: url, parameters: nil)
-                guard let user: BaseUserDTO = response else {
-                    print("Failed to register account")
-                    return
-                }
-                
-                await MainActor.run {
-                    self.shouldNavigateToPhoneNumberView = true
-                    self.spawnUser = user
-                    self.email = user.email
-                }
-            }
-            
-        } catch {
-            print("Error registering user")
-            self.shouldNavigateToPhoneNumberView = false
-        }
-    }
-    
-    
     // New method for sending email verification
     func sendEmailVerification(email: String) async {
         do {
@@ -1175,35 +1487,53 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.errorMessage = nil
                     } else {
                         // Handle error
-                        self.errorMessage = "Failed to send verification email"
+                        self.errorMessage = "Unable to send verification email. Please try again."
                     }
                 }
             }
         } catch let error as APIError {
             await MainActor.run {
-                // Handle specific API errors
+                // Handle specific API errors with user-friendly messages
                 if case .invalidStatusCode(let statusCode) = error {
                     switch statusCode {
                     case 400:
-                        self.errorMessage = "Invalid email address"
+                        self.errorMessage = "Please enter a valid email address."
                     case 409:
-                        self.errorMessage = "Email already registered"
+                        self.errorMessage = "This email is already registered. Please try signing in instead."
+                    case 429:
+                        self.errorMessage = "Too many verification attempts. Please wait a few minutes and try again."
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
                     default:
-                        self.errorMessage = "Failed to send verification email"
+                        self.errorMessage = "Unable to send verification email. Please try again."
                     }
                 } else {
-                    self.errorMessage = "Failed to send verification email"
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
                 }
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to send verification email"
+                self.errorMessage = "Unable to send verification email. Please try again."
             }
         }
     }
     
     // New method for OAuth registration
     func registerWithOAuth(idToken: String, provider: AuthProviderType, email: String?, name: String?, profilePictureUrl: String?) async {
+        // Store OAuth credentials immediately for potential re-authentication during onboarding
+        await MainActor.run {
+            self.authProvider = provider
+            self.idToken = idToken
+            self.email = email
+            
+            // Also store them in backup storage for onboarding
+            self.storedOAuthProvider = provider
+            self.storedIdToken = idToken
+            self.storedEmail = email
+            
+            print("🔐 Stored OAuth credentials for onboarding (provider: \(provider.rawValue))")
+        }
+        
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/register/oauth") {
                 let oauthRegistrationDTO = OAuthRegistrationDTO(
@@ -1214,40 +1544,135 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     profilePictureUrl: profilePictureUrl
                 )
                 
-            let response: AuthResponseDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
-            
-            await MainActor.run {
-                if let authResponse = response {
-                    // Success - use status-based navigation for OAuth users
-                    self.spawnUser = authResponse.user
-					self.navigateBasedOnUserStatus(authResponse: authResponse)
-                    self.email = authResponse.user.email
-                    self.errorMessage = nil
-                } else {
-                    // Handle error
-                    self.errorMessage = "Failed to register with OAuth"
+                let response: AuthResponseDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
+                
+                await MainActor.run {
+                    if let authResponse = response {
+                        // Success - use status-based navigation for OAuth users
+                        self.spawnUser = authResponse.user
+                        
+                        // Ensure we have the OAuth credentials stored for subsequent API calls
+                        self.authProvider = provider
+                        self.idToken = idToken
+                        self.email = email
+                        
+                        // Set isLoggedIn to true for OAuth users since they have a valid account and tokens
+                        self.isLoggedIn = true
+                        
+                        self.navigateBasedOnUserStatus(authResponse: authResponse)
+                        self.email = authResponse.user.email
+                        self.errorMessage = nil
+                    } else {
+                        // Handle error
+                        self.navigateTo(.accountNotFound)
+                        self.errorMessage = "Unable to create account with this sign-in method. Please try again."
+                    }
                 }
-            }
             }
         } catch let error as APIError {
             await MainActor.run {
-                // Handle specific API errors
+                // Handle specific API errors with user-friendly messages
                 if case .invalidStatusCode(let statusCode) = error {
                     switch statusCode {
                     case 400:
-                        self.errorMessage = "Invalid OAuth credentials"
+                        self.errorMessage = "Invalid sign-in credentials. Please try again."
                     case 409:
-                        self.errorMessage = "Account already exists"
+                        // User already exists - attempt to sign them in instead
+                        print("📍 User already exists (409), attempting OAuth sign-in")
+                        self.isAutoSigningIn = true
+                        self.authAlert = .accountFoundSigningIn
+                        Task {
+                            await self.signInWithOAuth(idToken: idToken, provider: provider, email: email)
+                        }
+                        return
+                    case 429:
+                        self.errorMessage = "Too many registration attempts. Please wait a few minutes and try again."
+                    case 500:
+                        // Server error - might also indicate existing user, try sign-in as fallback
+                        print("📍 Server error (500), attempting OAuth sign-in as fallback")
+                        self.isAutoSigningIn = true
+                        self.authAlert = .accountFoundSigningIn
+                        Task {
+                            await self.signInWithOAuth(idToken: idToken, provider: provider, email: email)
+                        }
+                        return
+                    case 500...599:
+                        self.errorMessage = "Server temporarily unavailable. Please try again later."
                     default:
-                        self.errorMessage = "Failed to register with OAuth"
+                        self.navigateTo(.accountNotFound)
+                        self.errorMessage = "Unable to create account. Please try again."
                     }
                 } else {
-                    self.errorMessage = "Failed to register with OAuth"
+                    self.navigateTo(.accountNotFound)
+                    self.errorMessage = "Network connection error. Please check your internet connection and try again."
                 }
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to register with OAuth"
+                self.navigateTo(.accountNotFound)
+                self.errorMessage = "Unable to create account. Please try again."
+            }
+        }
+    }
+    
+    // New method for OAuth sign-in (for existing users)
+    private func signInWithOAuth(idToken: String, provider: AuthProviderType, email: String?) async {
+        // Set the OAuth credentials for the sign-in attempt
+        await MainActor.run {
+            self.authProvider = provider
+            self.idToken = idToken
+            self.email = email
+            print("🔐 Setting OAuth credentials for re-authentication")
+        }
+        
+        guard let url = URL(string: APIService.baseURL + "auth/sign-in") else {
+            await MainActor.run {
+                self.errorMessage = "Failed to create sign-in URL"
+            }
+            return
+        }
+        
+        let emailToUse = email ?? ""
+        let parameters: [String: String] = [
+            "idToken": idToken,
+            "email": emailToUse,
+            "provider": provider.rawValue
+        ]
+        
+        do {
+            let authResponse: AuthResponseDTO = try await self.apiService.fetchData(from: url, parameters: parameters)
+            
+            await MainActor.run {
+                self.spawnUser = authResponse.user
+                self.email = authResponse.user.email
+                self.errorMessage = nil
+                
+                // Clear auto sign-in state and alert on successful sign-in
+                self.isAutoSigningIn = false
+                self.authAlert = nil
+                
+                // For re-authentication during onboarding, determine where to navigate
+                if !self.hasCompletedOnboarding {
+                    print("📍 Re-authentication successful during onboarding - continuing with onboarding flow")
+                    self.navigateBasedOnUserStatus(authResponse: authResponse)
+                } else {
+                    // For completed users, use the skip destination logic
+                    self.determineSkipDestination(authResponse: authResponse)
+                }
+                
+                print("📍 OAuth re-authentication successful for user with status: \(authResponse.status?.rawValue ?? "unknown")")
+            }
+        } catch {
+            await MainActor.run {
+                print("❌ OAuth re-authentication failed: \(error.localizedDescription)")
+                
+                // If re-authentication fails, we need to start over
+                self.navigateTo(.accountNotFound)
+                self.errorMessage = "Authentication failed. Please try signing in again."
+                
+                // Clear auto sign-in state on failure
+                self.isAutoSigningIn = false
+                self.authAlert = nil
             }
         }
     }
@@ -1297,8 +1722,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
     }
     
-    // Update user details after registration
+    // Add this new method to validate stored tokens
+    private func validateStoredTokens() -> Bool {
+        // Check if we have both access and refresh tokens
+        let hasAccessToken = KeychainService.shared.load(key: "accessToken") != nil
+        let hasRefreshToken = KeychainService.shared.load(key: "refreshToken") != nil
+        
+        print("🔐 Token validation - Access: \(hasAccessToken ? "✅" : "❌"), Refresh: \(hasRefreshToken ? "✅" : "❌")")
+        
+        // For OAuth users during onboarding, we need at least one valid token
+        // The refresh token is more important for long-term authentication
+        return hasAccessToken || hasRefreshToken
+    }
+    
+    // Modify updateUserDetails to validate tokens first
     func updateUserDetails(id: String, username: String, phoneNumber: String, password: String?) async {
+        // Validate tokens before making the API call
+        if !validateStoredTokens() {
+            print("🔄 No valid tokens found before updateUserDetails. Attempting OAuth re-authentication...")
+            await MainActor.run {
+                self.handleAuthenticationFailure()
+            }
+            return
+        }
+        
         do {
             let dto = UpdateUserDetailsDTO(id: id, username: username, phoneNumber: phoneNumber, password: password)
             if let url = URL(string: APIService.baseURL + "auth/user/details") {
@@ -1308,6 +1755,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.spawnUser = user
                         self.shouldNavigateToUserOptionalDetailsInputView = true
                         self.errorMessage = nil
+                        print("✅ User details updated successfully")
                     } else {
                         self.errorMessage = "Failed to update user details."
                     }
@@ -1319,7 +1767,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 case .failedHTTPRequest(let description):
                     self.errorMessage = description
                 case .invalidStatusCode(let statusCode):
-                    self.errorMessage = "Server error (\(statusCode))."
+                    if statusCode == 401 {
+                        // Authentication failed - tokens may be invalid
+                        print("🔄 Authentication failed during user details update. Attempting re-authentication...")
+                        self.handleAuthenticationFailure()
+                    } else {
+                        self.errorMessage = "Server error (\(statusCode))."
+                    }
+                case .failedTokenSaving(let tokenType):
+                    self.errorMessage = "Authentication error. Please try signing in again."
+                    print("🔄 Token saving failed for \(tokenType). Logging out user.")
+                    self.signOut()
                 default:
                     self.errorMessage = error.localizedDescription
                 }
@@ -1327,6 +1785,56 @@ class UserAuthViewModel: NSObject, ObservableObject {
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to update user details."
+            }
+        }
+    }
+    
+    // Add this new method to handle authentication failures gracefully
+    private func handleAuthenticationFailure() {
+        // Prevent multiple concurrent re-authentication attempts
+        guard !isReauthenticating else {
+            print("🔄 Re-authentication already in progress, skipping duplicate attempt")
+            return
+        }
+        
+        isReauthenticating = true
+        print("🔄 Starting authentication failure recovery...")
+        
+        // First try to use current OAuth credentials
+        var idToken = self.idToken
+        var authProvider = self.authProvider
+        var email = self.email
+        
+        // If current credentials are not available, try stored credentials
+        if idToken == nil || authProvider == nil {
+            print("🔄 Current OAuth credentials not available, trying stored credentials...")
+            idToken = self.storedIdToken
+            authProvider = self.storedOAuthProvider
+            email = self.storedEmail
+        }
+        
+        // Check if we have OAuth credentials to re-authenticate
+        guard let validIdToken = idToken,
+              let validAuthProvider = authProvider,
+              let validEmail = email else {
+            print("🔄 No OAuth credentials available for re-authentication. Logging out.")
+            isReauthenticating = false
+            self.signOut()
+            return
+        }
+        
+        print("🔄 Re-authenticating with OAuth credentials (provider: \(validAuthProvider.rawValue))...")
+        
+        // Clear potentially stale tokens
+        let _ = KeychainService.shared.delete(key: "accessToken")
+        let _ = KeychainService.shared.delete(key: "refreshToken")
+        
+        // Attempt to re-sign in with OAuth credentials
+        Task {
+            await self.signInWithOAuth(idToken: validIdToken, provider: validAuthProvider, email: validEmail)
+            await MainActor.run {
+                self.isReauthenticating = false
+                print("🔄 Re-authentication attempt completed")
             }
         }
     }
@@ -1346,7 +1854,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
-                        self.shouldNavigateToUserToS = true
+                        self.shouldNavigateToContactImportView = true
                         self.errorMessage = nil
                     } else {
                         self.errorMessage = "Failed to update optional details."

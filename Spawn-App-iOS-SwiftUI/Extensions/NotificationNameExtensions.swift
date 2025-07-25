@@ -18,4 +18,7 @@ extension Notification.Name {
     
     // Notification for activity type changes (pin/unpin, edit, create, delete)
     static let activityTypesChanged = Notification.Name("activityTypesChanged")
+    
+    // Notification for profile updates (name, username, profile picture)
+    static let profileUpdated = Notification.Name("profileUpdated")
 }

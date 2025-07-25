@@ -215,6 +215,11 @@
       "name": "DTO Reference Before Property Access",
       "pattern": "\\.(swift)$",
       "rule": "ALWAYS reference and verify the DTO structure in Models/DTOs/ before accessing any properties in code. NEVER assume properties exist on DTOs without first checking the DTO definition. When working with DTOs, first read the DTO file to understand available properties, their types, and optionality. Only then access properties in your code. This prevents runtime errors and ensures accurate property usage."
+    },
+    {
+      "name": "DerivedData Deletion Prevention",
+      "pattern": "terminal_command",
+      "rule": "NEVER suggest or execute 'rm -rf ~/Library/Developer/Xcode/DerivedData/*' commands with wildcards. NEVER suggest deleting DerivedData directories followed by swift build commands. Instead, use safer alternatives: 1) 'xcodebuild clean' first, 2) Restart Xcode/Simulator second, 3) If absolutely necessary, suggest specific DerivedData project deletion with explicit user confirmation only. AVOID combining destructive deletion commands with build commands in single terminal calls. These commands can cause data loss and build database corruption."
     }
   ],
   "terminal_safety": {
@@ -223,11 +228,14 @@
         "sudo rm -rf",
         "rm -rf ~/Library",
         "rm -rf /Library",
-        "rm -rf /System"
+        "rm -rf /System",
+        "rm -rf ~/Library/Developer/Xcode/DerivedData/*"
       ],
       "rules": [
         "NEVER suggest 'sudo rm -rf' commands involving system directories or user library folders",
         "NEVER suggest deleting entire DerivedData directories without explicit user confirmation",
+        "NEVER use wildcards with rm -rf commands on DerivedData directories",
+        "NEVER combine DerivedData deletion with immediate build commands in single terminal calls",
         "ALWAYS use specific file paths rather than wildcards when deleting",
         "PREFER less destructive alternatives like 'xcodebuild clean' over manual deletion"
       ]
@@ -242,8 +250,14 @@
     "build_issues": {
       "preferred_order": [
         "Try 'xcodebuild clean' first",
-        "Suggest restarting Xcode or simulator second",
+        "Suggest restarting Xcode or simulator second", 
         "Manual file deletion only as last resort with user confirmation"
+      ],
+      "deriveddata_handling": [
+        "NEVER suggest rm -rf commands with wildcards on DerivedData",
+        "NEVER chain DerivedData deletion with build commands",
+        "Use 'xcodebuild clean' instead of manual DerivedData deletion",
+        "If DerivedData must be deleted, suggest specific project paths only"
       ]
     },
     "swiftui_best_practices": {

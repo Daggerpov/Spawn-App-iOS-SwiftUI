@@ -14,11 +14,11 @@ class ActivityCreationViewModel: ObservableObject {
 	static var shared: ActivityCreationViewModel = ActivityCreationViewModel()
 
 	@Published var selectedDate: Date = Date()
-	@Published var activity: ActivityCreationDTO
+	@Published var activity: ActivityDTO
 	@Published var creationMessage: String = ""
 	@Published var selectedActivityType: ActivityTypeDTO?
 	@Published var selectedDuration: ActivityDuration = .indefinite
-	@Published var selectedLocation: Location?
+	@Published var selectedLocation: LocationDTO?
 
 	@Published var selectedFriends: [FullFriendUserDTO] = []
 	
@@ -33,6 +33,118 @@ class ActivityCreationViewModel: ObservableObject {
 	
 	// Edit state
 	@Published var isEditingExistingActivity: Bool = false
+	
+	// MARK: - Change Tracking Properties
+	// Store original values when editing starts to detect changes
+	@Published var originalTitle: String?
+	@Published var originalDate: Date?
+	@Published var originalDuration: ActivityDuration?
+	@Published var originalLocation: LocationDTO?
+	
+	// Computed property to check if there are any changes
+	var hasAnyChanges: Bool {
+		guard isEditingExistingActivity else { return false }
+		
+		return titleChanged || dateChanged || durationChanged || locationChanged
+	}
+	
+	// Individual change detection properties
+	var titleChanged: Bool {
+		guard isEditingExistingActivity else { return false }
+		return (activity.title?.trimmingCharacters(in: .whitespaces) ?? "") != (originalTitle?.trimmingCharacters(in: .whitespaces) ?? "")
+	}
+	
+	var dateChanged: Bool {
+		guard isEditingExistingActivity else { return false }
+		guard let originalDate = originalDate else { return false }
+		
+		// Compare dates with minute precision (ignore seconds)
+		let calendar = Calendar.current
+		let originalComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: originalDate)
+		let currentComponents = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: selectedDate)
+		
+		return originalComponents != currentComponents
+	}
+	
+	var durationChanged: Bool {
+		guard isEditingExistingActivity else { return false }
+		return selectedDuration != originalDuration
+	}
+	
+	var locationChanged: Bool {
+		guard isEditingExistingActivity else { return false }
+		
+		// Compare location names and coordinates
+		if originalLocation == nil && selectedLocation == nil {
+			return false
+		}
+		
+		if originalLocation == nil || selectedLocation == nil {
+			return true
+		}
+		
+		guard let original = originalLocation, let current = selectedLocation else {
+			return true
+		}
+		
+		return original.name != current.name || 
+			   abs(original.latitude - current.latitude) > 0.0001 ||
+			   abs(original.longitude - current.longitude) > 0.0001
+	}
+	
+	// MARK: - Change Summary Methods
+	func getChangedFieldsSummary() -> [String] {
+		var changes: [String] = []
+		
+		if titleChanged {
+			let newTitle = activity.title?.trimmingCharacters(in: .whitespaces) ?? ""
+			let oldTitle = originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
+			changes.append("Title: \"\(oldTitle)\" → \"\(newTitle)\"")
+		}
+		
+		if dateChanged {
+			let formatter = DateFormatter()
+			formatter.dateFormat = "MMM d, h:mm a"
+			let oldDateStr = originalDate.map { formatter.string(from: $0) } ?? ""
+			let newDateStr = formatter.string(from: selectedDate)
+			changes.append("Date & Time: \(oldDateStr) → \(newDateStr)")
+		}
+		
+		if durationChanged {
+			let oldDuration = originalDuration?.title ?? "Indefinite"
+			let newDuration = selectedDuration.title
+			changes.append("Duration: \(oldDuration) → \(newDuration)")
+		}
+		
+		if locationChanged {
+			let oldLocation = originalLocation?.name ?? "No location"
+			let newLocation = selectedLocation?.name ?? "No location"
+			changes.append("Location: \(oldLocation) → \(newLocation)")
+		}
+		
+		return changes
+	}
+	
+	func getChangesSummaryText() -> String {
+		let changes = getChangedFieldsSummary()
+		if changes.isEmpty {
+			return "No changes to save."
+		} else if changes.count == 1 {
+			return "1 change: \(changes.first!)"
+		} else {
+			return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
+		}
+	}
+	
+	// MARK: - Reset Changes Method
+	func resetToOriginalValues() {
+		guard isEditingExistingActivity else { return }
+		
+		activity.title = originalTitle
+		selectedDate = originalDate ?? Date()
+		selectedDuration = originalDuration ?? .indefinite
+		selectedLocation = originalLocation
+	}
 	
 	private var apiService: IAPIService
 	
@@ -78,6 +190,12 @@ class ActivityCreationViewModel: ObservableObject {
 				shared.selectedDuration = .indefinite
 			}
 		}
+		
+		// MARK: - Store Original Values for Change Tracking
+		shared.originalTitle = activity.title
+		shared.originalDate = activity.startTime
+		shared.originalLocation = activity.location
+		shared.originalDuration = shared.selectedDuration
 		
 		// Get activity type if available
 		if let activityTypeId = activity.activityTypeId {
@@ -143,18 +261,23 @@ class ActivityCreationViewModel: ObservableObject {
 		isCreatingActivity = false
 		isEditingExistingActivity = false
 		
+		// Reset change tracking properties
+		originalTitle = nil
+		originalDate = nil
+		originalDuration = nil
+		originalLocation = nil
+		
 		// Reset the activity DTO
 		let defaultStart = Date()
 		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
-		activity = ActivityCreationDTO(
+		activity = ActivityDTO(
 			id: UUID(),
 			title: "",
 			startTime: defaultStart,
 			endTime: defaultEnd,
-			location: nil,
 			icon: "⭐️",
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-			invitedFriendUserIds: []
+			invitedUserIds: []
 		)
 		
 		// Reload friends
@@ -176,15 +299,14 @@ class ActivityCreationViewModel: ObservableObject {
 
 		let defaultStart = Date()
 		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
-		self.activity = ActivityCreationDTO(
+		self.activity = ActivityDTO(
 			id: UUID(),
 			title: "",
 			startTime: defaultStart,
 			endTime: defaultEnd,
-			location: nil,
 			icon: "⭐️",
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-			invitedFriendUserIds: []
+			invitedUserIds: []
 		)
 		
 		// Ensure selectedActivityType starts as nil by default (no auto-selection)
@@ -323,7 +445,7 @@ class ActivityCreationViewModel: ObservableObject {
 		// Category is now handled by the back-end, so we don't need to infer it
 	}
 	
-	func setLocation(_ location: Location) {
+	func setLocation(_ location: LocationDTO) {
 		selectedLocation = location
 		activity.location = location
 	}
@@ -341,7 +463,7 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 
 		// Map selected friends to their IDs
-		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
+		activity.invitedUserIds = selectedFriends.map { $0.id }
 		print("🔍 DEBUG: Selected friends count: \(selectedFriends.count)")
 		
 		// Update the activity with the current date and duration
@@ -430,7 +552,7 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 
 		// Map selected friends to their IDs
-		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
+		activity.invitedUserIds = selectedFriends.map { $0.id }
 		
 		// Update the activity with the current date and duration
 		updateActivityDuration()

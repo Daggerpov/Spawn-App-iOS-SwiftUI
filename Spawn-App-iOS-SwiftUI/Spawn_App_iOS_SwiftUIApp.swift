@@ -70,8 +70,8 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						GIDSignIn.sharedInstance.handle(url)
 					}
 					.onestFontTheme()
-			} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser {
-				// User is logged in and user data exists - go to main content
+			} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser, userAuth.hasCompletedOnboarding {
+				// User is logged in, has user data, and has completed onboarding - go to main content
 				ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
 					.onAppear {
 						print("🔄 DEBUG: Showing ContentView - User is logged in")
