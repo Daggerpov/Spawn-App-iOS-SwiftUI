@@ -25,22 +25,21 @@ struct DayActivitiesPageView: View {
         .background(universalBackgroundColor)
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showActivityDetails) {
-            if let activity = profileViewModel.selectedActivity {
-                let activityColor = activity.isSelfOwned == true ?
-                    universalAccentColor : getActivityColor(for: activity.id)
+        .overlay(
+            // Use the same ActivityPopupDrawer as the feed view for consistency
+            Group {
+                if showActivityDetails, let activity = profileViewModel.selectedActivity {
+                    let activityColor = activity.isSelfOwned == true ?
+                        universalAccentColor : getActivityColor(for: activity.id)
 
-                ActivityDetailModalView(
-                    activity: activity,
-                    activityColor: activityColor,
-                    onDismiss: {
-                        showActivityDetails = false
-                    }
-                )
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
+                    ActivityPopupDrawer(
+                        activity: activity,
+                        activityColor: activityColor,
+                        isPresented: $showActivityDetails
+                    )
+                }
             }
-        }
+        )
         .onAppear {
             fetchAllActivityDetails()
         }

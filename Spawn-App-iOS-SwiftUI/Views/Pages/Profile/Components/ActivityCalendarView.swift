@@ -141,7 +141,6 @@ struct MonthCalendarView: View {
     let onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
     
     @State private var showActivityDetails = false
-    @State private var selectedActivity: CalendarActivityDTO?
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -166,8 +165,17 @@ struct MonthCalendarView: View {
                                 tileSize: 86.4, // Fixed tile size matching Figma specs
                                 onDayTapped: { activities in
                                     if activities.count == 1 {
-                                        selectedActivity = activities.first!
-                                        showActivityDetails = true
+                                        // Fetch full activity details and show popup
+                                        if let activity = activities.first,
+                                           let activityId = activity.activityId {
+                                            Task {
+                                                if let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
+                                                    await MainActor.run {
+                                                        showActivityDetails = true
+                                                    }
+                                                }
+                                            }
+                                        }
                                     } else if activities.count > 1 {
                                         onDayActivitiesSelected(activities)
                                     }
@@ -180,11 +188,22 @@ struct MonthCalendarView: View {
             .padding(.horizontal, 8)
         }
         .frame(maxWidth: .infinity)
-        .sheet(isPresented: $showActivityDetails) {
-            if let activity = selectedActivity {
-                ActivityDetailsSheet(activity: activity, userAuth: userAuth)
+        .overlay(
+            // Use the same ActivityPopupDrawer as the feed view for consistency
+            Group {
+                if showActivityDetails, let activity = profileViewModel.selectedActivity {
+                    // Use the same color scheme as ActivityCardView would
+                    let activityColor = activity.isSelfOwned == true ?
+                        universalAccentColor : getActivityColor(for: activity.id)
+
+                    ActivityPopupDrawer(
+                        activity: activity,
+                        activityColor: activityColor,
+                        isPresented: $showActivityDetails
+                    )
+                }
             }
-        }
+        )
     }
     
     private var numberOfRows: Int {

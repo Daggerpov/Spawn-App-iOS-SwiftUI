@@ -66,23 +66,22 @@ struct ProfileCalendarView: View {
 		.onAppear {
 			fetchCalendarData()
 		}
-		.sheet(isPresented: $showActivityDetails) {
-			if let activity = profileViewModel.selectedActivity {
-				// Use the same color scheme as ActivityCardView would
-				let activityColor = activity.isSelfOwned == true ?
-				universalAccentColor : getActivityColor(for: activity.id)
+		.overlay(
+			// Use the same ActivityPopupDrawer as the feed view for consistency
+			Group {
+				if showActivityDetails, let activity = profileViewModel.selectedActivity {
+					// Use the same color scheme as ActivityCardView would
+					let activityColor = activity.isSelfOwned == true ?
+						universalAccentColor : getActivityColor(for: activity.id)
 
-				ActivityDetailModalView(
-					activity: activity,
-					activityColor: activityColor,
-					onDismiss: {
-						showActivityDetails = false
-					}
-				)
-				.presentationDetents([.large])
-				.presentationDragIndicator(.visible)
+					ActivityPopupDrawer(
+						activity: activity,
+						activityColor: activityColor,
+						isPresented: $showActivityDetails
+					)
+				}
 			}
-		}
+		)
 	}
 
 	// MARK: - Computed Properties for Body Components
