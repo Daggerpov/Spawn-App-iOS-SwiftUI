@@ -147,6 +147,124 @@ struct ActivityDateTimeView: View {
         }
     }
     
+    // MARK: - Picker Views
+    
+    private var dayPickerView: some View {
+        Picker("Day", selection: $selectedDay) {
+            ForEach(DayOption.allCases, id: \.self) { day in
+                Text(day.title)
+                    .font(Font.custom("Onest", size: 22))
+                    .foregroundColor(pickerTextColor)
+                    .tag(day)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 130)
+        .clipped()
+        .onChange(of: selectedDay) { _ in
+            if selectedDay == .tomorrow {
+                selectedHour = tomorrowHour
+                selectedMinute = tomorrowMinute
+                isAM = tomorrowIsAM
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private var hourPickerView: some View {
+        Picker("Hour", selection: $selectedHour) {
+            ForEach(hours, id: \.self) { h in
+                Text("\(h)")
+                    .font(.custom("Onest", size: 26))
+                    .foregroundColor(pickerTextColor)
+                    .tag(h)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 50)
+        .clipped()
+        .onChange(of: selectedHour) { _ in
+            if selectedDay == .tomorrow {
+                tomorrowHour = selectedHour
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private var minutePickerView: some View {
+        Picker("Minute", selection: $selectedMinute) {
+            ForEach(minutes, id: \.self) { m in
+                Text(String(format: "%02d", m))
+                    .font(.custom("Onest", size: 26))
+                    .foregroundColor(pickerTextColor)
+                    .tag(m)
+            }
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 60)
+        .clipped()
+        .onChange(of: selectedMinute) { _ in
+            if selectedDay == .tomorrow {
+                tomorrowMinute = selectedMinute
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private var amPmPickerView: some View {
+        Picker("AM/PM", selection: $isAM) {
+            Text("AM")
+                .font(.custom("Onest", size: 26))
+                .foregroundColor(pickerTextColor)
+                .tag(true)
+            Text("PM")
+                .font(.custom("Onest", size: 26))
+                .foregroundColor(pickerTextColor)
+                .tag(false)
+        }
+        .pickerStyle(.wheel)
+        .frame(width: 60)
+        .clipped()
+        .onChange(of: isAM) { _ in
+            if selectedDay == .tomorrow {
+                tomorrowIsAM = isAM
+            }
+            updateSelectedDate()
+            syncCurrentValuesToViewModel()
+        }
+    }
+    
+    private func durationButton(for duration: ActivityDuration) -> some View {
+        let isSelected = selectedDuration == duration
+        let borderColor = Color(red: 0.33, green: 0.42, blue: 0.93)
+        
+        return Button(action: { 
+            selectedDuration = duration
+            viewModel.selectedDuration = duration
+            syncCurrentValuesToViewModel()
+        }) {
+            Text(duration.title)
+                .font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
+                .foregroundColor(isSelected ? borderColor : secondaryTextColor)
+                .padding(12)
+                .background(durationButtonBackground(isSelected: isSelected, borderColor: borderColor))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    private func durationButtonBackground(isSelected: Bool, borderColor: Color) -> some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(.clear)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .inset(by: isSelected ? 1 : 0.5)
+                    .stroke(borderColor, lineWidth: isSelected ? 1 : 0.5)
+            )
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Back button at the top
@@ -210,89 +328,10 @@ struct ActivityDateTimeView: View {
                             
                             // Picker content
                             HStack(spacing: 24) {
-                                // Day picker (Today/Tomorrow)
-                                Picker("Day", selection: $selectedDay) {
-                                    ForEach(DayOption.allCases, id: \.self) { day in
-                                        Text(day.title)
-                                            .font(Font.custom("Onest", size: 22))
-                                            .foregroundColor(pickerTextColor)
-                                            .tag(day)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 130)
-                                .clipped()
-                                .onChange(of: selectedDay) { _ in
-                                    if selectedDay == .tomorrow {
-                                        selectedHour = tomorrowHour
-                                        selectedMinute = tomorrowMinute
-                                        isAM = tomorrowIsAM
-                                    }
-                                    updateSelectedDate()
-                                    syncCurrentValuesToViewModel()
-                                }
-                                
-                                // Hour picker
-                                Picker("Hour", selection: $selectedHour) {
-                                    ForEach(hours, id: \.self) { h in
-                                        Text("\(h)")
-                                            .font(.custom("Onest", size: 26))
-                                            .foregroundColor(pickerTextColor)
-                                            .tag(h)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 50)
-                                .clipped()
-                                .onChange(of: selectedHour) { _ in
-                                    if selectedDay == .tomorrow {
-                                        tomorrowHour = selectedHour
-                                    }
-                                    updateSelectedDate()
-                                    syncCurrentValuesToViewModel()
-                                }
-                                
-                                // Minute picker
-                                Picker("Minute", selection: $selectedMinute) {
-                                    ForEach(minutes, id: \.self) { m in
-                                        Text(String(format: "%02d", m))
-                                            .font(.custom("Onest", size: 26))
-                                            .foregroundColor(pickerTextColor)
-                                            .tag(m)
-                                    }
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 60)
-                                .clipped()
-                                .onChange(of: selectedMinute) { _ in
-                                    if selectedDay == .tomorrow {
-                                        tomorrowMinute = selectedMinute
-                                    }
-                                    updateSelectedDate()
-                                    syncCurrentValuesToViewModel()
-                                }
-                                
-                                // AM/PM picker
-                                Picker("AM/PM", selection: $isAM) {
-                                    Text("AM")
-                                        .font(.custom("Onest", size: 26))
-                                        .foregroundColor(pickerTextColor)
-                                        .tag(true)
-                                    Text("PM")
-                                        .font(.custom("Onest", size: 26))
-                                        .foregroundColor(pickerTextColor)
-                                        .tag(false)
-                                }
-                                .pickerStyle(.wheel)
-                                .frame(width: 60)
-                                .clipped()
-                                .onChange(of: isAM) { _ in
-                                    if selectedDay == .tomorrow {
-                                        tomorrowIsAM = isAM
-                                    }
-                                    updateSelectedDate()
-                                    syncCurrentValuesToViewModel()
-                                }
+                                dayPickerView
+                                hourPickerView
+                                minutePickerView
+                                amPmPickerView
                             }
                             .offset(x: 4, y: 1.13)
                         }
@@ -360,29 +399,7 @@ struct ActivityDateTimeView: View {
                         // Duration buttons - horizontal layout with Figma styling
                         HStack(spacing: 8) {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
-                                Button(action: { 
-                                    selectedDuration = duration
-                                    viewModel.selectedDuration = duration
-                                    syncCurrentValuesToViewModel()
-                                }) {
-                                    Text(duration.title)
-                                        .font(.custom("Onest", size: 16).weight(selectedDuration == duration ? .bold : .medium))
-                                        .foregroundColor(selectedDuration == duration ? 
-                                                       Color(red: 0.33, green: 0.42, blue: 0.93) : 
-                                                       secondaryTextColor)
-                                        .padding(12)
-                                        .background(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .fill(.clear)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 12)
-                                                        .inset(by: selectedDuration == duration ? 1 : 0.5)
-                                                        .stroke(Color(red: 0.33, green: 0.42, blue: 0.93), 
-                                                               lineWidth: selectedDuration == duration ? 1 : 0.5)
-                                                )
-                                        )
-                                }
-                                .buttonStyle(PlainButtonStyle())
+                                durationButton(for: duration)
                             }
                             Spacer()
                         }
@@ -432,7 +449,7 @@ struct ActivityDateTimeView: View {
                 viewModel.resetToOriginalValues()
                 onBack?()
             }
-            Button("Save All Changes", role: .default) {
+			Button("Save All Changes") {
                 // Save changes by calling onNext to proceed through the flow
                 let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                 if trimmedTitle.isEmpty {
