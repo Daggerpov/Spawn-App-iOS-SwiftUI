@@ -119,58 +119,7 @@ struct OnboardingContinuationView: View {
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: .constant(userAuth.navigationState != .none)) {
-            switch userAuth.navigationState {
-            case .signIn:
-                SignInView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none // Reset after navigation
-                    }
-            case .userDetailsInput(let isOAuthUser):
-                UserDetailsInputView(isOAuthUser: isOAuthUser)
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none // Reset after navigation
-                    }
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none // Reset after navigation
-                    }
-            case .contactImport:
-                ContactImportView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none // Reset after navigation
-                    }
-            case .userTermsOfService:
-                UserToS()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none // Reset after navigation
-                    }
-            case .feedView:
-                if let loggedInSpawnUser = userAuth.spawnUser {
-                    ContentView(user: loggedInSpawnUser)
-                        .navigationBarTitle("")
-                        .navigationBarHidden(true)
-                        .onAppear {
-                            userAuth.navigationState = .none // Reset after navigation
-                        }
-                } else {
-                    EmptyView()
-                }
-            default:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(userAuth)
     }
 }
 

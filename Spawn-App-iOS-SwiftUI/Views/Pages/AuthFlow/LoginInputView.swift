@@ -225,63 +225,7 @@ struct LoginInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: .constant(userAuth.navigationState != .none)) {
-            switch userAuth.navigationState {
-            case .userDetailsInput(let isOAuthUser):
-                UserDetailsInputView(isOAuthUser: isOAuthUser)
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .contactImport:
-                ContactImportView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .userTermsOfService:
-                UserToS()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .feedView:
-                if let loggedInSpawnUser = userAuth.spawnUser {
-                    ContentView(user: loggedInSpawnUser)
-                        .navigationBarTitle("")
-                        .navigationBarHidden(true)
-                        .onAppear {
-                            userAuth.navigationState = .none
-                        }
-                } else {
-                    EmptyView()
-                }
-            case .accountNotFound:
-                AccountNotFoundView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .onboardingContinuation:
-                OnboardingContinuationView()
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            default:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(userAuth)
         .onAppear {
             // Reset any previous error state
             userAuth.errorMessage = nil

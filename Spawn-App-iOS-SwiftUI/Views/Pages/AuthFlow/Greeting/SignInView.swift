@@ -60,55 +60,7 @@ struct SignInView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: .constant(userAuth.navigationState != .none)) {
-            switch userAuth.navigationState {
-            case .accountNotFound:
-                AccountNotFoundView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .feedView:
-                if let loggedInSpawnUser = userAuth.spawnUser {
-                    ContentView(user: loggedInSpawnUser)
-                        .navigationBarTitle("")
-                        .navigationBarHidden(true)
-                        .onAppear {
-                            userAuth.navigationState = .none
-                        }
-                } else {
-                    EmptyView()
-                }
-            case .onboardingContinuation:
-                OnboardingContinuationView()
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .userDetailsInput(let isOAuthUser):
-                UserDetailsInputView(isOAuthUser: isOAuthUser)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .contactImport:
-                ContactImportView()
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .userTermsOfService:
-                UserToS()
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            default:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(userAuth)
 		.onAppear {
             // Clear any previous error state when returning to main auth screen
             userAuth.clearAllErrors()

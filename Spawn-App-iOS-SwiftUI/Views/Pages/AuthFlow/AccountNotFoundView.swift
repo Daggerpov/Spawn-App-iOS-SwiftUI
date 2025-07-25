@@ -88,26 +88,7 @@ struct AccountNotFoundView: View {
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
-        .navigationDestination(isPresented: .constant(userAuth.navigationState != .none)) {
-            switch userAuth.navigationState {
-            case .signIn:
-                SignInView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            case .register:
-                RegisterInputView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-                    .onAppear {
-                        userAuth.navigationState = .none
-                    }
-            default:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(userAuth)
         .onAppear {
             // Clear any previous error state when this view appears
             userAuth.clearAllErrors()
