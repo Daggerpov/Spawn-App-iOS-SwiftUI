@@ -17,6 +17,9 @@ struct ParticipantsImagesView: View {
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
     
+    // State to control showing participants modal
+    @State private var showParticipantsModal = false
+    
     init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
         self.activity = activity
         self._selectedTab = selectedTab
@@ -46,7 +49,29 @@ struct ParticipantsImagesView: View {
 				id: \.self
 			) { participantIndex in
                 let participant: BaseUserDTO = participants[participantIndex]
-				ProfilePictureView(user: participant, selectedTab: $selectedTab, allowsNavigation: false)
+                
+                // Profile picture with tap gesture to show participants modal
+                VStack {
+                    if let pfpUrl = participant.profilePicture {
+                        if MockAPIService.isMocking {
+                            Image(pfpUrl)
+                                .ProfileImageModifier(imageType: .activityParticipants)
+                        } else {
+                            CachedProfileImage(
+                                userId: participant.id,
+                                url: URL(string: pfpUrl),
+                                imageType: .activityParticipants
+                            )
+                        }
+                    } else {
+                        Circle()
+                            .fill(Color.gray)
+                            .frame(width: width, height: height)
+                    }
+                }
+                .onTapGesture {
+                    showParticipantsModal = true
+                }
 			}
             
             if participants.count > maxCount {
@@ -59,13 +84,23 @@ struct ParticipantsImagesView: View {
                         .foregroundColor(figmaSoftBlue)
                 }
                 .shadow(radius: 2)
+                .onTapGesture {
+                    showParticipantsModal = true
+                }
             }
 		}
+        .fullScreenCover(isPresented: $showParticipantsModal) {
+            ActivityParticipantsView(
+                activity: activity,
+                onDismiss: {
+                    showParticipantsModal = false
+                }
+            )
+        }
 	}
 }
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
-	ParticipantsImagesView(activity: FullFeedActivityDTO.mockDinnerActivity).environmentObject(appCache)
+    ParticipantsImagesView(activity: FullFeedActivityDTO.mockDinnerActivity)
 }
