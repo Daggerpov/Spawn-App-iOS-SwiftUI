@@ -23,6 +23,22 @@ struct TutorialActivityPreConfirmationView: View {
         colorScheme == .dark ? Color.white : Color.black
     }
     
+    /// Convert activity type to proper English phrase
+    private var activityPhrase: String {
+        switch activityType.lowercased() {
+        case "food", "eat":
+            return "eat"
+        case "chill":
+            return "chill"
+        case "active", "gym":
+            return "get active"
+        case "study":
+            return "study"
+        default:
+            return "do \(activityType.lowercased())"
+        }
+    }
+    
     var body: some View {
         ZStack {
             // Semi-transparent background
@@ -41,7 +57,7 @@ struct TutorialActivityPreConfirmationView: View {
             // Popup content
             VStack(spacing: 24) {
                 // Title
-                Text("You're about to \(activityType.lowercased()), who do you want to let know?")
+                Text("You're about to \(activityPhrase), who do you want to let know?")
                     .font(.onestSemiBold(size: 22))
                     .foregroundColor(adaptiveTextColor)
                     .multilineTextAlignment(.center)

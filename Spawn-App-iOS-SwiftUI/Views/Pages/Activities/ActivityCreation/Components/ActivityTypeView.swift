@@ -78,11 +78,15 @@ struct ActivityTypeView: View {
             }
             .sheet(isPresented: $navigateToManageType) {
                 if let selectedType = selectedActivityTypeForManagement {
-                    ActivityTypeEditView(activityTypeDTO: selectedType)
+                    NavigationStack {
+                        ActivityTypeEditView(activityTypeDTO: selectedType)
+                    }
                 }
             }
             .sheet(isPresented: $navigateToCreateType) {
-                ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+                NavigationStack {
+                    ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+                }
             }
         }
     }

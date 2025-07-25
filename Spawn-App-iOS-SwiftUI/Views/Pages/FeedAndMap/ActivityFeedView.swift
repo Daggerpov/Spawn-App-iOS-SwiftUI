@@ -300,7 +300,7 @@ extension ActivityFeedView {
                     handleActivityTypeSelection(selectedActivityTypeDTO)
                 }
                 .tutorialHighlight(
-                    isHighlighted: tutorialViewModel.tutorialState.shouldShowTutorialOverlay,
+                    isHighlighted: tutorialViewModel.tutorialState == .activityTypeSelection,
                     cornerRadius: 12
                 )
                 .allowsHitTesting(

@@ -24,12 +24,32 @@ struct TutorialOverlayView: View {
     var body: some View {
         ZStack {
             if tutorialViewModel.tutorialState.shouldShowTutorialOverlay {
-                // Semi-transparent background overlay
-                Color.black.opacity(0.6)
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        // Prevent background taps during tutorial
-                    }
+                // Semi-transparent background overlay with cutout for activity types
+                VStack(spacing: 0) {
+                    // Top overlay (above activity types)
+                    Color.black.opacity(0.6)
+                        .frame(height: 160) // Cover header and "Spawn in!" section
+//						.cornerRadius(16)
+
+                    // Clear space for activity types (roughly 115px height + padding)
+					RoundedRectangle(cornerRadius: 16)
+						.fill(Color.clear)
+                        .frame(height: 10)
+						.padding()
+
+                    // Clear space for welcome message (roughly 80px height + padding)
+                    Color.clear
+                        .frame(height: 100)
+						.cornerRadius(16)
+
+                    // Bottom overlay (below welcome message)
+                    Color.black.opacity(0.6)
+                        .frame(maxHeight: .infinity)
+                }
+                .ignoresSafeArea()
+                .onTapGesture {
+                    // Prevent background taps during tutorial
+                }
                 
                 // Tutorial callout
                 if showCallout && tutorialViewModel.shouldShowCallout {
@@ -61,47 +81,40 @@ struct TutorialOverlayView: View {
     }
     
     private var tutorialCallout: some View {
-        VStack(spacing: 16) {
-            // Callout text
+        VStack(spacing: 12) {
+            // Callout text with theme-appropriate styling
             VStack(spacing: 8) {
                 Text("Welcome to Spawn! 👋")
-                    .font(.onestSemiBold(size: 20))
-                    .foregroundColor(.white)
+                    .font(.onestSemiBold(size: 18))
+                    .foregroundColor(Color(red: 0.23, green: 0.22, blue: 0.22))
                 
                 Text("Tap on an Activity Type to create your first activity")
                     .font(.onestMedium(size: 16))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(Color(red: 0.23, green: 0.22, blue: 0.22))
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 20)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.black.opacity(0.8))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    .fill(Color.white)
+                    .shadow(
+                        color: Color.black.opacity(0.1),
+                        radius: 8,
+                        x: 0,
+                        y: 4
                     )
             )
             .padding(.horizontal, 32)
-            
-            // Arrow pointing down to activity types
-            Image(systemName: "arrow.down")
-                .font(.title2)
-                .foregroundColor(.white)
-                .opacity(0.8)
         }
         .position(x: UIScreen.main.bounds.width / 2, y: calculateCalloutPosition())
     }
     
     private func calculateCalloutPosition() -> CGFloat {
-        // Position the callout above the activity types
-        if let activityTypesFrame = activityTypesFrame {
-            return activityTypesFrame.minY - 120
-        } else {
-            // Default position
-            return UIScreen.main.bounds.height * 0.3
-        }
+        // Position the callout in the space between activity types and "See what's happening"
+        // Activity types end around 425px, "See what's happening" starts around 500px
+        // So position callout around 450px from top
+        return 350
     }
 }
 
@@ -115,15 +128,16 @@ struct TutorialHighlight: ViewModifier {
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(
-                        isHighlighted ? Color.white.opacity(0.8) : Color.clear,
-                        lineWidth: isHighlighted ? 2 : 0
+                        isHighlighted ? Color.white : Color.clear,
+                        lineWidth: isHighlighted ? 3 : 0
                     )
-                    .shadow(
-                        color: isHighlighted ? Color.white.opacity(0.5) : Color.clear,
-                        radius: isHighlighted ? 8 : 0
-                    )
+                    .animation(.easeInOut(duration: 0.3), value: isHighlighted)
             )
-            .scaleEffect(isHighlighted ? 1.02 : 1.0)
+            .shadow(
+                color: isHighlighted ? Color.white.opacity(0.6) : Color.clear,
+                radius: isHighlighted ? 12 : 0
+            )
+            .scaleEffect(isHighlighted ? 1.05 : 1.0)
             .animation(.easeInOut(duration: 0.3), value: isHighlighted)
     }
 }
