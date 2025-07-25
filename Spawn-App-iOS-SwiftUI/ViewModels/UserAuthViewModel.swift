@@ -1470,31 +1470,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
         authorizationController.performRequests()
     }
     
-    
-    func register(email: String?, idToken: String?, provider: AuthProviderType?) async {
-        do {
-            if let url: URL = URL(string: APIService.baseURL + "auth/registration") {
-                let registration: RegistrationDTO = RegistrationDTO(email: email, idToken: idToken, provider: provider?.rawValue)
-                let response: BaseUserDTO? = try await self.apiService.sendData(registration, to: url, parameters: nil)
-                guard let user: BaseUserDTO = response else {
-                    print("Failed to register account")
-                    return
-                }
-                
-                await MainActor.run {
-                    self.shouldNavigateToPhoneNumberView = true
-                    self.spawnUser = user
-                    self.email = user.email
-                }
-            }
-            
-        } catch {
-            print("Error registering user")
-            self.shouldNavigateToPhoneNumberView = false
-        }
-    }
-    
-    
     // New method for sending email verification
     func sendEmailVerification(email: String) async {
         do {

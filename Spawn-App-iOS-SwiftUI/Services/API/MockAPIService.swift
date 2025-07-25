@@ -89,7 +89,7 @@ class MockAPIService: IAPIService {
 				activityToCache.title = possibleTitles.randomElement()
 				activityToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"]
 					.randomElement()
-				activityToCache.location = Location(
+				            activityToCache.location = LocationDTO(
 					id: UUID(),
 					name: possibleLocations.randomElement() ?? "The Spot",
 					latitude: Double.random(in: defaultMapLatitude - 0.05...defaultMapLatitude + 0.05),
@@ -166,95 +166,7 @@ class MockAPIService: IAPIService {
 
 		// fetchFilteredResults() - for users/filtered/{userId} endpoint
 		if url.absoluteString.contains("users/filtered/") {
-			// Extract search query from URL
-			let urlComponents = URLComponents(string: url.absoluteString)
-			let searchQuery = urlComponents?.queryItems?.first(where: { $0.name == "searchQuery" })?.value ?? ""
-			
-			var allUsers: [SearchResultUser] = []
-			
-			// Filter and add friends
-			let filteredFriends = FullFriendUserDTO.mockUsers.filter { user in
-				let lowercasedQuery = searchQuery.lowercased()
-				let name = FormatterService.shared.formatName(user: user).lowercased()
-				let username = (user.username ?? "").lowercased()
-				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
-			}
-			
-			for friend in filteredFriends {
-				allUsers.append(SearchResultUser(
-					user: BaseUserDTO(
-						id: friend.id,
-						username: friend.username,
-						profilePicture: friend.profilePicture,
-						name: friend.name,
-						bio: friend.bio,
-						email: friend.email
-					),
-					relationshipType: .friend,
-					mutualFriendCount: nil,
-					friendRequestId: nil
-				))
-			}
-			
-			// Filter and add recommended friends
-			let filteredRecommended = RecommendedFriendUserDTO.mockUsers.filter { user in
-				let lowercasedQuery = searchQuery.lowercased()
-				let name = FormatterService.shared.formatName(user: user).lowercased()
-				let username = (user.username ?? "").lowercased()
-				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
-			}
-			
-			for recommended in filteredRecommended {
-				allUsers.append(SearchResultUser(
-					user: BaseUserDTO(
-						id: recommended.id,
-						username: recommended.username,
-						profilePicture: recommended.profilePicture,
-						name: recommended.name,
-						bio: recommended.bio,
-						email: recommended.email
-					),
-					relationshipType: .recommendedFriend,
-					mutualFriendCount: recommended.mutualFriendCount,
-					friendRequestId: nil
-				))
-			}
-			
-			// Filter and add incoming friend requests
-			let filteredRequests = FetchFriendRequestDTO.mockFriendRequests.filter { request in
-				let lowercasedQuery = searchQuery.lowercased()
-				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
-				let username = (request.senderUser.username ?? "").lowercased()
-				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
-			}
-			
-			for request in filteredRequests {
-				allUsers.append(SearchResultUser(
-					user: request.senderUser,
-					relationshipType: .incomingFriendRequest,
-					mutualFriendCount: nil,
-					friendRequestId: request.id
-				))
-			}
-			
-			// Filter and add outgoing friend requests
-			let filteredOutgoingRequests = FetchFriendRequestDTO.mockOutgoingFriendRequests.filter { request in
-				let lowercasedQuery = searchQuery.lowercased()
-				let name = FormatterService.shared.formatName(user: request.senderUser).lowercased()
-				let username = (request.senderUser.username ?? "").lowercased()
-				return searchQuery.isEmpty || name.contains(lowercasedQuery) || username.contains(lowercasedQuery)
-			}
-			
-			for request in filteredOutgoingRequests {
-				allUsers.append(SearchResultUser(
-					user: request.senderUser,
-					relationshipType: .outgoingFriendRequest,
-					mutualFriendCount: nil,
-					friendRequestId: request.id
-				))
-			}
-			
-			return SearchedUserResult(users: allUsers) as! T
+			return FullFriendUserDTO.mockUsers as! T
 		}
 
 		// Check friendship status endpoint

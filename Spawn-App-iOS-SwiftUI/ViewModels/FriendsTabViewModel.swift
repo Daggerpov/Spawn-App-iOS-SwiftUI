@@ -137,14 +137,14 @@ class FriendsTabViewModel: ObservableObject {
                 await MainActor.run {
                     // Parse the unified results and separate by relationship type
                     self.filteredIncomingFriendRequests = searchedUserResult.users
-                        .filter { $0.relationshipType == .incomingFriendRequest }
+                        .filter { $0.relationshipType == UserRelationshipType.incomingFriendRequest }
                         .compactMap { result in
                             guard let friendRequestId = result.friendRequestId else { return nil }
                             return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
                         }
                     
                     self.filteredOutgoingFriendRequests = searchedUserResult.users
-                        .filter { $0.relationshipType == .outgoingFriendRequest }
+                        .filter { $0.relationshipType == UserRelationshipType.outgoingFriendRequest }
                         .compactMap { result in
                             guard let friendRequestId = result.friendRequestId else { return nil }
                             // For outgoing requests, the user in the result is the receiver
@@ -152,7 +152,7 @@ class FriendsTabViewModel: ObservableObject {
                         }
                     
                     self.filteredRecommendedFriends = searchedUserResult.users
-                        .filter { $0.relationshipType == .recommendedFriend }
+                        .filter { $0.relationshipType == UserRelationshipType.recommendedFriend }
                         .map { result in
                             RecommendedFriendUserDTO(
                                 id: result.user.id,
@@ -166,7 +166,7 @@ class FriendsTabViewModel: ObservableObject {
                         }
                     
                     self.filteredFriends = searchedUserResult.users
-                        .filter { $0.relationshipType == .friend }
+                        .filter { $0.relationshipType == UserRelationshipType.friend }
                         .map { result in
                             FullFriendUserDTO(
                                 id: result.user.id,

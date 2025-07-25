@@ -16,7 +16,7 @@ class ActivityInviteDTO: Identifiable, Codable {
     // MARK: Info
     var startTime: Date?
     var endTime: Date?
-    var location: Location?
+    var location: LocationDTO?
     var note: String?
     /* The icon is stored as a Unicode emoji character string (e.g. "⭐️", "🎉", "🏀").
        This is the literal emoji character, not a shortcode or description.
@@ -37,7 +37,7 @@ class ActivityInviteDTO: Identifiable, Codable {
         title: String? = nil,
         startTime: Date? = nil,
         endTime: Date? = nil,
-        location: Location? = nil,
+        location: LocationDTO? = nil,
         locationId: UUID? = nil,
         activityTypeId: UUID? = nil,
         note: String? = nil,

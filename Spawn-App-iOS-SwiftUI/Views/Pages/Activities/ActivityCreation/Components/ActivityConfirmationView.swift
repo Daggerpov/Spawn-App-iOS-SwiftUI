@@ -473,7 +473,7 @@ struct ActivityConfirmationView: View {
         }
     }
     
-    private func generateShareURL(for activity: ActivityCreationDTO, completion: @escaping (URL) -> Void) {
+    private func generateShareURL(for activity: ActivityDTO, completion: @escaping (URL) -> Void) {
         // Use the centralized Constants for share URL generation with share codes
         ServiceConstants.generateActivityShareCodeURL(for: activity.id) { url in
             completion(url ?? ServiceConstants.generateActivityShareURL(for: activity.id))

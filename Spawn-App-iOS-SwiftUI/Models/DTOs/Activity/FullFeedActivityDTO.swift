@@ -18,7 +18,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	// MARK: Info
 	var startTime: Date?
 	var endTime: Date?
-    var location: Location?
+    var location: LocationDTO?
 	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in activity
 	/* The icon is stored as a Unicode emoji character string (e.g. "⭐️", "🎉", "🏀").
 	   This is the literal emoji character, not a shortcode or description.
@@ -43,7 +43,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		title: String? = nil,
 		startTime: Date? = nil,
 		endTime: Date? = nil,
-		location: Location? = nil,
+		location: LocationDTO? = nil,
 		activityTypeId: UUID? = nil,
 		note: String? = nil,
 		icon: String? = nil,
@@ -89,7 +89,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         title = try container.decodeIfPresent(String.self, forKey: .title)
         startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
         endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
-        location = try container.decodeIfPresent(Location.self, forKey: .location)
+        location = try container.decodeIfPresent(LocationDTO.self, forKey: .location)
         activityTypeId = try container.decodeIfPresent(UUID.self, forKey: .activityTypeId)
         note = try container.decodeIfPresent(String.self, forKey: .note)
         icon = try container.decodeIfPresent(String.self, forKey: .icon)
@@ -156,7 +156,7 @@ extension FullFeedActivityDTO {
 		title: "Dinner time!!!!!!",
 		startTime: dateFromTimeString("10:00 PM"),
 		endTime: dateFromTimeString("11:30 PM"),
-		location: Location(
+		location: LocationDTO(
 			id: UUID(), name: "Gather - Place Vanier",
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
@@ -173,7 +173,7 @@ extension FullFeedActivityDTO {
         title: "Dinner time!!!!!!",
         startTime: dateFromTimeString("10:00 PM"),
         endTime: dateFromTimeString("11:30 PM"),
-        location: Location(
+        location: LocationDTO(
             id: UUID(), name: "Gather - Place Vanier",
             latitude: 49.26468617023799, longitude: -123.25859833051356),
         note: "let's eat!",
@@ -193,7 +193,7 @@ extension FullFeedActivityDTO {
         title: "Indefinite Hangout",
         startTime: dateFromTimeString("2:00 PM"),
         endTime: nil, // Indefinite activity - no end time
-        location: Location(
+        location: LocationDTO(
             id: UUID(), name: "Central Library",
             latitude: 49.26468617023799, longitude: -123.25859833051356),
         note: "Come hang out whenever you can!",
@@ -211,7 +211,7 @@ extension FullFeedActivityDTO {
         title: "Yesterday's Indefinite Study Session",
         startTime: Calendar.current.date(byAdding: .day, value: -1, to: Date()),
         endTime: nil, // Indefinite activity - no end time
-        location: Location(
+        location: LocationDTO(
             id: UUID(), name: "Library",
             latitude: 49.26468617023799, longitude: -123.25859833051356),
         note: "This should be filtered out!",

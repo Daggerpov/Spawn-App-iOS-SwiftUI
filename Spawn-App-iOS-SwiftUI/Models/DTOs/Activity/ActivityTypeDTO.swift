@@ -12,15 +12,17 @@ class ActivityTypeDTO: Identifiable, Codable, Equatable {
     var icon: String
     var associatedFriends: [BaseUserDTO]
     var orderNum: Int
+    var ownerUserId: UUID?
     var isPinned: Bool
     
     
-    init(id: UUID, title: String, icon: String, associatedFriends: [BaseUserDTO], orderNum: Int, isPinned: Bool = false) {
+    init(id: UUID, title: String, icon: String, associatedFriends: [BaseUserDTO], orderNum: Int, ownerUserId: UUID? = nil, isPinned: Bool = false) {
         self.id = id
         self.title = title
         self.icon = icon
         self.associatedFriends = associatedFriends
         self.orderNum = orderNum
+        self.ownerUserId = ownerUserId
         self.isPinned = isPinned
     }
     
@@ -57,6 +59,7 @@ extension ActivityTypeDTO {
             icon: "⭐️",
             associatedFriends: [],
             orderNum: 0,
+            ownerUserId: nil,
             isPinned: false
         )
     }

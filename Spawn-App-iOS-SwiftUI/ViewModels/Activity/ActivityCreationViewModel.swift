@@ -14,11 +14,11 @@ class ActivityCreationViewModel: ObservableObject {
 	static var shared: ActivityCreationViewModel = ActivityCreationViewModel()
 
 	@Published var selectedDate: Date = Date()
-	@Published var activity: ActivityCreationDTO
+	@Published var activity: ActivityDTO
 	@Published var creationMessage: String = ""
 	@Published var selectedActivityType: ActivityTypeDTO?
 	@Published var selectedDuration: ActivityDuration = .indefinite
-	@Published var selectedLocation: Location?
+	@Published var selectedLocation: LocationDTO?
 
 	@Published var selectedFriends: [FullFriendUserDTO] = []
 	
@@ -39,7 +39,7 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var originalTitle: String?
 	@Published var originalDate: Date?
 	@Published var originalDuration: ActivityDuration?
-	@Published var originalLocation: Location?
+	@Published var originalLocation: LocationDTO?
 	
 	// Computed property to check if there are any changes
 	var hasAnyChanges: Bool {
@@ -270,15 +270,14 @@ class ActivityCreationViewModel: ObservableObject {
 		// Reset the activity DTO
 		let defaultStart = Date()
 		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
-		activity = ActivityCreationDTO(
+		activity = ActivityDTO(
 			id: UUID(),
 			title: "",
 			startTime: defaultStart,
 			endTime: defaultEnd,
-			location: nil,
 			icon: "⭐️",
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-			invitedFriendUserIds: []
+			invitedUserIds: []
 		)
 		
 		// Reload friends
@@ -300,15 +299,14 @@ class ActivityCreationViewModel: ObservableObject {
 
 		let defaultStart = Date()
 		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
-		self.activity = ActivityCreationDTO(
+		self.activity = ActivityDTO(
 			id: UUID(),
 			title: "",
 			startTime: defaultStart,
 			endTime: defaultEnd,
-			location: nil,
 			icon: "⭐️",
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-			invitedFriendUserIds: []
+			invitedUserIds: []
 		)
 		
 		// Ensure selectedActivityType starts as nil by default (no auto-selection)
@@ -447,7 +445,7 @@ class ActivityCreationViewModel: ObservableObject {
 		// Category is now handled by the back-end, so we don't need to infer it
 	}
 	
-	func setLocation(_ location: Location) {
+	func setLocation(_ location: LocationDTO) {
 		selectedLocation = location
 		activity.location = location
 	}
@@ -465,7 +463,7 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 
 		// Map selected friends to their IDs
-		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
+		activity.invitedUserIds = selectedFriends.map { $0.id }
 		print("🔍 DEBUG: Selected friends count: \(selectedFriends.count)")
 		
 		// Update the activity with the current date and duration
@@ -554,7 +552,7 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 
 		// Map selected friends to their IDs
-		activity.invitedFriendUserIds = selectedFriends.map { $0.id }
+		activity.invitedUserIds = selectedFriends.map { $0.id }
 		
 		// Update the activity with the current date and duration
 		updateActivityDuration()

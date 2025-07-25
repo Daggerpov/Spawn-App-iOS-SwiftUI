@@ -163,7 +163,7 @@ struct ActivityDetailModalView: View {
         }
     }
     
-    private func locationInfoView(location: Location) -> some View {
+    private func locationInfoView(location: LocationDTO) -> some View {
         HStack(spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "location.fill")
@@ -292,14 +292,14 @@ struct ActivityDetailModalView: View {
         return getActivityStatus() == "Event Passed" ? 0.4 : 1.0
     }
     
-    private func getDistanceText(location: Location) -> String {
+    private func getDistanceText(location: LocationDTO) -> String {
         return FormatterService.shared.distanceString(
             from: locationManager.userLocation,
             to: location
         ) + " away"
     }
     
-    private func openDirections(to location: Location) {
+    private func openDirections(to location: LocationDTO) {
         let coordinate = CLLocationCoordinate2D(
             latitude: location.latitude,
             longitude: location.longitude

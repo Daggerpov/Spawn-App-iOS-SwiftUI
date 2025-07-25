@@ -16,7 +16,7 @@ class ProfileActivityDTO: FullFeedActivityDTO {
         title: String? = nil,
         startTime: Date? = nil,
         endTime: Date? = nil,
-        location: Location? = nil,
+        location: LocationDTO? = nil,
         note: String? = nil,
         icon: String? = nil,
         creatorUser: BaseUserDTO,
