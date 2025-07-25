@@ -331,6 +331,13 @@ class ActivityTypeViewModel: ObservableObject {
             return
         }
         
+        // Validation: Don't allow pinned items to be moved after unpinned items
+        if sourceItem.isPinned && !destinationItem.isPinned {
+            print("❌ Cannot move pinned item after unpinned item")
+            errorMessage = "Pinned activities cannot be moved after unpinned activities"
+            return
+        }
+        
         // Create a mutable copy of the sorted types
         var reorderedTypes = sortedTypes
         
@@ -370,7 +377,13 @@ class ActivityTypeViewModel: ObservableObject {
             print("❌ Failed to reorder activity types, reverting: \(error)")
             // Revert on failure
             self.activityTypes = originalTypes
-            errorMessage = "Failed to reorder activity types: \(error.localizedDescription)"
+            
+            // Use the backend error message if available, otherwise fall back to generic message
+            if let backendErrorMessage = apiService.errorMessage, !backendErrorMessage.isEmpty {
+                errorMessage = backendErrorMessage
+            } else {
+                errorMessage = "Failed to reorder activity types: \(error.localizedDescription)"
+            }
         }
     }
     

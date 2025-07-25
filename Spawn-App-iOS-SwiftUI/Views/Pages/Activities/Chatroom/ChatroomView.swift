@@ -78,17 +78,18 @@ struct ChatroomView: View {
                         Button(action: {
                             Task {
                                 let messageToSend = messageText
+                                messageText = "" // Clear immediately for better UX
                                 await viewModel.sendMessage(message: messageToSend)
                                 
-                                // Only clear the text field if there's no error message
-                                if viewModel.creationMessage == nil {
-                                    messageText = ""
+                                // If there was an error, restore the message text
+                                if viewModel.creationMessage != nil {
+                                    messageText = messageToSend
                                 }
                             }
                         }) {
                             HStack {
-                                Text("􀈟")
-                                    .font(.system(size: 16))
+                                Image(systemName: "paperplane.fill")
+                                    .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(Color(red: 1, green: 1, blue: 1).opacity(0.60))
                             }
                             .padding(8)
@@ -96,6 +97,7 @@ struct ChatroomView: View {
                             .background(Color(red: 0.42, green: 0.51, blue: 0.98))
                             .cornerRadius(100)
                         }
+                        .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                 }
                 .padding(EdgeInsets(top: 0, leading: 24, bottom: 0, trailing: 24))
@@ -106,8 +108,8 @@ struct ChatroomView: View {
                 Button(action: {
                     dismiss()
                 }) {
-                    Text("􀆉")
-                        .font(Font.custom("SF Pro Display", size: 20).weight(.semibold))
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(Color(red: 1, green: 1, blue: 1).opacity(0.60))
                 }
                 .offset(x: -178, y: -241)
@@ -135,8 +137,12 @@ struct ChatroomView: View {
                 if let errorMessage = viewModel.creationMessage {
                     Text(errorMessage)
                         .font(.onestMedium(size: 14))
-                        .foregroundColor(.red)
+                        .foregroundColor(Color(hex: colorsRed500))
                         .padding(.horizontal, 24)
+                        .padding(.vertical, 8)
+                        .background(Color.white.opacity(0.9))
+                        .cornerRadius(8)
+                        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
                         .offset(x: 0, y: 200)
                 }
             }

@@ -11,6 +11,7 @@ struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTab: TabType = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
+    @StateObject private var tutorialViewModel = TutorialViewModel.shared
     @StateObject private var inAppNotificationManager = InAppNotificationManager.shared
     @ObservedObject var deepLinkManager: DeepLinkManager
     
@@ -60,6 +61,7 @@ struct ContentView: View {
                         )
                         Text("Map")
                     }
+                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 ActivityCreationView(
                     creatingUser: user,
                     closeCallback: {
@@ -98,6 +100,7 @@ struct ContentView: View {
                         )
                         Text("Friends")
                     }
+                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 
                 NavigationStack {
                     ProfileView(user: user)
@@ -112,8 +115,18 @@ struct ContentView: View {
                         )
                         Text("Profile")
                     }
+                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
             }
             .tint(universalSecondaryColor) // Set the tint color for selected tabs to purple
+            .onChange(of: selectedTab) { newTab in
+                // Restrict navigation during tutorial
+                if tutorialViewModel.tutorialState.shouldRestrictNavigation {
+                    if !tutorialViewModel.canNavigateToTab(newTab) {
+                        // Revert to previous valid tab
+                        selectedTab = .home
+                    }
+                }
+            }
             .onAppear {
                 // Configure tab bar appearance for theme compatibility
                 let appearance = UITabBarAppearance()
