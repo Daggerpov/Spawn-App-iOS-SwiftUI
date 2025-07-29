@@ -51,7 +51,8 @@ struct ActivityTypeEditView: View {
         .onChange(of: editedTitle) { _ in
             updateHasChanges()
         }
-        .onChange(of: editedIcon) { _ in
+        .onChange(of: editedIcon) { newValue in
+            print("DEBUG: editedIcon changed to: \(newValue)")
             updateHasChanges()
         }
         .navigationDestination(isPresented: $navigateToFriendSelection) {
@@ -136,6 +137,12 @@ struct ActivityTypeEditView: View {
             }) {
                 Text(editedIcon)
                     .font(.system(size: 40))
+                    .onAppear {
+                        print("DEBUG: Icon display onAppear - editedIcon: \(editedIcon)")
+                    }
+                    .onChange(of: editedIcon) { newValue in
+                        print("DEBUG: Icon display onChange - editedIcon: \(newValue)")
+                    }
             }
             
             // Edit button overlay - positioned at bottom right

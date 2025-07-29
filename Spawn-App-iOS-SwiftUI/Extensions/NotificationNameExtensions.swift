@@ -21,4 +21,11 @@ extension Notification.Name {
     
     // Notification for profile updates (name, username, profile picture)
     static let profileUpdated = Notification.Name("profileUpdated")
+    
+    static let refreshUI = Notification.Name("refreshUI")
+    static let showChatroom = Notification.Name("showChatroom")
+    static let showParticipants = Notification.Name("showParticipants")
+    
+    // Global activity popup notification
+    static let showGlobalActivityPopup = Notification.Name("showGlobalActivityPopup")
 }

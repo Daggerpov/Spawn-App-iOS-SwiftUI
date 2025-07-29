@@ -50,7 +50,7 @@ class TutorialViewModel: ObservableObject {
     /// This should be called when user reaches the main feed for the first time
     private func shouldStartTutorial() -> Bool {
         // Check if user has completed onboarding and this is their first time in the main app
-        guard let user = UserAuthViewModel.shared.spawnUser else { return false }
+        guard UserAuthViewModel.shared.spawnUser != nil else { return false }
         
         // User should start tutorial if:
         // 1. They haven't completed the tutorial before

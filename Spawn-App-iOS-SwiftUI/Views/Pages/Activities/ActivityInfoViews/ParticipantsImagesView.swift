@@ -10,19 +10,35 @@ import SwiftUI
 
 struct ParticipantsImagesView: View {
 	var activity: FullFeedActivityDTO
-    let maxCount: Int = 2
-    let width: CGFloat = 48
-    let height: CGFloat = 48
+    let maxCount: Int = 3  // Changed to match Figma design
+    let width: CGFloat = 42.33  // Figma design specification
+    let height: CGFloat = 43.26  // Figma design specification
     
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
     
-    // State to control showing participants modal
-    @State private var showParticipantsModal = false
+    // Callback to dismiss the drawer
+    let onDismiss: () -> Void
     
-    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
+    // Simplified tap handler to avoid delays
+    private func handleParticipantTap(_ participant: BaseUserDTO) {
+        // Always show participants modal first, regardless of selectedTab
+        NotificationCenter.default.post(name: .showParticipants, object: activity)
+        // Dismiss the drawer
+        onDismiss()
+    }
+    
+    // Simplified handler for participants modal
+    private func showParticipantsModal() {
+        NotificationCenter.default.post(name: .showParticipants, object: activity)
+        // Dismiss the drawer
+        onDismiss()
+    }
+    
+    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil), onDismiss: @escaping () -> Void = {}) {
         self.activity = activity
         self._selectedTab = selectedTab
+        self.onDismiss = onDismiss
     }
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
@@ -41,7 +57,7 @@ struct ParticipantsImagesView: View {
 	}
 
 	var body: some View {
-		HStack(spacing: -8) {
+		HStack(spacing: -10.10) { // Figma design specification
 			//Spacer()
             let participants: [BaseUserDTO] = participantsCleanup(participants: activity.participantUsers ?? [])
 			ForEach(
@@ -50,53 +66,71 @@ struct ParticipantsImagesView: View {
 			) { participantIndex in
                 let participant: BaseUserDTO = participants[participantIndex]
                 
-                // Profile picture with tap gesture to show participants modal
+                // Profile picture with tap gesture
                 VStack {
                     if let pfpUrl = participant.profilePicture {
                         if MockAPIService.isMocking {
                             Image(pfpUrl)
-                                .ProfileImageModifier(imageType: .activityParticipants)
+                                .ProfileImageModifier(imageType: .participantsPopup)
+                                .shadow(
+                                    color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
+                                    radius: 4.06, 
+                                    y: 1.62
+                                )
                         } else {
                             CachedProfileImage(
                                 userId: participant.id,
                                 url: URL(string: pfpUrl),
-                                imageType: .activityParticipants
+                                imageType: .participantsPopup
+                            )
+                            .shadow(
+                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
+                                radius: 4.06, 
+                                y: 1.62
                             )
                         }
                     } else {
-                        Circle()
-                            .fill(Color.gray)
+                        Ellipse()
+                            .foregroundColor(.clear)
                             .frame(width: width, height: height)
+                            .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+                            .shadow(
+                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
+                                radius: 4.06, 
+                                y: 1.62
+                            )
                     }
                 }
                 .onTapGesture {
-                    showParticipantsModal = true
+                    // Simplified immediate action - no complex conditional logic
+                    handleParticipantTap(participant)
                 }
+                .allowsHitTesting(true)
+                .contentShape(Circle()) // Ensure hit testing is limited to circular area
 			}
             
             if participants.count > maxCount {
                 ZStack {
                     Circle()
-                        .fill(Color.white)
+                        .fill(.white)
                         .frame(width: width, height: height)
+                        .shadow(
+                            color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
+                            radius: 4.06, 
+                            y: 1.62
+                        )
+                    
                     Text("+\(participants.count - maxCount)")
-                        .font(.onestSemiBold(size: 12))
-                        .foregroundColor(figmaSoftBlue)
+                        .font(Font.custom("SF Pro Display", size: 15.15).weight(.bold))
+                        .foregroundColor(Color(red: 0.42, green: 0.51, blue: 0.98))
                 }
-                .shadow(radius: 2)
                 .onTapGesture {
-                    showParticipantsModal = true
+                    showParticipantsModal()
                 }
+                .allowsHitTesting(true)
+                .contentShape(Circle()) // Ensure hit testing is limited to circular area
             }
 		}
-        .fullScreenCover(isPresented: $showParticipantsModal) {
-            ActivityParticipantsView(
-                activity: activity,
-                onDismiss: {
-                    showParticipantsModal = false
-                }
-            )
-        }
 	}
 }
 

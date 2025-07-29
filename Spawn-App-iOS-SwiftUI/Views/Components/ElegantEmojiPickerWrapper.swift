@@ -38,8 +38,20 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
         }
         
         func emojiPicker(_ picker: ElegantEmojiPicker, didSelectEmoji emoji: Emoji?) {
-            parent.selectedEmoji = emoji?.emoji ?? "⭐️" // Default emoji if reset is selected
-            parent.isPresented = false
+            let selectedEmojiString = emoji?.emoji ?? "⭐️"
+            print("DEBUG: Emoji selected: \(selectedEmojiString)")
+            
+            // Update selectedEmoji on main thread and ensure it propagates before dismissing
+            DispatchQueue.main.async {
+                self.parent.selectedEmoji = selectedEmojiString // Default emoji if reset is selected
+                print("DEBUG: Updated parent.selectedEmoji to: \(self.parent.selectedEmoji)")
+                
+                // Add a small delay to ensure the binding update propagates properly
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    print("DEBUG: Dismissing emoji picker")
+                    self.parent.isPresented = false
+                }
+            }
         }
     }
 }

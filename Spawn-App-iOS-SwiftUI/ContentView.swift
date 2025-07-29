@@ -21,6 +21,11 @@ struct ContentView: View {
     @State private var shouldShowDeepLinkedProfile = false
     @State private var deepLinkedProfileId: UUID?
     
+    // Global activity popup state
+    @State private var showingGlobalActivityPopup = false
+    @State private var globalPopupActivity: FullFeedActivityDTO?
+    @State private var globalPopupColor: Color?
+    
     init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
         self.user = user
         self.deepLinkManager = deepLinkManager
@@ -186,6 +191,14 @@ struct ContentView: View {
                     )
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .showGlobalActivityPopup)) { notification in
+                if let activity = notification.userInfo?["activity"] as? FullFeedActivityDTO,
+                   let color = notification.userInfo?["color"] as? Color {
+                    globalPopupActivity = activity
+                    globalPopupColor = color
+                    showingGlobalActivityPopup = true
+                }
+            }
             
             // In-app notification overlay
             VStack {
@@ -206,6 +219,22 @@ struct ContentView: View {
                 }
                 
                 Spacer()
+            }
+            
+            // Global activity popup overlay - covers entire screen including tab bar
+            if showingGlobalActivityPopup, let activity = globalPopupActivity, let color = globalPopupColor {
+                ActivityPopupDrawer(
+                    activity: activity,
+                    activityColor: color,
+                    isPresented: $showingGlobalActivityPopup,
+                    selectedTab: Binding<TabType?>(
+                        get: { selectedTab },
+                        set: { if let newTab = $0 { selectedTab = newTab } }
+                    )
+                )
+                .allowsHitTesting(true)
+                .ignoresSafeArea(.all, edges: .all) // Cover absolutely everything
+                .zIndex(999) // Below notifications but above everything else
             }
         }
     }

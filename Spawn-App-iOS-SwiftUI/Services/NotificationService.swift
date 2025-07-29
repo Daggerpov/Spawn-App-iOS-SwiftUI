@@ -183,7 +183,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             if UserAuthViewModel.shared.spawnUser == nil {
                 print("[PUSH DEBUG] User not logged in (spawnUser is nil)")
             } else if let user = UserAuthViewModel.shared.spawnUser {
-                print("[PUSH DEBUG] User logged in but ID is nil. Username: \(user.username)")
+                print("[PUSH DEBUG] User logged in but ID is nil. Username: \(user.username ?? "N/A")")
             }
             print("[PUSH DEBUG] APIService baseURL: \(APIService.baseURL)")
         }
@@ -333,7 +333,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username), name: \(user.name ?? "")), request ID: \(requestId)")
+            print("[PUSH DEBUG] Friend request from user \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown")), request ID: \(requestId)")
         } else {
             print("[PUSH DEBUG] Friend request from user \(senderId), request ID: \(requestId)")
         }
@@ -385,7 +385,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         if let userId = UUID(uuidString: senderId), 
            let user = UserAuthViewModel.shared.spawnUser, 
            user.id == userId {
-            print("[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
+            print("[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))")
         } else {
             print("[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId)")
         }
@@ -415,7 +415,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             
             // Add more detailed logging
             if let user = UserAuthViewModel.shared.spawnUser {
-                print("Test Friend Request - User ID: \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
+                print("Test Friend Request - User ID: \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))")
             }
             
         case .activityInvite:
@@ -445,7 +445,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             
             // Add more detailed logging
             if let user = UserAuthViewModel.shared.spawnUser {
-                print("Test Chat Message - User ID: \(senderId) (username: \(user.username), name: \(user.name ?? ""))")
+                print("Test Chat Message - User ID: \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))")
             }
             
         case .welcome:
@@ -570,7 +570,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         
         // Log user details
         if let user = UserAuthViewModel.shared.spawnUser {
-            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.name ?? ""))")
+            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))")
         }
         
         // Don't fetch from backend if in mock mode
@@ -621,7 +621,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         
         // Log user details
         if let user = UserAuthViewModel.shared.spawnUser {
-            print("Updating notification preferences for user ID: \(userId) (username: \(user.username), name: \(user.name ?? ""))")
+            print("Updating notification preferences for user ID: \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))")
         }
         
         // Save to UserDefaults immediately (optimistic update)

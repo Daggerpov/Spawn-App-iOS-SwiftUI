@@ -256,7 +256,7 @@ class ContactsService: ObservableObject {
 
 	// MARK: - Helper Methods
 
-	private func cleanPhoneNumber(_ phoneNumber: String) -> String {
+	private nonisolated func cleanPhoneNumber(_ phoneNumber: String) -> String {
 		print("🧹 CLEANING PHONE: '\(phoneNumber)'")
 		
 		// Check if it's obviously not a phone number

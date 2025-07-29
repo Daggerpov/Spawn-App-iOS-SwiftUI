@@ -71,17 +71,29 @@ struct ProfileCalendarView: View {
 			Group {
 				if showActivityDetails, let activity = profileViewModel.selectedActivity {
 					// Use the same color scheme as ActivityCardView would
-					let activityColor = activity.isSelfOwned == true ?
+					let _ = activity.isSelfOwned == true ?
 						universalAccentColor : getActivityColor(for: activity.id)
 
-					ActivityPopupDrawer(
-						activity: activity,
-						activityColor: activityColor,
-						isPresented: $showActivityDetails
-					)
+					EmptyView() // Replaced with global popup system
 				}
 			}
 		)
+		.onChange(of: showActivityDetails) { isShowing in
+			if isShowing, let activity = profileViewModel.selectedActivity {
+				let activityColor = activity.isSelfOwned == true ?
+					universalAccentColor : getActivityColor(for: activity.id)
+				
+				// Post notification to show global popup
+				NotificationCenter.default.post(
+					name: .showGlobalActivityPopup,
+					object: nil,
+					userInfo: ["activity": activity, "color": activityColor]
+				)
+				// Reset local state since global popup will handle it
+				showActivityDetails = false
+				profileViewModel.selectedActivity = nil
+			}
+		}
 	}
 
 	// MARK: - Computed Properties for Body Components

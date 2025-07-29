@@ -1,0 +1,36 @@
+# Cursor Rules for Spawn App iOS SwiftUI
+
+## Code Generation Guidelines
+
+### Figma to Code Plugin Output
+When working with Figma to code plugin output or any UI design conversion:
+
+1. **NEVER include status bar elements** such as:
+   - Phone battery indicators
+   - Signal strength indicators  
+   - Time displays (9:41, etc.)
+   - WiFi/cellular icons
+   - Carrier names
+   - Any system status indicators
+
+2. **Focus on actual UI components** only:
+   - App content and navigation
+   - User interface elements
+   - Custom buttons, images, and text
+   - Layout containers and spacing
+
+3. **Safe area handling**:
+   - Use proper SafeArea modifiers for content
+   - Ignore safe areas only when explicitly needed for full-screen experiences
+
+### SwiftUI Best Practices
+- Use semantic color names instead of hardcoded RGB values when possible
+- Implement proper state management with @State, @Binding, @ObservedObject
+- Use proper view modifiers for layout and styling
+- Follow iOS Human Interface Guidelines
+
+### Project-Specific Rules
+- Use custom fonts (Onest family) as defined in the project
+- Follow the established color scheme and design system
+- Maintain consistency with existing UI components
+- Use proper image assets from the project's asset catalog 

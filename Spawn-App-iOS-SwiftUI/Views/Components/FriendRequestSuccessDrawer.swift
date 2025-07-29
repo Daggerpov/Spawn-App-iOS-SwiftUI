@@ -43,7 +43,7 @@ struct FriendRequestSuccessDrawer: View {
                         .foregroundColor(.white)
                         .padding(.top, 8)
                     
-                    Text("You've added \(friendUser.name ?? friendUser.username) as a friend")
+                    Text("You've added \(friendUser.name ?? friendUser.username ?? "Unknown") as a friend")
                         .font(.onestMedium(size: 16))
                         .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
                         .multilineTextAlignment(.center)

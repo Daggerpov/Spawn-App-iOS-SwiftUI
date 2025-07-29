@@ -13,6 +13,7 @@ struct ActivityTypeView: View {
     // Simplified drag and drop state
     @State private var draggedItem: ActivityTypeDTO?
     @State private var targetItem: ActivityTypeDTO?
+    @GestureState private var isDragging = false
     
     // Initialize the view model with userId
     init(selectedActivityType: Binding<ActivityTypeDTO?>, onNext: @escaping () -> Void) {
@@ -76,11 +77,9 @@ struct ActivityTypeView: View {
                     Text(errorMessage)
                 }
             }
-            .sheet(isPresented: $navigateToManageType) {
+            .navigationDestination(isPresented: $navigateToManageType) {
                 if let selectedType = selectedActivityTypeForManagement {
-                    NavigationStack {
-                        ActivityTypeEditView(activityTypeDTO: selectedType)
-                    }
+                    ActivityTypeManagementView(activityTypeDTO: selectedType)
                 }
             }
             .sheet(isPresented: $navigateToCreateType) {
@@ -190,13 +189,43 @@ extension ActivityTypeView {
         )
         .opacity(draggedItem?.id == activityTypeDTO.id ? 0.3 : (targetItem?.id == activityTypeDTO.id ? 0.3 : 1))
         .scaleEffect(draggedItem?.id == activityTypeDTO.id ? 0.8 : targetItem?.id == activityTypeDTO.id ? 1.1 : 1)
+        .animation(.easeInOut(duration: 0.2), value: draggedItem?.id)
+        .animation(.easeInOut(duration: 0.2), value: targetItem?.id)
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
+        .simultaneousGesture(
+            DragGesture()
+                .updating($isDragging) { _, state, _ in
+                    state = true
+                }
+                .onChanged { _ in
+                    // Clear any previous drag states first
+                    if draggedItem == nil {
+                        targetItem = nil
+                        draggedItem = activityTypeDTO
+                    }
+                }
+        )
         .onDrag {
             // Clear any previous drag states first
             targetItem = nil
             // Set draggedItem to the current item being dragged
             draggedItem = activityTypeDTO
             return NSItemProvider(object: activityTypeDTO.id.uuidString as NSString)
+        }
+        .onDisappear {
+            // Reset drag state when view disappears to handle navigation away during drag
+            draggedItem = nil
+            targetItem = nil
+        }
+        .onChange(of: isDragging) { newValue in
+            // Reset drag state when gesture ends (cancelled or completed)
+            if !newValue {
+                // Add a small delay to ensure all states are reset properly
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    draggedItem = nil
+                    targetItem = nil
+                }
+            }
         }
         .onDrop(
             of: [.text],
@@ -232,10 +261,25 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
         return DropProposal(operation: .move)
     }
     
+    func validateDrop(info: DropInfo) -> Bool {
+        // Always reset state if validation fails
+        guard draggedItem != nil else {
+            resetDragState()
+            return false
+        }
+        return true
+    }
+    
+    private func resetDragState() {
+        draggedItem = nil
+        targetItem = nil
+    }
+    
     func performDrop(info: DropInfo) -> Bool {
+        // Always reset state at the end to ensure cleanup regardless of outcome
+        defer { resetDragState() }
+        
         guard let draggedItem = draggedItem, draggedItem.id != item.id else { 
-            self.draggedItem = nil
-            targetItem = nil
             return false 
         }
         
@@ -245,8 +289,6 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
         guard let fromIndex = sortedTypes.firstIndex(where: { $0.id == draggedItem.id }),
               let toIndex = sortedTypes.firstIndex(where: { $0.id == item.id }),
               fromIndex != toIndex else { 
-            self.draggedItem = nil
-            targetItem = nil
             return false 
         }
         
@@ -260,8 +302,6 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
                 viewModel.showError("Unpinned activities cannot be moved before pinned activities")
             }
             
-            self.draggedItem = nil
-            targetItem = nil
             return false
         }
         
@@ -275,18 +315,12 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
                 viewModel.showError("Pinned activities cannot be moved after unpinned activities")
             }
             
-            self.draggedItem = nil
-            targetItem = nil
             return false
         }
         
         // Success feedback
         let successGenerator = UIImpactFeedbackGenerator(style: .light)
         successGenerator.impactOccurred()
-        
-        // Clear drag state immediately to prevent UI deformation
-        self.draggedItem = nil
-        targetItem = nil
         
         // Perform the reorder
         Task {
@@ -307,6 +341,9 @@ struct ActivityTypeCard: View {
     // Drag and drop states
     let isDragging: Bool
     let isDropTarget: Bool
+    
+    // Add state to track button interaction
+    @State private var isPressed = false
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -410,6 +447,9 @@ struct ActivityTypeCard: View {
 
     var body: some View {
         Button(action: { 
+            // Don't execute if currently dragging
+            guard !isDragging else { return }
+            
             // Haptic feedback
             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
             impactGenerator.impactOccurred()
@@ -472,7 +512,7 @@ struct ActivityTypeCard: View {
                 }
             }
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(DragSafeButtonStyle(isDragging: isDragging, isPressed: $isPressed))
         .contextMenu {
             Button(action: onPin) {
                 Label(
@@ -551,6 +591,29 @@ struct CreateNewActivityTypeCard: View {
             )
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Custom Button Style
+struct DragSafeButtonStyle: ButtonStyle {
+    let isDragging: Bool
+    @Binding var isPressed: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(isDragging ? 1.0 : (configuration.isPressed ? 0.95 : 1.0))
+            .opacity(isDragging ? 1.0 : (configuration.isPressed ? 0.8 : 1.0))
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .animation(.easeInOut(duration: 0.1), value: isDragging)
+            .onChange(of: isDragging) { newValue in
+                // Reset pressed state when dragging starts
+                if newValue {
+                    isPressed = false
+                }
+            }
+            .onChange(of: configuration.isPressed) { newValue in
+                isPressed = newValue && !isDragging
+            }
     }
 }
 

@@ -93,7 +93,7 @@ struct FriendsView: View {
                 ]
                 let fetchedUser: BaseUserDTO = try await apiService.fetchData(from: url, parameters: parameters)
                 
-                print("✅ FriendsView: Successfully fetched deep linked profile: \(fetchedUser.name ?? fetchedUser.username)")
+                print("✅ FriendsView: Successfully fetched deep linked profile: \(fetchedUser.name ?? fetchedUser.username ?? "Unknown")")
                 
                 // Navigate to the profile
                 await MainActor.run {
