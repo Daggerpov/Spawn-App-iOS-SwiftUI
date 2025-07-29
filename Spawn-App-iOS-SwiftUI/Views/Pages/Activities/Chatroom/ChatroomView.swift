@@ -40,16 +40,20 @@ struct ChatroomContentView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            headerView
-            
-            // Messages area that takes remaining space but leaves room for input
-            messagesScrollView
-            
-            // Error message and input pinned to bottom
+        GeometryReader { geometry in
             VStack(spacing: 0) {
-                errorMessageView
-                messageInputView
+                headerView
+                    .padding(.top, isExpanded ? geometry.safeAreaInsets.top + 16 : 0)
+                
+                // Messages area that takes remaining space but leaves room for input
+                messagesScrollView
+                
+                // Error message and input pinned to bottom
+                VStack(spacing: 0) {
+                    errorMessageView
+                    messageInputView
+                        .padding(.bottom, geometry.safeAreaInsets.bottom + 20) // Always respect safe area + padding
+                }
             }
         }
         .onAppear {
@@ -182,7 +186,6 @@ struct ChatroomContentView: View {
             sendButton
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, isExpanded ? 20 : 85) // Increased to 85 to ensure content visibility when minimized
     }
     
     private var userAvatarView: some View {

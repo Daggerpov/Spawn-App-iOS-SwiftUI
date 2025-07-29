@@ -10,6 +10,9 @@ struct ParticipantsContentView: View {
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
     
+    // Callback to dismiss the drawer
+    let onDismiss: () -> Void
+    
     // State for other user profile navigation
     @State private var showProfile = false
     @State private var selectedUser: BaseUserDTO?
@@ -30,14 +33,17 @@ struct ParticipantsContentView: View {
             selectedUser = user
             showProfile = true
         }
+        // Dismiss the drawer when navigating to profiles
+        onDismiss()
     }
     
-    init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, onBack: @escaping () -> Void, selectedTab: Binding<TabType?> = .constant(nil)) {
+    init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, onBack: @escaping () -> Void, selectedTab: Binding<TabType?> = .constant(nil), onDismiss: @escaping () -> Void = {}) {
         self.activity = activity
         self.backgroundColor = backgroundColor
         self.isExpanded = isExpanded
         self.onBack = onBack
         self._selectedTab = selectedTab
+        self.onDismiss = onDismiss
     }
     
     var body: some View {

@@ -17,28 +17,20 @@ struct ParticipantsImagesView: View {
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
     
-    // Callback to dismiss the drawer
-    let onDismiss: () -> Void
-    
     // Simplified tap handler to avoid delays
     private func handleParticipantTap(_ participant: BaseUserDTO) {
         // Always show participants modal first, regardless of selectedTab
         NotificationCenter.default.post(name: .showParticipants, object: activity)
-        // Dismiss the drawer
-        onDismiss()
     }
     
     // Simplified handler for participants modal
     private func showParticipantsModal() {
         NotificationCenter.default.post(name: .showParticipants, object: activity)
-        // Dismiss the drawer
-        onDismiss()
     }
     
-    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil), onDismiss: @escaping () -> Void = {}) {
+    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
         self.activity = activity
         self._selectedTab = selectedTab
-        self.onDismiss = onDismiss
     }
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {

@@ -77,7 +77,8 @@ struct ActivityCardPopupView: View {
                                 showingParticipants = false
                             }
                         },
-                        selectedTab: $selectedTab
+                        selectedTab: $selectedTab,
+                        onDismiss: onDismiss
                     )
                 } else {
                     // Main card content
@@ -166,7 +167,7 @@ struct ActivityCardPopupView: View {
             titleAndTime
             
             // Spawn In button and attendees
-            ParticipationButtonView(activity: activity, cardViewModel: cardViewModel, selectedTab: $selectedTab, onDismiss: onDismiss)
+            ParticipationButtonView(activity: activity, cardViewModel: cardViewModel, selectedTab: $selectedTab)
             
             // Map and location info container - always visible
             if activity.location != nil {
@@ -349,7 +350,7 @@ extension ActivityCardPopupView {
                 .cornerRadius(12)
             }
             Spacer()
-            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab, onDismiss: onDismiss)
+            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab)
         }
     }
     
@@ -480,19 +481,15 @@ struct ParticipationButtonView: View {
     // Optional binding to control tab selection for current user navigation  
     @Binding var selectedTab: TabType?
     
-    // Callback to dismiss the drawer
-    let onDismiss: () -> Void
-    
     // Animation states for 3D effect
     @State private var isPressed = false
     @State private var scale: CGFloat = 1.0
     @State private var showingEditFlow = false
     
-    init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel, selectedTab: Binding<TabType?> = .constant(nil), onDismiss: @escaping () -> Void = {}) {
+    init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel, selectedTab: Binding<TabType?> = .constant(nil)) {
         self.activity = activity
         self.cardViewModel = cardViewModel
         self._selectedTab = selectedTab
-        self.onDismiss = onDismiss
     }
     
     private var isUserCreator: Bool {
@@ -571,7 +568,7 @@ struct ParticipationButtonView: View {
             }, perform: {})
             
             Spacer()
-            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab, onDismiss: onDismiss)
+            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab)
         }
         .fullScreenCover(isPresented: $showingEditFlow) {
             ActivityCreationView(

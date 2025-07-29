@@ -145,10 +145,8 @@ extension ActivityTypeView {
         }
         .onTapGesture {
             // Clear any residual drag state when tapping outside cards
-            if draggedItem != nil {
-                draggedItem = nil
-                targetItem = nil
-            }
+            draggedItem = nil
+            targetItem = nil
         }
     }
     
@@ -220,11 +218,9 @@ extension ActivityTypeView {
         .onChange(of: isDragging) { newValue in
             // Reset drag state when gesture ends (cancelled or completed)
             if !newValue {
-                // Add a small delay to ensure all states are reset properly
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    draggedItem = nil
-                    targetItem = nil
-                }
+                // Immediately clear drag states
+                draggedItem = nil
+                targetItem = nil
             }
         }
         .onDrop(
@@ -344,6 +340,7 @@ struct ActivityTypeCard: View {
     
     // Add state to track button interaction
     @State private var isPressed = false
+    @State private var isRecentlyDragged = false
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -512,7 +509,28 @@ struct ActivityTypeCard: View {
                 }
             }
         }
-        .buttonStyle(DragSafeButtonStyle(isDragging: isDragging, isPressed: $isPressed))
+        .buttonStyle(DragSafeButtonStyle(
+            isDragging: isDragging, 
+            isPressed: $isPressed, 
+            isRecentlyDragged: isRecentlyDragged
+        ))
+        .onChange(of: isDragging) { newValue in
+            // Handle drag state changes
+            if newValue {
+                // Dragging started
+                isPressed = false
+                isRecentlyDragged = false
+            } else {
+                // Dragging ended - mark as recently dragged and reset after delay
+                isRecentlyDragged = true
+                isPressed = false
+                
+                // Clear the recently dragged flag after sufficient time
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    isRecentlyDragged = false
+                }
+            }
+        }
         .contextMenu {
             Button(action: onPin) {
                 Label(
@@ -598,21 +616,41 @@ struct CreateNewActivityTypeCard: View {
 struct DragSafeButtonStyle: ButtonStyle {
     let isDragging: Bool
     @Binding var isPressed: Bool
+    let isRecentlyDragged: Bool
     
     func makeBody(configuration: Configuration) -> some View {
+        let shouldShowPressed = configuration.isPressed && !isDragging && !isRecentlyDragged
+        
         configuration.label
-            .scaleEffect(isDragging ? 1.0 : (configuration.isPressed ? 0.95 : 1.0))
-            .opacity(isDragging ? 1.0 : (configuration.isPressed ? 0.8 : 1.0))
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+            .scaleEffect(isDragging ? 1.0 : (shouldShowPressed ? 0.95 : 1.0))
+            .opacity(isDragging ? 1.0 : (shouldShowPressed ? 0.8 : 1.0))
+            .animation(.easeInOut(duration: 0.1), value: shouldShowPressed)
             .animation(.easeInOut(duration: 0.1), value: isDragging)
+            .allowsHitTesting(!isDragging && !isRecentlyDragged) // Disable interaction during and after dragging
             .onChange(of: isDragging) { newValue in
-                // Reset pressed state when dragging starts
+                // Reset pressed state when dragging starts or ends
                 if newValue {
+                    // Dragging started - immediately reset pressed state
+                    isPressed = false
+                } else {
+                    // Dragging ended - ensure clean state reset
                     isPressed = false
                 }
             }
             .onChange(of: configuration.isPressed) { newValue in
-                isPressed = newValue && !isDragging
+                // Only allow pressed state if not dragging and not recently dragged
+                if !isDragging && !isRecentlyDragged {
+                    isPressed = newValue
+                } else {
+                    // Force reset if we're dragging or recently dragged
+                    isPressed = false
+                }
+            }
+            .onChange(of: isRecentlyDragged) { newValue in
+                // Reset pressed state when recently dragged state changes
+                if newValue {
+                    isPressed = false
+                }
             }
     }
 }
@@ -639,3 +677,4 @@ extension RoundedRectangle {
         .environmentObject(appCache)
     }
 } 
+
