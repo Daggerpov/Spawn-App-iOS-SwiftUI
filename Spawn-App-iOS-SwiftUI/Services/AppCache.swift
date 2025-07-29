@@ -130,13 +130,18 @@ class AppCache: ObservableObject {
     /// Validate cache with backend and refresh stale items
     func validateCache() async {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-            print("Cannot validate cache: No logged in user")
+            print("❌ [CACHE] Cannot validate cache: No logged in user")
+            print("🔍 [CACHE] UserAuthViewModel.shared.spawnUser is nil")
+            print("🔍 [CACHE] UserAuthViewModel.shared.isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
             return
         }
         
+        print("✅ [CACHE] Starting cache validation for user: \(userId)")
+        
         // Double-check authentication state before proceeding
         guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot validate cache: User is not logged in")
+            print("❌ [CACHE] Cannot validate cache: User is not logged in")
+            print("🔍 [CACHE] User ID exists but isLoggedIn is false")
             return
         }
         
@@ -152,9 +157,14 @@ class AppCache: ObservableObject {
         // Get user-specific cache timestamps
         let userLastChecked = getLastCheckedForUser(userId)
         
+        print("🔍 [CACHE] User cache timestamps: \(userLastChecked)")
+        print("🔍 [CACHE] Current cached friends count: \(friends[userId]?.count ?? 0)")
+        print("🔍 [CACHE] Current cached friend requests count: \(friendRequests[userId]?.count ?? 0)")
+        print("🔍 [CACHE] Current cached sent friend requests count: \(sentFriendRequests[userId]?.count ?? 0)")
+        
         // If we have no cached items to validate for this user, request fresh data for all cache types
         if userLastChecked.isEmpty {
-            print("No cached items to validate, requesting fresh data for all cache types")
+            print("🔄 [CACHE] No cached items to validate, requesting fresh data for all cache types")
             // Request fresh data for all standard cache types
             let _ = await MainActor.run {
                 Task {
@@ -172,6 +182,8 @@ class AppCache: ObservableObject {
                     await recommendedFriendsTask
                     await friendRequestsTask
                     await sentFriendRequestsTask
+                    
+                    print("✅ [CACHE] Completed initial cache refresh for all cache types")
                 }
             }
             return
@@ -603,8 +615,14 @@ class AppCache: ObservableObject {
 
     /// Get friend requests for the current user
     func getCurrentUserFriendRequests() -> [FetchFriendRequestDTO] {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
-        return friendRequests[userId] ?? []
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("❌ [CACHE] getCurrentUserFriendRequests: No user ID available")
+            print("🔍 [CACHE] UserAuthViewModel.shared.spawnUser is nil")
+            return [] 
+        }
+        let requests = friendRequests[userId] ?? []
+        print("🔍 [CACHE] getCurrentUserFriendRequests for user \(userId): returning \(requests.count) requests")
+        return requests
     }
 
     /// Update friend requests for a specific user
@@ -754,12 +772,53 @@ class AppCache: ObservableObject {
         print("✅ [CACHE] Force refresh of friend requests completed")
     }
     
+    /// Diagnostic method to force refresh all data and provide detailed logging
+    func diagnosticForceRefresh() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ [DIAGNOSTIC] Cannot run diagnostic: No user ID available")
+            print("🔍 [DIAGNOSTIC] UserAuthViewModel.shared.spawnUser: \(UserAuthViewModel.shared.spawnUser?.username ?? "nil")")
+            print("🔍 [DIAGNOSTIC] UserAuthViewModel.shared.isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
+            return
+        }
+        
+        print("🔍 [DIAGNOSTIC] Starting diagnostic refresh for user: \(userId)")
+        print("🔍 [DIAGNOSTIC] Current state before refresh:")
+        print("   - Friends: \(friends[userId]?.count ?? 0)")
+        print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
+        print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
+        print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
+        
+        // Force refresh all data
+        async let friendsTask: () = refreshFriends()
+        async let friendRequestsTask: () = refreshFriendRequests()
+        async let sentFriendRequestsTask: () = refreshSentFriendRequests()
+        async let recommendedFriendsTask: () = refreshRecommendedFriends()
+        
+        await friendsTask
+        await friendRequestsTask
+        await sentFriendRequestsTask
+        await recommendedFriendsTask
+        
+        print("🔍 [DIAGNOSTIC] State after refresh:")
+        print("   - Friends: \(friends[userId]?.count ?? 0)")
+        print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
+        print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
+        print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
+        print("✅ [DIAGNOSTIC] Diagnostic refresh completed")
+    }
+    
     // MARK: - User-Specific Data Helper Methods
     
     /// Get friends for the current user
     func getCurrentUserFriends() -> [FullFriendUserDTO] {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
-        return friends[userId] ?? []
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+            print("❌ [CACHE] getCurrentUserFriends: No user ID available")
+            print("🔍 [CACHE] UserAuthViewModel.shared.spawnUser is nil")
+            return [] 
+        }
+        let userFriends = friends[userId] ?? []
+        print("🔍 [CACHE] getCurrentUserFriends for user \(userId): returning \(userFriends.count) friends")
+        return userFriends
     }
     
     /// Update friends for a specific user

@@ -36,6 +36,8 @@ class FriendsTabViewModel: ObservableObject {
 		self.userId = userId
 		self.apiService = apiService
         self.appCache = AppCache.shared
+        
+        print("🔄 [FRIENDS_TAB] Initializing FriendsTabViewModel for user: \(userId)")
 
 		if !MockAPIService.isMocking {
 			
@@ -44,6 +46,7 @@ class FriendsTabViewModel: ObservableObject {
 				.sink { [weak self] cachedFriends in
 					guard let self = self else { return }
 					let userFriends = cachedFriends[self.userId] ?? []
+					print("🔄 [FRIENDS_TAB] AppCache friends updated: \(userFriends.count) friends for user \(self.userId)")
 					self.friends = userFriends
 					if !self.isSearching {
 						self.filteredFriends = userFriends
@@ -56,6 +59,7 @@ class FriendsTabViewModel: ObservableObject {
 				.sink { [weak self] cachedRecommendedFriends in
 					guard let self = self else { return }
 					let userRecommendedFriends = cachedRecommendedFriends[self.userId] ?? []
+					print("🔄 [FRIENDS_TAB] AppCache recommended friends updated: \(userRecommendedFriends.count) for user \(self.userId)")
 					self.recommendedFriends = userRecommendedFriends
 					if !self.isSearching {
 						self.filteredRecommendedFriends = userRecommendedFriends
@@ -68,6 +72,7 @@ class FriendsTabViewModel: ObservableObject {
             .sink { [weak self] cachedFriendRequests in
                 guard let self = self else { return }
                 let userFriendRequests = cachedFriendRequests[self.userId] ?? []
+                print("🔄 [FRIENDS_TAB] AppCache friend requests updated: \(userFriendRequests.count) for user \(self.userId)")
                 self.incomingFriendRequests = userFriendRequests
                 if !self.isSearching {
                     self.filteredIncomingFriendRequests = userFriendRequests
@@ -80,6 +85,7 @@ class FriendsTabViewModel: ObservableObject {
             .sink { [weak self] cachedSentFriendRequests in
                 guard let self = self else { return }
                 let userSentFriendRequests = cachedSentFriendRequests[self.userId] ?? []
+                print("🔄 [FRIENDS_TAB] AppCache sent friend requests updated: \(userSentFriendRequests.count) for user \(self.userId)")
                 self.outgoingFriendRequests = userSentFriendRequests
                 if !self.isSearching {
                     self.filteredOutgoingFriendRequests = userSentFriendRequests
@@ -270,31 +276,53 @@ class FriendsTabViewModel: ObservableObject {
     }
 
 	func fetchAllData() async {
+        print("🔄 [FRIENDS_TAB] Starting fetchAllData for user: \(userId)")
+        
         await MainActor.run {
             isLoading = true
         }
         
         // Create a task group to run these in parallel
         await withTaskGroup(of: Void.self) { group in
-            group.addTask { await self.fetchIncomingFriendRequests() }
-            group.addTask { await self.fetchOutgoingFriendRequests() }
+            group.addTask { 
+                print("🔄 [FRIENDS_TAB] Starting fetchIncomingFriendRequests")
+                await self.fetchIncomingFriendRequests() 
+            }
+            group.addTask { 
+                print("🔄 [FRIENDS_TAB] Starting fetchOutgoingFriendRequests")
+                await self.fetchOutgoingFriendRequests() 
+            }
             group.addTask { 
                 // Check cache first for recommended friends
                 let cachedUserRecommendedFriends = self.appCache.getCurrentUserRecommendedFriends()
                 if cachedUserRecommendedFriends.isEmpty {
+                    print("🔄 [FRIENDS_TAB] No cached recommended friends, fetching from API")
                     await self.fetchRecommendedFriends()
                 } else {
+                    print("🔄 [FRIENDS_TAB] Using cached recommended friends: \(cachedUserRecommendedFriends.count)")
                     await MainActor.run {
                         self.recommendedFriends = cachedUserRecommendedFriends
                     }
                 }
             }
-            group.addTask { await self.fetchFriends() }
-            group.addTask { await self.fetchRecentlySpawnedWith() }
+            group.addTask { 
+                print("🔄 [FRIENDS_TAB] Starting fetchFriends")
+                await self.fetchFriends() 
+            }
+            group.addTask { 
+                print("🔄 [FRIENDS_TAB] Starting fetchRecentlySpawnedWith")
+                await self.fetchRecentlySpawnedWith() 
+            }
         }
         
         // Initialize filtered lists with full lists after fetching
         await MainActor.run {
+            print("✅ [FRIENDS_TAB] fetchAllData completed. Final counts:")
+            print("   - Friends: \(self.friends.count)")
+            print("   - Incoming friend requests: \(self.incomingFriendRequests.count)")
+            print("   - Outgoing friend requests: \(self.outgoingFriendRequests.count)")
+            print("   - Recommended friends: \(self.recommendedFriends.count)")
+            
             self.filteredFriends = self.friends
             self.filteredRecommendedFriends = self.recommendedFriends
             self.filteredIncomingFriendRequests = self.incomingFriendRequests
