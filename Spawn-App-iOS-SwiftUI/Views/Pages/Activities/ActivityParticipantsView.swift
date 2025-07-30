@@ -1,5 +1,116 @@
 import SwiftUI
 
+// MARK: - Shared User Item Component
+struct UserItemView: View {
+    let user: BaseUserDTO
+    let onTap: (() -> Void)?
+    
+    init(user: BaseUserDTO, onTap: (() -> Void)? = nil) {
+        self.user = user
+        self.onTap = onTap
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // User avatar
+            if let profilePictureUrl = user.profilePicture, let url = URL(string: profilePictureUrl) {
+                CachedProfileImage(
+                    userId: user.id,
+                    url: url,
+                    imageType: .participantsDrawer
+                )
+            } else {
+                Circle()
+                    .fill(Color.white.opacity(0.3))
+                    .frame(width: 36, height: 36)
+                    .overlay(
+                        Text(String(user.name?.first ?? user.username?.first ?? "?").uppercased())
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white)
+                    )
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(user.name ?? (user.id == UserAuthViewModel.shared.spawnUser?.id ? "You" : "User"))
+                    .font(Font.custom("Onest", size: 16).weight(.bold))
+                    .foregroundColor(.white)
+                Text("@\(user.username ?? "user")")
+                    .font(Font.custom("Onest", size: 14).weight(.medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.black.opacity(0.2))
+        .cornerRadius(12)
+        .onTapGesture {
+            onTap?()
+        }
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Shared Participants Content
+struct SharedParticipantsContent: View {
+    @ObservedObject var activity: FullFeedActivityDTO
+    let onUserTap: ((BaseUserDTO) -> Void)?
+    
+    init(activity: FullFeedActivityDTO, onUserTap: ((BaseUserDTO) -> Void)? = nil) {
+        self.activity = activity
+        self.onUserTap = onUserTap
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            hostSection
+            participantsSection
+        }
+    }
+    
+    private var hostSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Host")
+                .font(Font.custom("Onest", size: 16).weight(.medium))
+                .foregroundColor(.white.opacity(0.8))
+            
+            UserItemView(user: activity.creatorUser) {
+                onUserTap?(activity.creatorUser)
+            }
+        }
+    }
+    
+    private var participantsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            let participantCount = activity.participantUsers?.count ?? 0
+            Text("Going (\(participantCount))")
+                .font(Font.custom("Onest", size: 16).weight(.medium))
+                .foregroundColor(.white.opacity(0.8))
+            
+            if let participants = activity.participantUsers, !participants.isEmpty {
+                ForEach(participants, id: \.id) { participant in
+                    UserItemView(user: participant) {
+                        onUserTap?(participant)
+                    }
+                }
+            } else {
+                // Empty state
+                VStack(spacing: 8) {
+                    Text("No one has joined yet")
+                        .font(Font.custom("Onest", size: 16).weight(.medium))
+                        .foregroundColor(.white.opacity(0.6))
+                    Text("Invite friends to join your activity!")
+                        .font(Font.custom("Onest", size: 14).weight(.medium))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 40)
+            }
+        }
+    }
+}
+
 // MARK: - Embedded Participants Content View (for use within drawers)
 struct ParticipantsContentView: View {
     @ObservedObject var activity: FullFeedActivityDTO
@@ -52,9 +163,8 @@ struct ParticipantsContentView: View {
             
             // Participants content that takes remaining space
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    hostSection
-                    participantsSection
+                SharedParticipantsContent(activity: activity) { user in
+                    navigateToUserProfile(user)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, isExpanded ? 20 : 85) // Increased to match chatroom padding for visibility
@@ -105,117 +215,6 @@ struct ParticipantsContentView: View {
         }
         .disabled(true)
     }
-    
-    private var hostSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Host")
-                .font(Font.custom("Onest", size: 16).weight(.medium))
-                .foregroundColor(.white.opacity(0.8))
-            
-            HStack(spacing: 12) {
-                // Host avatar
-                if let profilePictureUrl = activity.creatorUser.profilePicture, let url = URL(string: profilePictureUrl) {
-                    CachedProfileImage(
-                        userId: activity.creatorUser.id,
-                        url: url,
-                        imageType: .participantsDrawer
-                    )
-                } else {
-                    Circle()
-                        .fill(Color.white.opacity(0.3))
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Text(String(activity.creatorUser.name?.first ?? activity.creatorUser.username?.first ?? "?").uppercased())
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                        )
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(activity.creatorUser.name ?? "Host")
-                        .font(Font.custom("Onest", size: 16).weight(.bold))
-                        .foregroundColor(.white)
-                    Text("@\(activity.creatorUser.username ?? "host")")
-                        .font(Font.custom("Onest", size: 14).weight(.medium))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.black.opacity(0.2))
-            .cornerRadius(12)
-            .onTapGesture {
-                navigateToUserProfile(activity.creatorUser)
-            }
-            .contentShape(Rectangle()) // Ensure the entire area is tappable
-        }
-    }
-    
-    private var participantsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            let participantCount = activity.participantUsers?.count ?? 0
-            Text("Going (\(participantCount))")
-                .font(Font.custom("Onest", size: 16).weight(.medium))
-                .foregroundColor(.white.opacity(0.8))
-            
-            if let participants = activity.participantUsers, !participants.isEmpty {
-                ForEach(participants, id: \.id) { participant in
-                    HStack(spacing: 12) {
-                        // Participant avatar
-                        if let profilePictureUrl = participant.profilePicture, let url = URL(string: profilePictureUrl) {
-                            CachedProfileImage(
-                                userId: participant.id,
-                                url: url,
-                                imageType: .participantsDrawer
-                            )
-                        } else {
-                            Circle()
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: 36, height: 36)
-                                .overlay(
-                                    Text(String(participant.name?.first ?? participant.username?.first ?? "?").uppercased())
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.white)
-                                )
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(participant.name ?? "Participant")
-                                .font(Font.custom("Onest", size: 16).weight(.bold))
-                                .foregroundColor(.white)
-                            Text("@\(participant.username ?? "user")")
-                                .font(Font.custom("Onest", size: 14).weight(.medium))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color.black.opacity(0.2))
-                    .cornerRadius(12)
-                    .onTapGesture {
-                        navigateToUserProfile(participant)
-                    }
-                    .contentShape(Rectangle()) // Ensure the entire area is tappable
-                }
-            } else {
-                // Empty state
-                VStack(spacing: 8) {
-                    Text("No one has joined yet")
-                        .font(Font.custom("Onest", size: 16).weight(.medium))
-                        .foregroundColor(.white.opacity(0.6))
-                    Text("Invite friends to join your activity!")
-                        .font(Font.custom("Onest", size: 14).weight(.medium))
-                        .foregroundColor(.white.opacity(0.4))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
-            }
-        }
-    }
 }
 
 // MARK: - Standalone Participants View (for sheets/full screen presentation)
@@ -240,12 +239,9 @@ struct ActivityParticipantsView: View {
                     
                     // Participants content that takes remaining space
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 20) {
-                            hostSection
-                            participantsSection
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 20)
+                        SharedParticipantsContent(activity: activity)
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 20)
                     }
                     
                     bottomHandle
@@ -272,142 +268,25 @@ struct ActivityParticipantsView: View {
     
     private var headerView: some View {
         HStack {
-            backButton
+            Button(action: { onDismiss() }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.6))
+            }
             Spacer()
-            titleText
+            Text("Who's Coming?")
+                .font(Font.custom("Onest", size: 20).weight(.semibold))
+                .foregroundColor(.white)
             Spacer()
-            invisibleBalanceButton
+            Button(action: {}) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.clear)
+            }
+            .disabled(true)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 16)
-    }
-    
-    private var backButton: some View {
-        Button(action: {
-            onDismiss()
-        }) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white.opacity(0.6))
-        }
-    }
-    
-    private var titleText: some View {
-        Text("Who's Coming?")
-            .font(Font.custom("Onest", size: 20).weight(.semibold))
-            .foregroundColor(.white)
-    }
-    
-    private var invisibleBalanceButton: some View {
-        Button(action: {}) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.clear)
-        }
-        .disabled(true)
-    }
-    
-    private var hostSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Host")
-                .font(Font.custom("Onest", size: 16).weight(.medium))
-                .foregroundColor(.white.opacity(0.8))
-            
-            HStack(spacing: 12) {
-                // Host avatar
-                if let profilePictureUrl = activity.creatorUser.profilePicture, let url = URL(string: profilePictureUrl) {
-                    CachedProfileImage(
-                        userId: activity.creatorUser.id,
-                        url: url,
-                        imageType: .participantsDrawer
-                    )
-                } else {
-                    Circle()
-                        .fill(Color.white.opacity(0.3))
-                        .frame(width: 36, height: 36)
-                        .overlay(
-                            Text(String(activity.creatorUser.name?.first ?? activity.creatorUser.username?.first ?? "?").uppercased())
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                        )
-                }
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(activity.creatorUser.name ?? "Host")
-                        .font(Font.custom("Onest", size: 16).weight(.bold))
-                        .foregroundColor(.white)
-                    Text("@\(activity.creatorUser.username ?? "host")")
-                        .font(Font.custom("Onest", size: 14).weight(.medium))
-                        .foregroundColor(.white.opacity(0.7))
-                }
-                
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.black.opacity(0.2))
-            .cornerRadius(12)
-        }
-    }
-    
-    private var participantsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            let participantCount = activity.participantUsers?.count ?? 0
-            Text("Going (\(participantCount))")
-                .font(Font.custom("Onest", size: 16).weight(.medium))
-                .foregroundColor(.white.opacity(0.8))
-            
-            if let participants = activity.participantUsers, !participants.isEmpty {
-                ForEach(participants, id: \.id) { participant in
-                    HStack(spacing: 12) {
-                        // Participant avatar
-                        if let profilePictureUrl = participant.profilePicture, let url = URL(string: profilePictureUrl) {
-                            CachedProfileImage(
-                                userId: participant.id,
-                                url: url,
-                                imageType: .participantsDrawer
-                            )
-                        } else {
-                            Circle()
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: 36, height: 36)
-                                .overlay(
-                                    Text(String(participant.name?.first ?? participant.username?.first ?? "?").uppercased())
-                                        .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(.white)
-                                )
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(participant.name ?? "Participant")
-                                .font(Font.custom("Onest", size: 16).weight(.bold))
-                                .foregroundColor(.white)
-                            Text("@\(participant.username ?? "user")")
-                                .font(Font.custom("Onest", size: 14).weight(.medium))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color.black.opacity(0.2))
-                    .cornerRadius(12)
-                }
-            } else {
-                // Empty state
-                VStack(spacing: 8) {
-                    Text("No one has joined yet")
-                        .font(Font.custom("Onest", size: 16).weight(.medium))
-                        .foregroundColor(.white.opacity(0.6))
-                    Text("Invite friends to join your activity!")
-                        .font(Font.custom("Onest", size: 14).weight(.medium))
-                        .foregroundColor(.white.opacity(0.4))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
-            }
-        }
     }
     
     private var bottomHandle: some View {

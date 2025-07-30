@@ -240,6 +240,7 @@ struct ActivityCardPopupView: View {
 						Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
 					)
 			)
+			.allowsHitTesting(false) // Disable map interaction to prevent gesture conflicts
 
 			// Location info overlay at bottom
 			locationOverlay
@@ -258,6 +259,8 @@ struct ActivityCardPopupView: View {
 		}
 		.padding(.horizontal, 12)
 		.padding(.bottom, 12)
+		.zIndex(1) // Ensure overlay is above the map
+		.allowsHitTesting(true) // Ensure the overlay can receive touches
 	}
 
 	var locationInfoSection: some View {
@@ -291,7 +294,20 @@ struct ActivityCardPopupView: View {
 	}
 
 	var viewInMapsButton: some View {
-		Button(action: {
+		HStack(spacing: 6) {
+			Image(systemName: "arrow.triangle.turn.up.right.diamond")
+				.font(.system(size: 12, weight: .bold))
+				.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+
+			Text("View in Maps")
+				.font(.onestSemiBold(size: 14))
+				.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+		}
+		.padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
+		.background(.white)
+		.cornerRadius(10)
+		.contentShape(Rectangle()) // Define the entire button area as tappable
+		.onTapGesture {
 			guard let location = activity.location else { return }
 
 			let coordinate = CLLocationCoordinate2D(
@@ -313,23 +329,8 @@ struct ActivityCardPopupView: View {
 					MKLaunchOptionsShowsTrafficKey: true,
 				]
 			)
-		}) {
-			HStack(spacing: 6) {
-				Image(systemName: "arrow.triangle.turn.up.right.diamond")
-					.font(.system(size: 12, weight: .bold))
-					.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
-
-				Text("View in Maps")
-					.font(.onestSemiBold(size: 14))
-					.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
-			}
-			.padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
-			.background(.white)
-			.cornerRadius(10)
 		}
-		.buttonStyle(PlainButtonStyle())
 		.allowsHitTesting(true)
-		.highPriorityGesture(TapGesture())  // Ensure tap gestures take priority over parent drag gestures
 	}
 }
 
