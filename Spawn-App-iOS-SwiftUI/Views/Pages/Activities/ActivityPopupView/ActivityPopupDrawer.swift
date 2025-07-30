@@ -24,7 +24,7 @@ struct ActivityPopupDrawer: View {
     }
     
     private var halfScreenOffset: CGFloat {
-        screenHeight * 0.15 // Reduced to ensure input row is visible in minimized chatroom state
+        screenHeight * 0.30 // Reduced height to align with bottom of activity type cards from feed view
     }
     
     private var currentOffset: CGFloat {

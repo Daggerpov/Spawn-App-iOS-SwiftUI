@@ -42,26 +42,24 @@ struct ChatroomContentView: View {
     var body: some View {
         GeometryReader { geometry in
             VStack(spacing: 0) {
+                // Header - always visible at top
                 headerView
                     .padding(.top, isExpanded ? geometry.safeAreaInsets.top + 16 : 0)
                 
-                // Messages area that takes remaining space but leaves room for input
-                if isExpanded {
-                    messagesScrollView
-                } else {
-                    // When minimized, ensure input area is visible by limiting messages height
-                    messagesScrollView
-                        .frame(maxHeight: max(120, geometry.size.height - 140)) // Optimized space reservation for header + input
-                        .layoutPriority(-1) // Give lower priority to messages when space is limited
-                }
+                // Messages area - fixed size based on expansion state
+                messagesScrollView
+                    .frame(height: isExpanded ? expandedMessagesHeight : minimizedMessagesHeight)
+                    .clipped()
                 
-                // Error message and input pinned to bottom - always visible
+                Spacer() // Push input to bottom
+                
+                // Input area - always anchored at bottom with no spacing below
                 VStack(spacing: 0) {
                     errorMessageView
                     messageInputView
-                        .padding(.bottom, isExpanded ? geometry.safeAreaInsets.bottom + 20 : 20)
+                        .padding(.bottom, isExpanded ? geometry.safeAreaInsets.bottom : 0)
                 }
-                .layoutPriority(1) // Give high priority to input area
+                .background(backgroundColor.opacity(0.97)) // Match the main background
             }
         }
         .onAppear {
@@ -70,6 +68,10 @@ struct ChatroomContentView: View {
             }
         }
     }
+    
+    // Fixed heights for messages area
+    private let minimizedMessagesHeight: CGFloat = 200
+    private let expandedMessagesHeight: CGFloat = 500
     
     // MARK: - View Components
     
@@ -130,10 +132,19 @@ struct ChatroomContentView: View {
                     }
                 }
                 .padding(.horizontal, 24)
+                .padding(.top, 8) // Add some top padding
                 .onChange(of: viewModel.chats.count) { _ in
                     // Auto-scroll to newest message when new messages arrive
                     if let lastMessage = sortedMessages.last {
                         withAnimation(.easeOut(duration: 0.3)) {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: isExpanded) { _ in
+                    // When expansion state changes, maintain scroll position to bottom
+                    if let lastMessage = sortedMessages.last {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }
                     }
@@ -148,7 +159,6 @@ struct ChatroomContentView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .layoutPriority(-1) // Give lower priority so input area gets its space first
         }
     }
     

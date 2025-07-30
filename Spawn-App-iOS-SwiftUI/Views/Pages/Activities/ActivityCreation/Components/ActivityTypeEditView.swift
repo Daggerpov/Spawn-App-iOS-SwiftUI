@@ -11,7 +11,6 @@ struct ActivityTypeEditView: View {
     @State private var hasChanges: Bool = false
     @State private var navigateToFriendSelection: Bool = false
     @State private var showEmojiPicker: Bool = false
-    @State private var refreshID = UUID()
     @FocusState private var isTitleFieldFocused: Bool
     
     @StateObject private var viewModel: ActivityTypeViewModel
@@ -42,16 +41,7 @@ struct ActivityTypeEditView: View {
         .sheet(isPresented: $showEmojiPicker) {
             ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
         }
-        .onChange(of: showEmojiPicker) { isShowing in
-            if !isShowing {
-                print("DEBUG: Emoji picker dismissed")
-                // Force view refresh when emoji picker dismisses
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    refreshID = UUID()
-                    print("DEBUG: Post-dismissal refresh with ID: \(refreshID)")
-                }
-            }
-        }
+
         .onChange(of: hasChanges) { newValue in
             print("DEBUG: hasChanges updated to: \(newValue)")
         }
@@ -69,11 +59,6 @@ struct ActivityTypeEditView: View {
         .onChange(of: editedIcon) { newValue in
             print("DEBUG: editedIcon changed to: \(newValue)")
             updateHasChanges()
-            // Force view refresh when emoji changes
-            DispatchQueue.main.async {
-                refreshID = UUID()
-                print("DEBUG: Refreshed view with new ID: \(refreshID)")
-            }
         }
         .navigationDestination(isPresented: $navigateToFriendSelection) {
             navigationDestinationView
@@ -142,7 +127,6 @@ struct ActivityTypeEditView: View {
         .background(colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93))
         .cornerRadius(30)
         .padding(.top, 40)
-        .id("circular-content-\(refreshID)")
     }
     
     private var iconPickerView: some View {
@@ -158,6 +142,7 @@ struct ActivityTypeEditView: View {
             }) {
                 Text(editedIcon)
                     .font(.system(size: 40))
+                    .id("emoji-\(editedIcon)")
                     .onAppear {
                         print("DEBUG: Icon display onAppear - editedIcon: \(editedIcon)")
                     }
@@ -170,7 +155,6 @@ struct ActivityTypeEditView: View {
             editButtonOverlay
         }
         .frame(width: 128, height: 128)
-        .id(refreshID)
     }
     
     private var editButtonOverlay: some View {
