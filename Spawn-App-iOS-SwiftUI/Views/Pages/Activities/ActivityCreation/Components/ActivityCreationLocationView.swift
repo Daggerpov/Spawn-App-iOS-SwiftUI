@@ -5,6 +5,11 @@ import CoreLocation
 // Extension to make MKCoordinateRegion conform to Equatable
 extension MKCoordinateRegion: @retroactive Equatable {
     public static func == (lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
+        // Validate coordinates before comparing to prevent NaN issues
+        guard CLLocationCoordinate2DIsValid(lhs.center) && CLLocationCoordinate2DIsValid(rhs.center) else {
+            return false
+        }
+        
         return lhs.center.latitude == rhs.center.latitude &&
                lhs.center.longitude == rhs.center.longitude &&
                lhs.span.latitudeDelta == rhs.span.latitudeDelta &&
@@ -43,6 +48,11 @@ struct ActivityCreationLocationView: View {
                             return
                         }
                         
+                        // Additional iOS 17 specific debugging
+                        if #available(iOS 17, *) {
+                            print("📍 iOS 17: Setting region with valid coordinates - lat: \(location.latitude), lng: \(location.longitude)")
+                        }
+                        
                         region = MKCoordinateRegion(
                             center: location,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
@@ -52,6 +62,9 @@ struct ActivityCreationLocationView: View {
                 .onReceive(locationManager.$locationError) { error in
                     if let error = error {
                         print("Location error in ActivityCreationLocationView: \(error)")
+                        if #available(iOS 17, *) {
+                            print("⚠️ iOS 17: Location error occurred: \(error)")
+                        }
                     }
                 }
             
@@ -163,6 +176,12 @@ struct ActivityCreationLocationView: View {
                         ActivityNextStepButton(
                             title: "Confirm Location"
                         ) {
+                            // Validate coordinates before creating LocationDTO to prevent invalid location data
+                            guard CLLocationCoordinate2DIsValid(region.center) else {
+                                print("⚠️ Confirm Location: Invalid region center coordinates - \(region.center)")
+                                return
+                            }
+                            
                             // Set the location in the view model based on current pin position
                             let location = LocationDTO(
                                 id: UUID(),
@@ -242,6 +261,20 @@ struct ActivityCreationLocationView: View {
             }
         }
         .onChange(of: region) { newRegion in
+            // Validate region center before processing to prevent NaN issues
+            guard CLLocationCoordinate2DIsValid(newRegion.center) else {
+                print("⚠️ ActivityCreationLocationView: Invalid region change detected - \(newRegion.center)")
+                if #available(iOS 17, *) {
+                    print("⚠️ iOS 17: Invalid region center - resetting to default Vancouver coordinates")
+                    // Reset to a valid default region
+                    region = MKCoordinateRegion(
+                        center: CLLocationCoordinate2D(latitude: 49.2827, longitude: -123.1207),
+                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                    )
+                }
+                return
+            }
+            
             // Update search text when region changes (when user drags map)
             updateLocationText(for: newRegion.center)
         }
@@ -442,6 +475,27 @@ struct LocationPickerView: View {
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = searchText
         if let userLocation = userLocation {
+            // Validate user location before using it in search region
+            guard CLLocationCoordinate2DIsValid(userLocation) else {
+                print("⚠️ searchLocations: Invalid user location - \(userLocation)")
+                // Continue search without region restriction
+                let search = MKLocalSearch(request: request)
+                search.start { response, error in
+                    guard let response = response, error == nil else {
+                        searchResults = []
+                        return
+                    }
+                    DispatchQueue.main.async {
+                        // Filter out results with invalid coordinates
+                        let validResults = response.mapItems.filter { item in
+                            CLLocationCoordinate2DIsValid(item.placemark.coordinate)
+                        }
+                        searchResults = Array(validResults.prefix(10)) // Limit results
+                    }
+                }
+                return
+            }
+            
             request.region = MKCoordinateRegion(
                 center: userLocation,
                 span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
@@ -455,7 +509,11 @@ struct LocationPickerView: View {
                 return
             }
             DispatchQueue.main.async {
-                searchResults = Array(response.mapItems.prefix(10)) // Limit results
+                // Filter out results with invalid coordinates
+                let validResults = response.mapItems.filter { item in
+                    CLLocationCoordinate2DIsValid(item.placemark.coordinate)
+                }
+                searchResults = Array(validResults.prefix(10)) // Limit results
             }
         }
     }
