@@ -581,13 +581,13 @@ class ActivityCreationViewModel: ObservableObject {
 				// Cache the updated activity
 				AppCache.shared.addOrUpdateActivity(updatedActivity)
 				
-				// Post notification for successful update
-				NotificationCenter.default.post(
-					name: .activityUpdated,
-					object: updatedActivity
-				)
-				
 				await MainActor.run {
+					// Post notification for successful update
+					NotificationCenter.default.post(
+						name: .activityUpdated,
+						object: updatedActivity
+					)
+					
 					creationMessage = "Activity updated successfully!"
 				}
 			} else {
