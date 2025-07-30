@@ -309,7 +309,9 @@ extension ActivityFeedView {
     var activityTypeListView: some View {
         HStack(spacing: 8) {
             // Show only first 4 activity types (sorted with pinned first) and make them tappable to pre-select
-            ForEach(Array(viewModel.sortedActivityTypes.prefix(4)), id: \.id) { activityType in
+            // Add safety check to prevent array access issues during tutorial
+            let activityTypesToShow = Array(viewModel.sortedActivityTypes.prefix(4))
+            ForEach(activityTypesToShow, id: \.id) { activityType in
                 ActivityTypeCardView(activityType: activityType) { selectedActivityTypeDTO in
                     handleActivityTypeSelection(selectedActivityTypeDTO)
                 }

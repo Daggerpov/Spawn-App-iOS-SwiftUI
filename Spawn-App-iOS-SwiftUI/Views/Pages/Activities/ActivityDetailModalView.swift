@@ -211,51 +211,107 @@ struct ActivityDetailModalView: View {
             return "Time TBD"
         }
         
-        let formatter = DateFormatter()
-        formatter.dateFormat = "h:mm a • MMMM d"
         let now = Date()
+        let calendar = Calendar.current
+        
+        // Helper function to get day context for a date
+        func getDayContext(for date: Date) -> String {
+            if calendar.isDateInToday(date) {
+                return "today"
+            } else if calendar.isDateInTomorrow(date) {
+                return "tomorrow"
+            } else if calendar.isDateInYesterday(date) {
+                return "yesterday"
+            } else if calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear) {
+                // Same week - show day name
+                let dayFormatter = DateFormatter()
+                dayFormatter.dateFormat = "EEEE"
+                return dayFormatter.string(from: date).lowercased()
+            } else {
+                // Different week/month - show full date
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "MMMM d"
+                return dateFormatter.string(from: date)
+            }
+        }
+        
+        // Helper function to format time with day context
+        func formatTimeWithContext(for date: Date, timePrefix: String) -> String {
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "h:mm a"
+            let timeString = timeFormatter.string(from: date)
+            
+            let dayContext = getDayContext(for: date)
+            
+            // Remove trailing "at" from prefix if it exists for special day contexts
+            let basePrefix = timePrefix.hasSuffix(" at") ? String(timePrefix.dropLast(3)) : timePrefix
+            
+            if dayContext == "today" {
+                return "\(timePrefix) \(timeString)"
+            } else if dayContext == "tomorrow" {
+                return "\(basePrefix) tomorrow at \(timeString)"
+            } else if dayContext == "yesterday" {
+                return "\(basePrefix) yesterday at \(timeString)"
+            } else if calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear) {
+                return "\(basePrefix) \(dayContext) at \(timeString)"
+            } else {
+                return "\(timePrefix) \(timeString) • \(dayContext)"
+            }
+        }
         
         // Check if activity has started
         let hasStarted = now >= startTime
         
         if let endTime = activity.endTime {
             let hasEnded = now >= endTime
-            let isSameDay = Calendar.current.isDate(startTime, inSameDayAs: endTime)
+            let isSameDay = calendar.isDate(startTime, inSameDayAs: endTime)
             
             if hasEnded {
                 // Activity has completely ended
-                let endFormatter = DateFormatter()
-                endFormatter.dateFormat = "h:mm a • MMMM d"
-                return "Ended at \(endFormatter.string(from: endTime))"
+                return formatTimeWithContext(for: endTime, timePrefix: "Ended at")
             } else if hasStarted {
                 // Activity is currently happening
                 if isSameDay {
-                    let startFormatter = DateFormatter()
-                    startFormatter.dateFormat = "h:mm a"
-                    let endFormatter = DateFormatter()
-                    endFormatter.dateFormat = "h:mm a • MMMM d"
-                    return "Started at \(startFormatter.string(from: startTime)) • Ends at \(endFormatter.string(from: endTime))"
+                    let startTimeFormatter = DateFormatter()
+                    startTimeFormatter.dateFormat = "h:mm a"
+                    let startTimeString = startTimeFormatter.string(from: startTime)
+                    let endTimeString = formatTimeWithContext(for: endTime, timePrefix: "Ends at")
+                    return "Started at \(startTimeString) • \(endTimeString)"
                 } else {
-                    return "Started at \(formatter.string(from: startTime))"
+                    return formatTimeWithContext(for: startTime, timePrefix: "Started at")
                 }
             } else {
                 // Activity hasn't started yet
                 if isSameDay {
-                    let startFormatter = DateFormatter()
-                    startFormatter.dateFormat = "h:mm"
-                    let endFormatter = DateFormatter()
-                    endFormatter.dateFormat = "h:mm a • MMMM d"
-                    return "\(startFormatter.string(from: startTime)) - \(endFormatter.string(from: endTime))"
+                    let startTimeFormatter = DateFormatter()
+                    startTimeFormatter.dateFormat = "h:mm"
+                    let endTimeFormatter = DateFormatter() 
+                    endTimeFormatter.dateFormat = "h:mm a"
+                    let startTimeString = startTimeFormatter.string(from: startTime)
+                    let endTimeString = endTimeFormatter.string(from: endTime)
+                    
+                    let dayContext = getDayContext(for: startTime)
+                    if dayContext == "today" {
+                        return "\(startTimeString) - \(endTimeString)"
+                    } else if dayContext == "tomorrow" {
+                        return "Tomorrow \(startTimeString) - \(endTimeString)"
+                    } else if dayContext == "yesterday" {
+                        return "Yesterday \(startTimeString) - \(endTimeString)"
+                    } else if calendar.isDate(startTime, equalTo: now, toGranularity: .weekOfYear) {
+                        return "\(dayContext.capitalized) \(startTimeString) - \(endTimeString)"
+                    } else {
+                        return "\(startTimeString) - \(endTimeString) • \(dayContext)"
+                    }
                 } else {
-                    return "Starts at \(formatter.string(from: startTime))"
+                    return formatTimeWithContext(for: startTime, timePrefix: "Starts at")
                 }
             }
         } else {
             // No end time specified
             if hasStarted {
-                return "Started at \(formatter.string(from: startTime))"
+                return formatTimeWithContext(for: startTime, timePrefix: "Started at")
             } else {
-                return "Starts at \(formatter.string(from: startTime))"
+                return formatTimeWithContext(for: startTime, timePrefix: "Starts at")
             }
         }
     }

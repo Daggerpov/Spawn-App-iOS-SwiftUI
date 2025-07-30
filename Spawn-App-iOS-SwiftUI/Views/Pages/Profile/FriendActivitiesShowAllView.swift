@@ -220,8 +220,7 @@ struct FriendActivitiesShowAllView: View {
     private var activityDetailsView: some View {
         Group {
             if let activity = profileViewModel.selectedActivity {
-                let activityColor = activity.isSelfOwned == true ?
-                    universalAccentColor : getActivityColor(for: activity.id)
+                let activityColor = getActivityColor(for: activity.id)
                 
                 ActivityDescriptionView(
                     activity: activity,

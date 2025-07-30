@@ -2,9 +2,14 @@
 //  ActivityInfoType.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 2024-11-19.
+//  Created by Daniel Agapov on 11/11/24.
 //
 
+import Foundation
+
 enum ActivityInfoType {
-	case time, location, distance
+    case title
+    case location
+    case time
+    case distance
 }

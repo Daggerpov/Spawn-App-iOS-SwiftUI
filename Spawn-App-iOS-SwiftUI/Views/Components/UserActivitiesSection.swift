@@ -100,7 +100,7 @@ struct UserActivitiesSection: View {
                             ActivityCardView(
                                 userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                                 activity: activity,
-                                color: activity.isSelfOwned == true ? universalAccentColor : getActivityColor(for: activity.id),
+                                color: getActivityColor(for: activity.id),
                                 locationManager: locationManager,
                                 callback: { selectedActivity, color in
                                     profileViewModel.selectedActivity = selectedActivity

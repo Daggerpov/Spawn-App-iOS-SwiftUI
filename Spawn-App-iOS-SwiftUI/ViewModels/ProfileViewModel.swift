@@ -548,21 +548,20 @@ class ProfileViewModel: ObservableObject {
 
         let firstDayOffset = firstDayOfMonth(month: month, year: year)
         
-        // Group activities by day using UTC calendar for consistency
-        var utcCalendar = Calendar.current
-        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        // Group activities by day using local calendar for consistency
+        let calendar = Calendar.current
         
         var activitiesByDay: [Int: [CalendarActivityDTO]] = [:]
         
         print("📅 ProfileViewModel: Converting \(activities.count) activities to calendar grid for \(month)/\(year)")
         
         for activity in activities {
-            let activityMonth = utcCalendar.component(.month, from: activity.dateAsDate)
-            let activityYear = utcCalendar.component(.year, from: activity.dateAsDate)
+            let activityMonth = calendar.component(.month, from: activity.dateAsDate)
+            let activityYear = calendar.component(.year, from: activity.dateAsDate)
             
             // Only include activities from the specified month and year
             if activityMonth == month && activityYear == year {
-                let day = utcCalendar.component(.day, from: activity.dateAsDate)
+                let day = calendar.component(.day, from: activity.dateAsDate)
                 
                 print("📅 ProfileViewModel: Including activity '\(activity.title ?? "No title")' on day \(day)")
                 

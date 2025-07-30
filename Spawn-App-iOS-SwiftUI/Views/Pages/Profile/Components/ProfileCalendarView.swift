@@ -70,18 +70,13 @@ struct ProfileCalendarView: View {
 			// Use the same ActivityPopupDrawer as the feed view for consistency
 			Group {
 				if showActivityDetails, let activity = profileViewModel.selectedActivity {
-					// Use the same color scheme as ActivityCardView would
-					let _ = activity.isSelfOwned == true ?
-						universalAccentColor : getActivityColor(for: activity.id)
-
 					EmptyView() // Replaced with global popup system
 				}
 			}
 		)
 		.onChange(of: showActivityDetails) { isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
-				let activityColor = activity.isSelfOwned == true ?
-					universalAccentColor : getActivityColor(for: activity.id)
+				let activityColor = getActivityColor(for: activity)
 				
 				// Post notification to show global popup
 				NotificationCenter.default.post(
@@ -94,6 +89,14 @@ struct ProfileCalendarView: View {
 				profileViewModel.selectedActivity = nil
 			}
 		}
+	}
+
+	// MARK: - Helper Functions
+	
+	// Helper function to get consistent activity color for any activity type
+	private func getActivityColor(for activity: FullFeedActivityDTO) -> Color {
+		// Use the global function from Constants.swift for consistency
+		return Color(hex: getActivityColorHex(for: activity.id))
 	}
 
 	// MARK: - Computed Properties for Body Components
@@ -190,10 +193,22 @@ struct ProfileCalendarView: View {
 	}
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
-		// NEW LOGIC: Always navigate to full calendar view first
-		// This preserves the old logic of showing the full calendar before day selection
-		DispatchQueue.main.async {
-			self.navigateToCalendar = true
+		if activities.count == 1 {
+			// Single activity - fetch details and show popup directly
+			if let activity = activities.first {
+				handleActivitySelection(activity)
+			}
+		} else if activities.count > 1 {
+			// Multiple activities - set selected activities and navigate directly to day activities view
+			DispatchQueue.main.async {
+				self.selectedDayActivities = activities
+				self.navigateToDayActivities = true
+			}
+		} else {
+			// No activities - navigate to full calendar view (preserve existing behavior for empty days)
+			DispatchQueue.main.async {
+				self.navigateToCalendar = true
+			}
 		}
 	}
 
@@ -216,15 +231,12 @@ struct ProfileCalendarView: View {
 
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
-		_ = Calendar.current
-		
-		// Create a UTC calendar for consistent date comparison
-		var utcCalendar = Calendar.current
-		utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+		// Use local calendar for date comparison since CalendarActivityDTO now uses local timezone
+		let calendar = Calendar.current
 		
 		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
-			// Use UTC calendar for consistent date comparison since backend sends UTC dates
-			let isSameDay = utcCalendar.isDate(activity.dateAsDate, inSameDayAs: date)
+			// Use local calendar for consistent date comparison since we now convert to local timezone
+			let isSameDay = calendar.isDate(activity.dateAsDate, inSameDayAs: date)
 			return isSameDay
 		}
 		
@@ -324,16 +336,22 @@ struct CalendarDayCell: View {
 	}
 	
 	private func activityColor(for activity: CalendarActivityDTO) -> Color {
-		// First check if activity has a custom color hex code
-		if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
-			return Color(hex: colorHexCode)
+		// Use the same logic as the feed view - always use ActivityColorService assignment
+		// Priority: activityId first (main activity), then calendar activity id as fallback
+		if let activityId = activity.activityId {
+			let color = getActivityColor(for: activityId)
+			let hexColor = getActivityColorHex(for: activityId)
+			print("🎨 ProfileCalendarView: Using activityId \(activityId) color \(hexColor) for calendar activity \(activity.id)")
+			return color
 		}
-
-		// Fallback to activity color based on ID
-		guard let activityId = activity.activityId else {
-			return figmaCalendarDayIcon  // Default gray color
-		}
-		return getActivityColor(for: activityId)
+		
+		// For calendar-only activities without activityId, use the calendar activity's own id
+		let color = getActivityColor(for: activity.id)
+		let hexColor = getActivityColorHex(for: activity.id)
+		print("🎨 ProfileCalendarView: Using calendar activity id \(activity.id) color \(hexColor)")
+		return color
+		
+		// Note: We ignore backend colorHexCode entirely like the feed view does
 	}
 
 	private func activityIcon(for activity: CalendarActivityDTO) -> some View {

@@ -21,6 +21,7 @@ struct ActivityCalendarView: View {
     @State private var hasInitiallyScrolled = false
     
     var onDismiss: (() -> Void)?
+    var onActivitySelected: ((CalendarActivityDTO) -> Void)?
     var onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
     
     var body: some View {
@@ -38,6 +39,7 @@ struct ActivityCalendarView: View {
                                     month: month,
                                     profileViewModel: profileViewModel,
                                     userAuth: userAuth,
+                                    onActivitySelected: onActivitySelected,
                                     onDayActivitiesSelected: onDayActivitiesSelected
                                 )
                                 .id(month)
@@ -121,26 +123,15 @@ struct ActivityCalendarView: View {
         }
     }
     
-    private func handleActivitySelection(_ activity: CalendarActivityDTO) {
-        Task {
-            if let activityId = activity.activityId,
-               let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
-                await MainActor.run {
-                    // The activity details will be shown via the ProfileView's existing sheet
-                    // when navigateToDayActivities is set to false
-                }
-            }
-        }
-    }
+
 }
 
 struct MonthCalendarView: View {
     let month: Date
     @StateObject var profileViewModel: ProfileViewModel
     @StateObject var userAuth: UserAuthViewModel
+    let onActivitySelected: ((CalendarActivityDTO) -> Void)?
     let onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void
-    
-    @State private var showActivityDetails = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -165,16 +156,9 @@ struct MonthCalendarView: View {
                                 tileSize: 86.4, // Fixed tile size matching Figma specs
                                 onDayTapped: { activities in
                                     if activities.count == 1 {
-                                        // Fetch full activity details and show popup
-                                        if let activity = activities.first,
-                                           let activityId = activity.activityId {
-                                            Task {
-                                                if let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
-                                                    await MainActor.run {
-                                                        showActivityDetails = true
-                                                    }
-                                                }
-                                            }
+                                        // Use the callback for single activities
+                                        if let activity = activities.first {
+                                            onActivitySelected?(activity)
                                         }
                                     } else if activities.count > 1 {
                                         onDayActivitiesSelected(activities)
@@ -188,34 +172,6 @@ struct MonthCalendarView: View {
             .padding(.horizontal, 8)
         }
         .frame(maxWidth: .infinity)
-        .overlay(
-            // Use the same ActivityPopupDrawer as the feed view for consistency
-            Group {
-                if showActivityDetails, let activity = profileViewModel.selectedActivity {
-                    // Use the same color scheme as ActivityCardView would
-                    let _ = activity.isSelfOwned == true ?
-                        universalAccentColor : getActivityColor(for: activity.id)
-
-                                                    EmptyView() // Replaced with global popup system
-            }
-        }
-        .onChange(of: showActivityDetails) { isShowing in
-            if isShowing, let activity = profileViewModel.selectedActivity {
-                let activityColor = activity.isSelfOwned == true ?
-                    universalAccentColor : getActivityColor(for: activity.id)
-                
-                // Post notification to show global popup
-                NotificationCenter.default.post(
-                    name: .showGlobalActivityPopup,
-                    object: nil,
-                    userInfo: ["activity": activity, "color": activityColor]
-                )
-                // Reset local state since global popup will handle it
-                showActivityDetails = false
-                profileViewModel.selectedActivity = nil
-            }
-        }
-        )
     }
     
     private var numberOfRows: Int {
@@ -240,13 +196,12 @@ struct MonthCalendarView: View {
     }
     
     private func getActivitiesForDay(_ date: Date) -> [CalendarActivityDTO] {
-        // Create a UTC calendar for consistent date comparison
-        var utcCalendar = Calendar.current
-        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        // Use local calendar for date comparison since CalendarActivityDTO now uses local timezone
+        let calendar = Calendar.current
         
         let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
-            // Use UTC calendar for consistent date comparison since backend sends UTC dates
-            utcCalendar.isDate(activity.dateAsDate, inSameDayAs: date)
+            // Use local calendar for consistent date comparison since we now convert to local timezone
+            calendar.isDate(activity.dateAsDate, inSameDayAs: date)
         }
         
         // Add debug logging for this view as well
@@ -468,6 +423,7 @@ extension DateFormatter {
         userCreationDate: nil,
         calendarOwnerName: nil,
         onDismiss: {},
+        onActivitySelected: { _ in },
         onDayActivitiesSelected: { _ in }
     )
 } 

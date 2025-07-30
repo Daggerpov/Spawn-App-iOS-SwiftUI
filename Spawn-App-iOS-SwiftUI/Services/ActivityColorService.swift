@@ -110,6 +110,18 @@ class ActivityColorService: ObservableObject {
     
     /// Assign the next color using round-robin distribution
     private func assignNextColor() -> Color {
+        // Ensure nextColorIndex is within bounds before accessing array
+        guard !availableColors.isEmpty else {
+            print("⚠️ ActivityColorService: No available colors, using default")
+            return Color.blue
+        }
+        
+        // Validate and clamp nextColorIndex to prevent out of bounds access
+        if nextColorIndex < 0 || nextColorIndex >= availableColors.count {
+            print("⚠️ ActivityColorService: nextColorIndex (\(nextColorIndex)) out of bounds, resetting to 0")
+            nextColorIndex = 0
+        }
+        
         let color = availableColors[nextColorIndex]
         nextColorIndex = (nextColorIndex + 1) % availableColors.count
         return color
@@ -146,7 +158,15 @@ class ActivityColorService: ObservableObject {
         
         // Load next color index for current user
         let indexKey = "\(CacheKeys.nextColorIndex)_\(userId)"
-        nextColorIndex = UserDefaults.standard.integer(forKey: indexKey)
+        let savedIndex = UserDefaults.standard.integer(forKey: indexKey)
+        
+        // Validate the loaded index to prevent out of bounds access
+        if savedIndex >= 0 && savedIndex < availableColors.count {
+            nextColorIndex = savedIndex
+        } else {
+            print("⚠️ ActivityColorService: Invalid nextColorIndex (\(savedIndex)) loaded from cache, resetting to 0")
+            nextColorIndex = 0
+        }
     }
     
     /// Save color assignments to UserDefaults
@@ -178,7 +198,15 @@ class ActivityColorService: ObservableObject {
         
         // Save next color index for current user
         let indexKey = "\(CacheKeys.nextColorIndex)_\(userId)"
-        UserDefaults.standard.set(nextColorIndex, forKey: indexKey)
+        
+        // Validate nextColorIndex before saving to prevent storing invalid values
+        let indexToSave = (nextColorIndex >= 0 && nextColorIndex < availableColors.count) ? nextColorIndex : 0
+        if indexToSave != nextColorIndex {
+            print("⚠️ ActivityColorService: Correcting invalid nextColorIndex (\(nextColorIndex)) before saving")
+            nextColorIndex = indexToSave
+        }
+        
+        UserDefaults.standard.set(indexToSave, forKey: indexKey)
     }
     
     /// Clear color preferences for a specific user (useful when user logs out)

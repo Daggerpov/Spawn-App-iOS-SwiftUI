@@ -118,7 +118,6 @@ struct LaunchView: View {
 			}
 			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 			.navigationBarHidden(true)
-			.withAuthNavigation(userAuth)
 		}
 	}
 }

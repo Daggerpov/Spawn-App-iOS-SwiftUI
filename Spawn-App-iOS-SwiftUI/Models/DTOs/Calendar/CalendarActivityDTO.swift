@@ -13,7 +13,7 @@ struct CalendarActivityDTO: Codable, Identifiable {
     var dateAsDate: Date {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC
+        formatter.timeZone = TimeZone.current // Use current timezone for display
         return formatter.date(from: date) ?? Date()
     }
     
@@ -28,7 +28,7 @@ struct CalendarActivityDTO: Codable, Identifiable {
     ) -> CalendarActivityDTO {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        formatter.timeZone = TimeZone(secondsFromGMT: 0) // UTC
+        formatter.timeZone = TimeZone.current // Convert to user's local timezone
         
         return CalendarActivityDTO(
             id: id,

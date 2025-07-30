@@ -197,13 +197,46 @@ struct UserDetailsInputView: View {
                         // Execute action with slight delay for animation
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             Task {
-                                guard let user = viewModel.spawnUser else { return }
-                                await viewModel.updateUserDetails(
-                                    id: user.id.uuidString,
-                                    username: username,
-                                    phoneNumber: phoneNumber,
-                                    password: isOAuthUser ? nil : password
-                                )
+                                if isOAuthUser {
+                                    // For OAuth users who don't exist yet, register them first
+                                    if viewModel.spawnUser == nil {
+                                        // First create the OAuth user with EMAIL_VERIFIED status
+                                        let userCreated = await viewModel.createOAuthUserOnly(
+                                            idToken: viewModel.idToken ?? "",
+                                            provider: viewModel.authProvider ?? .google,
+                                            email: viewModel.email,
+                                            name: viewModel.name,
+                                            profilePictureUrl: viewModel.profilePicUrl
+                                        )
+                                        
+                                        // Then update with username and phone number if user was created successfully
+                                        if userCreated, let user = viewModel.spawnUser {
+                                            await viewModel.updateUserDetails(
+                                                id: user.id.uuidString,
+                                                username: username,
+                                                phoneNumber: phoneNumber,
+                                                password: nil
+                                            )
+                                        }
+                                    } else {
+                                        // For existing OAuth users, just update details
+                                        await viewModel.updateUserDetails(
+                                            id: viewModel.spawnUser!.id.uuidString,
+                                            username: username,
+                                            phoneNumber: phoneNumber,
+                                            password: nil
+                                        )
+                                    }
+                                } else {
+                                    // For email users, they should already exist at this point
+                                    guard let user = viewModel.spawnUser else { return }
+                                    await viewModel.updateUserDetails(
+                                        id: user.id.uuidString,
+                                        username: username,
+                                        phoneNumber: phoneNumber,
+                                        password: password
+                                    )
+                                }
                             }
                         }
                     }) {
@@ -222,8 +255,8 @@ struct UserDetailsInputView: View {
             Spacer()
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
+        .ignoresSafeArea(.all)
         .navigationBarHidden(true)
-        .withAuthNavigation(viewModel)
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()

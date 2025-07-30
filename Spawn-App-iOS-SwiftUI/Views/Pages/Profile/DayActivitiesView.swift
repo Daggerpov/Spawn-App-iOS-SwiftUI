@@ -83,21 +83,6 @@ struct DayActivitiesView: View {
         }
     }
     
-    func getColorForActivity(
-        _ activity: CalendarActivityDTO
-    ) -> Color {
-        // If we have a color hex code from the backend, use it
-        if let colorHex = activity.colorHexCode, !colorHex.isEmpty {
-            return Color(hex: colorHex)
-        }
-        
-        // Otherwise, use the activity color based on ID
-        guard let activityId = activity.activityId else {
-            return .gray
-        }
-        
-        return getActivityColor(for: activityId)
-    }
 }
 
 extension DayActivitiesView {
@@ -113,7 +98,7 @@ extension DayActivitiesView {
                         ActivityCardView(
                             userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
                             activity: fullActivity,
-                            color: getColorForActivity(activity),
+                            color: Color(hex: getActivityColorHex(for: fullActivity.id)),
                             locationManager: locationManager,
                             callback: { _, _ in
                                 onActivitySelected(activity)

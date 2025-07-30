@@ -160,6 +160,7 @@ extension FullFeedActivityDTO {
 			id: UUID(), name: "Gather - Place Vanier",
 			latitude: 49.26468617023799, longitude: -123.25859833051356),
 		note: "let's eat!",
+		icon: "🍽️",
 		creatorUser: BaseUserDTO.danielAgapov,
 		participantUsers: [
 			BaseUserDTO.danielLee,
@@ -170,13 +171,14 @@ extension FullFeedActivityDTO {
 	)
     static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
         id: UUID(),
-        title: "Dinner time!!!!!!",
+        title: "Basketball Game",
         startTime: dateFromTimeString("10:00 PM"),
         endTime: dateFromTimeString("11:30 PM"),
         location: LocationDTO(
-            id: UUID(), name: "Gather - Place Vanier",
-            latitude: 49.26468617023799, longitude: -123.25859833051356),
-        note: "let's eat!",
+            id: UUID(), name: "UBC Recreation Center",
+            latitude: 49.26500000000000, longitude: -123.25900000000000),
+        note: "Let's play some basketball!",
+        icon: "🏀",
         creatorUser: BaseUserDTO.danielAgapov,
         participantUsers: [
             BaseUserDTO.danielLee,
@@ -190,13 +192,14 @@ extension FullFeedActivityDTO {
     
     static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
         id: UUID(),
-        title: "Indefinite Hangout",
+        title: "Study Session",
         startTime: dateFromTimeString("2:00 PM"),
         endTime: nil, // Indefinite activity - no end time
         location: LocationDTO(
             id: UUID(), name: "Central Library",
-            latitude: 49.26468617023799, longitude: -123.25859833051356),
-        note: "Come hang out whenever you can!",
+            latitude: 49.26400000000000, longitude: -123.25800000000000),
+        note: "Come study with us!",
+        icon: "📚",
         creatorUser: BaseUserDTO.danielAgapov,
         participantUsers: [
             BaseUserDTO.danielAgapov,
