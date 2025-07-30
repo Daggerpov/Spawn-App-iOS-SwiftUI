@@ -137,34 +137,7 @@ struct UserToS: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(
-            isPresented: $userAuth.shouldNavigateToFeedView
-        ) {
-            if let loggedInSpawnUser = userAuth.spawnUser {
-                ContentView(user: loggedInSpawnUser)
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            } else {
-                EmptyView() // This should never happen
-            }
-        }
-        .navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
-            OnboardingContinuationView()
-        }
-        .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
-            switch userAuth.skipDestination {
-            case .userDetailsInput:
-                UserDetailsInputView(isOAuthUser: true)
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-            case .contactImport:
-                ContactImportView()
-            case .userToS:
-                UserToS()
-            case .none:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(userAuth)
         .onAppear {
             // Clear any previous error state when this view appears
             userAuth.clearAllErrors()

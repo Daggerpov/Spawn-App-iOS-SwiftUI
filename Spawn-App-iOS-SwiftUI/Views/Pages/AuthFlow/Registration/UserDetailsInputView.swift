@@ -223,55 +223,7 @@ struct UserDetailsInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView
-        ) {
-            UserOptionalDetailsInputView()
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToContactImportView
-        ) {
-            ContactImportView()
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToUserToS
-        ) {
-            UserToS()
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToFeedView
-        ) {
-            if let loggedInSpawnUser = viewModel.spawnUser {
-                ContentView(user: loggedInSpawnUser)
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            } else {
-                EmptyView() // This should never happen
-            }
-        }
-        .navigationDestination(isPresented: $viewModel.shouldShowOnboardingContinuation) {
-            OnboardingContinuationView()
-        }
-        .navigationDestination(isPresented: $viewModel.shouldSkipAhead) {
-            switch viewModel.skipDestination {
-            case .userDetailsInput:
-                UserDetailsInputView(isOAuthUser: true)
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-            case .contactImport:
-                ContactImportView()
-            case .userToS:
-                UserToS()
-            case .none:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(viewModel)
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()

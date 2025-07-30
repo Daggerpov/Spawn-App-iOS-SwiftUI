@@ -73,7 +73,8 @@ struct OnboardingContinuationView: View {
                     
                     // Add a small delay to prevent rapid taps
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        userAuth.continueOnboarding()
+                        // Navigation is now handled directly, no need for continuation popup
+                        userAuth.navigationState = .none
                         
                         // Reset processing state after a delay
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
