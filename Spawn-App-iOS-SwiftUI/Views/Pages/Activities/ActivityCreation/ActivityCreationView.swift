@@ -199,6 +199,11 @@ struct ActivityCreationView: View {
                     
                     viewModel.activity.title = trimmedTitle
                     
+                    // Add safety checks for tutorial mode to prevent crashes during transition
+                    if case .activityCreation = tutorialViewModel.tutorialState {
+                        print("📍 Tutorial: Transitioning from dateTime to location step")
+                    }
+                    
                     // Sync selectedDate and selectedDuration with viewModel
                     let calendar = Calendar.current
                     let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
@@ -212,7 +217,10 @@ struct ActivityCreationView: View {
                     }
                     viewModel.selectedDuration = selectedDuration
                     
-                    currentStep = .location
+                    // Ensure we're in a safe state before transitioning
+                    DispatchQueue.main.async {
+                        currentStep = .location
+                    }
                 },
                 onBack: {
                     // If we're editing (startingStep is dateTime), close the edit flow
@@ -228,11 +236,20 @@ struct ActivityCreationView: View {
         case .location:
             ActivityCreationLocationView(
                 onNext: {
+                    // Add safety checks for tutorial mode
+                    if case .activityCreation = tutorialViewModel.tutorialState {
+                        print("📍 Tutorial: Transitioning from location to preConfirmation step")
+                    }
+                    
                     // Ensure title is still synced when moving from location to preConfirmation
                     if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
                         viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
                     }
-                    currentStep = .preConfirmation
+                    
+                    // Ensure we're in a safe state before transitioning
+                    DispatchQueue.main.async {
+                        currentStep = .preConfirmation
+                    }
                 },
                 onBack: {
                     currentStep = currentStep.previous()

@@ -42,6 +42,8 @@ class FormatterService {
 				return "today"
 			} else if calendar.isDateInTomorrow(date) {
 				return "tomorrow"
+			} else if calendar.isDateInYesterday(date) {
+				return "yesterday"
 			} else if calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear) {
 				// Same week - show day name
 				let dayFormatter = DateFormatter()
@@ -68,6 +70,8 @@ class FormatterService {
 				return "\(timePrefix) \(timeString)"
 			} else if dayContext == "tomorrow" {
 				return "\(timePrefix) tomorrow at \(timeString)"
+			} else if dayContext == "yesterday" {
+				return "\(timePrefix) yesterday at \(timeString)"
 			} else if calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear) {
 				return "\(timePrefix) \(dayContext) at \(timeString)"
 			} else {
@@ -112,6 +116,8 @@ class FormatterService {
 							return "\(startTimeString) - \(endTimeString)"
 						} else if dayContext == "tomorrow" {
 							return "Tomorrow \(startTimeString) - \(endTimeString)"
+						} else if dayContext == "yesterday" {
+							return "Yesterday \(startTimeString) - \(endTimeString)"
 						} else if calendar.isDate(startTime, equalTo: now, toGranularity: .weekOfYear) {
 							return "\(dayContext.capitalized) \(startTimeString) - \(endTimeString)"
 						} else {

@@ -114,11 +114,12 @@ struct InviteView: View {
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(activityCreationViewModel.selectedFriends) { friend in
+                    // Create a stable array copy to prevent iteration issues during updates
+                    let selectedFriendsCopy = activityCreationViewModel.selectedFriends
+                    ForEach(selectedFriendsCopy) { friend in
                         Button(action: {
-                            if let index = activityCreationViewModel.selectedFriends.firstIndex(where: { $0.id == friend.id }) {
-                                activityCreationViewModel.selectedFriends.remove(at: index)
-                            }
+                            // Use the safe removeFriend method instead of direct array manipulation
+                            activityCreationViewModel.removeFriend(friend)
                         }) {
                             HStack(spacing: 4) {
                                 if let profilePicUrl = friend.profilePicture,

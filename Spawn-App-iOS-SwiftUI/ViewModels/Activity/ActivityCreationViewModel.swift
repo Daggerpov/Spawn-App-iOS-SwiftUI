@@ -130,7 +130,8 @@ class ActivityCreationViewModel: ObservableObject {
 		if changes.isEmpty {
 			return "No changes to save."
 		} else if changes.count == 1 {
-			return "1 change: \(changes.first!)"
+			// Add safety check to prevent force unwrapping crash
+			return "1 change: \(changes.first ?? "Unknown change")"
 		} else {
 			return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
 		}
@@ -357,22 +358,28 @@ class ActivityCreationViewModel: ObservableObject {
 	
 	// Method to add a friend to the selected friends list
 	func addFriend(_ friend: FullFriendUserDTO) {
-		if !selectedFriends.contains(where: { $0.id == friend.id }) {
-			selectedFriends.append(friend)
+		DispatchQueue.main.async {
+			if !self.selectedFriends.contains(where: { $0.id == friend.id }) {
+				self.selectedFriends.append(friend)
+			}
 		}
 	}
 	
 	// Method to remove a friend from the selected friends list
 	func removeFriend(_ friend: FullFriendUserDTO) {
-		selectedFriends.removeAll { $0.id == friend.id }
+		DispatchQueue.main.async {
+			self.selectedFriends.removeAll { $0.id == friend.id }
+		}
 	}
 	
 	// Method to toggle a friend's selection
 	func toggleFriendSelection(_ friend: FullFriendUserDTO) {
-		if selectedFriends.contains(where: { $0.id == friend.id }) {
-			removeFriend(friend)
-		} else {
-			addFriend(friend)
+		DispatchQueue.main.async {
+			if self.selectedFriends.contains(where: { $0.id == friend.id }) {
+				self.selectedFriends.removeAll { $0.id == friend.id }
+			} else if !self.selectedFriends.contains(where: { $0.id == friend.id }) {
+				self.selectedFriends.append(friend)
+			}
 		}
 	}
 	

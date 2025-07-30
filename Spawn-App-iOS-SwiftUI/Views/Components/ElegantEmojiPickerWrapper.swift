@@ -86,11 +86,16 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
             let selectedEmojiString = emoji?.emoji ?? "⭐️"
             print("DEBUG: Emoji selected: \(selectedEmojiString)")
             
-            // Update selectedEmoji on main thread - do NOT automatically dismiss
+            // Update selectedEmoji on main thread and dismiss ONLY the emoji picker
             DispatchQueue.main.async {
                 self.parent.selectedEmoji = selectedEmojiString
                 print("DEBUG: Updated parent.selectedEmoji to: \(self.parent.selectedEmoji)")
-                // Note: Removed automatic dismissal - let user manually close the picker
+                
+                // Dismiss only the emoji picker sheet, not the parent
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    print("DEBUG: Dismissing emoji picker sheet only")
+                    self.parent.isPresented = false
+                }
             }
         }
     }

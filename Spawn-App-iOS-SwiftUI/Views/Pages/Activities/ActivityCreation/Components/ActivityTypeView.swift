@@ -10,6 +10,10 @@ struct ActivityTypeView: View {
     @State private var navigateToCreateType = false
     @State private var selectedActivityTypeForManagement: ActivityTypeDTO?
     
+    // Delete confirmation state
+    @State private var showDeleteConfirmation = false
+    @State private var activityTypeToDelete: ActivityTypeDTO?
+    
     // Simplified drag and drop state
     @State private var draggedItem: ActivityTypeDTO?
     @State private var targetItem: ActivityTypeDTO?
@@ -75,6 +79,23 @@ struct ActivityTypeView: View {
             } message: {
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
+                }
+            }
+            .alert("Delete Activity Type", isPresented: $showDeleteConfirmation) {
+                Button("Cancel", role: .cancel) {
+                    activityTypeToDelete = nil
+                }
+                Button("Delete", role: .destructive) {
+                    if let activityType = activityTypeToDelete {
+                        Task {
+                            await viewModel.deleteActivityType(activityType)
+                        }
+                    }
+                    activityTypeToDelete = nil
+                }
+            } message: {
+                if let activityType = activityTypeToDelete {
+                    Text("Are you sure you want to delete '\(activityType.title)'? This action cannot be undone.")
                 }
             }
             .navigationDestination(isPresented: $navigateToManageType) {
@@ -174,9 +195,8 @@ extension ActivityTypeView {
                 }
             },
             onDelete: {
-                Task {
-                    await viewModel.deleteActivityType(activityTypeDTO)
-                }
+                activityTypeToDelete = activityTypeDTO
+                showDeleteConfirmation = true
             },
             onManage: {
                 selectedActivityTypeForManagement = activityTypeDTO

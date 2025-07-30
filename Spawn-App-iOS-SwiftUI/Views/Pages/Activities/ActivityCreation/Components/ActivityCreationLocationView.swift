@@ -428,7 +428,8 @@ struct LocationPickerView: View {
                     }
                     
                     // Search results
-                    ForEach(searchResults, id: \.self) { item in
+                    let searchResultsCopy = searchResults  // Create stable copy
+                    ForEach(searchResultsCopy, id: \.self) { item in
                         LocationRowView(
                             icon: "mappin.circle",
                             iconColor: figmaBlack300,
@@ -468,7 +469,9 @@ struct LocationPickerView: View {
     
     private func searchLocations() {
         guard !searchText.isEmpty else {
-            searchResults = []
+            DispatchQueue.main.async {
+                self.searchResults = []
+            }
             return
         }
         
@@ -482,7 +485,9 @@ struct LocationPickerView: View {
                 let search = MKLocalSearch(request: request)
                 search.start { response, error in
                     guard let response = response, error == nil else {
-                        searchResults = []
+                        DispatchQueue.main.async {
+                            self.searchResults = []
+                        }
                         return
                     }
                     DispatchQueue.main.async {
@@ -490,7 +495,7 @@ struct LocationPickerView: View {
                         let validResults = response.mapItems.filter { item in
                             CLLocationCoordinate2DIsValid(item.placemark.coordinate)
                         }
-                        searchResults = Array(validResults.prefix(10)) // Limit results
+                        self.searchResults = Array(validResults.prefix(10)) // Limit results
                     }
                 }
                 return
@@ -505,7 +510,9 @@ struct LocationPickerView: View {
         let search = MKLocalSearch(request: request)
         search.start { response, error in
             guard let response = response, error == nil else {
-                searchResults = []
+                DispatchQueue.main.async {
+                    self.searchResults = []
+                }
                 return
             }
             DispatchQueue.main.async {
@@ -513,7 +520,7 @@ struct LocationPickerView: View {
                 let validResults = response.mapItems.filter { item in
                     CLLocationCoordinate2DIsValid(item.placemark.coordinate)
                 }
-                searchResults = Array(validResults.prefix(10)) // Limit results
+                self.searchResults = Array(validResults.prefix(10)) // Limit results
             }
         }
     }
