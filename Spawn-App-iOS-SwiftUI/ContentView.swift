@@ -242,7 +242,7 @@ struct ContentView: View {
                         set: { if let newTab = $0 { selectedTab = newTab } }
                     )
                 )
-                .id("\(activity.id.uuidString)-\(activity.title ?? "untitled")")  // Force recreation when activity changes
+                .id("\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)")  // Force recreation when activity changes
                 .allowsHitTesting(true)
                 .ignoresSafeArea(.all, edges: .all) // Cover absolutely everything
                 .zIndex(999) // Below notifications but above everything else

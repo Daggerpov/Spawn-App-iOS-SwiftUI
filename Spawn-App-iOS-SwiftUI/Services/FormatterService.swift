@@ -66,14 +66,17 @@ class FormatterService {
 			
 			let dayContext = getDayContext(for: date)
 			
+			// Remove trailing "at" from prefix if it exists for special day contexts
+			let basePrefix = timePrefix.hasSuffix(" at") ? String(timePrefix.dropLast(3)) : timePrefix
+			
 			if dayContext == "today" {
 				return "\(timePrefix) \(timeString)"
 			} else if dayContext == "tomorrow" {
-				return "\(timePrefix) tomorrow at \(timeString)"
+				return "\(basePrefix) tomorrow at \(timeString)"
 			} else if dayContext == "yesterday" {
-				return "\(timePrefix) yesterday at \(timeString)"
+				return "\(basePrefix) yesterday at \(timeString)"
 			} else if calendar.isDate(date, equalTo: now, toGranularity: .weekOfYear) {
-				return "\(timePrefix) \(dayContext) at \(timeString)"
+				return "\(basePrefix) \(dayContext) at \(timeString)"
 			} else {
 				return "\(timePrefix) \(timeString) • \(dayContext)"
 			}
