@@ -834,6 +834,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
+		// Reset hasCompletedOnboarding for users who haven't completed onboarding
+		// This ensures they go through onboarding even if flag was previously set
+		if status != .active {
+			hasCompletedOnboarding = false
+			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+			print("🔄 Reset hasCompletedOnboarding for user with status: \(status.rawValue)")
+		}
+		
 		switch status {
 		case .emailVerified:
 			// Needs to input username, phone number, and password
@@ -853,41 +861,51 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			// Fully onboarded user - go to feed
 			isFormValid = true
             isLoggedIn = true
+			// Ensure hasCompletedOnboarding is set for active users
+			if !hasCompletedOnboarding {
+				hasCompletedOnboarding = true
+				UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+				print("🔄 Set hasCompletedOnboarding for active user")
+			}
 			navigateTo(.feedView)
 			print("📍 User status: active - navigating to feed")
 		}
 	}
     
     private func determineSkipDestination(authResponse: AuthResponseDTO) {
-        print("Determining skip destination")
+        
         guard let status = authResponse.status else {
             // No status means legacy active user
-            print("Error: User has no status")
+            print("❌ [AUTH] Error: User has no status")
             return
         }
+        
+        print("🔍 [AUTH] User status: \(status.rawValue)")
+        print("🔍 [AUTH] User onboarding completed: \(hasCompletedOnboarding)")
+        print("🔍 [AUTH] User details: \(authResponse.user.username ?? "no username"), \(authResponse.user.name ?? "no name")")
         
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
             skipDestination = .userDetailsInput
             navigateTo(.onboardingContinuation)
-            print("📍 User status: emailVerified - showing continuation popup")
+            print("📍 [AUTH] User status: emailVerified - showing continuation popup")
             
         case .usernameAndPhoneNumber:
             // Needs to complete name and photo details
             skipDestination = .userOptionalDetailsInput
             navigateTo(.onboardingContinuation)
-            print("📍 User status: usernameAndPhoneNumber - showing continuation popup")
+            print("📍 [AUTH] User status: usernameAndPhoneNumber - showing continuation popup")
         
         case .nameAndPhoto:
             skipDestination = .contactImport
             navigateTo(.onboardingContinuation)
-            print("📍 User status: nameAndPhoto - showing continuation popup for contact import")
+            print("📍 [AUTH] User status: nameAndPhoto - showing continuation popup for contact import")
         
         case .contactImport:
             skipDestination = .userToS
             navigateTo(.onboardingContinuation)
-            print("📍 User status: contactImport - showing continuation popup for terms of service")
+            print("📍 [AUTH] User status: contactImport - showing continuation popup for terms of service")
             
         case .active:
             // Fully onboarded user - go to feed
@@ -898,7 +916,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			if !hasCompletedOnboarding {
 				markOnboardingCompleted()
 			}
-            print("📍 User status: active - navigating to feed")
+            print("📍 [AUTH] User status: active - navigating to feed")
         }
     }
     

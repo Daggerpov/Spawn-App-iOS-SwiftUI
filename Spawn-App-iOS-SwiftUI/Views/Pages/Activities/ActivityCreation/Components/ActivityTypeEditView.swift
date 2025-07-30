@@ -11,6 +11,7 @@ struct ActivityTypeEditView: View {
     @State private var hasChanges: Bool = false
     @State private var navigateToFriendSelection: Bool = false
     @State private var showEmojiPicker: Bool = false
+    @State private var refreshID = UUID()
     @FocusState private var isTitleFieldFocused: Bool
     
     @StateObject private var viewModel: ActivityTypeViewModel
@@ -41,6 +42,19 @@ struct ActivityTypeEditView: View {
         .sheet(isPresented: $showEmojiPicker) {
             ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
         }
+        .onChange(of: showEmojiPicker) { isShowing in
+            if !isShowing {
+                print("DEBUG: Emoji picker dismissed")
+                // Force view refresh when emoji picker dismisses
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    refreshID = UUID()
+                    print("DEBUG: Post-dismissal refresh with ID: \(refreshID)")
+                }
+            }
+        }
+        .onChange(of: hasChanges) { newValue in
+            print("DEBUG: hasChanges updated to: \(newValue)")
+        }
         .onAppear {
             setupInitialState()
             // Auto-focus the title field when the view appears
@@ -48,12 +62,18 @@ struct ActivityTypeEditView: View {
                 isTitleFieldFocused = true
             }
         }
-        .onChange(of: editedTitle) { _ in
+        .onChange(of: editedTitle) { newValue in
+            print("DEBUG: editedTitle changed to: \(newValue)")
             updateHasChanges()
         }
         .onChange(of: editedIcon) { newValue in
             print("DEBUG: editedIcon changed to: \(newValue)")
             updateHasChanges()
+            // Force view refresh when emoji changes
+            DispatchQueue.main.async {
+                refreshID = UUID()
+                print("DEBUG: Refreshed view with new ID: \(refreshID)")
+            }
         }
         .navigationDestination(isPresented: $navigateToFriendSelection) {
             navigationDestinationView
@@ -122,6 +142,7 @@ struct ActivityTypeEditView: View {
         .background(colorScheme == .dark ? Color(red: 0.24, green: 0.23, blue: 0.23) : Color(red: 0.95, green: 0.93, blue: 0.93))
         .cornerRadius(30)
         .padding(.top, 40)
+        .id("circular-content-\(refreshID)")
     }
     
     private var iconPickerView: some View {
@@ -149,6 +170,7 @@ struct ActivityTypeEditView: View {
             editButtonOverlay
         }
         .frame(width: 128, height: 128)
+        .id(refreshID)
     }
     
     private var editButtonOverlay: some View {
@@ -184,26 +206,40 @@ struct ActivityTypeEditView: View {
     }
     
     private var actionButtonsView: some View {
-        VStack(spacing: 16) {
+        let isButtonEnabled = !((isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) || (!hasChanges && !isNewActivityType) || viewModel.isLoading)
+        
+		return VStack(spacing: 16) {
             // Save button
             Enhanced3DButton(
                 title: isNewActivityType ? "Next" : "Save",
                 backgroundColor: Color(red: 0.42, green: 0.51, blue: 0.98),
                 foregroundColor: .white,
-                isEnabled: !((isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) || (!hasChanges && !isNewActivityType) || viewModel.isLoading)
+                isEnabled: isButtonEnabled
             ) {
+                print("DEBUG: Save button tapped - isNewActivityType: \(isNewActivityType), hasChanges: \(hasChanges), isButtonEnabled: \(isButtonEnabled)")
                 // Only proceed if validation passes
-                guard !(isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) else { return }
+                guard !(isNewActivityType && editedTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) else { 
+                    print("DEBUG: Save button - validation failed, empty title")
+                    return 
+                }
                 
                 if isNewActivityType {
+                    print("DEBUG: Save button - navigating to next step")
                     // For new activity types, navigate to friend selection
                     navigateToNextStep()
                 } else {
+                    print("DEBUG: Save button - saving changes")
                     // For existing activity types, save changes
                     saveChanges()
                 }
             }
             .frame(width: 290)
+            .onAppear {
+                print("DEBUG: Save button appeared - isButtonEnabled: \(isButtonEnabled)")
+            }
+            .onChange(of: isButtonEnabled) { newValue in
+                print("DEBUG: Save button enabled state changed to: \(newValue)")
+            }
             
             // Cancel button
             Enhanced3DButton(
@@ -269,10 +305,18 @@ struct ActivityTypeEditView: View {
         editedTitle = activityTypeDTO.title
         editedIcon = activityTypeDTO.icon
         hasChanges = false
+        print("DEBUG: setupInitialState() - editedTitle: '\(editedTitle)'")
+        print("DEBUG: setupInitialState() - editedIcon: '\(editedIcon)'")
+        print("DEBUG: setupInitialState() - activityTypeDTO.title: '\(activityTypeDTO.title)'")
+        print("DEBUG: setupInitialState() - activityTypeDTO.icon: '\(activityTypeDTO.icon)'")
     }
     
     private func updateHasChanges() {
+        let oldHasChanges = hasChanges
         hasChanges = (editedTitle != activityTypeDTO.title) || (editedIcon != activityTypeDTO.icon)
+        print("DEBUG: updateHasChanges() - editedTitle: '\(editedTitle)' vs activityTypeDTO.title: '\(activityTypeDTO.title)'")
+        print("DEBUG: updateHasChanges() - editedIcon: '\(editedIcon)' vs activityTypeDTO.icon: '\(activityTypeDTO.icon)'")
+        print("DEBUG: updateHasChanges() - hasChanges changed from \(oldHasChanges) to \(hasChanges)")
     }
     
     private func navigateToNextStep() {
@@ -297,11 +341,15 @@ struct ActivityTypeEditView: View {
     
     private func saveChanges() {
         let updatedActivityType = createUpdatedActivityType()
+        print("DEBUG: saveChanges() called with updatedActivityType: title='\(updatedActivityType.title)', icon='\(updatedActivityType.icon)'")
         Task {
+            print("DEBUG: About to call viewModel.updateActivityType")
             await viewModel.updateActivityType(updatedActivityType)
+            print("DEBUG: Finished calling viewModel.updateActivityType")
             
             // Dismiss after saving
             Task { @MainActor in
+                print("DEBUG: Dismissing view after save")
                 dismiss()
             }
         }

@@ -34,7 +34,7 @@ struct CoreInputView: View {
     
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Navigation Bar
                 HStack {
@@ -147,7 +147,7 @@ struct CoreInputView: View {
                             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                             impactGenerator.impactOccurred()
                             
-                            viewModel.signInWithApple()
+                            viewModel.appleRegister()
                         }) {
                             AuthProviderButtonView(.apple)
                         }
@@ -161,7 +161,7 @@ struct CoreInputView: View {
                             impactGenerator.impactOccurred()
                             
                             Task{
-                                await viewModel.loginWithGoogle()
+                                await viewModel.googleRegister()
                             }
                         }) {
                             AuthProviderButtonView(.google)

@@ -46,14 +46,22 @@ struct ChatroomContentView: View {
                     .padding(.top, isExpanded ? geometry.safeAreaInsets.top + 16 : 0)
                 
                 // Messages area that takes remaining space but leaves room for input
-                messagesScrollView
+                if isExpanded {
+                    messagesScrollView
+                } else {
+                    // When minimized, ensure input area is visible by limiting messages height
+                    messagesScrollView
+                        .frame(maxHeight: max(120, geometry.size.height - 140)) // Optimized space reservation for header + input
+                        .layoutPriority(-1) // Give lower priority to messages when space is limited
+                }
                 
-                // Error message and input pinned to bottom
+                // Error message and input pinned to bottom - always visible
                 VStack(spacing: 0) {
                     errorMessageView
                     messageInputView
-                        .padding(.bottom, geometry.safeAreaInsets.bottom + 20) // Always respect safe area + padding
+                        .padding(.bottom, isExpanded ? geometry.safeAreaInsets.bottom + 20 : 20)
                 }
+                .layoutPriority(1) // Give high priority to input area
             }
         }
         .onAppear {

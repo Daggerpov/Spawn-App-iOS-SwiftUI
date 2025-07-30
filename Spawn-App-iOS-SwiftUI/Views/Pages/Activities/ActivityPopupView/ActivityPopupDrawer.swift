@@ -24,7 +24,7 @@ struct ActivityPopupDrawer: View {
     }
     
     private var halfScreenOffset: CGFloat {
-        screenHeight * 0.25 // Adjusted to show more content including chatroom button in minimized state
+        screenHeight * 0.15 // Reduced to ensure input row is visible in minimized chatroom state
     }
     
     private var currentOffset: CGFloat {
@@ -54,7 +54,8 @@ struct ActivityPopupDrawer: View {
                     activityColor: activityColor, 
                     isExpanded: $isExpanded, 
                     selectedTab: $selectedTab,
-                    onDismiss: dismissPopup
+                    onDismiss: dismissPopup,
+                    onMinimize: minimizePopup
                 )
             }
             .background(activityColor.opacity(0.08))
@@ -119,6 +120,14 @@ struct ActivityPopupDrawer: View {
                 dragOffset = 0
             }
     }
+    
+    private func minimizePopup() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
+            isExpanded = false
+            dragOffset = 0
+        }
+    }
+    
     private func dismissPopup() {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
             animationOffset = screenHeight

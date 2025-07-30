@@ -20,7 +20,19 @@ struct LaunchView: View {
     @State private var animationCompleted = false
 
 	var body: some View {
-		NavigationStack {
+		NavigationStack(path: Binding(
+			get: {
+				if userAuth.navigationState != .none {
+					return NavigationPath([userAuth.navigationState])
+				}
+				return NavigationPath()
+			},
+			set: { (path: NavigationPath) in
+				if path.isEmpty {
+					userAuth.navigationState = .none
+				}
+			}
+		)) {
 			VStack(spacing: 16) {
 				Spacer()
 				
@@ -64,7 +76,7 @@ struct LaunchView: View {
 						impactGenerator.impactOccurred()
 						
 						Task {
-                            await userAuth.loginWithGoogle()
+                            await userAuth.googleRegister()
 						}
 					}) {
 						AuthProviderButtonView(authProviderType: .google)
@@ -78,7 +90,7 @@ struct LaunchView: View {
 						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
 						impactGenerator.impactOccurred()
 						
-						userAuth.signInWithApple()
+						userAuth.appleRegister()
 					}) {
 						AuthProviderButtonView(authProviderType: .apple)
 					}
@@ -106,40 +118,62 @@ struct LaunchView: View {
 			}
 			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
 			.navigationBarHidden(true)
+			// Main navigation destinations using new NavigationState system
+			.navigationDestination(for: NavigationState.self) { state in
+				switch state {
+				case .welcome:
+					LaunchView()
+				case .signIn:
+					SignInView()
+						.onAppear {
+							userAuth.resetAuthFlow()
+						}
+				case .register:
+					RegisterInputView()
+						.onAppear {
+							userAuth.resetAuthFlow()
+						}
+				case .loginInput:
+					SignInView()
+				case .accountNotFound:
+					AccountNotFoundView()
+						.navigationBarTitle("")
+						.navigationBarHidden(true)
+				case .onboardingContinuation:
+					OnboardingContinuationView()
+				case .userDetailsInput(let isOAuthUser):
+					UserDetailsInputView(isOAuthUser: isOAuthUser)
+						.navigationBarTitle("")
+						.navigationBarHidden(true)
+				case .userOptionalDetailsInput:
+					UserOptionalDetailsInputView()
+				case .contactImport:
+					ContactImportView()
+				case .userTermsOfService:
+					UserToS()
+				case .phoneNumberInput:
+					UserDetailsInputView(isOAuthUser: false)
+				case .verificationCode:
+					VerificationCodeView(viewModel: userAuth)
+				case .feedView:
+					if let loggedInSpawnUser = userAuth.spawnUser {
+						ContentView(user: loggedInSpawnUser)
+							.navigationBarTitle("")
+							.navigationBarHidden(true)
+					} else {
+						EmptyView() // This should never happen
+					}
+				case .none:
+					EmptyView()
+				}
+			}
+			// Legacy navigation destinations for backward compatibility
 			.navigationDestination(
 				isPresented: $userAuth.shouldNavigateToUserInfoInputView
 			) {
 				UserInfoInputView()
 					.navigationBarTitle("")
 					.navigationBarHidden(true)
-			}
-			.navigationDestination(
-				isPresented: $userAuth.shouldNavigateToAccountNotFoundView
-			) {
-				AccountNotFoundView()
-					.navigationBarTitle("")
-					.navigationBarHidden(true)
-			}
-			.navigationDestination(
-				isPresented: $userAuth.shouldNavigateToUserDetailsView
-			) {
-				UserDetailsInputView(isOAuthUser: true)
-					.navigationBarTitle("")
-					.navigationBarHidden(true)
-			}
-			.navigationDestination(
-				isPresented: $userAuth.shouldNavigateToFeedView
-			) {
-				if let loggedInSpawnUser = userAuth.spawnUser {
-					ContentView(user: loggedInSpawnUser)
-						.navigationBarTitle("")
-						.navigationBarHidden(true)
-				} else {
-					EmptyView() // This should never happen
-				}
-			}
-			.navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
-				OnboardingContinuationView()
 			}
 			.navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
 				switch userAuth.skipDestination {
@@ -154,31 +188,6 @@ struct LaunchView: View {
 				case .none:
 					EmptyView()
 				}
-			}
-			// Additional navigation destinations for AuthFlow views
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToVerificationCodeView) {
-				VerificationCodeView(viewModel: userAuth)
-			}
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToUserOptionalDetailsInputView) {
-				UserOptionalDetailsInputView()
-			}
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToContactImportView) {
-				ContactImportView()
-			}
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToUserToS) {
-				UserToS()
-			}
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToSignInView) {
-				SignInView()
-					.onAppear {
-						userAuth.resetAuthFlow()
-					}
-			}
-			.navigationDestination(isPresented: $userAuth.shouldNavigateToRegisterInputView) {
-				RegisterInputView()
-					.onAppear {
-						userAuth.resetAuthFlow()
-					}
 			}
 		}
 	}

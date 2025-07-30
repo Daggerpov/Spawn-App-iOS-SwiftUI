@@ -47,7 +47,7 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
                 print("DEBUG: Updated parent.selectedEmoji to: \(self.parent.selectedEmoji)")
                 
                 // Add a small delay to ensure the binding update propagates properly
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     print("DEBUG: Dismissing emoji picker")
                     self.parent.isPresented = false
                 }

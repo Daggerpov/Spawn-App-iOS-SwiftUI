@@ -23,6 +23,9 @@ struct ActivityCardPopupView: View {
     // Callback to dismiss the drawer
     let onDismiss: () -> Void
     
+    // Callback to minimize the drawer
+    let onMinimize: () -> Void
+    
     // State for activity reporting
     @State private var showActivityMenu: Bool = false
     @State private var showReportDialog: Bool = false
@@ -30,7 +33,7 @@ struct ActivityCardPopupView: View {
     @State private var showingParticipants = false // Add this state for participants navigation
     
     
-    init(activity: FullFeedActivityDTO, activityColor: Color, isExpanded: Binding<Bool>, selectedTab: Binding<TabType?> = .constant(nil), onDismiss: @escaping () -> Void = {}) {
+    init(activity: FullFeedActivityDTO, activityColor: Color, isExpanded: Binding<Bool>, selectedTab: Binding<TabType?> = .constant(nil), onDismiss: @escaping () -> Void = {}, onMinimize: @escaping () -> Void = {}) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity, locationManager: LocationManager())
         let mapVM = MapViewModel(activity: activity)
@@ -41,6 +44,7 @@ struct ActivityCardPopupView: View {
         self._isExpanded = isExpanded
         self._selectedTab = selectedTab
         self.onDismiss = onDismiss
+        self.onMinimize = onMinimize
     }
     
     var body: some View {
@@ -180,7 +184,7 @@ struct ActivityCardPopupView: View {
             // Bottom spacing to match design
             Spacer(minLength: 20)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 25)
         .padding(.bottom, 20)
     }
     
@@ -316,8 +320,12 @@ extension ActivityCardPopupView {
     var titleAndTime: some View {
         VStack(alignment: .leading, spacing: 4) {
             Button(action: {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    isExpanded.toggle()
+                if isExpanded {
+                    onMinimize()
+                } else {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isExpanded = true
+                    }
                 }
             }) {
                 Image(isExpanded ? "x_symbol" : "expansion_symbol")
@@ -651,8 +659,7 @@ struct ChatroomButtonView: View {
                 }
                 Spacer()
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 16)
+            .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 20))
             .background(Color.black.opacity(0.2))
             .cornerRadius(12)
         }
@@ -730,7 +737,7 @@ struct ChatroomButtonView: View {
 
 struct ActivityCardPopupView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue, isExpanded: .constant(false))
+        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue, isExpanded: .constant(false), onDismiss: {}, onMinimize: {})
             
     }
 }
