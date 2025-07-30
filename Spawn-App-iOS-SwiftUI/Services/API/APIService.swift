@@ -304,8 +304,7 @@ class APIService: IAPIService {
                 if let responseString = String(data: data, encoding: .utf8) {
                     print("🔄 DEBUG: Raw response data: \(responseString)")
                 }
-				let decoder = JSONDecoder()
-				decoder.dateDecodingStrategy = .iso8601
+				let decoder = APIService.makeDecoder()
 				let decodedData = try decoder.decode(U.self, from: data)
 				return decodedData
 			} catch {
