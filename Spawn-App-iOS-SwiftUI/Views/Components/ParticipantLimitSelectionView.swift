@@ -101,7 +101,14 @@ struct ParticipantLimitSelectionView: View {
 }
 
 #Preview {
-    @State var selectedLimit: Int? = nil
-    return ParticipantLimitSelectionView(selectedLimit: $selectedLimit)
-        .background(Color.black)
+    struct PreviewWrapper: View {
+        @State var selectedLimit: Int? = nil
+        
+        var body: some View {
+            ParticipantLimitSelectionView(selectedLimit: $selectedLimit)
+                .background(Color.black)
+        }
+    }
+    
+    return PreviewWrapper()
 } 

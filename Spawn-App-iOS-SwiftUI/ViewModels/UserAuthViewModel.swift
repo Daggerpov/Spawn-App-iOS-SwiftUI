@@ -136,8 +136,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
             self.navigationState = state
             
             // Reset the navigation lock after a short delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.isNavigating = false
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.isNavigating = false
             }
         }
     }
@@ -390,9 +390,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
             self.shouldShowOnboardingContinuation = false
             
             // Wait a brief moment for the UI to update, then navigate
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                self.navigateTo(targetState)
-            }
+            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
+            self.navigateTo(targetState)
         }
     }
 	
@@ -791,7 +790,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					parameters: parameters
 				)
 
-			print("User created successfully: \(fetchedUser.username)")
+			print("User created successfully: \(fetchedUser.username ?? "Unknown")")
 			if let profilePic = fetchedUser.profilePicture {
 				print("Profile picture set: \(profilePic)")
 			} else {
@@ -835,6 +834,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 		
+		// Reset hasCompletedOnboarding for users who haven't completed onboarding
+		// This ensures they go through onboarding even if flag was previously set
+		if status != .active {
+			hasCompletedOnboarding = false
+			UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+			print("🔄 Reset hasCompletedOnboarding for user with status: \(status.rawValue)")
+		}
+		
 		switch status {
 		case .emailVerified:
 			// Needs to input username, phone number, and password
@@ -854,41 +861,51 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			// Fully onboarded user - go to feed
 			isFormValid = true
             isLoggedIn = true
+			// Ensure hasCompletedOnboarding is set for active users
+			if !hasCompletedOnboarding {
+				hasCompletedOnboarding = true
+				UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+				print("🔄 Set hasCompletedOnboarding for active user")
+			}
 			navigateTo(.feedView)
 			print("📍 User status: active - navigating to feed")
 		}
 	}
     
     private func determineSkipDestination(authResponse: AuthResponseDTO) {
-        print("Determining skip destination")
+        
         guard let status = authResponse.status else {
             // No status means legacy active user
-            print("Error: User has no status")
+            print("❌ [AUTH] Error: User has no status")
             return
         }
+        
+        print("🔍 [AUTH] User status: \(status.rawValue)")
+        print("🔍 [AUTH] User onboarding completed: \(hasCompletedOnboarding)")
+        print("🔍 [AUTH] User details: \(authResponse.user.username ?? "no username"), \(authResponse.user.name ?? "no name")")
         
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
             skipDestination = .userDetailsInput
             navigateTo(.onboardingContinuation)
-            print("📍 User status: emailVerified - showing continuation popup")
+            print("📍 [AUTH] User status: emailVerified - showing continuation popup")
             
         case .usernameAndPhoneNumber:
             // Needs to complete name and photo details
             skipDestination = .userOptionalDetailsInput
             navigateTo(.onboardingContinuation)
-            print("📍 User status: usernameAndPhoneNumber - showing continuation popup")
+            print("📍 [AUTH] User status: usernameAndPhoneNumber - showing continuation popup")
         
         case .nameAndPhoto:
             skipDestination = .contactImport
             navigateTo(.onboardingContinuation)
-            print("📍 User status: nameAndPhoto - showing continuation popup for contact import")
+            print("📍 [AUTH] User status: nameAndPhoto - showing continuation popup for contact import")
         
         case .contactImport:
             skipDestination = .userToS
             navigateTo(.onboardingContinuation)
-            print("📍 User status: contactImport - showing continuation popup for terms of service")
+            print("📍 [AUTH] User status: contactImport - showing continuation popup for terms of service")
             
         case .active:
             // Fully onboarded user - go to feed
@@ -899,7 +916,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			if !hasCompletedOnboarding {
 				markOnboardingCompleted()
 			}
-            print("📍 User status: active - navigating to feed")
+            print("📍 [AUTH] User status: active - navigating to feed")
         }
     }
     
@@ -929,7 +946,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.spawnUser = updatedUser
                 self.shouldNavigateToUserToS = true
-                print("Successfully completed contact import for user: \(updatedUser.username)")
+                print("Successfully completed contact import for user: \(updatedUser.username ?? "Unknown")")
             }
         } catch {
             await MainActor.run {
@@ -974,7 +991,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 self.errorMessage = nil // Clear any previous errors on success
                 // Mark onboarding as completed when user accepts Terms of Service
                 self.markOnboardingCompleted()
-                print("Successfully accepted Terms of Service for user: \(updatedUser.username)")
+                print("Successfully accepted Terms of Service for user: \(updatedUser.username ?? "Unknown")")
             }
         } catch let error as APIError {
             await MainActor.run {
@@ -1016,13 +1033,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
 			do {
                 // Try to unregister device token, but don't let it fail the account deletion
-                do {
-                    await NotificationService.shared.unregisterDeviceToken()
-                } catch {
-                    print("Failed to unregister device token during account deletion (continuing with deletion): \(error.localizedDescription)")
-                }
+				await NotificationService.shared.unregisterDeviceToken()
 
-                try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
+                _ = try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
 				
                 // Clear tokens after successful account deletion
                 var success = KeychainService.shared.delete(key: "accessToken")
@@ -1133,7 +1146,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 		
 		if let user = spawnUser {
-			print("Starting profile picture update for user \(userId) (username: \(user.username), name: \(user.name ?? "")) with image data size: \(imageData.count) bytes")
+			print("Starting profile picture update for user \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown")) with image data size: \(imageData.count) bytes")
 		} else {
 			print("Starting profile picture update for user \(userId) with image data size: \(imageData.count) bytes")
 		}
@@ -1141,7 +1154,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Immediately update the UI with the selected image for better UX
 		await MainActor.run {
 			// Create a temporary updated user with the selected image for immediate UI feedback
-			if var currentUser = self.spawnUser {
+			if self.spawnUser != nil {
 				// We'll update this with the actual URL once uploaded
 				self.objectWillChange.send()
 			}
@@ -1226,7 +1239,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		
 		// Log user details
 		if let user = spawnUser {
-			print("Editing profile for user \(userId) (username: \(user.username), name: \(user.name ?? ""))")
+			print("Editing profile for user \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))")
 		}
 
 		if let url = URL(string: APIService.baseURL + "users/update/\(userId)") {
@@ -1250,7 +1263,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					// Ensure UI updates with the latest values
 					self.objectWillChange.send()
 					
-					print("Profile updated successfully: \(updatedUser.username)")
+					print("Profile updated successfully: \(updatedUser.username ?? "Unknown")")
 					
 					// Post notification for profile update to trigger hot-reload across the app
 					NotificationCenter.default.post(
@@ -1286,7 +1299,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					// Force UI to update
 					self.objectWillChange.send()
 					
-					print("User data refreshed: \(updatedUser.username), \(updatedUser.name ?? "")")
+					print("User data refreshed: \(updatedUser.username ?? "Unknown"), \(updatedUser.name ?? "Unknown")")
 				}
 			} catch {
 				print("Error fetching user data: \(error.localizedDescription)")

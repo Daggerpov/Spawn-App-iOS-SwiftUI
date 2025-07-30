@@ -13,6 +13,7 @@ struct ActivityTypeView: View {
     // Simplified drag and drop state
     @State private var draggedItem: ActivityTypeDTO?
     @State private var targetItem: ActivityTypeDTO?
+    @GestureState private var isDragging = false
     
     // Initialize the view model with userId
     init(selectedActivityType: Binding<ActivityTypeDTO?>, onNext: @escaping () -> Void) {
@@ -76,11 +77,9 @@ struct ActivityTypeView: View {
                     Text(errorMessage)
                 }
             }
-            .sheet(isPresented: $navigateToManageType) {
+            .navigationDestination(isPresented: $navigateToManageType) {
                 if let selectedType = selectedActivityTypeForManagement {
-                    NavigationStack {
-                        ActivityTypeEditView(activityTypeDTO: selectedType)
-                    }
+                    ActivityTypeManagementView(activityTypeDTO: selectedType)
                 }
             }
             .sheet(isPresented: $navigateToCreateType) {
@@ -146,10 +145,8 @@ extension ActivityTypeView {
         }
         .onTapGesture {
             // Clear any residual drag state when tapping outside cards
-            if draggedItem != nil {
-                draggedItem = nil
-                targetItem = nil
-            }
+            draggedItem = nil
+            targetItem = nil
         }
     }
     
@@ -190,13 +187,41 @@ extension ActivityTypeView {
         )
         .opacity(draggedItem?.id == activityTypeDTO.id ? 0.3 : (targetItem?.id == activityTypeDTO.id ? 0.3 : 1))
         .scaleEffect(draggedItem?.id == activityTypeDTO.id ? 0.8 : targetItem?.id == activityTypeDTO.id ? 1.1 : 1)
+        .animation(.easeInOut(duration: 0.2), value: draggedItem?.id)
+        .animation(.easeInOut(duration: 0.2), value: targetItem?.id)
         .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 12))
+        .simultaneousGesture(
+            DragGesture()
+                .updating($isDragging) { _, state, _ in
+                    state = true
+                }
+                .onChanged { _ in
+                    // Clear any previous drag states first
+                    if draggedItem == nil {
+                        targetItem = nil
+                        draggedItem = activityTypeDTO
+                    }
+                }
+        )
         .onDrag {
             // Clear any previous drag states first
             targetItem = nil
             // Set draggedItem to the current item being dragged
             draggedItem = activityTypeDTO
             return NSItemProvider(object: activityTypeDTO.id.uuidString as NSString)
+        }
+        .onDisappear {
+            // Reset drag state when view disappears to handle navigation away during drag
+            draggedItem = nil
+            targetItem = nil
+        }
+        .onChange(of: isDragging) { newValue in
+            // Reset drag state when gesture ends (cancelled or completed)
+            if !newValue {
+                // Immediately clear drag states
+                draggedItem = nil
+                targetItem = nil
+            }
         }
         .onDrop(
             of: [.text],
@@ -232,10 +257,25 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
         return DropProposal(operation: .move)
     }
     
+    func validateDrop(info: DropInfo) -> Bool {
+        // Always reset state if validation fails
+        guard draggedItem != nil else {
+            resetDragState()
+            return false
+        }
+        return true
+    }
+    
+    private func resetDragState() {
+        draggedItem = nil
+        targetItem = nil
+    }
+    
     func performDrop(info: DropInfo) -> Bool {
+        // Always reset state at the end to ensure cleanup regardless of outcome
+        defer { resetDragState() }
+        
         guard let draggedItem = draggedItem, draggedItem.id != item.id else { 
-            self.draggedItem = nil
-            targetItem = nil
             return false 
         }
         
@@ -245,8 +285,6 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
         guard let fromIndex = sortedTypes.firstIndex(where: { $0.id == draggedItem.id }),
               let toIndex = sortedTypes.firstIndex(where: { $0.id == item.id }),
               fromIndex != toIndex else { 
-            self.draggedItem = nil
-            targetItem = nil
             return false 
         }
         
@@ -260,8 +298,6 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
                 viewModel.showError("Unpinned activities cannot be moved before pinned activities")
             }
             
-            self.draggedItem = nil
-            targetItem = nil
             return false
         }
         
@@ -275,18 +311,12 @@ struct ActivityTypeDragDropDelegate: DropDelegate {
                 viewModel.showError("Pinned activities cannot be moved after unpinned activities")
             }
             
-            self.draggedItem = nil
-            targetItem = nil
             return false
         }
         
         // Success feedback
         let successGenerator = UIImpactFeedbackGenerator(style: .light)
         successGenerator.impactOccurred()
-        
-        // Clear drag state immediately to prevent UI deformation
-        self.draggedItem = nil
-        targetItem = nil
         
         // Perform the reorder
         Task {
@@ -307,6 +337,10 @@ struct ActivityTypeCard: View {
     // Drag and drop states
     let isDragging: Bool
     let isDropTarget: Bool
+    
+    // Add state to track button interaction
+    @State private var isPressed = false
+    @State private var isRecentlyDragged = false
     
     @Environment(\.colorScheme) private var colorScheme
     
@@ -410,6 +444,9 @@ struct ActivityTypeCard: View {
 
     var body: some View {
         Button(action: { 
+            // Don't execute if currently dragging
+            guard !isDragging else { return }
+            
             // Haptic feedback
             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
             impactGenerator.impactOccurred()
@@ -472,7 +509,28 @@ struct ActivityTypeCard: View {
                 }
             }
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(DragSafeButtonStyle(
+            isDragging: isDragging, 
+            isPressed: $isPressed, 
+            isRecentlyDragged: isRecentlyDragged
+        ))
+        .onChange(of: isDragging) { newValue in
+            // Handle drag state changes
+            if newValue {
+                // Dragging started
+                isPressed = false
+                isRecentlyDragged = false
+            } else {
+                // Dragging ended - mark as recently dragged and reset after delay
+                isRecentlyDragged = true
+                isPressed = false
+                
+                // Clear the recently dragged flag after sufficient time
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                    isRecentlyDragged = false
+                }
+            }
+        }
         .contextMenu {
             Button(action: onPin) {
                 Label(
@@ -554,6 +612,49 @@ struct CreateNewActivityTypeCard: View {
     }
 }
 
+// MARK: - Custom Button Style
+struct DragSafeButtonStyle: ButtonStyle {
+    let isDragging: Bool
+    @Binding var isPressed: Bool
+    let isRecentlyDragged: Bool
+    
+    func makeBody(configuration: Configuration) -> some View {
+        let shouldShowPressed = configuration.isPressed && !isDragging && !isRecentlyDragged
+        
+        configuration.label
+            .scaleEffect(isDragging ? 1.0 : (shouldShowPressed ? 0.95 : 1.0))
+            .opacity(isDragging ? 1.0 : (shouldShowPressed ? 0.8 : 1.0))
+            .animation(.easeInOut(duration: 0.1), value: shouldShowPressed)
+            .animation(.easeInOut(duration: 0.1), value: isDragging)
+            .allowsHitTesting(!isDragging && !isRecentlyDragged) // Disable interaction during and after dragging
+            .onChange(of: isDragging) { newValue in
+                // Reset pressed state when dragging starts or ends
+                if newValue {
+                    // Dragging started - immediately reset pressed state
+                    isPressed = false
+                } else {
+                    // Dragging ended - ensure clean state reset
+                    isPressed = false
+                }
+            }
+            .onChange(of: configuration.isPressed) { newValue in
+                // Only allow pressed state if not dragging and not recently dragged
+                if !isDragging && !isRecentlyDragged {
+                    isPressed = newValue
+                } else {
+                    // Force reset if we're dragging or recently dragged
+                    isPressed = false
+                }
+            }
+            .onChange(of: isRecentlyDragged) { newValue in
+                // Reset pressed state when recently dragged state changes
+                if newValue {
+                    isPressed = false
+                }
+            }
+    }
+}
+
 // MARK: - Extensions
 extension RoundedRectangle {
     func stroke(_ content: Color, lineWidth: CGFloat, dashLengthValue: CGFloat, dashSpacingValue: CGFloat) -> some View {
@@ -576,3 +677,4 @@ extension RoundedRectangle {
         .environmentObject(appCache)
     }
 } 
+

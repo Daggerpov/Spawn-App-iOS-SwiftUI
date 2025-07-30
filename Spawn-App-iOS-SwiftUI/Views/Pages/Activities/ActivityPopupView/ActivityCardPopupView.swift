@@ -17,12 +17,23 @@ struct ActivityCardPopupView: View {
     @State private var region: MKCoordinateRegion
     @Binding var isExpanded: Bool
     
+    // Optional binding to control tab selection for current user navigation
+    @Binding var selectedTab: TabType?
+    
+    // Callback to dismiss the drawer
+    let onDismiss: () -> Void
+    
+    // Callback to minimize the drawer
+    let onMinimize: () -> Void
+    
     // State for activity reporting
     @State private var showActivityMenu: Bool = false
     @State private var showReportDialog: Bool = false
+    @State private var showingChatroom = false // Add this state for navigation
+    @State private var showingParticipants = false // Add this state for participants navigation
     
     
-    init(activity: FullFeedActivityDTO, activityColor: Color, isExpanded: Binding<Bool>) {
+    init(activity: FullFeedActivityDTO, activityColor: Color, isExpanded: Binding<Bool>, selectedTab: Binding<TabType?> = .constant(nil), onDismiss: @escaping () -> Void = {}, onMinimize: @escaping () -> Void = {}) {
         self.activity = activity
         viewModel = ActivityInfoViewModel(activity: activity, locationManager: LocationManager())
         let mapVM = MapViewModel(activity: activity)
@@ -31,6 +42,9 @@ struct ActivityCardPopupView: View {
         self.activityColor = activityColor
         _region = State(initialValue: mapVM.initialRegion)
         self._isExpanded = isExpanded
+        self._selectedTab = selectedTab
+        self.onDismiss = onDismiss
+        self.onMinimize = onMinimize
     }
     
     var body: some View {
@@ -43,13 +57,43 @@ struct ActivityCardPopupView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 12)
                 
-                // Main card content
-                mainCardContent
+                // Conditional content based on navigation state
+                if showingChatroom {
+                    // Chatroom content
+                    ChatroomContentView(
+                        activity: activity, 
+                        backgroundColor: activityColor,
+                        isExpanded: isExpanded,
+                        onBack: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showingChatroom = false
+                            }
+                        }
+                    )
+                } else if showingParticipants {
+                    // Participants content
+                    ParticipantsContentView(
+                        activity: activity,
+                        backgroundColor: activityColor,
+                        isExpanded: isExpanded,
+                        onBack: {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                showingParticipants = false
+                            }
+                        },
+                        selectedTab: $selectedTab,
+                        onDismiss: onDismiss
+                    )
+                } else {
+                    // Main card content
+                    mainCardContent
+                }
             }
             .background(activityColor.opacity(0.97))
             .cornerRadius(isExpanded ? 0 : 20)
             .shadow(radius: isExpanded ? 0 : 20)
-            .ignoresSafeArea(.container, edges: .bottom) // Extend into safe area at bottom
+            .ignoresSafeArea((showingChatroom || showingParticipants) && isExpanded ? .all : .container, edges: (showingChatroom || showingParticipants) && isExpanded ? .all : .bottom) // Fill entire screen when chatroom/participants are maximized
+            .frame(maxWidth: .infinity, maxHeight: .infinity) // Ensure consistent framing
             .sheet(isPresented: $showActivityMenu) {
                 ActivityMenuView(
                     activity: activity,
@@ -69,6 +113,16 @@ struct ActivityCardPopupView: View {
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showChatroom)) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showingChatroom = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showParticipants)) { _ in
+            withAnimation(.easeInOut(duration: 0.3)) {
+                showingParticipants = true
             }
         }
     }
@@ -107,6 +161,9 @@ struct ActivityCardPopupView: View {
                             .font(.title3)
                             .padding(8)
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .allowsHitTesting(true)
+                    .highPriorityGesture(TapGesture()) // Ensure tap gestures take priority over parent drag gestures
                 }
             }
             
@@ -114,7 +171,7 @@ struct ActivityCardPopupView: View {
             titleAndTime
             
             // Spawn In button and attendees
-            ParticipationButtonView(activity: activity, cardViewModel: cardViewModel)
+            ParticipationButtonView(activity: activity, cardViewModel: cardViewModel, selectedTab: $selectedTab)
             
             // Map and location info container - always visible
             if activity.location != nil {
@@ -127,7 +184,7 @@ struct ActivityCardPopupView: View {
             // Bottom spacing to match design
             Spacer(minLength: 20)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 25)
         .padding(.bottom, 20)
     }
     
@@ -142,8 +199,11 @@ struct ActivityCardPopupView: View {
                 }
             }
             .frame(height: 200)
-            .cornerRadius(12)
-            .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
+            )
             
             // Location info overlay at bottom
             locationOverlay
@@ -170,11 +230,22 @@ struct ActivityCardPopupView: View {
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
             
-            Text("\(viewModel.getDisplayString(activityInfoType: .location)) • \(viewModel.getDisplayString(activityInfoType: .distance)) away")
-                .font(Font.custom("Onest", size: 14).weight(.medium))
-                .foregroundColor(.white)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            // Display location and distance separately to control truncation
+            HStack(spacing: 4) {
+                Text(viewModel.getDisplayString(activityInfoType: .location))
+                    .font(Font.custom("Onest", size: 14).weight(.medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(0) // Lower priority for truncation
+                
+                Text("• \(viewModel.getDisplayString(activityInfoType: .distance)) away")
+                    .font(Font.custom("Onest", size: 14).weight(.medium))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false) // Prevent truncation of distance
+                    .layoutPriority(1) // Higher priority to keep this part visible
+            }
         }
         .padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
         .background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
@@ -215,6 +286,9 @@ struct ActivityCardPopupView: View {
             .background(.white)
             .cornerRadius(10)
         }
+        .buttonStyle(PlainButtonStyle())
+        .allowsHitTesting(true)
+        .highPriorityGesture(TapGesture()) // Ensure tap gestures take priority over parent drag gestures
     }
 }
 
@@ -245,6 +319,19 @@ struct MapHelper: Identifiable {
 extension ActivityCardPopupView {
     var titleAndTime: some View {
         VStack(alignment: .leading, spacing: 4) {
+            Button(action: {
+                if isExpanded {
+                    onMinimize()
+                } else {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isExpanded = true
+                    }
+                }
+            }) {
+                Image(isExpanded ? "x_symbol" : "expansion_symbol")
+                    .foregroundColor(.white)
+            }
+            .buttonStyle(PlainButtonStyle())
             Text(activity.title ?? "\(activity.creatorUser.name ?? activity.creatorUser.username ?? "User")'s activity")
                 .font(.onestSemiBold(size: 32))
                 .foregroundColor(.white)
@@ -271,7 +358,7 @@ extension ActivityCardPopupView {
                 .cornerRadius(12)
             }
             Spacer()
-            ParticipantsImagesView(activity: activity)
+            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab)
         }
     }
     
@@ -287,7 +374,7 @@ extension ActivityCardPopupView {
                         .foregroundColor(.white)
                         .font(.onestSemiBold(size: 15))
                 }
-                Text(viewModel.getDisplayString(activityInfoType: .distance) + " away")
+                Text("• \(viewModel.getDisplayString(activityInfoType: .distance)) away")
                     .foregroundColor(.white)
                     .font(.onestRegular(size: 14))
             }
@@ -338,9 +425,22 @@ extension ActivityCardPopupView {
                 Image(systemName: "mappin.and.ellipse")
                     .font(.system(size: 14))
                     .foregroundColor(.white)
-                Text("\(viewModel.getDisplayString(activityInfoType: .location)) • \(viewModel.getDisplayString(activityInfoType: .distance)) away")
-                    .font(.custom("Onest", size: 14).weight(.medium))
-                    .foregroundColor(.white)
+                // Display location and distance separately to control truncation
+                HStack(spacing: 4) {
+                    Text(viewModel.getDisplayString(activityInfoType: .location))
+                        .font(.custom("Onest", size: 14).weight(.medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(0) // Lower priority for truncation
+                    
+                    Text("• \(viewModel.getDisplayString(activityInfoType: .distance)) away")
+                        .font(.custom("Onest", size: 14).weight(.medium))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false) // Prevent truncation of distance
+                        .layoutPriority(1) // Higher priority to keep this part visible
+                }
             }
             .padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
             .background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
@@ -386,14 +486,18 @@ struct ParticipationButtonView: View {
     @ObservedObject private var activity: FullFeedActivityDTO
     @ObservedObject private var cardViewModel: ActivityCardViewModel
     
+    // Optional binding to control tab selection for current user navigation  
+    @Binding var selectedTab: TabType?
+    
     // Animation states for 3D effect
     @State private var isPressed = false
     @State private var scale: CGFloat = 1.0
     @State private var showingEditFlow = false
     
-    init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel) {
+    init(activity: FullFeedActivityDTO, cardViewModel: ActivityCardViewModel, selectedTab: Binding<TabType?> = .constant(nil)) {
         self.activity = activity
         self.cardViewModel = cardViewModel
+        self._selectedTab = selectedTab
     }
     
     private var isUserCreator: Bool {
@@ -432,18 +536,8 @@ struct ParticipationButtonView: View {
                 let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                 impactGenerator.impactOccurred()
                 
-                // Execute action with slight delay for animation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    if isUserCreator {
-                        // Initialize the creation view model with existing activity data
-                        ActivityCreationViewModel.initializeWithExistingActivity(activity)
-                        showingEditFlow = true
-                    } else {
-                        Task {
-                            await cardViewModel.toggleParticipation()
-                        }
-                    }
-                }
+                // Direct action without delay for better responsiveness
+                handleParticipationAction()
             }) {
                 HStack {
                     Image(systemName: participationIcon)
@@ -466,9 +560,11 @@ struct ParticipationButtonView: View {
                 )
             }
             .buttonStyle(PlainButtonStyle())
+            .allowsHitTesting(true)
+            .contentShape(Rectangle()) // Ensure the entire button area is tappable
             .animation(.easeInOut(duration: 0.15), value: scale)
             .animation(.easeInOut(duration: 0.15), value: isPressed)
-            .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            .onLongPressGesture(minimumDuration: 0.2, maximumDistance: 10, pressing: { pressing in
                 isPressed = pressing
                 scale = pressing ? 0.95 : 1.0
                 
@@ -480,7 +576,7 @@ struct ParticipationButtonView: View {
             }, perform: {})
             
             Spacer()
-            ParticipantsImagesView(activity: activity)
+            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab)
         }
         .fullScreenCover(isPresented: $showingEditFlow) {
             ActivityCreationView(
@@ -493,6 +589,19 @@ struct ParticipationButtonView: View {
             )
         }
     }
+    
+    // Direct action method for better responsiveness
+    private func handleParticipationAction() {
+        if isUserCreator {
+            // Initialize the creation view model with existing activity data
+            ActivityCreationViewModel.initializeWithExistingActivity(activity)
+            showingEditFlow = true
+        } else {
+            Task {
+                await cardViewModel.toggleParticipation()
+            }
+        }
+    }
 }
 
 struct ChatroomButtonView: View {
@@ -500,7 +609,7 @@ struct ChatroomButtonView: View {
     let activityColor: Color
     @ObservedObject var activity: FullFeedActivityDTO
     @ObservedObject var viewModel: ChatViewModel
-    @State private var showingChatroom = false
+    @State private var isLoading: Bool = true
     
     init(activity: FullFeedActivityDTO, activityColor: Color) {
         self.activity = activity
@@ -512,10 +621,16 @@ struct ChatroomButtonView: View {
     
     var body: some View {
         Button(action: {
-            showingChatroom = true
+            guard !isLoading else { return } // Prevent action during loading
+            // Use direct action instead of notification to avoid potential delays
+            openChatroom()
         }) {
             HStack {
-                if viewModel.chats.isEmpty {
+                if isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                        .frame(width: 40, height: 40)
+                } else if viewModel.chats.isEmpty {
                     Image("EmptyDottedCircle")
                 } else {
                     profilePictures
@@ -525,7 +640,11 @@ struct ChatroomButtonView: View {
                     Text("Chatroom")
                         .foregroundColor(.white)
                         .font(.onestMedium(size: 18))
-                    if viewModel.chats.isEmpty {
+                    if isLoading {
+                        Text("Loading...")
+                            .foregroundColor(.white.opacity(0.8))
+                            .font(.onestRegular(size: 15))
+                    } else if viewModel.chats.isEmpty {
                         Text("Be the first to send a message!")
                             .foregroundColor(.white.opacity(0.8))
                             .font(.onestRegular(size: 15))
@@ -540,14 +659,26 @@ struct ChatroomButtonView: View {
                 }
                 Spacer()
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 16)
+            .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 20))
             .background(Color.black.opacity(0.2))
             .cornerRadius(12)
         }
-        .sheet(isPresented: $showingChatroom) {
-            ChatroomView(activity: activity, backgroundColor: activityColor)
+        .buttonStyle(PlainButtonStyle())
+        .allowsHitTesting(true)
+        .contentShape(Rectangle()) // Ensure the entire button area is tappable
+        .onAppear {
+            Task {
+                await viewModel.refreshChat()
+                await MainActor.run {
+                    isLoading = false
+                }
+            }
         }
+    }
+    
+    // Direct action method to avoid notification delays
+    private func openChatroom() {
+        NotificationCenter.default.post(name: .showChatroom, object: nil)
     }
     
     var profilePictures: some View {
@@ -606,7 +737,7 @@ struct ChatroomButtonView: View {
 
 struct ActivityCardPopupView_Previews: PreviewProvider {
     static var previews: some View {
-        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue, isExpanded: .constant(false))
+        ActivityCardPopupView(activity: FullFeedActivityDTO.mockDinnerActivity, activityColor: figmaSoftBlue, isExpanded: .constant(false), onDismiss: {}, onMinimize: {})
             
     }
 }

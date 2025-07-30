@@ -9,7 +9,7 @@ import Foundation
 
 /// Master enum representing all possible navigation states in the app
 /// This replaces multiple boolean navigation flags to prevent concurrent navigation updates
-enum NavigationState: Equatable {
+enum NavigationState: Equatable, Hashable {
     // Auth Flow States
     case welcome
     case signIn

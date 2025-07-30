@@ -723,7 +723,7 @@ class MockAPIService: IAPIService {
 		if let existingUser = mockUsers.first(where: { $0.id == userId }) {
 			// Log with user details
 			print(
-				"🔍 MOCK: Updating profile picture for user \(userId) (username: \(existingUser.username), name: \(existingUser.name ?? ""))"
+				"🔍 MOCK: Updating profile picture for user \(userId) (username: \(existingUser.username ?? "N/A"), name: \(existingUser.name ?? ""))"
 			)
 		} else {
 			// Log just the ID if user not found
@@ -745,7 +745,7 @@ class MockAPIService: IAPIService {
 			mockUsers[existingUserIndex].profilePicture = mockProfilePicURL
 			let updatedUser = mockUsers[existingUserIndex]
 			print(
-				"✅ MOCK: Profile picture updated successfully for user \(userId) (username: \(updatedUser.username), name: \(updatedUser.name ?? "")) with URL: \(mockProfilePicURL)"
+				"✅ MOCK: Profile picture updated successfully for user \(userId) (username: \(updatedUser.username ?? "Unknown"), name: \(updatedUser.name ?? "Unknown")) with URL: \(mockProfilePicURL)"
 			)
 			return mockUsers[existingUserIndex]
 		} else {

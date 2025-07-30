@@ -160,7 +160,7 @@ struct ActivityCreationLocationView: View {
                             // Set the location in the view model based on current pin position
                             let location = LocationDTO(
                                 id: UUID(),
-                                name: searchText.isEmpty ? "Pacific Spirit Park" : searchText,
+                                name: searchText.isEmpty ? "Selected Location" : searchText,
                                 latitude: region.center.latitude,
                                 longitude: region.center.longitude
                             )

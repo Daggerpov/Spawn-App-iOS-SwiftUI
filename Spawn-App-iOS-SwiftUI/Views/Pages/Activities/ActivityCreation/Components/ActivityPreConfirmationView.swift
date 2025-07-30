@@ -74,7 +74,7 @@ struct ActivityPreConfirmationView: View {
                     if let location = viewModel.selectedLocation {
                         Text(location.name)
                     } else {
-                        Text("Pacific Spirit Park")
+                        Text("Location TBD")
                     }
                     
                     Text("@")
@@ -169,13 +169,13 @@ struct ActivityPreConfirmationView: View {
                     .fill(adaptiveCardBackgroundColor)
                     .frame(width: 48, height: 48)
                 
-                Text(viewModel.selectedActivityType?.icon ?? "🥾")
+                Text(viewModel.selectedActivityType?.icon ?? "🎯")
                     .font(.system(size: 32))
             }
             
             // Activity details
             VStack(spacing: 12) {
-                Text(viewModel.selectedActivityType?.title ?? "Hike")
+                Text(viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Morning Stroll"))
                     .font(.onestMedium(size: 24))
                     .foregroundColor(adaptiveTextColor)
                 

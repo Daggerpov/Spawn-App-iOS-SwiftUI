@@ -40,65 +40,56 @@ struct ActivityTypeCardView: View {
     }
 
     var body: some View {
-        Button(action: {
+        VStack(spacing: 4) {
+            Text(activityType.icon)
+                .font(Font.custom("Onest", size: 34).weight(.bold))
+                .foregroundColor(Color(red: 0.07, green: 0.07, blue: 0.07))
+            Text(activityType.title)
+                .font(Font.custom("Onest", size: 16).weight(.semibold))
+                .foregroundColor(Color(red: 0.07, green: 0.07, blue: 0.07))
+        }
+        .padding(16)
+        .frame(width: 85, height: 115)
+        .background(Color(red: 0.95, green: 0.93, blue: 0.93))
+        .cornerRadius(12)
+        .scaleEffect(scale)
+        .shadow(
+            color: Color.black.opacity(0.15),
+            radius: isPressed ? 2 : 8,
+            x: 0,
+            y: isPressed ? 2 : 4
+        )
+        .animation(.easeInOut(duration: 0.15), value: scale)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .onTapGesture {
             // Haptic feedback
             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
             impactGenerator.impactOccurred()
             
-            // Execute action with slight delay for animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if let onTap = onTap {
-                    print("🔘 ActivityTypeCardView '\(activityType.title)' button tapped")
-                    onTap(activityType)
-                } else {
-                    print("❌ ActivityTypeCardView '\(activityType.title)' button tapped but onTap is nil")
-                }
+            if let onTap = onTap {
+                print("🔘 ActivityTypeCardView '\(activityType.title)' button tapped")
+                onTap(activityType)
+            } else {
+                print("❌ ActivityTypeCardView '\(activityType.title)' button tapped but onTap is nil")
             }
-        }) {
-            VStack(spacing: 4) {
-                Text(activityType.icon)
-                    .font(Font.custom("Onest", size: 34).weight(.bold))
-                    .foregroundColor(adaptiveTextColor)
-                Text(activityType.title)
-                    .font(Font.custom("Onest", size: 16).weight(.semibold))
-                    .foregroundColor(adaptiveTextColor)
-            }
-            .padding(16)
-            .frame(width: 85, height: 115)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(adaptiveBackgroundColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(
-                                colorScheme == .dark ? 
-                                    Color.white.opacity(0.1) : 
-                                    Color.clear, 
-                                lineWidth: 1
-                            )
-                    )
-            )
-            .scaleEffect(scale)
-            .shadow(
-                color: Color.black.opacity(0.15),
-                radius: isPressed ? 2 : 8,
-                x: 0,
-                y: isPressed ? 2 : 4
-            )
         }
-        .buttonStyle(PlainButtonStyle())
-        .animation(.easeInOut(duration: 0.15), value: scale)
-        .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-            isPressed = pressing
-            scale = pressing ? 0.95 : 1.0
-            
-            // Additional haptic feedback for press down
-            if pressing {
-                let selectionGenerator = UISelectionFeedbackGenerator()
-                selectionGenerator.selectionChanged()
-            }
-        }, perform: {})
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isPressed {
+                        isPressed = true
+                        scale = 0.95
+                        
+                        // Haptic feedback for press down
+                        let selectionGenerator = UISelectionFeedbackGenerator()
+                        selectionGenerator.selectionChanged()
+                    }
+                }
+                .onEnded { _ in
+                    isPressed = false
+                    scale = 1.0
+                }
+        )
     }
 }
 

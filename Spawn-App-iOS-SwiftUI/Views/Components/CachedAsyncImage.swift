@@ -162,6 +162,10 @@ struct CachedProfileImage: View {
             return 50
         case .activityParticipants, .chatMessage:
             return 25
+        case .participantsPopup:
+            return 42.33
+        case .participantsDrawer:
+            return 36
         case .profilePage:
             return 150
         }

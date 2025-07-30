@@ -20,6 +20,18 @@ struct ActivityFeedView: View {
     @State private var showFullActivitiesList: Bool = false
     @Environment(\.dismiss) private var dismiss
     
+    // Convert non-optional selectedTab to optional for ActivityPopupDrawer
+    private var optionalSelectedTab: Binding<TabType?> {
+        Binding<TabType?>(
+            get: { selectedTab },
+            set: { newValue in
+                if let newValue = newValue {
+                    selectedTab = newValue
+                }
+            }
+        )
+    }
+    
     // Deep link parameters
     @Binding var deepLinkedActivityId: UUID?
     @Binding var shouldShowDeepLinkedActivity: Bool
@@ -96,18 +108,20 @@ struct ActivityFeedView: View {
                 }
             }
         }
-        .overlay(
-            // Custom popup overlay
-            Group {
-                if showingActivityPopup, let popupActivity = activityInPopup, let color = colorInPopup {
-                    ActivityPopupDrawer(
-                        activity: popupActivity,
-                        activityColor: color,
-                        isPresented: $showingActivityPopup
-                    )
-                }
+        .onChange(of: showingActivityPopup) { isShowing in
+            if isShowing, let activity = activityInPopup, let color = colorInPopup {
+                // Post notification to show global popup
+                NotificationCenter.default.post(
+                    name: .showGlobalActivityPopup,
+                    object: nil,
+                    userInfo: ["activity": activity, "color": color]
+                )
+                // Reset local state since global popup will handle it
+                showingActivityPopup = false
+                activityInPopup = nil
+                colorInPopup = nil
             }
-        )
+        }
         .overlay(
             // Tutorial overlay
             TutorialOverlayView()

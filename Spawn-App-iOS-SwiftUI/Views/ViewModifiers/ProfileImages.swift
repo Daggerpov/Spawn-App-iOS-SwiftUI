@@ -23,6 +23,14 @@ extension Image {
 			imageSize = 25
 			strokeColor = .white
 			lineWidth = 1
+		case .participantsPopup:
+			imageSize = 42.33 // Figma design specification
+			strokeColor = .clear
+			lineWidth = 0
+		case .participantsDrawer:
+			imageSize = 36 // Figma design specification
+			strokeColor = .clear
+			lineWidth = 0
 		case .profilePage:
 			imageSize = 150
 		}

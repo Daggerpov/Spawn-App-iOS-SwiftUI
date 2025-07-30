@@ -220,7 +220,7 @@ struct EditProfileView: View {
             
             // Ensure the user object is fully refreshed
             if let spawnUser = userAuth.spawnUser {
-                print("Updated profile: \(spawnUser.name ?? ""), @\(spawnUser.username)")
+                print("Updated profile: \(spawnUser.name ?? "Unknown"), @\(spawnUser.username ?? "unknown")")
                 await MainActor.run {
                     userAuth.objectWillChange.send()
                 }

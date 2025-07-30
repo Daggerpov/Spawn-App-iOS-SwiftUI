@@ -11,6 +11,9 @@ struct ActivityPopupDrawer: View {
     let activityColor: Color
     @Binding var isPresented: Bool
     
+    // Optional binding to control tab selection for current user navigation
+    @Binding var selectedTab: TabType?
+    
     @State private var dragOffset: CGFloat = 0
     @State private var isExpanded: Bool = false
     @State private var isDragging: Bool = false
@@ -21,7 +24,7 @@ struct ActivityPopupDrawer: View {
     }
     
     private var halfScreenOffset: CGFloat {
-        screenHeight * 0.12
+        screenHeight * 0.15 // Reduced to ensure input row is visible in minimized chatroom state
     }
     
     private var currentOffset: CGFloat {
@@ -35,23 +38,32 @@ struct ActivityPopupDrawer: View {
     var body: some View {
         ZStack {
             VisualEffectView(effect: UIBlurEffect(style: .systemUltraThinMaterial))
-                    .ignoresSafeArea()
+                    .ignoresSafeArea(.all, edges: .all) // Cover everything including tab bar
+                    .frame(maxWidth: .infinity, maxHeight: .infinity) // Ensure full coverage
                     .onTapGesture {
                         // Prevent multiple dismissals
                         guard isPresented else { return }
                         dismissPopup()
                     }
                     .opacity(0.65)
+                    .zIndex(isExpanded ? 999 : 0) // Ensure blur covers tab bar when expanded
             // Popup content
             VStack(spacing: 0) {
-                ActivityCardPopupView(activity: activity, activityColor: activityColor, isExpanded: $isExpanded)
+                ActivityCardPopupView(
+                    activity: activity, 
+                    activityColor: activityColor, 
+                    isExpanded: $isExpanded, 
+                    selectedTab: $selectedTab,
+                    onDismiss: dismissPopup,
+                    onMinimize: minimizePopup
+                )
             }
             .background(activityColor.opacity(0.08))
             .frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)
             .cornerRadius(isExpanded ? 0 : 20, corners: [.topLeft, .topRight])
             .offset(y: currentOffset)
             .gesture(
-                DragGesture(minimumDistance: 0)
+                DragGesture(minimumDistance: 15) // Increased minimum distance to prevent interference with button taps
                     .onChanged { value in
                         isDragging = true
                         // Allow dragging in both directions for smoother interaction
@@ -62,7 +74,9 @@ struct ActivityPopupDrawer: View {
                         handleDragEnd(value: value)
                     }
             )
+            .allowsHitTesting(true) // Ensure buttons inside can still be tapped
             .ignoresSafeArea(isExpanded ? .all : .container, edges: isExpanded ? .all : .bottom)
+            .zIndex(isExpanded ? 1000 : 1) // Ensure expanded popup appears above tab bar
         }
         .transition(.move(edge: .bottom))
         .onAppear {
@@ -106,6 +120,14 @@ struct ActivityPopupDrawer: View {
                 dragOffset = 0
             }
     }
+    
+    private func minimizePopup() {
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
+            isExpanded = false
+            dragOffset = 0
+        }
+    }
+    
     private func dismissPopup() {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8, blendDuration: 0)) {
             animationOffset = screenHeight
