@@ -255,60 +255,7 @@ struct ContactImportView: View {
             }
         )
         .navigationBarHidden(true)
-        .navigationDestination(for: NavigationState.self) { state in
-            switch state {
-            case .welcome:
-                LaunchView()
-            case .signIn:
-                SignInView()
-                    .onAppear {
-                        userAuth.resetAuthFlow()
-                    }
-            case .register:
-                RegisterInputView()
-                    .onAppear {
-                        userAuth.resetAuthFlow()
-                    }
-            case .loginInput:
-                SignInView()
-            case .accountNotFound:
-                AccountNotFoundView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .onboardingContinuation:
-                OnboardingContinuationView()
-            case .userDetailsInput(let isOAuthUser):
-                UserDetailsInputView(isOAuthUser: isOAuthUser)
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .contactImport:
-                ContactImportView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .userTermsOfService:
-                UserToS()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .phoneNumberInput:
-                UserDetailsInputView(isOAuthUser: false)
-            case .verificationCode:
-                VerificationCodeView(viewModel: userAuth)
-            case .feedView:
-                if let loggedInSpawnUser = userAuth.spawnUser {
-                    ContentView(user: loggedInSpawnUser)
-                        .navigationBarTitle("")
-                        .navigationBarHidden(true)
-                } else {
-                    EmptyView() // This should never happen
-                }
-            case .none:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(userAuth)
         .alert("Contacts Permission Denied", isPresented: $showPermissionDeniedAlert) {
             Button("Settings") {
                 openAppSettings()

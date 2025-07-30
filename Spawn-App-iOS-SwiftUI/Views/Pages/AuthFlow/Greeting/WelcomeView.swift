@@ -14,7 +14,19 @@ struct WelcomeView: View {
     @StateObject private var userAuth = UserAuthViewModel.shared
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: Binding(
+            get: {
+                if userAuth.navigationState != .none {
+                    return NavigationPath([userAuth.navigationState])
+                }
+                return NavigationPath()
+            },
+            set: { (path: NavigationPath) in
+                if path.isEmpty {
+                    userAuth.navigationState = .none
+                }
+            }
+        )) {
             VStack {
                 Spacer()
                 

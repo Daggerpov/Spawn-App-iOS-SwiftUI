@@ -199,60 +199,7 @@ struct RegisterInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .navigationDestination(for: NavigationState.self) { state in
-            switch state {
-            case .welcome:
-                LaunchView()
-            case .signIn:
-                SignInView()
-                    .onAppear {
-                        viewModel.resetAuthFlow()
-                    }
-            case .register:
-                RegisterInputView()
-                    .onAppear {
-                        viewModel.resetAuthFlow()
-                    }
-            case .loginInput:
-                SignInView()
-            case .accountNotFound:
-                AccountNotFoundView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .onboardingContinuation:
-                OnboardingContinuationView()
-            case .userDetailsInput(let isOAuthUser):
-                UserDetailsInputView(isOAuthUser: isOAuthUser)
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .contactImport:
-                ContactImportView()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .userTermsOfService:
-                UserToS()
-                    .navigationBarTitle("")
-                    .navigationBarHidden(true)
-            case .phoneNumberInput:
-                UserDetailsInputView(isOAuthUser: false)
-            case .verificationCode:
-                VerificationCodeView(viewModel: viewModel)
-            case .feedView:
-                if let loggedInSpawnUser = viewModel.spawnUser {
-                    ContentView(user: loggedInSpawnUser)
-                        .navigationBarTitle("")
-                        .navigationBarHidden(true)
-                } else {
-                    EmptyView() // This should never happen
-                }
-            case .none:
-                EmptyView()
-            }
-        }
+        .withAuthNavigation(viewModel)
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()
