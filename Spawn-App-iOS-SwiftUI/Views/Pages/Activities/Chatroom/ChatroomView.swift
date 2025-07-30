@@ -69,7 +69,7 @@ struct ChatroomContentView: View {
     
     // Fixed heights for messages area
     private let minimizedMessagesHeight: CGFloat = 480
-    private let expandedMessagesHeight: CGFloat = 650
+    private let expandedMessagesHeight: CGFloat = 725
     
     // MARK: - View Components
     

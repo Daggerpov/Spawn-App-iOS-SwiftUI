@@ -1,5 +1,58 @@
 import SwiftUI
 
+// MARK: - Shared Components
+
+// Shared back button component
+struct ParticipantsBackButton: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white.opacity(0.6))
+        }
+    }
+}
+
+// Shared title text component
+struct ParticipantsTitleText: View {
+    var body: some View {
+        Text("Who's Coming?")
+            .font(Font.custom("Onest", size: 20).weight(.semibold))
+            .foregroundColor(.white)
+    }
+}
+
+// Shared invisible balance button for layout purposes
+struct InvisibleBalanceButton: View {
+    var body: some View {
+        Button(action: {}) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.clear)
+        }
+        .disabled(true)
+    }
+}
+
+// Shared header view component
+struct ParticipantsHeaderView: View {
+    let onBack: () -> Void
+    
+    var body: some View {
+        HStack {
+            ParticipantsBackButton(action: onBack)
+            Spacer()
+            ParticipantsTitleText()
+            Spacer()
+            InvisibleBalanceButton()
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 16)
+    }
+}
+
 // MARK: - Shared User Item Component
 struct UserItemView: View {
     let user: BaseUserDTO
@@ -159,7 +212,7 @@ struct ParticipantsContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            headerView
+            ParticipantsHeaderView(onBack: onBack)
             
             // Participants content that takes remaining space
             ScrollView {
@@ -175,45 +228,6 @@ struct ParticipantsContentView: View {
                 ProfileView(user: selectedUser)
             }
         }
-    }
-    
-    // MARK: - View Components
-    
-    private var headerView: some View {
-        HStack {
-            backButton
-            Spacer()
-            titleText
-            Spacer()
-            invisibleBalanceButton
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 16)
-    }
-    
-    private var backButton: some View {
-        Button(action: {
-            onBack()
-        }) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.white.opacity(0.6))
-        }
-    }
-    
-    private var titleText: some View {
-        Text("Who's Coming?")
-            .font(Font.custom("Onest", size: 20).weight(.semibold))
-            .foregroundColor(.white)
-    }
-    
-    private var invisibleBalanceButton: some View {
-        Button(action: {}) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(.clear)
-        }
-        .disabled(true)
     }
 }
 
@@ -235,7 +249,7 @@ struct ActivityParticipantsView: View {
                 // Main participants container
                 VStack(spacing: 0) {
                     handleBar
-                    headerView
+                    ParticipantsHeaderView(onBack: onDismiss)
                     
                     // Participants content that takes remaining space
                     ScrollView {
@@ -264,29 +278,6 @@ struct ActivityParticipantsView: View {
             .frame(width: 50, height: 4)
             .padding(.top, 8)
             .padding(.bottom, 12)
-    }
-    
-    private var headerView: some View {
-        HStack {
-            Button(action: { onDismiss() }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            Spacer()
-            Text("Who's Coming?")
-                .font(Font.custom("Onest", size: 20).weight(.semibold))
-                .foregroundColor(.white)
-            Spacer()
-            Button(action: {}) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(.clear)
-            }
-            .disabled(true)
-        }
-        .padding(.horizontal, 24)
-        .padding(.bottom, 16)
     }
     
     private var bottomHandle: some View {

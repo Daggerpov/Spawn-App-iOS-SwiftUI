@@ -74,6 +74,15 @@ class FeedViewModel: ObservableObject {
             }
             .store(in: &cancellables)
         
+        // Register for activity update notifications  
+        NotificationCenter.default.publisher(for: .activityUpdated)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.fetchActivitiesForUser()
+                }
+            }
+            .store(in: &cancellables)
+        
         // Register for activity type changes for immediate UI refresh
         NotificationCenter.default.publisher(for: .activityTypesChanged)
             .sink { [weak self] _ in

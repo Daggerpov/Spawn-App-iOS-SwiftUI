@@ -8,7 +8,7 @@ import MapKit
 import SwiftUI
 
 struct ActivityCardPopupView: View {
-	private var viewModel: ActivityInfoViewModel
+	@StateObject private var viewModel: ActivityInfoViewModel
 	@StateObject private var mapViewModel: MapViewModel
 	@StateObject private var cardViewModel: ActivityCardViewModel
 	@StateObject private var locationManager = LocationManager()
@@ -41,9 +41,11 @@ struct ActivityCardPopupView: View {
 		onMinimize: @escaping () -> Void = {}
 	) {
 		self.activity = activity
-		viewModel = ActivityInfoViewModel(
-			activity: activity,
-			locationManager: LocationManager()
+		self._viewModel = StateObject(
+			wrappedValue: ActivityInfoViewModel(
+				activity: activity,
+				locationManager: LocationManager()
+			)
 		)
 		let mapVM = MapViewModel(activity: activity)
 		_mapViewModel = StateObject(wrappedValue: mapVM)
@@ -150,6 +152,22 @@ struct ActivityCardPopupView: View {
 		{ _ in
 			withAnimation(.easeInOut(duration: 0.3)) {
 				showingParticipants = true
+			}
+		}
+		.onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
+			if let updatedActivity = notification.object as? FullFeedActivityDTO,
+			   updatedActivity.id == activity.id {
+				print("🔄 ActivityCardPopupView: Received activity update for \(updatedActivity.title ?? "Unknown")")
+				
+				// Update all view models with the new activity data
+				viewModel.updateActivity(updatedActivity)
+				mapViewModel.updateActivity(updatedActivity)
+				cardViewModel.updateActivity(updatedActivity)
+				
+				// Update the region for the map to reflect new location
+				region = mapViewModel.initialRegion
+				
+				print("✅ ActivityCardPopupView: Updated all view models with new activity data")
 			}
 		}
 	}
@@ -303,33 +321,36 @@ struct ActivityCardPopupView: View {
 				.font(.onestSemiBold(size: 14))
 				.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
 		}
-		.padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
+		.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
 		.background(.white)
 		.cornerRadius(10)
 		.contentShape(Rectangle()) // Define the entire button area as tappable
-		.onTapGesture {
-			guard let location = activity.location else { return }
+		.simultaneousGesture(
+			TapGesture()
+				.onEnded { _ in
+					guard let location = activity.location else { return }
 
-			let coordinate = CLLocationCoordinate2D(
-				latitude: location.latitude,
-				longitude: location.longitude
-			)
-			let destinationMapItem = MKMapItem(
-				placemark: MKPlacemark(coordinate: coordinate)
-			)
-			destinationMapItem.name = location.name
+					let coordinate = CLLocationCoordinate2D(
+						latitude: location.latitude,
+						longitude: location.longitude
+					)
+					let destinationMapItem = MKMapItem(
+						placemark: MKPlacemark(coordinate: coordinate)
+					)
+					destinationMapItem.name = location.name
 
-			let sourceMapItem = MKMapItem.forCurrentLocation()
+					let sourceMapItem = MKMapItem.forCurrentLocation()
 
-			MKMapItem.openMaps(
-				with: [sourceMapItem, destinationMapItem],
-				launchOptions: [
-					MKLaunchOptionsDirectionsModeKey:
-						MKLaunchOptionsDirectionsModeDefault,
-					MKLaunchOptionsShowsTrafficKey: true,
-				]
-			)
-		}
+					MKMapItem.openMaps(
+						with: [sourceMapItem, destinationMapItem],
+						launchOptions: [
+							MKLaunchOptionsDirectionsModeKey:
+								MKLaunchOptionsDirectionsModeDefault,
+							MKLaunchOptionsShowsTrafficKey: true,
+						]
+					)
+				}
+		)
 		.allowsHitTesting(true)
 	}
 }
