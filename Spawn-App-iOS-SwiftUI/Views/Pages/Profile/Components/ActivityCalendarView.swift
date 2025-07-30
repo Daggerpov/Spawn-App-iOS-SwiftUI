@@ -192,17 +192,12 @@ struct MonthCalendarView: View {
             // Use the same ActivityPopupDrawer as the feed view for consistency
             Group {
                 if showActivityDetails, let activity = profileViewModel.selectedActivity {
-                    // Use the same color scheme as ActivityCardView would
-                    let _ = activity.isSelfOwned == true ?
-                        universalAccentColor : getActivityColor(for: activity.id)
-
                                                     EmptyView() // Replaced with global popup system
             }
         }
         .onChange(of: showActivityDetails) { isShowing in
             if isShowing, let activity = profileViewModel.selectedActivity {
-                let activityColor = activity.isSelfOwned == true ?
-                    universalAccentColor : getActivityColor(for: activity.id)
+                let activityColor = getActivityColor(for: activity.id)
                 
                 // Post notification to show global popup
                 NotificationCenter.default.post(

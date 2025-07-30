@@ -70,18 +70,13 @@ struct ProfileCalendarView: View {
 			// Use the same ActivityPopupDrawer as the feed view for consistency
 			Group {
 				if showActivityDetails, let activity = profileViewModel.selectedActivity {
-					// Use the same color scheme as ActivityCardView would
-					let _ = activity.isSelfOwned == true ?
-						universalAccentColor : getActivityColor(for: activity.id)
-
 					EmptyView() // Replaced with global popup system
 				}
 			}
 		)
 		.onChange(of: showActivityDetails) { isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
-				let activityColor = activity.isSelfOwned == true ?
-					universalAccentColor : getActivityColor(for: activity.id)
+				let activityColor = getActivityColor(for: activity.id)
 				
 				// Post notification to show global popup
 				NotificationCenter.default.post(
@@ -190,10 +185,22 @@ struct ProfileCalendarView: View {
 	}
 
 	private func handleDaySelection(activities: [CalendarActivityDTO]) {
-		// NEW LOGIC: Always navigate to full calendar view first
-		// This preserves the old logic of showing the full calendar before day selection
-		DispatchQueue.main.async {
-			self.navigateToCalendar = true
+		if activities.count == 1 {
+			// Single activity - fetch details and show popup directly
+			if let activity = activities.first {
+				handleActivitySelection(activity)
+			}
+		} else if activities.count > 1 {
+			// Multiple activities - set selected activities and navigate directly to day activities view
+			DispatchQueue.main.async {
+				self.selectedDayActivities = activities
+				self.navigateToDayActivities = true
+			}
+		} else {
+			// No activities - navigate to full calendar view (preserve existing behavior for empty days)
+			DispatchQueue.main.async {
+				self.navigateToCalendar = true
+			}
 		}
 	}
 
@@ -326,11 +333,9 @@ struct CalendarDayCell: View {
 			return Color(hex: colorHexCode)
 		}
 
-		// Fallback to activity color based on ID
-		guard let activityId = activity.activityId else {
-			return figmaCalendarDayIcon  // Default gray color
-		}
-		return getActivityColor(for: activityId)
+		// Use the same logic as feed view - prefer activityId, fallback to the calendar activity's id
+		let colorId = activity.activityId ?? activity.id
+		return getActivityColor(for: colorId)
 	}
 
 	private func activityIcon(for activity: CalendarActivityDTO) -> some View {

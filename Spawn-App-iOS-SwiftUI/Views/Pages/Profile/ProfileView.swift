@@ -627,8 +627,9 @@ struct ProfileView: View {
 			date: date,
 			activities: selectedDayActivities,
 			onDismiss: {
-				// Reset navigation state when day activities view is dismissed
+				// Navigate back to calendar view instead of going back to profile
 				navigateToDayActivities = false
+				navigateToCalendar = true
 			},
 			onActivitySelected: { activity in
 				// Reset navigation state and handle activity selection
@@ -641,18 +642,12 @@ struct ProfileView: View {
 	private var activityDetailsView: some View {
 		Group {
 			if let activity = profileViewModel.selectedActivity {
-				// Use the same color scheme as ActivityCardView would
-				let _ =
-					activity.isSelfOwned == true
-					? universalAccentColor : getActivityColor(for: activity.id)
-
 				EmptyView() // Replaced with global popup system
 			}
 		}
 		.onChange(of: showActivityDetails) { isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
-				let activityColor = activity.isSelfOwned == true ?
-					universalAccentColor : getActivityColor(for: activity.id)
+				let activityColor = getActivityColor(for: activity.id)
 				
 				// Post notification to show global popup
 				NotificationCenter.default.post(

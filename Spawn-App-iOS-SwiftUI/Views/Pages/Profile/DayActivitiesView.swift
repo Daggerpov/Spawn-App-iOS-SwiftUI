@@ -91,12 +91,9 @@ struct DayActivitiesView: View {
             return Color(hex: colorHex)
         }
         
-        // Otherwise, use the activity color based on ID
-        guard let activityId = activity.activityId else {
-            return .gray
-        }
-        
-        return getActivityColor(for: activityId)
+        // Use the same logic as feed view - prefer activityId, fallback to the calendar activity's id
+        let colorId = activity.activityId ?? activity.id
+        return getActivityColor(for: colorId)
     }
 }
 
