@@ -51,8 +51,6 @@ struct ChatroomContentView: View {
                     .frame(height: isExpanded ? expandedMessagesHeight : minimizedMessagesHeight)
                     .clipped()
                 
-                Spacer() // Push input to bottom
-                
                 // Input area - always anchored at bottom with no spacing below
                 VStack(spacing: 0) {
                     errorMessageView
@@ -70,8 +68,8 @@ struct ChatroomContentView: View {
     }
     
     // Fixed heights for messages area
-    private let minimizedMessagesHeight: CGFloat = 200
-    private let expandedMessagesHeight: CGFloat = 500
+    private let minimizedMessagesHeight: CGFloat = 480
+    private let expandedMessagesHeight: CGFloat = 650
     
     // MARK: - View Components
     
@@ -159,6 +157,7 @@ struct ChatroomContentView: View {
                 }
             }
             .frame(maxWidth: .infinity)
+			.padding(.vertical)
         }
     }
     
