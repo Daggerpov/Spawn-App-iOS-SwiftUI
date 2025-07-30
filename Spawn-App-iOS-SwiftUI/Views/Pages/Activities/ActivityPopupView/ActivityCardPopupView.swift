@@ -75,6 +75,10 @@ struct ActivityCardPopupView: View {
 					.frame(width: 50, height: 4)
 					.padding(.top, 8)
 					.padding(.bottom, 12)
+			} else {
+				// Add equivalent padding when expanded to avoid status bar
+				Spacer()
+					.frame(height: 24) // 8 + 4 + 12 from handle bar
 			}
 
 			// Conditional content based on navigation state
