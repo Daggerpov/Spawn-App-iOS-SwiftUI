@@ -255,37 +255,56 @@ struct ContactImportView: View {
             }
         )
         .navigationBarHidden(true)
-        .navigationDestination(
-            isPresented: $userAuth.shouldNavigateToUserToS
-        ) {
-            UserToS()
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $userAuth.shouldNavigateToFeedView
-        ) {
-            if let loggedInSpawnUser = userAuth.spawnUser {
-                ContentView(user: loggedInSpawnUser)
+        .navigationDestination(for: NavigationState.self) { state in
+            switch state {
+            case .welcome:
+                LaunchView()
+            case .signIn:
+                SignInView()
+                    .onAppear {
+                        userAuth.resetAuthFlow()
+                    }
+            case .register:
+                RegisterInputView()
+                    .onAppear {
+                        userAuth.resetAuthFlow()
+                    }
+            case .loginInput:
+                SignInView()
+            case .accountNotFound:
+                AccountNotFoundView()
                     .navigationBarTitle("")
                     .navigationBarHidden(true)
-            } else {
-                EmptyView() // This should never happen
-            }
-        }
-        .navigationDestination(isPresented: $userAuth.shouldShowOnboardingContinuation) {
-            OnboardingContinuationView()
-        }
-        .navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
-            switch userAuth.skipDestination {
-            case .userDetailsInput:
-                UserDetailsInputView(isOAuthUser: true)
+            case .onboardingContinuation:
+                OnboardingContinuationView()
+            case .userDetailsInput(let isOAuthUser):
+                UserDetailsInputView(isOAuthUser: isOAuthUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
             case .userOptionalDetailsInput:
                 UserOptionalDetailsInputView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
             case .contactImport:
                 ContactImportView()
-            case .userToS:
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            case .userTermsOfService:
                 UserToS()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            case .phoneNumberInput:
+                UserDetailsInputView(isOAuthUser: false)
+            case .verificationCode:
+                VerificationCodeView(viewModel: userAuth)
+            case .feedView:
+                if let loggedInSpawnUser = userAuth.spawnUser {
+                    ContentView(user: loggedInSpawnUser)
+                        .navigationBarTitle("")
+                        .navigationBarHidden(true)
+                } else {
+                    EmptyView() // This should never happen
+                }
             case .none:
                 EmptyView()
             }

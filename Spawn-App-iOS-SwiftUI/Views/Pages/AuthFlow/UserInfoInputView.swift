@@ -285,7 +285,7 @@ struct UserInfoInputView: View {
 				if userAuth.spawnUser != nil {
 					requestNotificationPermission()
 					userAuth.isFormValid = true
-					userAuth.shouldNavigateToUserToS = true
+					userAuth.navigateTo(.userTermsOfService)
 				} else {
 					errorMessage = "Failed to create user. Please try again."
 					showErrorAlert = true

@@ -67,8 +67,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Replace all individual navigation flags with a single navigation state
 	@Published var navigationState: NavigationState = .none
 	
-	// Keep these for backwards compatibility during transition
-	@Published var shouldNavigateToFeedView: Bool = false
+	// Keep legacy navigation flags for any remaining compatibility needs
 	@Published var shouldNavigateToUserInfoInputView: Bool = false  // New property for navigation
 	@Published var shouldNavigateToAccountNotFoundView: Bool = false  // New property for account not found
 
@@ -92,14 +91,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     @Published var shouldNavigateToPhoneNumberView: Bool = false
     @Published var shouldNavigateToVerificationCodeView: Bool = false
-    @Published var shouldNavigateToUserDetailsView: Bool = false
     @Published var secondsUntilNextVerificationAttempt: Int = 30
-    
-    @Published var shouldNavigateToUserOptionalDetailsInputView: Bool = false
-    
-    @Published var shouldNavigateToContactImportView: Bool = false
-    
-    @Published var shouldNavigateToUserToS: Bool = false
     
     @Published var shouldNavigateToSignInView: Bool = false
     @Published var shouldNavigateToRegisterInputView: Bool = false
@@ -116,7 +108,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     // MARK: - Navigation Helper Methods
     
-    /// Safely navigate to a new state with proper debouncing and protection
+        /// Safely navigate to a new state with proper debouncing and protection
     func navigateTo(_ state: NavigationState, delay: TimeInterval = 0.1) {
         // Prevent multiple concurrent navigation attempts
         guard !isNavigating else {
@@ -229,35 +221,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				self.storedEmail = self.email
 			}
 
-			// Reset user state
-			self.errorMessage = nil
-			self.authProvider = nil
-			self.externalUserId = nil
-			self.idToken = nil
-			self.isLoggedIn = false
-			self.spawnUser = nil
+					// Reset user state
+		self.errorMessage = nil
+		self.authProvider = nil
+		self.externalUserId = nil
+		self.idToken = nil
+		self.isLoggedIn = false
+		self.spawnUser = nil
 
-			self.name = nil
-			self.email = nil
-			self.profilePicUrl = nil
+		self.name = nil
+		self.email = nil
+		self.profilePicUrl = nil
 
-			self.isFormValid = false
+		self.isFormValid = false
 
-			self.navigationState = .none
-			self.shouldNavigateToFeedView = false
-			self.shouldNavigateToUserInfoInputView = false
-			self.shouldNavigateToAccountNotFoundView = false
-			self.shouldNavigateToPhoneNumberView = false
-			self.shouldNavigateToVerificationCodeView = false
-			self.shouldNavigateToUserDetailsView = false
-			self.shouldNavigateToUserOptionalDetailsInputView = false
-			self.shouldNavigateToContactImportView = false
-			self.shouldNavigateToUserToS = false
-			self.shouldNavigateToSignInView = false
-			self.shouldNavigateToRegisterInputView = false
-			self.shouldShowOnboardingContinuation = false
-			self.shouldSkipAhead = false
-			self.skipDestination = .none
+		self.navigationState = .none
+		self.shouldNavigateToUserInfoInputView = false
+		self.shouldNavigateToAccountNotFoundView = false
+		self.shouldNavigateToPhoneNumberView = false
+		self.shouldNavigateToVerificationCodeView = false
+		self.shouldNavigateToSignInView = false
+		self.shouldNavigateToRegisterInputView = false
+		self.shouldShowOnboardingContinuation = false
+		self.shouldSkipAhead = false
+		self.skipDestination = .none
 			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
@@ -319,22 +306,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			
 			self.isFormValid = false
 			
-			// Reset all navigation flags
-			self.navigationState = .none
-			self.shouldNavigateToFeedView = false
-			self.shouldNavigateToUserInfoInputView = false
-			self.shouldNavigateToAccountNotFoundView = false
-			self.shouldNavigateToPhoneNumberView = false
-			self.shouldNavigateToVerificationCodeView = false
-			self.shouldNavigateToUserDetailsView = false
-			self.shouldNavigateToUserOptionalDetailsInputView = false
-			self.shouldNavigateToContactImportView = false
-			self.shouldNavigateToUserToS = false
-			self.shouldNavigateToSignInView = false
-			self.shouldNavigateToRegisterInputView = false
-			self.shouldShowOnboardingContinuation = false
-			self.shouldSkipAhead = false
-			self.skipDestination = .none
+					// Reset all navigation flags
+		self.navigationState = .none
+		self.shouldNavigateToUserInfoInputView = false
+		self.shouldNavigateToAccountNotFoundView = false
+		self.shouldNavigateToPhoneNumberView = false
+		self.shouldNavigateToVerificationCodeView = false
+		self.shouldNavigateToSignInView = false
+		self.shouldNavigateToRegisterInputView = false
+		self.shouldShowOnboardingContinuation = false
+		self.shouldSkipAhead = false
+		self.skipDestination = .none
 			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
@@ -819,13 +801,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 
-	func setShouldNavigateToFeedView() {
-		navigateTo(.feedView, delay: 0.05)
-	}
+
 	
 	private func navigateBasedOnUserStatus(authResponse: AuthResponseDTO) {
-		// Reset navigation state
-		navigationState = .none
+		// Reset form validation state
 		isFormValid = false
 		
 		guard let status = authResponse.status else {
@@ -945,7 +924,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             
             await MainActor.run {
                 self.spawnUser = updatedUser
-                self.shouldNavigateToUserToS = true
+                self.navigateTo(.userTermsOfService)
                 print("Successfully completed contact import for user: \(updatedUser.username ?? "Unknown")")
             }
         } catch {
@@ -1369,7 +1348,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
                 // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
                 // This ensures the minimum loading time is respected
@@ -1387,11 +1365,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 guard let user: BaseUserDTO = response else {
                     print("Failed to login with email/username")
                     await MainActor.run {
-                        self.isLoggedIn = false
-                        self.spawnUser = nil
-                        self.shouldNavigateToFeedView = false
-                        self.shouldNavigateToUserInfoInputView = false
-                        self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
+                                            self.isLoggedIn = false
+                    self.spawnUser = nil
+                    self.shouldNavigateToUserInfoInputView = false
+                    self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
                     }
                     return
                 }
@@ -1412,7 +1389,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
                 
                 // Provide user-friendly error messages based on API error
@@ -1438,7 +1414,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                self.shouldNavigateToFeedView = false
                 self.shouldNavigateToUserInfoInputView = false
                 self.errorMessage = "Unable to sign in at this time. Please try again later."
             }
@@ -1766,7 +1741,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
-                        self.shouldNavigateToUserOptionalDetailsInputView = true
+                        self.navigateTo(.userOptionalDetailsInput)
                         self.errorMessage = nil
                         print("✅ User details updated successfully")
                     } else {
@@ -1867,7 +1842,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
-                        self.shouldNavigateToContactImportView = true
+                        self.navigateTo(.contactImport)
                         self.errorMessage = nil
                     } else {
                         self.errorMessage = "Failed to update optional details."

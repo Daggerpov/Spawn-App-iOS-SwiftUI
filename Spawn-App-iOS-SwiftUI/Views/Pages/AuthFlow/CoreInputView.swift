@@ -176,58 +176,56 @@ struct CoreInputView: View {
             .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         }
         .navigationBarHidden(true)
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToUserDetailsView
-        ) {
-            UserDetailsInputView(isOAuthUser: true)
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToUserOptionalDetailsInputView
-        ) {
-            UserOptionalDetailsInputView()
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToContactImportView
-        ) {
-            ContactImportView()
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToUserToS
-        ) {
-            UserToS()
-                .navigationBarTitle("")
-                .navigationBarHidden(true)
-        }
-        .navigationDestination(
-            isPresented: $viewModel.shouldNavigateToFeedView
-        ) {
-            if let loggedInSpawnUser = viewModel.spawnUser {
-                ContentView(user: loggedInSpawnUser)
+        .navigationDestination(for: NavigationState.self) { state in
+            switch state {
+            case .welcome:
+                LaunchView()
+            case .signIn:
+                SignInView()
+                    .onAppear {
+                        viewModel.resetAuthFlow()
+                    }
+            case .register:
+                RegisterInputView()
+                    .onAppear {
+                        viewModel.resetAuthFlow()
+                    }
+            case .loginInput:
+                SignInView()
+            case .accountNotFound:
+                AccountNotFoundView()
                     .navigationBarTitle("")
                     .navigationBarHidden(true)
-            } else {
-                EmptyView() // This should never happen
-            }
-        }
-        .navigationDestination(isPresented: $viewModel.shouldShowOnboardingContinuation) {
-            OnboardingContinuationView()
-        }
-        .navigationDestination(isPresented: $viewModel.shouldSkipAhead) {
-            switch viewModel.skipDestination {
-            case .userDetailsInput:
-                UserDetailsInputView(isOAuthUser: true)
+            case .onboardingContinuation:
+                OnboardingContinuationView()
+            case .userDetailsInput(let isOAuthUser):
+                UserDetailsInputView(isOAuthUser: isOAuthUser)
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
             case .userOptionalDetailsInput:
                 UserOptionalDetailsInputView()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
             case .contactImport:
                 ContactImportView()
-            case .userToS:
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            case .userTermsOfService:
                 UserToS()
+                    .navigationBarTitle("")
+                    .navigationBarHidden(true)
+            case .phoneNumberInput:
+                UserDetailsInputView(isOAuthUser: false)
+            case .verificationCode:
+                VerificationCodeView(viewModel: viewModel)
+            case .feedView:
+                if let loggedInSpawnUser = viewModel.spawnUser {
+                    ContentView(user: loggedInSpawnUser)
+                        .navigationBarTitle("")
+                        .navigationBarHidden(true)
+                } else {
+                    EmptyView() // This should never happen
+                }
             case .none:
                 EmptyView()
             }
