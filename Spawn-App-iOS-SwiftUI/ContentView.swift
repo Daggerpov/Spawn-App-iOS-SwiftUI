@@ -199,6 +199,16 @@ struct ContentView: View {
                     showingGlobalActivityPopup = true
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
+                // Update the global popup activity if it's currently being displayed and matches the updated activity
+                if let updatedActivity = notification.object as? FullFeedActivityDTO,
+                   let currentActivity = globalPopupActivity,
+                   updatedActivity.id == currentActivity.id,
+                   showingGlobalActivityPopup {
+                    print("🔄 ContentView: Updating global popup activity for \(updatedActivity.title ?? "Unknown")")
+                    globalPopupActivity = updatedActivity
+                }
+            }
             
             // In-app notification overlay
             VStack {
