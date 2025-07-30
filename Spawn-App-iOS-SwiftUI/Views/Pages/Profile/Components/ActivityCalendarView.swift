@@ -240,13 +240,12 @@ struct MonthCalendarView: View {
     }
     
     private func getActivitiesForDay(_ date: Date) -> [CalendarActivityDTO] {
-        // Create a UTC calendar for consistent date comparison
-        var utcCalendar = Calendar.current
-        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        // Use local calendar for date comparison since CalendarActivityDTO now uses local timezone
+        let calendar = Calendar.current
         
         let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
-            // Use UTC calendar for consistent date comparison since backend sends UTC dates
-            utcCalendar.isDate(activity.dateAsDate, inSameDayAs: date)
+            // Use local calendar for consistent date comparison since we now convert to local timezone
+            calendar.isDate(activity.dateAsDate, inSameDayAs: date)
         }
         
         // Add debug logging for this view as well
