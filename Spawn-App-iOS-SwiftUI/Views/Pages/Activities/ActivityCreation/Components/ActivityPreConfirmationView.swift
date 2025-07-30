@@ -169,7 +169,7 @@ struct ActivityPreConfirmationView: View {
                     .fill(adaptiveCardBackgroundColor)
                     .frame(width: 48, height: 48)
                 
-                Text(viewModel.selectedActivityType?.icon ?? "🎯")
+                Text(activityIcon)
                     .font(.system(size: 32))
             }
             
@@ -188,6 +188,24 @@ struct ActivityPreConfirmationView: View {
         .frame(width: 150, height: 150)
         .background(adaptiveCardBackgroundColor)
         .cornerRadius(18)
+    }
+    
+    // MARK: - Computed Properties
+    
+    /// Returns the appropriate icon for the activity, prioritizing the activity's own icon over the activity type icon
+    private var activityIcon: String {
+        // First check if the activity has its own icon (important for editing existing activities)
+        if let activityIcon = viewModel.activity.icon, !activityIcon.isEmpty {
+            return activityIcon
+        }
+        
+        // Fall back to the selected activity type's icon
+        if let activityTypeIcon = viewModel.selectedActivityType?.icon, !activityTypeIcon.isEmpty {
+            return activityTypeIcon
+        }
+        
+        // Final fallback to default star emoji
+        return "⭐️"
     }
     
     private func formatTime(_ date: Date) -> String {
