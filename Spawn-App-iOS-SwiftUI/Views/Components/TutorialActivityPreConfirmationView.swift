@@ -14,6 +14,7 @@ struct TutorialActivityPreConfirmationView: View {
     
     @Environment(\.colorScheme) var colorScheme
     @State private var isVisible = false
+    @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     
     private var adaptiveBackgroundColor: Color {
         colorScheme == .dark ? Color(red: 0.13, green: 0.13, blue: 0.13) : Color.white
@@ -39,6 +40,15 @@ struct TutorialActivityPreConfirmationView: View {
         }
     }
     
+    /// Generate the appropriate message based on whether user has friends
+    private var tutorialMessage: String {
+        if tutorialViewModel.userHasFriends() {
+            return "You're about to \(activityPhrase), who do you want to let know?"
+        } else {
+            return "You're about to \(activityPhrase)! Let's set this up."
+        }
+    }
+    
     var body: some View {
         ZStack {
             // Semi-transparent background
@@ -57,7 +67,7 @@ struct TutorialActivityPreConfirmationView: View {
             // Popup content
             VStack(spacing: 24) {
                 // Title
-                Text("You're about to \(activityPhrase), who do you want to let know?")
+                Text(tutorialMessage)
                     .font(.onestSemiBold(size: 22))
                     .foregroundColor(adaptiveTextColor)
                     .multilineTextAlignment(.center)

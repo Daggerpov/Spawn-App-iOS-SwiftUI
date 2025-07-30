@@ -37,6 +37,12 @@ struct ActivityCreationLocationView: View {
                 .ignoresSafeArea(.all, edges: .top)
                 .onReceive(locationManager.$userLocation) { location in
                     if let location = location, !locationManager.locationUpdated {
+                        // Validate coordinates before creating region to prevent NaN values
+                        guard CLLocationCoordinate2DIsValid(location) else {
+                            print("⚠️ ActivityCreationLocationView: Invalid user location received - \(location)")
+                            return
+                        }
+                        
                         region = MKCoordinateRegion(
                             center: location,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
@@ -223,6 +229,12 @@ struct ActivityCreationLocationView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             // Update region when app becomes active
             if let userLocation = locationManager.userLocation {
+                // Validate coordinates before creating region to prevent NaN values
+                guard CLLocationCoordinate2DIsValid(userLocation) else {
+                    print("⚠️ ActivityCreationLocationView: Invalid user location on foreground - \(userLocation)")
+                    return
+                }
+                
                 region = MKCoordinateRegion(
                     center: userLocation,
                     span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
@@ -250,6 +262,13 @@ struct ActivityCreationLocationView: View {
     private func performReverseGeocoding(for coordinate: CLLocationCoordinate2D) {
         // Prevent multiple simultaneous updates
         guard !isUpdatingLocation else { return }
+        
+        // Validate coordinates before reverse geocoding to prevent NaN values
+        guard CLLocationCoordinate2DIsValid(coordinate) else {
+            print("⚠️ performReverseGeocoding: Invalid coordinates - \(coordinate)")
+            return
+        }
+        
         isUpdatingLocation = true
         
         let geocoder = CLGeocoder()
@@ -444,9 +463,21 @@ struct LocationPickerView: View {
     private func distanceFromUser(to coordinate: CLLocationCoordinate2D) -> String? {
         guard let userLocation = userLocation else { return nil }
         
+        // Validate both coordinates before calculating distance to prevent NaN values
+        guard CLLocationCoordinate2DIsValid(userLocation) && CLLocationCoordinate2DIsValid(coordinate) else {
+            print("⚠️ distanceFromUser: Invalid coordinates - user: \(userLocation), target: \(coordinate)")
+            return nil
+        }
+        
         let userCLLocation = CLLocation(latitude: userLocation.latitude, longitude: userLocation.longitude)
         let targetLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         let distance = userCLLocation.distance(from: targetLocation)
+        
+        // Additional check to ensure distance is valid
+        guard distance.isFinite && !distance.isNaN else {
+            print("⚠️ distanceFromUser: Invalid distance calculated: \(distance)")
+            return nil
+        }
         
         if distance < 1000 {
             return "\(Int(distance))m"

@@ -284,7 +284,7 @@ struct ActivityDateTimeView: View {
                     
                     Spacer()
                 }
-                .padding(.top, 60)
+                .padding(.top, 16)
                 .padding(.bottom, 12)
             }
             
