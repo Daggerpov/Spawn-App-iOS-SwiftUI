@@ -522,10 +522,14 @@ class ActivityCreationViewModel: ObservableObject {
 					object: createdActivity
 				)
 				
-				creationMessage = "Activity created successfully!"
+				await MainActor.run {
+					creationMessage = "Activity created successfully!"
+				}
 				print("🔍 DEBUG: Activity creation successful")
 			} else {
-				creationMessage = "Failed to create activity. Please try again."
+				await MainActor.run {
+					creationMessage = "Failed to create activity. Please try again."
+				}
 				print("🔍 DEBUG: Activity creation failed - received nil response")
 			}
 			

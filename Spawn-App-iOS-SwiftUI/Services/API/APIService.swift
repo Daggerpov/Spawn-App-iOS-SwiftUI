@@ -658,8 +658,6 @@ class APIService: IAPIService {
 			return
 		}
 		
-		print("🔐 Setting auth headers for: \(url.absoluteString)")
-		
 		// Get the access token from keychain
         guard
             let accessTokenData = KeychainService.shared.load(key: "accessToken"),
@@ -684,7 +682,6 @@ class APIService: IAPIService {
 
 		// Set the auth headers
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-		print("✅ Authorization header set successfully")
 	} 
 	 
 
