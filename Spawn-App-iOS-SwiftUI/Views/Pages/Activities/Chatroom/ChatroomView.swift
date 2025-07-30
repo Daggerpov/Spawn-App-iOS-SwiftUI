@@ -69,7 +69,7 @@ struct ChatroomContentView: View {
     
     // Fixed heights for messages area
     private let minimizedMessagesHeight: CGFloat = 480
-    private let expandedMessagesHeight: CGFloat = 725
+    private let expandedMessagesHeight: CGFloat = 710
     
     // MARK: - View Components
     
@@ -292,7 +292,6 @@ struct ChatroomView: View {
                 
                 // Main chatroom container
                 VStack(spacing: 0) {
-                    handleBar
                     headerView
                     
                     // Messages area that takes remaining space but leaves room for input
@@ -321,14 +320,6 @@ struct ChatroomView: View {
     }
     
     // MARK: - View Components
-    
-    private var handleBar: some View {
-        RoundedRectangle(cornerRadius: 2.5)
-            .fill(Color.white.opacity(0.6))
-            .frame(width: 50, height: 4)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
-    }
     
     private var headerView: some View {
         HStack {

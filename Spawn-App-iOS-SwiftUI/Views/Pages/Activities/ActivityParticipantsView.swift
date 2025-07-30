@@ -211,16 +211,19 @@ struct ParticipantsContentView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            ParticipantsHeaderView(onBack: onBack)
-            
-            // Participants content that takes remaining space
-            ScrollView {
-                SharedParticipantsContent(activity: activity) { user in
-                    navigateToUserProfile(user)
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                ParticipantsHeaderView(onBack: onBack)
+                    .padding(.top, isExpanded ? geometry.safeAreaInsets.top + 24 : 0)
+                
+                // Participants content that takes remaining space
+                ScrollView {
+                    SharedParticipantsContent(activity: activity) { user in
+                        navigateToUserProfile(user)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, isExpanded ? 20 : 85) // Increased to match chatroom padding for visibility
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, isExpanded ? 20 : 85) // Increased to match chatroom padding for visibility
             }
         }
         .fullScreenCover(isPresented: $showProfile) {
@@ -248,7 +251,6 @@ struct ActivityParticipantsView: View {
                 
                 // Main participants container
                 VStack(spacing: 0) {
-                    handleBar
                     ParticipantsHeaderView(onBack: onDismiss)
                     
                     // Participants content that takes remaining space
@@ -271,14 +273,6 @@ struct ActivityParticipantsView: View {
     }
     
     // MARK: - View Components
-    
-    private var handleBar: some View {
-        RoundedRectangle(cornerRadius: 2.5)
-            .fill(Color.white.opacity(0.6))
-            .frame(width: 50, height: 4)
-            .padding(.top, 8)
-            .padding(.bottom, 12)
-    }
     
     private var bottomHandle: some View {
         RoundedRectangle(cornerRadius: 2.5)

@@ -67,15 +67,17 @@ struct ActivityCardPopupView: View {
 
 	var body: some View {
 		NavigationStack {
-			VStack(spacing: 0) {
-				// Handle bar
+					VStack(spacing: 0) {
+			// Handle bar - only show when not expanded
+			if !isExpanded {
 				RoundedRectangle(cornerRadius: 2.5)
 					.fill(Color.white.opacity(0.6))
 					.frame(width: 50, height: 4)
 					.padding(.top, 8)
 					.padding(.bottom, 12)
+			}
 
-				// Conditional content based on navigation state
+			// Conditional content based on navigation state
 				if showingChatroom {
 					// Chatroom content
 					ChatroomContentView(
@@ -395,10 +397,7 @@ extension ActivityCardPopupView {
 					.foregroundColor(.white)
 			}
 			.buttonStyle(PlainButtonStyle())
-			Text(
-				activity.title
-					?? "\(activity.creatorUser.name ?? activity.creatorUser.username ?? "User")'s activity"
-			)
+			Text(viewModel.getDisplayString(activityInfoType: .title))
 			.font(.onestSemiBold(size: 32))
 			.foregroundColor(.white)
 			Text(

@@ -19,6 +19,8 @@ class ActivityInfoViewModel: ObservableObject {
     
     func getDisplayString(activityInfoType: ActivityInfoType) -> String {
         switch activityInfoType {
+            case .title:
+                return activity.title ?? "\(activity.creatorUser.name ?? activity.creatorUser.username ?? "User")'s activity"
             case .location:
                 return activity.location?.name ?? "No Location"
             case .time:

@@ -582,15 +582,18 @@ class ActivityCreationViewModel: ObservableObject {
 			let updatedActivity: FullFeedActivityDTO? = try await apiService.updateData(activity, to: url, parameters: nil)
 			
 			if let updatedActivity = updatedActivity {
-				// Cache the updated activity
-				AppCache.shared.addOrUpdateActivity(updatedActivity)
-				
 				await MainActor.run {
-					// Post notification for successful update
-					NotificationCenter.default.post(
-						name: .activityUpdated,
-						object: updatedActivity
-					)
+					// Cache the updated activity first
+					AppCache.shared.addOrUpdateActivity(updatedActivity)
+					
+					// Add a small delay to ensure cache update completes before posting notification
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						// Post notification for successful update after cache is updated
+						NotificationCenter.default.post(
+							name: .activityUpdated,
+							object: updatedActivity
+						)
+					}
 					
 					creationMessage = "Activity updated successfully!"
 				}
