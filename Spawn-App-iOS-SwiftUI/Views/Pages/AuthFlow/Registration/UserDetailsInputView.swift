@@ -277,23 +277,6 @@ struct UserDetailsInputView: View {
                 EmptyView()
             }
         }
-        .navigationDestination(isPresented: $viewModel.shouldShowOnboardingContinuation) {
-            OnboardingContinuationView()
-        }
-        .navigationDestination(isPresented: $viewModel.shouldSkipAhead) {
-            switch viewModel.skipDestination {
-            case .userDetailsInput:
-                UserDetailsInputView(isOAuthUser: true)
-            case .userOptionalDetailsInput:
-                UserOptionalDetailsInputView()
-            case .contactImport:
-                ContactImportView()
-            case .userToS:
-                UserToS()
-            case .none:
-                EmptyView()
-            }
-        }
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()

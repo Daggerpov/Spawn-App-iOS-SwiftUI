@@ -67,10 +67,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Replace all individual navigation flags with a single navigation state
 	@Published var navigationState: NavigationState = .none
 	
-	// Keep legacy navigation flags for any remaining compatibility needs
-	@Published var shouldNavigateToUserInfoInputView: Bool = false  // New property for navigation
-	@Published var shouldNavigateToAccountNotFoundView: Bool = false  // New property for account not found
-
 	@Published var isLoading: Bool = false
 
 	private var apiService: IAPIService
@@ -89,19 +85,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var defaultPfpFetchError: Bool = false
 	@Published var defaultPfpUrlString: String? = nil
     
-    @Published var shouldNavigateToPhoneNumberView: Bool = false
-    @Published var shouldNavigateToVerificationCodeView: Bool = false
     @Published var secondsUntilNextVerificationAttempt: Int = 30
     
-    @Published var shouldNavigateToSignInView: Bool = false
-    @Published var shouldNavigateToRegisterInputView: Bool = false
-    
-    @Published var shouldShowOnboardingContinuation: Bool = false
-    
     private var isOnboarding: Bool = false
-    
-    @Published var shouldSkipAhead: Bool = false
-    @Published var skipDestination: SkipDestination = .none
     
     // Add flag to prevent multiple concurrent navigation updates
     private var isNavigating: Bool = false
@@ -236,15 +222,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		self.isFormValid = false
 
 		self.navigationState = .none
-		self.shouldNavigateToUserInfoInputView = false
-		self.shouldNavigateToAccountNotFoundView = false
-		self.shouldNavigateToPhoneNumberView = false
-		self.shouldNavigateToVerificationCodeView = false
-		self.shouldNavigateToSignInView = false
-		self.shouldNavigateToRegisterInputView = false
-		self.shouldShowOnboardingContinuation = false
-		self.shouldSkipAhead = false
-		self.skipDestination = .none
 			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
@@ -308,15 +285,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			
 					// Reset all navigation flags
 		self.navigationState = .none
-		self.shouldNavigateToUserInfoInputView = false
-		self.shouldNavigateToAccountNotFoundView = false
-		self.shouldNavigateToPhoneNumberView = false
-		self.shouldNavigateToVerificationCodeView = false
-		self.shouldNavigateToSignInView = false
-		self.shouldNavigateToRegisterInputView = false
-		self.shouldShowOnboardingContinuation = false
-		self.shouldSkipAhead = false
-		self.skipDestination = .none
 			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
@@ -347,35 +315,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
         }
     }
-    
-    // Continue onboarding from where the user left off
-    func continueOnboarding() {
-        print("📍 Continuing onboarding from: \(skipDestination)")
-        
-        // Convert skipDestination to NavigationState
-        let targetState: NavigationState
-        switch skipDestination {
-        case .userDetailsInput:
-            targetState = .userDetailsInput(isOAuthUser: true)
-        case .userOptionalDetailsInput:
-            targetState = .userOptionalDetailsInput
-        case .contactImport:
-            targetState = .contactImport
-        case .userToS:
-            targetState = .userTermsOfService
-        case .none:
-            targetState = .none
-        }
-        
-        // First clear the continuation state, then navigate to the target
-        Task { @MainActor in
-            self.shouldShowOnboardingContinuation = false
-            
-            // Wait a brief moment for the UI to update, then navigate
-            try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
-            self.navigateTo(targetState)
-        }
-    }
+
 	
 	// Reset launch state for testing/debugging purposes
 	func resetLaunchState() {
@@ -782,7 +722,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			// Only set user and navigate after successful account creation
 			await MainActor.run {
 				self.spawnUser = fetchedUser
-				self.shouldNavigateToUserInfoInputView = false
 				// Don't automatically set navigation flags - leave that to the view
 				
 				// Post notification that user did login
@@ -851,7 +790,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
     
-    private func determineSkipDestination(authResponse: AuthResponseDTO) {
+    private func continueUserOnboarding(authResponse: AuthResponseDTO) {
         
         guard let status = authResponse.status else {
             // No status means legacy active user
@@ -866,25 +805,21 @@ class UserAuthViewModel: NSObject, ObservableObject {
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
-            skipDestination = .userDetailsInput
-            navigateTo(.onboardingContinuation)
-            print("📍 [AUTH] User status: emailVerified - showing continuation popup")
+            navigateTo(.userDetailsInput(isOAuthUser: true))
+            print("📍 [AUTH] User status: emailVerified - navigating to user details input")
             
         case .usernameAndPhoneNumber:
             // Needs to complete name and photo details
-            skipDestination = .userOptionalDetailsInput
-            navigateTo(.onboardingContinuation)
-            print("📍 [AUTH] User status: usernameAndPhoneNumber - showing continuation popup")
+            navigateTo(.userOptionalDetailsInput)
+            print("📍 [AUTH] User status: usernameAndPhoneNumber - navigating to optional details input")
         
         case .nameAndPhoto:
-            skipDestination = .contactImport
-            navigateTo(.onboardingContinuation)
-            print("📍 [AUTH] User status: nameAndPhoto - showing continuation popup for contact import")
+            navigateTo(.contactImport)
+            print("📍 [AUTH] User status: nameAndPhoto - navigating to contact import")
         
         case .contactImport:
-            skipDestination = .userToS
-            navigateTo(.onboardingContinuation)
-            print("📍 [AUTH] User status: contactImport - showing continuation popup for terms of service")
+            navigateTo(.userTermsOfService)
+            print("📍 [AUTH] User status: contactImport - navigating to terms of service")
             
         case .active:
             // Fully onboarded user - go to feed
@@ -1338,7 +1273,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.markOnboardingCompleted()
                     }
                     
-                    self.determineSkipDestination(authResponse: authResponse)
+                    self.continueUserOnboarding(authResponse: authResponse)
                     // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
                     // This ensures the minimum loading time is respected
                 }
@@ -1348,7 +1283,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                self.shouldNavigateToUserInfoInputView = false
                 // Don't set hasCheckedSpawnUserExistence directly - let checkLoadingCompletion() handle it
                 // This ensures the minimum loading time is respected
             }
@@ -1367,7 +1301,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     await MainActor.run {
                                             self.isLoggedIn = false
                     self.spawnUser = nil
-                    self.shouldNavigateToUserInfoInputView = false
                     self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
                     }
                     return
@@ -1389,7 +1322,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                self.shouldNavigateToUserInfoInputView = false
                 
                 // Provide user-friendly error messages based on API error
                 if case .invalidStatusCode(let statusCode) = error {
@@ -1414,7 +1346,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                self.shouldNavigateToUserInfoInputView = false
                 self.errorMessage = "Unable to sign in at this time. Please try again later."
             }
         }
@@ -1468,7 +1399,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let response = response {
                         // Success - navigate to verification code view
-                        self.shouldNavigateToVerificationCodeView = true
+                        self.navigationState = .verificationCode
                         self.email = email
                         // Store the seconds until next attempt for the timer
                         self.secondsUntilNextVerificationAttempt = response.secondsUntilNextAttempt
@@ -1644,8 +1575,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     print("📍 Re-authentication successful during onboarding - continuing with onboarding flow")
                     self.navigateBasedOnUserStatus(authResponse: authResponse)
                 } else {
-                    // For completed users, use the skip destination logic
-                    self.determineSkipDestination(authResponse: authResponse)
+                    // For incomplete users, continue their onboarding
+                    self.continueUserOnboarding(authResponse: authResponse)
                 }
                 
                 print("📍 OAuth re-authentication successful for user with status: \(authResponse.status?.rawValue ?? "unknown")")

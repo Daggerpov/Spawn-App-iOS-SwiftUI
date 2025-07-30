@@ -167,28 +167,6 @@ struct LaunchView: View {
 					EmptyView()
 				}
 			}
-			// Legacy navigation destinations for backward compatibility
-			.navigationDestination(
-				isPresented: $userAuth.shouldNavigateToUserInfoInputView
-			) {
-				UserInfoInputView()
-					.navigationBarTitle("")
-					.navigationBarHidden(true)
-			}
-			.navigationDestination(isPresented: $userAuth.shouldSkipAhead) {
-				switch userAuth.skipDestination {
-				case .userDetailsInput:
-					UserDetailsInputView(isOAuthUser: true)
-				case .userOptionalDetailsInput:
-					UserOptionalDetailsInputView()
-				case .contactImport:
-					ContactImportView()
-				case .userToS:
-					UserToS()
-				case .none:
-					EmptyView()
-				}
-			}
 		}
 	}
 }
