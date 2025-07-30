@@ -25,6 +25,7 @@ struct ContentView: View {
     @State private var showingGlobalActivityPopup = false
     @State private var globalPopupActivity: FullFeedActivityDTO?
     @State private var globalPopupColor: Color?
+    @State private var globalPopupFromMapView = false
     
     init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
         self.user = user
@@ -196,6 +197,7 @@ struct ContentView: View {
                    let color = notification.userInfo?["color"] as? Color {
                     globalPopupActivity = activity
                     globalPopupColor = color
+                    globalPopupFromMapView = notification.userInfo?["fromMapView"] as? Bool ?? false
                     showingGlobalActivityPopup = true
                 }
             }
@@ -240,7 +242,8 @@ struct ContentView: View {
                     selectedTab: Binding<TabType?>(
                         get: { selectedTab },
                         set: { if let newTab = $0 { selectedTab = newTab } }
-                    )
+                    ),
+                    fromMapView: globalPopupFromMapView
                 )
                 .id("\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)")  // Force recreation when activity changes
                 .allowsHitTesting(true)

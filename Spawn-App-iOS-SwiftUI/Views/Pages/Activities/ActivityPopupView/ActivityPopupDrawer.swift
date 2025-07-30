@@ -14,10 +14,27 @@ struct ActivityPopupDrawer: View {
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
     
+    // Flag to determine if opened from map view
+    let fromMapView: Bool
+    
     @State private var dragOffset: CGFloat = 0
     @State private var isExpanded: Bool = false
     @State private var isDragging: Bool = false
     @State private var animationOffset: CGFloat = 0
+    
+    init(
+        activity: FullFeedActivityDTO,
+        activityColor: Color,
+        isPresented: Binding<Bool>,
+        selectedTab: Binding<TabType?> = .constant(nil),
+        fromMapView: Bool = false
+    ) {
+        self.activity = activity
+        self.activityColor = activityColor
+        self._isPresented = isPresented
+        self._selectedTab = selectedTab
+        self.fromMapView = fromMapView
+    }
     
     private var screenHeight: CGFloat {
         UIScreen.main.bounds.height
@@ -54,6 +71,7 @@ struct ActivityPopupDrawer: View {
                     activityColor: activityColor, 
                     isExpanded: $isExpanded, 
                     selectedTab: $selectedTab,
+                    fromMapView: fromMapView,
                     onDismiss: dismissPopup,
                     onMinimize: minimizePopup
                 )
@@ -63,10 +81,11 @@ struct ActivityPopupDrawer: View {
             .cornerRadius(isExpanded ? 0 : 20, corners: [.topLeft, .topRight])
             .offset(y: currentOffset)
             .gesture(
-                DragGesture(minimumDistance: 15) // Increased minimum distance to prevent interference with button taps
+                DragGesture(minimumDistance: 50) // Increased significantly to prevent interference with buttons
                     .onChanged { value in
+                        // Only start dragging if user is clearly performing a drag gesture
+                        guard abs(value.translation.height) > abs(value.translation.width) else { return }
                         isDragging = true
-                        // Allow dragging in both directions for smoother interaction
                         dragOffset = value.translation.height
                     }
                     .onEnded { value in

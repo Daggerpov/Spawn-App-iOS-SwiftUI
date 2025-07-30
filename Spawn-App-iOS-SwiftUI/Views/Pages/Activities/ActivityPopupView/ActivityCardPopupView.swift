@@ -19,6 +19,9 @@ struct ActivityCardPopupView: View {
 
 	// Optional binding to control tab selection for current user navigation
 	@Binding var selectedTab: TabType?
+	
+	// Flag to determine if opened from map view
+	let fromMapView: Bool
 
 	// Callback to dismiss the drawer
 	let onDismiss: () -> Void
@@ -37,6 +40,7 @@ struct ActivityCardPopupView: View {
 		activityColor: Color,
 		isExpanded: Binding<Bool>,
 		selectedTab: Binding<TabType?> = .constant(nil),
+		fromMapView: Bool = false,
 		onDismiss: @escaping () -> Void = {},
 		onMinimize: @escaping () -> Void = {}
 	) {
@@ -61,6 +65,7 @@ struct ActivityCardPopupView: View {
 		_region = State(initialValue: mapVM.initialRegion)
 		self._isExpanded = isExpanded
 		self._selectedTab = selectedTab
+		self.fromMapView = fromMapView
 		self.onDismiss = onDismiss
 		self.onMinimize = onMinimize
 	}
@@ -215,11 +220,11 @@ struct ActivityCardPopupView: View {
 						Image(systemName: "ellipsis")
 							.foregroundColor(.white)
 							.font(.title3)
-							.padding(8)
+							.padding(12) // Increased padding for better touch targets
 					}
 					.buttonStyle(PlainButtonStyle())
 					.allowsHitTesting(true)
-					.highPriorityGesture(TapGesture())  // Ensure tap gestures take priority over parent drag gestures
+					.contentShape(Circle()) // Better touch area for circular button
 				}
 			}
 
@@ -235,7 +240,11 @@ struct ActivityCardPopupView: View {
 
 			// Map and location info container - always visible
 			if activity.location != nil {
-				mapAndLocationView
+				if fromMapView {
+					mapViewLocationSection
+				} else {
+					mapAndLocationView
+				}
 			}
 
 			// Chat section
@@ -493,6 +502,9 @@ extension ActivityCardPopupView {
 				.background(.white)
 				.cornerRadius(12)
 			}
+			.buttonStyle(PlainButtonStyle())
+			.allowsHitTesting(true)
+			.contentShape(Rectangle())
 			.padding(.vertical, 10)
 			.padding(.trailing, 9)
 		}
@@ -575,6 +587,67 @@ extension ActivityCardPopupView {
 			}
 		}
 	}
+	
+	// Map view location section - simplified version for when opened from map
+	var mapViewLocationSection: some View {
+		HStack(spacing: 8) {
+			HStack(spacing: 8) {
+				Text("􀎫")
+					.font(Font.custom("SF Pro Display", size: 28))
+					.foregroundColor(.white)
+				VStack(alignment: .leading, spacing: 2) {
+					Text(viewModel.getDisplayString(activityInfoType: .location))
+						.font(Font.custom("Onest", size: 16).weight(.bold))
+						.foregroundColor(.white)
+						.lineLimit(1)
+						.truncationMode(.tail)
+					Text("\(viewModel.getDisplayString(activityInfoType: .distance)) away")
+						.font(Font.custom("Onest", size: 13).weight(.medium))
+						.foregroundColor(.white)
+				}
+			}
+			
+			Spacer()
+			
+			Button(action: {
+				// Create source map item from user's current location
+				let sourceMapItem = MKMapItem.forCurrentLocation()
+
+				// Create destination map item from activity location
+				let destinationMapItem = mapViewModel.mapItem
+
+				// Open Maps with directions from current location to activity location
+				MKMapItem.openMaps(
+					with: [sourceMapItem, destinationMapItem],
+					launchOptions: [
+						MKLaunchOptionsDirectionsModeKey:
+							MKLaunchOptionsDirectionsModeDefault,
+						MKLaunchOptionsShowsTrafficKey: true,
+					]
+				)
+			}) {
+				HStack(spacing: 6) {
+					Text("􀙞")
+						.font(Font.custom("SF Pro Display", size: 14).weight(.bold))
+						.foregroundColor(Color(red: 0.11, green: 0.63, blue: 0.29))
+					Text("Get Directions")
+						.font(Font.custom("Onest", size: 13).weight(.semibold))
+						.foregroundColor(Color(red: 0.11, green: 0.63, blue: 0.29))
+				}
+				.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+				.background(.white)
+				.cornerRadius(12)
+			}
+			.buttonStyle(PlainButtonStyle())
+			.allowsHitTesting(true)
+			.contentShape(Rectangle())
+		}
+		.padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
+		.frame(maxWidth: .infinity)
+		.frame(height: 67)
+		.background(Color(red: 0, green: 0, blue: 0).opacity(0.20))
+		.cornerRadius(12)
+	}
 }
 
 struct ParticipationButtonView: View {
@@ -585,8 +658,8 @@ struct ParticipationButtonView: View {
 	@Binding var selectedTab: TabType?
 
 	// Animation states for 3D effect
-	@State private var isPressed = false
 	@State private var scale: CGFloat = 1.0
+	@State private var isPressed: Bool = false
 	@State private var showingEditFlow = false
 
 	init(
@@ -634,11 +707,20 @@ struct ParticipationButtonView: View {
 	var body: some View {
 		HStack {
 			Button(action: {
-				// Haptic feedback
-				let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+				// Simple haptic feedback
+				let impactGenerator = UIImpactFeedbackGenerator(style: .light)
 				impactGenerator.impactOccurred()
-
-				// Direct action without delay for better responsiveness
+				
+				// Visual feedback
+				withAnimation(.easeInOut(duration: 0.1)) {
+					scale = 0.95
+				}
+				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+					withAnimation(.easeInOut(duration: 0.1)) {
+						scale = 1.0
+					}
+				}
+				
 				handleParticipationAction()
 			}) {
 				HStack {
@@ -656,31 +738,14 @@ struct ParticipationButtonView: View {
 				.scaleEffect(scale)
 				.shadow(
 					color: Color.black.opacity(0.15),
-					radius: isPressed ? 2 : 8,
+					radius: 8,
 					x: 0,
-					y: isPressed ? 2 : 4
+					y: 4
 				)
 			}
 			.buttonStyle(PlainButtonStyle())
 			.allowsHitTesting(true)
-			.contentShape(Rectangle())  // Ensure the entire button area is tappable
-			.animation(.easeInOut(duration: 0.15), value: scale)
-			.animation(.easeInOut(duration: 0.15), value: isPressed)
-			.onLongPressGesture(
-				minimumDuration: 0.2,
-				maximumDistance: 10,
-				pressing: { pressing in
-					isPressed = pressing
-					scale = pressing ? 0.95 : 1.0
-
-					// Additional haptic feedback for press down
-					if pressing {
-						let selectionGenerator = UISelectionFeedbackGenerator()
-						selectionGenerator.selectionChanged()
-					}
-				},
-				perform: {}
-			)
+			.contentShape(Rectangle())
 
 			Spacer()
 			ParticipantsImagesView(
@@ -736,8 +801,7 @@ struct ChatroomButtonView: View {
 
 	var body: some View {
 		Button(action: {
-			guard !isLoading else { return }  // Prevent action during loading
-			// Use direct action instead of notification to avoid potential delays
+			guard !isLoading else { return }
 			openChatroom()
 		}) {
 			HStack {
@@ -784,14 +848,18 @@ struct ChatroomButtonView: View {
 		}
 		.buttonStyle(PlainButtonStyle())
 		.allowsHitTesting(true)
-		.contentShape(Rectangle())  // Ensure the entire button area is tappable
-		.onAppear {
-			Task {
-				await viewModel.refreshChat()
-				await MainActor.run {
-					isLoading = false
-				}
-			}
+		.contentShape(Rectangle())
+		.task {
+			// Use .task instead of .onAppear for better async handling
+			await refreshChatAsync()
+		}
+	}
+
+	// Optimized async refresh method
+	private func refreshChatAsync() async {
+		await viewModel.refreshChat()
+		await MainActor.run {
+			isLoading = false
 		}
 	}
 

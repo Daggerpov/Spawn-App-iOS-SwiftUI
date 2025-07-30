@@ -19,6 +19,9 @@ struct ActivityCardView: View {
     @State private var showReportDialog: Bool = false
     @StateObject private var userAuth = UserAuthViewModel.shared
     
+    // State for activity sharing
+    @State private var showShareDrawer = false
+    
     init(
         userId: UUID, activity: FullFeedActivityDTO, color: Color,
         locationManager: LocationManager,
@@ -103,8 +106,14 @@ struct ActivityCardView: View {
                 }
             }
             .contextMenu {
-                // Only show delete option if the current user is the creator of the activity
+                // Only show options if the current user is the creator of the activity
                 if viewModel.userId == activity.creatorUser.id {
+                    Button(action: {
+                        showShareDrawer = true
+                    }) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                    
                     Button(action: {
                         showDeleteConfirmation = true
                     }) {
@@ -146,6 +155,11 @@ struct ActivityCardView: View {
                 }
             } message: {
                 Text("Are you sure you want to delete this activity? This action cannot be undone.")
+            }
+            .sheet(isPresented: $showShareDrawer) {
+                ActivityShareDrawer(activity: activity)
+                    .presentationDetents([.height(280)])
+                    .presentationDragIndicator(.visible)
             }
 
             // Time Status Badge

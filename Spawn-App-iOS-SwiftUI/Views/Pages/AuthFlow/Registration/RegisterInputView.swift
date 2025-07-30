@@ -25,8 +25,13 @@ struct RegisterInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Reset auth flow state when going back to sign in
-                    viewModel.resetAuthFlow()
+                    // Only reset auth flow if we don't have OAuth credentials to preserve
+                    if viewModel.authProvider == nil && viewModel.idToken == nil {
+                        viewModel.resetAuthFlow()
+                    } else {
+                        // Just clear errors but preserve OAuth credentials
+                        viewModel.clearAllErrors()
+                    }
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -199,7 +204,6 @@ struct RegisterInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .withAuthNavigation(viewModel)
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()

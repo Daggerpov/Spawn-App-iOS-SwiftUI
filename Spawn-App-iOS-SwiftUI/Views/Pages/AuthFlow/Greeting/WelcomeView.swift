@@ -90,7 +90,6 @@ struct WelcomeView: View {
                 print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
             }
         }
-        .withAuthNavigation(userAuth)
         
     }
 }

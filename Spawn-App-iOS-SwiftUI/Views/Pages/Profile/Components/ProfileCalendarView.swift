@@ -76,7 +76,7 @@ struct ProfileCalendarView: View {
 		)
 		.onChange(of: showActivityDetails) { isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
-				let activityColor = getActivityColor(for: activity.id)
+				let activityColor = getActivityColor(for: activity)
 				
 				// Post notification to show global popup
 				NotificationCenter.default.post(
@@ -89,6 +89,14 @@ struct ProfileCalendarView: View {
 				profileViewModel.selectedActivity = nil
 			}
 		}
+	}
+
+	// MARK: - Helper Functions
+	
+	// Helper function to get consistent activity color for any activity type
+	private func getActivityColor(for activity: FullFeedActivityDTO) -> Color {
+		// Use the global function from Constants.swift for consistency
+		return Color(hex: getActivityColorHex(for: activity.id))
 	}
 
 	// MARK: - Computed Properties for Body Components
@@ -328,14 +336,22 @@ struct CalendarDayCell: View {
 	}
 	
 	private func activityColor(for activity: CalendarActivityDTO) -> Color {
-		// First check if activity has a custom color hex code
-		if let colorHexCode = activity.colorHexCode, !colorHexCode.isEmpty {
-			return Color(hex: colorHexCode)
+		// Use the same logic as the feed view - always use ActivityColorService assignment
+		// Priority: activityId first (main activity), then calendar activity id as fallback
+		if let activityId = activity.activityId {
+			let color = getActivityColor(for: activityId)
+			let hexColor = getActivityColorHex(for: activityId)
+			print("🎨 ProfileCalendarView: Using activityId \(activityId) color \(hexColor) for calendar activity \(activity.id)")
+			return color
 		}
-
-		// Use the same logic as feed view - prefer activityId, fallback to the calendar activity's id
-		let colorId = activity.activityId ?? activity.id
-		return getActivityColor(for: colorId)
+		
+		// For calendar-only activities without activityId, use the calendar activity's own id
+		let color = getActivityColor(for: activity.id)
+		let hexColor = getActivityColorHex(for: activity.id)
+		print("🎨 ProfileCalendarView: Using calendar activity id \(activity.id) color \(hexColor)")
+		return color
+		
+		// Note: We ignore backend colorHexCode entirely like the feed view does
 	}
 
 	private func activityIcon(for activity: CalendarActivityDTO) -> some View {

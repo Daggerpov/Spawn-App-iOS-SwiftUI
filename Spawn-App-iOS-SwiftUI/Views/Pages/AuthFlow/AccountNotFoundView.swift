@@ -63,7 +63,17 @@ struct AccountNotFoundView: View {
                 Button(action: {
                     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                     impactGenerator.impactOccurred()
-                    userAuth.navigateTo(.register)
+                    
+                    // If user has OAuth credentials (from failed sign-in attempt), go directly to user details
+                    // since email is already verified through OAuth provider
+                    if let provider = userAuth.authProvider, userAuth.idToken != nil {
+                        print("📍 OAuth user registration - going directly to user details input")
+                        userAuth.navigateTo(.userDetailsInput(isOAuthUser: true))
+                    } else {
+                        // For non-OAuth users, go to regular registration flow
+                        print("📍 Non-OAuth user registration - going to register flow")
+                        userAuth.navigateTo(.register)
+                    }
                 }) {
                     OnboardingButtonCoreView("Register Now")
                 }
@@ -88,7 +98,6 @@ struct AccountNotFoundView: View {
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .cornerRadius(44)
         .navigationBarHidden(true)
-        .withAuthNavigation(userAuth)
         .onAppear {
             // Clear any previous error state when this view appears
             userAuth.clearAllErrors()

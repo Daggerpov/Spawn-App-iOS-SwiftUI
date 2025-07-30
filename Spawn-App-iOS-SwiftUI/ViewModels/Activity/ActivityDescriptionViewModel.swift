@@ -104,6 +104,15 @@ class ActivityDescriptionViewModel: ObservableObject {
 				self.activity = updatedActivity
 				// Update cache with confirmed changes
 				AppCache.shared.addOrUpdateActivity(updatedActivity)
+				
+				// Add a small delay to ensure cache update completes before posting notification
+				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+					// Post notification for successful update after cache is updated
+					NotificationCenter.default.post(
+						name: .activityUpdated,
+						object: updatedActivity
+					)
+				}
 			}
 		} catch let error as APIError {
 			print("❌ APIError saving activity changes: \(error)")

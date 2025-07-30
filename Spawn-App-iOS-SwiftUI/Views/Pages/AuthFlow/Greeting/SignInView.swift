@@ -59,8 +59,8 @@ struct SignInView: View {
             .padding(.horizontal)
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
+        .ignoresSafeArea(.all)
         .navigationBarHidden(true)
-        .withAuthNavigation(userAuth)
 		.onAppear {
             // Clear any previous error state when returning to main auth screen
             userAuth.clearAllErrors()

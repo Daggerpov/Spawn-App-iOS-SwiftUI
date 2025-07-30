@@ -226,9 +226,13 @@ struct DayActivitiesPageView: View {
             return Color(hex: colorHex)
         }
         
-        // Use the same logic as feed view - prefer activityId, fallback to the calendar activity's id
-        let colorId = activity.activityId ?? activity.id
-        return getActivityColor(for: colorId)
+        // Use the exact same logic as feed view - ActivityColorService with activityId
+        if let activityId = activity.activityId {
+            return ActivityColorService.shared.getColorForActivity(activityId)
+        }
+        
+        // For calendar-only activities without activityId, use the calendar activity's own id
+        return ActivityColorService.shared.getColorForActivity(activity.id)
     }
     
     // MARK: - Computed Properties
