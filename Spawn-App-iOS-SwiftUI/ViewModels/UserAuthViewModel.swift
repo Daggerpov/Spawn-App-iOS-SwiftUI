@@ -763,8 +763,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		switch status {
 		case .emailVerified:
 			// Needs to input username, phone number, and password
-			navigateTo(.userDetailsInput(isOAuthUser: true))
-			print("📍 User status: emailVerified - navigating to user details input")
+			// Check if user is registering with email vs OAuth
+			let isOAuthUser = authProvider != .email
+			navigateTo(.userDetailsInput(isOAuthUser: isOAuthUser))
+			print("📍 User status: emailVerified - navigating to user details input (OAuth: \(isOAuthUser))")
 		case .usernameAndPhoneNumber:
 			// Needs to complete name and photo details
 			navigateTo(.userOptionalDetailsInput)
@@ -805,8 +807,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
-            navigateTo(.userDetailsInput(isOAuthUser: true))
-            print("📍 [AUTH] User status: emailVerified - navigating to user details input")
+            // Check if user is registering with email vs OAuth
+            let isOAuthUser = authProvider != .email
+            navigateTo(.userDetailsInput(isOAuthUser: isOAuthUser))
+            print("📍 [AUTH] User status: emailVerified - navigating to user details input (OAuth: \(isOAuthUser))")
             
         case .usernameAndPhoneNumber:
             // Needs to complete name and photo details
@@ -1299,9 +1303,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 guard let user: BaseUserDTO = response else {
                     print("Failed to login with email/username")
                     await MainActor.run {
-                                            self.isLoggedIn = false
-                    self.spawnUser = nil
-                    self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
+                        self.isLoggedIn = false
+                        self.spawnUser = nil
+                        self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
                     }
                     return
                 }
@@ -1322,7 +1326,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                
+                print("[DEBUG] Error: \(error)")
                 // Provide user-friendly error messages based on API error
                 if case .invalidStatusCode(let statusCode) = error {
                     switch statusCode {
@@ -1401,6 +1405,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         // Success - navigate to verification code view
                         self.navigationState = .verificationCode
                         self.email = email
+                        // Set authProvider to email for email registration
+                        self.authProvider = .email
                         // Store the seconds until next attempt for the timer
                         self.secondsUntilNextVerificationAttempt = response.secondsUntilNextAttempt
                         self.errorMessage = nil
@@ -1608,6 +1614,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         // Success - set user and navigate based on status
                         self.spawnUser = authResponse.user
                         self.email = authResponse.user.email
+                        // Set authProvider to email for email registration
+                        self.authProvider = .email
                         self.errorMessage = nil
                         
                         // Navigate based on user status

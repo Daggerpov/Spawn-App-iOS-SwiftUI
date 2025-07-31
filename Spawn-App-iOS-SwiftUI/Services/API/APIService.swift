@@ -278,7 +278,7 @@ class APIService: IAPIService {
 		// 200 means success || 201 means created || 204 means no content (successful operation with no response body)
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204
 		else {
-			if httpResponse.statusCode == 401 {
+            if httpResponse.statusCode == 401 && !(urlString.contains("/auth/sign-in") || urlString.contains("/auth/login")) {
 				// Handle token refresh logic here
 				let newAccessToken: String = try await handleRefreshToken()
 				// Retry the request with the new access token
