@@ -39,7 +39,7 @@ struct ErrorInputField: View {
             }
             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
             .frame(height: 63)
-            .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+            .background(Color(hex: colorsGrayInput))
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
@@ -99,7 +99,7 @@ struct PhoneNumberInputField: View {
             }
             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
             .frame(height: 63)
-            .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+            .background(Color(hex: colorsGrayInput))
             .cornerRadius(16)
             .overlay(
                 RoundedRectangle(cornerRadius: 16)

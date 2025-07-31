@@ -200,11 +200,11 @@ struct CustomTextFieldStyle: TextFieldStyle {
         let currentScheme = themeService.colorScheme
         switch currentScheme {
         case .light:
-            return figmaAuthButtonGrey
+            return Color(hex: colorsGrayInput)
         case .dark:
             return Color(hex: "#2C2C2C")
         case .system:
-            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : Color(hex: colorsGrayInput)
         }
     }
 }
@@ -236,11 +236,11 @@ struct ErrorTextFieldStyle: TextFieldStyle {
         let currentScheme = themeService.colorScheme
         switch currentScheme {
         case .light:
-            return figmaAuthButtonGrey
+            return Color(hex: colorsGrayInput)
         case .dark:
             return Color(hex: "#2C2C2C")
         case .system:
-            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : Color(hex: colorsGrayInput)
         }
     }
 }
@@ -272,11 +272,11 @@ struct ErrorSecureFieldStyle: TextFieldStyle {
         let currentScheme = themeService.colorScheme
         switch currentScheme {
         case .light:
-            return figmaAuthButtonGrey
+            return Color(hex: colorsGrayInput)
         case .dark:
             return Color(hex: "#2C2C2C")
         case .system:
-            return colorScheme == .dark ? Color(hex: "#2C2C2C") : figmaAuthButtonGrey
+            return colorScheme == .dark ? Color(hex: "#2C2C2C") : Color(hex: colorsGrayInput)
         }
     }
 }
