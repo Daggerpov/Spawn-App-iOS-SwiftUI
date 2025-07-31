@@ -9,24 +9,13 @@ import SwiftUI
 
 struct WelcomeView: View {
     @State private var animationCompleted = false
+    @State private var navigationPath = NavigationPath()
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
     @StateObject private var userAuth = UserAuthViewModel.shared
     
     var body: some View {
-        NavigationStack(path: Binding(
-            get: {
-                if userAuth.navigationState != .none {
-                    return NavigationPath([userAuth.navigationState])
-                }
-                return NavigationPath()
-            },
-            set: { (path: NavigationPath) in
-                if path.isEmpty {
-                    userAuth.navigationState = .none
-                }
-            }
-        )) {
+        NavigationStack(path: $navigationPath) {
             VStack {
                 Spacer()
                 
@@ -91,6 +80,16 @@ struct WelcomeView: View {
             }
         }
         .withAuthNavigation(userAuth)
+        .onReceive(userAuth.$navigationState) { newState in
+            if newState != .none {
+                navigationPath.append(newState)
+                print("📍 DEBUG: Appending navigation state to path: \(newState.description)")
+            } else {
+                // Clear navigation path when state is reset to none
+                navigationPath = NavigationPath()
+                print("📍 DEBUG: Clearing navigation path")
+            }
+        }
         
     }
 }
