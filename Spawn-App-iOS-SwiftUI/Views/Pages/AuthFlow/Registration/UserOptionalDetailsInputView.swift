@@ -82,13 +82,6 @@ struct UserOptionalDetailsInputView: View {
                         .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 }
                 Spacer()
-//                Button(action: {
-//                    userAuth.shouldNavigateToUserToS = true
-//                }) {
-//                    Text("Skip for now")
-//                        .font(Font.onestRegular(size: 16))
-//                        .foregroundColor(.secondary)
-//                }
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
@@ -178,7 +171,6 @@ struct UserOptionalDetailsInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .withAuthNavigation(userAuth)
         .onAppear {
             // Clear any previous error state when this view appears
             userAuth.clearAllErrors()

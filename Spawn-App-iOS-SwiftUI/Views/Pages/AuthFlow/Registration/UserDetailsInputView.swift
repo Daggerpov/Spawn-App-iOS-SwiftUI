@@ -223,7 +223,6 @@ struct UserDetailsInputView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .withAuthNavigation(viewModel)
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()

@@ -12,16 +12,18 @@ struct AuthNavigationModifier: ViewModifier {
                     LaunchView()
                 case .signIn:
                     SignInView()
-                        .onAppear {
-                            userAuth.resetAuthFlow()
-                        }
+//                        .onAppear {
+//                            userAuth.resetAuthFlow()
+//                        }
+                case .spawnIntro:
+                    SpawnIntroView()
                 case .register:
                     RegisterInputView()
-                        .onAppear {
-                            userAuth.resetAuthFlow()
-                        }
+//                        .onAppear {
+//                            userAuth.resetAuthFlow()
+//                        }
                 case .loginInput:
-                    SignInView()
+                    LoginInputView()
                 case .accountNotFound:
                     AccountNotFoundView()
                         .navigationBarTitle("")

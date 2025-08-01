@@ -137,7 +137,6 @@ struct UserToS: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .navigationBarHidden(true)
-        .withAuthNavigation(userAuth)
         .onAppear {
             // Clear any previous error state when this view appears
             userAuth.clearAllErrors()

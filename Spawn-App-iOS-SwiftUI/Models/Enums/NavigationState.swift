@@ -12,6 +12,7 @@ import Foundation
 enum NavigationState: Equatable, Hashable {
     // Auth Flow States
     case welcome
+    case spawnIntro
     case signIn
     case register
     case loginInput
@@ -34,6 +35,8 @@ enum NavigationState: Equatable, Hashable {
         switch self {
         case .welcome:
             return "Welcome"
+        case .spawnIntro:
+            return "Spawn Intro"
         case .signIn:
             return "Sign In"
         case .register:

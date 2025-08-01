@@ -10,6 +10,7 @@ import Foundation
 struct AuthResponseDTO: Codable {
 	var user: BaseUserDTO
 	var status: UserStatus?
+    var isOAuthUser: Bool?
 
 	init(user: BaseUserDTO, status: UserStatus? = nil) {
 		self.user = user

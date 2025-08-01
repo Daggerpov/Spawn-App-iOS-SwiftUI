@@ -255,7 +255,6 @@ struct ContactImportView: View {
             }
         )
         .navigationBarHidden(true)
-        .withAuthNavigation(userAuth)
         .alert("Contacts Permission Denied", isPresented: $showPermissionDeniedAlert) {
             Button("Settings") {
                 openAppSettings()
