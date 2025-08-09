@@ -119,6 +119,13 @@ class ProfilePictureCache: ObservableObject {
         defer { stopDownloading(key) }
         
         guard let url = URL(string: urlString) else {
+            print("Failed to create URL from string: \(urlString) for user \(userId)")
+            return nil
+        }
+        
+        // Validate that the URL is a proper HTTP/HTTPS URL
+        guard url.scheme == "http" || url.scheme == "https" else {
+            print("Invalid URL scheme for profile picture: \(urlString) for user \(userId). Only HTTP/HTTPS URLs are supported.")
             return nil
         }
         
