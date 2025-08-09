@@ -57,27 +57,7 @@ struct FriendsTabView: View {
 						.padding(.horizontal, 16)
 					}
                     
-                    // Debug section (temporary for diagnostic purposes)
-                    #if DEBUG
-                    VStack(spacing: 8) {
-                        Button("🔍 Run Cache Diagnostic") {
-                            Task {
-                                await AppCache.shared.diagnosticForceRefresh()
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        
-                        Text("Debug: F:\(viewModel.friends.count) FR:\(viewModel.incomingFriendRequests.count) SF:\(viewModel.outgoingFriendRequests.count)")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 16)
-                    #endif
-                    
+
                     // Friends section
 					friendsSection
                     
