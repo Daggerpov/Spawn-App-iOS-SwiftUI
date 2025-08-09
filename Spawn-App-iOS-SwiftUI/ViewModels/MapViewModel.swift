@@ -8,27 +8,41 @@ import MapKit
 import SwiftUI
 
 class MapViewModel: Identifiable, ObservableObject {
-    var lat: Double
-    var lon: Double
+    @ObservedObject var activity: FullFeedActivityDTO
     let id = UUID()
-    let coordinate: CLLocationCoordinate2D
-    let mapItem: MKMapItem
-    let initialRegion: MKCoordinateRegion
     
-    init(activity: FullFeedActivityDTO) {
-        if let location = activity.location {
-            lat = location.latitude
-            lon = location.longitude
-        } else { // TODO: something more robust
-            lat = 0
-            lon = 0
-        }
-        coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
-        initialRegion = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: lat, longitude: lon),
+    var lat: Double {
+        activity.location?.latitude ?? 0
+    }
+    
+    var lon: Double {
+        activity.location?.longitude ?? 0
+    }
+    
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: lat, longitude: lon)
+    }
+    
+    var mapItem: MKMapItem {
+        let item = MKMapItem(placemark: .init(coordinate: coordinate))
+        item.name = activity.location?.name ?? "Activity Location"
+        return item
+    }
+    
+    var initialRegion: MKCoordinateRegion {
+        MKCoordinateRegion(
+            center: coordinate,
             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
         )
-        mapItem = MKMapItem(placemark: .init(coordinate: coordinate))
-        mapItem.name = activity.location?.name ?? "Activity Location"
+    }
+    
+    init(activity: FullFeedActivityDTO) {
+        self.activity = activity
+    }
+    
+    // Add method to update activity reference
+    func updateActivity(_ newActivity: FullFeedActivityDTO) {
+        self.activity = newActivity
+        objectWillChange.send()
     }
 }

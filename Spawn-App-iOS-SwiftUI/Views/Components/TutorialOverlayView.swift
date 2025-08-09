@@ -24,27 +24,34 @@ struct TutorialOverlayView: View {
     var body: some View {
         ZStack {
             if tutorialViewModel.tutorialState.shouldShowTutorialOverlay {
-                // Semi-transparent background overlay with cutout for activity types
-                VStack(spacing: 0) {
-                    // Top overlay (above activity types)
-                    Color.black.opacity(0.6)
-                        .frame(height: 160) // Cover header and "Spawn in!" section
-//						.cornerRadius(16)
-
-                    // Clear space for activity types (roughly 115px height + padding)
-					RoundedRectangle(cornerRadius: 16)
-						.fill(Color.clear)
-                        .frame(height: 10)
-						.padding()
-
-                    // Clear space for welcome message (roughly 80px height + padding)
-                    Color.clear
-                        .frame(height: 100)
-						.cornerRadius(16)
-
-                    // Bottom overlay (below welcome message)
-                    Color.black.opacity(0.6)
-                        .frame(maxHeight: .infinity)
+                GeometryReader { geometry in
+                    let safeAreaTop = geometry.safeAreaInsets.top
+                    let screenHeight = geometry.size.height
+                    
+                    // Calculate dynamic positions based on screen size
+                    let headerHeight = safeAreaTop + 44 // Safe area + navigation bar
+                    let spawnInHeight: CGFloat = 100 // Approximate height of "Spawn in!" section
+                    let activityTypesAreaHeight: CGFloat = 62 // Activity types height (115) + minimal padding (16)
+                    let welcomeMessageHeight: CGFloat = 80 // Welcome message area
+                    
+                    // Dynamic overlay positioning
+                    VStack(spacing: 0) {
+                        // Top overlay (covers header and "Spawn in!" section)
+                        Color.black.opacity(0.6)
+                            .frame(height: headerHeight + spawnInHeight)
+                        
+                        // Clear space for activity types with minimal padding
+                        Color.clear
+                            .frame(height: activityTypesAreaHeight)
+                        
+                        // Clear space for welcome message
+                        Color.clear
+                            .frame(height: welcomeMessageHeight)
+                        
+                        // Bottom overlay (covers remaining space)
+                        Color.black.opacity(0.6)
+                            .frame(maxHeight: .infinity)
+                    }
                 }
                 .ignoresSafeArea()
                 .onTapGesture {

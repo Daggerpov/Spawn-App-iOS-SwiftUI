@@ -130,7 +130,8 @@ class ActivityCreationViewModel: ObservableObject {
 		if changes.isEmpty {
 			return "No changes to save."
 		} else if changes.count == 1 {
-			return "1 change: \(changes.first!)"
+			// Add safety check to prevent force unwrapping crash
+			return "1 change: \(changes.first ?? "Unknown change")"
 		} else {
 			return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
 		}
@@ -357,22 +358,28 @@ class ActivityCreationViewModel: ObservableObject {
 	
 	// Method to add a friend to the selected friends list
 	func addFriend(_ friend: FullFriendUserDTO) {
-		if !selectedFriends.contains(where: { $0.id == friend.id }) {
-			selectedFriends.append(friend)
+		DispatchQueue.main.async {
+			if !self.selectedFriends.contains(where: { $0.id == friend.id }) {
+				self.selectedFriends.append(friend)
+			}
 		}
 	}
 	
 	// Method to remove a friend from the selected friends list
 	func removeFriend(_ friend: FullFriendUserDTO) {
-		selectedFriends.removeAll { $0.id == friend.id }
+		DispatchQueue.main.async {
+			self.selectedFriends.removeAll { $0.id == friend.id }
+		}
 	}
 	
 	// Method to toggle a friend's selection
 	func toggleFriendSelection(_ friend: FullFriendUserDTO) {
-		if selectedFriends.contains(where: { $0.id == friend.id }) {
-			removeFriend(friend)
-		} else {
-			addFriend(friend)
+		DispatchQueue.main.async {
+			if self.selectedFriends.contains(where: { $0.id == friend.id }) {
+				self.selectedFriends.removeAll { $0.id == friend.id }
+			} else if !self.selectedFriends.contains(where: { $0.id == friend.id }) {
+				self.selectedFriends.append(friend)
+			}
 		}
 	}
 	
@@ -522,10 +529,14 @@ class ActivityCreationViewModel: ObservableObject {
 					object: createdActivity
 				)
 				
-				creationMessage = "Activity created successfully!"
+				await MainActor.run {
+					creationMessage = "Activity created successfully!"
+				}
 				print("🔍 DEBUG: Activity creation successful")
 			} else {
-				creationMessage = "Failed to create activity. Please try again."
+				await MainActor.run {
+					creationMessage = "Failed to create activity. Please try again."
+				}
 				print("🔍 DEBUG: Activity creation failed - received nil response")
 			}
 			
@@ -578,16 +589,19 @@ class ActivityCreationViewModel: ObservableObject {
 			let updatedActivity: FullFeedActivityDTO? = try await apiService.updateData(activity, to: url, parameters: nil)
 			
 			if let updatedActivity = updatedActivity {
-				// Cache the updated activity
-				AppCache.shared.addOrUpdateActivity(updatedActivity)
-				
-				// Post notification for successful update
-				NotificationCenter.default.post(
-					name: .activityUpdated,
-					object: updatedActivity
-				)
-				
 				await MainActor.run {
+					// Cache the updated activity first
+					AppCache.shared.addOrUpdateActivity(updatedActivity)
+					
+					// Add a small delay to ensure cache update completes before posting notification
+					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						// Post notification for successful update after cache is updated
+						NotificationCenter.default.post(
+							name: .activityUpdated,
+							object: updatedActivity
+						)
+					}
+					
 					creationMessage = "Activity updated successfully!"
 				}
 			} else {

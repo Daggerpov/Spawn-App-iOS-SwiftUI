@@ -118,9 +118,8 @@ struct OnboardingContinuationView: View {
         }
         .frame(width: 428, height: 926)
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
-        .cornerRadius(44)
+        .ignoresSafeArea(.all)
         .navigationBarHidden(true)
-        .withAuthNavigation(userAuth)
     }
 }
 

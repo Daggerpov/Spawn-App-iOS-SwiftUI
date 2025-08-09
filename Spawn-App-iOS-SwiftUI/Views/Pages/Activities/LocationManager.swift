@@ -39,6 +39,12 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
+        // Validate coordinates before setting them to prevent NaN values
+        guard CLLocationCoordinate2DIsValid(location.coordinate) else {
+            print("⚠️ LocationManager: Invalid coordinates received - latitude: \(location.coordinate.latitude), longitude: \(location.coordinate.longitude)")
+            return
+        }
+        
         DispatchQueue.main.async {
             self.userLocation = location.coordinate
             self.locationUpdated = true

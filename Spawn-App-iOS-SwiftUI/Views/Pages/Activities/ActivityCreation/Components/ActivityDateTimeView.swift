@@ -35,14 +35,38 @@ struct ActivityDateTimeView: View {
     private let amPmOptions = ["AM", "PM"]
     
     enum DayOption: CaseIterable {
+        case yesterday
         case today
         case tomorrow
         
         var title: String {
             switch self {
+            case .yesterday: return "Yesterday"
             case .today: return "Today"
             case .tomorrow: return "Tomorrow"
             }
+        }
+        
+        // Only show options that make sense based on current context
+        static var availableOptions: [DayOption] {
+            let calendar = Calendar.current
+            let now = Date()
+            let viewModel = ActivityCreationViewModel.shared
+            
+            var options: [DayOption] = [.today, .tomorrow]
+            
+            // Add yesterday option if editing an existing activity and it was created yesterday
+            if viewModel.isEditingExistingActivity,
+               let activityDate = viewModel.originalDate {
+                let activityDay = calendar.startOfDay(for: activityDate)
+                let yesterday = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: now) ?? now)
+                
+                if activityDay == yesterday {
+                    options.insert(.yesterday, at: 0)
+                }
+            }
+            
+            return options
         }
     }
     
@@ -151,7 +175,7 @@ struct ActivityDateTimeView: View {
     
     private var dayPickerView: some View {
         Picker("Day", selection: $selectedDay) {
-            ForEach(DayOption.allCases, id: \.self) { day in
+            ForEach(DayOption.availableOptions, id: \.self) { day in
                 Text(day.title)
                     .font(Font.custom("Onest", size: 22))
                     .foregroundColor(pickerTextColor)
@@ -284,7 +308,7 @@ struct ActivityDateTimeView: View {
                     
                     Spacer()
                 }
-                .padding(.top, 60)
+                .padding(.top, 16)
                 .padding(.bottom, 12)
             }
             
@@ -500,6 +524,8 @@ struct ActivityDateTimeView: View {
         // Get the base date (today or tomorrow)
         let baseDate: Date
         switch selectedDay {
+        case .yesterday:
+            baseDate = calendar.date(byAdding: .day, value: -1, to: now) ?? now
         case .today:
             baseDate = now
         case .tomorrow:
@@ -528,8 +554,39 @@ struct ActivityDateTimeView: View {
             viewModel.activity.title = activityTitle
         }
         
+        // Determine the correct day option based on the existing activity's date if editing
+        if viewModel.isEditingExistingActivity {
+            selectedDay = determineDayOptionFromActivityDate()
+        }
+        
         // Update the selected date with initial values
         updateSelectedDate()
+    }
+    
+    private func determineDayOptionFromActivityDate() -> DayOption {
+        guard let activityDate = viewModel.selectedDate != Date() ? viewModel.selectedDate : viewModel.originalDate else {
+            return .today
+        }
+        
+        let calendar = Calendar.current
+        let now = Date()
+        
+        let activityDay = calendar.startOfDay(for: activityDate)
+        let today = calendar.startOfDay(for: now)
+        let yesterday = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: now) ?? now)
+        let tomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: now) ?? now)
+        
+        if activityDay == yesterday {
+            return .yesterday
+        } else if activityDay == today {
+            return .today
+        } else if activityDay == tomorrow {
+            return .tomorrow
+        } else {
+            // For dates beyond yesterday/today/tomorrow, default to today
+            // In the future, we might want to add more options or handle this differently
+            return .today
+        }
     }
 }
 

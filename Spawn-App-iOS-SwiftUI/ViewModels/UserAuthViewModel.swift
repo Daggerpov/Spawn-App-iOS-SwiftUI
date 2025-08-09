@@ -868,8 +868,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
             
             await MainActor.run {
                 self.spawnUser = updatedUser
+                // After contact import is completed, user should be at CONTACT_IMPORT status
+                // Navigate to the next step which is terms of service
                 self.navigateTo(.userTermsOfService)
-                print("Successfully completed contact import for user: \(updatedUser.username ?? "Unknown")")
+                print("Successfully completed contact import for user: \(updatedUser.username ?? "Unknown"), navigating to terms of service")
             }
         } catch {
             await MainActor.run {
@@ -909,12 +911,15 @@ class UserAuthViewModel: NSObject, ObservableObject {
             
             await MainActor.run {
                 self.spawnUser = updatedUser
+                // After terms are accepted, user should be at ACTIVE status
+                // Navigate to the feed view to complete onboarding
+                self.navigateTo(.feedView)
 //                self.navigateTo(.feedView)
                 self.isLoggedIn = true
                 self.errorMessage = nil // Clear any previous errors on success
                 // Mark onboarding as completed when user accepts Terms of Service
                 self.markOnboardingCompleted()
-                print("Successfully accepted Terms of Service for user: \(updatedUser.username ?? "Unknown")")
+                print("Successfully accepted Terms of Service for user: \(updatedUser.username ?? "Unknown"), navigating to feed view")
             }
         } catch let error as APIError {
             await MainActor.run {
@@ -1551,6 +1556,50 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
     }
     
+    // Method for creating OAuth user without navigation (for use in UserDetailsInputView)
+    func createOAuthUserOnly(idToken: String, provider: AuthProviderType, email: String?, name: String?, profilePictureUrl: String?) async -> Bool {
+        do {
+            if let url: URL = URL(string: APIService.baseURL + "auth/register/oauth") {
+                let oauthRegistrationDTO = OAuthRegistrationDTO(
+                    idToken: idToken,
+                    provider: provider.rawValue,
+                    email: email,
+                    name: name,
+                    profilePictureUrl: profilePictureUrl
+                )
+                
+                let response: AuthResponseDTO? = try await self.apiService.sendData(oauthRegistrationDTO, to: url, parameters: nil)
+                
+                await MainActor.run {
+                    if let authResponse = response {
+                        self.spawnUser = authResponse.user
+                        self.isLoggedIn = true
+                        print("✅ OAuth user created successfully without navigation")
+                        return
+                    }
+                }
+                return response != nil
+            }
+        } catch let error as APIError {
+            await MainActor.run {
+                if case .invalidStatusCode(let statusCode) = error {
+                    switch statusCode {
+                    case 409:
+                        print("📍 User already exists during OAuth creation")
+                    default:
+                        print("❌ OAuth user creation failed with status \(statusCode)")
+                    }
+                }
+                self.errorMessage = "Failed to create account. Please try again."
+            }
+        } catch {
+            await MainActor.run {
+                self.errorMessage = "Unable to create account. Please try again."
+            }
+        }
+        return false
+    }
+    
     // New method for OAuth sign-in (for existing users)
     private func signInWithOAuth(idToken: String, provider: AuthProviderType, email: String?) async {
         // Set the OAuth credentials for the sign-in attempt
@@ -1685,9 +1734,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
+                        // After username and phone are set, user should be at USERNAME_AND_PHONE_NUMBER status
+                        // Navigate to the next step which is optional details input
                         self.navigateTo(.userOptionalDetailsInput)
                         self.errorMessage = nil
-                        print("✅ User details updated successfully")
+                        print("✅ User details updated successfully, navigating to optional details input")
                     } else {
                         self.errorMessage = "Failed to update user details."
                     }
@@ -1786,8 +1837,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
+                        // After name and photo are set, user should be at NAME_AND_PHOTO status
+                        // Navigate to the next step which is contact import
                         self.navigateTo(.contactImport)
                         self.errorMessage = nil
+                        print("✅ Optional details updated successfully, navigating to contact import")
                     } else {
                         self.errorMessage = "Failed to update optional details."
                     }

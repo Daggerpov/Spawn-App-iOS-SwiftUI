@@ -304,8 +304,7 @@ class APIService: IAPIService {
                 if let responseString = String(data: data, encoding: .utf8) {
                     print("🔄 DEBUG: Raw response data: \(responseString)")
                 }
-				let decoder = JSONDecoder()
-				decoder.dateDecodingStrategy = .iso8601
+				let decoder = APIService.makeDecoder()
 				let decodedData = try decoder.decode(U.self, from: data)
 				return decodedData
 			} catch {
@@ -659,8 +658,6 @@ class APIService: IAPIService {
 			return
 		}
 		
-		print("🔐 Setting auth headers for: \(url.absoluteString)")
-		
 		// Get the access token from keychain
         guard
             let accessTokenData = KeychainService.shared.load(key: "accessToken"),
@@ -685,7 +682,6 @@ class APIService: IAPIService {
 
 		// Set the auth headers
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-		print("✅ Authorization header set successfully")
 	} 
 	 
 

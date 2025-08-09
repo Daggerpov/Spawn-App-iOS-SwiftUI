@@ -72,7 +72,10 @@ struct InfiniteCalendarView: View {
                             today: today,
                             onDayTapped: { activities in
                                 if activities.count == 1 {
-                                    onActivitySelected(activities.first!)
+                                    // Add safety check to prevent force unwrapping crash
+                                    if let firstActivity = activities.first {
+                                        onActivitySelected(firstActivity)
+                                    }
                                 } else if activities.count > 1 {
                                     onDayActivitiesSelected(activities)
                                 }
@@ -215,7 +218,12 @@ struct DayCell: View {
                 if !activities.isEmpty {
                     if activities.count == 1 {
                         // Single activity - show its icon
-                        activityIconView(for: activities.first!)
+                        // Add safety check to prevent force unwrapping crash
+                        if let firstActivity = activities.first {
+                            activityIconView(for: firstActivity)
+                        } else {
+                            EmptyView()
+                        }
                     } else {
                         // Multiple activities - show count or multiple icons
                         multipleActivitiesView

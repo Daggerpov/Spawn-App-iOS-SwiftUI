@@ -1,11 +1,48 @@
 import SwiftUI
 import ElegantEmojiPicker
 
+// Custom subclass to prevent auto-dismissal
+class NonDismissingElegantEmojiPicker: ElegantEmojiPicker {
+    var onManualDismiss: (() -> Void)?
+    private var allowDismissal = false
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        if allowDismissal {
+            print("DEBUG: Allowing manual dismissal")
+            super.dismiss(animated: flag, completion: completion)
+        } else {
+            print("DEBUG: Prevented automatic dismissal of emoji picker")
+            completion?()
+        }
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        print("DEBUG: NonDismissingElegantEmojiPicker loaded")
+    }
+    
+    // Allow manual dismissal through this method
+    func manualDismiss() {
+        print("DEBUG: Manual dismissal triggered")
+        allowDismissal = true
+        onManualDismiss?()
+    }
+    
+    // Override other potential dismissal methods
+    override func viewDidDisappear(_ animated: Bool) {
+        if allowDismissal {
+            super.viewDidDisappear(animated)
+        } else {
+            print("DEBUG: Prevented viewDidDisappear")
+        }
+    }
+}
+
 struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
     @Binding var selectedEmoji: String
     @Binding var isPresented: Bool
     
-    func makeUIViewController(context: Context) -> ElegantEmojiPicker {
+    func makeUIViewController(context: Context) -> NonDismissingElegantEmojiPicker {
         let configuration = ElegantConfiguration(
             showSearch: true,
             showRandom: false,
@@ -18,11 +55,19 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
             defaultSkinTone: nil
         )
         
-        let picker = ElegantEmojiPicker(delegate: context.coordinator, configuration: configuration)
+        let picker = NonDismissingElegantEmojiPicker(delegate: context.coordinator, configuration: configuration)
+        
+        // Set up manual dismiss callback
+        picker.onManualDismiss = {
+            DispatchQueue.main.async {
+                self.isPresented = false
+            }
+        }
+        
         return picker
     }
     
-    func updateUIViewController(_ uiViewController: ElegantEmojiPicker, context: Context) {
+    func updateUIViewController(_ uiViewController: NonDismissingElegantEmojiPicker, context: Context) {
         // No updates needed for this implementation
     }
     
@@ -41,14 +86,14 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
             let selectedEmojiString = emoji?.emoji ?? "⭐️"
             print("DEBUG: Emoji selected: \(selectedEmojiString)")
             
-            // Update selectedEmoji on main thread and ensure it propagates before dismissing
+            // Update selectedEmoji on main thread and dismiss ONLY the emoji picker
             DispatchQueue.main.async {
-                self.parent.selectedEmoji = selectedEmojiString // Default emoji if reset is selected
+                self.parent.selectedEmoji = selectedEmojiString
                 print("DEBUG: Updated parent.selectedEmoji to: \(self.parent.selectedEmoji)")
                 
-                // Add a small delay to ensure the binding update propagates properly
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    print("DEBUG: Dismissing emoji picker")
+                // Dismiss only the emoji picker sheet, not the parent
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    print("DEBUG: Dismissing emoji picker sheet only")
                     self.parent.isPresented = false
                 }
             }

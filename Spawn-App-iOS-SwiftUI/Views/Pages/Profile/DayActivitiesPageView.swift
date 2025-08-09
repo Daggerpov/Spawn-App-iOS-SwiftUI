@@ -29,16 +29,12 @@ struct DayActivitiesPageView: View {
             // Use the same ActivityPopupDrawer as the feed view for consistency
             Group {
                 if showActivityDetails, let activity = profileViewModel.selectedActivity {
-                    let _ = activity.isSelfOwned == true ?
-                        universalAccentColor : getActivityColor(for: activity.id)
-
                                                     EmptyView() // Replaced with global popup system
             }
         }
         .onChange(of: showActivityDetails) { isShowing in
             if isShowing, let activity = profileViewModel.selectedActivity {
-                let activityColor = activity.isSelfOwned == true ?
-                    universalAccentColor : getActivityColor(for: activity.id)
+                let activityColor = getActivityColor(for: activity.id)
                 
                 // Post notification to show global popup
                 NotificationCenter.default.post(
@@ -230,12 +226,13 @@ struct DayActivitiesPageView: View {
             return Color(hex: colorHex)
         }
         
-        // Otherwise, use the activity color based on ID
-        guard let activityId = activity.activityId else {
-            return .gray
+        // Use the exact same logic as feed view - ActivityColorService with activityId
+        if let activityId = activity.activityId {
+            return ActivityColorService.shared.getColorForActivity(activityId)
         }
         
-        return getActivityColor(for: activityId)
+        // For calendar-only activities without activityId, use the calendar activity's own id
+        return ActivityColorService.shared.getColorForActivity(activity.id)
     }
     
     // MARK: - Computed Properties
