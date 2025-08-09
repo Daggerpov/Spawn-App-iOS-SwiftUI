@@ -34,8 +34,21 @@ struct SignInView: View {
                 // Buttons
                 VStack {
                     // Create Account Button
-                    OnboardingButtonView("Create an Account", destination: RegisterInputView())
-                        .padding(.bottom, -16)
+                    Button(action: {
+                        print("🔘 DEBUG: Create Account button tapped")
+                        // Haptic feedback
+                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                        impactGenerator.impactOccurred()
+                        
+                        // Use auth navigation system
+                        userAuth.navigateTo(.register)
+                    }) {
+                        OnboardingButtonCoreView("Create an Account") {
+                            figmaIndigo
+                        }
+                    }
+                    .buttonStyle(OnboardingButtonStyle())
+                    .padding(.bottom, -16)
                     
                     // Log in text
                     HStack(spacing: 4) {

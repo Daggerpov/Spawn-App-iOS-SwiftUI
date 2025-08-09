@@ -47,6 +47,7 @@ let colorsGray600: String = "#3E3B3B"
 let colorsGray700: String = "#262424"
 let colorsGray800: String = "#1F1E1E"
 let colorsGray900: String = "#1A1A1A"
+let colorsGrayInput: String = "#F5F5F5"
 
 // MARK: - Indigo Colors
 let colorsIndigo100: String = "#EBEEFD"

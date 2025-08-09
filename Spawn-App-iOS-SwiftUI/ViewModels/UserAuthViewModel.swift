@@ -110,7 +110,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
             
-            print("📍 Navigating to: \(state.description)")
+            print("📍 Navigating to: \(state.description) with delay: \(delay)s")
+            print("📍 Current state - isLoggedIn: \(isLoggedIn), hasCompletedOnboarding: \(hasCompletedOnboarding), spawnUser: \(spawnUser?.id.uuidString ?? "nil")")
             self.navigationState = state
             
             // Reset the navigation lock after a short delay
@@ -604,7 +605,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.isLoggedIn = true
 						
 						// Navigate based on user status from AuthResponseDTO
-						self.navigateBasedOnUserStatus(authResponse: authResponse)
+                        continueUserOnboarding(authResponse: authResponse)
+						//self.navigateBasedOnUserStatus(authResponse: authResponse)
                         
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
@@ -763,8 +765,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		switch status {
 		case .emailVerified:
 			// Needs to input username, phone number, and password
-			navigateTo(.userDetailsInput(isOAuthUser: true))
-			print("📍 User status: emailVerified - navigating to user details input")
+			// Check if user is registering with email vs OAuth
+			let isOAuthUser = authProvider != .email
+			navigateTo(.userDetailsInput(isOAuthUser: isOAuthUser))
+			print("📍 User status: emailVerified - navigating to user details input (OAuth: \(isOAuthUser))")
 		case .usernameAndPhoneNumber:
 			// Needs to complete name and photo details
 			navigateTo(.userOptionalDetailsInput)
@@ -790,23 +794,27 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
     
-    private func continueUserOnboarding(authResponse: AuthResponseDTO) {
+    func continueUserOnboarding(authResponse: AuthResponseDTO) {
         
-        guard let status = authResponse.status else {
-            // No status means legacy active user
-            print("❌ [AUTH] Error: User has no status")
+        // Guard against calling this method for users who have already completed onboarding
+        if hasCompletedOnboarding {
+            print("🔍 [AUTH] User has already completed onboarding - skipping continueUserOnboarding")
             return
         }
         
-        print("🔍 [AUTH] User status: \(status.rawValue)")
-        print("🔍 [AUTH] User onboarding completed: \(hasCompletedOnboarding)")
-        print("🔍 [AUTH] User details: \(authResponse.user.username ?? "no username"), \(authResponse.user.name ?? "no name")")
+        guard let status = authResponse.status else {
+            // No status means legacy active user
+            print("Error: User has no status")
+            return
+        }
         
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
-            navigateTo(.userDetailsInput(isOAuthUser: true))
-            print("📍 [AUTH] User status: emailVerified - navigating to user details input")
+            // Check if user is registering with email vs OAuth
+            let isOAuthUser = authResponse.isOAuthUser ?? false
+            navigateTo(.userDetailsInput(isOAuthUser: isOAuthUser))
+            print("📍 [AUTH] User status: emailVerified - navigating to user details input (OAuth: \(isOAuthUser))")
             
         case .usernameAndPhoneNumber:
             // Needs to complete name and photo details
@@ -824,7 +832,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
         case .active:
             // Fully onboarded user - go to feed
             isFormValid = true
-            isLoggedIn = true
             navigateTo(.feedView)
 			// Mark onboarding as completed for active users
 			if !hasCompletedOnboarding {
@@ -833,6 +840,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
             print("📍 [AUTH] User status: active - navigating to feed")
         }
     }
+    
+
     
     
     func completeContactImport() async {
@@ -905,6 +914,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 // After terms are accepted, user should be at ACTIVE status
                 // Navigate to the feed view to complete onboarding
                 self.navigateTo(.feedView)
+//                self.navigateTo(.feedView)
                 self.isLoggedIn = true
                 self.errorMessage = nil // Clear any previous errors on success
                 // Mark onboarding as completed when user accepts Terms of Service
@@ -1303,9 +1313,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 guard let user: BaseUserDTO = response else {
                     print("Failed to login with email/username")
                     await MainActor.run {
-                                            self.isLoggedIn = false
-                    self.spawnUser = nil
-                    self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
+                        self.isLoggedIn = false
+                        self.spawnUser = nil
+                        self.errorMessage = "Invalid email/username or password. Please check your credentials and try again."
                     }
                     return
                 }
@@ -1326,7 +1336,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 self.isLoggedIn = false
                 self.spawnUser = nil
-                
+                print("[DEBUG] Error: \(error)")
                 // Provide user-friendly error messages based on API error
                 if case .invalidStatusCode(let statusCode) = error {
                     switch statusCode {
@@ -1395,6 +1405,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     // New method for sending email verification
     func sendEmailVerification(email: String) async {
+        print("🔄 DEBUG: sendEmailVerification called with email: \(email)")
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/register/verification/send") {
                 let emailVerificationDTO = EmailVerificationSendDTO(email: email)
@@ -1402,19 +1413,25 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 
                 await MainActor.run {
                     if let response = response {
+                        print("✅ DEBUG: Email verification sent successfully, navigating to verification code view")
                         // Success - navigate to verification code view
                         self.navigationState = .verificationCode
                         self.email = email
+                        // Set authProvider to email for email registration
+                        self.authProvider = .email
                         // Store the seconds until next attempt for the timer
                         self.secondsUntilNextVerificationAttempt = response.secondsUntilNextAttempt
                         self.errorMessage = nil
+                        print("📍 DEBUG: Set navigationState to .verificationCode")
                     } else {
+                        print("❌ DEBUG: Email verification response was nil")
                         // Handle error
                         self.errorMessage = "Unable to send verification email. Please try again."
                     }
                 }
             }
         } catch let error as APIError {
+            print("❌ DEBUG: Email verification API error: \(error)")
             await MainActor.run {
                 // Handle specific API errors with user-friendly messages
                 if case .invalidStatusCode(let statusCode) = error {
@@ -1435,6 +1452,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 }
             }
         } catch {
+            print("❌ DEBUG: Email verification general error: \(error)")
             await MainActor.run {
                 self.errorMessage = "Unable to send verification email. Please try again."
             }
@@ -1617,16 +1635,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 // Clear auto sign-in state and alert on successful sign-in
                 self.isAutoSigningIn = false
                 self.authAlert = nil
+                self.isLoggedIn = true
                 
                 // For re-authentication during onboarding, determine where to navigate
-                if !self.hasCompletedOnboarding {
-                    print("📍 Re-authentication successful during onboarding - continuing with onboarding flow")
-                    self.navigateBasedOnUserStatus(authResponse: authResponse)
-                } else {
-                    // For incomplete users, continue their onboarding
-                    self.continueUserOnboarding(authResponse: authResponse)
-                }
-                
+                self.continueUserOnboarding(authResponse: authResponse)
                 print("📍 OAuth re-authentication successful for user with status: \(authResponse.status?.rawValue ?? "unknown")")
             }
         } catch {
@@ -1656,10 +1668,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         // Success - set user and navigate based on status
                         self.spawnUser = authResponse.user
                         self.email = authResponse.user.email
+                        // Set authProvider to email for email registration
+                        self.authProvider = .email
                         self.errorMessage = nil
                         
                         // Navigate based on user status
-                        self.navigateBasedOnUserStatus(authResponse: authResponse)
+                        self.navigateTo(.userDetailsInput(isOAuthUser: false))
                     } else {
                         // Handle error
                         self.errorMessage = "Invalid verification code"
@@ -1926,6 +1940,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return .invalidToken
 		}
 	}
+    
+    func getStarted() {
+        if self.isFirstLaunch {
+            navigateTo(.spawnIntro)
+        } else {
+            navigateTo(.signIn)
+        }
+    }
     
 }
 

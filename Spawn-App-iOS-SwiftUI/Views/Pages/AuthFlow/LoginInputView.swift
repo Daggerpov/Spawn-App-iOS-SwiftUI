@@ -78,6 +78,7 @@ struct LoginInputView: View {
                             .onChange(of: usernameOrEmail) { _ in
                                 hasLoginError = false
                             }
+                            .textInputAutocapitalization(.never)
                     }
                     
                     // Password Field

@@ -12,23 +12,25 @@ struct AuthNavigationModifier: ViewModifier {
                     LaunchView()
                 case .signIn:
                     SignInView()
-                        .onAppear {
-                            userAuth.resetAuthFlow()
-                        }
+//                        .onAppear {
+//                            userAuth.resetAuthFlow()
+//                        }
+                case .spawnIntro:
+                    SpawnIntroView()
                 case .register:
                     RegisterInputView()
-                        .onAppear {
-                            // Only reset auth flow if we don't have OAuth credentials to preserve
+//                        .onAppear {
+//                            // Only reset auth flow if we don't have OAuth credentials to preserve
                             // When coming from AccountNotFoundView with OAuth credentials, we should keep them
                             if userAuth.authProvider == nil && userAuth.idToken == nil {
                                 userAuth.resetAuthFlow()
-                            } else {
+//                            } else {
                                 // Just clear errors but preserve OAuth credentials for registration
                                 userAuth.clearAllErrors()
                             }
                         }
                 case .loginInput:
-                    SignInView()
+                    LoginInputView()
                 case .accountNotFound:
                     AccountNotFoundView()
                         .navigationBarTitle("")

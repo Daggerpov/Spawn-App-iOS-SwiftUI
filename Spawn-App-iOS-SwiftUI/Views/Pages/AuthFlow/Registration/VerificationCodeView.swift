@@ -110,7 +110,7 @@ struct VerificationCodeView: View {
         if viewModel.errorMessage != nil {
             return Color.red.opacity(0.1)
         }
-        return colorScheme == .dark ? Color(hex: "#2C2C2C") : Color(hex: "#F5F5F5")
+        return colorScheme == .dark ? Color(hex: "#2C2C2C") : Color(hex: colorsGrayInput)
     }
     
     var body: some View {

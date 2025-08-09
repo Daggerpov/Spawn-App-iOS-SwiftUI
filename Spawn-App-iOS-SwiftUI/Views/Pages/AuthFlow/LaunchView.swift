@@ -18,21 +18,10 @@ struct LaunchView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showAuthButtons = false
     @State private var animationCompleted = false
+    @State private var navigationPath = NavigationPath()
 
 	var body: some View {
-		NavigationStack(path: Binding(
-			get: {
-				if userAuth.navigationState != .none {
-					return NavigationPath([userAuth.navigationState])
-				}
-				return NavigationPath()
-			},
-			set: { (path: NavigationPath) in
-				if path.isEmpty {
-					userAuth.navigationState = .none
-				}
-			}
-		)) {
+		NavigationStack(path: $navigationPath) {
 			VStack(spacing: 16) {
 				Spacer()
 				
@@ -113,11 +102,25 @@ struct LaunchView: View {
 					.padding(.horizontal, 40)
 					.transition(.opacity)
 				}
-
+				
 				Spacer()
 			}
 			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
-			.navigationBarHidden(true)
+			.ignoresSafeArea(.all)
+			.onAppear {
+				print("🔄 DEBUG: LaunchView appeared")
+			}
+		}
+		.withAuthNavigation(userAuth)
+		.onReceive(userAuth.$navigationState) { newState in
+			if newState != .none {
+				navigationPath.append(newState)
+				print("📍 DEBUG: Appending navigation state to path: \(newState.description)")
+			} else {
+				// Clear navigation path when state is reset to none
+				navigationPath = NavigationPath()
+				print("📍 DEBUG: Clearing navigation path")
+			}
 		}
 	}
 }
