@@ -859,8 +859,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
             
             await MainActor.run {
                 self.spawnUser = updatedUser
+                // After contact import is completed, user should be at CONTACT_IMPORT status
+                // Navigate to the next step which is terms of service
                 self.navigateTo(.userTermsOfService)
-                print("Successfully completed contact import for user: \(updatedUser.username ?? "Unknown")")
+                print("Successfully completed contact import for user: \(updatedUser.username ?? "Unknown"), navigating to terms of service")
             }
         } catch {
             await MainActor.run {
@@ -900,12 +902,14 @@ class UserAuthViewModel: NSObject, ObservableObject {
             
             await MainActor.run {
                 self.spawnUser = updatedUser
+                // After terms are accepted, user should be at ACTIVE status
+                // Navigate to the feed view to complete onboarding
                 self.navigateTo(.feedView)
                 self.isLoggedIn = true
                 self.errorMessage = nil // Clear any previous errors on success
                 // Mark onboarding as completed when user accepts Terms of Service
                 self.markOnboardingCompleted()
-                print("Successfully accepted Terms of Service for user: \(updatedUser.username ?? "Unknown")")
+                print("Successfully accepted Terms of Service for user: \(updatedUser.username ?? "Unknown"), navigating to feed view")
             }
         } catch let error as APIError {
             await MainActor.run {
@@ -1716,9 +1720,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
+                        // After username and phone are set, user should be at USERNAME_AND_PHONE_NUMBER status
+                        // Navigate to the next step which is optional details input
                         self.navigateTo(.userOptionalDetailsInput)
                         self.errorMessage = nil
-                        print("✅ User details updated successfully")
+                        print("✅ User details updated successfully, navigating to optional details input")
                     } else {
                         self.errorMessage = "Failed to update user details."
                     }
@@ -1817,8 +1823,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 await MainActor.run {
                     if let user = response {
                         self.spawnUser = user
+                        // After name and photo are set, user should be at NAME_AND_PHOTO status
+                        // Navigate to the next step which is contact import
                         self.navigateTo(.contactImport)
                         self.errorMessage = nil
+                        print("✅ Optional details updated successfully, navigating to contact import")
                     } else {
                         self.errorMessage = "Failed to update optional details."
                     }
