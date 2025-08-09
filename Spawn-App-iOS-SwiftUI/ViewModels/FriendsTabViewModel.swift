@@ -66,33 +66,9 @@ class FriendsTabViewModel: ObservableObject {
 					}
 				}
 				.store(in: &cancellables)
-        
-        // Subscribe to AppCache friend requests updates
-        appCache.$friendRequests
-            .sink { [weak self] cachedFriendRequests in
-                guard let self = self else { return }
-                let userFriendRequests = cachedFriendRequests[self.userId] ?? []
-                print("🔄 [FRIENDS_TAB] AppCache friend requests updated: \(userFriendRequests.count) for user \(self.userId)")
-                self.incomingFriendRequests = userFriendRequests
-                if !self.isSearching {
-                    self.filteredIncomingFriendRequests = userFriendRequests
-                }
-            }
-            .store(in: &cancellables)
-        
-        // Subscribe to AppCache sent friend requests updates  
-        appCache.$sentFriendRequests
-            .sink { [weak self] cachedSentFriendRequests in
-                guard let self = self else { return }
-                let userSentFriendRequests = cachedSentFriendRequests[self.userId] ?? []
-                print("🔄 [FRIENDS_TAB] AppCache sent friend requests updated: \(userSentFriendRequests.count) for user \(self.userId)")
-                self.outgoingFriendRequests = userSentFriendRequests
-                if !self.isSearching {
-                    self.filteredOutgoingFriendRequests = userSentFriendRequests
-                }
-            }
-            .store(in: &cancellables)
-		}
+
+            // Removed AppCache subscriptions for friend requests and sent friend requests to prevent cache from overriding API results
+        }
 	}
     
     // Call this method to connect the search view model to this view model
@@ -332,12 +308,6 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-    // Show cached data immediately if available
-    let cachedRequests = appCache.getCurrentUserFriendRequests()
-    await MainActor.run {
-        self.incomingFriendRequests = cachedRequests
-    }
-    
     // Always fetch fresh data from API to ensure we have the latest information
     // full path: /api/v1/friend-requests/incoming/{userId}
     if let url = URL(
@@ -363,12 +333,6 @@ class FriendsTabViewModel: ObservableObject {
 }
 
 	internal func fetchOutgoingFriendRequests() async {
-        // Show cached data immediately if available
-        let cachedSentRequests = appCache.getCurrentUserSentFriendRequests()
-        await MainActor.run {
-            self.outgoingFriendRequests = cachedSentRequests
-        }
-        
         // Always fetch fresh data from API to ensure we have the latest information
 		// full path: /api/v1/friend-requests/sent/{userId}
 		if let url = URL(
