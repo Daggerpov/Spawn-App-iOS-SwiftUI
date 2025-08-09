@@ -24,23 +24,7 @@ class FriendRequestsViewModel: ObservableObject {
         self.apiService = apiService
         self.appCache = AppCache.shared
         
-        // Always subscribe to cache updates for this user's friend requests, regardless of mock mode
-        appCache.$friendRequests
-            .sink { [weak self] cachedFriendRequests in
-                guard let self = self else { return }
-                let userFriendRequests = cachedFriendRequests[self.userId] ?? []
-                self.incomingFriendRequests = userFriendRequests
-            }
-            .store(in: &cancellables)
-        
-        // Always subscribe to cache updates for this user's sent friend requests, regardless of mock mode
-        appCache.$sentFriendRequests
-            .sink { [weak self] cachedSentFriendRequests in
-                guard let self = self else { return }
-                let userSentFriendRequests = cachedSentFriendRequests[self.userId] ?? []
-                self.sentFriendRequests = userSentFriendRequests
-            }
-            .store(in: &cancellables)
+        // Removed AppCache subscriptions to ensure API results drive UI state for friend requests
         
         // Initialize cache with mock data if in mock mode and cache is empty
         if MockAPIService.isMocking {
@@ -65,13 +49,6 @@ class FriendRequestsViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         
-        // Show cached data immediately if available
-        let cachedIncoming = appCache.getCurrentUserFriendRequests()
-        let cachedSent = appCache.getCurrentUserSentFriendRequests()
-        
-        self.incomingFriendRequests = cachedIncoming
-        self.sentFriendRequests = cachedSent
-        
         // Always fetch fresh data from API to ensure we have the latest information
         do {
             // Fetch incoming friend requests
@@ -86,9 +63,12 @@ class FriendRequestsViewModel: ObservableObject {
                 return
             }
             
-            let fetchedIncomingRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: incomingUrl, parameters: nil)
-            let fetchedSentRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: sentUrl, parameters: nil)
+            async let incoming: [FetchFriendRequestDTO] = apiService.fetchData(from: incomingUrl, parameters: nil)
+            async let sent: [FetchFriendRequestDTO] = apiService.fetchData(from: sentUrl, parameters: nil)
             
+            let (fetchedIncomingRequests, fetchedSentRequests) = try await (incoming, sent)
+            
+            // Update UI first, then cache
             self.incomingFriendRequests = fetchedIncomingRequests
             self.sentFriendRequests = fetchedSentRequests
             
@@ -98,10 +78,14 @@ class FriendRequestsViewModel: ObservableObject {
             
         } catch {
             errorMessage = "Failed to fetch friend requests: \(error.localizedDescription)"
-            if !MockAPIService.isMocking {
-                // For development, load mock data if real API fails
+            if MockAPIService.isMocking {
+                // Fallback to mock data in mock environment
                 self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
                 self.sentFriendRequests = FetchFriendRequestDTO.mockSentFriendRequests
+            } else {
+                // Clear lists on failure to avoid showing stale cache
+                self.incomingFriendRequests = []
+                self.sentFriendRequests = []
             }
         }
     }
@@ -132,8 +116,6 @@ class FriendRequestsViewModel: ObservableObject {
         } catch {
             errorMessage = "Failed to \(action == .accept ? "accept" : action == .cancel ? "cancel" : "decline") friend request: \(error.localizedDescription)"
             
-            // For mock environment, simulate success even when the API call "fails"
-            // because the MockAPIService will return EmptyResponse() for friend request actions
             if MockAPIService.isMocking {
                 self.incomingFriendRequests.removeAll { $0.id == requestId }
                 self.sentFriendRequests.removeAll { $0.id == requestId }

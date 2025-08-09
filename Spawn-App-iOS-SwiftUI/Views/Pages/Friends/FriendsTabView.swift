@@ -68,6 +68,8 @@ struct FriendsTabView: View {
 			}
 			.onAppear {
 				Task {
+                    // Ensure cache is aligned with API on entry
+                    await AppCache.shared.forceRefreshAllFriendRequests()
 					await viewModel.fetchAllData()
 					viewModel.connectSearchViewModel(searchViewModel)
 				}
@@ -76,6 +78,7 @@ struct FriendsTabView: View {
                 // Pull to refresh functionality
                 Task {
                     await AppCache.shared.refreshFriends()
+                    await AppCache.shared.forceRefreshAllFriendRequests()
                     await viewModel.fetchAllData()
                 }
             }
