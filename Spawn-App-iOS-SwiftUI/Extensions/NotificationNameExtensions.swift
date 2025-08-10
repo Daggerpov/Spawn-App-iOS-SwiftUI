@@ -28,4 +28,8 @@ extension Notification.Name {
     
     // Global activity popup notification
     static let showGlobalActivityPopup = Notification.Name("showGlobalActivityPopup")
+
+    // Friend system notifications
+    static let friendRequestsDidChange = Notification.Name("friendRequestsDidChange")
+    static let friendsDidChange = Notification.Name("friendsDidChange")
 }

@@ -115,18 +115,27 @@ struct ActivityTypeView: View {
 // MARK: - View Components
 extension ActivityTypeView {
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("What are you up to?")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding(.horizontal)
+        HStack {
+            // Invisible chevron to balance layout (no back button on this screen)
+            Image(systemName: "chevron.left")
+                .font(.title3)
+                .foregroundColor(.clear)
             
-            Text("Choose an activity type or create a new one")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .padding(.horizontal)
+            Spacer()
+            
+            Text("What are you up to?")
+                .font(.title3)
+                .fontWeight(.semibold)
+            
+            Spacer()
+            
+            // Invisible chevron to balance the left side
+            Image(systemName: "chevron.left")
+                .font(.title3)
+                .foregroundColor(.clear)
         }
-        .padding(.top)
+        .padding(.horizontal)
+        .padding(.vertical, 12)
     }
     
     private var emptyStateSection: some View {

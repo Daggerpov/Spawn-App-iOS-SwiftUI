@@ -87,9 +87,8 @@ class MockAPIService: IAPIService {
 					"Coffee House", "Cinema", "Game Room", "Beach",
 				]
 				activityToCache.title = possibleTitles.randomElement()
-				activityToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"]
-					.randomElement()
-				            activityToCache.location = LocationDTO(
+				activityToCache.icon = ["🍽️", "📚", "🏋️", "☕", "🎬", "🎮", "🏖️"].randomElement()
+				activityToCache.location = LocationDTO(
 					id: UUID(),
 					name: possibleLocations.randomElement() ?? "The Spot",
 					latitude: Double.random(in: defaultMapLatitude - 0.05...defaultMapLatitude + 0.05),
@@ -684,7 +683,23 @@ class MockAPIService: IAPIService {
 		parameters: [String: String]? = nil,
 		object: T? = nil
 	) async throws {
-		// Handle delete operations
+		// Handle friend request deletion (cancel)
+		if url.absoluteString.contains("friend-requests/") {
+			let parts = url.absoluteString.components(separatedBy: "/")
+			if let idStr = parts.last, let frId = UUID(uuidString: idStr) {
+				// Remove from mock caches
+				for (uid, requests) in AppCache.shared.friendRequests {
+					AppCache.shared.friendRequests[uid] = requests.filter { $0.id != frId }
+				}
+				for (uid, requests) in AppCache.shared.sentFriendRequests {
+					AppCache.shared.sentFriendRequests[uid] = requests.filter { $0.id != frId }
+				}
+			}
+			return
+		}
+
+		// For other delete operations, assume success in mock
+		return
 	}
 
 	func patchData<T: Encodable, U: Decodable>(

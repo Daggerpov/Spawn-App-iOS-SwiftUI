@@ -20,7 +20,7 @@ struct AuthNavigationModifier: ViewModifier {
                 case .register:
                     RegisterInputView()
                         .onAppear {
-//                            // Only reset auth flow if we don't have OAuth credentials to preserve
+                            // Only reset auth flow if we don't have OAuth credentials to preserve
                             // When coming from AccountNotFoundView with OAuth credentials, we should keep them
                             if userAuth.authProvider == nil && userAuth.idToken == nil {
                                 userAuth.resetAuthFlow()

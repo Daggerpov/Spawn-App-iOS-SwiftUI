@@ -4,15 +4,49 @@ struct ProfileShareDrawer: View {
     let user: Nameable
     @Binding var showShareSheet: Bool
     @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject var themeService = ThemeService.shared
     
     // State for drag gesture
     @State private var dragOffset: CGFloat = 0
+    
+    // Adaptive Colors
+    private var adaptiveBackgroundColor: Color {
+        universalBackgroundColor(from: themeService, environment: colorScheme)
+    }
+    
+    private var adaptiveOverlayColor: Color {
+        switch colorScheme {
+        case .dark: return Color.black.opacity(0.60)
+        case .light: return Color.black.opacity(0.40)
+        @unknown default: return Color.black.opacity(0.40)
+        }
+    }
+    
+    private var adaptiveTitleColor: Color {
+        universalAccentColor(from: themeService, environment: colorScheme)
+    }
+    
+    private var adaptiveShareButtonBackgroundColor: Color {
+        switch colorScheme {
+        case .dark: return Color(red: 0.52, green: 0.49, blue: 0.49)
+        case .light: return Color(red: 0.85, green: 0.82, blue: 0.82)
+        @unknown default: return Color(red: 0.85, green: 0.82, blue: 0.82)
+        }
+    }
+    
+    private var adaptiveShareButtonTextColor: Color {
+        switch colorScheme {
+        case .dark: return Color(red: 0.82, green: 0.80, blue: 0.80)
+        case .light: return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default: return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
     
     var body: some View {
         ZStack {
             // Background overlay
             if showShareSheet {
-                Color.black.opacity(0.4)
+                adaptiveOverlayColor
                     .ignoresSafeArea()
                     .onTapGesture {
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -31,14 +65,14 @@ struct ProfileShareDrawer: View {
                     Rectangle()
                         .foregroundColor(.clear)
                         .frame(width: 134, height: 5)
-                        .background(Color(red: 0.56, green: 0.52, blue: 0.52))
+                        .background(Color(.systemGray4))
                         .cornerRadius(100)
                         .padding(.top, 12)
                     
                     // Title
                     Text("Share Profile")
                         .font(.custom("Onest", size: 20).weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(adaptiveTitleColor)
                         .padding(.top, 8)
                     
                     // Share options
@@ -53,7 +87,7 @@ struct ProfileShareDrawer: View {
                             VStack(spacing: 8) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                        .fill(adaptiveShareButtonBackgroundColor)
                                         .frame(width: 64, height: 64)
                                     Image("share_via_button")
                                         .resizable()
@@ -62,7 +96,7 @@ struct ProfileShareDrawer: View {
                                 }
                                 Text("Share via")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                    .foregroundColor(adaptiveShareButtonTextColor)
                             }
                             .frame(width: 64)
                         }
@@ -80,7 +114,7 @@ struct ProfileShareDrawer: View {
                             VStack(spacing: 8) {
                                 ZStack {
                                     Circle()
-                                        .fill(Color(red: 0.52, green: 0.49, blue: 0.49))
+                                        .fill(adaptiveShareButtonBackgroundColor)
                                         .frame(width: 64, height: 64)
                                     Image("copy_link_button")
                                         .resizable()
@@ -89,7 +123,7 @@ struct ProfileShareDrawer: View {
                                 }
                                 Text("Copy Link")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                    .foregroundColor(adaptiveShareButtonTextColor)
                             }
                             .frame(width: 68)
                         }
@@ -108,7 +142,7 @@ struct ProfileShareDrawer: View {
                                     .frame(width: 64, height: 64)
                                 Text("WhatsApp")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                    .foregroundColor(adaptiveShareButtonTextColor)
                             }
                             .frame(width: 72)
                         }
@@ -127,7 +161,7 @@ struct ProfileShareDrawer: View {
                                     .frame(width: 64, height: 64)
                                 Text("Message")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                                    .foregroundColor(adaptiveShareButtonTextColor)
                             }
                             .frame(width: 65)
                         }
@@ -137,7 +171,7 @@ struct ProfileShareDrawer: View {
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 236)
-                .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+                .background(adaptiveBackgroundColor)
                 .cornerRadius(20)
                 .shadow(
                     color: Color(red: 0, green: 0, blue: 0, opacity: 0.10), radius: 32
