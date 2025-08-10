@@ -10,9 +10,23 @@ import SwiftUI
 
 struct ParticipantsImagesView: View {
 	var activity: FullFeedActivityDTO
-    let maxCount: Int = 3  // Changed to match Figma design
-    let width: CGFloat = 42.33  // Figma design specification
-    let height: CGFloat = 43.26  // Figma design specification
+    let maxCount: Int = 3  // Figma design specification
+    // New: control avatar sizing by context (feed card vs popup/drawer)
+    var imageType: ProfileImageType = .feedCardParticipants
+    
+    // New: compute size based on image type
+    private var avatarSize: CGFloat {
+        switch imageType {
+        case .participantsPopup:
+            return 42.33
+        case .participantsDrawer:
+            return 36
+        case .feedCardParticipants:
+            return 34
+        default:
+            return 34
+        }
+    }
     
     // Optional binding to control tab selection for current user navigation
     @Binding var selectedTab: TabType?
@@ -28,9 +42,10 @@ struct ParticipantsImagesView: View {
         NotificationCenter.default.post(name: .showParticipants, object: activity)
     }
     
-    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil)) {
+    init(activity: FullFeedActivityDTO, selectedTab: Binding<TabType?> = .constant(nil), imageType: ProfileImageType = .feedCardParticipants) {
         self.activity = activity
         self._selectedTab = selectedTab
+        self.imageType = imageType
     }
 
 	func participantsCleanup(participants: [BaseUserDTO]) -> [BaseUserDTO] {
@@ -63,33 +78,33 @@ struct ParticipantsImagesView: View {
                     if let pfpUrl = participant.profilePicture {
                         if MockAPIService.isMocking {
                             Image(pfpUrl)
-                                .ProfileImageModifier(imageType: .participantsPopup)
+                                .ProfileImageModifier(imageType: imageType)
                                 .shadow(
-                                    color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
-                                    radius: 4.06, 
-                                    y: 1.62
+                                    color: Color(red: 0, green: 0, blue: 0, opacity: 0.25),
+                                    radius: 3.22,
+                                    y: 1.29
                                 )
                         } else {
                             CachedProfileImage(
                                 userId: participant.id,
                                 url: URL(string: pfpUrl),
-                                imageType: .participantsPopup
+                                imageType: imageType
                             )
                             .shadow(
-                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
-                                radius: 4.06, 
-                                y: 1.62
+                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25),
+                                radius: 3.22,
+                                y: 1.29
                             )
                         }
                     } else {
                         Ellipse()
                             .foregroundColor(.clear)
-                            .frame(width: width, height: height)
+                            .frame(width: avatarSize, height: avatarSize)
                             .background(Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50))
                             .shadow(
-                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
-                                radius: 4.06, 
-                                y: 1.62
+                                color: Color(red: 0, green: 0, blue: 0, opacity: 0.25),
+                                radius: 3.22,
+                                y: 1.29
                             )
                     }
                 }
@@ -105,7 +120,7 @@ struct ParticipantsImagesView: View {
                 ZStack {
                     Circle()
                         .fill(.white)
-                        .frame(width: width, height: height)
+                        .frame(width: avatarSize, height: avatarSize)
                         .shadow(
                             color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), 
                             radius: 4.06, 

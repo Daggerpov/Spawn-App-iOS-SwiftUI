@@ -31,7 +31,7 @@ struct ActivityCardTopRowView: View {
                 activitySubtitleView
             }
             Spacer()
-            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab)
+            ParticipantsImagesView(activity: activity, selectedTab: $selectedTab, imageType: .feedCardParticipants)
         }
 	}
     

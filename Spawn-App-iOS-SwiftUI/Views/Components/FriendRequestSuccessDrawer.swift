@@ -9,10 +9,46 @@ struct FriendRequestSuccessDrawer: View {
     @State private var dragOffset: CGFloat = 0
     @State private var isDragging: Bool = false
     
+    // Theme
+    @ObservedObject private var themeService = ThemeService.shared
+    @Environment(\.colorScheme) private var colorScheme
+    
+    // Adaptive Colors
+    private var adaptiveOverlayColor: Color {
+        switch colorScheme {
+        case .dark: return Color.black.opacity(0.60)
+        case .light: return Color.black.opacity(0.40)
+        @unknown default: return Color.black.opacity(0.40)
+        }
+    }
+    
+    private var adaptiveDrawerBackground: Color {
+        switch colorScheme {
+        case .dark: return Color(red: 0.12, green: 0.12, blue: 0.12)
+        case .light: return Color(red: 0.95, green: 0.93, blue: 0.93)
+        @unknown default: return Color(red: 0.95, green: 0.93, blue: 0.93)
+        }
+    }
+    
+    private var adaptiveTitleColor: Color {
+        universalAccentColor(from: themeService, environment: colorScheme)
+    }
+    
+    private var adaptiveSecondaryTextColor: Color {
+        switch colorScheme {
+        case .dark: return Color(red: 0.82, green: 0.80, blue: 0.80)
+        case .light: return Color(red: 0.52, green: 0.49, blue: 0.49)
+        @unknown default: return Color(red: 0.52, green: 0.49, blue: 0.49)
+        }
+    }
+    
+    private var adaptiveHandleColor: Color { Color(.systemGray4) }
+    private var adaptiveBorderColor: Color { ThemeService.shared.borderColor(for: colorScheme) }
+    
     var body: some View {
         ZStack {
             // Background overlay
-            Color.black.opacity(0.4)
+            adaptiveOverlayColor
                 .ignoresSafeArea()
                 .onTapGesture {
                     dismissDrawer()
@@ -26,7 +62,7 @@ struct FriendRequestSuccessDrawer: View {
                 VStack(spacing: 16) {
                     // Drag handle
                     RoundedRectangle(cornerRadius: 100)
-                        .fill(Color(red: 0.82, green: 0.80, blue: 0.80))
+                        .fill(adaptiveHandleColor)
                         .frame(width: 50, height: 4)
                         .padding(.top, 12)
                     
@@ -40,12 +76,12 @@ struct FriendRequestSuccessDrawer: View {
                     // Success message
                     Text("Success!")
                         .font(.onestSemiBold(size: 24))
-                        .foregroundColor(.white)
+                        .foregroundColor(adaptiveTitleColor)
                         .padding(.top, 8)
                     
                     Text("You've added \(friendUser.name ?? friendUser.username ?? "Unknown") as a friend")
                         .font(.onestMedium(size: 16))
-                        .foregroundColor(Color(red: 0.82, green: 0.80, blue: 0.80))
+                        .foregroundColor(adaptiveSecondaryTextColor)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                         .padding(.top, 8)
@@ -75,11 +111,11 @@ struct FriendRequestSuccessDrawer: View {
                     Spacer().frame(height: 32)
                 }
                 .frame(maxWidth: .infinity)
-                .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+                .background(adaptiveDrawerBackground)
                 .cornerRadius(20)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color(red: 0.52, green: 0.49, blue: 0.49), lineWidth: 0.5)
+                        .stroke(adaptiveBorderColor, lineWidth: 0.5)
                 )
                 .shadow(color: Color.black.opacity(0.1), radius: 32)
                 .offset(y: dragOffset)

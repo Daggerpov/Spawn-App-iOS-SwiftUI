@@ -33,6 +33,10 @@ extension Image {
 			lineWidth = 0
 		case .profilePage:
 			imageSize = 150
+		case .feedCardParticipants:
+			imageSize = 34 // Approximate min(width: 33.53, height: 34.26)
+			strokeColor = .clear
+			lineWidth = 0
 		}
 
 		return

@@ -23,7 +23,11 @@ struct SignInView: View {
                 
                 // Logo
                 Image("SpawnLogo")
-                    .padding(.bottom, 120)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 120)
+                    .padding(.top, 24)
+                    .padding(.bottom, 80)
                 
                 // Main content
                 GetInTextView()
@@ -66,7 +70,7 @@ struct SignInView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 32)
+                .padding(.horizontal, 16)
                 .padding(.bottom, 60)
             }
             .padding(.horizontal)

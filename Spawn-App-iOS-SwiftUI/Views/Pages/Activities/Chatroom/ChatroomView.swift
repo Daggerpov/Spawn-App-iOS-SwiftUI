@@ -259,6 +259,7 @@ struct ChatroomView: View {
     var backgroundColor: Color
     @StateObject var viewModel: ChatViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) var colorScheme
     
     init(activity: FullFeedActivityDTO, backgroundColor: Color) {
         self.activity = activity
@@ -284,7 +285,7 @@ struct ChatroomView: View {
         GeometryReader { geometry in
             ZStack {
                 // Background overlay
-                Color.black.opacity(0.4)
+                (colorScheme == .dark ? Color.black.opacity(0.60) : Color.black.opacity(0.40))
                     .ignoresSafeArea()
                     .onTapGesture {
                         dismiss()
@@ -555,9 +556,17 @@ struct OtherUserMessageView: View {
     }
     
     private var userNameText: some View {
-        Text(message.senderUser.name ?? message.senderUser.username ?? "User")
-            .font(Font.custom("Onest", size: 12).weight(.medium))
-            .foregroundColor(.white.opacity(0.8))
+        HStack(spacing: 6) {
+            Text(message.senderUser.name ?? message.senderUser.username ?? "User")
+                .font(Font.custom("Onest", size: 12).weight(.medium))
+                .foregroundColor(.white.opacity(0.8))
+            Text("•")
+                .font(Font.custom("Onest", size: 12).weight(.medium))
+                .foregroundColor(.white.opacity(0.7))
+            Text(FormatterService.shared.chatTimestamp(from: message.timestamp))
+                .font(Font.custom("Onest", size: 12).weight(.medium))
+                .foregroundColor(.white.opacity(0.7))
+        }
     }
     
     private var messageBubble: some View {

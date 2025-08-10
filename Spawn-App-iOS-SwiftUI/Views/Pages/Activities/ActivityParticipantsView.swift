@@ -238,12 +238,13 @@ struct ParticipantsContentView: View {
 struct ActivityParticipantsView: View {
     let activity: FullFeedActivityDTO
     let onDismiss: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
                 // Background overlay
-                Color.black.opacity(0.4)
+                (colorScheme == .dark ? Color.black.opacity(0.60) : Color.black.opacity(0.40))
                     .ignoresSafeArea()
                     .onTapGesture {
                         onDismiss()

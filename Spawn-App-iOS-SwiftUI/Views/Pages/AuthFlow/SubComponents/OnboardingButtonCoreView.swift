@@ -26,6 +26,9 @@ struct OnboardingButtonCoreView: View {
             Text(buttonText)
 				.font(.onestSemiBold(size: 20))
                 .foregroundColor(.white)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .allowsTightening(true)
                 .padding(.vertical, 16)
                 .padding(.horizontal, 22)
             Spacer()
@@ -34,7 +37,7 @@ struct OnboardingButtonCoreView: View {
             RoundedRectangle(cornerRadius: 16)
                 .fill(fill())
         )
-        .padding(.horizontal, 22)
+        .padding(.horizontal, 12)
         .padding(.vertical, 32)
         .frame(maxWidth: .infinity)
         .shadow(

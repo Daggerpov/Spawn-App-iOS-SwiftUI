@@ -8,5 +8,5 @@
 import Foundation
 
 enum ProfileImageType {
-	case feedPage, activityParticipants, profilePage, chatMessage, friendsListView, participantsPopup, participantsDrawer
+	case feedPage, activityParticipants, profilePage, chatMessage, friendsListView, participantsPopup, participantsDrawer, feedCardParticipants
 }

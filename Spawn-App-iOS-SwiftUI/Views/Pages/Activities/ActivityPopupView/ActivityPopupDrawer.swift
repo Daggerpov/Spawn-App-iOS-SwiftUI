@@ -41,7 +41,8 @@ struct ActivityPopupDrawer: View {
     }
     
     private var halfScreenOffset: CGFloat {
-        screenHeight * 0.30 // Reduced height to align with bottom of activity type cards from feed view
+        // When opened from map view, show a smaller minimized card since there's no map preview
+        fromMapView ? screenHeight * 0.42 : screenHeight * 0.30
     }
     
     private var currentOffset: CGFloat {

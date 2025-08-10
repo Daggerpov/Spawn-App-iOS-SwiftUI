@@ -31,9 +31,16 @@ struct ActivityCreationLocationView: View {
     @State private var isExpanded = false
     @State private var isUpdatingLocation = false
     @State private var debounceTimer: Timer?
+    // Drop effect state for the base ellipse and a brief pulse
+    @State private var baseEllipseScale: CGFloat = 1.0
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var pulseOpacity: Double = 0.0
     
     let onNext: () -> Void
     let onBack: (() -> Void)?
+    
+    // 3D camera toggle (placeholder for SwiftUI Map). Used to reflect UI state.
+    @State private var is3DMode: Bool = false
     
     var body: some View {
         ZStack {
@@ -67,19 +74,70 @@ struct ActivityCreationLocationView: View {
                         }
                     }
                 }
+                // Detect user dragging on the map to animate the pin lift/drop
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            if !isDragging {
+                                withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) {
+                                    isDragging = true
+                                    baseEllipseScale = 0.88
+                                }
+                            }
+                        }
+                        .onEnded { _ in
+                            // Drop the pin with a subtle bounce and pulse underlay
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) {
+                                isDragging = false
+                                baseEllipseScale = 1.18
+                            }
+                            withAnimation(.spring(response: 0.42, dampingFraction: 0.8).delay(0.03)) {
+                                baseEllipseScale = 1.0
+                            }
+                            // Pulse effect
+                            pulseOpacity = 0.35
+                            pulseScale = 1.0
+                            withAnimation(.easeOut(duration: 0.5)) {
+                                pulseScale = 1.8
+                                pulseOpacity = 0.0
+                            }
+                        }
+                )
             
             // Pin in center of map
             VStack {
                 Spacer()
-                Image(systemName: "mappin")
-                    .font(.system(size: 30))
-                    .foregroundColor(.blue)
-                    .scaleEffect(isDragging ? 1.2 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: isDragging)
+                ZStack {
+                    // Base ellipse under the pin
+                    Ellipse()
+                        .fill(Color(red: 0.15, green: 0.55, blue: 1))
+                        .frame(width: 19.90, height: 9.95)
+                        .scaleEffect(baseEllipseScale)
+                        .opacity(0.9)
+                        .shadow(color: Color.black.opacity(0.25), radius: 12, x: 0, y: 3)
+                        .offset(y: 18)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.85), value: baseEllipseScale)
+                    // Expanding pulse when dropped
+                    Ellipse()
+                        .fill(Color(red: 0.15, green: 0.55, blue: 1))
+                        .frame(width: 19.90, height: 9.95)
+                        .scaleEffect(pulseScale)
+                        .opacity(pulseOpacity)
+                        .offset(y: 18)
+                    
+                    // Pin icon
+                    Image(systemName: "mappin")
+                        .font(.system(size: 34))
+                        .foregroundColor(.blue)
+                        .scaleEffect(isDragging ? 1.1 : 1.0)
+                        .offset(y: isDragging ? -10 : 0)
+                        .shadow(color: .black.opacity(isDragging ? 0.35 : 0.25), radius: isDragging ? 8 : 6, x: 0, y: isDragging ? 6 : 3)
+                        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isDragging)
+                }
                 Spacer()
             }
             
-            // Top navigation
+            // Top navigation - back button aligned to safe area like other creation pages
             VStack {
                 HStack {
                     Button(action: {
@@ -97,28 +155,78 @@ struct ActivityCreationLocationView: View {
                     
                     Spacer()
                     
-                    Text("Burrard Inlet")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+                    // Removed floating label
                     
                     Spacer()
-                    
-                    Button(action: {
-                        // 3D toggle action
-                    }) {
-                        Text("3D")
-                            .font(.caption)
-                            .foregroundColor(universalAccentColor)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(universalBackgroundColor.opacity(0.9))
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                    }
-                    .padding(.trailing, 24)
                 }
-                .padding(.top, 60)
+                .padding(.top, 24)
                 .padding(.bottom, 12)
                 
+                Spacer()
+            }
+            
+            // Top-right controls: 3D toggle and recenter buttons
+            VStack {
+                HStack {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        // 3D mode toggle (visual only for SwiftUI Map)
+                        if #available(iOS 17.0, *) {
+                            Button(action: {
+                                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                impactGenerator.impactOccurred()
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    is3DMode.toggle()
+                                }
+                            }) {
+                                Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(universalAccentColor)
+                                    .padding(12)
+                                    .background(universalBackgroundColor)
+                                    .clipShape(Circle())
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        } else {
+                            Button(action: {}) {
+                                Text("3D")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(universalAccentColor)
+                                    .padding(12)
+                                    .background(universalBackgroundColor)
+                                    .clipShape(Circle())
+                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                        
+                        // Recenter to user location
+                        Button(action: {
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            if let userLocation = locationManager.userLocation {
+                                withAnimation(.easeInOut(duration: 0.75)) {
+                                    region = MKCoordinateRegion(
+                                        center: userLocation,
+                                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                    )
+                                }
+                            }
+                        }) {
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(universalAccentColor)
+                                .padding(12)
+                                .background(universalBackgroundColor)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding(.trailing, 16)
+                }
+                .padding(.top, 24)
                 Spacer()
             }
             
@@ -176,7 +284,7 @@ struct ActivityCreationLocationView: View {
                         ActivityNextStepButton(
                             title: "Confirm Location"
                         ) {
-                            // Validate coordinates before creating LocationDTO to prevent invalid location data
+                            
                             guard CLLocationCoordinate2DIsValid(region.center) else {
                                 print("⚠️ Confirm Location: Invalid region center coordinates - \(region.center)")
                                 return
