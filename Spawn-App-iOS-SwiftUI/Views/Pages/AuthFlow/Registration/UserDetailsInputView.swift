@@ -60,7 +60,9 @@ struct UserDetailsInputView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Navigation Bar
+            Spacer()
             HStack {
+                
                 Button(action: {
                     // Clear any error states when going back
                     viewModel.clearAllErrors()

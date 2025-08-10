@@ -10,35 +10,6 @@ struct OnboardingContinuationView: View {
     
     var body: some View {
         ZStack {
-            // Status Bar
-            HStack(alignment: .top, spacing: 32) {
-                HStack(alignment: .bottom, spacing: 10) {
-                    Text("9:41")
-                        .font(Font.custom("SF Pro Text", size: 20).weight(.semibold))
-                        .lineSpacing(20)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                }
-                .padding(EdgeInsets(top: 1, leading: 0, bottom: 0, trailing: 0))
-                .frame(width: 77.14)
-                .cornerRadius(24)
-                
-                HStack(alignment: .top, spacing: 0) {
-                    Rectangle()
-                        .foregroundColor(.clear)
-                        .frame(width: 192)
-                        .background(universalAccentColor(from: themeService, environment: colorScheme))
-                        .cornerRadius(30)
-                }
-                
-                HStack(alignment: .bottom, spacing: 4.95) {
-                    // Battery and signal indicators would go here
-                }
-                .frame(height: 37)
-            }
-            .padding(EdgeInsets(top: 0, leading: 24, bottom: 0, trailing: 24))
-            .frame(width: 428, height: 37)
-            .offset(x: 0, y: -444.50)
-            
             // Logo
             VStack(spacing: 30) {
                 Image("logo_no_text")
@@ -74,7 +45,7 @@ struct OnboardingContinuationView: View {
                     // Add a small delay to prevent rapid taps
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         // Navigation is now handled directly, no need for continuation popup
-                        userAuth.navigationState = .none
+                        userAuth.navigateOnStatus()
                         
                         // Reset processing state after a delay
                         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -97,6 +68,7 @@ struct OnboardingContinuationView: View {
                     
                     // Add a small delay to prevent rapid taps
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        userAuth.resetAuthFlow()
                         userAuth.navigateTo(.signIn)
                         
                         // Reset processing state after a delay
@@ -125,4 +97,4 @@ struct OnboardingContinuationView: View {
 
 #Preview {
     OnboardingContinuationView()
-} 
+}
