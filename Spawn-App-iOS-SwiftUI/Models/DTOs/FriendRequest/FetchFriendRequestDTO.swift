@@ -31,17 +31,22 @@ struct FetchFriendRequestDTO: Identifiable, Codable, Hashable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        // Try to decode UUID directly; if null or missing, generate a new one
+
+        // Decode sender first so we can derive a stable fallback id if needed
+        let decodedSenderUser = try container.decode(BaseUserDTO.self, forKey: .senderUser)
+
+        // Try to decode UUID directly; if null or missing, derive from sender id for stability
         if let uuid = try? container.decode(UUID.self, forKey: .id) {
             self.id = uuid
         } else if let idString = try? container.decodeIfPresent(String.self, forKey: .id),
                   let uuid = UUID(uuidString: idString) {
             self.id = uuid
         } else {
-            // Backend occasionally returns null id; use zero UUID sentinel and let callers filter
-            self.id = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+            // Fallback to a stable, non-zero UUID derived from the sender user
+            self.id = decodedSenderUser.id
         }
-        self.senderUser = try container.decode(BaseUserDTO.self, forKey: .senderUser)
+
+        self.senderUser = decodedSenderUser
         self.mutualFriendCount = try container.decodeIfPresent(Int.self, forKey: .mutualFriendCount)
     }
 

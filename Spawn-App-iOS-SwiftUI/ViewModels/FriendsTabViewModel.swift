@@ -312,11 +312,21 @@ class FriendsTabViewModel: ObservableObject {
                     try await self.apiService.fetchData(
                         from: url, parameters: nil)
 
+                // Normalize: filter zero UUIDs and de-duplicate by id
+                let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+                var seen = Set<UUID>()
+                let normalized = fetchedIncomingFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+                    guard req.id != zeroUUID else { return nil }
+                    if seen.contains(req.id) { return nil }
+                    seen.insert(req.id)
+                    return req
+                }
+
                 // Ensure updating on the main thread
                 await MainActor.run {
-                    self.incomingFriendRequests = fetchedIncomingFriendRequests
+                    self.incomingFriendRequests = normalized
                     // Update the cache
-                    self.appCache.updateFriendRequestsForUser(fetchedIncomingFriendRequests, userId: userId)
+                    self.appCache.updateFriendRequestsForUser(normalized, userId: userId)
                 }
             } catch {
                 await MainActor.run {
@@ -337,11 +347,21 @@ class FriendsTabViewModel: ObservableObject {
 					try await self.apiService.fetchData(
 						from: url, parameters: nil)
 
+                // Normalize: filter zero UUIDs and de-duplicate by id
+                let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+                var seen = Set<UUID>()
+                let normalized = fetchedOutgoingFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+                    guard req.id != zeroUUID else { return nil }
+                    if seen.contains(req.id) { return nil }
+                    seen.insert(req.id)
+                    return req
+                }
+
 				// Ensure updating on the main thread
 				await MainActor.run {
-					self.outgoingFriendRequests = fetchedOutgoingFriendRequests
+					self.outgoingFriendRequests = normalized
                     // Update the cache
-                    self.appCache.updateSentFriendRequestsForUser(fetchedOutgoingFriendRequests, userId: self.userId)
+                    self.appCache.updateSentFriendRequestsForUser(normalized, userId: self.userId)
 				}
 			} catch {
 				await MainActor.run {

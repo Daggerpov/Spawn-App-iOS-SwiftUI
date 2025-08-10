@@ -627,18 +627,40 @@ class AppCache: ObservableObject {
     /// Update friend requests for a specific user
     func updateFriendRequestsForUser(_ newFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
         print("💾 [CACHE] Updating incoming friend requests cache for user \(userId): \(newFriendRequests.count) requests")
-        friendRequests[userId] = newFriendRequests
+        // Normalize: remove zero UUIDs and unique by id
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var seen = Set<UUID>()
+        let normalized = newFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+            guard req.id != zeroUUID else { return nil }
+            if seen.contains(req.id) { return nil }
+            seen.insert(req.id)
+            return req
+        }
+        friendRequests[userId] = normalized
         setLastCheckedForUser(userId, cacheType: CacheKeys.friendRequests, date: Date())
         saveToDisk()
         
         // Preload profile pictures for friend request senders
         Task {
-            await preloadProfilePicturesForFriendRequests([userId: newFriendRequests])
+            await preloadProfilePicturesForFriendRequests([userId: normalized])
         }
     }
 
     func updateFriendRequests(_ newFriendRequests: [UUID: [FetchFriendRequestDTO]]) {
-        friendRequests = newFriendRequests
+        // Normalize all entries
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var normalizedMap: [UUID: [FetchFriendRequestDTO]] = [:]
+        for (uid, list) in newFriendRequests {
+            var seen = Set<UUID>()
+            let normalized = list.compactMap { req -> FetchFriendRequestDTO? in
+                guard req.id != zeroUUID else { return nil }
+                if seen.contains(req.id) { return nil }
+                seen.insert(req.id)
+                return req
+            }
+            normalizedMap[uid] = normalized
+        }
+        friendRequests = normalizedMap
         
         // Update timestamp for current user
         if let userId = UserAuthViewModel.shared.spawnUser?.id {
@@ -649,7 +671,7 @@ class AppCache: ObservableObject {
         
         // Preload profile pictures for friend request senders
         Task {
-            await preloadProfilePicturesForFriendRequests(newFriendRequests)
+            await preloadProfilePicturesForFriendRequests(normalizedMap)
         }
     }
 
@@ -700,18 +722,39 @@ class AppCache: ObservableObject {
     /// Update sent friend requests for a specific user
     func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
         print("💾 [CACHE] Updating sent friend requests cache for user \(userId): \(newSentFriendRequests.count) requests")
-        sentFriendRequests[userId] = newSentFriendRequests
+        // Normalize: remove zero UUIDs and unique by id
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var seen = Set<UUID>()
+        let normalized = newSentFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+            guard req.id != zeroUUID else { return nil }
+            if seen.contains(req.id) { return nil }
+            seen.insert(req.id)
+            return req
+        }
+        sentFriendRequests[userId] = normalized
         setLastCheckedForUser(userId, cacheType: CacheKeys.sentFriendRequests, date: Date())
         saveToDisk()
         
         // Preload profile pictures for sent friend request receivers
         Task {
-            await preloadProfilePicturesForFriendRequests([userId: newSentFriendRequests])
+            await preloadProfilePicturesForFriendRequests([userId: normalized])
         }
     }
 
     func updateSentFriendRequests(_ newSentFriendRequests: [UUID: [FetchFriendRequestDTO]]) {
-        sentFriendRequests = newSentFriendRequests
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var normalizedMap: [UUID: [FetchFriendRequestDTO]] = [:]
+        for (uid, list) in newSentFriendRequests {
+            var seen = Set<UUID>()
+            let normalized = list.compactMap { req -> FetchFriendRequestDTO? in
+                guard req.id != zeroUUID else { return nil }
+                if seen.contains(req.id) { return nil }
+                seen.insert(req.id)
+                return req
+            }
+            normalizedMap[uid] = normalized
+        }
+        sentFriendRequests = normalizedMap
         
         // Update timestamp for current user
         if let userId = UserAuthViewModel.shared.spawnUser?.id {
@@ -722,7 +765,7 @@ class AppCache: ObservableObject {
         
         // Preload profile pictures for sent friend request receivers
         Task {
-            await preloadProfilePicturesForFriendRequests(newSentFriendRequests)
+            await preloadProfilePicturesForFriendRequests(normalizedMap)
         }
     }
 

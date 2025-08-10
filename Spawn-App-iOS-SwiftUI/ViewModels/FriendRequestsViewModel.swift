@@ -68,13 +68,30 @@ class FriendRequestsViewModel: ObservableObject {
             
             let (fetchedIncomingRequests, fetchedSentRequests) = try await (incoming, sent)
             
-            // Update UI first, then cache (do not filter out zero UUIDs here)
-            self.incomingFriendRequests = fetchedIncomingRequests
-            self.sentFriendRequests = fetchedSentRequests
+            // Normalize: filter out invalid zero UUIDs and de-duplicate by id
+            let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+            func normalize(_ items: [FetchFriendRequestDTO]) -> [FetchFriendRequestDTO] {
+                var seen = Set<UUID>()
+                var result: [FetchFriendRequestDTO] = []
+                for item in items where item.id != zeroUUID {
+                    if !seen.contains(item.id) {
+                        seen.insert(item.id)
+                        result.append(item)
+                    }
+                }
+                return result
+            }
+            
+            let normalizedIncoming = normalize(fetchedIncomingRequests)
+            let normalizedSent = normalize(fetchedSentRequests)
+            
+            // Update UI first, then cache
+            self.incomingFriendRequests = normalizedIncoming
+            self.sentFriendRequests = normalizedSent
             
             // Update cache for both incoming and sent requests
-            appCache.updateFriendRequestsForUser(fetchedIncomingRequests, userId: userId)
-            appCache.updateSentFriendRequestsForUser(fetchedSentRequests, userId: userId)
+            appCache.updateFriendRequestsForUser(normalizedIncoming, userId: userId)
+            appCache.updateSentFriendRequestsForUser(normalizedSent, userId: userId)
             
             // Fallback to cache if API returned empty but cache has data
             if self.incomingFriendRequests.isEmpty {
