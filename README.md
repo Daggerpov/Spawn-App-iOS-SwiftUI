@@ -11,6 +11,7 @@
     - [MVVM Architecture](#mvvm-architecture)
     - [Mobile Caching Implementation](#mobile-caching-implementation)
     - [Map Integration](#map-integration)
+    - [Configuring Deeplink Share URLs](#configuring-share-urls)
 
 # Onboarding
 
@@ -53,35 +54,6 @@ However, you'll only be able to preview SwiftUI files that include this section 
 More complicated case, to supply initial state and `init()` parameters:
 
 ![alt text](images/onboarding-images/image-3.png)
-
-</details>
-
-<details>
-
-<summary> Configuring Share URLs </summary>
-
-</br>
-
-The app uses share URLs to allow users to share activities with others. By default, these URLs point to a GitHub Pages URL, but you can customize them:
-
-1. Open `Spawn-App-iOS-SwiftUI/Services/Constants.swift`
-2. Update the `shareBase` URL in the `URLs` struct:
-
-```swift
-struct URLs {
-    // Base URL for sharing activities
-    // Option 1: Use GitHub Pages (recommended for web app)
-    static let shareBase = "https://daggerpov.github.io/spawn-app"
-    
-    // Option 2: Use GitHub repository directly
-    // static let shareBase = "https://github.com/daggerpov/spawn-app"
-    
-    // Option 3: Use a custom domain
-    // static let shareBase = "https://your-domain.com"
-}
-```
-
-The app will automatically generate share URLs in the format: `{shareBase}/activity/{activityId}`
 
 </details>
 
@@ -372,6 +344,35 @@ The app uses standard Apple MapKit for maps with a clean, basic styling:
 3. Both implementations use a fixed pin approach where the map moves under the pin
 
 The map implementation is designed to be simple and intuitive, with a clean aesthetic that matches iOS system apps.
+</details>
+
+<details>
+
+<summary>Configuring Share URLs</summary>
+
+</br>
+
+The app uses share URLs to allow users to share activities with others. By default, these URLs point to a GitHub Pages URL, but you can customize them:
+
+1. Open `Spawn-App-iOS-SwiftUI/Services/Constants.swift`
+2. Update the `shareBase` URL in the `URLs` struct:
+
+```swift
+struct URLs {
+    // Base URL for sharing activities
+    // Option 1: Use GitHub Pages (recommended for web app)
+    static let shareBase = "https://daggerpov.github.io/spawn-app"
+    
+    // Option 2: Use GitHub repository directly
+    // static let shareBase = "https://github.com/daggerpov/spawn-app"
+    
+    // Option 3: Use a custom domain
+    // static let shareBase = "https://your-domain.com"
+}
+```
+
+The app will automatically generate share URLs in the format: `{shareBase}/activity/{activityId}`
+
 </details>
 
 
