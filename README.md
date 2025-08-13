@@ -10,8 +10,7 @@
     - [SwiftUI Syntax](#swiftui-syntax)
     - [MVVM Architecture](#mvvm-architecture)
     - [Mobile Caching Implementation](#mobile-caching-implementation)
-- [Entity Relationship Diagram](#entity-relationship-diagram)
-- [Map Integration](#map-integration)
+    - [Map Integration](#map-integration)
 
 # Onboarding
 
@@ -29,19 +28,15 @@
 
 <details>
 
-<summary> Running through an iPhone Simulator (for testing end-to-end functionality) </summary>
+<summary> Running the app (iOS Simulator & XCode Canvas) </summary>
 
-This is simply done through clicking here (or Cmd+R): 
+</br>
+
+## 1. iPhone Simulator (for end-to-end testing)
 
 ![alt text](images/onboarding-images/image-4.png)
 
-</details>
-
-<details>
-
-<summary> Previewing within XCode (for quickly seeing UI changes) </summary>
-
-</br>
+## 2. Previewing within XCode (for quickly seeing UI changes)
 
 Firstly, in `MockAPIService.swift` is where you'll be able to dictate whether the app is being mocked, through the `isMocked` variable, as you can see here:
 ![alt text](images/onboarding-images/image.png)
@@ -353,9 +348,13 @@ For complete implementation details, see the [cache-implementation-guide.md](cac
 
 </details>
 
-</br>
+<details>
 
-# Map Integration
+ <summary>Map Integration</summary>
+
+ </br>
+
+ # Map Integration
 
 The app uses standard Apple MapKit for maps with a clean, basic styling:
 
@@ -373,4 +372,7 @@ The app uses standard Apple MapKit for maps with a clean, basic styling:
 3. Both implementations use a fixed pin approach where the map moves under the pin
 
 The map implementation is designed to be simple and intuitive, with a clean aesthetic that matches iOS system apps.
+</details>
+
+
 
