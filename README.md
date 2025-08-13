@@ -11,7 +11,7 @@
     - [MVVM Architecture](#mvvm-architecture)
     - [Mobile Caching Implementation](#mobile-caching-implementation)
     - [Map Integration](#map-integration)
-    - [Configuring Deeplink Share URLs](#configuring-share-urls)
+    - [Configuring Deeplink Share URLs](#configuring-deeplink-share-urls)
 
 # Onboarding
 
@@ -348,7 +348,9 @@ The map implementation is designed to be simple and intuitive, with a clean aest
 
 <details>
 
-<summary>Configuring Share URLs</summary>
+<summary>Configuring Deeplink Share URLs</summary>
+
+# Configuring Deeplink Share URLs
 
 </br>
 
