@@ -495,7 +495,7 @@ class FriendsTabViewModel: ObservableObject {
         
         // Remove duplicates
         var seen = Set<UUID>()
-        let uniqueUsers = usersToRefresh.compactMap { user in
+        let uniqueUsers = usersToRefresh.compactMap { user -> (userId: UUID, profilePictureUrl: String?)? in
             guard !seen.contains(user.userId) else { return nil }
             seen.insert(user.userId)
             return user
