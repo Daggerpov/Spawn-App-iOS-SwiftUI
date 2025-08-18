@@ -158,6 +158,14 @@ struct FriendRequestsView: View {
                 }
             }
         )
+        .onChange(of: showSuccessDrawer) { isPresented in
+            if !isPresented {
+                Task { await viewModel.fetchFriendRequests() }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .friendRequestsDidChange)) { _ in
+            Task { await viewModel.fetchFriendRequests() }
+        }
         .navigationDestination(isPresented: $navigateToAddToActivityType) {
             if let friend = acceptedFriend {
                 AddToActivityTypeView(user: friend)
