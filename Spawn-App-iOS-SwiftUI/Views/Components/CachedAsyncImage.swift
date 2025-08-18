@@ -57,13 +57,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         // Reset state
         loadError = nil
         
-        // Check cache first
-        if let cachedImage = cache.getCachedImage(for: userId) {
-            image = cachedImage
-            return
-        }
-        
-        // If no cached image and no URL, nothing to load
+        // If no URL, nothing to load
         guard let url = url else {
             return
         }
@@ -72,7 +66,12 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         isLoading = true
         
         Task {
-            let downloadedImage = await cache.downloadAndCacheImage(from: url.absoluteString, for: userId)
+            // Use the new refresh mechanism that checks for staleness
+            let downloadedImage = await cache.getCachedImageWithRefresh(
+                for: userId, 
+                from: url.absoluteString, 
+                maxAge: 6 * 60 * 60 // 6 hours for more frequent updates
+            )
             
             await MainActor.run {
                 isLoading = false
