@@ -92,7 +92,8 @@ struct FriendsTabView: View {
 						shareProfile: { shareProfile(for: selectedFriend) },
 						navigateToProfile: { navigateToProfile = true }
 					)
-					.presentationDetents([.height(220)])
+					.background(universalBackgroundColor)
+					.presentationDetents([.height(276)])
 				}
 			}
 
@@ -423,7 +424,14 @@ struct RecommendedFriendView: View {
             if viewModel.isFriend(userId: friend.id) {
                 // Show three dots button for existing friends
                 Button(action: {
-                    // TODO: Add ProfileMenuView functionality here if needed
+                    selectedFriend = FullFriendUserDTO(
+                        id: friend.id,
+                        username: friend.username,
+                        name: friend.name,
+                        profilePictureURL: friend.profilePictureURL,
+                        mutualFriendCount: friend.mutualFriendCount
+                    )
+                    showProfileMenu = true
                 }) {
                     Image(systemName: "ellipsis")
                         .foregroundColor(universalAccentColor)
@@ -531,7 +539,14 @@ struct RecentlySpawnedView: View {
             if viewModel.isFriend(userId: recentUser.user.id) {
                 // Show three dots button for existing friends
                 Button(action: {
-                    // TODO: Add ProfileMenuView functionality here if needed
+                    selectedFriend = FullFriendUserDTO(
+                        id: recentUser.user.id,
+                        username: recentUser.user.username,
+                        name: recentUser.user.name,
+                        profilePictureURL: recentUser.user.profilePictureURL,
+                        mutualFriendCount: 0 // Not available for recently spawned users
+                    )
+                    showProfileMenu = true
                 }) {
                     Image(systemName: "ellipsis")
                         .foregroundColor(universalAccentColor)
