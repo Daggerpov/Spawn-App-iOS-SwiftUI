@@ -172,7 +172,12 @@ struct FriendsTabView: View {
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
 						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
-							RecentlySpawnedView(viewModel: viewModel, recentUser: recentUser)
+							RecentlySpawnedView(
+								viewModel: viewModel, 
+								recentUser: recentUser,
+								selectedFriend: $selectedFriend,
+								showProfileMenu: $showProfileMenu
+							)
 						}
 					}
 				}
@@ -189,7 +194,12 @@ struct FriendsTabView: View {
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
 						ForEach(viewModel.recommendedFriends) { friend in
-							RecommendedFriendView(viewModel: viewModel, friend: friend)
+							RecommendedFriendView(
+								viewModel: viewModel, 
+								friend: friend,
+								selectedFriend: $selectedFriend,
+								showProfileMenu: $showProfileMenu
+							)
 						}
 					}
 				}
@@ -369,6 +379,8 @@ struct RecommendedFriendView: View {
     @ObservedObject var viewModel: FriendsTabViewModel
     var friend: RecommendedFriendUserDTO
     @State private var isAdded: Bool = false
+    @Binding var selectedFriend: FullFriendUserDTO?
+    @Binding var showProfileMenu: Bool
 
     var body: some View {
         HStack {
@@ -427,9 +439,9 @@ struct RecommendedFriendView: View {
                     selectedFriend = FullFriendUserDTO(
                         id: friend.id,
                         username: friend.username,
+                        profilePicture: friend.profilePicture,
                         name: friend.name,
-                        profilePictureURL: friend.profilePictureURL,
-                        mutualFriendCount: friend.mutualFriendCount
+                        email: friend.email
                     )
                     showProfileMenu = true
                 }) {
@@ -490,6 +502,8 @@ struct RecentlySpawnedView: View {
     @ObservedObject var viewModel: FriendsTabViewModel
     var recentUser: RecentlySpawnedUserDTO
     @State private var isAdded: Bool = false
+    @Binding var selectedFriend: FullFriendUserDTO?
+    @Binding var showProfileMenu: Bool
 
     var body: some View {
         HStack {
@@ -542,9 +556,9 @@ struct RecentlySpawnedView: View {
                     selectedFriend = FullFriendUserDTO(
                         id: recentUser.user.id,
                         username: recentUser.user.username,
+                        profilePicture: recentUser.user.profilePicture,
                         name: recentUser.user.name,
-                        profilePictureURL: recentUser.user.profilePictureURL,
-                        mutualFriendCount: 0 // Not available for recently spawned users
+                        email: recentUser.user.email
                     )
                     showProfileMenu = true
                 }) {

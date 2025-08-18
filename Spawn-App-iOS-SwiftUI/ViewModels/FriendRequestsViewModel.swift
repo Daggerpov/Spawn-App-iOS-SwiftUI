@@ -10,7 +10,7 @@ import Combine
 
 class FriendRequestsViewModel: ObservableObject {
     @Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-    @Published var sentFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var sentFriendRequests: [FetchSentFriendRequestDTO] = []
     @Published var isLoading: Bool = false
     @Published var errorMessage: String = ""
     
@@ -40,7 +40,7 @@ class FriendRequestsViewModel: ObservableObject {
         if currentIncoming.isEmpty && currentSent.isEmpty {
             // Initialize cache with mock data for this specific user
             appCache.updateFriendRequestsForUser(FetchFriendRequestDTO.mockFriendRequests, userId: userId)
-            appCache.updateSentFriendRequestsForUser(FetchFriendRequestDTO.mockSentFriendRequests, userId: userId)
+            appCache.updateSentFriendRequestsForUser(FetchSentFriendRequestDTO.mockSentFriendRequests, userId: userId)
         }
     }
     
@@ -64,7 +64,7 @@ class FriendRequestsViewModel: ObservableObject {
             }
             
             async let incoming: [FetchFriendRequestDTO] = apiService.fetchData(from: incomingUrl, parameters: nil)
-            async let sent: [FetchFriendRequestDTO] = apiService.fetchData(from: sentUrl, parameters: nil)
+            async let sent: [FetchSentFriendRequestDTO] = apiService.fetchData(from: sentUrl, parameters: nil)
             
             let (fetchedIncomingRequests, fetchedSentRequests) = try await (incoming, sent)
             
@@ -82,8 +82,20 @@ class FriendRequestsViewModel: ObservableObject {
                 return result
             }
             
+            func normalizeSent(_ items: [FetchSentFriendRequestDTO]) -> [FetchSentFriendRequestDTO] {
+                var seen = Set<UUID>()
+                var result: [FetchSentFriendRequestDTO] = []
+                for item in items where item.id != zeroUUID {
+                    if !seen.contains(item.id) {
+                        seen.insert(item.id)
+                        result.append(item)
+                    }
+                }
+                return result
+            }
+            
             let normalizedIncoming = normalize(fetchedIncomingRequests)
-            let normalizedSent = normalize(fetchedSentRequests)
+            let normalizedSent = normalizeSent(fetchedSentRequests)
             
             // Update UI first, then cache
             self.incomingFriendRequests = normalizedIncoming
@@ -108,7 +120,7 @@ class FriendRequestsViewModel: ObservableObject {
             if MockAPIService.isMocking {
                 // Fallback to mock data in mock environment
                 self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
-                self.sentFriendRequests = FetchFriendRequestDTO.mockSentFriendRequests
+                self.sentFriendRequests = FetchSentFriendRequestDTO.mockSentFriendRequests
             } else {
                 // Fallback to cache to avoid showing empty lists if we have cached data
                 let cachedIncoming = appCache.getCurrentUserFriendRequests()
