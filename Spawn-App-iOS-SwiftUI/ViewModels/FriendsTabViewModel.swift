@@ -301,6 +301,9 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
             self.isLoading = false
         }
+        
+        // Refresh profile pictures for all visible users
+        await refreshProfilePictures()
 	}
 
 	internal func fetchIncomingFriendRequests() async {
@@ -462,6 +465,49 @@ class FriendsTabViewModel: ObservableObject {
             }
         }
 	}
+
+    /// Refresh profile pictures for all users visible in the friends tab
+    func refreshProfilePictures() async {
+        print("🔄 [FriendsTabViewModel] Refreshing profile pictures for friends tab users")
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        var usersToRefresh: [(userId: UUID, profilePictureUrl: String?)] = []
+        
+        // Add friends
+        for friend in friends {
+            usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+        }
+        
+        // Add recommended friends
+        for recommendedFriend in recommendedFriends {
+            usersToRefresh.append((userId: recommendedFriend.id, profilePictureUrl: recommendedFriend.profilePicture))
+        }
+        
+        // Add incoming friend request senders
+        for request in incomingFriendRequests {
+            usersToRefresh.append((userId: request.senderUser.id, profilePictureUrl: request.senderUser.profilePicture))
+        }
+        
+        // Add outgoing friend request receivers
+        for request in outgoingFriendRequests {
+            usersToRefresh.append((userId: request.receiverUser.id, profilePictureUrl: request.receiverUser.profilePicture))
+        }
+        
+        // Remove duplicates
+        var seen = Set<UUID>()
+        let uniqueUsers = usersToRefresh.compactMap { user in
+            guard !seen.contains(user.userId) else { return nil }
+            seen.insert(user.userId)
+            return user
+        }
+        
+        print("🔄 [FriendsTabViewModel] Found \(uniqueUsers.count) users to refresh profile pictures for")
+        
+        // Refresh stale profile pictures
+        await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
+        
+        print("✅ [FriendsTabViewModel] Completed profile picture refresh")
+    }
 
     func removeFriend(friendUserId: UUID) async {
         await MainActor.run {
