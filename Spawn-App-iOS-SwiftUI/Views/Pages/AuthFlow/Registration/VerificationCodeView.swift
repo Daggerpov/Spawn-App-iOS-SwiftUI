@@ -115,7 +115,20 @@ struct VerificationCodeView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            navigationBar
+            HStack {
+                Button(action: {
+                    // Clear any error states when going back
+                    viewModel.clearAllErrors()
+                    dismiss()
+                }) {
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+                }
+                Spacer()
+            }
+            .padding(.leading, 80)
+            .padding(.top, 10)
             Spacer()
             mainContent
             Spacer()
@@ -131,6 +144,7 @@ struct VerificationCodeView: View {
         .onDisappear {
             timer?.invalidate()
         }
+//        .ignoresSafeArea(.all)
         .navigationBarHidden(true)
     }
     
@@ -147,7 +161,10 @@ struct VerificationCodeView: View {
             Spacer()
         }
         .padding(.horizontal, 20)
-        .padding(.top, 10)
+        .padding(.top, 20)
+        .padding(.bottom, 10)
+        .background(universalBackgroundColor(from: themeService, environment: colorScheme))
+        .zIndex(1)
     }
     
     private var mainContent: some View {

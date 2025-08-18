@@ -10,8 +10,8 @@
     - [SwiftUI Syntax](#swiftui-syntax)
     - [MVVM Architecture](#mvvm-architecture)
     - [Mobile Caching Implementation](#mobile-caching-implementation)
-- [Entity Relationship Diagram](#entity-relationship-diagram)
-- [Map Integration](#map-integration)
+    - [Map Integration](#map-integration)
+    - [Configuring Deeplink Share URLs](#configuring-deeplink-share-urls)
 
 # Onboarding
 
@@ -29,19 +29,15 @@
 
 <details>
 
-<summary> Running through an iPhone Simulator (for testing end-to-end functionality) </summary>
+<summary> Running the app (iOS Simulator & XCode Canvas) </summary>
 
-This is simply done through clicking here (or Cmd+R): 
+</br>
+
+## 1. iPhone Simulator (for end-to-end testing)
 
 ![alt text](images/onboarding-images/image-4.png)
 
-</details>
-
-<details>
-
-<summary> Previewing within XCode (for quickly seeing UI changes) </summary>
-
-</br>
+## 2. Previewing within XCode (for quickly seeing UI changes)
 
 Firstly, in `MockAPIService.swift` is where you'll be able to dictate whether the app is being mocked, through the `isMocked` variable, as you can see here:
 ![alt text](images/onboarding-images/image.png)
@@ -58,35 +54,6 @@ However, you'll only be able to preview SwiftUI files that include this section 
 More complicated case, to supply initial state and `init()` parameters:
 
 ![alt text](images/onboarding-images/image-3.png)
-
-</details>
-
-<details>
-
-<summary> Configuring Share URLs </summary>
-
-</br>
-
-The app uses share URLs to allow users to share activities with others. By default, these URLs point to a GitHub Pages URL, but you can customize them:
-
-1. Open `Spawn-App-iOS-SwiftUI/Services/Constants.swift`
-2. Update the `shareBase` URL in the `URLs` struct:
-
-```swift
-struct URLs {
-    // Base URL for sharing activities
-    // Option 1: Use GitHub Pages (recommended for web app)
-    static let shareBase = "https://daggerpov.github.io/spawn-app"
-    
-    // Option 2: Use GitHub repository directly
-    // static let shareBase = "https://github.com/daggerpov/spawn-app"
-    
-    // Option 3: Use a custom domain
-    // static let shareBase = "https://your-domain.com"
-}
-```
-
-The app will automatically generate share URLs in the format: `{shareBase}/activity/{activityId}`
 
 </details>
 
@@ -353,9 +320,13 @@ For complete implementation details, see the [cache-implementation-guide.md](cac
 
 </details>
 
-</br>
+<details>
 
-# Map Integration
+ <summary>Map Integration</summary>
+
+ </br>
+
+ # Map Integration
 
 The app uses standard Apple MapKit for maps with a clean, basic styling:
 
@@ -373,4 +344,38 @@ The app uses standard Apple MapKit for maps with a clean, basic styling:
 3. Both implementations use a fixed pin approach where the map moves under the pin
 
 The map implementation is designed to be simple and intuitive, with a clean aesthetic that matches iOS system apps.
+</details>
+
+<details>
+
+<summary>Configuring Deeplink Share URLs</summary>
+
+# Configuring Deeplink Share URLs
+
+</br>
+
+The app uses share URLs to allow users to share activities with others. By default, these URLs point to a GitHub Pages URL, but you can customize them:
+
+1. Open `Spawn-App-iOS-SwiftUI/Services/Constants.swift`
+2. Update the `shareBase` URL in the `URLs` struct:
+
+```swift
+struct URLs {
+    // Base URL for sharing activities
+    // Option 1: Use GitHub Pages (recommended for web app)
+    static let shareBase = "https://daggerpov.github.io/spawn-app"
+    
+    // Option 2: Use GitHub repository directly
+    // static let shareBase = "https://github.com/daggerpov/spawn-app"
+    
+    // Option 3: Use a custom domain
+    // static let shareBase = "https://your-domain.com"
+}
+```
+
+The app will automatically generate share URLs in the format: `{shareBase}/activity/{activityId}`
+
+</details>
+
+
 

@@ -92,6 +92,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
     // Add flag to prevent multiple concurrent navigation updates
     private var isNavigating: Bool = false
     
+    private var continuingUserStatus: UserStatus?
+    private var isOAuthUser: Bool = false
+    
     // MARK: - Navigation Helper Methods
     
         /// Safely navigate to a new state with proper debouncing and protection
@@ -285,7 +288,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			self.isFormValid = false
 			
 					// Reset all navigation flags
-		self.navigationState = .none
+            self.navigationState = .none
 			
 			self.secondsUntilNextVerificationAttempt = 30
 			self.activeAlert = nil
@@ -295,6 +298,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			
 			// Reset navigation lock
 			self.isNavigating = false
+            
+            clearKeychainTokens()
 			
 			// Keep hasCheckedSpawnUserExistence true to avoid showing loading screen again
 			// Keep isFirstLaunch and hasCompletedOnboarding as they were
@@ -550,15 +555,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			await NotificationService.shared.unregisterDeviceToken()
 		}
 
-		// Clear Keychain
-		let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
-		let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
-		
-		if accessTokenDeleted && refreshTokenDeleted {
-			print("✅ Successfully cleared auth tokens from Keychain")
-		} else {
-			print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
-		}
+        clearKeychainTokens()
+        clearKeychainTokens()
 		
 		// Clear stored OAuth credentials for complete logout
 		self.storedOAuthProvider = nil
@@ -568,6 +566,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		resetState()
 	}
+    
+    private func clearKeychainTokens() {
+        // Clear Keychain
+        let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
+        let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
+        if accessTokenDeleted && refreshTokenDeleted {
+            print("✅ Successfully cleared auth tokens from Keychain")
+        } else {
+            print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
+        }
+    }
 
     func spawnFetchUserIfAlreadyExists() async {
 		
@@ -801,18 +810,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
             print("🔍 [AUTH] User has already completed onboarding - skipping continueUserOnboarding")
             return
         }
-        
-        guard let status = authResponse.status else {
+        self.continuingUserStatus = authResponse.status
+        self.isOAuthUser = authResponse.isOAuthUser ?? false
+        guard let status = continuingUserStatus else {
             // No status means legacy active user
             print("Error: User has no status")
             return
         }
         
+        if status != .active {
+            navigateTo(.onboardingContinuation)
+        }
+        navigateOnStatus()
+    }
+    
+    func navigateOnStatus() {
+        guard let status = self.continuingUserStatus else {
+            // No status means legacy active user
+            print("Error: User has no status")
+            return
+        }
         switch status {
         case .emailVerified:
             // Needs to input username, phone number, and password
             // Check if user is registering with email vs OAuth
-            let isOAuthUser = authResponse.isOAuthUser ?? false
             navigateTo(.userDetailsInput(isOAuthUser: isOAuthUser))
             print("📍 [AUTH] User status: emailVerified - navigating to user details input (OAuth: \(isOAuthUser))")
             
@@ -833,10 +854,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
             // Fully onboarded user - go to feed
             isFormValid = true
             navigateTo(.feedView)
-			// Mark onboarding as completed for active users
-			if !hasCompletedOnboarding {
-				markOnboardingCompleted()
-			}
+            // Mark onboarding as completed for active users
+            if !hasCompletedOnboarding {
+                markOnboardingCompleted()
+            }
             print("📍 [AUTH] User status: active - navigating to feed")
         }
     }

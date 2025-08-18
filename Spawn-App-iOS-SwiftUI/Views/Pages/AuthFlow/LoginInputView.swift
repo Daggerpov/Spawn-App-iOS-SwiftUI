@@ -34,8 +34,6 @@ struct LoginInputView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    // Reset auth flow state when going back to sign in
-                    UserAuthViewModel.shared.resetAuthFlow()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")

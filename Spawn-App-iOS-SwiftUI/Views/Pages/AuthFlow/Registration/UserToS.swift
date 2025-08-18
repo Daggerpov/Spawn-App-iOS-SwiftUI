@@ -17,6 +17,7 @@ struct UserToS: View {
     
     var body: some View {
         VStack(spacing: 0) {
+            Spacer()
             // Navigation Bar
             HStack {
                 Button(action: {

@@ -102,9 +102,9 @@ struct WelcomeView: View {
             .ignoresSafeArea(.all)
             .onAppear {
                 print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
-                Task {
-                    await userAuth.quickSignIn()
-                }
+//                Task {
+//                    await userAuth.quickSignIn()
+//                }
             }
             .onReceive(userAuth.$navigationState) { state in
                 if state == .none {
