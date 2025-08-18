@@ -896,6 +896,15 @@ class ProfileViewModel: ObservableObject {
     }
     
     func acceptFriendRequest(requestId: UUID) async {
+        // IMMEDIATELY update UI state to provide instant feedback
+        await MainActor.run {
+            self.friendshipStatus = .friends
+            self.pendingFriendRequestId = nil
+        }
+        
+        print("[PROFILE] accepted friend request id=\(requestId) -> status=friends")
+        NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
+        
         do {
             let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)")!
             let _: EmptyResponse = try await self.apiService.updateData(
@@ -903,14 +912,6 @@ class ProfileViewModel: ObservableObject {
                 to: url,
                 parameters: ["friendRequestAction": "accept"]
             )
-            
-            await MainActor.run {
-                self.friendshipStatus = .friends
-                self.pendingFriendRequestId = nil
-            }
-            
-            print("[PROFILE] accepted friend request id=\(requestId) -> status=friends")
-            NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
             
             // Refresh caches so other views update immediately
             Task {
@@ -921,11 +922,22 @@ class ProfileViewModel: ObservableObject {
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to accept friend request: \(error.localizedDescription)"
+                // Revert the optimistic update on failure
+                self.friendshipStatus = .requestReceived
+                self.pendingFriendRequestId = requestId
             }
         }
     }
     
     func declineFriendRequest(requestId: UUID) async {
+        // IMMEDIATELY update UI state to provide instant feedback
+        await MainActor.run {
+            self.friendshipStatus = .none
+            self.pendingFriendRequestId = nil
+        }
+        
+        NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
+        
         do {
             let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)")!
             let _: EmptyResponse = try await self.apiService.updateData(
@@ -933,14 +945,12 @@ class ProfileViewModel: ObservableObject {
                 to: url,
                 parameters: ["friendRequestAction": "reject"]
             )
-            
-            await MainActor.run {
-                self.friendshipStatus = .none
-                self.pendingFriendRequestId = nil
-            }
         } catch {
             await MainActor.run {
                 self.errorMessage = "Failed to decline friend request: \(error.localizedDescription)"
+                // Revert the optimistic update on failure
+                self.friendshipStatus = .requestReceived
+                self.pendingFriendRequestId = requestId
             }
         }
     }

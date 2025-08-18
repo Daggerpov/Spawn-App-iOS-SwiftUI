@@ -32,18 +32,24 @@ struct FetchFriendRequestDTO: Identifiable, Codable, Hashable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        // Decode sender first so we can derive a stable fallback id if needed
+        // Decode sender first
         let decodedSenderUser = try container.decode(BaseUserDTO.self, forKey: .senderUser)
 
-        // Try to decode UUID directly; if null or missing, derive from sender id for stability
+        // Try to decode UUID directly; if null or missing, throw an error instead of using sender ID
         if let uuid = try? container.decode(UUID.self, forKey: .id) {
             self.id = uuid
         } else if let idString = try? container.decodeIfPresent(String.self, forKey: .id),
                   let uuid = UUID(uuidString: idString) {
             self.id = uuid
         } else {
-            // Fallback to a stable, non-zero UUID derived from the sender user
-            self.id = decodedSenderUser.id
+            // If friend request ID is missing or invalid, this indicates a backend serialization issue
+            // Don't use sender ID as fallback since it causes API calls to fail with wrong ID
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: [CodingKeys.id],
+                    debugDescription: "Friend request ID is missing or invalid. Cannot use sender ID as fallback."
+                )
+            )
         }
 
         self.senderUser = decodedSenderUser

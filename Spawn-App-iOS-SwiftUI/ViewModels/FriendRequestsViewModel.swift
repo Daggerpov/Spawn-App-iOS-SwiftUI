@@ -128,14 +128,30 @@ class FriendRequestsViewModel: ObservableObject {
     func respondToFriendRequest(requestId: UUID, action: FriendRequestAction) async {
         let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
         if requestId == zeroUUID { return }
+        
+        let beforeIncoming = incomingFriendRequests.count
+        let beforeSent = sentFriendRequests.count
+        
+        // IMMEDIATELY remove the request from UI to provide instant feedback
+        self.incomingFriendRequests.removeAll { $0.id == requestId }
+        self.sentFriendRequests.removeAll { $0.id == requestId }
+        
+        // Update the cache immediately with the modified friend requests
+        appCache.updateFriendRequestsForUser(self.incomingFriendRequests, userId: userId)
+        appCache.updateSentFriendRequestsForUser(self.sentFriendRequests, userId: userId)
+        
+        let afterIncoming = incomingFriendRequests.count
+        let afterSent = sentFriendRequests.count
+        print("[FRIEND_REQUESTS] \(action.rawValue) requestId=\(requestId). Incoming: \(beforeIncoming)->\(afterIncoming), Sent: \(beforeSent)->\(afterSent)")
+        NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
+        
         do {
             guard let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)") else {
                 errorMessage = "Invalid URL"
+                // Revert the UI change if URL is invalid
+                await fetchFriendRequests()
                 return
             }
-            
-            let beforeIncoming = incomingFriendRequests.count
-            let beforeSent = sentFriendRequests.count
             
             if action == .cancel {
                 try await apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
@@ -146,19 +162,6 @@ class FriendRequestsViewModel: ObservableObject {
                     parameters: ["friendRequestAction": action.rawValue]
                 )
             }
-            
-            // Remove the request from both lists (it could be in either)
-            self.incomingFriendRequests.removeAll { $0.id == requestId }
-            self.sentFriendRequests.removeAll { $0.id == requestId }
-            
-            // Update the cache with the modified friend requests
-            appCache.updateFriendRequestsForUser(self.incomingFriendRequests, userId: userId)
-            appCache.updateSentFriendRequestsForUser(self.sentFriendRequests, userId: userId)
-            
-            let afterIncoming = incomingFriendRequests.count
-            let afterSent = sentFriendRequests.count
-            print("[FRIEND_REQUESTS] \(action.rawValue) requestId=\(requestId). Incoming: \(beforeIncoming)->\(afterIncoming), Sent: \(beforeSent)->\(afterSent)")
-            NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
             
             // If accepted, refresh friends and friend-requests globally so other views update immediately
             if action == .accept {
@@ -173,14 +176,11 @@ class FriendRequestsViewModel: ObservableObject {
             errorMessage = "Failed to \(action == .accept ? "accept" : action == .cancel ? "cancel" : "decline") friend request: \(error.localizedDescription)"
             
             if MockAPIService.isMocking {
-                self.incomingFriendRequests.removeAll { $0.id == requestId }
-                self.sentFriendRequests.removeAll { $0.id == requestId }
-                
-                // Update the cache for mock environment too
-                appCache.updateFriendRequestsForUser(self.incomingFriendRequests, userId: userId)
-                appCache.updateSentFriendRequestsForUser(self.sentFriendRequests, userId: userId)
-                
+                // In mock mode, the removal already happened above, so just clear error
                 errorMessage = ""
+            } else {
+                // For real API failures, revert the optimistic update by re-fetching
+                await fetchFriendRequests()
             }
         }
     }
