@@ -285,6 +285,11 @@ class AppCache: ObservableObject {
             print("Failed to validate cache: \(error.localizedDescription)")
             // If validation fails, we'll continue using cached data
         }
+        
+        // After cache validation, refresh profile pictures for all cached users
+        Task {
+            await refreshAllProfilePictures()
+        }
     }
     
     // MARK: - Friends Methods
@@ -850,6 +855,134 @@ class AppCache: ObservableObject {
         print("✅ [DIAGNOSTIC] Diagnostic refresh completed")
     }
     
+    /// Force refresh profile pictures for all cached users
+    func refreshAllProfilePictures() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ [CACHE] Cannot refresh profile pictures: No user ID available")
+            return
+        }
+        
+        print("🔄 [CACHE] Starting profile picture refresh for all cached users")
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        var usersToRefresh: [(userId: UUID, profilePictureUrl: String?)] = []
+        
+        // Collect all users from different caches
+        if let userFriends = friends[userId] {
+            for friend in userFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userRecommendedFriends = recommendedFriends[userId] {
+            for friend in userRecommendedFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userFriendRequests = friendRequests[userId] {
+            for request in userFriendRequests {
+                usersToRefresh.append((userId: request.senderUser.id, profilePictureUrl: request.senderUser.profilePicture))
+            }
+        }
+        
+        if let userSentFriendRequests = sentFriendRequests[userId] {
+            for request in userSentFriendRequests {
+                usersToRefresh.append((userId: request.receiverUser.id, profilePictureUrl: request.receiverUser.profilePicture))
+            }
+        }
+        
+        // Add other profiles
+        for (_, profile) in otherProfiles {
+            usersToRefresh.append((userId: profile.id, profilePictureUrl: profile.profilePicture))
+        }
+        
+        // Add current user
+        if let currentUser = UserAuthViewModel.shared.spawnUser {
+            usersToRefresh.append((userId: currentUser.id, profilePictureUrl: currentUser.profilePicture))
+        }
+        
+        // Remove duplicates
+        var seen = Set<UUID>()
+        let uniqueUsers = usersToRefresh.compactMap { user in
+            guard !seen.contains(user.userId) else { return nil }
+            seen.insert(user.userId)
+            return user
+        }
+        
+        print("🔄 [CACHE] Found \(uniqueUsers.count) unique users to refresh profile pictures for")
+        
+        // Refresh stale profile pictures
+        await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
+        
+        print("✅ [CACHE] Completed profile picture refresh for all cached users")
+    }
+    
+    /// Force refresh profile pictures for all cached users (public method for testing)
+    func forceRefreshAllProfilePictures() async {
+        print("🔄 [CACHE] Force refreshing ALL profile pictures (bypassing staleness check)")
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ [CACHE] Cannot refresh profile pictures: No user ID available")
+            return
+        }
+        
+        let profilePictureCache = ProfilePictureCache.shared
+        var usersToRefresh: [(userId: UUID, profilePictureUrl: String?)] = []
+        
+        // Collect all users from different caches
+        if let userFriends = friends[userId] {
+            for friend in userFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userRecommendedFriends = recommendedFriends[userId] {
+            for friend in userRecommendedFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userFriendRequests = friendRequests[userId] {
+            for request in userFriendRequests {
+                usersToRefresh.append((userId: request.senderUser.id, profilePictureUrl: request.senderUser.profilePicture))
+            }
+        }
+        
+        if let userSentFriendRequests = sentFriendRequests[userId] {
+            for request in userSentFriendRequests {
+                usersToRefresh.append((userId: request.receiverUser.id, profilePictureUrl: request.receiverUser.profilePicture))
+            }
+        }
+        
+        // Add other profiles
+        for (_, profile) in otherProfiles {
+            usersToRefresh.append((userId: profile.id, profilePictureUrl: profile.profilePicture))
+        }
+        
+        // Add current user
+        if let currentUser = UserAuthViewModel.shared.spawnUser {
+            usersToRefresh.append((userId: currentUser.id, profilePictureUrl: currentUser.profilePicture))
+        }
+        
+        // Remove duplicates
+        var seen = Set<UUID>()
+        let uniqueUsers = usersToRefresh.compactMap { user in
+            guard !seen.contains(user.userId) else { return nil }
+            seen.insert(user.userId)
+            return user
+        }
+        
+        print("🔄 [CACHE] Force refreshing \(uniqueUsers.count) unique users' profile pictures")
+        
+        // Force refresh all profile pictures
+        for user in uniqueUsers {
+            guard let profilePictureUrl = user.profilePictureUrl else { continue }
+            _ = await profilePictureCache.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
+        }
+        
+        print("✅ [CACHE] Completed force refresh of all profile pictures")
+    }
+    
     // MARK: - User-Specific Data Helper Methods
     
     /// Get friends for the current user
@@ -1029,10 +1162,12 @@ class AppCache: ObservableObject {
             for user in userList {
                 guard let profilePictureUrl = user.profilePicture else { continue }
                 
-                // Only download if not already cached
-                if profilePictureCache.getCachedImage(for: user.id) == nil {
-                    _ = await profilePictureCache.downloadAndCacheImage(from: profilePictureUrl, for: user.id)
-                }
+                // Use the new refresh mechanism that checks for staleness
+                _ = await profilePictureCache.getCachedImageWithRefresh(
+                    for: user.id,
+                    from: profilePictureUrl,
+                    maxAge: 6 * 60 * 60 // 6 hours for more frequent updates
+                )
             }
         }
     }
@@ -1045,18 +1180,22 @@ class AppCache: ObservableObject {
             for activity in activityList {
                 // Preload creator profile picture
                 if let creatorPicture = activity.creatorUser.profilePicture {
-                    if profilePictureCache.getCachedImage(for: activity.creatorUser.id) == nil {
-                        _ = await profilePictureCache.downloadAndCacheImage(from: creatorPicture, for: activity.creatorUser.id)
-                    }
+                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                        for: activity.creatorUser.id,
+                        from: creatorPicture,
+                        maxAge: 6 * 60 * 60 // 6 hours
+                    )
                 }
                 
                 // Preload participant profile pictures
                 if let participants = activity.participantUsers {
                     for participant in participants {
                         if let participantPicture = participant.profilePicture {
-                            if profilePictureCache.getCachedImage(for: participant.id) == nil {
-                                _ = await profilePictureCache.downloadAndCacheImage(from: participantPicture, for: participant.id)
-                            }
+                            _ = await profilePictureCache.getCachedImageWithRefresh(
+                                for: participant.id,
+                                from: participantPicture,
+                                maxAge: 6 * 60 * 60 // 6 hours
+                            )
                         }
                     }
                 }
@@ -1065,9 +1204,11 @@ class AppCache: ObservableObject {
                 if let invitedUsers = activity.invitedUsers {
                     for invitedUser in invitedUsers {
                         if let invitedPicture = invitedUser.profilePicture {
-                            if profilePictureCache.getCachedImage(for: invitedUser.id) == nil {
-                                _ = await profilePictureCache.downloadAndCacheImage(from: invitedPicture, for: invitedUser.id)
-                            }
+                            _ = await profilePictureCache.getCachedImageWithRefresh(
+                                for: invitedUser.id,
+                                from: invitedPicture,
+                                maxAge: 6 * 60 * 60 // 6 hours
+                            )
                         }
                     }
                 }
@@ -1076,9 +1217,11 @@ class AppCache: ObservableObject {
                 if let chatMessages = activity.chatMessages {
                     for chatMessage in chatMessages {
                         if let senderPicture = chatMessage.senderUser.profilePicture {
-                            if profilePictureCache.getCachedImage(for: chatMessage.senderUser.id) == nil {
-                                _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: chatMessage.senderUser.id)
-                            }
+                            _ = await profilePictureCache.getCachedImageWithRefresh(
+                                for: chatMessage.senderUser.id,
+                                from: senderPicture,
+                                maxAge: 6 * 60 * 60 // 6 hours
+                            )
                         }
                     }
                 }
@@ -1093,9 +1236,11 @@ class AppCache: ObservableObject {
         for (_, requests) in friendRequests {
             for request in requests {
                 if let senderPicture = request.senderUser.profilePicture {
-                    if profilePictureCache.getCachedImage(for: request.senderUser.id) == nil {
-                        _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: request.senderUser.id)
-                    }
+                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                        for: request.senderUser.id,
+                        from: senderPicture,
+                        maxAge: 6 * 60 * 60 // 6 hours
+                    )
                 }
             }
         }
