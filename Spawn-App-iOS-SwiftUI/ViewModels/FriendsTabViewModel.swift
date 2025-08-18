@@ -10,13 +10,13 @@ import Combine
 
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-    @Published var outgoingFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var outgoingFriendRequests: [FetchSentFriendRequestDTO] = []
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
 	@Published var friends: [FullFriendUserDTO] = []
     @Published var filteredFriends: [FullFriendUserDTO] = []
     @Published var filteredRecommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
-    @Published var filteredOutgoingFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var filteredOutgoingFriendRequests: [FetchSentFriendRequestDTO] = []
     @Published var isSearching: Bool = false
     @Published var searchQuery: String = ""
     @Published var isLoading: Bool = false
@@ -138,7 +138,7 @@ class FriendsTabViewModel: ObservableObject {
                         .compactMap { result in
                             guard let friendRequestId = result.friendRequestId else { return nil }
                             // For outgoing requests, the user in the result is the receiver
-                            return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
+                            return FetchSentFriendRequestDTO(id: friendRequestId, receiverUser: result.user)
                         }
                     
                     self.filteredRecommendedFriends = searchedUserResult.users
@@ -218,7 +218,7 @@ class FriendsTabViewModel: ObservableObject {
             }
             
             self.filteredOutgoingFriendRequests = self.outgoingFriendRequests.filter { request in
-                let friend = request.senderUser
+                let friend = request.receiverUser
                 let name = friend.name?.lowercased() ?? ""
                 let username = (friend.username ?? "").lowercased()
                 
@@ -346,14 +346,14 @@ class FriendsTabViewModel: ObservableObject {
 			string: APIService.baseURL + "friend-requests/sent/\(userId)")
 		{
 			do {
-				let fetchedOutgoingFriendRequests: [FetchFriendRequestDTO] =
+				let fetchedOutgoingFriendRequests: [FetchSentFriendRequestDTO] =
 					try await self.apiService.fetchData(
 						from: url, parameters: nil)
 
                 // Normalize: filter zero UUIDs and de-duplicate by id
                 let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
                 var seen = Set<UUID>()
-                let normalized = fetchedOutgoingFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+                let normalized = fetchedOutgoingFriendRequests.compactMap { req -> FetchSentFriendRequestDTO? in
                     guard req.id != zeroUUID else { return nil }
                     if seen.contains(req.id) { return nil }
                     seen.insert(req.id)

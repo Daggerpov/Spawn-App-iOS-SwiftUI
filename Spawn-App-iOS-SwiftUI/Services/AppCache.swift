@@ -19,7 +19,7 @@ class AppCache: ObservableObject {
     @Published var activityTypes: [ActivityTypeDTO] = []
     @Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]  // Changed to be user-specific
     @Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // Already user-specific
-    @Published var sentFriendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // User-specific sent friend requests
+    @Published var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]  // User-specific sent friend requests
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     
     // Profile caches
@@ -271,7 +271,7 @@ class AppCache: ObservableObject {
                 // Sent Friend Requests Cache
                 if let sentFriendRequestsResponse = result[CacheKeys.sentFriendRequests], sentFriendRequestsResponse.invalidate {
                     if let updatedItems = sentFriendRequestsResponse.updatedItems,
-                       let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: updatedItems) {
+                       let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: updatedItems) {
                         updateSentFriendRequests(updatedSentFriendRequests)
                     } else {
                         Task {
@@ -725,12 +725,12 @@ class AppCache: ObservableObject {
     }
 
     /// Update sent friend requests for a specific user
-    func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
+    func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchSentFriendRequestDTO], userId: UUID) {
         print("💾 [CACHE] Updating sent friend requests cache for user \(userId): \(newSentFriendRequests.count) requests")
         // Normalize: remove zero UUIDs and unique by id
         let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
         var seen = Set<UUID>()
-        let normalized = newSentFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+        let normalized = newSentFriendRequests.compactMap { req -> FetchSentFriendRequestDTO? in
             guard req.id != zeroUUID else { return nil }
             if seen.contains(req.id) { return nil }
             seen.insert(req.id)
