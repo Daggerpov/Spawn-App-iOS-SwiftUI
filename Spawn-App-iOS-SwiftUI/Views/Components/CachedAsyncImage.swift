@@ -168,6 +168,8 @@ struct CachedProfileImage: View {
             return 36
         case .profilePage:
             return 150
+        case .feedCardParticipants:
+            return 34
         }
     }
 }

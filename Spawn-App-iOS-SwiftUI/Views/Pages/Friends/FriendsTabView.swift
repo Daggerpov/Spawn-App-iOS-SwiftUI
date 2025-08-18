@@ -57,27 +57,7 @@ struct FriendsTabView: View {
 						.padding(.horizontal, 16)
 					}
                     
-                    // Debug section (temporary for diagnostic purposes)
-                    #if DEBUG
-                    VStack(spacing: 8) {
-                        Button("🔍 Run Cache Diagnostic") {
-                            Task {
-                                await AppCache.shared.diagnosticForceRefresh()
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                        
-                        Text("Debug: F:\(viewModel.friends.count) FR:\(viewModel.incomingFriendRequests.count) SF:\(viewModel.outgoingFriendRequests.count)")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 16)
-                    #endif
-                    
+
                     // Friends section
 					friendsSection
                     
@@ -88,6 +68,8 @@ struct FriendsTabView: View {
 			}
 			.onAppear {
 				Task {
+                    // Ensure cache is aligned with API on entry
+                    await AppCache.shared.forceRefreshAllFriendRequests()
 					await viewModel.fetchAllData()
 					viewModel.connectSearchViewModel(searchViewModel)
 				}
@@ -96,6 +78,7 @@ struct FriendsTabView: View {
                 // Pull to refresh functionality
                 Task {
                     await AppCache.shared.refreshFriends()
+                    await AppCache.shared.forceRefreshAllFriendRequests()
                     await viewModel.fetchAllData()
                 }
             }

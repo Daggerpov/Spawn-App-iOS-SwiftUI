@@ -35,16 +35,25 @@ struct ActivityLocationView: View {
     }
     
     var body: some View {
-        HStack {
+        HStack(spacing: 6) {
             Text(Image(systemName: "mappin.and.ellipse"))
                 .foregroundColor(.white)
                 .font(.onestSemiBold(size: ActivityLocationView.fontSize-2))
-            Text(viewModel.getDisplayString(activityInfoType: .location))
-                .foregroundColor(.white)
-                .font(font) +
-            Text(" • \(viewModel.getDisplayString(activityInfoType: .distance))")
-                .foregroundColor(.white)
-                .font(font)
+            HStack(spacing: 4) {
+                Text(viewModel.getDisplayString(activityInfoType: .location))
+                    .foregroundColor(.white)
+                    .font(font)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(0)
+
+                Text("• \(viewModel.getDisplayString(activityInfoType: .distance))")
+                    .foregroundColor(.white)
+                    .font(font)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .layoutPriority(1)
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)

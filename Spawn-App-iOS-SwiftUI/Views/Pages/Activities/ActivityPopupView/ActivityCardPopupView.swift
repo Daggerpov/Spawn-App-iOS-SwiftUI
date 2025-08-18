@@ -249,7 +249,10 @@ struct ActivityCardPopupView: View {
 
 			// Chat section
 			ChatroomButtonView(activity: activity, activityColor: activityColor)
-			Spacer()
+			// Reduce bottom spacing when minimized from MapView by omitting spacer
+			if !(fromMapView && !isExpanded) {
+				Spacer()
+			}
 		}
 		.padding(.horizontal, 24)
 	}
@@ -421,7 +424,7 @@ extension ActivityCardPopupView {
 			.foregroundColor(.white.opacity(0.9))
 		}
 	}
-
+	
 	var spawnInRow: some View {
 		HStack {
 			Button(action: {}) {
@@ -441,11 +444,12 @@ extension ActivityCardPopupView {
 			Spacer()
 			ParticipantsImagesView(
 				activity: activity,
-				selectedTab: $selectedTab
+				selectedTab: $selectedTab,
+				imageType: .participantsPopup
 			)
 		}
 	}
-
+	
 	var directionRow: some View {
 		HStack {
 			Image(systemName: "mappin.and.ellipse")
@@ -467,16 +471,16 @@ extension ActivityCardPopupView {
 				.font(.onestRegular(size: 14))
 			}
 			.padding(.vertical, 12)
-
+			
 			Spacer()
-
+			
 			Button(action: {
 				// Create source map item from user's current location
 				let sourceMapItem = MKMapItem.forCurrentLocation()
-
+				
 				// Create destination map item from activity location
 				let destinationMapItem = mapViewModel.mapItem
-
+				
 				// Open Maps with directions from current location to activity location
 				MKMapItem.openMaps(
 					with: [sourceMapItem, destinationMapItem],
@@ -511,7 +515,7 @@ extension ActivityCardPopupView {
 		.background(Color.black.opacity(0.2))
 		.cornerRadius(12)
 	}
-
+	
 	var locationInfoView: some View {
 		HStack(spacing: 8) {
 			// Location info pill
@@ -529,7 +533,7 @@ extension ActivityCardPopupView {
 					.lineLimit(1)
 					.truncationMode(.tail)
 					.layoutPriority(0)  // Lower priority for truncation
-
+					
 					Text(
 						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
 					)
@@ -543,15 +547,15 @@ extension ActivityCardPopupView {
 			.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
 			.background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
 			.cornerRadius(12)
-
+			
 			// View in Maps button
 			Button(action: {
 				// Create source map item from user's current location
 				let sourceMapItem = MKMapItem.forCurrentLocation()
-
+				
 				// Create destination map item from activity location
 				let destinationMapItem = mapViewModel.mapItem
-
+				
 				// Open Maps with directions from current location to activity location
 				MKMapItem.openMaps(
 					with: [sourceMapItem, destinationMapItem],
@@ -592,9 +596,11 @@ extension ActivityCardPopupView {
 	var mapViewLocationSection: some View {
 		HStack(spacing: 8) {
 			HStack(spacing: 8) {
-				Text("􀎫")
-					.font(Font.custom("SF Pro Display", size: 28))
-					.foregroundColor(.white)
+				Image("mapview_location_pin_icon")
+					.resizable()
+					.renderingMode(.original)
+					.scaledToFit()
+					.frame(width: 28, height: 28)
 				VStack(alignment: .leading, spacing: 2) {
 					Text(viewModel.getDisplayString(activityInfoType: .location))
 						.font(Font.custom("Onest", size: 16).weight(.bold))
@@ -612,10 +618,10 @@ extension ActivityCardPopupView {
 			Button(action: {
 				// Create source map item from user's current location
 				let sourceMapItem = MKMapItem.forCurrentLocation()
-
+				
 				// Create destination map item from activity location
 				let destinationMapItem = mapViewModel.mapItem
-
+				
 				// Open Maps with directions from current location to activity location
 				MKMapItem.openMaps(
 					with: [sourceMapItem, destinationMapItem],
@@ -627,8 +633,8 @@ extension ActivityCardPopupView {
 				)
 			}) {
 				HStack(spacing: 6) {
-					Text("􀙞")
-						.font(Font.custom("SF Pro Display", size: 14).weight(.bold))
+					Image(systemName: "arrow.trianglehead.turn.up.right.diamond")
+						.font(.system(size: 14, weight: .bold))
 						.foregroundColor(Color(red: 0.11, green: 0.63, blue: 0.29))
 					Text("Get Directions")
 						.font(Font.custom("Onest", size: 13).weight(.semibold))
@@ -653,15 +659,15 @@ extension ActivityCardPopupView {
 struct ParticipationButtonView: View {
 	@ObservedObject private var activity: FullFeedActivityDTO
 	@ObservedObject private var cardViewModel: ActivityCardViewModel
-
+	
 	// Optional binding to control tab selection for current user navigation
 	@Binding var selectedTab: TabType?
-
+	
 	// Animation states for 3D effect
 	@State private var scale: CGFloat = 1.0
 	@State private var isPressed: Bool = false
 	@State private var showingEditFlow = false
-
+	
 	init(
 		activity: FullFeedActivityDTO,
 		cardViewModel: ActivityCardViewModel,
@@ -671,14 +677,14 @@ struct ParticipationButtonView: View {
 		self.cardViewModel = cardViewModel
 		self._selectedTab = selectedTab
 	}
-
+	
 	private var isUserCreator: Bool {
 		guard let currentUserId = UserAuthViewModel.shared.spawnUser?.id else {
 			return false
 		}
 		return activity.creatorUser.id == currentUserId
 	}
-
+	
 	private var participationText: String {
 		if isUserCreator {
 			return "Edit"
@@ -686,7 +692,7 @@ struct ParticipationButtonView: View {
 			return cardViewModel.isParticipating ? "Going" : "Spawn In!"
 		}
 	}
-
+	
 	private var participationColor: Color {
 		if isUserCreator {
 			return figmaBittersweetOrange
@@ -694,7 +700,7 @@ struct ParticipationButtonView: View {
 			return cardViewModel.isParticipating ? figmaGreen : figmaSoftBlue
 		}
 	}
-
+	
 	private var participationIcon: String {
 		if isUserCreator {
 			return "pencil.circle"
@@ -703,7 +709,7 @@ struct ParticipationButtonView: View {
 				? "checkmark.circle" : "star.circle"
 		}
 	}
-
+	
 	var body: some View {
 		HStack {
 			Button(action: {
@@ -728,11 +734,11 @@ struct ParticipationButtonView: View {
 						.foregroundColor(participationColor)
 						.fontWeight(.bold)
 					Text(participationText)
-						.font(.onestMedium(size: 18))
+						.font(.onestSemiBold(size: 18))
 						.foregroundColor(participationColor)
 				}
 				.padding(.horizontal, 24)
-				.padding(.vertical, 8)
+				.padding(.vertical, 12)
 				.background(.white)
 				.cornerRadius(12)
 				.scaleEffect(scale)
@@ -746,11 +752,12 @@ struct ParticipationButtonView: View {
 			.buttonStyle(PlainButtonStyle())
 			.allowsHitTesting(true)
 			.contentShape(Rectangle())
-
+			
 			Spacer()
 			ParticipantsImagesView(
 				activity: activity,
-				selectedTab: $selectedTab
+				selectedTab: $selectedTab,
+				imageType: .participantsPopup
 			)
 		}
 		.fullScreenCover(isPresented: $showingEditFlow) {
@@ -765,7 +772,7 @@ struct ParticipationButtonView: View {
 			)
 		}
 	}
-
+	
 	// Direct action method for better responsiveness
 	private func handleParticipationAction() {
 		if isUserCreator {

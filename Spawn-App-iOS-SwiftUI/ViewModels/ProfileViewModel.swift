@@ -833,8 +833,9 @@ class ProfileViewModel: ObservableObject {
             
             if let requestFromProfileUser = requestFromProfileUser {
                 await MainActor.run {
+                    let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
                     self.friendshipStatus = .requestReceived
-                    self.pendingFriendRequestId = requestFromProfileUser.id
+                    self.pendingFriendRequestId = (requestFromProfileUser.id == zeroUUID) ? nil : requestFromProfileUser.id
                     self.isLoadingFriendshipStatus = false
                 }
                 return
@@ -906,6 +907,16 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.friendshipStatus = .friends
                 self.pendingFriendRequestId = nil
+            }
+            
+            print("[PROFILE] accepted friend request id=\(requestId) -> status=friends")
+            NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
+            
+            // Refresh caches so other views update immediately
+            Task {
+                await AppCache.shared.refreshFriends()
+                await AppCache.shared.forceRefreshAllFriendRequests()
+                NotificationCenter.default.post(name: .friendsDidChange, object: nil)
             }
         } catch {
             await MainActor.run {

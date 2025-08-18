@@ -615,14 +615,13 @@ class AppCache: ObservableObject {
 
     /// Get friend requests for the current user
     func getCurrentUserFriendRequests() -> [FetchFriendRequestDTO] {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             print("❌ [CACHE] getCurrentUserFriendRequests: No user ID available")
             print("🔍 [CACHE] UserAuthViewModel.shared.spawnUser is nil")
-            return [] 
+            return []
         }
-        let requests = friendRequests[userId] ?? []
-        print("🔍 [CACHE] getCurrentUserFriendRequests for user \(userId): returning \(requests.count) requests")
-        return requests
+        // Always return the latest in-memory value; this map is only mutated by API refresh/update methods
+        return friendRequests[userId] ?? []
     }
 
     /// Update friend requests for a specific user
@@ -694,6 +693,7 @@ class AppCache: ObservableObject {
     /// Get sent friend requests for the current user
     func getCurrentUserSentFriendRequests() -> [FetchFriendRequestDTO] {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
+        // Always return the latest in-memory value; this map is only mutated by API refresh/update methods
         return sentFriendRequests[userId] ?? []
     }
 

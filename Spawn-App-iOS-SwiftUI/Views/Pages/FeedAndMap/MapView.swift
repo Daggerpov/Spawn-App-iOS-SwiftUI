@@ -479,6 +479,24 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
     var annotationItems: [FullFeedActivityDTO]
     var onActivityTap: (FullFeedActivityDTO) -> Void
     
+            // Custom annotation type that carries the activity data needed for rendering
+        private class ActivityAnnotation: NSObject, MKAnnotation {
+            let activityId: UUID
+            dynamic var coordinate: CLLocationCoordinate2D
+            var title: String?
+            let activityIcon: String
+            let activityUIColor: UIColor
+            
+            init(activityId: UUID, title: String?, coordinate: CLLocationCoordinate2D, icon: String, color: UIColor) {
+                self.activityId = activityId
+                self.title = title
+                self.coordinate = coordinate
+                self.activityIcon = icon
+                self.activityUIColor = color
+                super.init()
+            }
+        }
+    
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.showsUserLocation = true
@@ -512,6 +530,9 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        // Keep coordinator in sync with latest parent values
+        context.coordinator.parent = self
+        
         if #available(iOS 17.0, *) {
             // Get current camera state
             let currentCamera = mapView.camera
@@ -554,15 +575,12 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
         let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
         mapView.removeAnnotations(currentAnnotations)
         
-        let newAnnotations = annotationItems.compactMap { activity -> MKPointAnnotation? in
+        let newAnnotations = annotationItems.compactMap { activity -> MKAnnotation? in
             guard let location = activity.location else { return nil }
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = CLLocationCoordinate2D(
-                latitude: location.latitude,
-                longitude: location.longitude
-            )
-            annotation.title = activity.title
-            return annotation
+            let coord = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+            let icon = (activity.icon?.isEmpty == false) ? activity.icon! : "⭐️"
+            let color = UIColor(ActivityColorService.shared.getColorForActivity(activity.id))
+            return ActivityAnnotation(activityId: activity.id, title: activity.title, coordinate: coord, icon: icon, color: color)
         }
         mapView.addAnnotations(newAnnotations)
     }
@@ -612,35 +630,43 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
                 annotationView?.isDraggable = false
                 annotationView?.isEnabled = true
                 annotationView?.isUserInteractionEnabled = true
-                
-                // Ensure the annotation view frame is properly sized for touch detection
-                annotationView?.frame.size = CGSize(width: 44, height: 44)
-                annotationView?.centerOffset = CGPoint(x: 0, y: -22) // Center the pin on the location
             } else {
                 annotationView?.annotation = annotation
             }
             
-            // Find the activity for this annotation and create custom pin
-            if let title = annotation.title,
-               let activity = parent.annotationItems.first(where: { $0.title == title }) {
-                
-                let activityIcon = activity.icon ?? "⭐️" // Default icon if none provided
-                let activityColor = ActivityColorService.shared.getColorForActivity(activity.id)
-                
-                print("🗺️ Creating custom pin with icon: \(activityIcon) and color: \(activityColor) for activity: \(activity.title ?? "nil")")
-                
-                // Create custom pin image using Core Graphics for better reliability
-                let customImage = createCustomPinImage(icon: activityIcon, color: UIColor(activityColor))
-                annotationView?.image = customImage
-                
+            // Resolve activity for this annotation (ID preferred, else coordinate fallback)
+            let resolvedActivity: FullFeedActivityDTO? = {
+                if let activityAnnotation = annotation as? ActivityAnnotation {
+                    return parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId })
+                }
+                // Fallback: coordinate proximity match
+                let coord = annotation.coordinate
+                let epsilon = 0.000001
+                return parent.annotationItems.first(where: { act in
+                    guard let loc = act.location else { return false }
+                    return abs(loc.latitude - coord.latitude) < epsilon && abs(loc.longitude - coord.longitude) < epsilon
+                })
+            }()
+            
+            if let activityAnnotation = annotation as? ActivityAnnotation {
+                if let customImage = createCustomPinImage(icon: activityAnnotation.activityIcon, color: activityAnnotation.activityUIColor) {
+                    annotationView?.image = customImage
+                    annotationView?.centerOffset = CGPoint(x: 0, y: -customImage.size.height / 2)
+                }
+            } else if let resolvedActivity = resolvedActivity {
+                let activityIcon = (resolvedActivity.icon?.isEmpty == false) ? resolvedActivity.icon! : "⭐️"
+                let activityColor = UIColor(ActivityColorService.shared.getColorForActivity(resolvedActivity.id))
+                if let customImage = createCustomPinImage(icon: activityIcon, color: activityColor) {
+                    annotationView?.image = customImage
+                    annotationView?.centerOffset = CGPoint(x: 0, y: -customImage.size.height / 2)
+                }
             } else {
-                print("🗺️ No activity found for annotation: \(annotation.title ?? "nil")")
-                // Fallback icon if activity not found
-                let fallbackImage = createCustomPinImage(icon: "⭐️", color: UIColor(universalAccentColor))
-                annotationView?.image = fallbackImage
+                if let fallbackImage = createCustomPinImage(icon: "⭐️", color: UIColor(Color(hex: "#333333"))) {
+                    annotationView?.image = fallbackImage
+                    annotationView?.centerOffset = CGPoint(x: 0, y: -fallbackImage.size.height / 2)
+                }
             }
             
-            // Ensure the annotation view is properly configured for selection
             annotationView?.isEnabled = true
             annotationView?.canShowCallout = false
             annotationView?.isUserInteractionEnabled = true
@@ -650,71 +676,79 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
         
         // Helper method to create custom pin images using Core Graphics
         func createCustomPinImage(icon: String, color: UIColor) -> UIImage? {
-            let size = CGSize(width: 44, height: 44)
+            let circleDiameter: CGFloat = 44
+            let pointerHeight: CGFloat = 14
+            let size = CGSize(width: circleDiameter, height: circleDiameter + pointerHeight)
             let renderer = UIGraphicsImageRenderer(size: size)
-            
-            print("🎨 Creating custom pin image with icon: '\(icon)' and color: \(color)")
             
             let image = renderer.image { context in
                 let cgContext = context.cgContext
                 
-                // Draw the circle background
+                // Draw the circular head
+                let circleRect = CGRect(x: 0, y: 0, width: circleDiameter, height: circleDiameter)
                 cgContext.setFillColor(color.cgColor)
-                let circleRect = CGRect(origin: .zero, size: size)
                 cgContext.addEllipse(in: circleRect)
                 cgContext.fillPath()
                 
-                // Draw the icon text (without shadow to avoid complexity)
+                // Draw the downward triangle pointer
+                let baseY = circleRect.maxY - 5 // Slight overlap with circle
+                let tipPoint = CGPoint(x: size.width / 2, y: size.height)
+                let leftBase = CGPoint(x: size.width / 2 - 15, y: baseY)
+                let rightBase = CGPoint(x: size.width / 2 + 15, y: baseY)
+                
+                cgContext.beginPath()
+                cgContext.move(to: tipPoint)
+                cgContext.addLine(to: leftBase)
+                cgContext.addLine(to: rightBase)
+                cgContext.closePath()
+                cgContext.setFillColor(color.cgColor)
+                cgContext.fillPath()
+                
+                // Draw the emoji centered within the circle
                 let iconString = NSString(string: icon)
                 let font = UIFont.systemFont(ofSize: 20)
                 let textAttributes: [NSAttributedString.Key: Any] = [
                     .font: font,
                     .foregroundColor: UIColor.white
                 ]
-                
                 let textSize = iconString.size(withAttributes: textAttributes)
                 let textRect = CGRect(
-                    x: (size.width - textSize.width) / 2,
-                    y: (size.height - textSize.height) / 2,
+                    x: (circleDiameter - textSize.width) / 2,
+                    y: (circleDiameter - textSize.height) / 2,
                     width: textSize.width,
                     height: textSize.height
                 )
-                
-                print("🎨 Drawing text '\(icon)' in rect: \(textRect)")
                 iconString.draw(in: textRect, withAttributes: textAttributes)
             }
             
-            print("🎨 Created image with size: \(image.size)")
             return image
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            print("🗺️ Map pin selected!")
-            
-            if let annotation = view.annotation {
-                print("🗺️ Annotation title: \(annotation.title ?? "nil")")
-                print("🗺️ Looking for activity with title: \(annotation.title ?? "nil")")
-                
-                if let title = annotation.title,
-                   let activity = parent.annotationItems.first(where: { $0.title == title }) {
-                    print("🗺️ Found matching activity: \(activity.title ?? "Unknown")")
+            if let activityAnnotation = view.annotation as? ActivityAnnotation,
+               let activity = parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId }) {
+                parent.onActivityTap(activity)
+            } else if let annotation = view.annotation {
+                // Fallback: coordinate proximity match
+                let coord = annotation.coordinate
+                let epsilon = 0.000001
+                if let activity = parent.annotationItems.first(where: { act in
+                    guard let loc = act.location else { return false }
+                    return abs(loc.latitude - coord.latitude) < epsilon && abs(loc.longitude - coord.longitude) < epsilon
+                }) {
                     parent.onActivityTap(activity)
-                } else {
-                    print("🗺️ No matching activity found")
-                    print("🗺️ Available activities:")
-                    for activity in parent.annotationItems {
-                        print("  - \(activity.title ?? "nil")")
+                } else if let title = annotation.title ?? nil {
+                    if let activity = parent.annotationItems.first(where: { $0.title == title }) {
+                        parent.onActivityTap(activity)
                     }
                 }
-            } else {
-                print("🗺️ No annotation found")
             }
         }
         
         func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
             print("🗺️ Map pin deselected!")
         }
-
+        
     }
 }
 

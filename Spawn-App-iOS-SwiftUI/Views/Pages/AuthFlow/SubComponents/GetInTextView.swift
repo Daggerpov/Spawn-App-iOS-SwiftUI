@@ -18,11 +18,13 @@ struct GetInTextView: View {
                 .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 .multilineTextAlignment(.center)
             
-            Text("Join your friends or start a hang. It's all happening here.")
-                .font(body1)
+            Text("Join your friends or start a hang. It's\nall happening here.")
+                .font(.onestRegular(size: 20))
                 .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                 .multilineTextAlignment(.center)
-                .lineSpacing(2)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(0)
         }
     }
 }

@@ -185,6 +185,36 @@ class FormatterService {
             return dateFormat.string(from: date)
         }
     }
+ 
+    // Short chat timestamp used next to sender names
+    // - Under 24h: relative compact (e.g., 45m ago, 2h ago, 30s ago)
+    // - 24h or older: clock time (e.g., 12:30pm)
+    func chatTimestamp(from date: Date) -> String {
+        let now = Date()
+        let seconds = Int(now.timeIntervalSince(date))
+        let minute = 60
+        let hour = 3600
+        let day = 86400
+        if seconds < minute {
+            return seconds <= 1 ? "1s ago" : "\(seconds)s ago"
+        } else if seconds < hour {
+            let minutes = seconds / minute
+            return minutes == 1 ? "1m ago" : "\(minutes)m ago"
+        } else if seconds < day {
+            let hours = seconds / hour
+            return hours == 1 ? "1h ago" : "\(hours)h ago"
+        } else {
+            // Show clock time for older messages
+            let formatter = DateFormatter()
+            formatter.dateFormat = "h:mma" // e.g., 12:30PM
+            formatter.amSymbol = "am"
+            formatter.pmSymbol = "pm"
+            var timeString = formatter.string(from: date).lowercased()
+            // Remove any extraneous spaces before am/pm (just in case)
+            timeString = timeString.replacingOccurrences(of: " ", with: "")
+            return timeString
+        }
+    }
 
 	// Format Instagram link to ensure proper storage format
 	func formatInstagramLink(_ link: String) -> String {

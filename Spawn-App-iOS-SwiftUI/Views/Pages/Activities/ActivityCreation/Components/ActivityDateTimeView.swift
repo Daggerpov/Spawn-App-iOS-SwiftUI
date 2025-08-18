@@ -291,7 +291,7 @@ struct ActivityDateTimeView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Back button at the top
+            // Header (Friend Requests style)
             if let onBack = onBack {
                 HStack {
                     ActivityBackButton {
@@ -304,31 +304,45 @@ struct ActivityDateTimeView: View {
                             onBack()
                         }
                     }
-                    .padding(.leading, 24)
                     
                     Spacer()
+                    
+                    Text("What time?")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(headerTextColor)
+                    
+                    Spacer()
+                    
+                    // Invisible chevron to balance the back button
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                        .foregroundColor(.clear)
                 }
-                .padding(.top, 16)
-                .padding(.bottom, 12)
+                .padding(.horizontal)
+                .padding(.vertical, 12)
+            } else {
+                HStack {
+                    // Invisible chevron to balance layout when no back
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                        .foregroundColor(.clear)
+                    Spacer()
+                    Text("What time?")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(headerTextColor)
+                    Spacer()
+                    Image(systemName: "chevron.left")
+                        .font(.title3)
+                        .foregroundColor(.clear)
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 12)
             }
             
             ScrollView {
                 VStack(spacing: 12) {
-                    // Header Section
-                    VStack(spacing: 12) {
-                        Text("What time?")
-                            .font(.custom("Onest", size: 20).weight(.semibold))
-                            .foregroundColor(headerTextColor)
-                        
-                        Text("Set a time for your \"\(viewModel.selectedActivityType?.title ?? "Activity")\" Activity")
-                            .font(.custom("Onest", size: 16).weight(.medium))
-                            .foregroundColor(secondaryTextColor)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    
                     // Time Picker Section - Updated to match Figma design
                     VStack(spacing: 0) {
                         ZStack {

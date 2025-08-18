@@ -22,7 +22,7 @@ class FriendRequestViewModel: ObservableObject {
 
 	func friendRequestAction(action: FriendRequestAction) async {
 		do {
-			// full path: /api/v1/friend-requests/{friendRequestId}?friendRequestAction={accept/reject/cancel}
+			// full path: /api/v1/friend-requests/{friendRequestId}
 			guard
 				let url = URL(
 					string: APIService.baseURL
@@ -31,9 +31,13 @@ class FriendRequestViewModel: ObservableObject {
 			else { return }
 
 			// make API call:
-			let _: EmptyResponse = try await self.apiService.updateData(
-				EmptyRequestBody(), to: url,
-				parameters: ["friendRequestAction": action.rawValue])
+			if action == .cancel {
+				try await self.apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
+			} else {
+				let _: EmptyResponse = try await self.apiService.updateData(
+					EmptyRequestBody(), to: url,
+					parameters: ["friendRequestAction": action.rawValue])
+			}
 			print("processed friend request at url: \(url.absoluteString)")
 		} catch {
 			await MainActor.run {
