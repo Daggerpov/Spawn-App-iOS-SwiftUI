@@ -168,6 +168,16 @@ struct ProfileView: View {
 				if !isCurrentUserProfile {
 					showBackButton = true
 				}
+				
+				// Refresh profile picture for this user
+				if let profilePictureUrl = user.profilePicture {
+					let profilePictureCache = ProfilePictureCache.shared
+					_ = await profilePictureCache.getCachedImageWithRefresh(
+						for: user.id,
+						from: profilePictureUrl,
+						maxAge: 6 * 60 * 60 // 6 hours
+					)
+				}
 			}
 		}
 		.onChange(of: userAuth.spawnUser) { newUser in

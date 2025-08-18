@@ -75,10 +75,12 @@ struct FriendRequestsView: View {
                                         friendRequest: request,
                                         isIncoming: true,
                                         onAccept: {
+                                            // Set acceptedFriend BEFORE calling respondToFriendRequest
+                                            // because that method immediately removes the request from the array
+                                            acceptedFriend = request.senderUser
                                             Task {
                                                 await viewModel.respondToFriendRequest(requestId: request.id, action: .accept)
                                                 // Show success drawer after successful acceptance
-                                                acceptedFriend = request.senderUser
                                                 showSuccessDrawer = true
                                             }
                                         },
