@@ -19,7 +19,7 @@ class AppCache: ObservableObject {
     @Published var activityTypes: [ActivityTypeDTO] = []
     @Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]  // Changed to be user-specific
     @Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // Already user-specific
-    @Published var sentFriendRequests: [UUID: [FetchFriendRequestDTO]] = [:]  // User-specific sent friend requests
+    @Published var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]  // User-specific sent friend requests
     @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
     
     // Profile caches
@@ -271,7 +271,7 @@ class AppCache: ObservableObject {
                 // Sent Friend Requests Cache
                 if let sentFriendRequestsResponse = result[CacheKeys.sentFriendRequests], sentFriendRequestsResponse.invalidate {
                     if let updatedItems = sentFriendRequestsResponse.updatedItems,
-                       let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: updatedItems) {
+                       let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: updatedItems) {
                         updateSentFriendRequests(updatedSentFriendRequests)
                     } else {
                         Task {
@@ -284,6 +284,11 @@ class AppCache: ObservableObject {
         } catch {
             print("Failed to validate cache: \(error.localizedDescription)")
             // If validation fails, we'll continue using cached data
+        }
+        
+        // After cache validation, refresh profile pictures for all cached users
+        Task {
+            await refreshAllProfilePictures()
         }
     }
     
@@ -627,18 +632,40 @@ class AppCache: ObservableObject {
     /// Update friend requests for a specific user
     func updateFriendRequestsForUser(_ newFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
         print("💾 [CACHE] Updating incoming friend requests cache for user \(userId): \(newFriendRequests.count) requests")
-        friendRequests[userId] = newFriendRequests
+        // Normalize: remove zero UUIDs and unique by id
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var seen = Set<UUID>()
+        let normalized = newFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+            guard req.id != zeroUUID else { return nil }
+            if seen.contains(req.id) { return nil }
+            seen.insert(req.id)
+            return req
+        }
+        friendRequests[userId] = normalized
         setLastCheckedForUser(userId, cacheType: CacheKeys.friendRequests, date: Date())
         saveToDisk()
         
         // Preload profile pictures for friend request senders
         Task {
-            await preloadProfilePicturesForFriendRequests([userId: newFriendRequests])
+            await preloadProfilePicturesForFriendRequests([userId: normalized])
         }
     }
 
     func updateFriendRequests(_ newFriendRequests: [UUID: [FetchFriendRequestDTO]]) {
-        friendRequests = newFriendRequests
+        // Normalize all entries
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var normalizedMap: [UUID: [FetchFriendRequestDTO]] = [:]
+        for (uid, list) in newFriendRequests {
+            var seen = Set<UUID>()
+            let normalized = list.compactMap { req -> FetchFriendRequestDTO? in
+                guard req.id != zeroUUID else { return nil }
+                if seen.contains(req.id) { return nil }
+                seen.insert(req.id)
+                return req
+            }
+            normalizedMap[uid] = normalized
+        }
+        friendRequests = normalizedMap
         
         // Update timestamp for current user
         if let userId = UserAuthViewModel.shared.spawnUser?.id {
@@ -649,7 +676,7 @@ class AppCache: ObservableObject {
         
         // Preload profile pictures for friend request senders
         Task {
-            await preloadProfilePicturesForFriendRequests(newFriendRequests)
+            await preloadProfilePicturesForFriendRequests(normalizedMap)
         }
     }
 
@@ -691,27 +718,48 @@ class AppCache: ObservableObject {
     // MARK: - Sent Friend Requests Methods
 
     /// Get sent friend requests for the current user
-    func getCurrentUserSentFriendRequests() -> [FetchFriendRequestDTO] {
+    func getCurrentUserSentFriendRequests() -> [FetchSentFriendRequestDTO] {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
         // Always return the latest in-memory value; this map is only mutated by API refresh/update methods
         return sentFriendRequests[userId] ?? []
     }
 
     /// Update sent friend requests for a specific user
-    func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
+    func updateSentFriendRequestsForUser(_ newSentFriendRequests: [FetchSentFriendRequestDTO], userId: UUID) {
         print("💾 [CACHE] Updating sent friend requests cache for user \(userId): \(newSentFriendRequests.count) requests")
-        sentFriendRequests[userId] = newSentFriendRequests
+        // Normalize: remove zero UUIDs and unique by id
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var seen = Set<UUID>()
+        let normalized = newSentFriendRequests.compactMap { req -> FetchSentFriendRequestDTO? in
+            guard req.id != zeroUUID else { return nil }
+            if seen.contains(req.id) { return nil }
+            seen.insert(req.id)
+            return req
+        }
+        sentFriendRequests[userId] = normalized
         setLastCheckedForUser(userId, cacheType: CacheKeys.sentFriendRequests, date: Date())
         saveToDisk()
         
         // Preload profile pictures for sent friend request receivers
         Task {
-            await preloadProfilePicturesForFriendRequests([userId: newSentFriendRequests])
+            await preloadProfilePicturesForSentFriendRequests([userId: normalized])
         }
     }
 
-    func updateSentFriendRequests(_ newSentFriendRequests: [UUID: [FetchFriendRequestDTO]]) {
-        sentFriendRequests = newSentFriendRequests
+    func updateSentFriendRequests(_ newSentFriendRequests: [UUID: [FetchSentFriendRequestDTO]]) {
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var normalizedMap: [UUID: [FetchSentFriendRequestDTO]] = [:]
+        for (uid, list) in newSentFriendRequests {
+            var seen = Set<UUID>()
+            let normalized = list.compactMap { req -> FetchSentFriendRequestDTO? in
+                guard req.id != zeroUUID else { return nil }
+                if seen.contains(req.id) { return nil }
+                seen.insert(req.id)
+                return req
+            }
+            normalizedMap[uid] = normalized
+        }
+        sentFriendRequests = normalizedMap
         
         // Update timestamp for current user
         if let userId = UserAuthViewModel.shared.spawnUser?.id {
@@ -722,7 +770,7 @@ class AppCache: ObservableObject {
         
         // Preload profile pictures for sent friend request receivers
         Task {
-            await preloadProfilePicturesForFriendRequests(newSentFriendRequests)
+            await preloadProfilePicturesForSentFriendRequests(normalizedMap)
         }
     }
 
@@ -743,7 +791,7 @@ class AppCache: ObservableObject {
             let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
             guard let url = URL(string: APIService.baseURL + "friend-requests/sent/\(userId)") else { return }
             
-            let fetchedSentFriendRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
+            let fetchedSentFriendRequests: [FetchSentFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
             
             print("🔄 [CACHE] Retrieved \(fetchedSentFriendRequests.count) sent friend requests from API")
             
@@ -805,6 +853,134 @@ class AppCache: ObservableObject {
         print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
         print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
         print("✅ [DIAGNOSTIC] Diagnostic refresh completed")
+    }
+    
+    /// Force refresh profile pictures for all cached users
+    func refreshAllProfilePictures() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ [CACHE] Cannot refresh profile pictures: No user ID available")
+            return
+        }
+        
+        print("🔄 [CACHE] Starting profile picture refresh for all cached users")
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        var usersToRefresh: [(userId: UUID, profilePictureUrl: String?)] = []
+        
+        // Collect all users from different caches
+        if let userFriends = friends[userId] {
+            for friend in userFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userRecommendedFriends = recommendedFriends[userId] {
+            for friend in userRecommendedFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userFriendRequests = friendRequests[userId] {
+            for request in userFriendRequests {
+                usersToRefresh.append((userId: request.senderUser.id, profilePictureUrl: request.senderUser.profilePicture))
+            }
+        }
+        
+        if let userSentFriendRequests = sentFriendRequests[userId] {
+            for request in userSentFriendRequests {
+                usersToRefresh.append((userId: request.receiverUser.id, profilePictureUrl: request.receiverUser.profilePicture))
+            }
+        }
+        
+        // Add other profiles
+        for (_, profile) in otherProfiles {
+            usersToRefresh.append((userId: profile.id, profilePictureUrl: profile.profilePicture))
+        }
+        
+        // Add current user
+        if let currentUser = UserAuthViewModel.shared.spawnUser {
+            usersToRefresh.append((userId: currentUser.id, profilePictureUrl: currentUser.profilePicture))
+        }
+        
+        // Remove duplicates
+        var seen = Set<UUID>()
+        let uniqueUsers = usersToRefresh.compactMap { (user: (userId: UUID, profilePictureUrl: String?)) -> (userId: UUID, profilePictureUrl: String?)? in
+            guard !seen.contains(user.userId) else { return nil }
+            seen.insert(user.userId)
+            return user
+        }
+        
+        print("🔄 [CACHE] Found \(uniqueUsers.count) unique users to refresh profile pictures for")
+        
+        // Refresh stale profile pictures
+        await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
+        
+        print("✅ [CACHE] Completed profile picture refresh for all cached users")
+    }
+    
+    /// Force refresh profile pictures for all cached users (public method for testing)
+    func forceRefreshAllProfilePictures() async {
+        print("🔄 [CACHE] Force refreshing ALL profile pictures (bypassing staleness check)")
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("❌ [CACHE] Cannot refresh profile pictures: No user ID available")
+            return
+        }
+        
+        let profilePictureCache = ProfilePictureCache.shared
+        var usersToRefresh: [(userId: UUID, profilePictureUrl: String?)] = []
+        
+        // Collect all users from different caches
+        if let userFriends = friends[userId] {
+            for friend in userFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userRecommendedFriends = recommendedFriends[userId] {
+            for friend in userRecommendedFriends {
+                usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+            }
+        }
+        
+        if let userFriendRequests = friendRequests[userId] {
+            for request in userFriendRequests {
+                usersToRefresh.append((userId: request.senderUser.id, profilePictureUrl: request.senderUser.profilePicture))
+            }
+        }
+        
+        if let userSentFriendRequests = sentFriendRequests[userId] {
+            for request in userSentFriendRequests {
+                usersToRefresh.append((userId: request.receiverUser.id, profilePictureUrl: request.receiverUser.profilePicture))
+            }
+        }
+        
+        // Add other profiles
+        for (_, profile) in otherProfiles {
+            usersToRefresh.append((userId: profile.id, profilePictureUrl: profile.profilePicture))
+        }
+        
+        // Add current user
+        if let currentUser = UserAuthViewModel.shared.spawnUser {
+            usersToRefresh.append((userId: currentUser.id, profilePictureUrl: currentUser.profilePicture))
+        }
+        
+        // Remove duplicates
+        var seen = Set<UUID>()
+        let uniqueUsers = usersToRefresh.compactMap { (user: (userId: UUID, profilePictureUrl: String?)) -> (userId: UUID, profilePictureUrl: String?)? in
+            guard !seen.contains(user.userId) else { return nil }
+            seen.insert(user.userId)
+            return user
+        }
+        
+        print("🔄 [CACHE] Force refreshing \(uniqueUsers.count) unique users' profile pictures")
+        
+        // Force refresh all profile pictures
+        for user in uniqueUsers {
+            guard let profilePictureUrl = user.profilePictureUrl else { continue }
+            _ = await profilePictureCache.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
+        }
+        
+        print("✅ [CACHE] Completed force refresh of all profile pictures")
     }
     
     // MARK: - User-Specific Data Helper Methods
@@ -986,10 +1162,12 @@ class AppCache: ObservableObject {
             for user in userList {
                 guard let profilePictureUrl = user.profilePicture else { continue }
                 
-                // Only download if not already cached
-                if profilePictureCache.getCachedImage(for: user.id) == nil {
-                    _ = await profilePictureCache.downloadAndCacheImage(from: profilePictureUrl, for: user.id)
-                }
+                // Use the new refresh mechanism that checks for staleness
+                _ = await profilePictureCache.getCachedImageWithRefresh(
+                    for: user.id,
+                    from: profilePictureUrl,
+                    maxAge: 6 * 60 * 60 // 6 hours for more frequent updates
+                )
             }
         }
     }
@@ -1002,18 +1180,22 @@ class AppCache: ObservableObject {
             for activity in activityList {
                 // Preload creator profile picture
                 if let creatorPicture = activity.creatorUser.profilePicture {
-                    if profilePictureCache.getCachedImage(for: activity.creatorUser.id) == nil {
-                        _ = await profilePictureCache.downloadAndCacheImage(from: creatorPicture, for: activity.creatorUser.id)
-                    }
+                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                        for: activity.creatorUser.id,
+                        from: creatorPicture,
+                        maxAge: 6 * 60 * 60 // 6 hours
+                    )
                 }
                 
                 // Preload participant profile pictures
                 if let participants = activity.participantUsers {
                     for participant in participants {
                         if let participantPicture = participant.profilePicture {
-                            if profilePictureCache.getCachedImage(for: participant.id) == nil {
-                                _ = await profilePictureCache.downloadAndCacheImage(from: participantPicture, for: participant.id)
-                            }
+                            _ = await profilePictureCache.getCachedImageWithRefresh(
+                                for: participant.id,
+                                from: participantPicture,
+                                maxAge: 6 * 60 * 60 // 6 hours
+                            )
                         }
                     }
                 }
@@ -1022,9 +1204,11 @@ class AppCache: ObservableObject {
                 if let invitedUsers = activity.invitedUsers {
                     for invitedUser in invitedUsers {
                         if let invitedPicture = invitedUser.profilePicture {
-                            if profilePictureCache.getCachedImage(for: invitedUser.id) == nil {
-                                _ = await profilePictureCache.downloadAndCacheImage(from: invitedPicture, for: invitedUser.id)
-                            }
+                            _ = await profilePictureCache.getCachedImageWithRefresh(
+                                for: invitedUser.id,
+                                from: invitedPicture,
+                                maxAge: 6 * 60 * 60 // 6 hours
+                            )
                         }
                     }
                 }
@@ -1033,9 +1217,11 @@ class AppCache: ObservableObject {
                 if let chatMessages = activity.chatMessages {
                     for chatMessage in chatMessages {
                         if let senderPicture = chatMessage.senderUser.profilePicture {
-                            if profilePictureCache.getCachedImage(for: chatMessage.senderUser.id) == nil {
-                                _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: chatMessage.senderUser.id)
-                            }
+                            _ = await profilePictureCache.getCachedImageWithRefresh(
+                                for: chatMessage.senderUser.id,
+                                from: senderPicture,
+                                maxAge: 6 * 60 * 60 // 6 hours
+                            )
                         }
                     }
                 }
@@ -1050,9 +1236,28 @@ class AppCache: ObservableObject {
         for (_, requests) in friendRequests {
             for request in requests {
                 if let senderPicture = request.senderUser.profilePicture {
-                    if profilePictureCache.getCachedImage(for: request.senderUser.id) == nil {
-                        _ = await profilePictureCache.downloadAndCacheImage(from: senderPicture, for: request.senderUser.id)
-                    }
+                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                        for: request.senderUser.id,
+                        from: senderPicture,
+                        maxAge: 6 * 60 * 60 // 6 hours
+                    )
+                }
+            }
+        }
+    }
+    
+    /// Preload profile pictures for sent friend request receivers
+    private func preloadProfilePicturesForSentFriendRequests(_ sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        for (_, requests) in sentFriendRequests {
+            for request in requests {
+                if let receiverPicture = request.receiverUser.profilePicture {
+                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                        for: request.receiverUser.id,
+                        from: receiverPicture,
+                        maxAge: 6 * 60 * 60 // 6 hours
+                    )
                 }
             }
         }
@@ -1210,7 +1415,7 @@ class AppCache: ObservableObject {
         
         // Load sent friend requests
         if let sentRequestsData = UserDefaults.standard.data(forKey: CacheKeys.sentFriendRequests),
-           let loadedSentRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: sentRequestsData) {
+           let loadedSentRequests = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: sentRequestsData) {
             sentFriendRequests = loadedSentRequests
         }
         

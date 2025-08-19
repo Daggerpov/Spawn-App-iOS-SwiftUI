@@ -491,6 +491,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"Spawn-App-iOS-SwiftUI/Preview Content\"";
 				DEVELOPMENT_TEAM = GUW483PXY6;
 				ENABLE_PREVIEWS = YES;
+				GENERATE_DSYM_FILE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Spawn-App-iOS-SwiftUI/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = Spawn;

@@ -10,13 +10,13 @@ import Combine
 
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-    @Published var outgoingFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var outgoingFriendRequests: [FetchSentFriendRequestDTO] = []
     @Published var recommendedFriends: [RecommendedFriendUserDTO] = []
 	@Published var friends: [FullFriendUserDTO] = []
     @Published var filteredFriends: [FullFriendUserDTO] = []
     @Published var filteredRecommendedFriends: [RecommendedFriendUserDTO] = []
     @Published var filteredIncomingFriendRequests: [FetchFriendRequestDTO] = []
-    @Published var filteredOutgoingFriendRequests: [FetchFriendRequestDTO] = []
+    @Published var filteredOutgoingFriendRequests: [FetchSentFriendRequestDTO] = []
     @Published var isSearching: Bool = false
     @Published var searchQuery: String = ""
     @Published var isLoading: Bool = false
@@ -138,7 +138,7 @@ class FriendsTabViewModel: ObservableObject {
                         .compactMap { result in
                             guard let friendRequestId = result.friendRequestId else { return nil }
                             // For outgoing requests, the user in the result is the receiver
-                            return FetchFriendRequestDTO(id: friendRequestId, senderUser: result.user)
+                            return FetchSentFriendRequestDTO(id: friendRequestId, receiverUser: result.user)
                         }
                     
                     self.filteredRecommendedFriends = searchedUserResult.users
@@ -218,7 +218,7 @@ class FriendsTabViewModel: ObservableObject {
             }
             
             self.filteredOutgoingFriendRequests = self.outgoingFriendRequests.filter { request in
-                let friend = request.senderUser
+                let friend = request.receiverUser
                 let name = friend.name?.lowercased() ?? ""
                 let username = (friend.username ?? "").lowercased()
                 
@@ -301,6 +301,9 @@ class FriendsTabViewModel: ObservableObject {
             self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
             self.isLoading = false
         }
+        
+        // Refresh profile pictures for all visible users
+        await refreshProfilePictures()
 	}
 
 	internal func fetchIncomingFriendRequests() async {
@@ -312,11 +315,21 @@ class FriendsTabViewModel: ObservableObject {
                     try await self.apiService.fetchData(
                         from: url, parameters: nil)
 
+                // Normalize: filter zero UUIDs and de-duplicate by id
+                let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+                var seen = Set<UUID>()
+                let normalized = fetchedIncomingFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
+                    guard req.id != zeroUUID else { return nil }
+                    if seen.contains(req.id) { return nil }
+                    seen.insert(req.id)
+                    return req
+                }
+
                 // Ensure updating on the main thread
                 await MainActor.run {
-                    self.incomingFriendRequests = fetchedIncomingFriendRequests
+                    self.incomingFriendRequests = normalized
                     // Update the cache
-                    self.appCache.updateFriendRequestsForUser(fetchedIncomingFriendRequests, userId: userId)
+                    self.appCache.updateFriendRequestsForUser(normalized, userId: userId)
                 }
             } catch {
                 await MainActor.run {
@@ -333,15 +346,25 @@ class FriendsTabViewModel: ObservableObject {
 			string: APIService.baseURL + "friend-requests/sent/\(userId)")
 		{
 			do {
-				let fetchedOutgoingFriendRequests: [FetchFriendRequestDTO] =
+				let fetchedOutgoingFriendRequests: [FetchSentFriendRequestDTO] =
 					try await self.apiService.fetchData(
 						from: url, parameters: nil)
 
+                // Normalize: filter zero UUIDs and de-duplicate by id
+                let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+                var seen = Set<UUID>()
+                let normalized = fetchedOutgoingFriendRequests.compactMap { req -> FetchSentFriendRequestDTO? in
+                    guard req.id != zeroUUID else { return nil }
+                    if seen.contains(req.id) { return nil }
+                    seen.insert(req.id)
+                    return req
+                }
+
 				// Ensure updating on the main thread
 				await MainActor.run {
-					self.outgoingFriendRequests = fetchedOutgoingFriendRequests
+					self.outgoingFriendRequests = normalized
                     // Update the cache
-                    self.appCache.updateSentFriendRequestsForUser(fetchedOutgoingFriendRequests, userId: self.userId)
+                    self.appCache.updateSentFriendRequestsForUser(normalized, userId: self.userId)
 				}
 			} catch {
 				await MainActor.run {
@@ -442,6 +465,49 @@ class FriendsTabViewModel: ObservableObject {
             }
         }
 	}
+
+    /// Refresh profile pictures for all users visible in the friends tab
+    func refreshProfilePictures() async {
+        print("🔄 [FriendsTabViewModel] Refreshing profile pictures for friends tab users")
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        var usersToRefresh: [(userId: UUID, profilePictureUrl: String?)] = []
+        
+        // Add friends
+        for friend in friends {
+            usersToRefresh.append((userId: friend.id, profilePictureUrl: friend.profilePicture))
+        }
+        
+        // Add recommended friends
+        for recommendedFriend in recommendedFriends {
+            usersToRefresh.append((userId: recommendedFriend.id, profilePictureUrl: recommendedFriend.profilePicture))
+        }
+        
+        // Add incoming friend request senders
+        for request in incomingFriendRequests {
+            usersToRefresh.append((userId: request.senderUser.id, profilePictureUrl: request.senderUser.profilePicture))
+        }
+        
+        // Add outgoing friend request receivers
+        for request in outgoingFriendRequests {
+            usersToRefresh.append((userId: request.receiverUser.id, profilePictureUrl: request.receiverUser.profilePicture))
+        }
+        
+        // Remove duplicates
+        var seen = Set<UUID>()
+        let uniqueUsers = usersToRefresh.compactMap { user -> (userId: UUID, profilePictureUrl: String?)? in
+            guard !seen.contains(user.userId) else { return nil }
+            seen.insert(user.userId)
+            return user
+        }
+        
+        print("🔄 [FriendsTabViewModel] Found \(uniqueUsers.count) users to refresh profile pictures for")
+        
+        // Refresh stale profile pictures
+        await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
+        
+        print("✅ [FriendsTabViewModel] Completed profile picture refresh")
+    }
 
     func removeFriend(friendUserId: UUID) async {
         await MainActor.run {

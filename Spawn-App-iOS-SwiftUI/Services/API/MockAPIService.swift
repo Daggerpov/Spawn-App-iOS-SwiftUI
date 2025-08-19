@@ -259,10 +259,10 @@ class MockAPIService: IAPIService {
 					let senderUsername = getUsernameFromMockUsers(senderUserIdString)
 					
 					// For demo purposes, simulate that some users have sent friend requests
-					let sentRequests: [String: [FetchFriendRequestDTO]] = [
-						"daggerpov": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.haley)], // Daniel Agapov sent request to Haley
+					let sentRequests: [String: [FetchSentFriendRequestDTO]] = [
+						"daggerpov": [FetchSentFriendRequestDTO(id: UUID(), receiverUser: BaseUserDTO.haley)], // Daniel Agapov sent request to Haley
 						"uhdlee": [], // Daniel Lee has no sent requests
-						"haleyusername": [FetchFriendRequestDTO(id: UUID(), senderUser: BaseUserDTO.danielAgapov)] // Haley sent request to Daniel Agapov
+						"haleyusername": [FetchSentFriendRequestDTO(id: UUID(), receiverUser: BaseUserDTO.danielAgapov)] // Haley sent request to Daniel Agapov
 					]
 					
 					let mockSentRequests = sentRequests[senderUsername] ?? []

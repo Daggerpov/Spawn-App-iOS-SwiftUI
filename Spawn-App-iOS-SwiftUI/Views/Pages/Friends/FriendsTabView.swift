@@ -92,7 +92,8 @@ struct FriendsTabView: View {
 						shareProfile: { shareProfile(for: selectedFriend) },
 						navigateToProfile: { navigateToProfile = true }
 					)
-					.presentationDetents([.height(220)])
+					.background(universalBackgroundColor)
+					.presentationDetents([.height(276)])
 				}
 			}
 
@@ -171,7 +172,12 @@ struct FriendsTabView: View {
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
 						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
-							RecentlySpawnedView(viewModel: viewModel, recentUser: recentUser)
+							RecentlySpawnedView(
+								viewModel: viewModel, 
+								recentUser: recentUser,
+								selectedFriend: $selectedFriend,
+								showProfileMenu: $showProfileMenu
+							)
 						}
 					}
 				}
@@ -188,7 +194,12 @@ struct FriendsTabView: View {
 				ScrollView(showsIndicators: false) {
 					VStack(spacing: 16) {
 						ForEach(viewModel.recommendedFriends) { friend in
-							RecommendedFriendView(viewModel: viewModel, friend: friend)
+							RecommendedFriendView(
+								viewModel: viewModel, 
+								friend: friend,
+								selectedFriend: $selectedFriend,
+								showProfileMenu: $showProfileMenu
+							)
 						}
 					}
 				}
@@ -368,6 +379,8 @@ struct RecommendedFriendView: View {
     @ObservedObject var viewModel: FriendsTabViewModel
     var friend: RecommendedFriendUserDTO
     @State private var isAdded: Bool = false
+    @Binding var selectedFriend: FullFriendUserDTO?
+    @Binding var showProfileMenu: Bool
 
     var body: some View {
         HStack {
@@ -423,7 +436,14 @@ struct RecommendedFriendView: View {
             if viewModel.isFriend(userId: friend.id) {
                 // Show three dots button for existing friends
                 Button(action: {
-                    // TODO: Add ProfileMenuView functionality here if needed
+                    selectedFriend = FullFriendUserDTO(
+                        id: friend.id,
+                        username: friend.username,
+                        profilePicture: friend.profilePicture,
+                        name: friend.name,
+                        email: friend.email
+                    )
+                    showProfileMenu = true
                 }) {
                     Image(systemName: "ellipsis")
                         .foregroundColor(universalAccentColor)
@@ -482,6 +502,8 @@ struct RecentlySpawnedView: View {
     @ObservedObject var viewModel: FriendsTabViewModel
     var recentUser: RecentlySpawnedUserDTO
     @State private var isAdded: Bool = false
+    @Binding var selectedFriend: FullFriendUserDTO?
+    @Binding var showProfileMenu: Bool
 
     var body: some View {
         HStack {
@@ -531,7 +553,14 @@ struct RecentlySpawnedView: View {
             if viewModel.isFriend(userId: recentUser.user.id) {
                 // Show three dots button for existing friends
                 Button(action: {
-                    // TODO: Add ProfileMenuView functionality here if needed
+                    selectedFriend = FullFriendUserDTO(
+                        id: recentUser.user.id,
+                        username: recentUser.user.username,
+                        profilePicture: recentUser.user.profilePicture,
+                        name: recentUser.user.name,
+                        email: recentUser.user.email
+                    )
+                    showProfileMenu = true
                 }) {
                     Image(systemName: "ellipsis")
                         .foregroundColor(universalAccentColor)

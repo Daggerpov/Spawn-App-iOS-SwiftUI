@@ -96,11 +96,11 @@ class ProfilePictureCache: ObservableObject {
     }
     
     /// Download and cache an image from a URL for a user ID
-    func downloadAndCacheImage(from urlString: String, for userId: UUID) async -> UIImage? {
+    func downloadAndCacheImage(from urlString: String, for userId: UUID, forceRefresh: Bool = false) async -> UIImage? {
         let key = userId.uuidString
         
-        // Check if already cached
-        if let cachedImage = getCachedImage(for: userId) {
+        // Check if already cached (skip if force refresh is requested)
+        if !forceRefresh, let cachedImage = getCachedImage(for: userId) {
             return cachedImage
         }
         
@@ -137,10 +137,15 @@ class ProfilePictureCache: ObservableObject {
                 return nil
             }
             
+            // If force refresh, remove old cached image first
+            if forceRefresh {
+                removeCachedImage(for: userId)
+            }
+            
             // Cache the image
             cacheImage(image, for: userId)
             
-            print("Successfully downloaded and cached profile picture for user \(userId)")
+            print("Successfully downloaded and cached profile picture for user \(userId) (forceRefresh: \(forceRefresh))")
             return image
             
         } catch {
@@ -180,6 +185,57 @@ class ProfilePictureCache: ObservableObject {
         // Clear metadata
         clearAllMetadata()
         saveMetadata()
+    }
+    
+    /// Force refresh a profile picture from the backend
+    func refreshProfilePicture(for userId: UUID, from urlString: String) async -> UIImage? {
+        print("🔄 [ProfilePictureCache] Force refreshing profile picture for user: \(userId)")
+        return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
+    }
+    
+    /// Check if a cached profile picture is stale and needs refreshing
+    func isProfilePictureStale(for userId: UUID, maxAge: TimeInterval = 24 * 60 * 60) -> Bool {
+        let key = userId.uuidString
+        guard let metadata = getMetadata(for: key) else {
+            // No metadata means no cached image, so it's "stale"
+            return true
+        }
+        
+        let ageInSeconds = Date().timeIntervalSince(metadata.cachedAt)
+        return ageInSeconds > maxAge
+    }
+    
+    /// Refresh profile pictures for multiple users if they're stale
+    func refreshStaleProfilePictures(for users: [(userId: UUID, profilePictureUrl: String?)]) async {
+        print("🔄 [ProfilePictureCache] Checking \(users.count) users for stale profile pictures")
+        
+        for user in users {
+            guard let profilePictureUrl = user.profilePictureUrl else { continue }
+            
+            // Check if the profile picture is stale (older than 24 hours)
+            if isProfilePictureStale(for: user.userId) {
+                print("🔄 [ProfilePictureCache] Refreshing stale profile picture for user: \(user.userId)")
+                _ = await refreshProfilePicture(for: user.userId, from: profilePictureUrl)
+            }
+        }
+    }
+    
+    /// Get the cached image with automatic staleness check and refresh
+    func getCachedImageWithRefresh(for userId: UUID, from urlString: String?, maxAge: TimeInterval = 24 * 60 * 60) async -> UIImage? {
+        // First try to get from cache
+        if let cachedImage = getCachedImage(for: userId) {
+            // Check if it's stale
+            if !isProfilePictureStale(for: userId, maxAge: maxAge) {
+                return cachedImage
+            }
+        }
+        
+        // If no cached image or it's stale, download fresh
+        guard let urlString = urlString else {
+            return getCachedImage(for: userId) // Return cached if no URL provided
+        }
+        
+        return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
     }
     
     /// Get cache size in bytes
