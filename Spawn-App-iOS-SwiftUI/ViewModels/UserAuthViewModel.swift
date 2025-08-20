@@ -556,7 +556,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
         clearKeychainTokens()
-        clearKeychainTokens()
 		
 		// Clear stored OAuth credentials for complete logout
 		self.storedOAuthProvider = nil
@@ -615,7 +614,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						
 						// Navigate based on user status from AuthResponseDTO
                         continueUserOnboarding(authResponse: authResponse)
-						//self.navigateBasedOnUserStatus(authResponse: authResponse)
                         
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
@@ -1329,9 +1327,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
         print("Attempting email/username sign-in")
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/login") {
-                let response: BaseUserDTO? = try await self.apiService.sendData(LoginDTO(usernameOrEmail: usernameOrEmail, password: password), to: url, parameters: nil)
+                let response: AuthResponseDTO? = try await self.apiService.sendData(LoginDTO(usernameOrEmail: usernameOrEmail, password: password), to: url, parameters: nil)
                 
-                guard let user: BaseUserDTO = response else {
+                guard let authResponse: AuthResponseDTO = response else {
                     print("Failed to login with email/username")
                     await MainActor.run {
                         self.isLoggedIn = false
@@ -1341,15 +1339,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     return
                 }
                 print("Email/username login successful")
+                let user: BaseUserDTO = authResponse.user
+                
                 await MainActor.run {
                     self.spawnUser = user
-                    // For existing users with email/username sign-in, mark onboarding as completed
-                    if !self.hasCompletedOnboarding {
-                        self.markOnboardingCompleted()
-                    }
-                    self.navigateTo(.feedView)
                     self.isLoggedIn = true
                     self.errorMessage = nil // Clear any previous errors on success
+                    self.continueUserOnboarding(authResponse: authResponse)
                 }
             }
         } catch let error as APIError {
@@ -1694,7 +1690,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.errorMessage = nil
                         
                         // Navigate based on user status
-                        self.navigateTo(.userDetailsInput(isOAuthUser: false))
+                        self.continueUserOnboarding(authResponse: authResponse)
                     } else {
                         // Handle error
                         self.errorMessage = "Invalid verification code"
