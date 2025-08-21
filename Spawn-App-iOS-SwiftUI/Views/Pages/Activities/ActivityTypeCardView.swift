@@ -49,15 +49,20 @@ struct ActivityTypeCardView: View {
                 .foregroundColor(Color(red: 0.07, green: 0.07, blue: 0.07))
         }
         .padding(16)
-        .frame(width: 85, height: 115)
+        .frame(
+            minWidth: 85,
+            maxWidth: .infinity,
+            minHeight: 115,
+        )
         .background(Color(red: 0.95, green: 0.93, blue: 0.93))
         .cornerRadius(12)
-        .scaleEffect(scale)
-        .shadow(
-            color: Color.black.opacity(0.15),
-            radius: isPressed ? 2 : 8,
-            x: 0,
-            y: isPressed ? 2 : 4
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1) // "border"
+                .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: -2) // dark shadow top
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: Color.white.opacity(0.7), radius: 4, x: 0, y: 4) // light shadow bottom
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         )
         .animation(.easeInOut(duration: 0.15), value: scale)
         .animation(.easeInOut(duration: 0.15), value: isPressed)
