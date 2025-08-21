@@ -398,17 +398,12 @@ struct FriendsTabView: View {
 	
 	// Remove friend functionality
 	private func removeFriend(currentUserId: UUID, friendUserId: UUID) async {
-		do {
-			let friendsService = FriendsService()
-			try await friendsService.removeFriend(currentUserId: currentUserId, friendUserId: friendUserId)
-			
-			// Refresh friends cache to remove the friend from friends list
-			await AppCache.shared.refreshFriends()
-			await viewModel.fetchAllData()
-			
-		} catch {
-			print("Failed to remove friend: \(error.localizedDescription)")
-		}
+		// Use the existing viewModel method which already handles API calls and cache updates
+		await viewModel.removeFriend(friendUserId: friendUserId)
+		
+		// Refresh cache and data to ensure UI is updated
+		await AppCache.shared.refreshFriends()
+		await viewModel.fetchAllData()
 	}
 }
 
