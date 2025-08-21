@@ -51,6 +51,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Track whether this is the first launch or a logout
 	@Published var isFirstLaunch: Bool = true
 	
+	// Track whether user has seen preview screens on this device
+	@Published var hasSeenPreviewScreens: Bool = false
+	
 	// Track onboarding completion
 	@Published var hasCompletedOnboarding: Bool = false {
 		didSet {
@@ -147,6 +150,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Load onboarding completion status from UserDefaults
 		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 		print("🔄 DEBUG: Loaded hasCompletedOnboarding from UserDefaults: \(self.hasCompletedOnboarding)")
+		
+		// Load preview screens status from UserDefaults
+		self.hasSeenPreviewScreens = UserDefaults.standard.bool(forKey: "hasSeenPreviewScreens")
+		print("🔄 DEBUG: Loaded hasSeenPreviewScreens from UserDefaults: \(self.hasSeenPreviewScreens)")
 
         // Start minimum loading timer
         Task {
@@ -1963,10 +1970,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
     
     func getStarted() {
-        if self.isFirstLaunch {
+        // Always show preview screens if user hasn't seen them on this device,
+        // regardless of whether they're a new or existing user
+        if !self.hasSeenPreviewScreens {
             navigateTo(.spawnIntro)
         } else {
             navigateTo(.signIn)
+        }
+    }
+    
+    // Mark preview screens as seen on this device
+    func markPreviewScreensAsSeen() {
+        Task { @MainActor in
+            hasSeenPreviewScreens = true
+            UserDefaults.standard.set(true, forKey: "hasSeenPreviewScreens")
+            print("🔄 DEBUG: Marked preview screens as seen")
+        }
+    }
+    
+    // Reset preview screens state for testing/debugging purposes
+    func resetPreviewScreensState() {
+        Task { @MainActor in
+            hasSeenPreviewScreens = false
+            UserDefaults.standard.set(false, forKey: "hasSeenPreviewScreens")
+            print("🔄 DEBUG: Reset preview screens state - will show preview screens on next Get Started")
         }
     }
     

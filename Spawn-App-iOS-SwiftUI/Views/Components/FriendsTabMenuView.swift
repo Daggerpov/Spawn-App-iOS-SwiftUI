@@ -11,6 +11,8 @@ struct FriendsTabMenuView: View {
     let user: Nameable
     @Binding var showReportDialog: Bool
     @Binding var showBlockDialog: Bool
+    @Binding var showRemoveFriendConfirmation: Bool
+    @Binding var showAddToActivityType: Bool
     let copyProfileURL: () -> Void
     let shareProfile: () -> Void
     let navigateToProfile: () -> Void
@@ -33,6 +35,8 @@ struct FriendsTabMenuView: View {
                     user: user,
                     showReportDialog: $showReportDialog,
                     showBlockDialog: $showBlockDialog,
+                    showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+                    showAddToActivityType: $showAddToActivityType,
                     copyProfileURL: copyProfileURL,
                     shareProfile: shareProfile,
                     navigateToProfile: navigateToProfile,
@@ -105,6 +109,8 @@ private struct MenuContent: View {
     let user: Nameable
     @Binding var showReportDialog: Bool
     @Binding var showBlockDialog: Bool
+    @Binding var showRemoveFriendConfirmation: Bool
+    @Binding var showAddToActivityType: Bool
     let copyProfileURL: () -> Void
     let shareProfile: () -> Void
     let navigateToProfile: () -> Void
@@ -142,8 +148,32 @@ private struct MenuContent: View {
             Divider()
             
             menuItem(
+                icon: "tag",
+                text: "Add to Activity Type",
+                color: universalAccentColor
+            ) {
+                dismiss()
+                showAddToActivityType = true
+            }
+            .background(universalBackgroundColor)
+            
+            Divider()
+            
+            menuItem(
+                icon: "link",
+                text: "Copy profile URL",
+                color: universalAccentColor
+            ) {
+                copyProfileURL()
+                dismiss()
+            }
+            .background(universalBackgroundColor)
+            
+            Divider()
+            
+            menuItem(
                 icon: "square.and.arrow.up",
-                text: "Share Profile",
+                text: "Share this Profile",
                 color: universalAccentColor
             ) {
                 shareProfile()
@@ -155,7 +185,7 @@ private struct MenuContent: View {
             
             menuItem(
                 icon: "exclamationmark.triangle",
-                text: "Report \(firstName)",
+                text: "Report",
                 color: .red
             ) {
                 dismiss()
@@ -167,11 +197,23 @@ private struct MenuContent: View {
             
             menuItem(
                 icon: "hand.raised.slash",
-                text: "Block \(firstName)",
+                text: "Block",
                 color: .red
             ) {
                 dismiss()
                 showBlockDialog = true
+            }
+            .background(universalBackgroundColor)
+            
+            Divider()
+            
+            menuItem(
+                icon: "person.badge.minus",
+                text: "Remove Friend",
+                color: .red
+            ) {
+                dismiss()
+                showRemoveFriendConfirmation = true
             }
             .background(universalBackgroundColor)
         }
@@ -217,6 +259,8 @@ private struct MenuContent: View {
         user: BaseUserDTO.danielAgapov,
         showReportDialog: .constant(false),
         showBlockDialog: .constant(false),
+        showRemoveFriendConfirmation: .constant(false),
+        showAddToActivityType: .constant(false),
         copyProfileURL: {},
         shareProfile: {},
         navigateToProfile: {}

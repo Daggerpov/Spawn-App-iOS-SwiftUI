@@ -50,14 +50,42 @@ class TutorialViewModel: ObservableObject {
     /// This should be called when user reaches the main feed for the first time
     private func shouldStartTutorial() -> Bool {
         // Check if user has completed onboarding and this is their first time in the main app
-        guard UserAuthViewModel.shared.spawnUser != nil else { return false }
+        guard let spawnUser = UserAuthViewModel.shared.spawnUser else { return false }
         
-        // User should start tutorial if:
-        // 1. They haven't completed the tutorial before
-        // 2. They have completed basic onboarding
-        // 3. They are in the main app (feed view)
-        return !userDefaults.bool(forKey: hasCompletedTutorialKey) && 
-               UserAuthViewModel.shared.hasCompletedOnboarding
+        // Always skip tutorial for existing users signing into their account
+        print("🎯 TutorialViewModel: Checking if user should start tutorial...")
+        
+        // Check if this user has any existing activities or friends
+        // If they do, they're likely an existing user who shouldn't see the tutorial
+        let cachedActivities = AppCache.shared.getCurrentUserActivities()
+        let cachedFriends = AppCache.shared.getCurrentUserFriends()
+        
+        if !cachedActivities.isEmpty || !cachedFriends.isEmpty {
+            print("🎯 TutorialViewModel: Skipping tutorial for user with existing activities (\(cachedActivities.count)) or friends (\(cachedFriends.count))")
+            return false
+        }
+        
+        // For users who signed in with email/username (not OAuth registration), 
+        // they are definitely existing users and should skip tutorial
+        if UserAuthViewModel.shared.authProvider == .email {
+            print("🎯 TutorialViewModel: Skipping tutorial for email/username sign-in user")
+            return false
+        }
+        
+        // IMPORTANT: For existing users signing into their account on a new device,
+        // we should NOT show the tutorial even if they have no cached data yet.
+        // The key indicator is that they already have a Spawn account that existed before this session.
+        // Since we can't easily distinguish between new registrations and existing sign-ins at this point,
+        // we'll be conservative and skip the tutorial for most cases to avoid annoying existing users.
+        
+        // Only show tutorial if user has explicitly never completed it AND
+        // this appears to be a completely new user experience
+        let hasNeverCompletedTutorial = !userDefaults.bool(forKey: hasCompletedTutorialKey)
+        let hasCompletedOnboarding = UserAuthViewModel.shared.hasCompletedOnboarding
+
+        let shouldStart = hasNeverCompletedTutorial && hasCompletedOnboarding
+        print("🎯 TutorialViewModel: shouldStartTutorial = \(shouldStart) (hasNeverCompleted: \(hasNeverCompletedTutorial), hasCompletedOnboarding: \(hasCompletedOnboarding))")
+        return shouldStart
     }
     
     /// Start the tutorial from the beginning

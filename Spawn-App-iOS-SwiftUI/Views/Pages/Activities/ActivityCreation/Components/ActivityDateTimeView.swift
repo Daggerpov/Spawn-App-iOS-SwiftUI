@@ -463,19 +463,9 @@ struct ActivityDateTimeView: View {
             .padding(.horizontal, 20)
             
             // Step indicators
-            HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 0.27, green: 0.87, blue: 0.63))
-                    .frame(width: 32, height: 8)
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(stepIndicatorInactiveColor)
-                    .frame(width: 32, height: 8)
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(stepIndicatorInactiveColor)
-                    .frame(width: 32, height: 8)
-            }
-            .padding(.top, 16)
-            .padding(.bottom, 30)
+            StepIndicatorView(currentStep: 1, totalSteps: 3)
+                .padding(.top, 16)
+                .padding(.bottom, 30)
         }
         .background(universalBackgroundColor)
         .onAppear {

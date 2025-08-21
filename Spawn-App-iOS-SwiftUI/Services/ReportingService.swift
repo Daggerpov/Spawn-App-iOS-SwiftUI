@@ -15,16 +15,40 @@ class ReportingService {
     ///   - blockedId: ID of the user being blocked  
     ///   - reason: Reason for blocking
     func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async throws {
+        print("🚫 DEBUG: Starting blockUser request")
+        print("🚫 DEBUG: blockerId: \(blockerId), blockedId: \(blockedId), reason: \(reason)")
+        print("🚫 DEBUG: UserAuthViewModel.shared.isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
+        print("🚫 DEBUG: UserAuthViewModel.shared.spawnUser: \(UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil")")
+        
+        // Check if we have access token in keychain
+        if let accessTokenData = KeychainService.shared.load(key: "accessToken"),
+           let accessToken = String(data: accessTokenData, encoding: .utf8) {
+            print("🚫 DEBUG: Access token found in keychain: \(accessToken.prefix(20))...")
+        } else {
+            print("🚫 DEBUG: ⚠️ No access token found in keychain")
+        }
+        
         guard let url = URL(string: APIService.baseURL + "blocked-users/block") else {
+            print("🚫 DEBUG: ❌ Failed to create URL")
             throw APIError.URLError
         }
+        print("🚫 DEBUG: Request URL: \(url.absoluteString)")
+        
         let blockDTO = BlockedUserCreationDTO(
             blockerId: blockerId,
             blockedId: blockedId,
             reason: reason
         )
         
-        let _: EmptyResponse? = try await apiService.sendData(blockDTO, to: url, parameters: nil)
+        print("🚫 DEBUG: Making API call...")
+        do {
+            let _: EmptyResponse? = try await apiService.sendData(blockDTO, to: url, parameters: nil)
+            print("🚫 DEBUG: ✅ Block user request completed successfully")
+        } catch {
+            print("🚫 DEBUG: ❌ Block user request failed with error: \(error)")
+            print("🚫 DEBUG: Error details: \(error.localizedDescription)")
+            throw error
+        }
     }
     
     /// Unblock a user
