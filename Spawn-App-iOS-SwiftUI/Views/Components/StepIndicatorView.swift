@@ -7,8 +7,8 @@ struct StepIndicatorView: View {
     var body: some View {
         HStack(spacing: 8) {
             ForEach(1...totalSteps, id: \.self) { step in
-                Image(step <= currentStep ? "SpawnEventButtonClicked" : "SpawnEventButton")
-                    .resizable()
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(step <= currentStep ? figmaGreen : Color.gray.opacity(0.3))
                     .frame(width: 32, height: 8)
                     .animation(.easeInOut(duration: 0.3), value: currentStep)
             }

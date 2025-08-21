@@ -47,7 +47,7 @@ struct ActivityNextStepButton: View {
             }
             .buttonStyle(PlainButtonStyle())
             .disabled(!isEnabled)
-            .opacity(isEnabled ? 1.0 : 0.7)
+            .opacity(isEnabled ? 1.0 : 0.8)
             .animation(.easeInOut(duration: 0.15), value: scale)
             .animation(.easeInOut(duration: 0.15), value: isPressed)
             .simultaneousGesture(

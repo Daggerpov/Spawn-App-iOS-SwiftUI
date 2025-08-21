@@ -62,7 +62,7 @@ struct ActivityTypeView: View {
                 Spacer()
                 
                 ActivityNextStepButton(
-                    title: "Next Step",
+                    title: "Create",
                     isEnabled: selectedActivityType != nil,
                     action: onNext
                 )
@@ -87,6 +87,10 @@ struct ActivityTypeView: View {
                 }
                 Button("Delete", role: .destructive) {
                     if let activityType = activityTypeToDelete {
+                        // Clear selected activity type if it's the one being deleted
+                        if selectedActivityType?.id == activityType.id {
+                            selectedActivityType = nil
+                        }
                         Task {
                             await viewModel.deleteActivityType(activityType)
                         }
