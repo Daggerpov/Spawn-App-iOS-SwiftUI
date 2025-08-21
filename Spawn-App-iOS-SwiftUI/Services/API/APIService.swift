@@ -236,6 +236,14 @@ class APIService: IAPIService {
 		if !isAuthEndpoint && !isWhitelistedEndpoint {
 			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 				print("❌ Cannot make API call to \(urlString): User is not logged in")
+				
+				// DEBUG: Extra logging for blocking endpoints
+				if urlString.contains("blocked-users") {
+					print("🚫 DEBUG: ❌ CRITICAL - User not logged in when attempting to block user!")
+					print("🚫 DEBUG: spawnUser: \(UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil")")
+					print("🚫 DEBUG: isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
+				}
+				
 				throw APIError.invalidStatusCode(statusCode: 401)
 			}
 		}
@@ -279,12 +287,37 @@ class APIService: IAPIService {
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204
 		else {
             if httpResponse.statusCode == 401 && !(urlString.contains("/auth/sign-in") || urlString.contains("/auth/login")) {
+				// DEBUG: Log for blocking endpoints specifically
+				if urlString.contains("blocked-users") {
+					print("🚫 DEBUG: Received 401 for blocking request, attempting token refresh...")
+				}
+				
 				// Handle token refresh logic here
-				let newAccessToken: String = try await handleRefreshToken()
-				// Retry the request with the new access token
-				let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
-				return try APIService.makeDecoder().decode(U.self, from: newData)
+				do {
+					let newAccessToken: String = try await handleRefreshToken()
+					// Retry the request with the new access token
+					let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
+					
+					// DEBUG: Log for blocking endpoints specifically
+					if urlString.contains("blocked-users") {
+						print("🚫 DEBUG: ✅ Token refresh successful, blocking request retried")
+					}
+					
+					return try APIService.makeDecoder().decode(U.self, from: newData)
+				} catch {
+					// DEBUG: Log for blocking endpoints specifically
+					if urlString.contains("blocked-users") {
+						print("🚫 DEBUG: ❌ Token refresh failed for blocking request: \(error)")
+					}
+					throw error
+				}
 			}
+			
+			// DEBUG: Log for blocking endpoints specifically
+			if urlString.contains("blocked-users") {
+				print("🚫 DEBUG: ❌ Blocking request failed with status code: \(httpResponse.statusCode)")
+			}
+			
 			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
 		}
         // Handle auth tokens if present
@@ -658,12 +691,22 @@ class APIService: IAPIService {
 			return
 		}
 		
+		// DEBUG: Log for blocking endpoints specifically
+		if url.absoluteString.contains("blocked-users") {
+			print("🚫 DEBUG: Setting auth header for blocking endpoint: \(url.absoluteString)")
+		}
+		
 		// Get the access token from keychain
         guard
             let accessTokenData = KeychainService.shared.load(key: "accessToken"),
             let accessToken = String(data: accessTokenData, encoding: .utf8)
         else {
 			print("⚠️ Missing access token for authenticated endpoint: \(url.absoluteString)")
+			
+			// DEBUG: Extra logging for blocking endpoints
+			if url.absoluteString.contains("blocked-users") {
+				print("🚫 DEBUG: ❌ CRITICAL - No access token available for blocking request!")
+			}
 			
 			// Check if we have a refresh token available
 			if let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
@@ -678,6 +721,11 @@ class APIService: IAPIService {
 				// manage re-authentication. This preserves OAuth credentials during onboarding.
 			}
 			return
+		}
+
+		// DEBUG: Log for blocking endpoints specifically
+		if url.absoluteString.contains("blocked-users") {
+			print("🚫 DEBUG: ✅ Successfully set Authorization header for blocking request")
 		}
 
 		// Set the auth headers
