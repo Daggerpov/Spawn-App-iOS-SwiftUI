@@ -204,6 +204,29 @@ class ActivityTypeViewModel: ObservableObject {
         }
     }
     
+    /// Removes a friend from an activity type
+    @MainActor
+    func removeFriendFromActivityType(activityTypeId: UUID, friendId: UUID) async {
+        guard let activityType = activityTypes.first(where: { $0.id == activityTypeId }) else {
+            errorMessage = "Activity type not found"
+            return
+        }
+        
+        // Create updated activity type with friend removed
+        let updatedAssociatedFriends = activityType.associatedFriends.filter { $0.id != friendId }
+        
+        let updatedActivityType = ActivityTypeDTO(
+            id: activityType.id,
+            title: activityType.title,
+            icon: activityType.icon,
+            associatedFriends: updatedAssociatedFriends,
+            orderNum: activityType.orderNum,
+            isPinned: activityType.isPinned
+        )
+        
+        await updateActivityType(updatedActivityType)
+    }
+    
     /// Updates an existing activity type via direct API call
     @MainActor
     func updateActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
