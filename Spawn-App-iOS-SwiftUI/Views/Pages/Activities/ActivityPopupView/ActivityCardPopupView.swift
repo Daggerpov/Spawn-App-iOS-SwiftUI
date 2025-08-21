@@ -330,46 +330,48 @@ struct ActivityCardPopupView: View {
 	}
 
 	var viewInMapsButton: some View {
-		HStack(spacing: 6) {
-			Image(systemName: "arrow.triangle.turn.up.right.diamond")
-				.font(.system(size: 12, weight: .bold))
-				.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+		Button(action: {
+			// Simple haptic feedback
+			let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+			impactGenerator.impactOccurred()
+			
+			guard let location = activity.location else { return }
 
-			Text("View in Maps")
-				.font(.onestSemiBold(size: 14))
-				.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+			let coordinate = CLLocationCoordinate2D(
+				latitude: location.latitude,
+				longitude: location.longitude
+			)
+			let destinationMapItem = MKMapItem(
+				placemark: MKPlacemark(coordinate: coordinate)
+			)
+			destinationMapItem.name = location.name
+
+			let sourceMapItem = MKMapItem.forCurrentLocation()
+
+			MKMapItem.openMaps(
+				with: [sourceMapItem, destinationMapItem],
+				launchOptions: [
+					MKLaunchOptionsDirectionsModeKey:
+						MKLaunchOptionsDirectionsModeDefault,
+					MKLaunchOptionsShowsTrafficKey: true,
+				]
+			)
+		}) {
+			HStack(spacing: 6) {
+				Image(systemName: "arrow.triangle.turn.up.right.diamond")
+					.font(.system(size: 12, weight: .bold))
+					.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+
+				Text("View in Maps")
+					.font(.onestSemiBold(size: 14))
+					.foregroundColor(Color(red: 0.33, green: 0.42, blue: 0.93))
+			}
+			.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+			.background(.white)
+			.cornerRadius(10)
 		}
-		.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
-		.background(.white)
-		.cornerRadius(10)
+		.buttonStyle(PlainButtonStyle())
 		.contentShape(Rectangle()) // Define the entire button area as tappable
-		.simultaneousGesture(
-			TapGesture()
-				.onEnded { _ in
-					guard let location = activity.location else { return }
-
-					let coordinate = CLLocationCoordinate2D(
-						latitude: location.latitude,
-						longitude: location.longitude
-					)
-					let destinationMapItem = MKMapItem(
-						placemark: MKPlacemark(coordinate: coordinate)
-					)
-					destinationMapItem.name = location.name
-
-					let sourceMapItem = MKMapItem.forCurrentLocation()
-
-					MKMapItem.openMaps(
-						with: [sourceMapItem, destinationMapItem],
-						launchOptions: [
-							MKLaunchOptionsDirectionsModeKey:
-								MKLaunchOptionsDirectionsModeDefault,
-							MKLaunchOptionsShowsTrafficKey: true,
-						]
-					)
-				}
-		)
-		.allowsHitTesting(true)
 	}
 }
 
@@ -616,6 +618,10 @@ extension ActivityCardPopupView {
 			Spacer()
 			
 			Button(action: {
+				// Simple haptic feedback
+				let impactGenerator = UIImpactFeedbackGenerator(style: .light)
+				impactGenerator.impactOccurred()
+				
 				// Create source map item from user's current location
 				let sourceMapItem = MKMapItem.forCurrentLocation()
 				
@@ -633,7 +639,7 @@ extension ActivityCardPopupView {
 				)
 			}) {
 				HStack(spacing: 6) {
-					Image(systemName: "arrow.trianglehead.turn.up.right.diamond")
+					Image(systemName: "arrow.triangle.turn.up.right.diamond")
 						.font(.system(size: 14, weight: .bold))
 						.foregroundColor(Color(red: 0.11, green: 0.63, blue: 0.29))
 					Text("Get Directions")
@@ -645,7 +651,6 @@ extension ActivityCardPopupView {
 				.cornerRadius(12)
 			}
 			.buttonStyle(PlainButtonStyle())
-			.allowsHitTesting(true)
 			.contentShape(Rectangle())
 		}
 		.padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
@@ -713,20 +718,11 @@ struct ParticipationButtonView: View {
 	var body: some View {
 		HStack {
 			Button(action: {
-				// Simple haptic feedback
+				// Lightweight haptic feedback only
 				let impactGenerator = UIImpactFeedbackGenerator(style: .light)
 				impactGenerator.impactOccurred()
 				
-				// Visual feedback
-				withAnimation(.easeInOut(duration: 0.1)) {
-					scale = 0.95
-				}
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-					withAnimation(.easeInOut(duration: 0.1)) {
-						scale = 1.0
-					}
-				}
-				
+				// Immediate action execution for better responsiveness
 				handleParticipationAction()
 			}) {
 				HStack {
