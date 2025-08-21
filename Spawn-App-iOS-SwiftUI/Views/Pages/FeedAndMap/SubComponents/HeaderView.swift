@@ -18,25 +18,12 @@ struct HeaderView: View {
 	}
 	
 	var body: some View {
-		HStack {
-			Spacer()
-			VStack {
-				HStack {
-					Text(
-						"Hey \(currentDisplayName)! 👋"
-					)
-					.font(.onestBold(size: 32))
-					.foregroundColor(universalAccentColor)
-					Spacer()
-				}
-				.font(.onestBold(size: 32))
-				Spacer().frame(height: 5)
-			}
-			.frame(alignment: .leading)
-			Spacer()
-			Spacer()
-		}
-		.padding(.vertical, 2)
+        HStack() {
+                    Text("Hey \(currentDisplayName)! 👋")
+                        .font(.onestBold(size: 32))
+                        .foregroundColor(universalAccentColor)
+                    Spacer()
+                }
 		.onAppear {
 			updateDisplayUser()
 		}
