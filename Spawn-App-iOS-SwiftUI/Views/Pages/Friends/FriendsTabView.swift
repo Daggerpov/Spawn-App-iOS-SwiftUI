@@ -27,6 +27,8 @@ struct FriendsTabView: View {
 	@State private var showProfileMenu: Bool = false
 	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
+	@State private var showRemoveFriendConfirmation: Bool = false
+	@State private var showAddToActivityType: Bool = false
 	@State private var selectedFriend: FullFriendUserDTO?
 	@State private var blockReason: String = ""
 	@State private var navigateToProfile: Bool = false
@@ -88,12 +90,14 @@ struct FriendsTabView: View {
 						user: selectedFriend,
 						showReportDialog: $showReportDialog,
 						showBlockDialog: $showBlockDialog,
+						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+						showAddToActivityType: $showAddToActivityType,
 						copyProfileURL: { copyProfileURL(for: selectedFriend) },
 						shareProfile: { shareProfile(for: selectedFriend) },
 						navigateToProfile: { navigateToProfile = true }
 					)
 					.background(universalBackgroundColor)
-					.presentationDetents([.height(276)])
+					.presentationDetents([.height(420)])
 				}
 			}
 
@@ -129,6 +133,26 @@ struct FriendsTabView: View {
 			.navigationDestination(isPresented: $navigateToProfile) {
 				if let friend = selectedFriend {
 					ProfileView(user: friend)
+				}
+			}
+			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
+				Button("Remove", role: .destructive) {
+					if let friendToRemove = selectedFriend,
+					   let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+						Task {
+							await removeFriend(currentUserId: currentUserId, friendUserId: friendToRemove.id)
+						}
+					}
+				}
+				Button("Cancel", role: .cancel) { }
+			} message: {
+				Text("Are you sure you want to remove this friend? This action cannot be undone.")
+			}
+			.sheet(isPresented: $showAddToActivityType) {
+				if let friend = selectedFriend {
+					AddToActivityTypeView(
+						user: friend
+					)
 				}
 			}
 		}
@@ -369,6 +393,21 @@ struct FriendsTabView: View {
 			
 		} catch {
 			print("Failed to block user: \(error.localizedDescription)")
+		}
+	}
+	
+	// Remove friend functionality
+	private func removeFriend(currentUserId: UUID, friendUserId: UUID) async {
+		do {
+			let friendsService = FriendsService()
+			try await friendsService.removeFriend(currentUserId: currentUserId, friendUserId: friendUserId)
+			
+			// Refresh friends cache to remove the friend from friends list
+			await AppCache.shared.refreshFriends()
+			await viewModel.fetchAllData()
+			
+		} catch {
+			print("Failed to remove friend: \(error.localizedDescription)")
 		}
 	}
 }

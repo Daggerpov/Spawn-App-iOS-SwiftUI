@@ -1048,17 +1048,13 @@ class ProfileViewModel: ObservableObject {
     
     func removeFriend(currentUserId: UUID, profileUserId: UUID) async {
         do {
-            let url = URL(string: APIService.baseURL + "blocked-users/remove-friendship")!
-            let parameters = [
-                "userAId": currentUserId.uuidString,
-                "userBId": profileUserId.uuidString
-            ]
+            let url = URL(string: APIService.baseURL + "api/v1/users/friends/\(currentUserId)/\(profileUserId)")!
             
-            // Discard the return value since we don't need it
-            _ = try await self.apiService.sendData(
-                EmptyRequestBody(),
-                to: url,
-                parameters: parameters
+            // Use DELETE request to remove friendship
+            _ = try await self.apiService.deleteData(
+                from: url,
+                parameters: nil,
+                object: Optional<String>.none
             )
             
             await MainActor.run {
