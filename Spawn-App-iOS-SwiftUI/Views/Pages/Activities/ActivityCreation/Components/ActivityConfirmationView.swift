@@ -179,7 +179,7 @@ struct ActivityConfirmationView: View {
                     .shadow(
                         color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
                     )
-                    .padding(.bottom, 120)
+                    .padding(.bottom, 120) // Standard bottom padding
                 }
             }
             

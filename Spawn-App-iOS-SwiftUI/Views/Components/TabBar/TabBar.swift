@@ -10,16 +10,59 @@ import SwiftUI
 struct WithTabBar<Content>: View where Content: View {
     @State private var selection: Tabs = .home
     @ViewBuilder var content: (Tabs) -> Content
+    
+    // Calculate the TabBar space needed
+    private var tabBarSpacing: CGFloat {
+        let buttonHeight: CGFloat = 64 // BTTN_HEIGHT from TabButtonLabelsView
+        let tabBarPadding: CGFloat = 4 * 2 // padding from TabBar
+        let extraSpacing: CGFloat = 20 // Additional spacing for visual separation
+        return buttonHeight + tabBarPadding + extraSpacing
+    }
 
     var body: some View {
         GeometryReader { proxy in
-            ZStack {
+            VStack(spacing: 0) {
                 content(selection)
+                    .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+                
+                // Spacer for TabBar
+                Color.clear
+                    .frame(height: tabBarSpacing)
             }
-            .frame(width: proxy.size.width, height: proxy.size.height)
             .overlay(alignment: .bottom) {
                 TabBar(selection: $selection)
-                    .padding(0)
+                    .padding(.bottom, 16)
+            }
+        }
+    }
+}
+
+// New version that accepts external binding
+struct WithTabBarBinding<Content>: View where Content: View {
+    @Binding var selection: Tabs
+    @ViewBuilder var content: (Tabs) -> Content
+    
+    // Calculate the TabBar space needed
+    private var tabBarSpacing: CGFloat {
+        let buttonHeight: CGFloat = 64 // BTTN_HEIGHT from TabButtonLabelsView
+        let tabBarPadding: CGFloat = 4 * 2 // padding from TabBar
+        let extraSpacing: CGFloat = 20 // Additional spacing for visual separation
+        return buttonHeight + tabBarPadding + extraSpacing
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                content(selection)
+                    .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+                
+                // Spacer for TabBar
+                Color.clear
+                    .frame(height: tabBarSpacing)
+            }
+            .overlay(alignment: .bottom) {
+                TabBar(selection: $selection)
+                    .padding(.bottom, 16)
             }
         }
     }
@@ -29,8 +72,20 @@ struct TabBar: View {
     @Binding var selection: Tabs
     @State private var symbolTrigger: Bool = false
     @Namespace private var tabItemNameSpace
+    @StateObject private var tutorialViewModel = TutorialViewModel.shared
 
     func changeTabTo(_ tab: Tabs) {
+        // Check if navigation is restricted during tutorial
+        if tutorialViewModel.tutorialState.shouldRestrictNavigation {
+            // Only allow home and activities tabs during tutorial
+            if tab != .home && tab != .activities {
+                // Add haptic feedback to indicate restriction
+                let notificationGenerator = UINotificationFeedbackGenerator()
+                notificationGenerator.notificationOccurred(.warning)
+                return
+            }
+        }
+        
         withAnimation(.bouncy(duration: 0.3, extraBounce: 0.15)) {
             selection = tab
         }
@@ -40,6 +95,13 @@ struct TabBar: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             symbolTrigger = false
         }
+    }
+    
+    func isTabDisabled(_ tab: Tabs) -> Bool {
+        if tutorialViewModel.tutorialState.shouldRestrictNavigation {
+            return tab != .home && tab != .activities
+        }
+        return false
     }
 
     var body: some View {
@@ -62,6 +124,8 @@ struct TabBar: View {
                             }
                         }
                         .withTabButtonStyle()
+                        .opacity(isTabDisabled(tab) ? 0.4 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: tutorialViewModel.tutorialState)
                     } else {
                         // Fallback on earlier versions
                     }

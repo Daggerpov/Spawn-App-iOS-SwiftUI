@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTab: TabType = .home
+    @State private var selectedTabsEnum: Tabs = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
     @StateObject private var tutorialViewModel = TutorialViewModel.shared
     @StateObject private var inAppNotificationManager = InAppNotificationManager.shared
@@ -39,12 +40,12 @@ struct ContentView: View {
 
 	var body: some View {
         ZStack {
-            WithTabBar { selectedTab in
+            WithTabBarBinding(selection: $selectedTabsEnum) { selectedTab in
                 switch selectedTab {
                 case .home:
                     ActivityFeedView(
                         user: user,
-                        selectedTab: Binding.constant(.home),
+                        selectedTab: $selectedTab,
                         deepLinkedActivityId: $deepLinkedActivityId,
                         shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
                     )
@@ -56,9 +57,9 @@ struct ContentView: View {
                         creatingUser: user,
                         closeCallback: {
                             // Navigate back to home tab when closing
-                            // This is handled by the TabBar system
+                            selectedTabsEnum = .home
                         },
-                        selectedTab: Binding.constant(.creation)
+                        selectedTab: $selectedTab
                     )
                 case .friends:
                     FriendsView(
@@ -75,7 +76,15 @@ struct ContentView: View {
                     .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 }
             }
-            .onAppear {
+            .onChange(of: selectedTabsEnum) { newTabsValue in
+                // Keep TabType in sync with Tabs enum
+                selectedTab = newTabsValue.toTabType
+            }
+            .onChange(of: selectedTab) { newTabTypeValue in
+                // Keep Tabs enum in sync with TabType (for programmatic navigation)
+                selectedTabsEnum = Tabs(from: newTabTypeValue)
+            }
+			.onAppear {
                 // Configure tab bar appearance for theme compatibility
                 let appearance = UITabBarAppearance()
                 appearance.configureWithOpaqueBackground()
@@ -200,7 +209,7 @@ struct ContentView: View {
         print("🎯 ContentView: Handling deep link for activity: \(activityId)")
         
         // Switch to home tab to show the activity in feed
-        selectedTab = .home
+        selectedTabsEnum = .home
         
         // Add a small delay to ensure tab switching completes before setting deep link state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -219,7 +228,7 @@ struct ContentView: View {
         print("🎯 ContentView: Handling deep link for profile: \(profileId)")
         
         // Switch to friends tab to show the profile
-        selectedTab = .friends
+        selectedTabsEnum = .friends
         
         // Add a small delay to ensure tab switching completes before setting deep link state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
