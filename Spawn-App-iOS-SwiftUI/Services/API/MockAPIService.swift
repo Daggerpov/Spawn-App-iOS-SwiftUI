@@ -37,6 +37,8 @@ class MockAPIService: IAPIService {
 					FullFeedActivityDTO.mockDinnerActivity,
 					FullFeedActivityDTO.mockSelfOwnedActivity,
 					FullFeedActivityDTO.mockSelfOwnedActivity2,
+					FullFeedActivityDTO.mockExpiredIndefiniteActivity, // This should be filtered out by FeedViewModel
+					FullFeedActivityDTO.mockPastActivity, // This should also be filtered out by FeedViewModel
 				] as! T
 			}
 		}

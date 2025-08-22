@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTab: TabType = .home
+    @State private var selectedTabsEnum: Tabs = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
     @StateObject private var tutorialViewModel = TutorialViewModel.shared
     @StateObject private var inAppNotificationManager = InAppNotificationManager.shared
@@ -39,101 +40,51 @@ struct ContentView: View {
 
 	var body: some View {
         ZStack {
-            TabView(selection: $selectedTab) {
-                ActivityFeedView(
-                    user: user, 
-                    selectedTab: $selectedTab, 
-                    deepLinkedActivityId: $deepLinkedActivityId, 
-                    shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
-                )
-                    .tag(TabType.home)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "home_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        Text("Home")
-                    }
-                MapView(user: user)
-                    .tag(TabType.map)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "map_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        Text("Map")
-                    }
-                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-                ActivityCreationView(
-                    creatingUser: user,
-                    closeCallback: {
-                        // Navigate back to home tab when closing
-                        selectedTab = .home
-                    },
-                    selectedTab: $selectedTab
-                )
-                .tag(TabType.creation)
-                .tabItem {
-                    Image(
-                        uiImage: resizeImage(
-                            UIImage(named: "activities_nav_icon")!,
-                            targetSize: CGSize(width: 30, height: 27)
-                        )!
+            WithTabBarBinding(selection: $selectedTabsEnum) { selectedTab in
+                switch selectedTab {
+                case .home:
+                    ActivityFeedView(
+                        user: user,
+                        selectedTab: $selectedTab,
+                        deepLinkedActivityId: $deepLinkedActivityId,
+                        shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
                     )
-                    Text("Activities")
-                }
-                FriendsView(
-                    user: user,
-                    viewModel: friendsViewModel,
-                    deepLinkedProfileId: $deepLinkedProfileId,
-                    shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
-                )
-                    .tag(TabType.friends)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "friends_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        .withNotificationBadge(
-                            count: friendsViewModel.incomingFriendRequests.count,
-                            offset: CGPoint(x: 10, y: -8)
-                        )
-                        Text("Friends")
+                case .map:
+                    MapView(user: user)
+                        .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+                case .activities:
+                    ActivityCreationView(
+                        creatingUser: user,
+                        closeCallback: {
+                            // Navigate back to home tab when closing
+                            selectedTabsEnum = .home
+                        },
+                        selectedTab: $selectedTab
+                    )
+                case .friends:
+                    FriendsView(
+                        user: user,
+                        viewModel: friendsViewModel,
+                        deepLinkedProfileId: $deepLinkedProfileId,
+                        shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
+                    )
+                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+                case .profile:
+                    NavigationStack {
+                        ProfileView(user: user)
                     }
                     .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-                
-                NavigationStack {
-                    ProfileView(user: user)
-                }
-                    .tag(TabType.profile)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "profile_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        Text("Profile")
-                    }
-                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-            }
-            .tint(universalSecondaryColor) // Set the tint color for selected tabs to purple
-            .onChange(of: selectedTab) { newTab in
-                // Restrict navigation during tutorial
-                if tutorialViewModel.tutorialState.shouldRestrictNavigation {
-                    if !tutorialViewModel.canNavigateToTab(newTab) {
-                        // Revert to previous valid tab
-                        selectedTab = .home
-                    }
                 }
             }
-            .onAppear {
+            .onChange(of: selectedTabsEnum) { newTabsValue in
+                // Keep TabType in sync with Tabs enum
+                selectedTab = newTabsValue.toTabType
+            }
+            .onChange(of: selectedTab) { newTabTypeValue in
+                // Keep Tabs enum in sync with TabType (for programmatic navigation)
+                selectedTabsEnum = Tabs(from: newTabTypeValue)
+            }
+			.onAppear {
                 // Configure tab bar appearance for theme compatibility
                 let appearance = UITabBarAppearance()
                 appearance.configureWithOpaqueBackground()
@@ -258,7 +209,7 @@ struct ContentView: View {
         print("🎯 ContentView: Handling deep link for activity: \(activityId)")
         
         // Switch to home tab to show the activity in feed
-        selectedTab = .home
+        selectedTabsEnum = .home
         
         // Add a small delay to ensure tab switching completes before setting deep link state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -277,7 +228,7 @@ struct ContentView: View {
         print("🎯 ContentView: Handling deep link for profile: \(profileId)")
         
         // Switch to friends tab to show the profile
-        selectedTab = .friends
+        selectedTabsEnum = .friends
         
         // Add a small delay to ensure tab switching completes before setting deep link state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {

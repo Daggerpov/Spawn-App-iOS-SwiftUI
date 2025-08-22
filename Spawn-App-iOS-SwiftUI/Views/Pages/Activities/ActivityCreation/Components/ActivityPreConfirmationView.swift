@@ -124,7 +124,7 @@ struct ActivityPreConfirmationView: View {
                 }
             }
         }
-        .padding(.bottom, 80)
+        .padding(.bottom, 80) // Standard bottom padding
         .background(adaptiveBackgroundColor)
         .ignoresSafeArea()
     }

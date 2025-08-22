@@ -763,7 +763,7 @@ struct ParticipationButtonView: View {
 				closeCallback: {
 					showingEditFlow = false
 				},
-				selectedTab: .constant(.creation),
+				selectedTab: .constant(.activities),
 				startingStep: .dateTime
 			)
 		}

@@ -15,7 +15,7 @@ struct ActivityFeedView: View {
     @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
     @Binding private var selectedTab: TabType
-    private let horizontalSubHeadingPadding: CGFloat = 21
+    private let horizontalSubHeadingPadding: CGFloat = 32
     private let bottomSubHeadingPadding: CGFloat = 14
     @State private var showFullActivitiesList: Bool = false
     @Environment(\.dismiss) private var dismiss
@@ -57,9 +57,10 @@ struct ActivityFeedView: View {
             
             VStack(alignment: .leading, spacing: 0) {
                 HeaderView(user: user)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 14)
-                    .padding(.top, 12)
+                    .padding(.bottom, 30)
+                    .padding(.top, 60)
+                    .padding(.horizontal, 32)
+                
                 // Spawn In! row
                 HStack {
                     Text("Spawn in!")
@@ -68,11 +69,14 @@ struct ActivityFeedView: View {
                     Spacer()
                     seeAllActivityTypesButton
                 }
-                .padding(.horizontal, horizontalSubHeadingPadding)
-                .padding(.bottom, bottomSubHeadingPadding)
+                .padding(.bottom, 20)
+                .padding(.horizontal, 32)
+                
                 // Activity Types row
                 activityTypeListView
-                    .padding(.bottom, 19)
+                    .padding(.bottom, 30)
+                    .padding(.horizontal, 32)
+                
                 // Activities in Your Area row
                 HStack {
                     Text("See what's happening")
@@ -81,10 +85,10 @@ struct ActivityFeedView: View {
                     Spacer()
                     seeAllActivitiesButton
                 }
-                .padding(.horizontal, horizontalSubHeadingPadding)
-                .padding(.bottom, bottomSubHeadingPadding)
-                // Activities
-                //activityListView
+                .padding(.bottom, 14)
+                .padding(.horizontal, 32)
+                
+                // Activities - no container padding, cards will handle their own
                 ActivityListView(
                     viewModel: viewModel,
                     user: user,
@@ -135,8 +139,8 @@ struct ActivityFeedView: View {
                         onContinue: {
                             showTutorialPreConfirmation = false
                             
-                            // Navigate to creation view
-                            selectedTab = TabType.creation
+                            // Navigate to activities view
+                            selectedTab = TabType.activities
                             
                             // Initialize with selected activity type and skip people management if no friends
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -198,7 +202,7 @@ struct ActivityFeedView: View {
         Button(action: {
             // Reset activity creation view model to ensure no pre-selection
             ActivityCreationViewModel.reInitialize()
-            selectedTab = TabType.creation
+            selectedTab = TabType.activities
         }) {
             seeAllText
         }
@@ -325,7 +329,6 @@ extension ActivityFeedView {
                 )
             }
         }
-        .padding(.horizontal)
     }
     
     private func handleActivityTypeSelection(_ selectedActivityTypeDTO: ActivityTypeDTO) {
@@ -342,7 +345,7 @@ extension ActivityFeedView {
             
         } else {
             // Normal flow
-            selectedTab = TabType.creation
+            selectedTab = TabType.activities
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
@@ -354,7 +357,7 @@ extension ActivityFeedView {
 extension ActivityFeedView {
     var activityListView: some View {
         ScrollView {
-            LazyVStack(spacing: 14) {
+            LazyVStack() {
                 if viewModel.activities.isEmpty {
                     Image("NoActivitiesFound")
                         .resizable()
@@ -387,7 +390,6 @@ extension ActivityFeedView {
                 }
             }
         }
-        .padding(.horizontal)
         .refreshable {
             Task {
                 await AppCache.shared.refreshActivities()

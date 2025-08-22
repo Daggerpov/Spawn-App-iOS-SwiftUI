@@ -129,8 +129,8 @@ class TutorialViewModel: ObservableObject {
             // During activity type selection, only allow home tab
             return tab == .home
         case .activityCreation:
-            // During activity creation, allow home and creation tabs
-            return tab == .home || tab == .creation
+            // During activity creation, allow home and activities tabs
+            return tab == .home || tab == .activities
         case .notStarted, .completed:
             // No restrictions
             return true

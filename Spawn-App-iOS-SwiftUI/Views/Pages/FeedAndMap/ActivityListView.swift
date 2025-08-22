@@ -60,7 +60,6 @@ struct ActivityListView: View {
             }
         }
         .background(universalBackgroundColor)
-        .padding(.horizontal)
         .refreshable {
             Task {
                 await AppCache.shared.refreshActivities()

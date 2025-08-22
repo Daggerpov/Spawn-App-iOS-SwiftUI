@@ -43,6 +43,34 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA40F16B2E579B7D008EDE5D /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Views/Components/SearchBarView.swift,
+				Views/Components/TabBar/TabBar.swift,
+				Views/Components/TabBar/TabBarView.swift,
+				Views/Components/TabBar/TabButtonLabelsView.swift,
+				Views/Components/TabBar/TabButtonStyle.swift,
+				Views/Components/TabBar/TabItemModel.swift,
+				Views/Components/TabBar/Tabs.swift,
+				Views/Components/TabBar/TabScrollContentView.swift,
+			);
+			target = 65D5036D2CD86EB600923A01 /* Spawn-App-iOS-SwiftUITests */;
+		};
+		AA40F16C2E579B7D008EDE5D /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUIUITests" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Views/Components/SearchBarView.swift,
+				Views/Components/TabBar/TabBar.swift,
+				Views/Components/TabBar/TabBarView.swift,
+				Views/Components/TabBar/TabButtonLabelsView.swift,
+				Views/Components/TabBar/TabButtonStyle.swift,
+				Views/Components/TabBar/TabItemModel.swift,
+				Views/Components/TabBar/Tabs.swift,
+				Views/Components/TabBar/TabScrollContentView.swift,
+			);
+			target = 65D503772CD86EB600923A01 /* Spawn-App-iOS-SwiftUIUITests */;
+		};
 		DC44BC0A2D1C3EFD00420368 /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUI" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -57,6 +85,8 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				DC44BC0A2D1C3EFD00420368 /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUI" target */,
+				AA40F16B2E579B7D008EDE5D /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUITests" target */,
+				AA40F16C2E579B7D008EDE5D /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUIUITests" target */,
 			);
 			path = "Spawn-App-iOS-SwiftUI";
 			sourceTree = "<group>";
