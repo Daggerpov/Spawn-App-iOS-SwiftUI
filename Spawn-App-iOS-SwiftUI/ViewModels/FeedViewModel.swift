@@ -159,7 +159,8 @@ class FeedViewModel: ObservableObject {
         }
     }
     
-    /// Filters out indefinite activities (null end time) that have a start time before the current client-side day
+    /// Filters out past activities and expired indefinite activities for feed view
+    /// Past activities are those that have already ended (endTime < now)
     /// Indefinite activities 'expire' by midnight of the local time
     private func filterExpiredIndefiniteActivities(_ activities: [FullFeedActivityDTO]) -> [FullFeedActivityDTO] {
         let calendar = Calendar.current
@@ -167,8 +168,13 @@ class FeedViewModel: ObservableObject {
         let startOfToday = calendar.startOfDay(for: now)
         
         return activities.filter { activity in
-            // If the activity has an end time, keep it (let backend handle expiration)
-            if activity.endTime != nil {
+            // Filter out past activities (those that have already ended)
+            if let endTime = activity.endTime {
+                // Activity has ended, exclude from feed view
+                if endTime < now {
+                    return false
+                }
+                // Activity hasn't ended yet, keep it
                 return true
             }
             

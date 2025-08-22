@@ -63,9 +63,9 @@ struct ActivityCardView: View {
         case .dark:
             return Color.black.opacity(0.3)
         case .light:
-            return Color.black.opacity(0.10)
+            return Color.black.opacity(0.20)
         @unknown default:
-            return Color.black.opacity(0.10)
+            return Color.black.opacity(0.20)
         }
     }
 
@@ -81,12 +81,12 @@ struct ActivityCardView: View {
             .background(
                 RoundedRectangle(cornerRadius: 14)
                     .fill(cardBackgroundColor)
+                    .shadow(color: shadowColor, radius: 4, x: 0, y: 4)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(cardBorderColor, lineWidth: 1)
                     )
             )
-            .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
             .onAppear {
                 viewModel.fetchIsParticipating()
             }
@@ -165,6 +165,8 @@ struct ActivityCardView: View {
             // Time Status Badge
             ActivityStatusView(activity: activity)
         }
+        .padding(.horizontal, 32) // 32px spacing from feed edges
+        .padding(.vertical, 2)
     }
     
     private func reportActivity(reportType: ReportType, description: String) async {

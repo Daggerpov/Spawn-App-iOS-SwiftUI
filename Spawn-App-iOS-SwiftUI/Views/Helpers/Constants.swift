@@ -279,7 +279,7 @@ var universalPlaceHolderTextColor: Color {
 }
 
 // MARK: - Static Colors (Theme-independent) - Updated to use new design system
-let universalSecondaryColorHexCode: String = colorsIndigo400
+let universalSecondaryColorHexCode: String = colorsIndigo500
 let universalSecondaryColor: Color = Color(hex: universalSecondaryColorHexCode)
 let universalTertiaryColor: Color = Color(hex: colorsRed500)
 let universalAccentColorHexCode: String = colorsGray900
@@ -301,7 +301,7 @@ let figmaBlack300: Color = Color(hex: figmaBlack300Hex)
 
 let figmaGreen: Color = Color(hex: colorsGreen500)
 
-let figmaBlack400Hex: String = colorsGray500
+let figmaBlack400Hex: String = colorsGray400
 let figmaBlack400: Color = Color(hex: figmaBlack400Hex)
 
 let figmaOrangeHex: String = colorsRed500
