@@ -21,17 +21,23 @@ struct WithTabBar<Content>: View where Content: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(spacing: 0) {
-                content(selection)
-                    .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+            ZStack {
+                // Background that extends to cover entire screen including tab bar area
+                universalBackgroundColor
+                    .ignoresSafeArea(.all)
                 
-                // Spacer for TabBar
-                Color.clear
-                    .frame(height: tabBarSpacing)
-            }
-            .overlay(alignment: .bottom) {
-                TabBar(selection: $selection)
-                    .padding(.bottom, 16)
+                VStack(spacing: 0) {
+                    content(selection)
+                        .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+                    
+                    // Spacer for TabBar
+                    Color.clear
+                        .frame(height: tabBarSpacing)
+                }
+                .overlay(alignment: .bottom) {
+                    TabBar(selection: $selection)
+                        .padding(.bottom, 16)
+                }
             }
         }
     }
@@ -52,17 +58,23 @@ struct WithTabBarBinding<Content>: View where Content: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(spacing: 0) {
-                content(selection)
-                    .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+            ZStack {
+                // Background that extends to cover entire screen including tab bar area
+                universalBackgroundColor
+                    .ignoresSafeArea(.all)
                 
-                // Spacer for TabBar
-                Color.clear
-                    .frame(height: tabBarSpacing)
-            }
-            .overlay(alignment: .bottom) {
-                TabBar(selection: $selection)
-                    .padding(.bottom, 16)
+                VStack(spacing: 0) {
+                    content(selection)
+                        .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+                    
+                    // Spacer for TabBar
+                    Color.clear
+                        .frame(height: tabBarSpacing)
+                }
+                .overlay(alignment: .bottom) {
+                    TabBar(selection: $selection)
+                        .padding(.bottom, 16)
+                }
             }
         }
     }
@@ -135,13 +147,21 @@ struct TabBar: View {
             .background(
                 ZStack {
                     RoundedRectangle(cornerRadius: 100, style: .continuous)
-                                        .fill(
-                                            .shadow(.inner(color: .white.opacity(0.75) ,radius: 16, x:0, y: 0))
-                                            .shadow(.inner(color: .white, radius: 2, x: 0, y: 2))
-                                        )
-                                        .foregroundColor(Color(hex: colorsTabBackground).opacity(0.6))
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 100, style: .continuous)
+                                .fill(
+                                    Color(UIColor { traitCollection in
+                                        switch traitCollection.userInterfaceStyle {
+                                        case .dark:
+                                            return UIColor(Color(hex: colorsGray800).opacity(0.8))
+                                        default:
+                                            return UIColor(Color(hex: colorsTabBackground).opacity(0.6))
+                                        }
+                                    })
+                                )
+                        )
                 }
-                .background(.ultraThinMaterial) // Material layer
             )
             .clipShape(RoundedRectangle(cornerRadius: 100))
             .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 5)
