@@ -75,6 +75,7 @@ struct MapView: View {
     }
 
     // Computed property for filtered activities
+    // Note: viewModel.activities already excludes past activities for feed views
     private var filteredActivities: [FullFeedActivityDTO] {
         let now = Date()
         let calendar = Calendar.current

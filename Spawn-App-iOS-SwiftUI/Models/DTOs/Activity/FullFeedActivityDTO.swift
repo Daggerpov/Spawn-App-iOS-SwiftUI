@@ -224,4 +224,23 @@ extension FullFeedActivityDTO {
         ],
         isSelfOwned: true
     )
+    
+    // Mock past activity that already ended - should be filtered out
+    static let mockPastActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+        id: UUID(),
+        title: "Past Lunch Meeting",
+        startTime: Calendar.current.date(byAdding: .hour, value: -3, to: Date()),
+        endTime: Calendar.current.date(byAdding: .hour, value: -2, to: Date()), // Ended 2 hours ago
+        location: LocationDTO(
+            id: UUID(), name: "Campus Cafe",
+            latitude: 49.26400000000000, longitude: -123.25800000000000),
+        note: "This meeting already happened and should be filtered out!",
+        icon: "🍽️",
+        creatorUser: BaseUserDTO.danielAgapov,
+        participantUsers: [
+            BaseUserDTO.danielAgapov,
+            BaseUserDTO.danielLee,
+        ],
+        isSelfOwned: true
+    )
 } 
