@@ -129,7 +129,7 @@ struct ActivityCreationView: View {
         }
         .onChange(of: selectedTab) { newTab in
             // Reset to beginning if activities tab is selected and we're at confirmation
-            if newTab == TabType.creation && currentStep == .confirmation {
+            if newTab == TabType.activities && currentStep == .confirmation {
                 currentStep = .activityType
                 ActivityCreationViewModel.reInitialize()
                 // Reset other state variables as well
@@ -144,8 +144,8 @@ struct ActivityCreationView: View {
                 selectedMinute = nextInterval.minute
                 isAM = nextInterval.isAM
             }
-            // Also reset when navigating to creation tab from other tabs (not from confirmation)
-            else if newTab == TabType.creation && currentStep != .confirmation {
+            // Also reset when navigating to activities tab from other tabs (not from confirmation)
+            else if newTab == TabType.activities && currentStep != .confirmation {
                 currentStep = .activityType
                 // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
                 if viewModel.selectedActivityType == nil {
@@ -370,6 +370,6 @@ enum ActivityDuration: CaseIterable {
         creatingUser: .danielAgapov,
         closeCallback: {
         },
-        selectedTab: .constant(TabType.creation)
+        selectedTab: .constant(TabType.activities)
     ).environmentObject(appCache)
 }

@@ -64,7 +64,7 @@ struct ActivityFeedView: View {
                 // Spawn In! row
                 HStack {
                     Text("Spawn in!")
-                        .font(.onestSemiBold(size: 24))
+                        .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
                     seeAllActivityTypesButton
@@ -80,7 +80,7 @@ struct ActivityFeedView: View {
                 // Activities in Your Area row
                 HStack {
                     Text("See what's happening")
-                        .font(.onestSemiBold(size: 24))
+                        .font(.onestSemiBold(size: 16))
                         .foregroundColor(figmaBlack400)
                     Spacer()
                     seeAllActivitiesButton
@@ -139,8 +139,8 @@ struct ActivityFeedView: View {
                         onContinue: {
                             showTutorialPreConfirmation = false
                             
-                            // Navigate to creation view
-                            selectedTab = TabType.creation
+                            // Navigate to activities view
+                            selectedTab = TabType.activities
                             
                             // Initialize with selected activity type and skip people management if no friends
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -202,7 +202,7 @@ struct ActivityFeedView: View {
         Button(action: {
             // Reset activity creation view model to ensure no pre-selection
             ActivityCreationViewModel.reInitialize()
-            selectedTab = TabType.creation
+            selectedTab = TabType.activities
         }) {
             seeAllText
         }
@@ -345,7 +345,7 @@ extension ActivityFeedView {
             
         } else {
             // Normal flow
-            selectedTab = TabType.creation
+            selectedTab = TabType.activities
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)

@@ -5,11 +5,11 @@ enum Tabs: CaseIterable {
 
 	case home, map, activities, friends, profile
     
-    // Mapping to/from TabType for compatibility
+    // Simple conversion to/from TabType (now that names match)
     init(from tabType: TabType) {
         switch tabType {
         case .home: self = .home
-        case .creation: self = .activities
+        case .activities: self = .activities
         case .map: self = .map
         case .friends: self = .friends
         case .profile: self = .profile
@@ -19,7 +19,7 @@ enum Tabs: CaseIterable {
     var toTabType: TabType {
         switch self {
         case .home: return .home
-        case .activities: return .creation
+        case .activities: return .activities
         case .map: return .map
         case .friends: return .friends
         case .profile: return .profile
