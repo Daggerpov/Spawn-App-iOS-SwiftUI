@@ -137,6 +137,11 @@ let colorsPink700: String = "#B83280"
 let colorsPink800: String = "#97266D"
 let colorsPink900: String = "#702459"
 
+// MARK: - Dark Brand Colors
+let colorsTabIconActive: String = "#536AEE"
+let colorsTabIconInactive: String = "#4B527F"
+let colorsTabBackground: String = "#DFE2F5"
+
 // MARK: - Transparent Colors
 let colorsTransparentBlack0: String = "#00000000"
 let colorsTransparentBlack20: String = "#00000033"
@@ -284,6 +289,7 @@ let profilePicPlusButtonColor: Color = Color(hex: colorsIndigo400)
 let authPageBackgroundColor: Color = Color(hex: colorsIndigo400)
 
 // Colors from the Figma design (updated to use new design system)
+
 let figmaBlueHex: String = colorsBlue700
 let figmaBlue: Color = Color(hex: figmaBlueHex)
 

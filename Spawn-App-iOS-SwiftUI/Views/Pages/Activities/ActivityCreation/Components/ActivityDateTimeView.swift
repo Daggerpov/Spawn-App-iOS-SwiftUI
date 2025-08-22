@@ -465,7 +465,7 @@ struct ActivityDateTimeView: View {
             // Step indicators
             StepIndicatorView(currentStep: 1, totalSteps: 3)
                 .padding(.top, 16)
-                .padding(.bottom, 30)
+                .padding(.bottom, 30) // Standard bottom padding
         }
         .background(universalBackgroundColor)
         .onAppear {
