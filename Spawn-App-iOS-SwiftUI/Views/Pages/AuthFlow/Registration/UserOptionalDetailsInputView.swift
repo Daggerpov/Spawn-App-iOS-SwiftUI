@@ -71,20 +71,20 @@ struct UserOptionalDetailsInputView: View {
        
         VStack(spacing: 0) {
             // Navigation Bar
-            HStack {
-                Button(action: {
-                    // Clear any error states when going back
-                    userAuth.clearAllErrors()
-                    dismiss()
-                }) {
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                }
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
+//            HStack {
+//                Button(action: {
+//                    // Clear any error states when going back
+//                    userAuth.clearAllErrors()
+//                    dismiss()
+//                }) {
+//                    Image(systemName: "chevron.left")
+//                        .font(.title2)
+//                        .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+//                }
+//                Spacer()
+//            }
+//            .padding(.horizontal, 20)
+//            .padding(.top, 10)
             
             Spacer()
             
