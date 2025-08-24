@@ -57,14 +57,12 @@ struct CircularButtonStyling: ViewModifier {
 			)
 			.overlay(
 				Button(action: {
-					// Haptic feedback
-					let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+					// Lightweight haptic feedback
+					let impactGenerator = UIImpactFeedbackGenerator(style: .light)
 					impactGenerator.impactOccurred()
 					
-					// Execute action with slight delay for animation
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-						buttonActionCallback()
-					}
+					// Execute action immediately for better responsiveness
+					buttonActionCallback()
 				}) {
 					Image(systemName: systemName)
 						.resizable()
@@ -74,32 +72,17 @@ struct CircularButtonStyling: ViewModifier {
 				}
 				.buttonStyle(PlainButtonStyle())
 			)
-			.scaleEffect(scale)
 			.shadow(
 				color: Color.black.opacity(0.15),
 				radius: isPressed ? 2 : 8,
 				x: 0,
 				y: isPressed ? 2 : 4
 			)
-			.animation(.easeInOut(duration: 0.15), value: scale)
-			.animation(.easeInOut(duration: 0.15), value: isPressed)
-			.simultaneousGesture(
-				DragGesture(minimumDistance: 0)
-					.onChanged { _ in
-						if !isPressed {
-							isPressed = true
-							scale = 0.95
-							
-							// Additional haptic feedback for press down
-							let selectionGenerator = UISelectionFeedbackGenerator()
-							selectionGenerator.selectionChanged()
-						}
-					}
-					.onEnded { _ in
-						isPressed = false
-						scale = 1.0
-					}
-			)
+			.scaleEffect(isPressed ? 0.95 : 1.0)
+			.animation(.easeInOut(duration: 0.1), value: isPressed)
+			.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+				isPressed = pressing
+			}, perform: {})
 	}
 }
 

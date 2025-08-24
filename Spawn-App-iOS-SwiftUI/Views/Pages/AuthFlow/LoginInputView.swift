@@ -129,21 +129,13 @@ struct LoginInputView: View {
                         x: 0,
                         y: isPressed ? 2 : 4
                     )
-                    .animation(.easeInOut(duration: 0.15), value: scale)
-                    .animation(.easeInOut(duration: 0.15), value: isPressed)
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { _ in
-                                guard isFormValid && !isLoading && !isPressed else { return }
-                                isPressed = true
-                                scale = 0.95
-                            }
-                            .onEnded { _ in
-                                guard isFormValid && !isLoading else { return }
-                                isPressed = false
-                                scale = 1.0
-                            }
-                    )
+                    .scaleEffect(isPressed ? 0.95 : 1.0)
+                    .animation(.easeInOut(duration: 0.1), value: isPressed)
+                    .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                        if isFormValid && !isLoading {
+                            isPressed = pressing
+                        }
+                    }, perform: {})
                 }
                 .padding(.horizontal, 40)
                 

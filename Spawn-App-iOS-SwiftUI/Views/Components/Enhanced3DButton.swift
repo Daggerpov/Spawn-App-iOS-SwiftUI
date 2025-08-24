@@ -30,14 +30,12 @@ struct Enhanced3DButton: View {
     
     var body: some View {
         Button(action: {
-            // Haptic feedback
-            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+            // Lightweight haptic feedback
+            let impactGenerator = UIImpactFeedbackGenerator(style: .light)
             impactGenerator.impactOccurred()
             
-            // Execute action with slight delay for animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                action()
-            }
+            // Execute action immediately for better responsiveness
+            action()
         }) {
             HStack(alignment: .center, spacing: 8) {
                 Text(title)
@@ -64,27 +62,13 @@ struct Enhanced3DButton: View {
         .buttonStyle(PlainButtonStyle())
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1.0 : 0.8)
-        .animation(.easeInOut(duration: 0.15), value: scale)
-        .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    if isEnabled && !isPressed {
-                        isPressed = true
-                        scale = 0.95
-                        
-                        // Additional haptic feedback for press down
-                        let selectionGenerator = UISelectionFeedbackGenerator()
-                        selectionGenerator.selectionChanged()
-                    }
-                }
-                .onEnded { _ in
-                    if isEnabled {
-                        isPressed = false
-                        scale = 1.0
-                    }
-                }
-        )
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            if isEnabled {
+                isPressed = pressing
+            }
+        }, perform: {})
     }
 }
 
