@@ -57,7 +57,7 @@ struct ActivityCardPopupView: View {
 			wrappedValue: ActivityCardViewModel(
 				apiService: MockAPIService.isMocking
 					? MockAPIService(userId: UUID()) : APIService(),
-				userId: UserAuthViewModel.shared.spawnUser!.id,
+				userId: UserAuthViewModel.shared.spawnUser?.id ?? BaseUserDTO.danielAgapov.id,
 				activity: activity
 			)
 		)
@@ -119,7 +119,7 @@ struct ActivityCardPopupView: View {
 				}
 			}
 
-			.background(activityColor.opacity(0.97))
+                    .background(activityColor.opacity(0.80).blendMode(.multiply))
 			.cornerRadius(isExpanded ? 0 : 20)
 			.shadow(radius: isExpanded ? 0 : 20)
 			.ignoresSafeArea(
@@ -205,9 +205,24 @@ struct ActivityCardPopupView: View {
 	}
 
 	var mainCardContent: some View {
-		VStack(alignment: .leading, spacing: 12) {
+		VStack(alignment: .leading, spacing: 16) {
 			// Header with arrow and title
 			HStack {
+                Button(action: {
+                    if isExpanded {
+                        onMinimize()
+                    } else {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isExpanded = true
+                        }
+                    }
+                }) {
+                    Image(systemName: isExpanded ? "xmark" : "arrow.up.left.and.arrow.down.right")
+                        .foregroundColor(.white)
+                        .font(.system(size: 24, weight: .regular))
+                }
+                .buttonStyle(PlainButtonStyle())
+                
 				Spacer()
 
 				// Only show menu for activities not owned by current user
@@ -227,6 +242,7 @@ struct ActivityCardPopupView: View {
 					.contentShape(Circle()) // Better touch area for circular button
 				}
 			}
+            .padding(.top, 23)
 
 			// Event title and time
 			titleAndTime
@@ -341,7 +357,16 @@ struct ActivityCardPopupView: View {
 		}
 		.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
 		.background(.white)
-		.cornerRadius(10)
+		.cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1) // border matching background
+                .shadow(color: Color.black.opacity(0.25), radius: 2, x: -2, y: -2) // dark shadow top
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: Color.white.opacity(0.7), radius: 4, x: 4, y: 4) // light shadow bottom
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        )
+        .shadow (color: Color.black.opacity(0.25), radius: 2, x: 0, y: 4)
 		.contentShape(Rectangle()) // Define the entire button area as tappable
 		.simultaneousGesture(
 			TapGesture()
@@ -399,20 +424,7 @@ struct MapHelper: Identifiable {
 
 extension ActivityCardPopupView {
 	var titleAndTime: some View {
-		VStack(alignment: .leading, spacing: 4) {
-			Button(action: {
-				if isExpanded {
-					onMinimize()
-				} else {
-					withAnimation(.easeInOut(duration: 0.3)) {
-						isExpanded = true
-					}
-				}
-			}) {
-				Image(isExpanded ? "x_symbol" : "expansion_symbol")
-					.foregroundColor(.white)
-			}
-			.buttonStyle(PlainButtonStyle())
+		VStack(alignment: .leading, spacing: 8) {
 			Text(viewModel.getDisplayString(activityInfoType: .title))
 			.font(.onestSemiBold(size: 32))
 			.foregroundColor(.white)
@@ -741,13 +753,15 @@ struct ParticipationButtonView: View {
 				.padding(.vertical, 12)
 				.background(.white)
 				.cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1) // border matching background
+                        .shadow(color: Color.black.opacity(0.50), radius: 2, x: -2, y: -2) // dark shadow top
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: Color.white.opacity(0.7), radius: 4, x: 4, y: 4) // light shadow bottom
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                )
 				.scaleEffect(scale)
-				.shadow(
-					color: Color.black.opacity(0.15),
-					radius: 8,
-					x: 0,
-					y: 4
-				)
 			}
 			.buttonStyle(PlainButtonStyle())
 			.allowsHitTesting(true)
