@@ -23,10 +23,10 @@ struct ActivityStatusView: View {
             .padding(.vertical, 6)
             .background(
                 UnevenRoundedRectangle(
-                    topLeadingRadius: 14,
+                    topLeadingRadius: 8,
                     bottomLeadingRadius: 2,
                     bottomTrailingRadius: 14,
-                    topTrailingRadius: 1
+                    topTrailingRadius: 2
                 )
                 .fill(viewModel.status.badgeColor)
             )

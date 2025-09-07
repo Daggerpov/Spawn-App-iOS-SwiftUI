@@ -34,7 +34,7 @@ public enum ActivityStatus {
     var badgeColor: Color {
         switch self {
         case .happeningNow:
-            return Color.green.opacity(0.8)
+            return Color(red: 70/255, green: 222/255, blue: 161/255)
         default:
             return Color.white.opacity(0.8)
         }

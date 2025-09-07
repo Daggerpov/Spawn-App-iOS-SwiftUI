@@ -273,10 +273,12 @@ struct ActivityDetailModalView: View {
                 // Activity is currently happening
                 if isSameDay {
                     let startTimeFormatter = DateFormatter()
-                    startTimeFormatter.dateFormat = "h:mm a"
+                    startTimeFormatter.dateFormat = "h:mm"
+                    let endTimeFormatter = DateFormatter() 
+                    endTimeFormatter.dateFormat = "h:mm a"
                     let startTimeString = startTimeFormatter.string(from: startTime)
-                    let endTimeString = formatTimeWithContext(for: endTime, timePrefix: "Ends at")
-                    return "Started at \(startTimeString) • \(endTimeString)"
+                    let endTimeString = endTimeFormatter.string(from: endTime)
+                    return "\(startTimeString) - \(endTimeString)"
                 } else {
                     return formatTimeWithContext(for: startTime, timePrefix: "Started at")
                 }
