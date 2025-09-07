@@ -514,12 +514,14 @@ class ActivityCreationViewModel: ObservableObject {
 			print("🔍 DEBUG: Making API call to: \(url.absoluteString)")
 			print("🔍 DEBUG: Using MockAPIService.isMocking: \(MockAPIService.isMocking)")
 			
-			let createdActivity: FullFeedActivityDTO? = try await apiService.sendData(activity, to: url, parameters: nil)
+			let response: ActivityCreationResponseDTO? = try await apiService.sendData(activity, to: url, parameters: nil)
 			
 			print("🔍 DEBUG: API call completed")
-			print("🔍 DEBUG: Created activity: \(createdActivity != nil ? "success" : "nil")")
+			print("🔍 DEBUG: Created activity response: \(response != nil ? "success" : "nil")")
 			
-			if let createdActivity = createdActivity {
+			if let response = response {
+				let createdActivity = response.activity
+				
 				// Cache the created activity
 				AppCache.shared.addOrUpdateActivity(createdActivity)
 				
@@ -533,6 +535,9 @@ class ActivityCreationViewModel: ObservableObject {
 					creationMessage = "Activity created successfully!"
 				}
 				print("🔍 DEBUG: Activity creation successful")
+				if let suggestion = response.friendSuggestion {
+					print("🔍 DEBUG: Friends were automatically added to activity type: \(suggestion.activityTypeTitle)")
+				}
 			} else {
 				await MainActor.run {
 					creationMessage = "Failed to create activity. Please try again."
@@ -578,7 +583,7 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 		
 		do {
-			guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)") else {
+			guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)/partial") else {
 				await MainActor.run {
 					creationMessage = "Failed to update activity. Invalid URL."
 				}
@@ -586,21 +591,50 @@ class ActivityCreationViewModel: ObservableObject {
 				return
 			}
 			
-			let updatedActivity: FullFeedActivityDTO? = try await apiService.updateData(activity, to: url, parameters: nil)
+			// Create partial update data with only the fields that should be updated
+			var updateData = ActivityPartialUpdateDTO(
+				title: activity.title ?? "",
+				icon: activity.icon ?? "",
+				startTime: nil,
+				endTime: nil,
+				participantLimit: nil,
+				note: nil
+			)
+			
+			// Add time fields if they've changed
+			if dateChanged {
+				// Convert Date to the format expected by backend
+				let formatter = ISO8601DateFormatter()
+				formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+				
+				updateData.startTime = formatter.string(from: activity.startTime ?? Date())
+				if let endTime = activity.endTime {
+					updateData.endTime = formatter.string(from: endTime)
+				}
+			}
+			
+			// Add participant limit if it's set
+			if let participantLimit = activity.participantLimit, participantLimit > 0 {
+				updateData.participantLimit = participantLimit
+			}
+			
+			// Add note if it's set
+			if let note = activity.note, !note.isEmpty {
+				updateData.note = note
+			}
+			
+			let updatedActivity: FullFeedActivityDTO? = try await apiService.patchData(from: url, with: updateData)
 			
 			if let updatedActivity = updatedActivity {
 				await MainActor.run {
 					// Cache the updated activity first
 					AppCache.shared.addOrUpdateActivity(updatedActivity)
 					
-					// Add a small delay to ensure cache update completes before posting notification
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-						// Post notification for successful update after cache is updated
-						NotificationCenter.default.post(
-							name: .activityUpdated,
-							object: updatedActivity
-						)
-					}
+					// Post notification for successful update immediately on main actor
+					NotificationCenter.default.post(
+						name: .activityUpdated,
+						object: updatedActivity
+					)
 					
 					creationMessage = "Activity updated successfully!"
 				}

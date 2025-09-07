@@ -216,19 +216,8 @@ struct ActivityShareDrawer: View {
     }
     
     private func shareViaSMS() {
-        generateShareURL(for: activity) { url in
-            let shareText = "Join me for \"\(activityTitle)\"! \(url.absoluteString)"
-            
-            if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-               let smsURL = URL(string: "sms:?body=\(encodedText)") {
-                
-                if UIApplication.shared.canOpenURL(smsURL) {
-                    UIApplication.shared.open(smsURL)
-                } else {
-                    print("SMS not available")
-                }
-            }
-        }
+        // Use the new SMS sharing service with enhanced messaging
+        SMSShareService.shared.shareActivity(activity)
     }
     
     private func generateShareURL(for activity: FullFeedActivityDTO, completion: @escaping (URL) -> Void) {

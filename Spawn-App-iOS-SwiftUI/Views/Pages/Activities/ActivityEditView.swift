@@ -7,8 +7,12 @@ struct ActivityEditView: View {
     
     @State private var editedTitle: String = ""
     @State private var editedIcon: String = ""
+    @State private var originalTitle: String = ""
+    @State private var originalIcon: String = ""
     @State private var showEmojiPicker: Bool = false
     @State private var hasChanges: Bool = false
+    @State private var showSuccessMessage: Bool = false
+    @State private var showSaveConfirmation: Bool = false
     @FocusState private var isTitleFieldFocused: Bool
     
     private var adaptiveBackgroundColor: Color {
@@ -91,6 +95,10 @@ struct ActivityEditView: View {
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                     .scaleEffect(0.8)
                                 Text("Saving...")
+                            } else if showSuccessMessage {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.white)
+                                Text("Saved!")
                             } else {
                                 Text("Save")
                             }
@@ -99,7 +107,10 @@ struct ActivityEditView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background((hasChanges && !viewModel.isLoading) ? figmaBlue : figmaBlue.opacity(0.5))
+                        .background(
+                            showSuccessMessage ? Color.green : 
+                            (hasChanges && !viewModel.isLoading) ? figmaBlue : figmaBlue.opacity(0.5)
+                        )
                         .cornerRadius(16)
                     }
                     .frame(width: 290, height: 56)
@@ -107,7 +118,11 @@ struct ActivityEditView: View {
                     
                     // Cancel button
                     Button(action: {
-                        dismiss()
+                        if hasChanges {
+                            showSaveConfirmation = true
+                        } else {
+                            dismiss()
+                        }
                     }) {
                         Text("Cancel")
                             .font(.onestSemiBold(size: 20))
@@ -159,6 +174,25 @@ struct ActivityEditView: View {
                     Text(errorMessage)
                 }
             }
+            .alert("Save All Changes?", isPresented: $showSaveConfirmation) {
+                Button("Don't Save", role: .destructive) {
+                    // Reset to original values and dismiss
+                    resetToOriginalValues()
+                    dismiss()
+                }
+                Button("Save All Changes") {
+                    // Save changes and dismiss
+                    saveChanges()
+                }
+                Button("Cancel", role: .cancel) {
+                    // Stay on the current screen
+                }
+            } message: {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("You have unsaved changes:")
+                    Text(getChangesSummaryText())
+                }
+            }
         }
     }
     
@@ -167,12 +201,13 @@ struct ActivityEditView: View {
     private func setupInitialState() {
         editedTitle = viewModel.activity.title ?? ""
         editedIcon = viewModel.activity.icon ?? "⭐️"
+        originalTitle = viewModel.activity.title ?? ""
+        originalIcon = viewModel.activity.icon ?? "⭐️"
         hasChanges = false
     }
     
     private func updateHasChanges() {
-        hasChanges = (editedTitle != (viewModel.activity.title ?? "")) || 
-                    (editedIcon != (viewModel.activity.icon ?? "⭐️"))
+        hasChanges = (editedTitle != originalTitle) || (editedIcon != originalIcon)
     }
     
     private func optimisticallyUpdateActivity() {
@@ -189,12 +224,51 @@ struct ActivityEditView: View {
         Task {
             await viewModel.saveActivityChanges()
             
-            // Only dismiss if there's no error
             await MainActor.run {
                 if viewModel.errorMessage == nil {
-                    dismiss()
+                    // Show success message
+                    showSuccessMessage = true
+                    hasChanges = false // Reset changes flag
+                    
+                    // Auto-dismiss after showing success for 1.5 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        dismiss()
+                    }
                 }
             }
+        }
+    }
+    
+    private func resetToOriginalValues() {
+        // Reset the edited values back to the original values
+        editedTitle = originalTitle
+        editedIcon = originalIcon
+        hasChanges = false
+        
+        // Reset the activity back to original values in the view model
+        viewModel.optimisticallyUpdateActivity(
+            title: originalTitle.isEmpty ? nil : originalTitle,
+            icon: originalIcon
+        )
+    }
+    
+    private func getChangesSummaryText() -> String {
+        var changes: [String] = []
+        
+        if editedTitle != originalTitle {
+            changes.append("Title: \"\(originalTitle)\" → \"\(editedTitle)\"")
+        }
+        
+        if editedIcon != originalIcon {
+            changes.append("Icon: \(originalIcon) → \(editedIcon)")
+        }
+        
+        if changes.isEmpty {
+            return "No changes to save."
+        } else if changes.count == 1 {
+            return "1 change: \(changes.first ?? "Unknown change")"
+        } else {
+            return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
         }
     }
 }

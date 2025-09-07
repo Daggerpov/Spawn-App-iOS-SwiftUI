@@ -28,7 +28,7 @@ struct DayActivitiesPageView: View {
         .overlay(
             // Use the same ActivityPopupDrawer as the feed view for consistency
             Group {
-                if showActivityDetails, let activity = profileViewModel.selectedActivity {
+                if showActivityDetails, let _ = profileViewModel.selectedActivity {
                                                     EmptyView() // Replaced with global popup system
             }
         }
