@@ -76,6 +76,12 @@ class ActivityCardViewModel: ObservableObject {
 				
 				// Update the cache with the updated activity so all views stay in sync
 				AppCache.shared.addOrUpdateActivity(updatedActivity)
+				
+				// Post notification for successful update to inform all views
+				NotificationCenter.default.post(
+					name: .activityUpdated,
+					object: updatedActivity
+				)
 			}
 		} catch let error as APIError {
 			await MainActor.run {

@@ -127,7 +127,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 				case .failedJSONParsing:
 					errorMessage = "Failed to parse server response. Please try again."
 				case .unknownError(let error):
-					errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
+					errorMessage = ErrorFormattingService.shared.formatError(error)
 				case .failedTokenSaving:
 					errorMessage = "Authentication error. Please try logging in again."
 				}
@@ -137,7 +137,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 			print("❌ Error type: \(type(of: error))")
 			print("❌ Error description: \(error.localizedDescription)")
 			await MainActor.run {
-				errorMessage = "Failed to save changes: \(error.localizedDescription)"
+				errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
 		}
 	}

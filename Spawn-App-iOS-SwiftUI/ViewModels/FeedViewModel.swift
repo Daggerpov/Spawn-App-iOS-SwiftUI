@@ -149,7 +149,7 @@ class FeedViewModel: ObservableObject {
             let filteredActivities = self.filterExpiredActivities(fetchedActivities)
             await MainActor.run {
                 self.activities = filteredActivities
-                self.appCache.updateActivitiesForUser(fetchedActivities, userId: self.userId) // Keep original activities in cache
+                self.appCache.updateActivitiesForUser(fetchedActivities, userId: self.userId) // Cache will filter expired activities internally
             }
         } catch {
             print("❌ DEBUG: Error fetching activities: \(error)")

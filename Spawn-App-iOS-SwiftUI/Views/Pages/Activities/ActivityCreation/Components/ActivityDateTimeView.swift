@@ -296,9 +296,10 @@ struct ActivityDateTimeView: View {
                 HStack {
                     ActivityBackButton {
                         // Sync current values to view model before checking changes
-                        syncCurrentValuesToViewModel()
+                        // Check for local changes before syncing
+                        let hasLocalChanges = hasAnyLocalChanges()
                         
-                        if viewModel.hasAnyChanges {
+                        if hasLocalChanges {
                             showSaveConfirmation = true
                         } else {
                             onBack()
@@ -502,12 +503,74 @@ struct ActivityDateTimeView: View {
         } message: {
             VStack(alignment: .leading, spacing: 8) {
                 Text("You have unsaved changes across multiple screens:")
-                Text(viewModel.getChangesSummaryText())
+                Text(getLocalChangesSummaryText())
             }
         }
     }
     
     // MARK: - Helper Methods
+    
+    private func hasAnyLocalChanges() -> Bool {
+        guard viewModel.isEditingExistingActivity else { return false }
+        
+        // Check title changes
+        let currentTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+        let originalTitle = viewModel.originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
+        if currentTitle != originalTitle {
+            return true
+        }
+        
+        // Check other changes using view model's computed properties
+        // But first sync the current values to make sure they're up to date
+        syncCurrentValuesToViewModel()
+        
+        return viewModel.dateChanged || viewModel.durationChanged || viewModel.locationChanged
+    }
+    
+    private func getLocalChangesSummaryText() -> String {
+        var changes: [String] = []
+        
+        // Check title changes locally
+        if viewModel.isEditingExistingActivity {
+            let currentTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+            let originalTitle = viewModel.originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
+            
+            if currentTitle != originalTitle {
+                changes.append("Title: \"\(originalTitle)\" → \"\(currentTitle)\"")
+            }
+            
+            // Check date changes
+            if viewModel.dateChanged {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMM d, h:mm a"
+                let oldDateStr = viewModel.originalDate.map { formatter.string(from: $0) } ?? ""
+                let newDateStr = formatter.string(from: viewModel.selectedDate)
+                changes.append("Date & Time: \(oldDateStr) → \(newDateStr)")
+            }
+            
+            // Check duration changes
+            if viewModel.durationChanged {
+                let oldDuration = viewModel.originalDuration?.title ?? "Indefinite"
+                let newDuration = selectedDuration.title
+                changes.append("Duration: \(oldDuration) → \(newDuration)")
+            }
+            
+            // Check location changes
+            if viewModel.locationChanged {
+                let oldLocation = viewModel.originalLocation?.name ?? "No location"
+                let newLocation = viewModel.selectedLocation?.name ?? "No location"
+                changes.append("Location: \(oldLocation) → \(newLocation)")
+            }
+        }
+        
+        if changes.isEmpty {
+            return "No changes detected."
+        } else if changes.count == 1 {
+            return "1 change: \(changes.first ?? "Unknown change")"
+        } else {
+            return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
+        }
+    }
     
     private func syncCurrentValuesToViewModel() {
         // Update activity title

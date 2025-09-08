@@ -269,7 +269,7 @@ class ActivityTypeViewModel: ObservableObject {
             
         } catch {
             print("❌ Error updating activity type: \(error)")
-            print("❌ Error details: \(error.localizedDescription)")
+            print("❌ Error details: \(ErrorFormattingService.shared.formatError(error))")
             
             // Enhanced error handling
             if let error = error as? APIError {
@@ -285,7 +285,7 @@ class ActivityTypeViewModel: ObservableObject {
                 case .failedJSONParsing:
                     errorMessage = "Failed to parse server response. Please try again."
                 case .unknownError(let error):
-                    errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
+                    errorMessage = "An unexpected error occurred: \(ErrorFormattingService.shared.formatError(error))"
                 case .failedTokenSaving:
                     errorMessage = "Authentication error. Please try logging in again."
                 }
@@ -294,7 +294,7 @@ class ActivityTypeViewModel: ObservableObject {
             }
             
             // Check if error is related to pinning limits
-            if error.localizedDescription.contains("pinned activity types") {
+            if ErrorFormattingService.shared.formatError(error).contains("pinned activity types") {
                 errorMessage = "You can only pin up to 3 activity types"
             }
             
@@ -405,7 +405,7 @@ class ActivityTypeViewModel: ObservableObject {
             if let backendErrorMessage = apiService.errorMessage, !backendErrorMessage.isEmpty {
                 errorMessage = backendErrorMessage
             } else {
-                errorMessage = "Failed to reorder activity types: \(error.localizedDescription)"
+                errorMessage = "Failed to reorder activity types: \(ErrorFormattingService.shared.formatError(error))"
             }
         }
     }
