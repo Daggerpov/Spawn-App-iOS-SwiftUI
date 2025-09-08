@@ -464,8 +464,22 @@ class MockAPIService: IAPIService {
 				) as! T
 			}
 		}
-		
 
+		// Handle User Preferences fetch
+		if url.absoluteString.contains("users/preferences/") {
+			print("🔍 MOCK: Fetching user preferences")
+			// Extract user ID from URL
+			let urlComponents = url.absoluteString.components(separatedBy: "/")
+			if let userIdString = urlComponents.last,
+			   let userId = UUID(uuidString: userIdString) {
+				// Return mock preferences indicating tutorial is not completed
+				// This allows testing of the tutorial flow in mock mode
+				return UserPreferencesDTO(
+					hasCompletedTutorial: false,
+					userId: userId
+				) as! T
+			}
+		}
 
 		throw APIError.invalidData
 	}
@@ -528,6 +542,15 @@ class MockAPIService: IAPIService {
 		if url.absoluteString.contains("auth/complete-contact-import/") {
 			print("🔍 MOCK: Contact import completion")
 			return BaseUserDTO.danielAgapov as! U?
+		}
+
+		// Handle User Preferences update
+		if url.absoluteString.contains("users/preferences/") {
+			print("🔍 MOCK: User preferences update")
+			if T.self == UserPreferencesDTO.self {
+				// Return the same preferences that were sent
+				return object as? U
+			}
 		}
 
 		throw APIError.invalidData

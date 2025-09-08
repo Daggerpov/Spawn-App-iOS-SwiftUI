@@ -26,7 +26,7 @@ struct TutorialOverlayView: View {
             if tutorialViewModel.tutorialState.shouldShowTutorialOverlay {
                 GeometryReader { geometry in
                     let safeAreaTop = geometry.safeAreaInsets.top
-                    let screenHeight = geometry.size.height
+                    let _ = geometry.size.height
                     
                     // Calculate dynamic positions based on screen size
                     let headerHeight = safeAreaTop + 44 // Safe area + navigation bar

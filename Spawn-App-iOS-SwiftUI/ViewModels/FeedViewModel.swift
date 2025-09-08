@@ -59,7 +59,7 @@ class FeedViewModel: ObservableObject {
                     guard let self = self else { return }
                     let userActivities = cachedActivities[self.userId] ?? []
                     if !userActivities.isEmpty {
-                        self.activities = self.filterExpiredIndefiniteActivities(userActivities)
+                        self.activities = self.filterExpiredActivities(userActivities)
                     }
                 }
                 .store(in: &cancellables)
@@ -116,7 +116,7 @@ class FeedViewModel: ObservableObject {
         let currentUserActivities = appCache.getCurrentUserActivities()
         if !currentUserActivities.isEmpty {
             await MainActor.run {
-                self.activities = self.filterExpiredIndefiniteActivities(currentUserActivities)
+                self.activities = self.filterExpiredActivities(currentUserActivities)
             }
             return
         }
@@ -145,8 +145,8 @@ class FeedViewModel: ObservableObject {
                 from: url, parameters: nil
             )
             
-            // Filter expired indefinite activities and update the cache and view model
-            let filteredActivities = self.filterExpiredIndefiniteActivities(fetchedActivities)
+            // Filter expired activities and update the cache and view model
+            let filteredActivities = self.filterExpiredActivities(fetchedActivities)
             await MainActor.run {
                 self.activities = filteredActivities
                 self.appCache.updateActivitiesForUser(fetchedActivities, userId: self.userId) // Keep original activities in cache
@@ -159,32 +159,13 @@ class FeedViewModel: ObservableObject {
         }
     }
     
-    /// Filters out past activities and expired indefinite activities for feed view
-    /// Past activities are those that have already ended (endTime < now)
-    /// Indefinite activities 'expire' by midnight of the local time
-    private func filterExpiredIndefiniteActivities(_ activities: [FullFeedActivityDTO]) -> [FullFeedActivityDTO] {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfToday = calendar.startOfDay(for: now)
-        
+    /// Filters out expired activities based on server-side expiration status.
+    /// This method now relies on the back-end's isExpired field as the single source of truth
+    /// for consistent expiration logic across all clients.
+    private func filterExpiredActivities(_ activities: [FullFeedActivityDTO]) -> [FullFeedActivityDTO] {
         return activities.filter { activity in
-            // Filter out past activities (those that have already ended)
-            if let endTime = activity.endTime {
-                // Activity has ended, exclude from feed view
-                if endTime < now {
-                    return false
-                }
-                // Activity hasn't ended yet, keep it
-                return true
-            }
-            
-            // If the activity has no end time (indefinite), check if it started before today
-            guard let startTime = activity.startTime else {
-                return false // Remove activities with no start time
-            }
-            
-            // Keep indefinite activities that start today or in the future
-            return startTime >= startOfToday
+            // Use server-side expiration status as single source of truth
+            return activity.isExpired != true
         }
     }
 }

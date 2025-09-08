@@ -655,7 +655,7 @@ struct ProfileView: View {
 
 	private var activityDetailsView: some View {
 		Group {
-			if let activity = profileViewModel.selectedActivity {
+			if let _ = profileViewModel.selectedActivity {
 				EmptyView() // Replaced with global popup system
 			}
 		}

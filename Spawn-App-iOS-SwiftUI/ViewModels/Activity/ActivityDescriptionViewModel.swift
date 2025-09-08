@@ -65,7 +65,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 		AppCache.shared.optimisticallyUpdateActivity(activity)
 	}
 	
-	/// Saves activity changes to the backend
+	/// Saves activity changes to the backend using partial update endpoint
 	func saveActivityChanges() async {
 		await MainActor.run {
 			isLoading = true
@@ -80,8 +80,8 @@ class ActivityDescriptionViewModel: ObservableObject {
 		
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 		
-		guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)") else {
-			print("❌ Error: Invalid URL for activity update")
+		guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)/partial") else {
+			print("❌ Error: Invalid URL for activity partial update")
 			await MainActor.run {
 				errorMessage = "Invalid URL for activity update"
 			}
@@ -91,28 +91,26 @@ class ActivityDescriptionViewModel: ObservableObject {
 		print("📡 Making API call to: \(url.absoluteString)")
 		
 		do {
-			// Create a simple update DTO with just the fields we want to update
-			let updateData = [
-				"title": activity.title ?? "",
-				"icon": activity.icon ?? ""
-			]
+			// Create a partial update DTO with just the fields we want to update
+			let updateData = ActivityPartialUpdateDTO(
+				title: activity.title ?? "",
+				icon: activity.icon ?? ""
+			)
 			
-			let updatedActivity: FullFeedActivityDTO = try await apiService.updateData(
-				updateData, to: url, parameters: nil)
+			// Use PATCH method for partial updates
+			let updatedActivity: FullFeedActivityDTO = try await apiService.patchData(
+				from: url, with: updateData)
 			
 			await MainActor.run {
 				self.activity = updatedActivity
 				// Update cache with confirmed changes
 				AppCache.shared.addOrUpdateActivity(updatedActivity)
 				
-				// Add a small delay to ensure cache update completes before posting notification
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-					// Post notification for successful update after cache is updated
-					NotificationCenter.default.post(
-						name: .activityUpdated,
-						object: updatedActivity
-					)
-				}
+				// Post notification for successful update immediately on main actor
+				NotificationCenter.default.post(
+					name: .activityUpdated,
+					object: updatedActivity
+				)
 			}
 		} catch let error as APIError {
 			print("❌ APIError saving activity changes: \(error)")

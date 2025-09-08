@@ -89,8 +89,8 @@ struct TabBar: View {
     func changeTabTo(_ tab: Tabs) {
         // Check if navigation is restricted during tutorial
         if tutorialViewModel.tutorialState.shouldRestrictNavigation {
-            // Only allow home and activities tabs during tutorial
-            if tab != .home && tab != .activities {
+            // Only allow activities tab during activity type selection
+            if !tutorialViewModel.canNavigateToTab(tab.toTabType) {
                 // Add haptic feedback to indicate restriction
                 let notificationGenerator = UINotificationFeedbackGenerator()
                 notificationGenerator.notificationOccurred(.warning)
@@ -111,7 +111,7 @@ struct TabBar: View {
     
     func isTabDisabled(_ tab: Tabs) -> Bool {
         if tutorialViewModel.tutorialState.shouldRestrictNavigation {
-            return tab != .home && tab != .activities
+            return !tutorialViewModel.canNavigateToTab(tab.toTabType)
         }
         return false
     }

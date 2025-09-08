@@ -208,6 +208,11 @@ struct ContentView: View {
     private func handleDeepLinkActivity(_ activityId: UUID) {
         print("🎯 ContentView: Handling deep link for activity: \(activityId)")
         
+        // Register user as invited to this activity if authenticated
+        if UserAuthViewModel.shared.isLoggedIn {
+            registerUserAsInvitedToActivity(activityId)
+        }
+        
         // Switch to home tab to show the activity in feed
         selectedTabsEnum = .home
         
@@ -222,6 +227,46 @@ struct ContentView: View {
         
         // Clear the deep link manager state
         deepLinkManager.clearPendingDeepLink()
+    }
+    
+    private func registerUserAsInvitedToActivity(_ activityId: UUID) {
+        guard let currentUser = UserAuthViewModel.shared.spawnUser else {
+            print("❌ ContentView: Cannot register invitation - user not authenticated")
+            return
+        }
+        
+        print("🎯 ContentView: Registering user \(currentUser.id) as invited to activity \(activityId)")
+        
+        // Call backend API to register the user as invited to this activity
+        Task {
+            do {
+                let url = URL(string: "\(ServiceConstants.URLs.apiBase)activities/\(activityId.uuidString)/invite/\(currentUser.id.uuidString)")!
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let (_, response) = try await URLSession.shared.data(for: request)
+                
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                    print("✅ ContentView: Successfully registered user as invited to activity")
+                    
+                    // Show success notification
+                    DispatchQueue.main.async {
+                        InAppNotificationManager.shared.showNotification(
+                            title: "You're invited!",
+                            message: "You've been added to this activity. Check it out!",
+                            type: .success,
+                            duration: 4.0
+                        )
+                    }
+                } else {
+                    print("❌ ContentView: Failed to register user as invited - HTTP \(String(describing: (response as? HTTPURLResponse)?.statusCode))")
+                }
+            } catch {
+                print("❌ ContentView: Error registering user as invited: \(error)")
+            }
+        }
     }
     
     private func handleDeepLinkProfile(_ profileId: UUID) {

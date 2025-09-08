@@ -28,12 +28,19 @@ struct ActivityCreationView: View {
     @Binding var selectedTab: TabType
     private var startingStep: ActivityCreationStep
     
+    // Track navigation context to determine correct back behavior
+    @State private var cameFromFeedWithPreselection: Bool = false
+    
     init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void, selectedTab: Binding<TabType>, startingStep: ActivityCreationStep = .activityType) {
         self.creatingUser = creatingUser
         self.closeCallback = closeCallback
         self._selectedTab = selectedTab
         self.startingStep = startingStep
-        self._currentStep = State(initialValue: startingStep)
+        
+        // If an activity type is pre-selected and we're starting at activityType step,
+        // skip directly to dateTime step
+        let initialStep = (startingStep == .activityType && ActivityCreationViewModel.shared.selectedActivityType != nil) ? .dateTime : startingStep
+        self._currentStep = State(initialValue: initialStep)
         
         // Initialize time values - either from existing activity or calculate next interval
         if startingStep == .dateTime && ActivityCreationViewModel.shared.selectedDate != Date() {
@@ -119,8 +126,14 @@ struct ActivityCreationView: View {
                 }
             }
             
+            // If we have a pre-selected activity type and we're at activityType step, skip to dateTime
+            if currentStep == .activityType && viewModel.selectedActivityType != nil {
+                // We came from feed with preselection - track this for back navigation
+                cameFromFeedWithPreselection = true
+                currentStep = .dateTime
+            }
             // If we're starting fresh (no pre-selected type), ensure absolutely clean state
-            if currentStep == .activityType && viewModel.selectedActivityType == nil {
+            else if currentStep == .activityType && viewModel.selectedActivityType == nil {
                 // First try force reset
                 ActivityCreationViewModel.forceReset()
                 // Then full reinitialization to be absolutely sure
@@ -132,6 +145,7 @@ struct ActivityCreationView: View {
             if newTab == TabType.activities && currentStep == .confirmation {
                 currentStep = .activityType
                 ActivityCreationViewModel.reInitialize()
+                cameFromFeedWithPreselection = false
                 // Reset other state variables as well
                 activityTitle = ""
                 selectedDuration = .indefinite
@@ -146,7 +160,17 @@ struct ActivityCreationView: View {
             }
             // Also reset when navigating to activities tab from other tabs (not from confirmation)
             else if newTab == TabType.activities && currentStep != .confirmation {
-                currentStep = .activityType
+                // If we have a pre-selected activity type, start at dateTime step, otherwise start at activityType
+                let hasPreselectedType = viewModel.selectedActivityType != nil
+                currentStep = hasPreselectedType ? .dateTime : .activityType
+                
+                // Track if we came from feed with preselection
+                if hasPreselectedType {
+                    cameFromFeedWithPreselection = true
+                } else {
+                    cameFromFeedWithPreselection = false
+                }
+                
                 // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
                 if viewModel.selectedActivityType == nil {
                     ActivityCreationViewModel.reInitialize()
@@ -166,6 +190,14 @@ struct ActivityCreationView: View {
                 selectedHour = nextInterval.hour
                 selectedMinute = nextInterval.minute
                 isAM = nextInterval.isAM
+            }
+        }
+        .onChange(of: viewModel.selectedActivityType) { newActivityType in
+            // If we're at activityType step and an activity type gets selected, skip to dateTime
+            if currentStep == .activityType && newActivityType != nil {
+                // We came from feed with preselection - track this for back navigation
+                cameFromFeedWithPreselection = true
+                currentStep = .dateTime
             }
         }
     }
@@ -223,12 +255,21 @@ struct ActivityCreationView: View {
                     }
                 },
                 onBack: {
-                    // If we're editing (startingStep is dateTime), close the edit flow
-                    // instead of navigating to activity types
+                    // Determine back navigation based on context:
+                    // 1. If editing existing activity (startingStep is dateTime) → close edit flow
+                    // 2. If came from feed with preselection → go back to home/feed
+                    // 3. If came from activities tab normally → go to activity type selection
+                    
                     if startingStep == .dateTime {
+                        // Editing existing activity - close edit flow
                         ActivityCreationViewModel.reInitialize()
                         closeCallback()
+                    } else if cameFromFeedWithPreselection {
+                        // Came from feed with preselected activity type - go back to home/feed
+                        ActivityCreationViewModel.reInitialize()
+                        selectedTab = TabType.home
                     } else {
+                        // Normal flow from activities tab - go to activity type selection
                         currentStep = currentStep.previous()
                     }
                 }

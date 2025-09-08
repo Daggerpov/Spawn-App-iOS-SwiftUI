@@ -344,12 +344,9 @@ extension ActivityFeedView {
             showTutorialPreConfirmation = true
             
         } else {
-            // Normal flow
+            // Normal flow - set the activity type first, then navigate
+            ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
             selectedTab = TabType.activities
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
-            }
         }
     }
 }

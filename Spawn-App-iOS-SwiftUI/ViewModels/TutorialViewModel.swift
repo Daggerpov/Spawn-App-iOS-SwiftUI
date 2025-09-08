@@ -17,19 +17,26 @@ class TutorialViewModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let tutorialStateKey = "TutorialState"
     private let hasCompletedTutorialKey = "HasCompletedFirstActivityTutorial"
+    private let apiService: IAPIService
     
     private init() {
+        self.apiService = MockAPIService.isMocking ? MockAPIService() : APIService()
         loadTutorialState()
     }
     
-    /// Load tutorial state from UserDefaults
+    /// Load tutorial state from UserDefaults and server
     private func loadTutorialState() {
         let hasCompleted = userDefaults.bool(forKey: hasCompletedTutorialKey)
         
         if hasCompleted {
             tutorialState = .completed
         } else {
-            // Check if user needs tutorial
+            // Check server for tutorial completion status
+            Task {
+                await fetchTutorialStatusFromServer()
+            }
+            
+            // Meanwhile, check if user needs tutorial based on local data
             if shouldStartTutorial() {
                 tutorialState = .activityTypeSelection
                 shouldShowCallout = true
@@ -39,10 +46,15 @@ class TutorialViewModel: ObservableObject {
         }
     }
     
-    /// Save tutorial state to UserDefaults
+    /// Save tutorial state to UserDefaults and server
     private func saveTutorialState() {
         if case .completed = tutorialState {
             userDefaults.set(true, forKey: hasCompletedTutorialKey)
+            
+            // Also save to server
+            Task {
+                await saveTutorialStatusToServer()
+            }
         }
     }
     
@@ -126,11 +138,11 @@ class TutorialViewModel: ObservableObject {
     func canNavigateToTab(_ tab: TabType) -> Bool {
         switch tutorialState {
         case .activityTypeSelection:
-            // During activity type selection, only allow home tab
-            return tab == .home
+            // During activity type selection, only allow activities tab
+            return tab == .activities
         case .activityCreation:
-            // During activity creation, allow home and activities tabs
-            return tab == .home || tab == .activities
+            // During activity creation, allow all tabs (user can navigate away)
+            return true
         case .notStarted, .completed:
             // No restrictions
             return true
@@ -157,5 +169,74 @@ class TutorialViewModel: ObservableObject {
         
         // Complete the tutorial
         completeTutorial()
+    }
+    
+    // MARK: - Server Sync Methods
+    
+    /// Fetch tutorial completion status from server
+    @MainActor
+    private func fetchTutorialStatusFromServer() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("🎯 TutorialViewModel: Cannot fetch tutorial status - no user logged in")
+            return
+        }
+        
+        // Skip server check in mock mode
+        if MockAPIService.isMocking {
+            print("🎯 TutorialViewModel: Skipping server check in mock mode")
+            return
+        }
+        
+        do {
+            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
+                let preferences: UserPreferencesDTO = try await apiService.fetchData(
+                    from: url,
+                    parameters: nil
+                )
+                
+                if preferences.hasCompletedTutorial {
+                    print("🎯 TutorialViewModel: Server indicates tutorial completed - updating local state")
+                    userDefaults.set(true, forKey: hasCompletedTutorialKey)
+                    tutorialState = .completed
+                    shouldShowCallout = false
+                }
+            }
+        } catch {
+            print("🎯 TutorialViewModel: Failed to fetch tutorial status from server: \(error)")
+            // Continue with local logic if server fails
+        }
+    }
+    
+    /// Save tutorial completion status to server
+    private func saveTutorialStatusToServer() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("🎯 TutorialViewModel: Cannot save tutorial status - no user logged in")
+            return
+        }
+        
+        // Skip server update in mock mode
+        if MockAPIService.isMocking {
+            print("🎯 TutorialViewModel: Skipping server update in mock mode")
+            return
+        }
+        
+        let preferences = UserPreferencesDTO(
+            hasCompletedTutorial: true,
+            userId: userId
+        )
+        
+        do {
+            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
+                let _: UserPreferencesDTO? = try await apiService.sendData(
+                    preferences,
+                    to: url,
+                    parameters: nil
+                )
+                print("🎯 TutorialViewModel: Successfully saved tutorial completion to server")
+            }
+        } catch {
+            print("🎯 TutorialViewModel: Failed to save tutorial status to server: \(error)")
+            // Local storage is already updated, so this is not critical
+        }
     }
 } 
