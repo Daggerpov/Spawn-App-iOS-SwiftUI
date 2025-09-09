@@ -45,17 +45,17 @@ struct SearchBarButtonView: View {
                 .cornerRadius(15)
                 .overlay(
                     RoundedRectangle(
-                        cornerRadius: universalRectangleCornerRadius
+                        cornerRadius: 15
                     )
                         .inset(by: 0.75)
                         .stroke(.gray)
                 )
         )
+        .padding(.horizontal, 25)
 
     }
 }
 
 #Preview {
     SearchBarButtonView(placeholder: "Search for friends", action: {})
-        .padding()
 } 

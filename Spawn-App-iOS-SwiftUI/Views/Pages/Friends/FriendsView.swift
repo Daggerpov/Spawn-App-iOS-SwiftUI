@@ -35,17 +35,14 @@ struct FriendsView: View {
     var body: some View {
         ZStack {
             NavigationStack {
-                VStack(spacing: 20) {
+                VStack {
                     HStack {
-                        Spacer()
                         FriendRequestNavButtonView
-                        Spacer()
                     }
-                    .padding(.horizontal)
-
+                    .padding(.top, 25)
+                    .padding(.horizontal, 25)
                     FriendsTabView(user: user, viewModel: viewModel)
                 }
-                .padding()
                 .background(universalBackgroundColor)
                 .navigationBarHidden(true)
             }
@@ -199,7 +196,7 @@ extension FriendsView {
                         }
                         .padding(EdgeInsets(top: 7, leading: 11, bottom: 7, trailing: 11))
                         .frame(width: 20, height: 20)
-                        .background(Color(red: 1, green: 0.45, blue: 0.44))
+                        .background(Color(hex: figmaSoftBlueHex))
                         .cornerRadius(16)
                     }
                 }

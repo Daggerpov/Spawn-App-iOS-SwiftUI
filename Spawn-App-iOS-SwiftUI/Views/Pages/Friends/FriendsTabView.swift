@@ -48,13 +48,12 @@ struct FriendsTabView: View {
 	var body: some View {
 		ZStack {
 			ScrollView {
-				VStack(spacing: 16) {
+				VStack(spacing: 24) {
 					// Search bar button that navigates to search view
 					NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .search)) {
 						SearchBarButtonView(
 							placeholder: "Search for friends"
 						)
-						.padding(.horizontal, 16)
 					}
                     
 
@@ -64,7 +63,7 @@ struct FriendsTabView: View {
                     // Recently spawned with section
                     recentlySpawnedWithFriendsSection
 				}
-                .padding(.top, 16)
+                .padding(.vertical, 20)
 			}
 			.onAppear {
 				Task {
