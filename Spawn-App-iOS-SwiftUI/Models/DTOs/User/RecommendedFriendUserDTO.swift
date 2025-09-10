@@ -21,6 +21,8 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var email: String?
     var mutualFriendCount: Int?
     var sharedActivitiesCount: Int?
+    var relationshipStatus: UserRelationshipType?
+    var pendingFriendRequestId: UUID?
 
 	init(
 		id: UUID,
@@ -30,7 +32,9 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		bio: String? = nil,
 		email: String?,
         mutualFriendCount: Int? = 0,
-        sharedActivitiesCount: Int? = 0
+        sharedActivitiesCount: Int? = 0,
+        relationshipStatus: UserRelationshipType? = .recommendedFriend,
+        pendingFriendRequestId: UUID? = nil
 	) {
 		self.id = id
 		self.username = username
@@ -40,6 +44,8 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.email = email
         self.mutualFriendCount = mutualFriendCount
         self.sharedActivitiesCount = sharedActivitiesCount
+        self.relationshipStatus = relationshipStatus
+        self.pendingFriendRequestId = pendingFriendRequestId
 	}
 }
 

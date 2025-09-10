@@ -83,6 +83,7 @@ struct PhoneNumberInputField: View {
     @Binding var phoneNumber: String
     let hasError: Bool
     let errorMessage: String?
+    @FocusState private var isPhoneFieldFocused: Bool
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -95,7 +96,23 @@ struct PhoneNumberInputField: View {
                 TextField("778-100-1000", text: $phoneNumber)
                     .font(Font.custom("Onest", size: 16).weight(.medium))
                     .foregroundColor(Color(red: 0.11, green: 0.11, blue: 0.11))
-                    .keyboardType(.phonePad)
+                    .keyboardType(.numberPad)
+                    .focused($isPhoneFieldFocused)
+                    .toolbar {
+                        ToolbarItemGroup(placement: .keyboard) {
+                            Spacer()
+                            Button("Done") {
+                                isPhoneFieldFocused = false
+                                // Force dismiss keyboard for number pad
+                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                            }
+                            .font(.onestMedium(size: 16))
+                            .foregroundColor(.blue)
+                        }
+                    }
+                    .onSubmit {
+                        isPhoneFieldFocused = false
+                    }
             }
             .padding(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
             .frame(height: 63)

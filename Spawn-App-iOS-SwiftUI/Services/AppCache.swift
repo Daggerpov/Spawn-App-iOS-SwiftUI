@@ -183,6 +183,9 @@ class AppCache: ObservableObject {
                     await friendRequestsTask
                     await sentFriendRequestsTask
                     
+                    // Clean up any expired activities after refresh
+                    cleanupExpiredActivities()
+                    
                     print("✅ [CACHE] Completed initial cache refresh for all cache types")
                 }
             }
@@ -213,8 +216,14 @@ class AppCache: ObservableObject {
                 if let activitiesResponse = result[CacheKeys.events], activitiesResponse.invalidate {
                     if let updatedItems = activitiesResponse.updatedItems,
                        let updatedActivities = try? JSONDecoder().decode([UUID: [FullFeedActivityDTO]].self, from: updatedItems) {
-                        // Backend provided the updated data
-                        updateActivities(updatedActivities)
+                        // Backend provided the updated data - filter expired activities before updating
+                        var filteredUpdatedActivities: [UUID: [FullFeedActivityDTO]] = [:]
+                        for (userId, userActivities) in updatedActivities {
+                            filteredUpdatedActivities[userId] = userActivities.filter { activity in
+                                return activity.isExpired != true
+                            }
+                        }
+                        updateActivities(filteredUpdatedActivities)
                     } else {
                         // Need to fetch new data
                         Task {
@@ -1015,26 +1024,44 @@ class AppCache: ObservableObject {
         saveToDisk()
     }
     
-    /// Get activities for the current user
+    /// Get activities for the current user, filtering out expired ones
     func getCurrentUserActivities() -> [FullFeedActivityDTO] {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
-        return activities[userId] ?? []
+        let userActivities = activities[userId] ?? []
+        
+        // Filter out expired activities based on server-side expiration status
+        let filteredActivities = userActivities.filter { activity in
+            return activity.isExpired != true
+        }
+        
+        // If we filtered out expired activities, update the cache to remove them
+        if filteredActivities.count != userActivities.count {
+            activities[userId] = filteredActivities
+            saveToDisk()
+        }
+        
+        return filteredActivities
     }
     
     /// Update activities for a specific user
     func updateActivitiesForUser(_ newActivities: [FullFeedActivityDTO], userId: UUID) {
-        activities[userId] = newActivities
+        // Filter out expired activities before storing in cache
+        let filteredActivities = newActivities.filter { activity in
+            return activity.isExpired != true
+        }
+        
+        activities[userId] = filteredActivities
         setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
         
         // Pre-assign colors for even distribution
-        let activityIds = newActivities.map { $0.id }
+        let activityIds = filteredActivities.map { $0.id }
         ActivityColorService.shared.assignColorsForActivities(activityIds)
         
         saveToDisk()
         
         // Preload profile pictures for activities
         Task {
-            await preloadProfilePicturesForActivities([userId: newActivities])
+            await preloadProfilePicturesForActivities([userId: filteredActivities])
         }
     }
     
@@ -1042,6 +1069,27 @@ class AppCache: ObservableObject {
     func clearActivitiesForUser(_ userId: UUID) {
         activities.removeValue(forKey: userId)
         saveToDisk()
+    }
+    
+    /// Clean up expired activities from cache for all users
+    func cleanupExpiredActivities() {
+        var hasChanges = false
+        
+        for (userId, userActivities) in activities {
+            let filteredActivities = userActivities.filter { activity in
+                return activity.isExpired != true
+            }
+            
+            if filteredActivities.count != userActivities.count {
+                activities[userId] = filteredActivities
+                hasChanges = true
+            }
+        }
+        
+        if hasChanges {
+            saveToDisk()
+            print("🧹 [CACHE] Cleaned up expired activities from cache")
+        }
     }
     
     /// Get recommended friends for the current user

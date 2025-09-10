@@ -85,7 +85,7 @@ class ProfileViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load user stats: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.isLoadingStats = false
             }
         }
@@ -115,7 +115,7 @@ class ProfileViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load user interests: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.isLoadingInterests = false
             }
         }
@@ -167,7 +167,7 @@ class ProfileViewModel: ObservableObject {
             // Revert local state if API call fails
             await MainActor.run {
                 self.userInterests.removeAll { $0 == interest }
-                self.errorMessage = "Failed to add interest: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
             return false
         }
@@ -197,7 +197,7 @@ class ProfileViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load social media: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.isLoadingSocialMedia = false
             }
         }
@@ -228,7 +228,7 @@ class ProfileViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to update social media: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
         }
     }
@@ -255,7 +255,7 @@ class ProfileViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load profile info: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.isLoadingProfileInfo = false
             }
         }
@@ -307,7 +307,7 @@ class ProfileViewModel: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load calendar: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.calendarActivities = Array(
                     repeating: Array(repeating: nil, count: 7),
                     count: 5
@@ -394,7 +394,7 @@ class ProfileViewModel: ObservableObject {
             }
             
             await MainActor.run {
-                let errorMsg = "Failed to load calendar: \(error.localizedDescription)"
+                let errorMsg = ErrorFormattingService.shared.formatError(error)
                 self.errorMessage = errorMsg
                 self.allCalendarActivities = []
                 self.isLoadingCalendar = false
@@ -795,6 +795,29 @@ class ProfileViewModel: ObservableObject {
     }
     
     // MARK: - Friendship Management
+    
+    /// Sets friendship status from a RecommendedFriendUserDTO, eliminating the need for an extra API call
+    func setFriendshipStatusFromRecommendedFriend(_ recommendedFriend: RecommendedFriendUserDTO) {
+        guard let relationshipStatus = recommendedFriend.relationshipStatus else {
+            self.friendshipStatus = .unknown
+            return
+        }
+        
+        let friendshipStatus: FriendshipStatus
+        switch relationshipStatus {
+        case .friend:
+            friendshipStatus = .friends
+        case .recommendedFriend:
+            friendshipStatus = .none
+        case .incomingFriendRequest:
+            friendshipStatus = .requestReceived
+        case .outgoingFriendRequest:
+            friendshipStatus = .requestSent
+        }
+        
+        self.friendshipStatus = friendshipStatus
+        self.pendingFriendRequestId = recommendedFriend.pendingFriendRequestId
+    }
     
     func checkFriendshipStatus(currentUserId: UUID, profileUserId: UUID) async {
         // Don't check if it's the current user's profile

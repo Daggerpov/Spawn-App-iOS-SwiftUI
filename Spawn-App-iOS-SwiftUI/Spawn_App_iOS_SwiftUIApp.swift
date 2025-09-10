@@ -78,6 +78,8 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						// Initialize and validate the cache
 						Task {
 							await appCache.validateCache()
+							// Clean up any expired activities after cache validation
+							appCache.cleanupExpiredActivities()
 						}
 					}
 					.onOpenURL { url in

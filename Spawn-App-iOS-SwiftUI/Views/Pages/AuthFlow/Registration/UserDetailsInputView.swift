@@ -259,6 +259,10 @@ struct UserDetailsInputView: View {
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .ignoresSafeArea(.all)
         .navigationBarHidden(true)
+        .onTapGesture {
+            // Dismiss keyboard when tapping outside
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
         .onAppear {
             // Clear any previous error state when this view appears
             viewModel.clearAllErrors()

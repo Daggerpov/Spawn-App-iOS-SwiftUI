@@ -104,9 +104,43 @@ enum AuthAlertType: Identifiable, Equatable {
 			case .networkError:
 				return "Unable to connect to the server. Please check your internet connection and try again."
 			case .unknownError(let message):
-				return message.isEmpty ? "An unexpected error occurred. Please try again." : message
+				// Never show raw error messages to users - always provide friendly alternatives
+				return formatUserFriendlyError(message)
 			case .accountFoundSigningIn:
 				return "We found your existing account and are signing you in automatically."
 		}
+	}
+	
+	/// Converts raw error messages into user-friendly alternatives
+	private func formatUserFriendlyError(_ rawMessage: String) -> String {
+		let lowercased = rawMessage.lowercased()
+		
+		// Network-related errors
+		if lowercased.contains("network") || lowercased.contains("connection") || lowercased.contains("timeout") {
+			return "Unable to connect to the server. Please check your internet connection and try again."
+		}
+		
+		// Server errors
+		if lowercased.contains("server") || lowercased.contains("internal") || lowercased.contains("500") {
+			return "We're experiencing technical difficulties. Please try again in a few moments."
+		}
+		
+		// Authentication errors
+		if lowercased.contains("unauthorized") || lowercased.contains("401") || lowercased.contains("forbidden") || lowercased.contains("403") {
+			return "Authentication failed. Please try signing in again."
+		}
+		
+		// Validation errors
+		if lowercased.contains("validation") || lowercased.contains("invalid") || lowercased.contains("format") {
+			return "Please check your information and try again."
+		}
+		
+		// Rate limiting
+		if lowercased.contains("rate") || lowercased.contains("limit") || lowercased.contains("429") {
+			return "Too many attempts. Please wait a few minutes and try again."
+		}
+		
+		// Generic fallback - never show raw technical errors
+		return "We're having trouble processing your request. Please try again."
 	}
 }
