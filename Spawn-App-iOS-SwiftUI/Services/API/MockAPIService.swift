@@ -641,64 +641,6 @@ class MockAPIService: IAPIService {
 			}
 		}
 		
-		// Activity type batch update (including pin updates)
-		if url.absoluteString.contains("activity-types") && !url.absoluteString.contains("pin") {
-			if let batchUpdateDTO = object as? BatchActivityTypeUpdateDTO {
-				print("🔍 MOCK: Batch updating activity types with \(batchUpdateDTO.updatedActivityTypes.count) updates and \(batchUpdateDTO.deletedActivityTypeIds.count) deletions")
-				
-				// Log the details of what we're updating
-				for updatedType in batchUpdateDTO.updatedActivityTypes {
-					print("📝 MOCK: Updating activity type: \(updatedType.title)")
-					print("   - ID: \(updatedType.id)")
-					print("   - isPinned: \(updatedType.isPinned)")
-					print("   - orderNum: \(updatedType.orderNum)")
-				}
-				
-				// Simulate the backend behavior: return ALL user's activity types after the update
-				// Start with the mock activity types and apply the changes
-				var allActivityTypes = [
-					ActivityTypeDTO.mockChillActivityType,
-					ActivityTypeDTO.mockFoodActivityType,
-					ActivityTypeDTO.mockActiveActivityType,
-					ActivityTypeDTO.mockStudyActivityType
-				]
-				
-				print("📋 MOCK: Starting with \(allActivityTypes.count) mock activity types")
-				
-				// Remove deleted activity types
-				let originalCount = allActivityTypes.count
-				allActivityTypes.removeAll { activityType in
-					batchUpdateDTO.deletedActivityTypeIds.contains(activityType.id)
-				}
-				
-				if allActivityTypes.count != originalCount {
-					print("🗑️ MOCK: Removed \(originalCount - allActivityTypes.count) activity types")
-				}
-				
-				// Update or add the updated activity types
-				for updatedType in batchUpdateDTO.updatedActivityTypes {
-					if let existingIndex = allActivityTypes.firstIndex(where: { $0.id == updatedType.id }) {
-						// Update existing activity type
-						let oldType = allActivityTypes[existingIndex]
-						print("🔄 MOCK: Updating existing activity type: \(oldType.title)")
-						print("   - Old isPinned: \(oldType.isPinned) -> New isPinned: \(updatedType.isPinned)")
-						allActivityTypes[existingIndex] = updatedType
-					} else {
-						// Add new activity type
-						print("➕ MOCK: Adding new activity type: \(updatedType.title)")
-						allActivityTypes.append(updatedType)
-					}
-				}
-				
-				print("📊 MOCK: Final activity types count: \(allActivityTypes.count)")
-				print("📋 MOCK: Final activity types:")
-				for (index, activityType) in allActivityTypes.enumerated() {
-					print("   \(index + 1). \(activityType.title) - isPinned: \(activityType.isPinned)")
-				}
-				
-				return allActivityTypes as! U
-			}
-		}
 
 		throw APIError.invalidData
 	}

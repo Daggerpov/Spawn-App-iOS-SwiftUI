@@ -22,15 +22,15 @@ class FeedViewModel: ObservableObject {
 
     // MARK: - Computed Properties
     
-    /// Returns activity types sorted with pinned ones first, then by orderNum
+    /// Returns activity types sorted with pinned ones first, then alphabetically
     var sortedActivityTypes: [ActivityTypeDTO] {
         return activityTypes.sorted { first, second in
             // Pinned types come first
             if first.isPinned != second.isPinned {
                 return first.isPinned
             }
-            // If both are pinned or both are not pinned, sort by orderNum
-            return first.orderNum < second.orderNum
+            // If both are pinned or both are not pinned, sort alphabetically by title
+            return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending
         }
     }
 
