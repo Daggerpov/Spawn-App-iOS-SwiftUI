@@ -473,6 +473,10 @@ class ActivityCreationViewModel: ObservableObject {
 		activity.invitedUserIds = selectedFriends.map { $0.id }
 		print("🔍 DEBUG: Selected friends count: \(selectedFriends.count)")
 		
+		// Set the client timezone for timezone-aware expiration
+		activity.clientTimezone = TimeZone.current.identifier
+		print("🔍 DEBUG: Client timezone set to: \(activity.clientTimezone ?? "nil")")
+		
 		// Update the activity with the current date and duration
 		updateActivityDuration()
 		updateActivityType()

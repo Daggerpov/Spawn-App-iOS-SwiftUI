@@ -502,7 +502,7 @@ struct ActivityDateTimeView: View {
             }
         } message: {
             VStack(alignment: .leading, spacing: 8) {
-                Text("You have unsaved changes across multiple screens:")
+                Text("You have unsaved changes:")
                 Text(getLocalChangesSummaryText())
             }
         }
