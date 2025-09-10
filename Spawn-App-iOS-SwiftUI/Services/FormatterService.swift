@@ -92,18 +92,49 @@ class FormatterService {
 				
 				if hasEnded {
 					// Activity has completely ended
-					return formatTimeWithContext(for: endTime, timePrefix: "Ended at")
-				} else if hasStarted {
-					// Activity is currently happening
 					if isSameDay {
+						let startTimeFormatter = DateFormatter()
+						startTimeFormatter.dateFormat = "h:mm"
+						startTimeFormatter.timeZone = .current
+						let endTimeFormatter = DateFormatter()
+						endTimeFormatter.dateFormat = "h:mm a"
+						endTimeFormatter.timeZone = .current
+						let startTimeString = startTimeFormatter.string(from: startTime)
+						let endTimeString = endTimeFormatter.string(from: endTime)
+						return "\(startTimeString) - \(endTimeString)"
+					} else {
 						let timeFormatter = DateFormatter()
 						timeFormatter.dateFormat = "h:mm a"
 						timeFormatter.timeZone = .current
 						let startTimeString = timeFormatter.string(from: startTime)
-						let endTimeString = formatTimeWithContext(for: endTime, timePrefix: "Ends at")
-						return "Started at \(startTimeString) • \(endTimeString)"
+						let endTimeFormatter = DateFormatter()
+						endTimeFormatter.dateFormat = "h:mm a"
+						endTimeFormatter.timeZone = .current
+						let endTimeString = endTimeFormatter.string(from: endTime)
+						return "\(startTimeString) - \(endTimeString)"
+					}
+				} else if hasStarted {
+					// Activity is currently happening
+					if isSameDay {
+						let startTimeFormatter = DateFormatter()
+						startTimeFormatter.dateFormat = "h:mm"
+						startTimeFormatter.timeZone = .current
+						let endTimeFormatter = DateFormatter()
+						endTimeFormatter.dateFormat = "h:mm a"
+						endTimeFormatter.timeZone = .current
+						let startTimeString = startTimeFormatter.string(from: startTime)
+						let endTimeString = endTimeFormatter.string(from: endTime)
+						return "\(startTimeString) - \(endTimeString)"
 					} else {
-						return formatTimeWithContext(for: startTime, timePrefix: "Started at")
+						let timeFormatter = DateFormatter()
+						timeFormatter.dateFormat = "h:mm a"
+						timeFormatter.timeZone = .current
+						let startTimeString = timeFormatter.string(from: startTime)
+						let endTimeFormatter = DateFormatter()
+						endTimeFormatter.dateFormat = "h:mm a"
+						endTimeFormatter.timeZone = .current
+						let endTimeString = endTimeFormatter.string(from: endTime)
+						return "\(startTimeString) - \(endTimeString)"
 					}
 				} else {
 					// Activity hasn't started yet
@@ -127,25 +158,30 @@ class FormatterService {
 							return "\(startTimeString) - \(endTimeString) • \(dayContext)"
 						}
 					} else {
-						return formatTimeWithContext(for: startTime, timePrefix: "Starts at")
+						let timeFormatter = DateFormatter()
+						timeFormatter.dateFormat = "h:mm a"
+						timeFormatter.timeZone = .current
+						let startTimeString = timeFormatter.string(from: startTime)
+						let endTimeFormatter = DateFormatter()
+						endTimeFormatter.dateFormat = "h:mm a"
+						endTimeFormatter.timeZone = .current
+						let endTimeString = endTimeFormatter.string(from: endTime)
+						return "\(startTimeString) - \(endTimeString)"
 					}
 				}
 			} else {
 				// No end time specified
-				if hasStarted {
-					return formatTimeWithContext(for: startTime, timePrefix: "Started at")
-				} else {
-					return formatTimeWithContext(for: startTime, timePrefix: "Starts at")
-				}
+				let timeFormatter = DateFormatter()
+				timeFormatter.dateFormat = "h:mm a"
+				timeFormatter.timeZone = .current
+				return timeFormatter.string(from: startTime)
 			}
 		} else if let endTime = activity.endTime {
 			// Only end time specified
-			let hasEnded = now >= endTime
-			if hasEnded {
-				return formatTimeWithContext(for: endTime, timePrefix: "Ended at")
-			} else {
-				return formatTimeWithContext(for: endTime, timePrefix: "Ends at")
-			}
+			let timeFormatter = DateFormatter()
+			timeFormatter.dateFormat = "h:mm a"
+			timeFormatter.timeZone = .current
+			return timeFormatter.string(from: endTime)
 		} else {
 			return "No Time Available"
 		}
