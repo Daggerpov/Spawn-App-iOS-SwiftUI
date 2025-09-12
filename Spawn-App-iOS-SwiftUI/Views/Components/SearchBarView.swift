@@ -44,11 +44,10 @@ struct SearchBarView: View {
         .background(
             Rectangle()
                 .foregroundColor(universalBackgroundColor)
-                .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
-                .cornerRadius(15)
+                .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 44)
                 .overlay(
                     RoundedRectangle(
-                        cornerRadius: universalRectangleCornerRadius
+                        cornerRadius: 15
                     )
                         .inset(by: 0.75)
                         .stroke(.gray)
