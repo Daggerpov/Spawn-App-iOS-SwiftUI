@@ -7,6 +7,8 @@ struct ActivityTypeManagementView: View {
     @State private var showingOptions = false
     @State private var showingManagePeople = false
     @State private var showingEditView = false
+    @State private var navigateToProfile = false
+    @State private var selectedUserForProfile: BaseUserDTO?
     
     // Use the ActivityTypeViewModel for managing activity types
     @StateObject private var viewModel: ActivityTypeViewModel
@@ -104,13 +106,18 @@ struct ActivityTypeManagementView: View {
             }
             .background(universalBackgroundColor)
             .navigationBarHidden(true)
-                    .navigationDestination(isPresented: $showingManagePeople) {
-            ManagePeopleView(
-                user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
-                activityTitle: displayActivityType.title,
-                activityTypeDTO: displayActivityType
-            )
-        }
+            .navigationDestination(isPresented: $showingManagePeople) {
+                ManagePeopleView(
+                    user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
+                    activityTitle: displayActivityType.title,
+                    activityTypeDTO: displayActivityType
+                )
+            }
+            .navigationDestination(isPresented: $navigateToProfile) {
+                if let selectedUser = selectedUserForProfile {
+                    ProfileView(user: selectedUser)
+                }
+            }
         .onAppear {
             // Fetch the latest activity types when the view appears
             Task {
@@ -244,7 +251,10 @@ struct ActivityTypeManagementView: View {
     }
     
     private func peopleRowView(friend: BaseUserDTO) -> some View {
-        PeopleRowView(friend: friend, activityType: displayActivityType)
+        PeopleRowView(friend: friend, activityType: displayActivityType) { user in
+            selectedUserForProfile = user
+            navigateToProfile = true
+        }
     }
     
     private var emptyStateView: some View {
@@ -300,8 +310,8 @@ struct ActivityTypeManagementView: View {
 struct PeopleRowView: View {
     let friend: BaseUserDTO
     let activityType: ActivityTypeDTO
+    let onProfileTap: (BaseUserDTO) -> Void
     @State private var showingPersonOptions = false
-    @State private var navigateToProfile = false
     @Environment(\.colorScheme) private var colorScheme
     
     // Theme-aware colors
@@ -362,11 +372,11 @@ struct PeopleRowView: View {
             ActivityTypeFriendMenuView(
                 friend: friend,
                 activityType: activityType,
-                navigateToProfile: { navigateToProfile = true }
+                navigateToProfile: { 
+                    showingPersonOptions = false
+                    onProfileTap(friend) 
+                }
             )
-        }
-        .navigationDestination(isPresented: $navigateToProfile) {
-            ProfileView(user: friend)
         }
     }
 }

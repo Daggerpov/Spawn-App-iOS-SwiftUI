@@ -176,6 +176,17 @@ struct ActivityDescriptionView: View {
 			.presentationDetents([.medium, .large])
 			.presentationDragIndicator(.visible)
 		}
+		.onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
+			if let updatedActivity = notification.object as? FullFeedActivityDTO,
+			   updatedActivity.id == viewModel.activity.id {
+				print("🔄 ActivityDescriptionView: Received activity update for \(updatedActivity.title ?? "Unknown")")
+				
+				// Update the view model with the new activity data
+				viewModel.activity = updatedActivity
+				
+				print("✅ ActivityDescriptionView: Updated activity data with new title")
+			}
+		}
 	}
 	
 	var usernamesView: some View {

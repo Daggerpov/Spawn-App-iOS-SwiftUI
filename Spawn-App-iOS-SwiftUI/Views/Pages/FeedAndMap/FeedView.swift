@@ -66,15 +66,18 @@ struct FeedView: View {
                     await viewModel.fetchAllData()
                 }
             }
-            .sheet(isPresented: $showingActivityDescriptionPopup) {
-                if let activity = activityInPopup, let color = colorInPopup {
-                    ActivityDescriptionView(
-                        activity: activity,
-                        users: activity.participantUsers,
-                        color: color,
-                        userId: user.id
+            .onChange(of: showingActivityDescriptionPopup) { isShowing in
+                if isShowing, let activity = activityInPopup, let color = colorInPopup {
+                    // Post notification to show global popup
+                    NotificationCenter.default.post(
+                        name: .showGlobalActivityPopup,
+                        object: nil,
+                        userInfo: ["activity": activity, "color": color]
                     )
-                    .presentationDragIndicator(.visible)
+                    // Reset local state since global popup will handle it
+                    showingActivityDescriptionPopup = false
+                    activityInPopup = nil
+                    colorInPopup = nil
                 }
             }
             .sheet(isPresented: $showActivityCreationDrawer) {
