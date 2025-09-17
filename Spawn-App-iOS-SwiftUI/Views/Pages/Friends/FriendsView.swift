@@ -208,7 +208,7 @@ extension FriendsView {
                     .foregroundColor(Color(red: 1, green: 1, blue: 1).opacity(0.80))
             }
             .padding(16)
-            .background(Color(red: 0.33, green: 0.42, blue: 0.93))
+            .background(Color(hex: figmaSoftBlueHex))
             .cornerRadius(12)
         }
     }
@@ -217,5 +217,124 @@ extension FriendsView {
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    FriendsView(user: .danielAgapov).environmentObject(appCache)
+    
+    // Create a mock view model with hardcoded data
+    let mockViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id, apiService: MockAPIService(userId: BaseUserDTO.danielAgapov.id))
+    
+    // Add hardcoded friends data
+    mockViewModel.friends = [
+        FullFriendUserDTO.danielLee,
+        FullFriendUserDTO(
+            id: UUID(),
+            username: "sarah_dev",
+            profilePicture: "Haley_pfp",
+            name: "Sarah Johnson",
+            bio: "Software engineer who loves hiking and coffee",
+            email: "sarah.johnson@example.com"
+        ),
+        FullFriendUserDTO(
+            id: UUID(),
+            username: "mike_fitness",
+            profilePicture: "Daniel_Agapov_pfp",
+            name: "Mike Chen",
+            bio: "Fitness enthusiast and basketball player",
+            email: "mike.chen@example.com"
+        ),
+        FullFriendUserDTO(
+            id: UUID(),
+            username: "emma_artist",
+            profilePicture: "Daniel_Lee_pfp",
+            name: "Emma Wilson",
+            bio: "Digital artist and UI/UX designer",
+            email: "emma.wilson@example.com"
+        ),
+        FullFriendUserDTO(
+            id: UUID(),
+            username: "alex_gamer",
+            profilePicture: "Haley_pfp",
+            name: "Alex Rodriguez",
+            bio: "Gaming enthusiast and tech blogger",
+            email: "alex.rodriguez@example.com"
+        )
+    ]
+    
+    // Add hardcoded recommended friends data
+    mockViewModel.recommendedFriends = [
+        RecommendedFriendUserDTO.haley,
+        RecommendedFriendUserDTO(
+            id: UUID(),
+            username: "jake_music",
+            profilePicture: "Daniel_Agapov_pfp",
+            name: "Jake Thompson",
+            bio: "Musician and music producer",
+            email: "jake.thompson@example.com",
+            mutualFriendCount: 3,
+            sharedActivitiesCount: 1
+        ),
+        RecommendedFriendUserDTO(
+            id: UUID(),
+            username: "lily_chef",
+            profilePicture: "Daniel_Lee_pfp",
+            name: "Lily Park",
+            bio: "Professional chef and food blogger",
+            email: "lily.park@example.com",
+            mutualFriendCount: 2,
+            sharedActivitiesCount: 4
+        ),
+        RecommendedFriendUserDTO(
+            id: UUID(),
+            username: "tom_traveler",
+            profilePicture: "Haley_pfp",
+            name: "Tom Anderson",
+            bio: "Travel photographer and adventure seeker",
+            email: "tom.anderson@example.com",
+            mutualFriendCount: 1,
+            sharedActivitiesCount: 2
+        ),
+        RecommendedFriendUserDTO(
+            id: UUID(),
+            username: "nina_writer",
+            profilePicture: "Daniel_Agapov_pfp",
+            name: "Nina Martinez",
+            bio: "Writer and book club organizer",
+            email: "nina.martinez@example.com",
+            mutualFriendCount: 4,
+            sharedActivitiesCount: 0
+        )
+    ]
+    
+    // Set filtered lists to show the data
+    mockViewModel.filteredFriends = mockViewModel.friends
+    mockViewModel.filteredRecommendedFriends = mockViewModel.recommendedFriends
+    
+    // Add some incoming friend requests for the notification badge
+    mockViewModel.incomingFriendRequests = [
+        FetchFriendRequestDTO(
+            id: UUID(),
+            senderUser: BaseUserDTO(
+                id: UUID(),
+                username: "new_friend1",
+                profilePicture: "Daniel_Lee_pfp",
+                name: "Chris Davis",
+                bio: "New to the area, looking to make friends!",
+                email: "chris.davis@example.com"
+            ),
+            mutualFriendCount: 1
+        ),
+        FetchFriendRequestDTO(
+            id: UUID(),
+            senderUser: BaseUserDTO(
+                id: UUID(),
+                username: "new_friend2",
+                profilePicture: "Haley_pfp",
+                name: "Maya Patel",
+                bio: "Love outdoor activities and board games",
+                email: "maya.patel@example.com"
+            ),
+            mutualFriendCount: 2
+        )
+    ]
+    
+    return FriendsView(user: .danielAgapov, viewModel: mockViewModel)
+        .environmentObject(appCache)
 }
