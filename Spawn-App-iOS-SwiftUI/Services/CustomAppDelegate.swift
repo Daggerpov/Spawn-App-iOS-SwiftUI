@@ -81,6 +81,9 @@ extension CustomAppDelegate: UNUserNotificationCenterDelegate {
         
         // Process the notification based on its type
         handleReceivedNotification(userInfo)
+        
+        // Also handle cache updates
+        NotificationService.shared.handleNotificationData(userInfo)
     }
     
     // This function allows us to view notifications with the app in the foreground
@@ -95,6 +98,9 @@ extension CustomAppDelegate: UNUserNotificationCenterDelegate {
         
         // Process the notification data for cache updates
         handleReceivedNotification(notification.request.content.userInfo)
+        
+        // Also handle cache updates
+        NotificationService.shared.handleNotificationData(notification.request.content.userInfo)
         
         // Return badge and sound only (no banner since we're showing in-app notification)
         return [.badge, .sound]

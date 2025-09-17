@@ -50,6 +50,24 @@ struct EnhancedActivityShareDrawer: View {
         return activity.title ?? "Activity"
     }
     
+    /// Returns the appropriate icon for the activity, prioritizing the activity's own icon over the activity type icon
+    private var activityIcon: String {
+        // First check if the activity has its own icon
+        if let activityIcon = activity.icon, !activityIcon.isEmpty {
+            return activityIcon
+        }
+        
+        // Fall back to the activity type's icon if activityTypeId exists
+        if let activityTypeId = activity.activityTypeId,
+           let activityType = AppCache.shared.activityTypes.first(where: { $0.id == activityTypeId }),
+           !activityType.icon.isEmpty {
+            return activityType.icon
+        }
+        
+        // Final fallback to default star emoji
+        return "⭐️"
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Handle bar
@@ -153,13 +171,8 @@ struct EnhancedActivityShareDrawer: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 // Activity icon
-                if let icon = activity.icon {
-                    Text(icon)
-                        .font(.title2)
-                } else {
-                    Image(systemName: "star.fill")
-                        .foregroundColor(.yellow)
-                }
+                Text(activityIcon)
+                    .font(.title2)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(activityTitle)

@@ -655,7 +655,7 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
                     annotationView?.centerOffset = CGPoint(x: 0, y: -customImage.size.height / 2)
                 }
             } else if let resolvedActivity = resolvedActivity {
-                let activityIcon = (resolvedActivity.icon?.isEmpty == false) ? resolvedActivity.icon! : "⭐️"
+                let activityIcon = getActivityIcon(for: resolvedActivity)
                 let activityColor = UIColor(ActivityColorService.shared.getColorForActivity(resolvedActivity.id))
                 if let customImage = createCustomPinImage(icon: activityIcon, color: activityColor) {
                     annotationView?.image = customImage
@@ -744,6 +744,24 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
                     }
                 }
             }
+        }
+        
+        // Helper method to get appropriate activity icon with fallback logic
+        func getActivityIcon(for activity: FullFeedActivityDTO) -> String {
+            // First check if the activity has its own icon
+            if let activityIcon = activity.icon, !activityIcon.isEmpty {
+                return activityIcon
+            }
+            
+            // Fall back to the activity type's icon if activityTypeId exists
+            if let activityTypeId = activity.activityTypeId,
+               let activityType = AppCache.shared.activityTypes.first(where: { $0.id == activityTypeId }),
+               !activityType.icon.isEmpty {
+                return activityType.icon
+            }
+            
+            // Final fallback to default star emoji
+            return "⭐️"
         }
         
         func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {

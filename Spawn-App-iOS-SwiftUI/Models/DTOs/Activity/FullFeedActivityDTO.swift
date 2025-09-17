@@ -44,6 +44,12 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	 * for expiration status across all clients.
 	 */
 	var isExpired: Bool?
+	
+	/**
+	 * Timezone of the client creating the activity (e.g., "America/New_York").
+	 * Used for timezone-aware expiration of activities without explicit end times.
+	 */
+	var clientTimezone: String?
 
 	init(
 		id: UUID,
@@ -62,7 +68,8 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		participationStatus: ParticipationStatus? = nil,
 		isSelfOwned: Bool? = nil,
 		createdAt: Date? = nil,
-		isExpired: Bool? = nil
+		isExpired: Bool? = nil,
+		clientTimezone: String? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -81,13 +88,14 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		self.isSelfOwned = isSelfOwned
 		self.createdAt = createdAt
 		self.isExpired = isExpired
+		self.clientTimezone = clientTimezone
 	}
     
     // CodingKeys for all properties (including @Published ones)
     enum CodingKeys: String, CodingKey {
         case id, title, startTime, endTime, location, activityTypeId, note, icon, participantLimit
         case createdAt, creatorUser, invitedUsers
-        case participantUsers, chatMessages, participationStatus, isSelfOwned, isExpired
+        case participantUsers, chatMessages, participationStatus, isSelfOwned, isExpired, clientTimezone
     }
     
     // Custom decoder
@@ -113,6 +121,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         participationStatus = try container.decodeIfPresent(ParticipationStatus.self, forKey: .participationStatus)
         isSelfOwned = try container.decodeIfPresent(Bool.self, forKey: .isSelfOwned)
         isExpired = try container.decodeIfPresent(Bool.self, forKey: .isExpired)
+        clientTimezone = try container.decodeIfPresent(String.self, forKey: .clientTimezone)
     }
     
     // Custom encoder
@@ -138,6 +147,7 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         try container.encodeIfPresent(participationStatus, forKey: .participationStatus)
         try container.encodeIfPresent(isSelfOwned, forKey: .isSelfOwned)
         try container.encodeIfPresent(isExpired, forKey: .isExpired)
+        try container.encodeIfPresent(clientTimezone, forKey: .clientTimezone)
     }
 }
 

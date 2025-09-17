@@ -28,10 +28,9 @@ class ActivityDescriptionViewModel: ObservableObject {
 	}
 	
 	func fetchIsParticipating() {
-		// Check if the user is in the participants list
-		if let participants = activity.participantUsers {
-			isParticipating = participants.contains { $0.id == senderUserId }
-		}
+		// Use the participationStatus from the activity DTO instead of checking the participants array
+		// This ensures consistency with ActivityCardViewModel
+		isParticipating = activity.participationStatus == .participating
 	}
 	
 	// MARK: - Optimistic Updates for Activity Editing
@@ -127,7 +126,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 				case .failedJSONParsing:
 					errorMessage = "Failed to parse server response. Please try again."
 				case .unknownError(let error):
-					errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
+					errorMessage = ErrorFormattingService.shared.formatError(error)
 				case .failedTokenSaving:
 					errorMessage = "Authentication error. Please try logging in again."
 				}
@@ -137,7 +136,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 			print("❌ Error type: \(type(of: error))")
 			print("❌ Error description: \(error.localizedDescription)")
 			await MainActor.run {
-				errorMessage = "Failed to save changes: \(error.localizedDescription)"
+				errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
 		}
 	}
@@ -149,45 +148,62 @@ class ActivityDescriptionViewModel: ObservableObject {
 	}
 	
 	func toggleParticipation() async {
-		// Toggle participation status
-		let newStatus = !isParticipating
+        if senderUserId == activity.creatorUser.id {
+            // Don't allow the creator to revoke participation in their event
+            return
+        }
 		
-		// Construct URL for participation API
-		if let url = URL(string: APIService.baseURL + "activities/\(activity.id)/participation") {
-			do {
-				let parameters = ["status": newStatus ? "PARTICIPATING" : "NOT_PARTICIPATING"]
-				_ = try await self.apiService.sendData(
-					EmptyRequestBody(), to: url, parameters: parameters)
+		// Use the correct API endpoint that matches the backend
+		let urlString = "\(APIService.baseURL)activities/\(activity.id)/toggleStatus/\(senderUserId)"
+		guard let url = URL(string: urlString) else {
+			print("Invalid URL")
+			return
+		}
+
+		do {
+			// Send a PUT request and receive the updated activity in response
+			let updatedActivity: FullFeedActivityDTO = try await apiService.updateData(
+				EmptyRequestBody(), to: url, parameters: nil)
+
+			// Update local state after a successful API call
+			await MainActor.run {
+				self.activity = updatedActivity
+				// Derive the participation status from the updated activity instead of toggling
+				self.isParticipating = updatedActivity.participationStatus == .participating
 				
-				// Update local state on success
-				await MainActor.run {
-					self.isParticipating = newStatus
-				}
-			} catch let error as APIError {
-				await MainActor.run {
-					// Handle specific API errors
-					if case .invalidStatusCode(let statusCode) = error {
-						if statusCode == 400 {
-							// Activity is full
-							NotificationCenter.default.post(
-								name: NSNotification.Name("ShowActivityFullAlert"),
-								object: nil,
-								userInfo: ["message": "Sorry, this activity is full"]
-							)
-						} else {
-							print("Error toggling participation (status \(statusCode)): \(error.localizedDescription)")
-							self.errorMessage = "Failed to update participation status"
-						}
+				// Update the cache with the updated activity so all views stay in sync
+				AppCache.shared.addOrUpdateActivity(updatedActivity)
+				
+				// Post notification for successful update to inform all views
+				NotificationCenter.default.post(
+					name: .activityUpdated,
+					object: updatedActivity
+				)
+			}
+		} catch let error as APIError {
+			await MainActor.run {
+				// Handle specific API errors
+				if case .invalidStatusCode(let statusCode) = error {
+					if statusCode == 400 {
+						// Activity is full
+						NotificationCenter.default.post(
+							name: NSNotification.Name("ShowActivityFullAlert"),
+							object: nil,
+							userInfo: ["message": "Sorry, this activity is full"]
+						)
 					} else {
-						print("Error toggling participation: \(error.localizedDescription)")
+						print("Error toggling participation (status \(statusCode)): \(error.localizedDescription)")
 						self.errorMessage = "Failed to update participation status"
 					}
-				}
-			} catch {
-				await MainActor.run {
-					print("Error toggling participation: \(error)")
+				} else {
+					print("Error toggling participation: \(error.localizedDescription)")
 					self.errorMessage = "Failed to update participation status"
 				}
+			}
+		} catch {
+			await MainActor.run {
+				print("Error toggling participation: \(error.localizedDescription)")
+				self.errorMessage = "Failed to update participation status"
 			}
 		}
 	}
@@ -265,4 +281,11 @@ class ActivityDescriptionViewModel: ObservableObject {
 			}
 		}
 	}
-} 
+	
+	/// Updates the activity object and refreshes participation status
+	public func updateActivity(_ updatedActivity: FullFeedActivityDTO) {
+		self.activity = updatedActivity
+		fetchIsParticipating()
+	}
+}
+

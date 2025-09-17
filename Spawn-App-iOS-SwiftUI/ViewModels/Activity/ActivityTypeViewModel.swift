@@ -97,10 +97,10 @@ class ActivityTypeViewModel: ObservableObject {
         if !activityTypeDTO.isPinned {
             let currentPinnedCount = activityTypes.filter { $0.isPinned }.count
             
-            if currentPinnedCount >= 3 {
-                print("❌ Cannot pin: Already at maximum of 3 pinned activity types")
+            if currentPinnedCount >= 4 {
+                print("❌ Cannot pin: Already at maximum of 4 pinned activity types")
                 await MainActor.run {
-                    errorMessage = "You can only pin up to 3 activity types"
+                    errorMessage = "You can only pin up to 4 activity types"
                 }
                 return
             }
@@ -269,7 +269,7 @@ class ActivityTypeViewModel: ObservableObject {
             
         } catch {
             print("❌ Error updating activity type: \(error)")
-            print("❌ Error details: \(error.localizedDescription)")
+            print("❌ Error details: \(ErrorFormattingService.shared.formatError(error))")
             
             // Enhanced error handling
             if let error = error as? APIError {
@@ -285,7 +285,7 @@ class ActivityTypeViewModel: ObservableObject {
                 case .failedJSONParsing:
                     errorMessage = "Failed to parse server response. Please try again."
                 case .unknownError(let error):
-                    errorMessage = "An unexpected error occurred: \(error.localizedDescription)"
+                    errorMessage = "An unexpected error occurred: \(ErrorFormattingService.shared.formatError(error))"
                 case .failedTokenSaving:
                     errorMessage = "Authentication error. Please try logging in again."
                 }
@@ -294,8 +294,8 @@ class ActivityTypeViewModel: ObservableObject {
             }
             
             // Check if error is related to pinning limits
-            if error.localizedDescription.contains("pinned activity types") {
-                errorMessage = "You can only pin up to 3 activity types"
+            if ErrorFormattingService.shared.formatError(error).contains("pinned activity types") {
+                errorMessage = "You can only pin up to 4 activity types"
             }
             
             // Refresh from API to get correct state
@@ -305,15 +305,15 @@ class ActivityTypeViewModel: ObservableObject {
     
     // MARK: - Utility Methods
     
-    /// Computed property to sort activity types with pinned ones first
+    /// Computed property to sort activity types with pinned ones first, then alphabetically
     var sortedActivityTypes: [ActivityTypeDTO] {
         let sorted = activityTypes.sorted { first, second in
             // Pinned types come first
             if first.isPinned != second.isPinned {
                 return first.isPinned
             }
-            // If both are pinned or both are not pinned, sort by orderNum
-            return first.orderNum < second.orderNum
+            // If both are pinned or both are not pinned, sort alphabetically by title
+            return first.title.localizedCaseInsensitiveCompare(second.title) == .orderedAscending
         }
         
         return sorted
@@ -331,121 +331,4 @@ class ActivityTypeViewModel: ObservableObject {
         errorMessage = message
     }
     
-    /// Reorders activity types based on drag and drop, with validation for pinned/unpinned constraints
-    @MainActor
-    func reorderActivityTypes(from source: Int, to destination: Int) async {
-        guard source != destination else { return }
-        
-        let sortedTypes = sortedActivityTypes
-        guard source < sortedTypes.count && destination < sortedTypes.count else {
-            print("❌ Invalid indices for reordering: source=\(source), destination=\(destination), count=\(sortedTypes.count)")
-            return
-        }
-        
-        let sourceItem = sortedTypes[source]
-        let destinationItem = sortedTypes[destination]
-        
-        print("🔄 Reordering: '\(sourceItem.title)' from position \(source) to position \(destination)")
-        
-        // Validation: Don't allow unpinned items to be moved before pinned items
-        if !sourceItem.isPinned && destinationItem.isPinned {
-            print("❌ Cannot move unpinned item before pinned item")
-            errorMessage = "Unpinned activities cannot be moved before pinned activities"
-            return
-        }
-        
-        // Validation: Don't allow pinned items to be moved after unpinned items
-        if sourceItem.isPinned && !destinationItem.isPinned {
-            print("❌ Cannot move pinned item after unpinned item")
-            errorMessage = "Pinned activities cannot be moved after unpinned activities"
-            return
-        }
-        
-        // Create a mutable copy of the sorted types
-        var reorderedTypes = sortedTypes
-        
-        // Move the item from source to destination
-        let movedItem = reorderedTypes.remove(at: source)
-        reorderedTypes.insert(movedItem, at: destination)
-        
-        // Update orderNum for all items to maintain proper sequencing
-        // Keep the original orderNum structure but adjust based on new positions
-        var updatedTypes: [ActivityTypeDTO] = []
-        
-        for (newIndex, activityType) in reorderedTypes.enumerated() {
-            // Create a new DTO with updated orderNum
-            let updatedType = ActivityTypeDTO(
-                id: activityType.id,
-                title: activityType.title,
-                icon: activityType.icon,
-                associatedFriends: activityType.associatedFriends,
-                orderNum: newIndex, // Set orderNum to the new position
-                isPinned: activityType.isPinned
-            )
-            updatedTypes.append(updatedType)
-            print("📋 Updated '\(updatedType.title)': orderNum=\(updatedType.orderNum), isPinned=\(updatedType.isPinned)")
-        }
-        
-        // Update the local state optimistically
-        let originalTypes = self.activityTypes
-        self.activityTypes = updatedTypes
-        
-        print("🚀 Calling batch update with \(updatedTypes.count) activity types")
-        
-        // Save changes to the backend
-        do {
-            try await batchUpdateActivityTypes(updatedTypes)
-            print("✅ Successfully reordered activity types")
-        } catch {
-            print("❌ Failed to reorder activity types, reverting: \(error)")
-            // Revert on failure
-            self.activityTypes = originalTypes
-            
-            // Use the backend error message if available, otherwise fall back to generic message
-            if let backendErrorMessage = apiService.errorMessage, !backendErrorMessage.isEmpty {
-                errorMessage = backendErrorMessage
-            } else {
-                errorMessage = "Failed to reorder activity types: \(error.localizedDescription)"
-            }
-        }
-    }
-    
-    /// Performs a batch update of activity types
-    @MainActor
-    private func batchUpdateActivityTypes(_ activityTypes: [ActivityTypeDTO]) async throws {
-        isLoading = true
-        errorMessage = nil
-        
-        defer { isLoading = false }
-        
-        let endpoint = "users/\(userId)/activity-types"
-        guard let url = URL(string: APIService.baseURL + endpoint) else {
-            throw APIError.URLError
-        }
-        
-        let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-            updatedActivityTypes: activityTypes,
-            deletedActivityTypeIds: []
-        )
-        
-        print("🌐 Sending PUT request to: \(url)")
-        print("📦 Batch update payload: \(activityTypes.count) updated types, 0 deleted types")
-        
-        let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
-            batchUpdateDTO,
-            to: url,
-            parameters: nil
-        )
-        
-        // Update local state with confirmed data from API
-        self.activityTypes = updatedActivityTypes
-        
-        // Update cache with confirmed data
-        appCache.updateActivityTypes(updatedActivityTypes)
-        
-        // Post notification for UI updates
-        NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
-        
-        print("✅ Successfully updated \(updatedActivityTypes.count) activity types from server")
-    }
 } 

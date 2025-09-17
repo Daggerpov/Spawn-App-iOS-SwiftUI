@@ -188,10 +188,7 @@ struct ActivityEditView: View {
                     // Stay on the current screen
                 }
             } message: {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("You have unsaved changes:")
-                    Text(getChangesSummaryText())
-                }
+                Text("You have unsaved changes.")
             }
         }
     }
@@ -252,25 +249,6 @@ struct ActivityEditView: View {
         )
     }
     
-    private func getChangesSummaryText() -> String {
-        var changes: [String] = []
-        
-        if editedTitle != originalTitle {
-            changes.append("Title: \"\(originalTitle)\" → \"\(editedTitle)\"")
-        }
-        
-        if editedIcon != originalIcon {
-            changes.append("Icon: \(originalIcon) → \(editedIcon)")
-        }
-        
-        if changes.isEmpty {
-            return "No changes to save."
-        } else if changes.count == 1 {
-            return "1 change: \(changes.first ?? "Unknown change")"
-        } else {
-            return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
-        }
-    }
 }
 
 

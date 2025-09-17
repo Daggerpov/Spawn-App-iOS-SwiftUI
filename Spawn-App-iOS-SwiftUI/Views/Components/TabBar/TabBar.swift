@@ -63,18 +63,19 @@ struct WithTabBarBinding<Content>: View where Content: View {
                 universalBackgroundColor
                     .ignoresSafeArea(.all)
                 
-                VStack(spacing: 0) {
-                    content(selection)
-                        .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
-                    
-                    // Spacer for TabBar
-                    Color.clear
-                        .frame(height: tabBarSpacing)
-                }
-                .overlay(alignment: .bottom) {
+                // Main content area - fills entire screen
+                content(selection)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .padding(.bottom, tabBarSpacing) // Add bottom padding to avoid tab bar overlap
+                    .ignoresSafeArea(.keyboard, edges: .bottom) // Prevent keyboard from pushing content up
+                
+                // Tab bar positioned absolutely at bottom
+                VStack {
+                    Spacer()
                     TabBar(selection: $selection)
                         .padding(.bottom, 16)
                 }
+                .ignoresSafeArea(.keyboard, edges: .bottom) // Keep tab bar fixed when keyboard appears
             }
         }
     }
