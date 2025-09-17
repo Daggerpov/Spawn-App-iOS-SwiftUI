@@ -97,10 +97,10 @@ class ActivityTypeViewModel: ObservableObject {
         if !activityTypeDTO.isPinned {
             let currentPinnedCount = activityTypes.filter { $0.isPinned }.count
             
-            if currentPinnedCount >= 3 {
-                print("❌ Cannot pin: Already at maximum of 3 pinned activity types")
+            if currentPinnedCount >= 4 {
+                print("❌ Cannot pin: Already at maximum of 4 pinned activity types")
                 await MainActor.run {
-                    errorMessage = "You can only pin up to 3 activity types"
+                    errorMessage = "You can only pin up to 4 activity types"
                 }
                 return
             }
@@ -295,7 +295,7 @@ class ActivityTypeViewModel: ObservableObject {
             
             // Check if error is related to pinning limits
             if ErrorFormattingService.shared.formatError(error).contains("pinned activity types") {
-                errorMessage = "You can only pin up to 3 activity types"
+                errorMessage = "You can only pin up to 4 activity types"
             }
             
             // Refresh from API to get correct state

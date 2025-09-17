@@ -193,6 +193,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time when day changes
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -214,6 +218,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -235,6 +243,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -258,6 +270,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -269,6 +285,10 @@ struct ActivityDateTimeView: View {
             selectedDuration = duration
             viewModel.selectedDuration = duration
             syncCurrentValuesToViewModel()
+            // Validate time in real-time when duration changes
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }) {
             Text(duration.title)
                 .font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
@@ -450,6 +470,15 @@ struct ActivityDateTimeView: View {
             
             Spacer()
             
+            // Time validation error message
+            if !viewModel.timeValidationMessage.isEmpty {
+                Text(viewModel.timeValidationMessage)
+                    .font(.custom("Onest", size: 12))
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+            }
+            
             // Next Step Button
             Enhanced3DButton(title: "Next Step (Location)") {
                 let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
@@ -458,8 +487,19 @@ struct ActivityDateTimeView: View {
                     return
                 }
                 showTitleError = false
+                
+                // Sync current values and validate time
                 syncCurrentValuesToViewModel()
-                onNext()
+                Task {
+                    await viewModel.validateActivityForm()
+                    
+                    await MainActor.run {
+                        if viewModel.isTimeValid {
+                            onNext()
+                        }
+                        // If time is invalid, the error message will be displayed
+                    }
+                }
             }
             .padding(.horizontal, 20)
             
@@ -501,10 +541,7 @@ struct ActivityDateTimeView: View {
                 // Stay on the current screen
             }
         } message: {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("You have unsaved changes:")
-                Text(getLocalChangesSummaryText())
-            }
+            Text("You have unsaved changes.")
         }
     }
     
@@ -527,50 +564,6 @@ struct ActivityDateTimeView: View {
         return viewModel.dateChanged || viewModel.durationChanged || viewModel.locationChanged
     }
     
-    private func getLocalChangesSummaryText() -> String {
-        var changes: [String] = []
-        
-        // Check title changes locally
-        if viewModel.isEditingExistingActivity {
-            let currentTitle = activityTitle.trimmingCharacters(in: .whitespaces)
-            let originalTitle = viewModel.originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
-            
-            if currentTitle != originalTitle {
-                changes.append("Title: \"\(originalTitle)\" → \"\(currentTitle)\"")
-            }
-            
-            // Check date changes
-            if viewModel.dateChanged {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMM d, h:mm a"
-                let oldDateStr = viewModel.originalDate.map { formatter.string(from: $0) } ?? ""
-                let newDateStr = formatter.string(from: viewModel.selectedDate)
-                changes.append("Date & Time: \(oldDateStr) → \(newDateStr)")
-            }
-            
-            // Check duration changes
-            if viewModel.durationChanged {
-                let oldDuration = viewModel.originalDuration?.title ?? "Indefinite"
-                let newDuration = selectedDuration.title
-                changes.append("Duration: \(oldDuration) → \(newDuration)")
-            }
-            
-            // Check location changes
-            if viewModel.locationChanged {
-                let oldLocation = viewModel.originalLocation?.name ?? "No location"
-                let newLocation = viewModel.selectedLocation?.name ?? "No location"
-                changes.append("Location: \(oldLocation) → \(newLocation)")
-            }
-        }
-        
-        if changes.isEmpty {
-            return "No changes detected."
-        } else if changes.count == 1 {
-            return "1 change: \(changes.first ?? "Unknown change")"
-        } else {
-            return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
-        }
-    }
     
     private func syncCurrentValuesToViewModel() {
         // Update activity title

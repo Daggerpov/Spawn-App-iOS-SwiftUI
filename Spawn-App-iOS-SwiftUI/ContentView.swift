@@ -202,6 +202,7 @@ struct ContentView: View {
                 .zIndex(999) // Below notifications but above everything else
             }
         }
+        .testInAppNotification() // Triple-tap anywhere to test in-app notifications
     }
     
     // MARK: - Deep Link Handling

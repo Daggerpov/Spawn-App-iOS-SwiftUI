@@ -24,10 +24,13 @@ struct ActivityDescriptionView: View {
 		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
 		userId: UUID
 	) {
+		// Get the most up-to-date activity from cache to ensure correct participation status
+		let cachedActivity = AppCache.shared.getActivityById(activity.id) ?? activity
+		
 		self.viewModel = ActivityDescriptionViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(
-					userId: userId) : APIService(), activity: activity,
+					userId: userId) : APIService(), activity: cachedActivity,
 			users: users,
 			senderUserId: userId
 		)
@@ -181,10 +184,10 @@ struct ActivityDescriptionView: View {
 			   updatedActivity.id == viewModel.activity.id {
 				print("🔄 ActivityDescriptionView: Received activity update for \(updatedActivity.title ?? "Unknown")")
 				
-				// Update the view model with the new activity data
-				viewModel.activity = updatedActivity
+				// Update the view model with the new activity data and refresh participation status
+				viewModel.updateActivity(updatedActivity)
 				
-				print("✅ ActivityDescriptionView: Updated activity data with new title")
+				print("✅ ActivityDescriptionView: Updated activity data and participation status")
 			}
 		}
 	}

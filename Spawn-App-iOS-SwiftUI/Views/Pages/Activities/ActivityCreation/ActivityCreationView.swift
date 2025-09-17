@@ -195,6 +195,11 @@ struct ActivityCreationView: View {
             }
         }
         .onChange(of: viewModel.selectedActivityType) { newActivityType in
+            // Update activity type immediately when selection changes to ensure icon is set
+            if newActivityType != nil {
+                viewModel.updateActivityType()
+            }
+            
             // If we're at activityType step and an activity type gets selected, skip to dateTime
             if currentStep == .activityType && newActivityType != nil {
                 currentStep = .dateTime
@@ -286,6 +291,9 @@ struct ActivityCreationView: View {
                     if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
                         viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
                     }
+                    
+                    // Update activity type to ensure the correct icon is set before showing preview
+                    viewModel.updateActivityType()
                     
                     // Ensure we're in a safe state before transitioning
                     DispatchQueue.main.async {

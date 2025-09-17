@@ -93,7 +93,19 @@ struct NotificationSettingsView: View {
                                 }
                         }
                     }
-                                    }
+                    
+                    Section(header: Text("Test Notifications")) {
+                        Button("Test In-App Notification") {
+                            testInAppNotification()
+                        }
+                        .foregroundColor(universalAccentColor)
+                        
+                        Button("Test Push Notification (Local)") {
+                            testPushNotification()
+                        }
+                        .foregroundColor(universalAccentColor)
+                    }
+                }
             }
             .onAppear {
                 notificationService.checkNotificationStatus()
@@ -140,6 +152,29 @@ struct NotificationSettingsView: View {
         Task {
             await notificationService.updateNotificationPreferences()
         }
+    }
+    
+    private func testInAppNotification() {
+        // Test the in-app notification directly
+        InAppNotificationManager.shared.showNotification(
+            title: "Test Notification",
+            message: "This is a test in-app notification to verify the fix works!",
+            type: .success,
+            duration: 5.0
+        )
+    }
+    
+    private func testPushNotification() {
+        // Test by simulating a push notification payload
+        let testPayload: [AnyHashable: Any] = [
+            "type": "friend-request",
+            "senderName": "Test User",
+            "senderId": UUID().uuidString,
+            "requestId": UUID().uuidString
+        ]
+        
+        // Simulate what happens when a push notification is received while app is in foreground
+        InAppNotificationManager.shared.showNotificationFromPushData(testPayload)
     }
 }
 

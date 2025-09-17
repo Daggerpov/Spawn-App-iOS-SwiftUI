@@ -44,21 +44,24 @@ struct ActivityCardPopupView: View {
 		onDismiss: @escaping () -> Void = {},
 		onMinimize: @escaping () -> Void = {}
 	) {
-		self.activity = activity
+		// Get the most up-to-date activity from cache to ensure correct participation status
+		let cachedActivity = AppCache.shared.getActivityById(activity.id) ?? activity
+		
+		self.activity = cachedActivity
 		self._viewModel = StateObject(
 			wrappedValue: ActivityInfoViewModel(
-				activity: activity,
+				activity: cachedActivity,
 				locationManager: LocationManager()
 			)
 		)
-		let mapVM = MapViewModel(activity: activity)
+		let mapVM = MapViewModel(activity: cachedActivity)
 		_mapViewModel = StateObject(wrappedValue: mapVM)
 		self._cardViewModel = StateObject(
 			wrappedValue: ActivityCardViewModel(
 				apiService: MockAPIService.isMocking
 					? MockAPIService(userId: UUID()) : APIService(),
 				userId: UserAuthViewModel.shared.spawnUser?.id ?? BaseUserDTO.danielAgapov.id,
-				activity: activity
+				activity: cachedActivity
 			)
 		)
 		self.activityColor = activityColor
