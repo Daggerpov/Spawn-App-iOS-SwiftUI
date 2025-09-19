@@ -74,8 +74,8 @@ struct FriendSearchView: View {
                     .foregroundColor(.clear)
             }
             .foregroundColor(universalAccentColor)
-            .padding(.horizontal)
-            .padding(.vertical, 12)
+            .padding(.vertical, 25)
+            .padding(.horizontal, 25)
             
             // Search bar
             if displayMode == .search || displayMode == .allFriends {
@@ -85,8 +85,8 @@ struct FriendSearchView: View {
                     placeholder: "Search for friends",
                     autofocus: displayMode == .search
                 )
-                .padding(.horizontal)
                 .padding(.bottom, 8)
+                .padding(.horizontal, 25)
             }
             
             // Content based on display mode
@@ -149,7 +149,7 @@ struct FriendSearchView: View {
 
     
     var searchResultsView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // Background for loading state
             Color.clear.frame(width: 0, height: 0)
                 .background(universalBackgroundColor)
@@ -165,7 +165,8 @@ struct FriendSearchView: View {
             } else {
                 ForEach(viewModel.searchResults) { user in
                     FriendRowView(user: user, viewModel: viewModel)
-                        .padding(.horizontal, 16)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 25)
                 }
             }
         }
@@ -173,7 +174,7 @@ struct FriendSearchView: View {
     }
     
     var allFriendsView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             // Background for loading state
             Color.clear.frame(width: 0, height: 0)
                 .background(universalBackgroundColor)
@@ -189,7 +190,8 @@ struct FriendSearchView: View {
             } else {
                 ForEach(viewModel.filteredFriends) { friend in
 					FriendRowView(friend: friend, viewModel: viewModel, isExistingFriend: true)
-                        .padding(.horizontal, 16)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 25)
                 }
             }
         }
@@ -197,7 +199,7 @@ struct FriendSearchView: View {
     }
     
     var recentlySpawnedWithView: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             // Background for loading state
             Color.clear.frame(width: 0, height: 0)
                 .background(universalBackgroundColor)
@@ -214,7 +216,8 @@ struct FriendSearchView: View {
             } else {
                 ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
                     FriendRowView(user: recentUser.user, viewModel: viewModel)
-                        .padding(.horizontal, 16)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 25)
                 }
             }
         }
@@ -222,7 +225,7 @@ struct FriendSearchView: View {
     }
     
     var recommendedFriendsView: some View {
-        VStack(spacing: 16) {
+        VStack (spacing: 12){
             // Background for loading state
             Color.clear.frame(width: 0, height: 0)
                 .background(universalBackgroundColor)
@@ -238,7 +241,8 @@ struct FriendSearchView: View {
             } else {
                 ForEach(viewModel.recommendedFriends) { recommendedFriend in
                     FriendRowView(recommendedFriend: recommendedFriend, viewModel: viewModel)
-                        .padding(.horizontal, 16)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 25)
                 }
             }
         }
@@ -281,47 +285,49 @@ struct FriendRowView: View {
                         Image(pfpUrl)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 50, height: 50)
+                            .frame(width: 36, height: 36)
                             .clipShape(Circle())
                     } else {
-                        CachedProfileImageFlexible(
+                        CachedProfileImage(
                             userId: userForProfile.id,
                             url: URL(string: pfpUrl),
-                            width: 50,
-                            height: 50
+                            imageType: .friendsListView
                         )
                     }
                 } else {
                     Circle()
                         .fill(.gray)
-                        .frame(width: 50, height: 50)
+                        .frame(width: 36, height: 36)
                 }
             }
+            .padding(.leading, 5)
+            .padding(.bottom, 4)
+            .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
             
             // Navigation link for name and username
             NavigationLink(destination: ProfileView(user: userForProfile)) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     // Works with user, friend, or recommendedFriend
                     if let user = user {
                         Text(FormatterService.shared.formatName(user: user))
-                            .font(.onestRegular(size: 14))
+                            .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
                         Text("@\(user.username ?? "username")")
-                            .font(.onestRegular(size: 14))
+                            .font(.onestRegular(size: 12))
                             .foregroundColor(Color.gray)
                     } else if let friend = friend {
                         Text(FormatterService.shared.formatName(user: friend))
-                            .font(.onestRegular(size: 14))
+                            .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
                         Text("@\(friend.username ?? "username")")
-                            .font(.onestRegular(size: 14))
+                            .font(.onestRegular(size: 12))
                             .foregroundColor(Color.gray)
                     } else if let recommendedFriend = recommendedFriend {
                         Text(FormatterService.shared.formatName(user: recommendedFriend))
-                            .font(.onestRegular(size: 14))
+                            .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
                         Text("@\(recommendedFriend.username ?? "username")")
-                            .font(.onestRegular(size: 14))
+                            .font(.onestRegular(size: 12))
                             .foregroundColor(Color.gray)
                         // Show mutual friends count if available
                         if let mutualCount = recommendedFriend.mutualFriendCount, mutualCount > 0 {
@@ -369,36 +375,34 @@ struct FriendRowView: View {
                         }
                     }
                 }) {
-                    HStack(spacing: 6) {
+                    HStack {
                         if isAdded {
                             Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(Color(hex:colorsGreen700))
                                 .transition(.scale.combined(with: .opacity))
                         } else {
                             Text("Add +")
-                                .font(.onestRegular(size: 14))
+                                .font(.onestMedium(size: 14))
                                 .transition(.scale.combined(with: .opacity))
                         }
                     }
-                    .foregroundColor(isAdded ? .white : universalSecondaryColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .foregroundColor(isAdded ? Color(hex:colorsGreen700) : figmaGray700)
+                    .frame(width: 71, height: 34)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(isAdded ? universalAccentColor : Color.clear)
+                            .fill(Color.clear)
                             .animation(.easeInOut(duration: 0.3), value: isAdded)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(isAdded ? universalAccentColor : universalSecondaryColor, lineWidth: 1)
+                            .stroke(isAdded ? Color(hex:colorsGreen700) : figmaGray700, lineWidth: 1)
                             .animation(.easeInOut(duration: 0.3), value: isAdded)
                     )
                 }
                 .disabled(isAdded)
             }
         }
-        .padding(.vertical, 8)
         .sheet(isPresented: $showProfileMenu) {
             ProfileMenuView(
                 user: userForProfile,

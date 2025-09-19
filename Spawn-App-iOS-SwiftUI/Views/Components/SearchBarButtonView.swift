@@ -28,11 +28,11 @@ struct SearchBarButtonView: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .font(.onestRegular(size: 18))
-                .foregroundColor(.gray)
+                .foregroundColor(universalAccentColor)
             
             Text(placeholder)
                 .font(.onestRegular(size: 16))
-                .foregroundColor(.gray)
+                .foregroundColor(universalAccentColor)
             
             Spacer()
         }
@@ -45,17 +45,15 @@ struct SearchBarButtonView: View {
                 .cornerRadius(15)
                 .overlay(
                     RoundedRectangle(
-                        cornerRadius: universalRectangleCornerRadius
+                        cornerRadius: 15
                     )
                         .inset(by: 0.75)
-                        .stroke(.gray)
+                        .stroke(universalAccentColor)
                 )
         )
-
     }
 }
 
 #Preview {
     SearchBarButtonView(placeholder: "Search for friends", action: {})
-        .padding()
 } 

@@ -14,8 +14,16 @@ struct FriendRequestsView: View {
     @State private var acceptedFriend: BaseUserDTO?
     @State private var navigateToAddToActivityType = false
     
-    init(userId: UUID) {
-        self._viewModel = StateObject(wrappedValue: FriendRequestsViewModel(userId: userId))
+    private let isPreviewMode: Bool
+    
+    init(userId: UUID, viewModel: FriendRequestsViewModel? = nil) {
+        if let existingViewModel = viewModel {
+            self._viewModel = StateObject(wrappedValue: existingViewModel)
+            self.isPreviewMode = true // When a viewModel is provided, we're in preview mode
+        } else {
+            self._viewModel = StateObject(wrappedValue: FriendRequestsViewModel(userId: userId))
+            self.isPreviewMode = false
+        }
     }
     
     var body: some View {
@@ -27,16 +35,21 @@ struct FriendRequestsView: View {
         .background(universalBackgroundColor)
         .navigationBarHidden(true)
         .task {
-            await viewModel.fetchFriendRequests()
+            // Only fetch data from API if we're not in preview mode
+            if !isPreviewMode {
+                await viewModel.fetchFriendRequests()
+            }
         }
         .overlay(successDrawerOverlay)
         .onChange(of: showSuccessDrawer) { isPresented in
-            if !isPresented {
+            if !isPresented && !isPreviewMode {
                 Task { await viewModel.fetchFriendRequests() }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .friendRequestsDidChange)) { _ in
-            Task { await viewModel.fetchFriendRequests() }
+            if !isPreviewMode {
+                Task { await viewModel.fetchFriendRequests() }
+            }
         }
         .navigationDestination(isPresented: $navigateToAddToActivityType) {
             if let friend = acceptedFriend {
@@ -69,8 +82,8 @@ struct FriendRequestsView: View {
                 .font(.title3)
                 .foregroundColor(.clear)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 12)
+        .padding(.vertical, 25)
+        .padding(.horizontal ,25)
     }
     
     // MARK: - Content View
@@ -91,7 +104,7 @@ struct FriendRequestsView: View {
     // MARK: - Loading View
     private var loadingView: some View {
         ProgressView()
-            .padding()
+            .padding(.top, 40)
     }
     
     // MARK: - Empty State View
@@ -122,8 +135,8 @@ struct FriendRequestsView: View {
                             .foregroundColor(universalAccentColor)
                         Spacer()
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
+                    .padding (.bottom, 8)
+                    .padding(.horizontal, 25)
                     
                     ForEach(viewModel.incomingFriendRequests) { request in
                         FriendRequestItemView(
@@ -136,8 +149,10 @@ struct FriendRequestsView: View {
                                 handleDeclineRequest(request)
                             }
                         )
-                        .padding(.horizontal)
                         .padding(.vertical, 8)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 25)
+                        
                     }
                 }
             }
@@ -150,8 +165,8 @@ struct FriendRequestsView: View {
             if !viewModel.incomingFriendRequests.isEmpty && !viewModel.sentFriendRequests.isEmpty {
                 Divider()
                     .background(universalPlaceHolderTextColor)
-                    .padding(.horizontal)
                     .padding(.vertical, 16)
+                    .padding(.horizontal, 20)
             }
         }
     }
@@ -168,8 +183,8 @@ struct FriendRequestsView: View {
                             .foregroundColor(universalAccentColor)
                         Spacer()
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 25)
+                    .padding(.bottom, 8)
                     
                     ForEach(viewModel.sentFriendRequests) { request in
                         SentFriendRequestItemView(
@@ -178,8 +193,9 @@ struct FriendRequestsView: View {
                                 handleCancelSentRequest(request)
                             }
                         )
-                        .padding(.horizontal)
                         .padding(.vertical, 8)
+                        .padding(.leading, 20)
+                        .padding(.trailing, 25)
                     }
                 }
             }
@@ -240,34 +256,41 @@ struct FriendRequestItemView: View {
             NavigationLink(destination: ProfileView(user: friendRequest.senderUser)) {
                 HStack(spacing: 12) {
                     // Profile picture
-                    if MockAPIService.isMocking {
-                        if let pfp = friendRequest.senderUser.profilePicture {
-                            Image(pfp)
-                                .ProfileImageModifier(imageType: .friendsListView)
-                        }
-                    } else {
-                        if let pfpUrl = friendRequest.senderUser.profilePicture {
-                            CachedProfileImage(
-                                userId: friendRequest.senderUser.id,
-                                url: URL(string: pfpUrl),
-                                imageType: .friendsListView
-                            )
+                    Group {
+                        if MockAPIService.isMocking {
+                            if let pfp = friendRequest.senderUser.profilePicture {
+                                Image(pfp)
+                                    .ProfileImageModifier(imageType: .friendsListView)
+                            }
                         } else {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
+                            if let pfpUrl = friendRequest.senderUser.profilePicture {
+                                CachedProfileImage(
+                                    userId: friendRequest.senderUser.id,
+                                    url: URL(string: pfpUrl),
+                                    imageType: .friendsListView,
+                                )
+                            } else {
+                                Circle()
+                                    .fill(Color.gray)
+                                    .frame(width: 36, height: 36)
+                            }
                         }
                     }
+                    .padding(.leading, 5)
+                    .padding(.bottom, 4)
+                    .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
                     
                     // User info
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(FormatterService.shared.formatName(user: friendRequest.senderUser))
-                            .font(.headline)
+                            .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
+                            .lineLimit(1)
                         
                         Text("@\(friendRequest.senderUser.username ?? "username")")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .font(.onestRegular(size: 12))
+                            .foregroundColor(Color.gray)
+                            .lineLimit(1)
                     }
                 }
             }
@@ -283,14 +306,12 @@ struct FriendRequestItemView: View {
                         onAccept()
                     }) {
                         Text("Accept")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.onestMedium(size: 14))
                             .foregroundColor(.white)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 12)
-                            .frame(minWidth: 60)
+                            .frame(width : 79, height: 34)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .fill(hasAccepted ? Color.gray : universalSecondaryColor)
+                                    .fill(hasAccepted ? Color(hex: colorsIndigo800) : universalSecondaryColor)
                             )
                     }
                     .disabled(hasAccepted)
@@ -300,17 +321,15 @@ struct FriendRequestItemView: View {
                         onRemove()
                     }) {
                         Text("Remove")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(universalAccentColor)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 12)
-                            .frame(minWidth: 60)
+                            .font(.onestMedium(size: 14))
+                            .foregroundColor(figmaGray700)
+                            .frame(width: 85, height: 34)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.clear)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(universalAccentColor, lineWidth: 1)
+                                            .stroke(figmaGray700, lineWidth: 1)
                                     )
                             )
                     }
@@ -321,17 +340,15 @@ struct FriendRequestItemView: View {
                         onRemove()
                     }) {
                         Text("Cancel")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(universalAccentColor)
-                            .padding(.vertical, 6)
-                            .padding(.horizontal, 12)
-                            .frame(minWidth: 60)
+                            .font(.onestMedium(size: 14))
+                            .foregroundColor(figmaGray700)
+                            .frame(width: 85, height: 34)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.clear)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(universalAccentColor, lineWidth: 1)
+                                            .stroke(figmaGray700, lineWidth: 1)
                                     )
                             )
                     }
@@ -339,7 +356,6 @@ struct FriendRequestItemView: View {
                 }
             }
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -354,34 +370,41 @@ struct SentFriendRequestItemView: View {
             NavigationLink(destination: ProfileView(user: friendRequest.receiverUser)) {
                 HStack(spacing: 12) {
                     // Profile picture
-                    if MockAPIService.isMocking {
-                        if let pfp = friendRequest.receiverUser.profilePicture {
-                            Image(pfp)
-                                .ProfileImageModifier(imageType: .friendsListView)
-                        }
-                    } else {
-                        if let pfpUrl = friendRequest.receiverUser.profilePicture {
-                            CachedProfileImage(
-                                userId: friendRequest.receiverUser.id,
-                                url: URL(string: pfpUrl),
-                                imageType: .friendsListView
-                            )
+                    Group {
+                        if MockAPIService.isMocking {
+                            if let pfp = friendRequest.receiverUser.profilePicture {
+                                Image(pfp)
+                                    .ProfileImageModifier(imageType: .friendsListView)
+                            }
                         } else {
-                            Circle()
-                                .fill(Color.gray)
-                                .frame(width: 50, height: 50)
+                            if let pfpUrl = friendRequest.receiverUser.profilePicture {
+                                CachedProfileImage(
+                                    userId: friendRequest.receiverUser.id,
+                                    url: URL(string: pfpUrl),
+                                    imageType: .friendsListView
+                                )
+                            } else {
+                                Circle()
+                                    .fill(Color.gray)
+                                    .frame(width: 36, height: 36)
+                            }
                         }
                     }
+                    .padding(.leading, 5)
+                    .padding(.bottom, 4)
+                    .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
                     
                     // User info
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(FormatterService.shared.formatName(user: friendRequest.receiverUser))
-                            .font(.headline)
+                            .font(.onestSemiBold(size: 14))
                             .foregroundColor(universalAccentColor)
+                            .lineLimit(1)
                         
                         Text("@\(friendRequest.receiverUser.username ?? "username")")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .font(.onestRegular(size: 12))
+                            .foregroundColor(Color.gray)
+                            .lineLimit(1)
                     }
                 }
             }
@@ -395,23 +418,20 @@ struct SentFriendRequestItemView: View {
                 onRemove()
             }) {
                 Text("Cancel")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(universalAccentColor)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .frame(minWidth: 60)
+                    .font(.onestMedium(size: 14))
+                    .foregroundColor(figmaGray700)
+                    .frame(width: 85, height: 34)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.clear)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 8)
-                                    .stroke(universalAccentColor, lineWidth: 1)
+                                    .stroke(figmaGray700, lineWidth: 1)
                             )
                     )
             }
             .disabled(hasRemoved)
         }
-        .padding(.vertical, 4)
     }
 }
 
@@ -419,7 +439,79 @@ struct SentFriendRequestItemView: View {
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @StateObject var appCache = AppCache.shared
-    NavigationStack {
-        FriendRequestsView(userId: UUID())
+    
+    // Create a mock view model with pre-populated data (following FriendsView pattern)
+    let mockUserId = UUID()
+    let mockViewModel = FriendRequestsViewModel(userId: mockUserId)
+    
+    // Pre-populate incoming friend requests
+    mockViewModel.incomingFriendRequests = [
+        FetchFriendRequestDTO(
+            id: UUID(),
+            senderUser: BaseUserDTO(
+                id: UUID(),
+                username: "emma_artist",
+                profilePicture: "Daniel_Lee_pfp",
+                name: "Emma Wilson",
+                bio: "Digital artist and UI/UX designer",
+                email: "emma.wilson@example.com"
+            ),
+            mutualFriendCount: 3
+        ),
+        FetchFriendRequestDTO(
+            id: UUID(),
+            senderUser: BaseUserDTO(
+                id: UUID(),
+                username: "mike_fitness",
+                profilePicture: "Daniel_Agapov_pfp",
+                name: "Mike Chen",
+                bio: "Fitness enthusiast and basketball player",
+                email: "mike.chen@example.com"
+            ),
+            mutualFriendCount: 1
+        ),
+        FetchFriendRequestDTO(
+            id: UUID(),
+            senderUser: BaseUserDTO(
+                id: UUID(),
+                username: "alex_gamer",
+                profilePicture: "Haley_pfp",
+                name: "Alex Rodriguez",
+                bio: "Gaming enthusiast and tech blogger",
+                email: "alex.rodriguez@example.com"
+            ),
+            mutualFriendCount: 2
+        )
+    ]
+    
+    // Pre-populate sent friend requests
+    mockViewModel.sentFriendRequests = [
+        FetchSentFriendRequestDTO(
+            id: UUID(),
+            receiverUser: BaseUserDTO(
+                id: UUID(),
+                username: "sarah_dev",
+                profilePicture: "Haley_pfp",
+                name: "Sarah Johnson",
+                bio: "Software engineer who loves hiking and coffee",
+                email: "sarah.johnson@example.com"
+            )
+        ),
+        FetchSentFriendRequestDTO(
+            id: UUID(),
+            receiverUser: BaseUserDTO(
+                id: UUID(),
+                username: "jake_music",
+                profilePicture: "Daniel_Lee_pfp",
+                name: "Jake Thompson",
+                bio: "Musician and music producer",
+                email: "jake.thompson@example.com"
+            )
+        )
+    ]
+    
+    // Use the actual FriendRequestsView with mock view model (just like FriendsView does)
+    return NavigationStack {
+        FriendRequestsView(userId: mockUserId, viewModel: mockViewModel)
     }.environmentObject(appCache)
 } 

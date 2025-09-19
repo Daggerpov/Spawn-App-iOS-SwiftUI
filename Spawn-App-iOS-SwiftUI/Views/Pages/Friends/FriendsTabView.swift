@@ -50,14 +50,14 @@ struct FriendsTabView: View {
 	var body: some View {
 		ZStack {
 			ScrollView {
-				VStack(spacing: 16) {
+				VStack(spacing: 24) {
 					// Search bar button that navigates to search view
 					NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .search)) {
 						SearchBarButtonView(
-							placeholder: "Search for friends"
+							placeholder: "Search for friends..."
 						)
-						.padding(.horizontal, 16)
 					}
+                    .padding(.horizontal, 25)
                     
 
                     // Friends section
@@ -66,7 +66,7 @@ struct FriendsTabView: View {
                     // Recently spawned with section
                     recentlySpawnedWithFriendsSection
 				}
-                .padding(.top, 16)
+                .padding(.vertical, 20)
 			}
 			.onAppear {
 				Task {
@@ -184,29 +184,29 @@ struct FriendsTabView: View {
     
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-			if !viewModel.recentlySpawnedWith.isEmpty {
-                HStack{
-                    Text("Recently Spawned With")
-                        .font(.onestMedium(size: 16))
-                        .foregroundColor(universalAccentColor)
-                    Spacer()
-                    showAllRecentlySpawnedButton
-                }
-
-				ScrollView(showsIndicators: false) {
-					VStack(spacing: 16) {
-						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
-							RecentlySpawnedView(
-								viewModel: viewModel, 
-								recentUser: recentUser,
-								selectedFriend: $selectedFriend,
-								showProfileMenu: $showProfileMenu
-							)
-						}
-					}
-				}
-			} else if !viewModel.recommendedFriends.isEmpty {
-                // Show "Recommended Friends" when "Recently Spawned With" is empty
+//			if !viewModel.recentlySpawnedWith.isEmpty {
+//                HStack{
+//                    Text("Recently Spawned With")
+//                        .font(.onestMedium(size: 16))
+//                        .foregroundColor(universalAccentColor)
+//                    Spacer()
+//                    showAllRecentlySpawnedButton
+//                }
+//
+//				ScrollView(showsIndicators: false) {
+//					VStack(spacing: 16) {
+//						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
+//							RecentlySpawnedView(
+//								viewModel: viewModel, 
+//								recentUser: recentUser,
+//								selectedFriend: $selectedFriend,
+//								showProfileMenu: $showProfileMenu
+//							)
+//						}
+//					}
+//				}
+//			} else if !viewModel.recommendedFriends.isEmpty {
+//                // Show "Recommended Friends" when "Recently Spawned With" is empty
                 HStack{
                     Text("Recommended Friends")
                         .font(.onestMedium(size: 16))
@@ -214,22 +214,24 @@ struct FriendsTabView: View {
                     Spacer()
                     showAllRecommendedButton
                 }
+                .padding(.leading, 5)
 
-				ScrollView(showsIndicators: false) {
-					VStack(spacing: 16) {
-						ForEach(viewModel.recommendedFriends) { friend in
-							RecommendedFriendView(
-								viewModel: viewModel, 
-								friend: friend,
-								selectedFriend: $selectedFriend,
-								showProfileMenu: $showProfileMenu
-							)
-						}
-					}
-				}
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 16) {
+                    ForEach(viewModel.recommendedFriends) { friend in
+                        RecommendedFriendView(
+                            viewModel: viewModel,
+                            friend: friend,
+                            selectedFriend: $selectedFriend,
+                            showProfileMenu: $showProfileMenu
+                        )
+                    }
+                }
+                .padding(.trailing, 1)
             }
 		}
-		.padding(.horizontal, 16)
+        .padding(.leading, 20)
+        .padding(.trailing, 25)
 	}
 
 	var friendsSection: some View {
@@ -242,9 +244,10 @@ struct FriendsTabView: View {
                     Spacer()
                     showAllFriendsButton
                 }
+                .padding(.leading, 5)
 
 				ScrollView(showsIndicators: false) {
-					VStack(spacing: 16) {
+					VStack(spacing: 12) {
 						ForEach(viewModel.filteredFriends.prefix(5)) { friend in
                             // Updated Friend Card
                             VStack {
@@ -256,35 +259,37 @@ struct FriendsTabView: View {
                                                 Image(pfp)
                                                     .resizable()
                                                     .scaledToFill()
-                                                    .frame(width: 50, height: 50)
+                                                    .frame(width: 36, height: 36)
                                                     .clipShape(Circle())
                                             }
                                         }
                                     } else {
                                         NavigationLink(destination: ProfileView(user: friend)) {
                                             if let pfpUrl = friend.profilePicture {
-                                                CachedProfileImageFlexible(
+                                                CachedProfileImage(
                                                     userId: friend.id,
                                                     url: URL(string: pfpUrl),
-                                                    width: 50,
-                                                    height: 50
+                                                    imageType: .friendsListView
                                                 )
                                                 .transition(.opacity.animation(.easeInOut))
                                             } else {
                                                 Image(systemName: "person.circle.fill")
                                                     .resizable()
                                                     .scaledToFit()
-                                                    .frame(width: 50, height: 50)
+                                                    .frame(width: 36, height: 36)
                                                     .foregroundColor(Color.gray.opacity(0.5))
                                             }
                                         }
+                                        .padding(.leading, 5)
+                                        .padding(.bottom, 4)
+                                        .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
                                     }
                                     
                                     // Friend info
                                     NavigationLink(destination: ProfileView(user: friend)) {
                                         VStack(alignment: .leading, spacing: 4) {
                                             Text(friend.name ?? friend.username ?? "User")
-                                                .font(.onestMedium(size: 16))
+                                                .font(.onestSemiBold(size: 14))
                                                 .foregroundColor(universalAccentColor)
                                                 .lineLimit(1)
                                             Text("@\(friend.username ?? "username")")
@@ -292,7 +297,7 @@ struct FriendsTabView: View {
                                                 .foregroundColor(Color.gray)
                                                 .lineLimit(1)
                                         }
-                                        .padding(.horizontal, 8)
+                                        .padding(.leading, 5)
                                     }
                                     .buttonStyle(PlainButtonStyle())
                                     
@@ -306,7 +311,7 @@ struct FriendsTabView: View {
                                             .foregroundColor(
                                                 universalAccentColor
                                             )
-                                            .padding(8)
+                                            .padding(1)
                                     }
                                 }
                             }
@@ -323,7 +328,8 @@ struct FriendsTabView: View {
 					.foregroundColor(universalAccentColor)
 			}
 		}
-		.padding(.horizontal, 16)
+        .padding(.leading, 20)
+        .padding(.trailing, 25)
 	}
 
 	// Helper methods for profile actions
@@ -424,43 +430,45 @@ struct RecommendedFriendView: View {
                         Image(pfp)
                             .resizable()
                             .scaledToFill()
-                            .frame(width: 50, height: 50)
+                            .frame(width: 36, height: 36)
                             .clipShape(Circle())
                     }
                 }
             } else {
                 NavigationLink(destination: ProfileView(user: friend)) {
                     if let pfpUrl = friend.profilePicture {
-                        CachedProfileImageFlexible(
+                        CachedProfileImage(
                             userId: friend.id,
                             url: URL(string: pfpUrl),
-                            width: 50,
-                            height: 50
+                            imageType: .friendsListView
                         )
                     } else {
                         Circle()
                             .fill(.white)
-                            .frame(width: 50, height: 50)
+                            .frame(width: 36, height: 36)
                     }
                 }
+                .padding(.leading, 5)
+                .padding(.bottom, 4)
+                .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
             }
 
             NavigationLink(destination: ProfileView(user: friend)) {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(FormatterService.shared.formatName(user: friend))
-                        .font(.onestBold(size: 14))
+                        .font(.onestSemiBold(size: 14))
                         .foregroundColor(universalAccentColor)
                     Text("@\(friend.username ?? "username")")
                         .font(.onestRegular(size: 12))
                         .foregroundColor(Color.gray)
-                    // Show mutual friends count if available
-                    if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
-                        Text("\(mutualCount) mutual friend\(mutualCount == 1 ? "" : "s")")
-                            .font(.onestRegular(size: 12))
-                            .foregroundColor(Color.gray)
-                    }
+//                    // Show mutual friends count if available
+//                    if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
+//                        Text("\(mutualCount) mutual friend\(mutualCount == 1 ? "" : "s")")
+//                            .font(.onestRegular(size: 12))
+//                            .foregroundColor(Color.gray)
+//                    }
                 }
-                .padding(.leading, 8)
+                .padding(.leading, 4)
             }
             .buttonStyle(PlainButtonStyle())
 
@@ -495,11 +503,11 @@ struct RecommendedFriendView: View {
                         viewModel.removeFromRecommended(friendId: friend.id)
                     }
                 }) {
-                    HStack(spacing: 6) {
+                    HStack {
                         if isAdded {
                             Image(systemName: "checkmark")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
+                                .font(.system(size: 14, weight: .regular))
+                                .foregroundColor(Color(hex:colorsGreen700))
                                 .transition(.scale.combined(with: .opacity))
                         } else {
                             Text("Add +")
@@ -507,27 +515,23 @@ struct RecommendedFriendView: View {
                                 .transition(.scale.combined(with: .opacity))
                         }
                     }
-                    .foregroundColor(isAdded ? .white : .gray)
-                    .padding(12)
+                    .foregroundColor(isAdded ? Color(hex:colorsGreen700) : figmaGray700)
+                    .frame(width: 71, height: 34)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(isAdded ? universalAccentColor : Color.clear)
+                            .fill(Color.clear)
                             .animation(.easeInOut(duration: 0.3), value: isAdded)
                     )
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
+                            .stroke(isAdded ? Color(hex:colorsGreen700) : figmaGray700, lineWidth: 1)
                             .animation(.easeInOut(duration: 0.3), value: isAdded)
                     )
-                    .frame(minHeight: 46, maxHeight: 46)
                 }
                 .buttonStyle(PlainButtonStyle())
                 .disabled(isAdded)
             }
         }
-        .padding(.vertical, 12)
-        .cornerRadius(16)
-        .foregroundColor(universalAccentColor)
     }
 }
 
@@ -554,18 +558,20 @@ struct RecentlySpawnedView: View {
             } else {
                 NavigationLink(destination: ProfileView(user: recentUser.user)) {
                     if let pfpUrl = recentUser.user.profilePicture {
-                        CachedProfileImageFlexible(
+                        CachedProfileImage(
                             userId: recentUser.user.id,
                             url: URL(string: pfpUrl),
-                            width: 50,
-                            height: 50
+                            imageType: .friendsListView
                         )
                     } else {
                         Circle()
                             .fill(.white)
-                            .frame(width: 50, height: 50)
+                            .frame(width: 36, height: 36)
                     }
                 }
+                .padding(.leading, 5)
+                .padding(.bottom, 4)
+                .shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
             }
 
             NavigationLink(destination: ProfileView(user: recentUser.user)) {
