@@ -18,7 +18,10 @@ struct TabScrollContentView: View {
                                         .blur(radius: phase.isIdentity ? 0 : 10)
                                 }
                         } else {
-                            // Fallback on earlier versions
+                            // Fallback for iOS < 17 (without scroll transitions)
+                            RoundedRectangle(cornerRadius: 25)
+                                .fill(tab.item.color.opacity(0.5))
+                                .frame(height: 180)
                         }
                     }
                 }

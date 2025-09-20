@@ -29,7 +29,7 @@ struct WithTabBar<Content>: View where Content: View {
                 }
                 .overlay(alignment: .bottom) {
                     TabBar(selection: $selection)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, max(40, proxy.safeAreaInsets.bottom + 16))
                 }
             }
         }
@@ -66,7 +66,7 @@ struct WithTabBarBinding<Content>: View where Content: View {
                 VStack {
                     Spacer()
                     TabBar(selection: $selection)
-                        .padding(.bottom, max(48, proxy.safeAreaInsets.bottom + 40))
+                        .padding(.bottom, max(50, proxy.safeAreaInsets.bottom + 20))
                 }
             }
         }
@@ -132,7 +132,24 @@ struct TabBar: View {
                         .opacity(isTabDisabled(tab) ? 0.4 : 1.0)
                         .animation(.easeInOut(duration: 0.2), value: tutorialViewModel.tutorialState)
                     } else {
-                        // Fallback on earlier versions
+                        // Fallback for iOS < 17
+                        Button(action: {
+                            changeTabTo(tab)
+                        }) {
+                            if tab == selection {
+                                ActiveTabLabel(tabItem: tab.item, isAnimating: $symbolTrigger)
+                                    .matchedGeometryEffect(id: "tabItem", in: tabItemNameSpace)
+                                    .foregroundColor(Color(hex: colorsTabIconActive))
+                                    .animation(.none, value: selection)
+                            } else {
+                                InActiveTabLabel(tabItem: tab.item)
+                                    .foregroundColor(Color(hex: colorsTabIconInactive))
+                                    .animation(.none, value: selection)
+                            }
+                        }
+                        .withTabButtonStyle()
+                        .opacity(isTabDisabled(tab) ? 0.4 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: tutorialViewModel.tutorialState)
                     }
                 }
             }
