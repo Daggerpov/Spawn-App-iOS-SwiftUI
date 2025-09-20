@@ -62,10 +62,16 @@ class TutorialViewModel: ObservableObject {
     /// This should be called when user reaches the main feed for the first time
     private func shouldStartTutorial() -> Bool {
         // Check if user has completed onboarding and this is their first time in the main app
-		guard UserAuthViewModel.shared.spawnUser != nil else { return false }
+		guard let user = UserAuthViewModel.shared.spawnUser else { return false }
         
         // Always skip tutorial for existing users signing into their account
         print("🎯 TutorialViewModel: Checking if user should start tutorial...")
+        
+        // First check: If backend says user has completed onboarding, skip tutorial
+        if let backendOnboardingStatus = user.hasCompletedOnboarding, backendOnboardingStatus {
+            print("🎯 TutorialViewModel: Skipping tutorial - backend indicates onboarding completed")
+            return false
+        }
         
         // Check if this user has any existing activities or friends
         // If they do, they're likely an existing user who shouldn't see the tutorial
@@ -91,12 +97,15 @@ class TutorialViewModel: ObservableObject {
         // we'll be conservative and skip the tutorial for most cases to avoid annoying existing users.
         
         // Only show tutorial if user has explicitly never completed it AND
-        // this appears to be a completely new user experience
+        // this appears to be a completely new user experience AND
+        // the backend doesn't indicate they've completed onboarding
         let hasNeverCompletedTutorial = !userDefaults.bool(forKey: hasCompletedTutorialKey)
         let hasCompletedOnboarding = UserAuthViewModel.shared.hasCompletedOnboarding
+        let backendOnboardingStatus = user.hasCompletedOnboarding ?? false
 
-        let shouldStart = hasNeverCompletedTutorial && hasCompletedOnboarding
-        print("🎯 TutorialViewModel: shouldStartTutorial = \(shouldStart) (hasNeverCompleted: \(hasNeverCompletedTutorial), hasCompletedOnboarding: \(hasCompletedOnboarding))")
+        // Don't show tutorial if backend says they've completed onboarding
+        let shouldStart = hasNeverCompletedTutorial && hasCompletedOnboarding && !backendOnboardingStatus
+        print("🎯 TutorialViewModel: shouldStartTutorial = \(shouldStart) (hasNeverCompleted: \(hasNeverCompletedTutorial), hasCompletedOnboarding: \(hasCompletedOnboarding), backendOnboarding: \(backendOnboardingStatus))")
         return shouldStart
     }
     
