@@ -63,9 +63,10 @@ struct WithTabBarBinding<Content>: View where Content: View {
                 universalBackgroundColor
                     .ignoresSafeArea(.all)
                 
-                // Main content area - leaves space for tab bar
+                // Main content area - fills entire screen
                 content(selection)
-                    .frame(width: proxy.size.width, height: proxy.size.height - tabBarSpacing)
+                    .frame(width: proxy.size.width, height: proxy.size.height)
+                    .padding(.bottom, tabBarSpacing) // Add bottom padding to avoid tab bar overlap
                     .ignoresSafeArea(.keyboard, edges: .bottom) // Prevent keyboard from pushing content up
                 
                 // Tab bar positioned absolutely at bottom
