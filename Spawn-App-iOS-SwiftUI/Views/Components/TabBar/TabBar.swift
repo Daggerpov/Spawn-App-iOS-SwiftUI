@@ -73,9 +73,8 @@ struct WithTabBarBinding<Content>: View where Content: View {
                 VStack {
                     Spacer()
                     TabBar(selection: $selection)
-                        .padding(.bottom, 16)
+                        .padding(.bottom, max(48, proxy.safeAreaInsets.bottom + 40))
                 }
-                .ignoresSafeArea(.keyboard, edges: .bottom) // Keep tab bar fixed when keyboard appears
             }
         }
     }
