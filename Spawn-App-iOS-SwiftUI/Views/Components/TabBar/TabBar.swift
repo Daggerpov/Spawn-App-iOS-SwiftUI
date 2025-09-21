@@ -48,6 +48,21 @@ struct WithTabBarBinding<Content>: View where Content: View {
         let extraSpacing: CGFloat = 20 // Additional spacing for visual separation
         return buttonHeight + tabBarPadding + extraSpacing
     }
+    
+    // Calculate adaptive bottom padding based on screen size and safe area
+    private func adaptiveBottomPadding(for proxy: GeometryProxy) -> CGFloat {
+        let screenHeight = proxy.size.height
+        let safeAreaBottom = proxy.safeAreaInsets.bottom
+        
+        // iPhone 8 and similar devices (smaller screens, typically no safe area)
+        if screenHeight <= 667 || safeAreaBottom < 10 {
+            return max(100, safeAreaBottom + 20)
+        }
+        // iPhone X and newer (larger screens with significant safe area)
+        else {
+            return max(70, safeAreaBottom + 20)
+        }
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -60,13 +75,15 @@ struct WithTabBarBinding<Content>: View where Content: View {
                 content(selection)
                     .frame(width: proxy.size.width, height: proxy.size.height)
                     .padding(.bottom, tabBarSpacing) // Add bottom padding to avoid tab bar overlap
-                    .ignoresSafeArea(.keyboard, edges: .bottom) // Prevent keyboard from pushing content up
+                    .if(selection != .activities) { view in
+                        view.ignoresSafeArea(.keyboard, edges: .bottom) // Prevent keyboard from pushing content up for non-activities tabs
+                    }
                 
                 // Tab bar positioned absolutely at bottom
                 VStack {
                     Spacer()
                     TabBar(selection: $selection)
-                        .padding(.bottom, max(50, proxy.safeAreaInsets.bottom + 20))
+                        .padding(.bottom, adaptiveBottomPadding(for: proxy))
                 }
             }
         }

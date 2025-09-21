@@ -464,7 +464,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			GIDSignIn.sharedInstance.signIn(
 				withPresenting: presentingViewController
 			) { [weak self] signInResult, error in
-				guard let self = self else { return }
 				if let error = error {
 					print(error.localizedDescription)
 					return
