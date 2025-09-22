@@ -35,8 +35,21 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	var participantUsers: [BaseUserDTO]?
 	var invitedUsers: [BaseUserDTO]?
 	@Published var chatMessages: [FullActivityChatMessageDTO]?
-	@Published var participationStatus: ParticipationStatus?
+	@Published 	var participationStatus: ParticipationStatus?
 	var isSelfOwned: Bool?
+	
+	/**
+	 * Indicates whether this activity is expired based on server-side logic.
+	 * This field is computed by the back-end and serves as the single source of truth
+	 * for expiration status across all clients.
+	 */
+	var isExpired: Bool?
+	
+	/**
+	 * Timezone of the client creating the activity (e.g., "America/New_York").
+	 * Used for timezone-aware expiration of activities without explicit end times.
+	 */
+	var clientTimezone: String?
 
 	init(
 		id: UUID,
@@ -54,7 +67,9 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		chatMessages: [FullActivityChatMessageDTO]? = nil,
 		participationStatus: ParticipationStatus? = nil,
 		isSelfOwned: Bool? = nil,
-		createdAt: Date? = nil
+		createdAt: Date? = nil,
+		isExpired: Bool? = nil,
+		clientTimezone: String? = nil
 	) {
 		self.id = id
 		self.title = title
@@ -72,13 +87,15 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		self.participationStatus = participationStatus
 		self.isSelfOwned = isSelfOwned
 		self.createdAt = createdAt
+		self.isExpired = isExpired
+		self.clientTimezone = clientTimezone
 	}
     
     // CodingKeys for all properties (including @Published ones)
     enum CodingKeys: String, CodingKey {
         case id, title, startTime, endTime, location, activityTypeId, note, icon, participantLimit
         case createdAt, creatorUser, invitedUsers
-        case participantUsers, chatMessages, participationStatus, isSelfOwned
+        case participantUsers, chatMessages, participationStatus, isSelfOwned, isExpired, clientTimezone
     }
     
     // Custom decoder
@@ -103,6 +120,8 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         chatMessages = try container.decodeIfPresent([FullActivityChatMessageDTO].self, forKey: .chatMessages)
         participationStatus = try container.decodeIfPresent(ParticipationStatus.self, forKey: .participationStatus)
         isSelfOwned = try container.decodeIfPresent(Bool.self, forKey: .isSelfOwned)
+        isExpired = try container.decodeIfPresent(Bool.self, forKey: .isExpired)
+        clientTimezone = try container.decodeIfPresent(String.self, forKey: .clientTimezone)
     }
     
     // Custom encoder
@@ -127,6 +146,8 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         try container.encodeIfPresent(chatMessages, forKey: .chatMessages)
         try container.encodeIfPresent(participationStatus, forKey: .participationStatus)
         try container.encodeIfPresent(isSelfOwned, forKey: .isSelfOwned)
+        try container.encodeIfPresent(isExpired, forKey: .isExpired)
+        try container.encodeIfPresent(clientTimezone, forKey: .clientTimezone)
     }
 }
 
@@ -167,7 +188,8 @@ extension FullFeedActivityDTO {
 			BaseUserDTO.haley,
 			BaseUserDTO.danielAgapov,
 			BaseUserDTO.haley,
-		]
+		],
+		isExpired: false
 	)
     static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
         id: UUID(),
@@ -187,7 +209,8 @@ extension FullFeedActivityDTO {
             BaseUserDTO.haley,
         ],
         chatMessages: [.mockChat4, .mockChat1, .mockChat2, .mockChat3],
-        isSelfOwned: true
+        isSelfOwned: true,
+        isExpired: false
     )
     
     static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
@@ -205,7 +228,8 @@ extension FullFeedActivityDTO {
             BaseUserDTO.danielAgapov,
             BaseUserDTO.danielLee,
         ],
-        isSelfOwned: true
+        isSelfOwned: true,
+        isExpired: false
     )
     
     // Mock indefinite activity from yesterday - should be filtered out
@@ -222,6 +246,27 @@ extension FullFeedActivityDTO {
         participantUsers: [
             BaseUserDTO.danielAgapov,
         ],
-        isSelfOwned: true
+        isSelfOwned: true,
+        isExpired: true  // This activity should be expired
+    )
+    
+    // Mock past activity that already ended - should be filtered out
+    static let mockPastActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+        id: UUID(),
+        title: "Past Lunch Meeting",
+        startTime: Calendar.current.date(byAdding: .hour, value: -3, to: Date()),
+        endTime: Calendar.current.date(byAdding: .hour, value: -2, to: Date()), // Ended 2 hours ago
+        location: LocationDTO(
+            id: UUID(), name: "Campus Cafe",
+            latitude: 49.26400000000000, longitude: -123.25800000000000),
+        note: "This meeting already happened and should be filtered out!",
+        icon: "🍽️",
+        creatorUser: BaseUserDTO.danielAgapov,
+        participantUsers: [
+            BaseUserDTO.danielAgapov,
+            BaseUserDTO.danielLee,
+        ],
+        isSelfOwned: true,
+        isExpired: true  // This activity should be expired
     )
 } 

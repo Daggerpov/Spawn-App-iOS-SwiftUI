@@ -158,7 +158,7 @@ struct CachedProfileImage: View {
         case .feedPage:
             return 55
         case .friendsListView:
-            return 50
+            return 36
         case .activityParticipants, .chatMessage:
             return 25
         case .participantsPopup:

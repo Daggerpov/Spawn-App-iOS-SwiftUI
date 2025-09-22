@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTab: TabType = .home
+    @State private var selectedTabsEnum: Tabs = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
     @StateObject private var tutorialViewModel = TutorialViewModel.shared
     @StateObject private var inAppNotificationManager = InAppNotificationManager.shared
@@ -39,101 +40,51 @@ struct ContentView: View {
 
 	var body: some View {
         ZStack {
-            TabView(selection: $selectedTab) {
-                ActivityFeedView(
-                    user: user, 
-                    selectedTab: $selectedTab, 
-                    deepLinkedActivityId: $deepLinkedActivityId, 
-                    shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
-                )
-                    .tag(TabType.home)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "home_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        Text("Home")
-                    }
-                MapView(user: user)
-                    .tag(TabType.map)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "map_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        Text("Map")
-                    }
-                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-                ActivityCreationView(
-                    creatingUser: user,
-                    closeCallback: {
-                        // Navigate back to home tab when closing
-                        selectedTab = .home
-                    },
-                    selectedTab: $selectedTab
-                )
-                .tag(TabType.creation)
-                .tabItem {
-                    Image(
-                        uiImage: resizeImage(
-                            UIImage(named: "activities_nav_icon")!,
-                            targetSize: CGSize(width: 30, height: 27)
-                        )!
+            WithTabBarBinding(selection: $selectedTabsEnum) { selectedTab in
+                switch selectedTab {
+                case .home:
+                    ActivityFeedView(
+                        user: user,
+                        selectedTab: $selectedTab,
+                        deepLinkedActivityId: $deepLinkedActivityId,
+                        shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
                     )
-                    Text("Activities")
-                }
-                FriendsView(
-                    user: user,
-                    viewModel: friendsViewModel,
-                    deepLinkedProfileId: $deepLinkedProfileId,
-                    shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
-                )
-                    .tag(TabType.friends)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "friends_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        .withNotificationBadge(
-                            count: friendsViewModel.incomingFriendRequests.count,
-                            offset: CGPoint(x: 10, y: -8)
-                        )
-                        Text("Friends")
+                case .map:
+                    MapView(user: user)
+                        .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+                case .activities:
+                    ActivityCreationView(
+                        creatingUser: user,
+                        closeCallback: {
+                            // Navigate back to home tab when closing
+                            selectedTabsEnum = .home
+                        },
+                        selectedTab: $selectedTab
+                    )
+                case .friends:
+                    FriendsView(
+                        user: user,
+                        viewModel: friendsViewModel,
+                        deepLinkedProfileId: $deepLinkedProfileId,
+                        shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
+                    )
+                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+                case .profile:
+                    NavigationStack {
+                        ProfileView(user: user)
                     }
                     .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-                
-                NavigationStack {
-                    ProfileView(user: user)
-                }
-                    .tag(TabType.profile)
-                    .tabItem {
-                        Image(
-                            uiImage: resizeImage(
-                                UIImage(named: "profile_nav_icon")!,
-                                targetSize: CGSize(width: 30, height: 27)
-                            )!
-                        )
-                        Text("Profile")
-                    }
-                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-            }
-            .tint(universalSecondaryColor) // Set the tint color for selected tabs to purple
-            .onChange(of: selectedTab) { newTab in
-                // Restrict navigation during tutorial
-                if tutorialViewModel.tutorialState.shouldRestrictNavigation {
-                    if !tutorialViewModel.canNavigateToTab(newTab) {
-                        // Revert to previous valid tab
-                        selectedTab = .home
-                    }
                 }
             }
-            .onAppear {
+            .onChange(of: selectedTabsEnum) { newTabsValue in
+                // Keep TabType in sync with Tabs enum
+                selectedTab = newTabsValue.toTabType
+            }
+            .onChange(of: selectedTab) { newTabTypeValue in
+                // Keep Tabs enum in sync with TabType (for programmatic navigation)
+                selectedTabsEnum = Tabs(from: newTabTypeValue)
+            }
+			.onAppear {
                 // Configure tab bar appearance for theme compatibility
                 let appearance = UITabBarAppearance()
                 appearance.configureWithOpaqueBackground()
@@ -251,14 +202,20 @@ struct ContentView: View {
                 .zIndex(999) // Below notifications but above everything else
             }
         }
+        .testInAppNotification() // Triple-tap anywhere to test in-app notifications
     }
     
     // MARK: - Deep Link Handling
     private func handleDeepLinkActivity(_ activityId: UUID) {
         print("🎯 ContentView: Handling deep link for activity: \(activityId)")
         
+        // Register user as invited to this activity if authenticated
+        if UserAuthViewModel.shared.isLoggedIn {
+            registerUserAsInvitedToActivity(activityId)
+        }
+        
         // Switch to home tab to show the activity in feed
-        selectedTab = .home
+        selectedTabsEnum = .home
         
         // Add a small delay to ensure tab switching completes before setting deep link state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -273,11 +230,51 @@ struct ContentView: View {
         deepLinkManager.clearPendingDeepLink()
     }
     
+    private func registerUserAsInvitedToActivity(_ activityId: UUID) {
+        guard let currentUser = UserAuthViewModel.shared.spawnUser else {
+            print("❌ ContentView: Cannot register invitation - user not authenticated")
+            return
+        }
+        
+        print("🎯 ContentView: Registering user \(currentUser.id) as invited to activity \(activityId)")
+        
+        // Call backend API to register the user as invited to this activity
+        Task {
+            do {
+                let url = URL(string: "\(ServiceConstants.URLs.apiBase)activities/\(activityId.uuidString)/invite/\(currentUser.id.uuidString)")!
+                
+                var request = URLRequest(url: url)
+                request.httpMethod = "POST"
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                
+                let (_, response) = try await URLSession.shared.data(for: request)
+                
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                    print("✅ ContentView: Successfully registered user as invited to activity")
+                    
+                    // Show success notification
+                    DispatchQueue.main.async {
+                        InAppNotificationManager.shared.showNotification(
+                            title: "You're invited!",
+                            message: "You've been added to this activity. Check it out!",
+                            type: .success,
+                            duration: 4.0
+                        )
+                    }
+                } else {
+                    print("❌ ContentView: Failed to register user as invited - HTTP \(String(describing: (response as? HTTPURLResponse)?.statusCode))")
+                }
+            } catch {
+                print("❌ ContentView: Error registering user as invited: \(error)")
+            }
+        }
+    }
+    
     private func handleDeepLinkProfile(_ profileId: UUID) {
         print("🎯 ContentView: Handling deep link for profile: \(profileId)")
         
         // Switch to friends tab to show the profile
-        selectedTab = .friends
+        selectedTabsEnum = .friends
         
         // Add a small delay to ensure tab switching completes before setting deep link state
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {

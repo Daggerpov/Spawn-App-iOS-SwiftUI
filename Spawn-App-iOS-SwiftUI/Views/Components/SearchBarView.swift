@@ -19,7 +19,7 @@ struct SearchBarView: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .font(.onestRegular(size: 18))
-                .foregroundColor(.gray)
+                .foregroundColor(universalAccentColor)
             
             TextField(placeholder, text: $searchText)
                 .font(.onestRegular(size: 16))
@@ -35,7 +35,7 @@ struct SearchBarView: View {
                     isSearching = false
                 }) {
                     Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
+                        .foregroundColor(universalAccentColor)
                 }
             }
         }
@@ -44,16 +44,16 @@ struct SearchBarView: View {
         .background(
             Rectangle()
                 .foregroundColor(universalBackgroundColor)
-                .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 44)
+                .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+                .cornerRadius(15)
                 .overlay(
                     RoundedRectangle(
                         cornerRadius: 15
                     )
                         .inset(by: 0.75)
-                        .stroke(.gray)
+                        .stroke(universalAccentColor)
                 )
         )
-        .foregroundColor(universalAccentColor)
         .onAppear {
             if autofocus {
                 // Small delay to ensure the view is fully loaded

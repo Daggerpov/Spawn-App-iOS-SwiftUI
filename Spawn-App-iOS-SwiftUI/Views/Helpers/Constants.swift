@@ -46,7 +46,7 @@ let colorsGray500: String = "#625A5A"
 let colorsGray600: String = "#3E3B3B"
 let colorsGray700: String = "#262424"
 let colorsGray800: String = "#1F1E1E"
-let colorsGray900: String = "#1A1A1A"
+let colorsGray900: String = "#1B1B1B"
 let colorsGrayInput: String = "#F5F5F5"
 
 // MARK: - Indigo Colors
@@ -89,7 +89,7 @@ let colorsGreen300: String = "#78F6C3"
 let colorsGreen400: String = "#46DEA1"
 let colorsGreen500: String = "#30D895"
 let colorsGreen600: String = "#1AB979"
-let colorsGreen700: String = "#098151"
+let colorsGreen700: String = "#30D996"
 let colorsGreen800: String = "#045D39"
 let colorsGreen900: String = "#045D39"
 
@@ -136,6 +136,11 @@ let colorsPink600: String = "#D53F8C"
 let colorsPink700: String = "#B83280"
 let colorsPink800: String = "#97266D"
 let colorsPink900: String = "#702459"
+
+// MARK: - Dark Brand Colors
+let colorsTabIconActive: String = "#536AEE"
+let colorsTabIconInactive: String = "#4B527F"
+let colorsTabBackground: String = "#DFE2F5"
 
 // MARK: - Transparent Colors
 let colorsTransparentBlack0: String = "#00000000"
@@ -284,11 +289,15 @@ let profilePicPlusButtonColor: Color = Color(hex: colorsIndigo400)
 let authPageBackgroundColor: Color = Color(hex: colorsIndigo400)
 
 // Colors from the Figma design (updated to use new design system)
+
 let figmaBlueHex: String = colorsBlue700
 let figmaBlue: Color = Color(hex: figmaBlueHex)
 
 let figmaSoftBlueHex: String = colorsIndigo500
 let figmaSoftBlue: Color = Color(hex: figmaSoftBlueHex)
+
+let figmaGray700Hex: String = colorsGray700
+let figmaGray700: Color = Color(hex: figmaGray700Hex)
 
 let figmaBlack300Hex: String = colorsGray400
 let figmaBlack300: Color = Color(hex: figmaBlack300Hex)

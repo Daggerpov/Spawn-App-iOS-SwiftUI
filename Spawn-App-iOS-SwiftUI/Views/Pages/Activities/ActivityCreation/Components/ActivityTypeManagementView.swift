@@ -7,6 +7,8 @@ struct ActivityTypeManagementView: View {
     @State private var showingOptions = false
     @State private var showingManagePeople = false
     @State private var showingEditView = false
+    @State private var navigateToProfile = false
+    @State private var selectedUserForProfile: BaseUserDTO?
     
     // Use the ActivityTypeViewModel for managing activity types
     @StateObject private var viewModel: ActivityTypeViewModel
@@ -104,13 +106,18 @@ struct ActivityTypeManagementView: View {
             }
             .background(universalBackgroundColor)
             .navigationBarHidden(true)
-                    .navigationDestination(isPresented: $showingManagePeople) {
-            ManagePeopleView(
-                user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
-                activityTitle: displayActivityType.title,
-                activityTypeDTO: displayActivityType
-            )
-        }
+            .navigationDestination(isPresented: $showingManagePeople) {
+                ManagePeopleView(
+                    user: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
+                    activityTitle: displayActivityType.title,
+                    activityTypeDTO: displayActivityType
+                )
+            }
+            .navigationDestination(isPresented: $navigateToProfile) {
+                if let selectedUser = selectedUserForProfile {
+                    ProfileView(user: selectedUser)
+                }
+            }
         .onAppear {
             // Fetch the latest activity types when the view appears
             Task {
@@ -244,7 +251,10 @@ struct ActivityTypeManagementView: View {
     }
     
     private func peopleRowView(friend: BaseUserDTO) -> some View {
-        PeopleRowView(friend: friend)
+        PeopleRowView(friend: friend, activityType: displayActivityType) { user in
+            selectedUserForProfile = user
+            navigateToProfile = true
+        }
     }
     
     private var emptyStateView: some View {
@@ -299,6 +309,8 @@ struct ActivityTypeManagementView: View {
 
 struct PeopleRowView: View {
     let friend: BaseUserDTO
+    let activityType: ActivityTypeDTO
+    let onProfileTap: (BaseUserDTO) -> Void
     @State private var showingPersonOptions = false
     @Environment(\.colorScheme) private var colorScheme
     
@@ -356,21 +368,14 @@ struct PeopleRowView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(Color.clear)
         )
-        .actionSheet(isPresented: $showingPersonOptions) {
-            ActionSheet(
-                title: Text(FormatterService.shared.formatName(user: friend)),
-                buttons: [
-                    .default(Text("View Profile")) {
-                        // Handle view profile
-                    },
-                    .default(Text("Send Message")) {
-                        // Handle send message
-                    },
-                    .destructive(Text("Remove from Type")) {
-                        // Handle remove from type
-                    },
-                    .cancel()
-                ]
+        .sheet(isPresented: $showingPersonOptions) {
+            ActivityTypeFriendMenuView(
+                friend: friend,
+                activityType: activityType,
+                navigateToProfile: { 
+                    showingPersonOptions = false
+                    onProfileTap(friend) 
+                }
             )
         }
     }
@@ -494,6 +499,192 @@ struct ActivityTypeOptionsPopup: View {
             }
         } message: {
             Text("Are you sure you want to delete this activity type? This action cannot be undone.")
+        }
+    }
+}
+
+// MARK: - ActivityTypeFriendMenuView
+struct ActivityTypeFriendMenuView: View {
+    let friend: BaseUserDTO
+    let activityType: ActivityTypeDTO
+    let navigateToProfile: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var isLoading: Bool = true
+    @StateObject private var activityTypeViewModel = ActivityTypeViewModel(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
+    
+    private var firstName: String {
+        if let name = friend.name, !name.isEmpty {
+            return name.components(separatedBy: " ").first ?? friend.username ?? "User"
+        }
+        return friend.username ?? "User"
+    }
+    
+    var body: some View {
+        MenuContainer {
+            if isLoading {
+                loadingContent
+            } else {
+                MenuContent(
+                    friend: friend,
+                    activityType: activityType,
+                    navigateToProfile: navigateToProfile,
+                    removeFromType: removeFromActivityType,
+                    dismiss: dismiss
+                )
+            }
+        }
+        .background(universalBackgroundColor)
+        .onAppear {
+            // Simulate a very brief loading state to ensure smooth animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                isLoading = false
+            }
+        }
+    }
+    
+    private var loadingContent: some View {
+        VStack(spacing: 16) {
+            ForEach(0..<3) { _ in
+                HStack {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 20)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            
+            Divider()
+            
+            Button(action: { dismiss() }) {
+                Text("Cancel")
+                    .font(.headline)
+                    .foregroundColor(universalAccentColor)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+            }
+            .background(universalBackgroundColor)
+            .cornerRadius(12)
+        }
+        .background(universalBackgroundColor)
+        .redacted(reason: .placeholder)
+        .shimmering()
+    }
+    
+    private func removeFromActivityType() {
+        Task {
+            await activityTypeViewModel.removeFriendFromActivityType(
+                activityTypeId: activityType.id,
+                friendId: friend.id
+            )
+            dismiss()
+            
+            // Post notification to refresh the activity type management view
+            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+        }
+    }
+}
+
+// Container view that provides the background and layout for ActivityTypeFriendMenuView
+private struct MenuContainer<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            content
+                .background(universalBackgroundColor)
+                .cornerRadius(12, corners: [.topLeft, .topRight])
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .background(universalBackgroundColor)
+    }
+}
+
+// Content view that contains the actual menu items for ActivityTypeFriendMenuView
+private struct MenuContent: View {
+    let friend: BaseUserDTO
+    let activityType: ActivityTypeDTO
+    let navigateToProfile: () -> Void
+    let removeFromType: () -> Void
+    let dismiss: DismissAction
+    
+    private var firstName: String {
+        if let name = friend.name, !name.isEmpty {
+            return name.components(separatedBy: " ").first ?? friend.username ?? "User"
+        }
+        return friend.username ?? "User"
+    }
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            menuItems
+                .background(universalBackgroundColor)
+            
+            cancelButton
+        }
+        .background(universalBackgroundColor)
+    }
+    
+    private var menuItems: some View {
+        VStack(spacing: 0) {
+            menuItem(
+                icon: "person.crop.circle",
+                text: "View Profile",
+                color: universalAccentColor
+            ) {
+                dismiss()
+                navigateToProfile()
+            }
+            .background(universalBackgroundColor)
+            
+            Divider()
+            
+            menuItem(
+                icon: "person.badge.minus",
+                text: "Remove from \(activityType.title)",
+                color: .red
+            ) {
+                removeFromType()
+            }
+            .background(universalBackgroundColor)
+        }
+        .background(universalBackgroundColor)
+    }
+    
+    private var cancelButton: some View {
+        Button(action: { dismiss() }) {
+            Text("Cancel")
+                .font(.headline)
+                .foregroundColor(universalAccentColor)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+        }
+        .background(universalBackgroundColor)
+        .cornerRadius(12)
+    }
+    
+    private func menuItem(
+        icon: String,
+        text: String,
+        color: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                
+                Text(text)
+                    .foregroundColor(color)
+                
+                Spacer()
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 16)
         }
     }
 }

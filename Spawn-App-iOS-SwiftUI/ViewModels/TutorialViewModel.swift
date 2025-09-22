@@ -17,19 +17,26 @@ class TutorialViewModel: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let tutorialStateKey = "TutorialState"
     private let hasCompletedTutorialKey = "HasCompletedFirstActivityTutorial"
+    private let apiService: IAPIService
     
     private init() {
+        self.apiService = MockAPIService.isMocking ? MockAPIService() : APIService()
         loadTutorialState()
     }
     
-    /// Load tutorial state from UserDefaults
+    /// Load tutorial state from UserDefaults and server
     private func loadTutorialState() {
         let hasCompleted = userDefaults.bool(forKey: hasCompletedTutorialKey)
         
         if hasCompleted {
             tutorialState = .completed
         } else {
-            // Check if user needs tutorial
+            // Check server for tutorial completion status
+            Task {
+                await fetchTutorialStatusFromServer()
+            }
+            
+            // Meanwhile, check if user needs tutorial based on local data
             if shouldStartTutorial() {
                 tutorialState = .activityTypeSelection
                 shouldShowCallout = true
@@ -39,10 +46,15 @@ class TutorialViewModel: ObservableObject {
         }
     }
     
-    /// Save tutorial state to UserDefaults
+    /// Save tutorial state to UserDefaults and server
     private func saveTutorialState() {
         if case .completed = tutorialState {
             userDefaults.set(true, forKey: hasCompletedTutorialKey)
+            
+            // Also save to server
+            Task {
+                await saveTutorialStatusToServer()
+            }
         }
     }
     
@@ -50,14 +62,42 @@ class TutorialViewModel: ObservableObject {
     /// This should be called when user reaches the main feed for the first time
     private func shouldStartTutorial() -> Bool {
         // Check if user has completed onboarding and this is their first time in the main app
-        guard UserAuthViewModel.shared.spawnUser != nil else { return false }
+		guard UserAuthViewModel.shared.spawnUser != nil else { return false }
         
-        // User should start tutorial if:
-        // 1. They haven't completed the tutorial before
-        // 2. They have completed basic onboarding
-        // 3. They are in the main app (feed view)
-        return !userDefaults.bool(forKey: hasCompletedTutorialKey) && 
-               UserAuthViewModel.shared.hasCompletedOnboarding
+        // Always skip tutorial for existing users signing into their account
+        print("🎯 TutorialViewModel: Checking if user should start tutorial...")
+        
+        // Check if this user has any existing activities or friends
+        // If they do, they're likely an existing user who shouldn't see the tutorial
+        let cachedActivities = AppCache.shared.getCurrentUserActivities()
+        let cachedFriends = AppCache.shared.getCurrentUserFriends()
+        
+        if !cachedActivities.isEmpty || !cachedFriends.isEmpty {
+            print("🎯 TutorialViewModel: Skipping tutorial for user with existing activities (\(cachedActivities.count)) or friends (\(cachedFriends.count))")
+            return false
+        }
+        
+        // For users who signed in with email/username (not OAuth registration), 
+        // they are definitely existing users and should skip tutorial
+        if UserAuthViewModel.shared.authProvider == .email {
+            print("🎯 TutorialViewModel: Skipping tutorial for email/username sign-in user")
+            return false
+        }
+        
+        // IMPORTANT: For existing users signing into their account on a new device,
+        // we should NOT show the tutorial even if they have no cached data yet.
+        // The key indicator is that they already have a Spawn account that existed before this session.
+        // Since we can't easily distinguish between new registrations and existing sign-ins at this point,
+        // we'll be conservative and skip the tutorial for most cases to avoid annoying existing users.
+        
+        // Only show tutorial if user has explicitly never completed it AND
+        // this appears to be a completely new user experience
+        let hasNeverCompletedTutorial = !userDefaults.bool(forKey: hasCompletedTutorialKey)
+        let hasCompletedOnboarding = UserAuthViewModel.shared.hasCompletedOnboarding
+
+        let shouldStart = hasNeverCompletedTutorial && hasCompletedOnboarding
+        print("🎯 TutorialViewModel: shouldStartTutorial = \(shouldStart) (hasNeverCompleted: \(hasNeverCompletedTutorial), hasCompletedOnboarding: \(hasCompletedOnboarding))")
+        return shouldStart
     }
     
     /// Start the tutorial from the beginning
@@ -98,11 +138,11 @@ class TutorialViewModel: ObservableObject {
     func canNavigateToTab(_ tab: TabType) -> Bool {
         switch tutorialState {
         case .activityTypeSelection:
-            // During activity type selection, only allow home tab
-            return tab == .home
+            // During activity type selection, only allow activities tab
+            return tab == .activities
         case .activityCreation:
-            // During activity creation, allow home and creation tabs
-            return tab == .home || tab == .creation
+            // During activity creation, allow all tabs (user can navigate away)
+            return true
         case .notStarted, .completed:
             // No restrictions
             return true
@@ -129,5 +169,74 @@ class TutorialViewModel: ObservableObject {
         
         // Complete the tutorial
         completeTutorial()
+    }
+    
+    // MARK: - Server Sync Methods
+    
+    /// Fetch tutorial completion status from server
+    @MainActor
+    private func fetchTutorialStatusFromServer() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("🎯 TutorialViewModel: Cannot fetch tutorial status - no user logged in")
+            return
+        }
+        
+        // Skip server check in mock mode
+        if MockAPIService.isMocking {
+            print("🎯 TutorialViewModel: Skipping server check in mock mode")
+            return
+        }
+        
+        do {
+            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
+                let preferences: UserPreferencesDTO = try await apiService.fetchData(
+                    from: url,
+                    parameters: nil
+                )
+                
+                if preferences.hasCompletedTutorial {
+                    print("🎯 TutorialViewModel: Server indicates tutorial completed - updating local state")
+                    userDefaults.set(true, forKey: hasCompletedTutorialKey)
+                    tutorialState = .completed
+                    shouldShowCallout = false
+                }
+            }
+        } catch {
+            print("🎯 TutorialViewModel: Failed to fetch tutorial status from server: \(error)")
+            // Continue with local logic if server fails
+        }
+    }
+    
+    /// Save tutorial completion status to server
+    private func saveTutorialStatusToServer() async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("🎯 TutorialViewModel: Cannot save tutorial status - no user logged in")
+            return
+        }
+        
+        // Skip server update in mock mode
+        if MockAPIService.isMocking {
+            print("🎯 TutorialViewModel: Skipping server update in mock mode")
+            return
+        }
+        
+        let preferences = UserPreferencesDTO(
+            hasCompletedTutorial: true,
+            userId: userId
+        )
+        
+        do {
+            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
+                let _: UserPreferencesDTO? = try await apiService.sendData(
+                    preferences,
+                    to: url,
+                    parameters: nil
+                )
+                print("🎯 TutorialViewModel: Successfully saved tutorial completion to server")
+            }
+        } catch {
+            print("🎯 TutorialViewModel: Failed to save tutorial status to server: \(error)")
+            // Local storage is already updated, so this is not critical
+        }
     }
 } 

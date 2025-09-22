@@ -66,7 +66,7 @@ struct AccountNotFoundView: View {
                     
                     // If user has OAuth credentials (from failed sign-in attempt), go directly to user details
                     // since email is already verified through OAuth provider
-                    if let provider = userAuth.authProvider, userAuth.idToken != nil {
+                    if let _ = userAuth.authProvider, userAuth.idToken != nil {
                         print("📍 OAuth user registration - going directly to user details input")
                         userAuth.navigateTo(.userDetailsInput(isOAuthUser: true))
                     } else {

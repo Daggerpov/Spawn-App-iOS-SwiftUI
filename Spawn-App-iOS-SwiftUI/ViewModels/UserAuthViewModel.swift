@@ -51,6 +51,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Track whether this is the first launch or a logout
 	@Published var isFirstLaunch: Bool = true
 	
+	// Track whether user has seen preview screens on this device
+	@Published var hasSeenPreviewScreens: Bool = false
+	
 	// Track onboarding completion
 	@Published var hasCompletedOnboarding: Bool = false {
 		didSet {
@@ -147,6 +150,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		// Load onboarding completion status from UserDefaults
 		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 		print("🔄 DEBUG: Loaded hasCompletedOnboarding from UserDefaults: \(self.hasCompletedOnboarding)")
+		
+		// Load preview screens status from UserDefaults
+		self.hasSeenPreviewScreens = UserDefaults.standard.bool(forKey: "hasSeenPreviewScreens")
+		print("🔄 DEBUG: Loaded hasSeenPreviewScreens from UserDefaults: \(self.hasSeenPreviewScreens)")
 
         // Start minimum loading timer
         Task {
@@ -556,7 +563,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
         clearKeychainTokens()
-        clearKeychainTokens()
 		
 		// Clear stored OAuth credentials for complete logout
 		self.storedOAuthProvider = nil
@@ -615,42 +621,43 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						
 						// Navigate based on user status from AuthResponseDTO
                         continueUserOnboarding(authResponse: authResponse)
-						//self.navigateBasedOnUserStatus(authResponse: authResponse)
                         
 						// Post notification that user did login successfully
 						NotificationCenter.default.post(name: .userDidLogin, object: nil)
 					}
 				} catch let error as APIError {
 					await MainActor.run {
-						// Handle specific API errors
+						// Handle specific API errors - during onboarding, NEVER navigate away, only show alerts
+						self.spawnUser = nil
 						if case .invalidStatusCode(let statusCode) = error {
 							if statusCode == 404 {
-								// User doesn't exist in Spawn database - direct to account not found view
-								print("📍 User not found in Spawn database (404) - directing to AccountNotFoundView")
-								self.spawnUser = nil
-								self.navigateTo(.accountNotFound)
+								// User doesn't exist in Spawn database - show friendly error message
+								print("📍 User not found in Spawn database (404) - showing user-friendly error")
+								self.authAlert = .unknownError("We couldn't find your account. Please check your credentials or create a new account.")
+								self.errorMessage = "We couldn't find your account. Please check your credentials or create a new account."
 							} else {
-								// Other status codes (401, 500, etc.) - something went wrong with the request
-								print("❌ Authentication error (\(statusCode)) during OAuth sign-in: \(error.localizedDescription)")
-								self.spawnUser = nil
-								self.navigateTo(.accountNotFound)
-								self.errorMessage = "Authentication failed. Please try again."
+								// Other status codes (401, 500, etc.) - show appropriate error without navigation
+								print("❌ Authentication error (\(statusCode)) during OAuth sign-in")
+								let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(error, context: "sign in")
+								self.authAlert = .unknownError(userFriendlyMessage)
+								self.errorMessage = userFriendlyMessage
 							}
 						} else {
-							// Other API errors (network, parsing, etc.)
-							print("❌ API error during OAuth sign-in: \(error.localizedDescription)")
-							self.spawnUser = nil
-							self.navigateTo(.accountNotFound)
-							self.errorMessage = "Unable to sign in. Please check your connection and try again."
+							// Other API errors (network, parsing, etc.) - show friendly error without navigation
+							print("❌ API error during OAuth sign-in: \(error)")
+							let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(error, context: "sign in")
+							self.authAlert = .networkError
+							self.errorMessage = userFriendlyMessage
 						}
 					}
 				} catch {
 					await MainActor.run {
-						// Generic error handling
-						print("❌ Unexpected error during OAuth sign-in: \(error.localizedDescription)")
+						// Generic error handling - show user-friendly error without navigation
+						print("❌ Unexpected error during OAuth sign-in: \(error)")
 						self.spawnUser = nil
-						self.navigateTo(.accountNotFound)
-						self.errorMessage = "An unexpected error occurred. Please try again."
+						let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(error, context: "sign in")
+						self.authAlert = .unknownError(userFriendlyMessage)
+						self.errorMessage = userFriendlyMessage
 					}
 				}
 			await MainActor.run {
@@ -659,18 +666,20 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 	}
 	
-	// Helper method to handle API errors consistently
+	// Helper method to handle API errors consistently without navigation during onboarding
 	private func handleApiError(_ error: APIError) {
-		// For 404 errors (user doesn't exist), direct to account not found view without showing an error
+		// For 404 errors (user doesn't exist), show user-friendly error without navigation
 		if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
 			self.spawnUser = nil
-			self.navigateTo(.accountNotFound)
-			print("User does not exist yet in Spawn database - directing to account not found view")
+			self.authAlert = .unknownError("We couldn't find your account. Please check your credentials or create a new account.")
+			self.errorMessage = "We couldn't find your account. Please check your credentials or create a new account."
+			print("User does not exist yet in Spawn database - showing user-friendly error")
 		} else {
 			self.spawnUser = nil
-			self.navigateTo(.accountNotFound)
-			self.errorMessage = "Failed to fetch user: \(error.localizedDescription)"
-			print(self.errorMessage as Any)
+			let userFriendlyMessage = ErrorFormattingService.shared.formatAPIError(error)
+			self.authAlert = .unknownError(userFriendlyMessage)
+			self.errorMessage = userFriendlyMessage
+			print("API error handled with user-friendly message: \(userFriendlyMessage)")
 		}
 	}
 
@@ -746,7 +755,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		} catch {
 			await MainActor.run {
 				print("Error creating the user: \(error)")
-				self.authAlert = .unknownError(error.localizedDescription)
+				// Never show raw error messages to users during critical onboarding flows
+				let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(error, context: "account creation")
+				self.authAlert = .unknownError(userFriendlyMessage)
 			}
 		}
 	}
@@ -819,9 +830,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
         }
         
         if status != .active {
+            // Navigate to the "Continue Onboarding" view first
+            // The user will see this view and can choose to continue or return to login
             navigateTo(.onboardingContinuation)
+        } else {
+            // For active users, navigate directly to feed
+            navigateOnStatus()
         }
-        navigateOnStatus()
     }
     
     func navigateOnStatus() {
@@ -1329,9 +1344,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
         print("Attempting email/username sign-in")
         do {
             if let url: URL = URL(string: APIService.baseURL + "auth/login") {
-                let response: BaseUserDTO? = try await self.apiService.sendData(LoginDTO(usernameOrEmail: usernameOrEmail, password: password), to: url, parameters: nil)
+                let response: AuthResponseDTO? = try await self.apiService.sendData(LoginDTO(usernameOrEmail: usernameOrEmail, password: password), to: url, parameters: nil)
                 
-                guard let user: BaseUserDTO = response else {
+                guard let authResponse: AuthResponseDTO = response else {
                     print("Failed to login with email/username")
                     await MainActor.run {
                         self.isLoggedIn = false
@@ -1341,15 +1356,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     return
                 }
                 print("Email/username login successful")
+                let user: BaseUserDTO = authResponse.user
+                
                 await MainActor.run {
                     self.spawnUser = user
-                    // For existing users with email/username sign-in, mark onboarding as completed
-                    if !self.hasCompletedOnboarding {
-                        self.markOnboardingCompleted()
-                    }
-                    self.navigateTo(.feedView)
                     self.isLoggedIn = true
                     self.errorMessage = nil // Clear any previous errors on success
+                    self.continueUserOnboarding(authResponse: authResponse)
                 }
             }
         } catch let error as APIError {
@@ -1526,8 +1539,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.errorMessage = nil
                     } else {
                         // Handle error
-                        self.navigateTo(.accountNotFound)
-                        self.errorMessage = "Unable to create account with this sign-in method. Please try again."
+			// Show error instead of navigating away during onboarding
+			self.authAlert = .createError
+			self.errorMessage = "Unable to create account with this sign-in method. Please try again."
                     }
                 }
             }
@@ -1561,18 +1575,22 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     case 500...599:
                         self.errorMessage = "Server temporarily unavailable. Please try again later."
                     default:
-                        self.navigateTo(.accountNotFound)
+                        // Show error instead of navigating away during onboarding
+                        self.authAlert = .createError
                         self.errorMessage = "Unable to create account. Please try again."
                     }
                 } else {
-                    self.navigateTo(.accountNotFound)
+                    // Show error instead of navigating away during onboarding
+                    self.authAlert = .networkError
                     self.errorMessage = "Network connection error. Please check your internet connection and try again."
                 }
             }
         } catch {
             await MainActor.run {
-                self.navigateTo(.accountNotFound)
-                self.errorMessage = "Unable to create account. Please try again."
+                // Show error instead of navigating away during onboarding
+                let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(error, context: "account creation")
+                self.authAlert = .unknownError(userFriendlyMessage)
+                self.errorMessage = userFriendlyMessage
             }
         }
     }
@@ -1666,13 +1684,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
             await MainActor.run {
                 print("❌ OAuth re-authentication failed: \(error.localizedDescription)")
                 
-                // If re-authentication fails, we need to start over
-                self.navigateTo(.accountNotFound)
-                self.errorMessage = "Authentication failed. Please try signing in again."
+                // Show error without navigation - let user stay on current screen and retry
+                let userFriendlyMessage = ErrorFormattingService.shared.formatOnboardingError(error, context: "authentication")
+                self.authAlert = .unknownError(userFriendlyMessage)
+                self.errorMessage = userFriendlyMessage
                 
                 // Clear auto sign-in state on failure
                 self.isAutoSigningIn = false
-                self.authAlert = nil
             }
         }
     }
@@ -1694,7 +1712,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                         self.errorMessage = nil
                         
                         // Navigate based on user status
-                        self.navigateTo(.userDetailsInput(isOAuthUser: false))
+                        self.continueUserOnboarding(authResponse: authResponse)
                     } else {
                         // Handle error
                         self.errorMessage = "Invalid verification code"
@@ -1821,9 +1839,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
         guard let validIdToken = idToken,
               let validAuthProvider = authProvider,
               let validEmail = email else {
-            print("🔄 No OAuth credentials available for re-authentication. Logging out.")
+            print("🔄 No OAuth credentials available for re-authentication. Showing error instead of logging out.")
             isReauthenticating = false
-            self.signOut()
+            self.authAlert = .unknownError("We're having trouble with your session. Please try again.")
+            self.errorMessage = "We're having trouble with your session. Please try again."
             return
         }
         
@@ -1908,7 +1927,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				if statusCode >= 500 {
 					self.authAlert = .networkError
 				} else {
-					self.authAlert = .unknownError(apiService.errorMessage ?? "An error occurred during account creation")
+					// Use error formatting service instead of raw API messages
+					let rawMessage = apiService.errorMessage ?? "An error occurred during account creation"
+					let userFriendlyMessage = ErrorFormattingService.shared.formatGenericError(rawMessage)
+					self.authAlert = .unknownError(userFriendlyMessage)
 				}
 			}
 		} else {
@@ -1963,10 +1985,30 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	}
     
     func getStarted() {
-        if self.isFirstLaunch {
+        // Always show preview screens if user hasn't seen them on this device,
+        // regardless of whether they're a new or existing user
+        if !self.hasSeenPreviewScreens {
             navigateTo(.spawnIntro)
         } else {
             navigateTo(.signIn)
+        }
+    }
+    
+    // Mark preview screens as seen on this device
+    func markPreviewScreensAsSeen() {
+        Task { @MainActor in
+            hasSeenPreviewScreens = true
+            UserDefaults.standard.set(true, forKey: "hasSeenPreviewScreens")
+            print("🔄 DEBUG: Marked preview screens as seen")
+        }
+    }
+    
+    // Reset preview screens state for testing/debugging purposes
+    func resetPreviewScreensState() {
+        Task { @MainActor in
+            hasSeenPreviewScreens = false
+            UserDefaults.standard.set(false, forKey: "hasSeenPreviewScreens")
+            print("🔄 DEBUG: Reset preview screens state - will show preview screens on next Get Started")
         }
     }
     

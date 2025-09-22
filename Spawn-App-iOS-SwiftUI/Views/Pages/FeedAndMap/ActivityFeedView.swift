@@ -139,8 +139,8 @@ struct ActivityFeedView: View {
                         onContinue: {
                             showTutorialPreConfirmation = false
                             
-                            // Navigate to creation view
-                            selectedTab = TabType.creation
+                            // Navigate to activities view
+                            selectedTab = TabType.activities
                             
                             // Initialize with selected activity type and skip people management if no friends
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -202,7 +202,7 @@ struct ActivityFeedView: View {
         Button(action: {
             // Reset activity creation view model to ensure no pre-selection
             ActivityCreationViewModel.reInitialize()
-            selectedTab = TabType.creation
+            selectedTab = TabType.activities
         }) {
             seeAllText
         }
@@ -344,12 +344,9 @@ extension ActivityFeedView {
             showTutorialPreConfirmation = true
             
         } else {
-            // Normal flow
-            selectedTab = TabType.creation
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
-            }
+            // Normal flow - set the activity type first, then navigate
+            ActivityCreationViewModel.initializeWithSelectedActivityType(selectedActivityTypeDTO)
+            selectedTab = TabType.activities
         }
     }
 }

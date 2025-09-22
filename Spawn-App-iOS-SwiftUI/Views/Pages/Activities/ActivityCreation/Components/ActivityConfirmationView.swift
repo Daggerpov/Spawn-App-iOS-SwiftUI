@@ -136,6 +136,7 @@ struct ActivityConfirmationView: View {
                             .foregroundColor(adaptiveSecondaryTextColor)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
+                        
                     }
                     .padding(.top, 80)
                     
@@ -179,7 +180,7 @@ struct ActivityConfirmationView: View {
                     .shadow(
                         color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
                     )
-                    .padding(.bottom, 120)
+                    .padding(.bottom, 120) // Standard bottom padding
                 }
             }
             
@@ -458,19 +459,24 @@ struct ActivityConfirmationView: View {
     
     private func shareViaSMS() {
         let activity = viewModel.activity
-        generateShareURL(for: activity) { url in
-            let shareText = "Join me for \"\(activity.title ?? "an activity")\"! \(url.absoluteString)"
-            
-            if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-               let smsURL = URL(string: "sms:?body=\(encodedText)") {
-                
-                if UIApplication.shared.canOpenURL(smsURL) {
-                    UIApplication.shared.open(smsURL)
-                } else {
-                    print("SMS not available")
-                }
-            }
-        }
+        
+        // Convert ActivityDTO to FullFeedActivityDTO for SMS service
+        let fullActivity = FullFeedActivityDTO(
+            id: activity.id,
+            title: activity.title,
+            startTime: activity.startTime,
+            endTime: activity.endTime,
+            location: activity.location,
+            activityTypeId: activity.activityTypeId,
+            note: activity.note,
+            icon: activity.icon,
+            participantLimit: activity.participantLimit,
+            creatorUser: UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov,
+            createdAt: activity.createdAt
+        )
+        
+        // Use the new SMS sharing service with enhanced messaging
+        SMSShareService.shared.shareActivity(fullActivity)
     }
     
     private func generateShareURL(for activity: ActivityDTO, completion: @escaping (URL) -> Void) {

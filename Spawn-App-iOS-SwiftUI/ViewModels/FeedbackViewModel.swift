@@ -64,7 +64,7 @@ class FeedbackViewModel: ObservableObject {
                 successMessage = "Thank you for your feedback!"
             }
         } catch {
-            await setError("Failed to submit feedback: \(error.localizedDescription)")
+            await setError("Failed to submit feedback: \(ErrorFormattingService.shared.formatError(error))")
         }
     }
     

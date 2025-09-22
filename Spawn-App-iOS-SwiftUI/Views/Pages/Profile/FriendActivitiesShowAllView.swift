@@ -35,7 +35,7 @@ struct FriendActivitiesShowAllView: View {
                             calendarSection
                         }
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 100) // Safe area padding
+                        .padding(.bottom, 16) // Standard bottom padding
                     }
                 }
                 

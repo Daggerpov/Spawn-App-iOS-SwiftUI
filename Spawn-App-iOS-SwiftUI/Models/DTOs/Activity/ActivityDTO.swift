@@ -31,6 +31,7 @@ class ActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
     var participantUserIds: [UUID]?
     var invitedUserIds: [UUID]?
     var chatMessageIds: [UUID]?
+    var clientTimezone: String? // Timezone of the client creating the activity (e.g., "America/New_York")
 
     init(
         id: UUID,
@@ -46,7 +47,8 @@ class ActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         creatorUserId: UUID? = nil,
         participantUserIds: [UUID]? = nil,
         invitedUserIds: [UUID]? = nil,
-        chatMessageIds: [UUID]? = nil
+        chatMessageIds: [UUID]? = nil,
+        clientTimezone: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -62,12 +64,13 @@ class ActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         self.participantUserIds = participantUserIds
         self.invitedUserIds = invitedUserIds
         self.chatMessageIds = chatMessageIds
+        self.clientTimezone = clientTimezone
     }
     
     // CodingKeys for proper JSON serialization/deserialization
     enum CodingKeys: String, CodingKey {
         case id, title, startTime, endTime, note, icon, participantLimit, createdAt
-        case location, activityTypeId, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds
+        case location, activityTypeId, creatorUserId, participantUserIds, invitedUserIds, chatMessageIds, clientTimezone
     }
     
     // Custom decoder to handle the JSON structure from back-end
@@ -88,6 +91,7 @@ class ActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         participantUserIds = try container.decodeIfPresent([UUID].self, forKey: .participantUserIds)
         invitedUserIds = try container.decodeIfPresent([UUID].self, forKey: .invitedUserIds)
         chatMessageIds = try container.decodeIfPresent([UUID].self, forKey: .chatMessageIds)
+        clientTimezone = try container.decodeIfPresent(String.self, forKey: .clientTimezone)
     }
     
     // Custom encoder to ensure proper JSON structure for back-end
@@ -108,6 +112,7 @@ class ActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
         try container.encodeIfPresent(participantUserIds, forKey: .participantUserIds)
         try container.encodeIfPresent(invitedUserIds, forKey: .invitedUserIds)
         try container.encodeIfPresent(chatMessageIds, forKey: .chatMessageIds)
+        try container.encodeIfPresent(clientTimezone, forKey: .clientTimezone)
     }
 }
 

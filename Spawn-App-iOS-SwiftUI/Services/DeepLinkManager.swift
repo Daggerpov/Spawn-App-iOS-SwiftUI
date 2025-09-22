@@ -160,6 +160,9 @@ class DeepLinkManager: ObservableObject {
                 self.activityToShow = activityId
                 self.shouldShowActivity = true
                 
+                // Check if user is authenticated to determine behavior
+                self.handleActivityDeepLink(activityId)
+                
                 // Post notification for other parts of the app to listen to
                 NotificationCenter.default.post(
                     name: .deepLinkActivityReceived,
@@ -172,6 +175,9 @@ class DeepLinkManager: ObservableObject {
                 self.pendingDeepLink = deepLink
                 self.profileToShow = profileId
                 self.shouldShowProfile = true
+                
+                // Check if user is authenticated to determine behavior
+                self.handleProfileDeepLink(profileId)
                 
                 // Post notification for other parts of the app to listen to
                 NotificationCenter.default.post(
@@ -188,6 +194,33 @@ class DeepLinkManager: ObservableObject {
                 self.profileToShow = nil
                 self.shouldShowProfile = false
             }
+        }
+    }
+    
+    // MARK: - Deep Link Handlers
+    
+    private func handleActivityDeepLink(_ activityId: UUID) {
+        // If user has the app and is authenticated, open activity in-app
+        if UserAuthViewModel.shared.isLoggedIn {
+            print("🎯 DeepLinkManager: User authenticated - opening activity in-app")
+            // The activity will be opened by the ContentView listening to notifications
+            // The deep link will register the user as invited to this activity
+            // and show the activity popup in the UI
+        } else {
+            print("🎯 DeepLinkManager: User not authenticated - will show activity invite page")
+            // If not authenticated, the app will show the activity invite page
+            // where users can see activity details and join/install the app
+        }
+    }
+    
+    private func handleProfileDeepLink(_ profileId: UUID) {
+        // If user has the app and is authenticated, open profile in Friends page
+        if UserAuthViewModel.shared.isLoggedIn {
+            print("🎯 DeepLinkManager: User authenticated - opening profile in Friends page")
+            // The profile will be opened in the Friends tab by ContentView
+        } else {
+            print("🎯 DeepLinkManager: User not authenticated - will show profile invite page")
+            // If not authenticated, show a profile preview/invite page
         }
     }
     

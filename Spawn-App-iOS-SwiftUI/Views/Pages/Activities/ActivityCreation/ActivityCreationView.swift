@@ -28,12 +28,24 @@ struct ActivityCreationView: View {
     @Binding var selectedTab: TabType
     private var startingStep: ActivityCreationStep
     
+    // Track navigation context to determine correct back behavior
+    @State private var sourceTab: TabType
+    
     init(creatingUser: BaseUserDTO, closeCallback: @escaping () -> Void, selectedTab: Binding<TabType>, startingStep: ActivityCreationStep = .activityType) {
         self.creatingUser = creatingUser
         self.closeCallback = closeCallback
         self._selectedTab = selectedTab
         self.startingStep = startingStep
-        self._currentStep = State(initialValue: startingStep)
+        
+        // Track the source tab to determine correct back navigation
+        // If we have a pre-selected activity type and current tab is activities, we likely came from feed
+        let hasPreselectedType = ActivityCreationViewModel.shared.selectedActivityType != nil
+        self._sourceTab = State(initialValue: hasPreselectedType && selectedTab.wrappedValue == .activities ? .home : selectedTab.wrappedValue)
+        
+        // If an activity type is pre-selected and we're starting at activityType step,
+        // skip directly to dateTime step
+        let initialStep = (startingStep == .activityType && ActivityCreationViewModel.shared.selectedActivityType != nil) ? .dateTime : startingStep
+        self._currentStep = State(initialValue: initialStep)
         
         // Initialize time values - either from existing activity or calculate next interval
         if startingStep == .dateTime && ActivityCreationViewModel.shared.selectedDate != Date() {
@@ -119,8 +131,12 @@ struct ActivityCreationView: View {
                 }
             }
             
+            // If we have a pre-selected activity type and we're at activityType step, skip to dateTime
+            if currentStep == .activityType && viewModel.selectedActivityType != nil {
+                currentStep = .dateTime
+            }
             // If we're starting fresh (no pre-selected type), ensure absolutely clean state
-            if currentStep == .activityType && viewModel.selectedActivityType == nil {
+            else if currentStep == .activityType && viewModel.selectedActivityType == nil {
                 // First try force reset
                 ActivityCreationViewModel.forceReset()
                 // Then full reinitialization to be absolutely sure
@@ -129,7 +145,7 @@ struct ActivityCreationView: View {
         }
         .onChange(of: selectedTab) { newTab in
             // Reset to beginning if activities tab is selected and we're at confirmation
-            if newTab == TabType.creation && currentStep == .confirmation {
+            if newTab == TabType.activities && currentStep == .confirmation {
                 currentStep = .activityType
                 ActivityCreationViewModel.reInitialize()
                 // Reset other state variables as well
@@ -144,9 +160,19 @@ struct ActivityCreationView: View {
                 selectedMinute = nextInterval.minute
                 isAM = nextInterval.isAM
             }
-            // Also reset when navigating to creation tab from other tabs (not from confirmation)
-            else if newTab == TabType.creation && currentStep != .confirmation {
-                currentStep = .activityType
+            // Also reset when navigating to activities tab from other tabs (not from confirmation)
+            else if newTab == TabType.activities && currentStep != .confirmation {
+                // If we have a pre-selected activity type, start at dateTime step, otherwise start at activityType
+                let hasPreselectedType = viewModel.selectedActivityType != nil
+                currentStep = hasPreselectedType ? .dateTime : .activityType
+                
+                // Update source tab based on whether we have preselection
+                if hasPreselectedType {
+                    sourceTab = .home  // Likely came from feed
+                } else {
+                    sourceTab = .activities  // Direct navigation to activities tab
+                }
+                
                 // Only reinitialize if we don't already have a selection (to preserve any pre-selection from feed)
                 if viewModel.selectedActivityType == nil {
                     ActivityCreationViewModel.reInitialize()
@@ -166,6 +192,17 @@ struct ActivityCreationView: View {
                 selectedHour = nextInterval.hour
                 selectedMinute = nextInterval.minute
                 isAM = nextInterval.isAM
+            }
+        }
+        .onChange(of: viewModel.selectedActivityType) { newActivityType in
+            // Update activity type immediately when selection changes to ensure icon is set
+            if newActivityType != nil {
+                viewModel.updateActivityType()
+            }
+            
+            // If we're at activityType step and an activity type gets selected, skip to dateTime
+            if currentStep == .activityType && newActivityType != nil {
+                currentStep = .dateTime
             }
         }
     }
@@ -223,12 +260,21 @@ struct ActivityCreationView: View {
                     }
                 },
                 onBack: {
-                    // If we're editing (startingStep is dateTime), close the edit flow
-                    // instead of navigating to activity types
+                    // Determine back navigation based on context:
+                    // 1. If editing existing activity (startingStep is dateTime) → close edit flow
+                    // 2. If came from feed → go back to home/feed
+                    // 3. If came from activities tab → go to activity type selection
+                    
                     if startingStep == .dateTime {
+                        // Editing existing activity - close edit flow
                         ActivityCreationViewModel.reInitialize()
                         closeCallback()
+                    } else if sourceTab == .home {
+                        // Came from feed - go back to home/feed
+                        ActivityCreationViewModel.reInitialize()
+                        selectedTab = TabType.home
                     } else {
+                        // Normal flow from activities tab - go to activity type selection
                         currentStep = currentStep.previous()
                     }
                 }
@@ -245,6 +291,9 @@ struct ActivityCreationView: View {
                     if !activityTitle.trimmingCharacters(in: .whitespaces).isEmpty {
                         viewModel.activity.title = activityTitle.trimmingCharacters(in: .whitespaces)
                     }
+                    
+                    // Update activity type to ensure the correct icon is set before showing preview
+                    viewModel.updateActivityType()
                     
                     // Ensure we're in a safe state before transitioning
                     DispatchQueue.main.async {

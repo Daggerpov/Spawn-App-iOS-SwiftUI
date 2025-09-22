@@ -35,6 +35,8 @@ struct ActivityCreationLocationView: View {
     @State private var baseEllipseScale: CGFloat = 1.0
     @State private var pulseScale: CGFloat = 1.0
     @State private var pulseOpacity: Double = 0.0
+    @State private var showLocationError = false
+    @State private var previousRegion: MKCoordinateRegion?
     
     let onNext: () -> Void
     let onBack: (() -> Void)?
@@ -47,7 +49,25 @@ struct ActivityCreationLocationView: View {
             // Map View
             Map(coordinateRegion: $region, showsUserLocation: true)
                 .ignoresSafeArea(.all, edges: .top)
+                .onTapGesture {
+                    print("🎯 Map tapped - triggering pin drop animation")
+                    // Quick pin drop animation for taps
+                    withAnimation(.spring(response: 0.15, dampingFraction: 0.8)) {
+                        baseEllipseScale = 1.15
+                    }
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9).delay(0.05)) {
+                        baseEllipseScale = 1.0
+                    }
+                    // Brief pulse effect
+                    pulseOpacity = 0.2
+                    pulseScale = 1.0
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        pulseScale = 1.4
+                        pulseOpacity = 0.0
+                    }
+                }
                 .onReceive(locationManager.$userLocation) { location in
+                    print("📍 ActivityCreationLocationView: Received user location: \(String(describing: location))")
                     if let location = location, !locationManager.locationUpdated {
                         // Validate coordinates before creating region to prevent NaN values
                         guard CLLocationCoordinate2DIsValid(location) else {
@@ -55,54 +75,41 @@ struct ActivityCreationLocationView: View {
                             return
                         }
                         
+                        print("✅ ActivityCreationLocationView: Setting region with valid coordinates - lat: \(location.latitude), lng: \(location.longitude)")
+                        
                         // Additional iOS 17 specific debugging
                         if #available(iOS 17, *) {
                             print("📍 iOS 17: Setting region with valid coordinates - lat: \(location.latitude), lng: \(location.longitude)")
                         }
                         
-                        region = MKCoordinateRegion(
+                        let newRegion = MKCoordinateRegion(
                             center: location,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                         )
+                        
+                        // Validate the new region before setting
+                        guard CLLocationCoordinate2DIsValid(newRegion.center) else {
+                            print("⚠️ ActivityCreationLocationView: Invalid region center created")
+                            return
+                        }
+                        
+                        withAnimation(.easeInOut(duration: 1.0)) {
+                            region = newRegion
+                        }
+                        
+                        print("✅ ActivityCreationLocationView: Region updated successfully")
                     }
                 }
                 .onReceive(locationManager.$locationError) { error in
                     if let error = error {
                         print("Location error in ActivityCreationLocationView: \(error)")
+                        showLocationError = true
                         if #available(iOS 17, *) {
                             print("⚠️ iOS 17: Location error occurred: \(error)")
                         }
                     }
                 }
-                // Detect user dragging on the map to animate the pin lift/drop
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { _ in
-                            if !isDragging {
-                                withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) {
-                                    isDragging = true
-                                    baseEllipseScale = 0.88
-                                }
-                            }
-                        }
-                        .onEnded { _ in
-                            // Drop the pin with a subtle bounce and pulse underlay
-                            withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) {
-                                isDragging = false
-                                baseEllipseScale = 1.18
-                            }
-                            withAnimation(.spring(response: 0.42, dampingFraction: 0.8).delay(0.03)) {
-                                baseEllipseScale = 1.0
-                            }
-                            // Pulse effect
-                            pulseOpacity = 0.35
-                            pulseScale = 1.0
-                            withAnimation(.easeOut(duration: 0.5)) {
-                                pulseScale = 1.8
-                                pulseOpacity = 0.0
-                            }
-                        }
-                )
+            
             
             // Pin in center of map
             VStack {
@@ -136,6 +143,7 @@ struct ActivityCreationLocationView: View {
                 }
                 Spacer()
             }
+            .allowsHitTesting(false) // Prevent pin from blocking gestures
             
             // Top navigation - back button aligned to safe area like other creation pages
             VStack {
@@ -278,7 +286,7 @@ struct ActivityCreationLocationView: View {
                         
                         // Step indicators
                         StepIndicatorView(currentStep: 2, totalSteps: 3)
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 8) // Standard bottom padding
                         
                         // Confirm button
                         ActivityNextStepButton(
@@ -354,6 +362,7 @@ struct ActivityCreationLocationView: View {
             )
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            print("📍 ActivityCreationLocationView: App entering foreground, checking location services...")
             // Update region when app becomes active
             if let userLocation = locationManager.userLocation {
                 // Validate coordinates before creating region to prevent NaN values
@@ -367,6 +376,33 @@ struct ActivityCreationLocationView: View {
                     span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                 )
             }
+            
+            // Re-request location when app returns to foreground
+            if locationManager.authorizationStatus == .authorizedWhenInUse || locationManager.authorizationStatus == .authorizedAlways {
+                print("📍 ActivityCreationLocationView: Restarting location updates after app foreground...")
+                locationManager.startLocationUpdates()
+            } else {
+                print("⚠️ ActivityCreationLocationView: Location permission not granted when app entered foreground")
+            }
+        }
+        .onAppear {
+            print("📍 ActivityCreationLocationView: View appeared, checking location manager state...")
+            print("📍 Current authorization status: \(locationManager.authorizationStatus.rawValue)")
+            print("📍 Current user location: \(String(describing: locationManager.userLocation))")
+            print("📍 Location updated flag: \(locationManager.locationUpdated)")
+            
+            // Ensure location manager is properly set up when view appears
+            if locationManager.authorizationStatus == .authorizedWhenInUse || locationManager.authorizationStatus == .authorizedAlways {
+                locationManager.startLocationUpdates()
+            } else if locationManager.authorizationStatus == .notDetermined {
+                locationManager.requestLocationPermission()
+            }
+        }
+        .onDisappear {
+            print("📍 ActivityCreationLocationView: View disappeared, stopping location updates...")
+            locationManager.stopLocationUpdates()
+            // Clean up timers
+            debounceTimer?.invalidate()
         }
         .onChange(of: region) { newRegion in
             // Validate region center before processing to prevent NaN issues
@@ -383,8 +419,61 @@ struct ActivityCreationLocationView: View {
                 return
             }
             
+            // Check if this is a user-initiated region change (not programmatic)
+            if let previous = previousRegion, 
+               CLLocationCoordinate2DIsValid(previous.center) && previous != newRegion {
+                // Trigger pin animations when user drags the map
+                print("🎯 Map region changed by user interaction")
+                
+                // Start dragging animation
+                if !isDragging {
+                    withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) {
+                        isDragging = true
+                        baseEllipseScale = 0.88
+                    }
+                }
+                
+                // Use a timer to detect when dragging has stopped
+                debounceTimer?.invalidate()
+                debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+                    // Pin drop animation when dragging stops
+                    print("🎯 Map dragging stopped - triggering pin drop animation")
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) {
+                        isDragging = false
+                        baseEllipseScale = 1.18
+                    }
+                    withAnimation(.spring(response: 0.42, dampingFraction: 0.8).delay(0.03)) {
+                        baseEllipseScale = 1.0
+                    }
+                    // Pulse effect
+                    pulseOpacity = 0.35
+                    pulseScale = 1.0
+                    withAnimation(.easeOut(duration: 0.5)) {
+                        pulseScale = 1.8
+                        pulseOpacity = 0.0
+                    }
+                }
+            }
+            
+            // Update the previous region for next comparison
+            previousRegion = newRegion
+            
             // Update search text when region changes (when user drags map)
             updateLocationText(for: newRegion.center)
+        }
+        .alert("Location Error", isPresented: $showLocationError) {
+            Button("OK") {
+                showLocationError = false
+            }
+            if locationManager.authorizationStatus == .denied {
+                Button("Settings") {
+                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsUrl)
+                    }
+                }
+            }
+        } message: {
+            Text(locationManager.locationError ?? "An unknown location error occurred.")
         }
     }
     

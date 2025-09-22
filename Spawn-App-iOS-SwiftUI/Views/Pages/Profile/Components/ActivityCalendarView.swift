@@ -46,7 +46,7 @@ struct ActivityCalendarView: View {
                             }
                         }
                         .padding(.horizontal, 8)
-                        .padding(.bottom, 100) // Safe area padding
+                        .padding(.bottom, 16) // Standard bottom padding
                         .onAppear {
                             // Only scroll to current month on first appearance
                             guard !hasInitiallyScrolled else { return }

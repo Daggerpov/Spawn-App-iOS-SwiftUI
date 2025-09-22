@@ -4,7 +4,7 @@ import SwiftUI
 import FirebaseMessaging
 
 @available(iOS 16.0, *)
-class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUserNotificationCenterDelegate {
+class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
     static let shared = NotificationService()
     
     @Published var isNotificationsEnabled = false
@@ -46,8 +46,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
             object: nil
         )
         
-        // Set this class as the delegate for notification center
-        UNUserNotificationCenter.current().delegate = self
+        // Note: CustomAppDelegate handles UNUserNotificationCenterDelegate
+        // Don't set delegate here to avoid conflicts
     }
     
     // Register for push notifications
@@ -663,37 +663,11 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable, UNUs
         }
     }
     
-    // Handle notifications when app is in foreground
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
-        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
-    ) {
-        let userInfo = notification.request.content.userInfo
-        
-        // Process notification
-        handleNotificationData(userInfo)
-        
-        // Show the notification to the user
-        completionHandler([.banner, .badge, .sound])
-    }
-    
-    // Handle notifications when app is opened from a notification
-    func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse,
-        withCompletionHandler completionHandler: @escaping () -> Void
-    ) {
-        let userInfo = response.notification.request.content.userInfo
-        
-        // Process notification
-        handleNotificationData(userInfo)
-        
-        completionHandler()
-    }
+    // Note: Notification delegate methods are handled by CustomAppDelegate
+    // These methods have been moved there to avoid delegate conflicts
     
     // Handle notification data and update cache accordingly
-    private func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
+    func handleNotificationData(_ userInfo: [AnyHashable: Any]) {
         guard let type = userInfo["type"] as? String else {
             print("Notification missing type")
             return

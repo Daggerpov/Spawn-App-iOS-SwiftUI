@@ -151,10 +151,20 @@ struct ProfileView: View {
 				if !isCurrentUserProfile,
 					let currentUserId = userAuth.spawnUser?.id
 				{
-					await profileViewModel.checkFriendshipStatus(
-						currentUserId: currentUserId,
-						profileUserId: user.id
-					)
+					// Check if user is a RecommendedFriendUserDTO with relationship status
+					if let recommendedFriend = user as? RecommendedFriendUserDTO,
+					   recommendedFriend.relationshipStatus != nil {
+						// Use the relationship status from the DTO - no API call needed
+						await MainActor.run {
+							profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
+						}
+					} else {
+						// For other user types (BaseUserDTO, etc.), use the original API call
+						await profileViewModel.checkFriendshipStatus(
+							currentUserId: currentUserId,
+							profileUserId: user.id
+						)
+					}
 
 					// If they're friends, fetch their activities
 					if profileViewModel.friendshipStatus == .friends {
@@ -655,7 +665,7 @@ struct ProfileView: View {
 
 	private var activityDetailsView: some View {
 		Group {
-			if let activity = profileViewModel.selectedActivity {
+			if let _ = profileViewModel.selectedActivity {
 				EmptyView() // Replaced with global popup system
 			}
 		}

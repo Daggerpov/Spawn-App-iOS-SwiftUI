@@ -193,6 +193,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time when day changes
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -214,6 +218,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -235,6 +243,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -258,6 +270,10 @@ struct ActivityDateTimeView: View {
             }
             updateSelectedDate()
             syncCurrentValuesToViewModel()
+            // Validate time in real-time
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }
     }
     
@@ -269,6 +285,10 @@ struct ActivityDateTimeView: View {
             selectedDuration = duration
             viewModel.selectedDuration = duration
             syncCurrentValuesToViewModel()
+            // Validate time in real-time when duration changes
+            Task {
+                await viewModel.validateActivityForm()
+            }
         }) {
             Text(duration.title)
                 .font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
@@ -296,9 +316,10 @@ struct ActivityDateTimeView: View {
                 HStack {
                     ActivityBackButton {
                         // Sync current values to view model before checking changes
-                        syncCurrentValuesToViewModel()
+                        // Check for local changes before syncing
+                        let hasLocalChanges = hasAnyLocalChanges()
                         
-                        if viewModel.hasAnyChanges {
+                        if hasLocalChanges {
                             showSaveConfirmation = true
                         } else {
                             onBack()
@@ -449,6 +470,15 @@ struct ActivityDateTimeView: View {
             
             Spacer()
             
+            // Time validation error message
+            if !viewModel.timeValidationMessage.isEmpty {
+                Text(viewModel.timeValidationMessage)
+                    .font(.custom("Onest", size: 12))
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 8)
+            }
+            
             // Next Step Button
             Enhanced3DButton(title: "Next Step (Location)") {
                 let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
@@ -457,25 +487,26 @@ struct ActivityDateTimeView: View {
                     return
                 }
                 showTitleError = false
+                
+                // Sync current values and validate time
                 syncCurrentValuesToViewModel()
-                onNext()
+                Task {
+                    await viewModel.validateActivityForm()
+                    
+                    await MainActor.run {
+                        if viewModel.isTimeValid {
+                            onNext()
+                        }
+                        // If time is invalid, the error message will be displayed
+                    }
+                }
             }
             .padding(.horizontal, 20)
             
             // Step indicators
-            HStack(spacing: 8) {
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(red: 0.27, green: 0.87, blue: 0.63))
-                    .frame(width: 32, height: 8)
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(stepIndicatorInactiveColor)
-                    .frame(width: 32, height: 8)
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(stepIndicatorInactiveColor)
-                    .frame(width: 32, height: 8)
-            }
-            .padding(.top, 16)
-            .padding(.bottom, 30)
+            StepIndicatorView(currentStep: 1, totalSteps: 3)
+                .padding(.top, 16)
+                .padding(.bottom, 30) // Standard bottom padding
         }
         .background(universalBackgroundColor)
         .onAppear {
@@ -510,14 +541,29 @@ struct ActivityDateTimeView: View {
                 // Stay on the current screen
             }
         } message: {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("You have unsaved changes across multiple screens:")
-                Text(viewModel.getChangesSummaryText())
-            }
+            Text("You have unsaved changes.")
         }
     }
     
     // MARK: - Helper Methods
+    
+    private func hasAnyLocalChanges() -> Bool {
+        guard viewModel.isEditingExistingActivity else { return false }
+        
+        // Check title changes
+        let currentTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+        let originalTitle = viewModel.originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
+        if currentTitle != originalTitle {
+            return true
+        }
+        
+        // Check other changes using view model's computed properties
+        // But first sync the current values to make sure they're up to date
+        syncCurrentValuesToViewModel()
+        
+        return viewModel.dateChanged || viewModel.durationChanged || viewModel.locationChanged
+    }
+    
     
     private func syncCurrentValuesToViewModel() {
         // Update activity title

@@ -16,6 +16,7 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var selectedDate: Date = Date()
 	@Published var activity: ActivityDTO
 	@Published var creationMessage: String = ""
+	@Published var timeValidationMessage: String = ""
 	@Published var selectedActivityType: ActivityTypeDTO?
 	@Published var selectedDuration: ActivityDuration = .indefinite
 	@Published var selectedLocation: LocationDTO?
@@ -26,6 +27,7 @@ class ActivityCreationViewModel: ObservableObject {
 	@Published var isTitleValid: Bool = true
 	@Published var isInvitesValid: Bool = true
 	@Published var isLocationValid: Bool = true
+	@Published var isTimeValid: Bool = true
 	@Published var isFormValid: Bool = false
 	
 	// Loading state
@@ -92,50 +94,6 @@ class ActivityCreationViewModel: ObservableObject {
 			   abs(original.longitude - current.longitude) > 0.0001
 	}
 	
-	// MARK: - Change Summary Methods
-	func getChangedFieldsSummary() -> [String] {
-		var changes: [String] = []
-		
-		if titleChanged {
-			let newTitle = activity.title?.trimmingCharacters(in: .whitespaces) ?? ""
-			let oldTitle = originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
-			changes.append("Title: \"\(oldTitle)\" → \"\(newTitle)\"")
-		}
-		
-		if dateChanged {
-			let formatter = DateFormatter()
-			formatter.dateFormat = "MMM d, h:mm a"
-			let oldDateStr = originalDate.map { formatter.string(from: $0) } ?? ""
-			let newDateStr = formatter.string(from: selectedDate)
-			changes.append("Date & Time: \(oldDateStr) → \(newDateStr)")
-		}
-		
-		if durationChanged {
-			let oldDuration = originalDuration?.title ?? "Indefinite"
-			let newDuration = selectedDuration.title
-			changes.append("Duration: \(oldDuration) → \(newDuration)")
-		}
-		
-		if locationChanged {
-			let oldLocation = originalLocation?.name ?? "No location"
-			let newLocation = selectedLocation?.name ?? "No location"
-			changes.append("Location: \(oldLocation) → \(newLocation)")
-		}
-		
-		return changes
-	}
-	
-	func getChangesSummaryText() -> String {
-		let changes = getChangedFieldsSummary()
-		if changes.isEmpty {
-			return "No changes to save."
-		} else if changes.count == 1 {
-			// Add safety check to prevent force unwrapping crash
-			return "1 change: \(changes.first ?? "Unknown change")"
-		} else {
-			return "\(changes.count) changes:\n" + changes.joined(separator: "\n")
-		}
-	}
 	
 	// MARK: - Reset Changes Method
 	func resetToOriginalValues() {
@@ -251,6 +209,7 @@ class ActivityCreationViewModel: ObservableObject {
 		// Reset all properties to their default values
 		selectedDate = Date()
 		creationMessage = ""
+		timeValidationMessage = ""
 		selectedActivityType = nil
 		selectedDuration = .indefinite
 		selectedLocation = nil
@@ -258,6 +217,7 @@ class ActivityCreationViewModel: ObservableObject {
 		isTitleValid = true
 		isInvitesValid = true
 		isLocationValid = true
+		isTimeValid = true
 		isFormValid = false
 		isCreatingActivity = false
 		isEditingExistingActivity = false
@@ -396,6 +356,9 @@ class ActivityCreationViewModel: ObservableObject {
         print("🔍 DEBUG: - Trimmed title: '\(trimmedTitle)'")
         print("🔍 DEBUG: - Title is empty: \(trimmedTitle.isEmpty)")
         
+        // Update activity duration to ensure end time is current
+        updateActivityDuration()
+        
         await MainActor.run {
             isTitleValid = !trimmedTitle.isEmpty
             print("🔍 DEBUG: - Title valid result: \(isTitleValid)")
@@ -417,8 +380,32 @@ class ActivityCreationViewModel: ObservableObject {
             isLocationValid = hasLocation && hasLocationName && hasCoordinates
             print("🔍 DEBUG: - Location valid result: \(isLocationValid)")
             
+            // Check if activity time is valid (start time and end time not in the past)
+            let now = Date()
+            let isStartTimeValid = activity.startTime == nil || activity.startTime! > now
+            let isEndTimeValid = activity.endTime == nil || activity.endTime! > now
+            
+            print("🔍 DEBUG: - Activity start time: \(activity.startTime?.description ?? "nil")")
+            print("🔍 DEBUG: - Activity end time: \(activity.endTime?.description ?? "nil")")
+            print("🔍 DEBUG: - Current time: \(now.description)")
+            print("🔍 DEBUG: - Start time is valid: \(isStartTimeValid)")
+            print("🔍 DEBUG: - End time is valid: \(isEndTimeValid)")
+            
+            isTimeValid = isStartTimeValid && isEndTimeValid
+            
+            // Set time validation message
+            if !isStartTimeValid && !isEndTimeValid {
+                timeValidationMessage = "Activity cannot start or end in the past. Please select a future time."
+            } else if !isStartTimeValid {
+                timeValidationMessage = "Activity cannot start in the past. Please select a future time."
+            } else if !isEndTimeValid {
+                timeValidationMessage = "Activity cannot end in the past. Please select a future time."
+            } else {
+                timeValidationMessage = ""
+            }
+            
             // Update overall form validity
-            isFormValid = isTitleValid && isInvitesValid && isLocationValid
+            isFormValid = isTitleValid && isInvitesValid && isLocationValid && isTimeValid
             print("🔍 DEBUG: - Overall form valid: \(isFormValid)")
         }
 	}
@@ -473,6 +460,10 @@ class ActivityCreationViewModel: ObservableObject {
 		activity.invitedUserIds = selectedFriends.map { $0.id }
 		print("🔍 DEBUG: Selected friends count: \(selectedFriends.count)")
 		
+		// Set the client timezone for timezone-aware expiration
+		activity.clientTimezone = TimeZone.current.identifier
+		print("🔍 DEBUG: Client timezone set to: \(activity.clientTimezone ?? "nil")")
+		
 		// Update the activity with the current date and duration
 		updateActivityDuration()
 		updateActivityType()
@@ -514,12 +505,14 @@ class ActivityCreationViewModel: ObservableObject {
 			print("🔍 DEBUG: Making API call to: \(url.absoluteString)")
 			print("🔍 DEBUG: Using MockAPIService.isMocking: \(MockAPIService.isMocking)")
 			
-			let createdActivity: FullFeedActivityDTO? = try await apiService.sendData(activity, to: url, parameters: nil)
+			let response: ActivityCreationResponseDTO? = try await apiService.sendData(activity, to: url, parameters: nil)
 			
 			print("🔍 DEBUG: API call completed")
-			print("🔍 DEBUG: Created activity: \(createdActivity != nil ? "success" : "nil")")
+			print("🔍 DEBUG: Created activity response: \(response != nil ? "success" : "nil")")
 			
-			if let createdActivity = createdActivity {
+			if let response = response {
+				let createdActivity = response.activity
+				
 				// Cache the created activity
 				AppCache.shared.addOrUpdateActivity(createdActivity)
 				
@@ -533,6 +526,9 @@ class ActivityCreationViewModel: ObservableObject {
 					creationMessage = "Activity created successfully!"
 				}
 				print("🔍 DEBUG: Activity creation successful")
+				if let suggestion = response.friendSuggestion {
+					print("🔍 DEBUG: Friends were automatically added to activity type: \(suggestion.activityTypeTitle)")
+				}
 			} else {
 				await MainActor.run {
 					creationMessage = "Failed to create activity. Please try again."
@@ -578,7 +574,7 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 		
 		do {
-			guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)") else {
+			guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)/partial") else {
 				await MainActor.run {
 					creationMessage = "Failed to update activity. Invalid URL."
 				}
@@ -586,21 +582,50 @@ class ActivityCreationViewModel: ObservableObject {
 				return
 			}
 			
-			let updatedActivity: FullFeedActivityDTO? = try await apiService.updateData(activity, to: url, parameters: nil)
+			// Create partial update data with only the fields that should be updated
+			var updateData = ActivityPartialUpdateDTO(
+				title: activity.title ?? "",
+				icon: activity.icon ?? "",
+				startTime: nil,
+				endTime: nil,
+				participantLimit: nil,
+				note: nil
+			)
+			
+			// Add time fields if they've changed
+			if dateChanged {
+				// Convert Date to the format expected by backend
+				let formatter = ISO8601DateFormatter()
+				formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+				
+				updateData.startTime = formatter.string(from: activity.startTime ?? Date())
+				if let endTime = activity.endTime {
+					updateData.endTime = formatter.string(from: endTime)
+				}
+			}
+			
+			// Add participant limit if it's set
+			if let participantLimit = activity.participantLimit, participantLimit > 0 {
+				updateData.participantLimit = participantLimit
+			}
+			
+			// Add note if it's set
+			if let note = activity.note, !note.isEmpty {
+				updateData.note = note
+			}
+			
+			let updatedActivity: FullFeedActivityDTO? = try await apiService.patchData(from: url, with: updateData)
 			
 			if let updatedActivity = updatedActivity {
 				await MainActor.run {
 					// Cache the updated activity first
 					AppCache.shared.addOrUpdateActivity(updatedActivity)
 					
-					// Add a small delay to ensure cache update completes before posting notification
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-						// Post notification for successful update after cache is updated
-						NotificationCenter.default.post(
-							name: .activityUpdated,
-							object: updatedActivity
-						)
-					}
+					// Post notification for successful update immediately on main actor
+					NotificationCenter.default.post(
+						name: .activityUpdated,
+						object: updatedActivity
+					)
 					
 					creationMessage = "Activity updated successfully!"
 				}
