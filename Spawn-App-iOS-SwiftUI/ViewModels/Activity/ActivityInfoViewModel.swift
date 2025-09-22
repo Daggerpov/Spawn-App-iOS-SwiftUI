@@ -54,6 +54,12 @@ class ActivityInfoViewModel: ObservableObject {
         }
     }
     
+    // Check if distance is available
+    func isDistanceAvailable() -> Bool {
+        let distanceString = getDisplayString(activityInfoType: .distance)
+        return distanceString != "Distance unavailable"
+    }
+    
     // Add method to update activity reference
     func updateActivity(_ newActivity: FullFeedActivityDTO) {
         self.activity = newActivity

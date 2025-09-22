@@ -333,14 +333,16 @@ struct ActivityCardPopupView: View {
 					.truncationMode(.tail)
 					.layoutPriority(0)  // Lower priority for truncation
 
-				Text(
-					"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
-				)
-				.font(Font.custom("Onest", size: 14).weight(.medium))
-				.foregroundColor(.white)
-				.lineLimit(1)
-				.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
-				.layoutPriority(1)  // Higher priority to keep this part visible
+				if viewModel.isDistanceAvailable() {
+					Text(
+						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
+					)
+					.font(Font.custom("Onest", size: 14).weight(.medium))
+					.foregroundColor(.white)
+					.lineLimit(1)
+					.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
+					.layoutPriority(1)  // Higher priority to keep this part visible
+				}
 			}
 		}
 		.padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
@@ -479,11 +481,13 @@ extension ActivityCardPopupView {
 					.foregroundColor(.white)
 					.font(.onestSemiBold(size: 15))
 				}
-				Text(
-					"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
-				)
-				.foregroundColor(.white)
-				.font(.onestRegular(size: 14))
+				if viewModel.isDistanceAvailable() {
+					Text(
+						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
+					)
+					.foregroundColor(.white)
+					.font(.onestRegular(size: 14))
+				}
 			}
 			.padding(.vertical, 12)
 			
@@ -549,14 +553,16 @@ extension ActivityCardPopupView {
 					.truncationMode(.tail)
 					.layoutPriority(0)  // Lower priority for truncation
 					
-					Text(
-						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
-					)
-					.font(.custom("Onest", size: 14).weight(.medium))
-					.foregroundColor(.white)
-					.lineLimit(1)
-					.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
-					.layoutPriority(1)  // Higher priority to keep this part visible
+					if viewModel.isDistanceAvailable() {
+						Text(
+							"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
+						)
+						.font(.custom("Onest", size: 14).weight(.medium))
+						.foregroundColor(.white)
+						.lineLimit(1)
+						.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
+						.layoutPriority(1)  // Higher priority to keep this part visible
+					}
 				}
 			}
 			.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
