@@ -222,7 +222,7 @@ class TutorialViewModel: ObservableObject {
     /// Note: Tutorial completion is automatically handled when the user creates their first activity,
     /// which sets hasCompletedOnboarding to true on the backend. No separate API call needed.
     private func saveTutorialStatusToServer() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+		guard (UserAuthViewModel.shared.spawnUser?.id) != nil else {
             print("🎯 TutorialViewModel: Cannot save tutorial status - no user logged in")
             return
         }

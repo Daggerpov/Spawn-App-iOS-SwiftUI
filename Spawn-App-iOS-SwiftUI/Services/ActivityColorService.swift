@@ -44,11 +44,14 @@ class ActivityColorService: ObservableObject {
     
     /// Get color for an activity, assigning a new one if needed
     func getColorForActivity(_ activityId: UUID) -> Color {
+        print("🔍 DEBUG: getColorForActivity called for ID: \(activityId)")
         // Return cached color if available
         if let existingColor = activityColors[activityId] {
+            print("🔍 DEBUG: Found cached color for activity: \(activityId)")
             return existingColor
         }
         
+        print("🔍 DEBUG: Assigning new color for activity: \(activityId)")
         // Assign new color with even distribution
         let newColor = assignNextColor()
         activityColors[activityId] = newColor
@@ -59,6 +62,7 @@ class ActivityColorService: ObservableObject {
         // Save to cache
         saveToCache()
         
+        print("🔍 DEBUG: Assigned color for activity \(activityId): \(newColor)")
         return newColor
     }
     
@@ -110,6 +114,7 @@ class ActivityColorService: ObservableObject {
     
     /// Assign the next color using round-robin distribution
     private func assignNextColor() -> Color {
+        print("🔍 DEBUG: assignNextColor called, nextColorIndex: \(nextColorIndex), availableColors.count: \(availableColors.count)")
         // Ensure nextColorIndex is within bounds before accessing array
         guard !availableColors.isEmpty else {
             print("⚠️ ActivityColorService: No available colors, using default")
@@ -122,8 +127,11 @@ class ActivityColorService: ObservableObject {
             nextColorIndex = 0
         }
         
+        print("🔍 DEBUG: Accessing availableColors[\(nextColorIndex)]")
         let color = availableColors[nextColorIndex]
+        print("🔍 DEBUG: Got color: \(color)")
         nextColorIndex = (nextColorIndex + 1) % availableColors.count
+        print("🔍 DEBUG: Updated nextColorIndex to: \(nextColorIndex)")
         return color
     }
     

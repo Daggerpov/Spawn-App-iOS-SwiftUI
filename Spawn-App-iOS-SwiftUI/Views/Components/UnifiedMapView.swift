@@ -42,9 +42,17 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
     }
     
     func makeUIView(context: Context) -> MKMapView {
+        print("🔍 DEBUG: UnifiedMapView makeUIView called")
         let mapView = MKMapView()
+        print("🔍 DEBUG: Created MKMapView instance")
+        
+        // Ensure proper initialization for iOS < 17 compatibility
+        mapView.frame = CGRect(x: 0, y: 0, width: 100, height: 100) // Set initial finite frame
+        print("🔍 DEBUG: Set initial frame for MKMapView")
+        
         mapView.showsUserLocation = showsUserLocation
         mapView.delegate = context.coordinator
+        print("🔍 DEBUG: Set basic MKMapView properties")
         
         // Set properties for better stability
         mapView.isZoomEnabled = true
@@ -54,21 +62,56 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         mapView.showsScale = true
         mapView.isUserInteractionEnabled = true
         
-        print("🗺️ UnifiedMapView created with delegate set")
+        // Additional iOS < 17 compatibility settings
+        mapView.showsBuildings = true
+        mapView.isPitchEnabled = true
+        
+        // Use pointOfInterestFilter instead of deprecated showsPointsOfInterest
+        if #available(iOS 13.0, *) {
+            mapView.pointOfInterestFilter = .includingAll
+        } else {
+            mapView.showsPointsOfInterest = true
+        }
+        print("🔍 DEBUG: Set advanced MKMapView properties")
+        
+        print("🗺️ UnifiedMapView created with delegate set for iOS \(UIDevice.current.systemVersion)")
+        
+        // Validate region before setting to prevent crashes
+        print("🔍 DEBUG: Validating region - center: \(region.center), span: \(region.span)")
+        guard CLLocationCoordinate2DIsValid(region.center) &&
+              region.span.latitudeDelta > 0 && region.span.longitudeDelta > 0 &&
+              region.span.latitudeDelta.isFinite && region.span.longitudeDelta.isFinite else {
+            print("⚠️ UnifiedMapView: Invalid initial region, using default")
+            let defaultRegion = MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 49.2827, longitude: -123.1207),
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+            )
+            print("🔍 DEBUG: Setting default region: \(defaultRegion)")
+            mapView.setRegion(defaultRegion, animated: false)
+            print("🔍 DEBUG: Default region set, returning mapView")
+            return mapView
+        }
         
         // Set initial region using the basic setRegion method for better iOS < 17 compatibility
+        print("🔍 DEBUG: Setting valid initial region: \(region)")
         mapView.setRegion(region, animated: false)
+        print("🔍 DEBUG: Initial region set successfully")
         
+        print("🔍 DEBUG: Returning configured mapView")
         return mapView
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
+        print("🔍 DEBUG: UnifiedMapView updateUIView called")
         // Keep coordinator in sync with latest parent values
         context.coordinator.parent = self
         
         // Validate coordinates before updating
-        guard CLLocationCoordinate2DIsValid(region.center) else {
-            print("⚠️ UnifiedMapView: Invalid region center - \(region.center)")
+        print("🔍 DEBUG: Validating region for update - center: \(region.center), span: \(region.span)")
+        guard CLLocationCoordinate2DIsValid(region.center) &&
+              region.span.latitudeDelta > 0 && region.span.longitudeDelta > 0 &&
+              region.span.latitudeDelta.isFinite && region.span.longitudeDelta.isFinite else {
+            print("⚠️ UnifiedMapView: Invalid region - center: \(region.center), span: \(region.span)")
             return
         }
         
@@ -107,37 +150,64 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
                 mapView.setRegion(region, animated: true)
             }
         } else {
-            // For iOS < 17, use simple region updates
+            // For iOS < 17, use simple region updates with additional safety checks
             if isLocationChange {
-                mapView.setRegion(region, animated: true)
+                // Use a dispatch to main queue for better iOS < 17 compatibility
+                DispatchQueue.main.async {
+                    // Double-check region validity before setting
+                    guard CLLocationCoordinate2DIsValid(self.region.center) else {
+                        print("⚠️ UnifiedMapView: Invalid region center during iOS < 17 update")
+                        return
+                    }
+                    mapView.setRegion(self.region, animated: true)
+                }
             }
         }
         
         // Update annotations only if not in location selection mode
         if !isLocationSelectionMode {
+            print("🔍 DEBUG: Updating annotations, annotationItems count: \(annotationItems.count)")
             let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
+            print("🔍 DEBUG: Removing \(currentAnnotations.count) current annotations")
             mapView.removeAnnotations(currentAnnotations)
             
+            print("🔍 DEBUG: Processing \(annotationItems.count) annotation items")
             let newAnnotations = annotationItems.compactMap { activity -> MKAnnotation? in
-                guard let location = activity.location else { return nil }
+                print("🔍 DEBUG: Processing activity: \(activity.id)")
+                guard let location = activity.location else { 
+                    print("🔍 DEBUG: Activity \(activity.id) has no location")
+                    return nil 
+                }
                 let coord = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
                 let icon = (activity.icon?.isEmpty == false) ? activity.icon! : "⭐️"
+                print("🔍 DEBUG: Getting color for activity \(activity.id)")
                 let color = UIColor(ActivityColorService.shared.getColorForActivity(activity.id))
+                print("🔍 DEBUG: Created annotation for activity \(activity.id)")
                 return ActivityAnnotation(activityId: activity.id, title: activity.title, coordinate: coord, icon: icon, color: color)
             }
+            print("🔍 DEBUG: Adding \(newAnnotations.count) new annotations")
             mapView.addAnnotations(newAnnotations)
+            print("🔍 DEBUG: Annotations update completed")
+        } else {
+            print("🔍 DEBUG: In location selection mode, skipping annotation updates")
         }
     }
     
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        print("🔍 DEBUG: UnifiedMapView makeCoordinator called")
+        let coordinator = Coordinator(self)
+        print("🔍 DEBUG: Created coordinator: \(coordinator)")
+        return coordinator
     }
     
     class Coordinator: NSObject, MKMapViewDelegate {
         var parent: UnifiedMapViewRepresentable
         
         init(_ parent: UnifiedMapViewRepresentable) {
+            print("🔍 DEBUG: Coordinator init called with parent")
             self.parent = parent
+            super.init()
+            print("🔍 DEBUG: Coordinator initialized successfully")
         }
         
         func mapView(_ mapView: MKMapView, regionWillChangeAnimated animated: Bool) {
@@ -190,17 +260,24 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
             }
             
             // Resolve activity for this annotation
+            print("🔍 DEBUG: Resolving activity for annotation, annotationItems count: \(parent.annotationItems.count)")
             let resolvedActivity: FullFeedActivityDTO? = {
                 if let activityAnnotation = annotation as? ActivityAnnotation {
-                    return parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId })
+                    print("🔍 DEBUG: Looking for activity with ID: \(activityAnnotation.activityId)")
+                    let result = parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId })
+                    print("🔍 DEBUG: Found activity by ID: \(result != nil)")
+                    return result
                 }
                 // Fallback: coordinate proximity match
+                print("🔍 DEBUG: Using coordinate proximity match")
                 let coord = annotation.coordinate
                 let epsilon = 0.000001
-                return parent.annotationItems.first(where: { act in
+                let result = parent.annotationItems.first(where: { act in
                     guard let loc = act.location else { return false }
                     return abs(loc.latitude - coord.latitude) < epsilon && abs(loc.longitude - coord.longitude) < epsilon
                 })
+                print("🔍 DEBUG: Found activity by coordinate: \(result != nil)")
+                return result
             }()
             
             if let activityAnnotation = annotation as? ActivityAnnotation {
@@ -226,13 +303,24 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            print("🔍 DEBUG: didSelect annotation called")
             // Only handle activity selection if not in location selection mode
-            guard !parent.isLocationSelectionMode else { return }
+            guard !parent.isLocationSelectionMode else { 
+                print("🔍 DEBUG: In location selection mode, ignoring tap")
+                return 
+            }
             
-            if let activityAnnotation = view.annotation as? ActivityAnnotation,
-               let activity = parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId }) {
-                parent.onActivityTap(activity)
+            print("🔍 DEBUG: Processing activity selection, annotationItems count: \(parent.annotationItems.count)")
+            if let activityAnnotation = view.annotation as? ActivityAnnotation {
+                print("🔍 DEBUG: Got ActivityAnnotation with ID: \(activityAnnotation.activityId)")
+                if let activity = parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId }) {
+                    print("🔍 DEBUG: Found matching activity, calling onActivityTap")
+                    parent.onActivityTap(activity)
+                } else {
+                    print("🔍 DEBUG: No matching activity found for ID: \(activityAnnotation.activityId)")
+                }
             } else if let annotation = view.annotation {
+                print("🔍 DEBUG: Using coordinate fallback for annotation selection")
                 // Fallback: coordinate proximity match
                 let coord = annotation.coordinate
                 let epsilon = 0.000001
@@ -240,7 +328,10 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
                     guard let loc = act.location else { return false }
                     return abs(loc.latitude - coord.latitude) < epsilon && abs(loc.longitude - coord.longitude) < epsilon
                 }) {
+                    print("🔍 DEBUG: Found activity by coordinate, calling onActivityTap")
                     parent.onActivityTap(activity)
+                } else {
+                    print("🔍 DEBUG: No matching activity found by coordinate")
                 }
             }
         }
