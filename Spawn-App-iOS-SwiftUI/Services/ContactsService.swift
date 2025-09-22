@@ -2,7 +2,7 @@
 //  ContactsService.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by AI Assistant on 2025-01-30.
+//  Created By Daniel Agapov on 2025-01-30.
 //
 
 import Contacts

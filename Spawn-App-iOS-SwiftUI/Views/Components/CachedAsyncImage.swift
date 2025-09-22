@@ -2,7 +2,7 @@
 //  CachedAsyncImage.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by AI Assistant on 2025-01-03.
+//  Created By Daniel Agapov on 2025-01-03.
 //
 
 import SwiftUI
