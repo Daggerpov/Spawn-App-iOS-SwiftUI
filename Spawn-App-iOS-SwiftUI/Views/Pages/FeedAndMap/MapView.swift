@@ -9,6 +9,8 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
+// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
+
 // MARK: - Custom Activity Pin View
 struct ActivityPinView: View {
     let icon: String
@@ -42,7 +44,7 @@ struct MapView: View {
 
     // Add state for tracking mode
     @State private var userTrackingMode: MapUserTrackingMode = .none
-    @State private var is3DMode: Bool = false
+    @State private var is3DMode: Bool = false // Only used on iOS 17+
 
     // MARK - Activity Description State Vars - now using global popup system
 
@@ -142,12 +144,15 @@ struct MapView: View {
             // Base layer - Map and its components
             VStack {
                 ZStack {
-                    // Map layer
-                    ActivityMapViewRepresentable(
+                    // Map layer using unified component
+                    UnifiedMapViewRepresentable(
                         region: $region,
                         is3DMode: $is3DMode,
-                        userTrackingMode: $userTrackingMode,
+                        showsUserLocation: true,
                         annotationItems: filteredActivities.filter { $0.location != nil },
+                        isLocationSelectionMode: false,
+                        onMapWillChange: nil,
+                        onMapDidChange: { _ in },
                         onActivityTap: { activity in
                             // Use global popup system with fromMapView flag
                             NotificationCenter.default.post(
@@ -168,40 +173,38 @@ struct MapView: View {
                         HStack {
                             Spacer()
                             VStack(spacing: 8) {
-                                // 3D mode toggle button (iOS 17+ only)
-                                if #available(iOS 17.0, *) {
-                                    Button(action: {
-                                        // Haptic feedback
-                                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                        impactGenerator.impactOccurred()
-                                        
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            is3DMode.toggle()
-                                        }
-                                    }) {
-                                        Image(systemName: is3DMode ? "view.3d" : "view.2d")
-                                            .font(.system(size: 18))
-                                            .foregroundColor(universalAccentColor)
-                                            .padding(12)
-                                            .background(universalBackgroundColor)
-                                            .clipShape(Circle())
-                                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                            .scaleEffect(toggle3DScale)
+                                // 3D mode toggle button (works on iOS 9+ with MapKit camera)
+                                Button(action: {
+                                    // Haptic feedback
+                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                    impactGenerator.impactOccurred()
+                                    
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        is3DMode.toggle()
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
-                                    .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
-                                    .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                                        toggle3DPressed = pressing
-                                        toggle3DScale = pressing ? 0.95 : 1.0
-                                        
-                                        // Additional haptic feedback for press down
-                                        if pressing {
-                                            let selectionGenerator = UISelectionFeedbackGenerator()
-                                            selectionGenerator.selectionChanged()
-                                        }
-                                    }, perform: {})
+                                }) {
+                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(universalBackgroundColor)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                        .scaleEffect(toggle3DScale)
                                 }
+                                .buttonStyle(PlainButtonStyle())
+                                .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
+                                .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
+                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                                    toggle3DPressed = pressing
+                                    toggle3DScale = pressing ? 0.95 : 1.0
+                                    
+                                    // Additional haptic feedback for press down
+                                    if pressing {
+                                        let selectionGenerator = UISelectionFeedbackGenerator()
+                                        selectionGenerator.selectionChanged()
+                                    }
+                                }, perform: {})
                                 
                                 // Location button
                                 Button(action: {

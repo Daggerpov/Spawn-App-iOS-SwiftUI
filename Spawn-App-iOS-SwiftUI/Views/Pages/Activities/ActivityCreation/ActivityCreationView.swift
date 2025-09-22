@@ -304,6 +304,9 @@ struct ActivityCreationView: View {
         case .location:
             ActivityCreationLocationView(
                 onNext: {
+                    // Update location selection step state
+                    viewModel.isOnLocationSelectionStep = false
+                    
                     // Add safety checks for tutorial mode
                     if case .activityCreation = tutorialViewModel.tutorialState {
                         print("📍 Tutorial: Transitioning from location to preConfirmation step")
@@ -323,9 +326,15 @@ struct ActivityCreationView: View {
                     }
                 },
                 onBack: {
+                    // Update location selection step state
+                    viewModel.isOnLocationSelectionStep = false
                     currentStep = currentStep.previous()
                 }
             )
+            .onAppear {
+                // Set location selection step state when entering this view
+                viewModel.isOnLocationSelectionStep = true
+            }
         case .preConfirmation:
             ActivityPreConfirmationView(
                 onCreateActivity: {

@@ -2,20 +2,7 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// Extension to make MKCoordinateRegion conform to Equatable
-extension MKCoordinateRegion: @retroactive Equatable {
-    public static func == (lhs: MKCoordinateRegion, rhs: MKCoordinateRegion) -> Bool {
-        // Validate coordinates before comparing to prevent NaN issues
-        guard CLLocationCoordinate2DIsValid(lhs.center) && CLLocationCoordinate2DIsValid(rhs.center) else {
-            return false
-        }
-        
-        return lhs.center.latitude == rhs.center.latitude &&
-               lhs.center.longitude == rhs.center.longitude &&
-               lhs.span.latitudeDelta == rhs.span.latitudeDelta &&
-               lhs.span.longitudeDelta == rhs.span.longitudeDelta
-    }
-}
+// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
 
 struct ActivityCreationLocationView: View {
     @ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
@@ -25,48 +12,47 @@ struct ActivityCreationLocationView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
     @State private var searchText: String = "6133 University Blvd, Vancouver"
-    @State private var isDragging = false
     @State private var showingLocationPicker = false
     @State private var dragOffset: CGFloat = 0
-    @State private var isExpanded = false
     @State private var isUpdatingLocation = false
     @State private var debounceTimer: Timer?
-    // Drop effect state for the base ellipse and a brief pulse
+    
+    // Pin animation states
     @State private var baseEllipseScale: CGFloat = 1.0
     @State private var pulseScale: CGFloat = 1.0
     @State private var pulseOpacity: Double = 0.0
+    @State private var pinOffset: CGFloat = 0
+    @State private var pinScale: CGFloat = 1.0
+    @State private var isMapMoving = false
+    @State private var mapMovementTimer: Timer?
+    
+    // Location error handling
     @State private var showLocationError = false
-    @State private var previousRegion: MKCoordinateRegion?
     
     let onNext: () -> Void
     let onBack: (() -> Void)?
     
     // 3D camera toggle (placeholder for SwiftUI Map). Used to reflect UI state.
-    @State private var is3DMode: Bool = false
+    @State private var is3DMode: Bool = false // Only used on iOS 17+
     
     var body: some View {
         ZStack {
-            // Map View
-            Map(coordinateRegion: $region, showsUserLocation: true)
-                .ignoresSafeArea(.all, edges: .top)
-                .onTapGesture {
-                    print("🎯 Map tapped - triggering pin drop animation")
-                    // Quick pin drop animation for taps
-                    withAnimation(.spring(response: 0.15, dampingFraction: 0.8)) {
-                        baseEllipseScale = 1.15
-                    }
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.9).delay(0.05)) {
-                        baseEllipseScale = 1.0
-                    }
-                    // Brief pulse effect
-                    pulseOpacity = 0.2
-                    pulseScale = 1.0
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        pulseScale = 1.4
-                        pulseOpacity = 0.0
-                    }
-                }
-                .onReceive(locationManager.$userLocation) { location in
+            // Unified Map View using the same component as MapView (works on all iOS versions)
+            UnifiedMapViewRepresentable(
+                region: $region,
+                is3DMode: $is3DMode,
+                showsUserLocation: true,
+                annotationItems: [], // No activities to show in location selection mode
+                isLocationSelectionMode: true,
+                onMapWillChange: nil,
+                onMapDidChange: { coordinate in
+                    // Update location text when map moves (for pin drop)
+                    updateLocationText(for: coordinate)
+                },
+                onActivityTap: { _ in } // No activity taps in location selection mode
+            )
+            .ignoresSafeArea(.all, edges: .top)
+            .onReceive(locationManager.$userLocation) { location in
                     print("📍 ActivityCreationLocationView: Received user location: \(String(describing: location))")
                     if let location = location, !locationManager.locationUpdated {
                         // Validate coordinates before creating region to prevent NaN values
@@ -86,29 +72,17 @@ struct ActivityCreationLocationView: View {
                             center: location,
                             span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                         )
-                        
-                        // Validate the new region before setting
-                        guard CLLocationCoordinate2DIsValid(newRegion.center) else {
-                            print("⚠️ ActivityCreationLocationView: Invalid region center created")
-                            return
-                        }
-                        
-                        withAnimation(.easeInOut(duration: 1.0)) {
-                            region = newRegion
-                        }
-                        
-                        print("✅ ActivityCreationLocationView: Region updated successfully")
                     }
+                    
+                    print("✅ ActivityCreationLocationView: Region updated successfully")
                 }
-                .onReceive(locationManager.$locationError) { error in
-                    if let error = error {
-                        print("Location error in ActivityCreationLocationView: \(error)")
-                        showLocationError = true
-                        if #available(iOS 17, *) {
-                            print("⚠️ iOS 17: Location error occurred: \(error)")
-                        }
-                    }
+            }
+            .onReceive(locationManager.$locationError) { error in
+                if let error = error {
+                    print("Location error in ActivityCreationLocationView: \(error)")
+                    showLocationError = true
                 }
+            }
             
             
             // Pin in center of map
@@ -136,10 +110,12 @@ struct ActivityCreationLocationView: View {
                     Image(systemName: "mappin")
                         .font(.system(size: 34))
                         .foregroundColor(.blue)
-                        .scaleEffect(isDragging ? 1.1 : 1.0)
-                        .offset(y: isDragging ? -10 : 0)
-                        .shadow(color: .black.opacity(isDragging ? 0.35 : 0.25), radius: isDragging ? 8 : 6, x: 0, y: isDragging ? 6 : 3)
-                        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isDragging)
+                        .scaleEffect(pinScale)
+                        .offset(y: pinOffset)
+                        .shadow(color: .black.opacity(isMapMoving ? 0.35 : 0.25), radius: isMapMoving ? 8 : 6, x: 0, y: isMapMoving ? 6 : 3)
+                        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isMapMoving)
+                        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: pinOffset)
+                        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: pinScale)
                 }
                 Spacer()
             }
@@ -178,41 +154,29 @@ struct ActivityCreationLocationView: View {
                 HStack {
                     Spacer()
                     VStack(spacing: 8) {
-                        // 3D mode toggle (visual only for SwiftUI Map)
-                        if #available(iOS 17.0, *) {
-                            Button(action: {
-                                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                impactGenerator.impactOccurred()
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    is3DMode.toggle()
-                                }
-                            }) {
-                                Image(systemName: is3DMode ? "view.3d" : "view.2d")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(12)
-                                    .background(universalBackgroundColor)
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                        // 3D mode toggle (works on iOS 9+ with MapKit camera)
+                        Button(action: {
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                is3DMode.toggle()
                             }
-                            .buttonStyle(PlainButtonStyle())
-                        } else {
-                            Button(action: {}) {
-                                Text("3D")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(universalAccentColor)
-                                    .padding(12)
-                                    .background(universalBackgroundColor)
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                            }
-                            .buttonStyle(PlainButtonStyle())
+                        }) {
+                            Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                .font(.system(size: 20))
+                                .foregroundColor(universalAccentColor)
+                                .padding(12)
+                                .background(universalBackgroundColor)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                         }
+                        .buttonStyle(PlainButtonStyle())
                         
                         // Recenter to user location
                         Button(action: {
                             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                             impactGenerator.impactOccurred()
+                            
                             if let userLocation = locationManager.userLocation {
                                 withAnimation(.easeInOut(duration: 0.75)) {
                                     region = MKCoordinateRegion(
@@ -314,12 +278,7 @@ struct ActivityCreationLocationView: View {
                 .background(
                     universalBackgroundColor
                         .clipShape(
-                            UnevenRoundedRectangle(
-                                topLeadingRadius: 20,
-                                bottomLeadingRadius: 0,
-                                bottomTrailingRadius: 0,
-                                topTrailingRadius: 20
-                            )
+                            TopRoundedRectangle(radius: 20)
                         )
                         .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
                 )
@@ -365,7 +324,7 @@ struct ActivityCreationLocationView: View {
             print("📍 ActivityCreationLocationView: App entering foreground, checking location services...")
             // Update region when app becomes active
             if let userLocation = locationManager.userLocation {
-                // Validate coordinates before creating region to prevent NaN values
+                // Basic validation like in working MapView
                 guard CLLocationCoordinate2DIsValid(userLocation) else {
                     print("⚠️ ActivityCreationLocationView: Invalid user location on foreground - \(userLocation)")
                     return
@@ -403,64 +362,9 @@ struct ActivityCreationLocationView: View {
             locationManager.stopLocationUpdates()
             // Clean up timers
             debounceTimer?.invalidate()
+            mapMovementTimer?.invalidate()
         }
-        .onChange(of: region) { newRegion in
-            // Validate region center before processing to prevent NaN issues
-            guard CLLocationCoordinate2DIsValid(newRegion.center) else {
-                print("⚠️ ActivityCreationLocationView: Invalid region change detected - \(newRegion.center)")
-                if #available(iOS 17, *) {
-                    print("⚠️ iOS 17: Invalid region center - resetting to default Vancouver coordinates")
-                    // Reset to a valid default region
-                    region = MKCoordinateRegion(
-                        center: CLLocationCoordinate2D(latitude: 49.2827, longitude: -123.1207),
-                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                    )
-                }
-                return
-            }
-            
-            // Check if this is a user-initiated region change (not programmatic)
-            if let previous = previousRegion, 
-               CLLocationCoordinate2DIsValid(previous.center) && previous != newRegion {
-                // Trigger pin animations when user drags the map
-                print("🎯 Map region changed by user interaction")
-                
-                // Start dragging animation
-                if !isDragging {
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.75)) {
-                        isDragging = true
-                        baseEllipseScale = 0.88
-                    }
-                }
-                
-                // Use a timer to detect when dragging has stopped
-                debounceTimer?.invalidate()
-                debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
-                    // Pin drop animation when dragging stops
-                    print("🎯 Map dragging stopped - triggering pin drop animation")
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) {
-                        isDragging = false
-                        baseEllipseScale = 1.18
-                    }
-                    withAnimation(.spring(response: 0.42, dampingFraction: 0.8).delay(0.03)) {
-                        baseEllipseScale = 1.0
-                    }
-                    // Pulse effect
-                    pulseOpacity = 0.35
-                    pulseScale = 1.0
-                    withAnimation(.easeOut(duration: 0.5)) {
-                        pulseScale = 1.8
-                        pulseOpacity = 0.0
-                    }
-                }
-            }
-            
-            // Update the previous region for next comparison
-            previousRegion = newRegion
-            
-            // Update search text when region changes (when user drags map)
-            updateLocationText(for: newRegion.center)
-        }
+        // Removed onChange(of: region) to prevent iOS < 17 compatibility issues
         .alert("Location Error", isPresented: $showLocationError) {
             Button("OK") {
                 showLocationError = false
@@ -484,14 +388,19 @@ struct ActivityCreationLocationView: View {
         
         // Create a new timer with a delay to debounce the calls
         debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
-            performReverseGeocoding(for: coordinate)
+            DispatchQueue.main.async {
+                self.performReverseGeocoding(for: coordinate)
+            }
         }
     }
     
     // Function to perform the actual reverse geocoding
     private func performReverseGeocoding(for coordinate: CLLocationCoordinate2D) {
         // Prevent multiple simultaneous updates
-        guard !isUpdatingLocation else { return }
+        guard !isUpdatingLocation else { 
+            print("📍 performReverseGeocoding: Already updating location, skipping...")
+            return 
+        }
         
         // Validate coordinates before reverse geocoding to prevent NaN values
         guard CLLocationCoordinate2DIsValid(coordinate) else {
@@ -499,6 +408,7 @@ struct ActivityCreationLocationView: View {
             return
         }
         
+        print("📍 performReverseGeocoding: Starting reverse geocoding for \(coordinate)")
         isUpdatingLocation = true
         
         let geocoder = CLGeocoder()
@@ -506,51 +416,87 @@ struct ActivityCreationLocationView: View {
         
         geocoder.reverseGeocodeLocation(location) { placemarks, error in
             DispatchQueue.main.async {
-                defer { isUpdatingLocation = false }
+                defer { 
+                    self.isUpdatingLocation = false 
+                    print("📍 performReverseGeocoding: Finished reverse geocoding")
+                }
                 
                 if let error = error {
-                    print("Reverse geocoding error: \(error.localizedDescription)")
-                    return
+                    print("⚠️ Reverse geocoding error: \(error.localizedDescription)")
+                    // Don't return here - we might still want to show a default location
+                    if error.localizedDescription.contains("network") || error.localizedDescription.contains("Network") {
+                        print("📍 Network error during geocoding, keeping existing address")
+                        return
+                    }
                 }
                 
                 guard let placemark = placemarks?.first else {
-                    print("No placemark found")
+                    print("⚠️ No placemark found for coordinates \(coordinate)")
+                    // Set a generic location name based on coordinates
+                    self.searchText = String(format: "%.4f, %.4f", coordinate.latitude, coordinate.longitude)
                     return
                 }
                 
-                // Create a formatted address string
+                print("📍 Found placemark: \(placemark)")
+                
+                // Create a formatted address string with more robust handling
                 var addressComponents: [String] = []
                 
-                if let streetNumber = placemark.subThoroughfare {
-                    addressComponents.append(streetNumber)
+                // Try different combinations for the best address format
+                if let name = placemark.name, !name.isEmpty {
+                    // If we have a specific place name, use it
+                    addressComponents.append(name)
+                } else {
+                    // Build address from components
+                    if let streetNumber = placemark.subThoroughfare, !streetNumber.isEmpty {
+                        addressComponents.append(streetNumber)
+                    }
+                    
+                    if let street = placemark.thoroughfare, !street.isEmpty {
+                        addressComponents.append(street)
+                    }
                 }
                 
-                if let street = placemark.thoroughfare {
-                    addressComponents.append(street)
-                }
-                
-                if let city = placemark.locality {
+                if let city = placemark.locality, !city.isEmpty {
                     addressComponents.append(city)
                 }
                 
-                if let state = placemark.administrativeArea {
+                if let state = placemark.administrativeArea, !state.isEmpty {
                     addressComponents.append(state)
+                }
+                
+                // Fallback to postal code if we don't have much else
+                if addressComponents.isEmpty, let postalCode = placemark.postalCode, !postalCode.isEmpty {
+                    addressComponents.append(postalCode)
                 }
                 
                 let formattedAddress = addressComponents.joined(separator: ", ")
                 
-                // Update search text if we have a valid address
+                // Update search text if we have a valid address, otherwise use coordinates
                 if !formattedAddress.isEmpty {
-                    searchText = formattedAddress
+                    print("📍 Setting formatted address: \(formattedAddress)")
+                    self.searchText = formattedAddress
+                } else {
+                    print("📍 No formatted address available, using coordinates")
+                    self.searchText = String(format: "%.4f, %.4f", coordinate.latitude, coordinate.longitude)
                 }
             }
         }
     }
 }
 
+struct SearchResultItem: Identifiable {
+    let id = UUID()
+    let mapItem: MKMapItem
+    
+    init(_ mapItem: MKMapItem) {
+        self.mapItem = mapItem
+    }
+}
+
 struct LocationPickerView: View {
     @State private var searchText = ""
-    @State private var searchResults: [MKMapItem] = []
+    @State private var searchResults: [SearchResultItem] = []
     @Environment(\.presentationMode) var presentationMode
     
     let userLocation: CLLocationCoordinate2D?
@@ -584,9 +530,9 @@ struct LocationPickerView: View {
                     TextField("Where at?", text: $searchText)
                         .foregroundColor(universalAccentColor)
                         .font(.system(size: 16))
-                        .onChange(of: searchText) { _ in
+                        .onChange(of: searchText, perform: { _ in
                             searchLocations()
-                        }
+                        })
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal, 16)
@@ -624,9 +570,9 @@ struct LocationPickerView: View {
                         }
                     }
                     
-                    // Search results
-                    let searchResultsCopy = searchResults  // Create stable copy
-                    ForEach(searchResultsCopy, id: \.self) { item in
+                    // Search results - now thread-safe with proper identifiers
+                    ForEach(searchResults) { searchResult in
+                        let item = searchResult.mapItem
                         LocationRowView(
                             icon: "mappin.circle",
                             iconColor: figmaBlack300,
@@ -656,11 +602,13 @@ struct LocationPickerView: View {
             }
             .navigationTitle("Choose Location")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(
-                leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
                 }
-            )
+            }
         }
     }
     
@@ -692,7 +640,7 @@ struct LocationPickerView: View {
                         let validResults = response.mapItems.filter { item in
                             CLLocationCoordinate2DIsValid(item.placemark.coordinate)
                         }
-                        self.searchResults = Array(validResults.prefix(10)) // Limit results
+                        self.searchResults = Array(validResults.prefix(10)).map { SearchResultItem($0) }
                     }
                 }
                 return
@@ -717,7 +665,7 @@ struct LocationPickerView: View {
                 let validResults = response.mapItems.filter { item in
                     CLLocationCoordinate2DIsValid(item.placemark.coordinate)
                 }
-                self.searchResults = Array(validResults.prefix(10)) // Limit results
+                self.searchResults = Array(validResults.prefix(10)).map { SearchResultItem($0) }
             }
         }
     }
@@ -808,6 +756,33 @@ struct LocationData {
     let coordinate: CLLocationCoordinate2D
 }
 
+// Custom shape for top-rounded rectangles (iOS < 16 compatibility)
+struct TopRoundedRectangle: Shape {
+    let radius: CGFloat
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        
+        path.move(to: CGPoint(x: 0, y: rect.maxY))
+        path.addLine(to: CGPoint(x: 0, y: radius))
+        path.addArc(center: CGPoint(x: radius, y: radius), 
+                   radius: radius, 
+                   startAngle: .radians(.pi), 
+                   endAngle: .radians(.pi * 1.5), 
+                   clockwise: false)
+        path.addLine(to: CGPoint(x: rect.maxX - radius, y: 0))
+        path.addArc(center: CGPoint(x: rect.maxX - radius, y: radius), 
+                   radius: radius, 
+                   startAngle: .radians(.pi * 1.5), 
+                   endAngle: .radians(0), 
+                   clockwise: false)
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.closeSubpath()
+        
+        return path
+    }
+}
+
 // MKPlacemark extension to get formatted address
 extension MKPlacemark {
     func formattedAddress() -> String? {
@@ -822,6 +797,15 @@ extension MKPlacemark {
             .compactMap { $0 }
             .filter { !$0.isEmpty }
             .joined(separator: ", ")
+    }
+}
+
+// MARK: - Unified Map View now in Views/Components/UnifiedMapView.swift
+
+// Double extension for floating point comparison
+extension Double {
+    func isEqual(to other: Double, tolerance: Double = 0.0001) -> Bool {
+        return abs(self - other) < tolerance
     }
 }
 
