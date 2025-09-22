@@ -67,7 +67,7 @@ struct WithTabBarBinding<Content>: View where Content: View {
         }
         // iPhone X and newer (larger screens with significant safe area)
         else {
-            return max(70, safeAreaBottom + 20)
+            return max(80, safeAreaBottom + 20)
         }
     }
 
