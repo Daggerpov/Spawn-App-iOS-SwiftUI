@@ -197,14 +197,16 @@ class TutorialViewModel: ObservableObject {
         }
         
         do {
-            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
-                let preferences: UserPreferencesDTO = try await apiService.fetchData(
+            if let url = URL(string: "\(APIService.baseURL)users/\(userId)") {
+                let user: BaseUserDTO = try await apiService.fetchData(
                     from: url,
                     parameters: nil
                 )
                 
-                if preferences.hasCompletedTutorial {
-                    print("🎯 TutorialViewModel: Server indicates tutorial completed - updating local state")
+                // Check if user has completed onboarding (which indicates they've used the app before)
+                // If they have, we should skip the tutorial
+                if let hasCompletedOnboarding = user.hasCompletedOnboarding, hasCompletedOnboarding {
+                    print("🎯 TutorialViewModel: Server indicates onboarding completed - updating local state")
                     userDefaults.set(true, forKey: hasCompletedTutorialKey)
                     tutorialState = .completed
                     shouldShowCallout = false
@@ -217,6 +219,8 @@ class TutorialViewModel: ObservableObject {
     }
     
     /// Save tutorial completion status to server
+    /// Note: Tutorial completion is automatically handled when the user creates their first activity,
+    /// which sets hasCompletedOnboarding to true on the backend. No separate API call needed.
     private func saveTutorialStatusToServer() async {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             print("🎯 TutorialViewModel: Cannot save tutorial status - no user logged in")
@@ -229,23 +233,11 @@ class TutorialViewModel: ObservableObject {
             return
         }
         
-        let preferences = UserPreferencesDTO(
-            hasCompletedTutorial: true,
-            userId: userId
-        )
+        print("🎯 TutorialViewModel: Tutorial completion will be automatically saved when user creates their first activity")
+        print("🎯 TutorialViewModel: No separate API call needed - tutorial completion is tied to onboarding completion")
         
-        do {
-            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
-                let _: UserPreferencesDTO? = try await apiService.sendData(
-                    preferences,
-                    to: url,
-                    parameters: nil
-                )
-                print("🎯 TutorialViewModel: Successfully saved tutorial completion to server")
-            }
-        } catch {
-            print("🎯 TutorialViewModel: Failed to save tutorial status to server: \(error)")
-            // Local storage is already updated, so this is not critical
-        }
+        // The tutorial completion is actually handled automatically when the user creates their first activity
+        // The backend sets hasCompletedOnboarding to true, which we use to determine tutorial status
+        // So we don't need to make a separate API call here
     }
 } 
