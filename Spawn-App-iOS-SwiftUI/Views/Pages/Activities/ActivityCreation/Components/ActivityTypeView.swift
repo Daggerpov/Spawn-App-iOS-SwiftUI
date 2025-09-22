@@ -164,7 +164,7 @@ extension ActivityTypeView {
     
     private var activityTypeGrid: some View {
         ScrollView {
-            LazyVGrid(columns: gridColumns, spacing: 16) {
+            LazyVGrid(columns: gridColumns, spacing: 10) {
                 ForEach(viewModel.sortedActivityTypes, id: \.id) { activityTypeDTO in
                     activityTypeCardView(for: activityTypeDTO)
                 }
@@ -273,7 +273,7 @@ struct ActivityTypeCard: View {
     
     private var borderColor: Color {
         if isSelected {
-            return Color.blue
+            return Color.clear
         } else {
             return Color.clear
         }
@@ -323,7 +323,7 @@ struct ActivityTypeCard: View {
             }
         }) {
             ZStack {
-                VStack(spacing: 12) {
+                VStack(spacing: 10) {
                     // Icon
                     ZStack {
                         Text(activityTypeDTO.icon)
@@ -332,7 +332,7 @@ struct ActivityTypeCard: View {
                     .frame(width: 32, height: 32)
                     
                     // Title and people count
-                    VStack(spacing: 8) {
+                    VStack {
                         Text(activityTypeDTO.title)
                             .font(Font.custom("Onest", size: 16).weight(.medium))
                             .foregroundColor(adaptiveTitleColor)
@@ -352,23 +352,30 @@ struct ActivityTypeCard: View {
                                 .stroke(borderColor, lineWidth: borderWidth)
                         )
                 )
-                .shadow(
-                    color: shadowColor,
-                    radius: shadowRadius,
-                    x: 0,
-                    y: shadowOffset
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1) // "border"
+                        .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: -2) // dark shadow top
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: Color.white.opacity(0.7), radius: 4, x: 0, y: 4) // light shadow bottom
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                 )
+                
                 
                 // Pin icon overlay
                 if activityTypeDTO.isPinned {
                     VStack {
                         HStack {
                             Image(systemName: "pin.fill")
-                                .foregroundColor(.red)
-                                .font(.system(size: 12))
+                                .foregroundColor(.white)
+                                .font(.system(size: 8))
+                                .padding(3)
                                 .rotationEffect(.degrees(45))
+                                .background(Color(hex: colorsRed600))
+                                .clipShape(Circle())
                             Spacer()
                         }
+                        
                         Spacer()
                     }
                     .padding(8)
@@ -436,14 +443,16 @@ struct CreateNewActivityTypeCard: View {
     
     var body: some View {
         Button(action: onCreateNew) {
-            VStack(spacing: 12) {
-                Image("CreateNewActivityIcon")
+            VStack(spacing: 8) {
+                Image(systemName: "plus.circle")
                     .resizable()
                     .frame(width: 32, height: 32)
+                    .foregroundColor(Color(hex: colorsGreen700))
                 
                 Text("Create New Activity")
                     .font(Font.custom("Onest", size: 12).weight(.medium))
                     .foregroundColor(adaptiveTextColor)
+                    .multilineTextAlignment(.center)
             }
             .padding(16)
             .frame(width: 116, height: 116)

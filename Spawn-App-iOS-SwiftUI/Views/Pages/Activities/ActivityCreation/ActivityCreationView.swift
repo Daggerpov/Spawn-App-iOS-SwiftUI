@@ -414,11 +414,26 @@ enum ActivityDuration: CaseIterable {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    // Setup preview data directly on the shared cache
+    let _ = {
+        let hardcodedActivityTypes = [
+            ActivityTypeDTO(id: UUID(), title: "Chill", icon: "🛋️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.danielAgapov], orderNum: 0, isPinned: false),
+            ActivityTypeDTO(id: UUID(), title: "Food & Drink", icon: "🍽️", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.haley, BaseUserDTO.danielAgapov], orderNum: 1, isPinned: true),
+            ActivityTypeDTO(id: UUID(), title: "Active", icon: "🏃", associatedFriends: [BaseUserDTO.haley, BaseUserDTO.danielLee, BaseUserDTO.danielAgapov], orderNum: 2, isPinned: false),
+            ActivityTypeDTO(id: UUID(), title: "Study", icon: "📚", associatedFriends: BaseUserDTO.mockUsers, orderNum: 3, isPinned: false),
+            ActivityTypeDTO(id: UUID(), title: "Grind", icon: "💼", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.danielAgapov], orderNum: 4, isPinned: false),
+            ActivityTypeDTO(id: UUID(), title: "Gaming", icon: "🎮", associatedFriends: [BaseUserDTO.danielLee, BaseUserDTO.haley], orderNum: 5, isPinned: false),
+            ActivityTypeDTO(id: UUID(), title: "Music", icon: "🎵", associatedFriends: [BaseUserDTO.haley, BaseUserDTO.danielAgapov], orderNum: 6, isPinned: true)
+        ]
+        
+        // Set activity types directly on the shared cache instance
+        AppCache.shared.activityTypes = hardcodedActivityTypes
+    }()
+    
     ActivityCreationView(
         creatingUser: .danielAgapov,
         closeCallback: {
         },
-        selectedTab: .constant(TabType.activities)
-    ).environmentObject(appCache)
+        selectedTab: .constant(TabType.creation)
+    ).environmentObject(AppCache.shared)
 }
