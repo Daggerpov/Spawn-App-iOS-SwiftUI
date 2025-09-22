@@ -67,6 +67,7 @@ struct FriendsTabView: View {
                     recentlySpawnedWithFriendsSection
 				}
                 .padding(.vertical, 20)
+                .padding(.bottom, 100) // Add bottom padding to ensure last friend shows fully above nav bar
 			}
 			.onAppear {
 				Task {

@@ -40,6 +40,7 @@ struct WithTabBar<Content>: View where Content: View {
 struct WithTabBarBinding<Content>: View where Content: View {
     @Binding var selection: Tabs
     @ViewBuilder var content: (Tabs) -> Content
+    @StateObject private var activityCreationViewModel = ActivityCreationViewModel.shared
     
     // Calculate the TabBar space needed
     private var tabBarSpacing: CGFloat {
@@ -47,6 +48,12 @@ struct WithTabBarBinding<Content>: View where Content: View {
         let tabBarPadding: CGFloat = 4 * 2 // padding from TabBar
         let extraSpacing: CGFloat = 20 // Additional spacing for visual separation
         return buttonHeight + tabBarPadding + extraSpacing
+    }
+    
+    // Check if we should hide the tab bar (for location selection screen)
+    private var shouldHideTabBar: Bool {
+        // Hide tab bar only when on activities tab and specifically on location selection step
+        return selection == .activities && activityCreationViewModel.isOnLocationSelectionStep
     }
     
     // Calculate adaptive bottom padding based on screen size and safe area
@@ -74,16 +81,18 @@ struct WithTabBarBinding<Content>: View where Content: View {
                 // Main content area - fills entire screen
                 content(selection)
                     .frame(width: proxy.size.width, height: proxy.size.height)
-                    .padding(.bottom, tabBarSpacing) // Add bottom padding to avoid tab bar overlap
+                    .padding(.bottom, shouldHideTabBar ? 0 : tabBarSpacing) // Conditional padding based on tab bar visibility
                     .if(selection != .activities) { view in
                         view.ignoresSafeArea(.keyboard, edges: .bottom) // Prevent keyboard from pushing content up for non-activities tabs
                     }
                 
-                // Tab bar positioned absolutely at bottom
-                VStack {
-                    Spacer()
-                    TabBar(selection: $selection)
-                        .padding(.bottom, adaptiveBottomPadding(for: proxy))
+                // Tab bar positioned absolutely at bottom - conditionally visible
+                if !shouldHideTabBar {
+                    VStack {
+                        Spacer()
+                        TabBar(selection: $selection)
+                            .padding(.bottom, adaptiveBottomPadding(for: proxy))
+                    }
                 }
             }
         }
