@@ -16,6 +16,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@StateObject var appCache = AppCache.shared
 	@StateObject var themeService = ThemeService.shared
 	@StateObject var deepLinkManager = DeepLinkManager.shared
+    @Environment(\.scenePhase) private var scenePhase
     
     init() {
         // Register custom fonts
@@ -115,6 +116,29 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 		WindowGroup {
 			rootView
 				.preferredColorScheme(themeService.colorScheme.colorScheme)
+				.onChange(of: scenePhase) { phase in
+					handleScenePhaseChange(phase)
+				}
 		}
 	}
+    
+    // MARK: - Scene Phase Handling
+    private func handleScenePhaseChange(_ phase: ScenePhase) {
+        switch phase {
+        case .active:
+            print("🔄 App became active - refreshing activities")
+            // Refresh activities when app becomes active to ensure no stale data
+            Task {
+                await appCache.refreshActivities()
+                // Clean up any expired activities after refresh
+                appCache.cleanupExpiredActivities()
+            }
+        case .background:
+            print("📱 App entered background")
+        case .inactive:
+            print("📱 App became inactive")
+        @unknown default:
+            break
+        }
+    }
 }
