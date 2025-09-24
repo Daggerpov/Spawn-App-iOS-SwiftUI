@@ -9,6 +9,8 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
+// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
+
 // MARK: - Custom Activity Pin View
 struct ActivityPinView: View {
     let icon: String
@@ -59,7 +61,11 @@ struct MapView: View {
     @State private var showLocationError: Bool = false
     @State private var locationErrorMessage: String = ""
     
-    // No additional state needed for map delegate
+    // Animation states for 3D effects on map control buttons
+    @State private var toggle3DPressed = false
+    @State private var toggle3DScale: CGFloat = 1.0
+    @State private var locationPressed = false
+    @State private var locationScale: CGFloat = 1.0
     
     enum TimeFilter: String, CaseIterable {
         case lateNight = "Late Night"
@@ -138,11 +144,13 @@ struct MapView: View {
             // Base layer - Map and its components
             VStack {
                 ZStack {
-                    // Activity Viewing Map using new refactored components
-                    ActivityViewingMapView(
+                    // Map layer using unified component
+                    UnifiedMapViewRepresentable(
                         region: $region,
                         is3DMode: $is3DMode,
-                        activities: filteredActivities.filter { $0.location != nil },
+                        showsUserLocation: true,
+                        annotationItems: filteredActivities.filter { $0.location != nil },
+                        isLocationSelectionMode: false,
                         onMapWillChange: nil,
                         onMapDidChange: { _ in },
                         onActivityTap: { activity in
@@ -161,35 +169,99 @@ struct MapView: View {
                     .ignoresSafeArea()
 
                     // Top control buttons
-                    ActivityViewingMapControls(
-                        is3DMode: $is3DMode,
-                        userLocation: locationManager.userLocation,
-                        onRecenterTapped: {
-                            if let userLocation = locationManager.userLocation {
-                                if let newRegion = ActivityViewingMapView.adjustRegionToUserLocation(userLocation) {
-                                    withAnimation(.easeInOut(duration: 0.75)) {
-                                        region = newRegion
+                    VStack {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 8) {
+                                // 3D mode toggle button (works on iOS 9+ with MapKit camera)
+                                Button(action: {
+                                    // Haptic feedback
+                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                    impactGenerator.impactOccurred()
+                                    
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        is3DMode.toggle()
                                     }
+                                }) {
+                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(universalBackgroundColor)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                        .scaleEffect(toggle3DScale)
                                 }
+                                .buttonStyle(PlainButtonStyle())
+                                .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
+                                .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
+                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                                    toggle3DPressed = pressing
+                                    toggle3DScale = pressing ? 0.95 : 1.0
+                                    
+                                    // Additional haptic feedback for press down
+                                    if pressing {
+                                        let selectionGenerator = UISelectionFeedbackGenerator()
+                                        selectionGenerator.selectionChanged()
+                                    }
+                                }, perform: {})
+                                
+                                // Location button
+                                Button(action: {
+                                    // Haptic feedback
+                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                    impactGenerator.impactOccurred()
+                                    
+                                    if let userLocation = locationManager.userLocation {
+                                        withAnimation(.easeInOut(duration: 0.75)) {
+                                            region = MKCoordinateRegion(
+                                                center: userLocation,
+                                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                            )
+                                        }
+                                    }
+                                }) {
+                                    Image(systemName: "location.fill")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(universalBackgroundColor)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                        .scaleEffect(locationScale)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .animation(.easeInOut(duration: 0.15), value: locationScale)
+                                .animation(.easeInOut(duration: 0.15), value: locationPressed)
+                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                                    locationPressed = pressing
+                                    locationScale = pressing ? 0.95 : 1.0
+                                    
+                                    // Additional haptic feedback for press down
+                                    if pressing {
+                                        let selectionGenerator = UISelectionFeedbackGenerator()
+                                        selectionGenerator.selectionChanged()
+                                    }
+                                }, perform: {})
                             }
-                        },
-                        on3DToggled: {
-                            print("🗺️ MapView: 3D mode toggled to: \(is3DMode)")
+                            .padding(.trailing, 16)
                         }
-                    )
+                        .padding(.top, 16)
+                        
+                        Spacer()
+                    }
                 }
             }
             .task {
                 await viewModel.fetchAllData()
                 await MainActor.run {
                     if let userLocation = locationManager.userLocation {
-                        if let newRegion = ActivityViewingMapView.adjustRegionToUserLocation(userLocation) {
-                            region = newRegion
-                        }
+                        region = MKCoordinateRegion(
+                            center: userLocation,
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        )
                     } else if !viewModel.activities.isEmpty {
-                        if let newRegion = ActivityViewingMapView.adjustRegionForActivities(viewModel.activities) {
-                            region = newRegion
-                        }
+                        adjustRegionForActivities()
                     }
                 }
             }
@@ -197,19 +269,12 @@ struct MapView: View {
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
                    abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
                    abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
-                    if let userLocation = locationManager.userLocation,
-                       let newRegion = ActivityViewingMapView.adjustRegionToUserLocation(userLocation) {
-                        withAnimation {
-                            region = newRegion
-                        }
-                    }
+                    adjustRegionToUserLocation()
                 }
             })
             .onChange(of: viewModel.activities, perform: { _ in
-                if let userLocation = locationManager.userLocation {
-                    if let newRegion = ActivityViewingMapView.adjustRegionForActivities(viewModel.activities) {
-                        region = newRegion
-                    }
+                if locationManager.userLocation != nil {
+                    adjustRegionForActivities()
                 }
             })
             .onChange(of: locationManager.locationError, perform: { error in
@@ -353,7 +418,61 @@ struct MapView: View {
         }
     }
 
-    // Region adjustment functions are now handled by ActivityViewingMapView helper functions
+    private func adjustRegionToUserLocation() {
+        if let userLocation = locationManager.userLocation {
+            withAnimation {
+                region = MKCoordinateRegion(
+                    center: userLocation,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )
+            }
+        }
+    }
+
+    private func adjustRegionForActivitiesOrUserLocation() {
+        if let userLocation = locationManager.userLocation {
+            // Prioritize user location
+            withAnimation {
+                region = MKCoordinateRegion(
+                    center: userLocation,
+                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                )
+            }
+        } else if !viewModel.activities.isEmpty {
+            adjustRegionForActivities()
+        }
+    }
+
+    private func adjustRegionForActivities() {
+        guard !viewModel.activities.isEmpty else { return }
+        
+        let latitudes = viewModel.activities.compactMap { $0.location?.latitude }
+        let longitudes = viewModel.activities.compactMap { $0.location?.longitude }
+        
+        guard let minLatitude = latitudes.min(),
+              let maxLatitude = latitudes.max(),
+              let minLongitude = longitudes.min(),
+              let maxLongitude = longitudes.max()
+        else { return }
+        
+        let centerLatitude = (minLatitude + maxLatitude) / 2
+        let centerLongitude = (minLongitude + maxLongitude) / 2
+        let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
+        let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
+        
+        withAnimation {
+            region = MKCoordinateRegion(
+                center: CLLocationCoordinate2D(
+                    latitude: centerLatitude,
+                    longitude: centerLongitude
+                ),
+                span: MKCoordinateSpan(
+                    latitudeDelta: max(latitudeDelta, 0.01),
+                    longitudeDelta: max(longitudeDelta, 0.01)
+                )
+            )
+        }
+    }
 
     func closeCreation() {
         ActivityCreationViewModel.reInitialize()
@@ -362,7 +481,289 @@ struct MapView: View {
     }
 }
 
-// Old ActivityMapViewRepresentable removed - now using refactored components
+// MARK: - ActivityMapViewRepresentable
+struct ActivityMapViewRepresentable: UIViewRepresentable {
+    @Binding var region: MKCoordinateRegion
+    @Binding var is3DMode: Bool
+    var userTrackingMode: Binding<MapUserTrackingMode>
+    var annotationItems: [FullFeedActivityDTO]
+    var onActivityTap: (FullFeedActivityDTO) -> Void
+    
+            // Custom annotation type that carries the activity data needed for rendering
+        private class ActivityAnnotation: NSObject, MKAnnotation {
+            let activityId: UUID
+            dynamic var coordinate: CLLocationCoordinate2D
+            var title: String?
+            let activityIcon: String
+            let activityUIColor: UIColor
+            
+            init(activityId: UUID, title: String?, coordinate: CLLocationCoordinate2D, icon: String, color: UIColor) {
+                self.activityId = activityId
+                self.title = title
+                self.coordinate = coordinate
+                self.activityIcon = icon
+                self.activityUIColor = color
+                super.init()
+            }
+        }
+    
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.showsUserLocation = true
+        mapView.delegate = context.coordinator
+        
+        // Set additional properties for better stability
+        mapView.isZoomEnabled = true
+        mapView.isScrollEnabled = true
+        mapView.isRotateEnabled = true
+        mapView.showsCompass = true
+        mapView.showsScale = true
+        
+        // Ensure annotation interactions are enabled
+        mapView.isUserInteractionEnabled = true
+        
+        print("🗺️ MapView created with delegate set")
+        
+        // Configure initial camera - MapKit camera is available on iOS 9+
+        let camera = MKMapCamera(lookingAtCenter: region.center, 
+                               fromDistance: 2000, // Initial distance in meters
+                               pitch: 0, // Initial pitch (0 for top-down)
+                               heading: 0) // Initial heading (0 for north)
+        mapView.camera = camera
+        
+        return mapView
+    }
+    
+    func updateUIView(_ mapView: MKMapView, context: Context) {
+        // Keep coordinator in sync with latest parent values
+        context.coordinator.parent = self
+        
+        // 3D mode functionality works on iOS 9+ with MapKit camera
+        // Get current camera state
+        let currentCamera = mapView.camera
+        let targetPitch = is3DMode ? 45.0 : 0.0
+        
+        // Only update camera if mode changed or significant location change
+        let isLocationChange = abs(mapView.region.center.latitude - region.center.latitude) > 0.0001 || 
+                             abs(mapView.region.center.longitude - region.center.longitude) > 0.0001
+        
+        if isLocationChange || abs(currentCamera.pitch - targetPitch) > 1.0 {
+            // Create new camera while preserving current altitude and heading
+            let newCamera = MKMapCamera(
+                lookingAtCenter: region.center,
+                fromDistance: max(currentCamera.altitude, 500), // Ensure minimum altitude
+                pitch: targetPitch,
+                heading: currentCamera.heading
+            )
+            
+            UIView.animate(
+                withDuration: 0.75,
+                delay: 0,
+                options: [.curveEaseInOut],
+                animations: {
+                    mapView.camera = newCamera
+                },
+                completion: nil
+            )
+        }
+        
+        // Update region only if not in 3D mode or if it's a significant change
+        if !is3DMode || isLocationChange {
+            mapView.setRegion(region, animated: true)
+        }
+        
+        // Update annotations
+        let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
+        mapView.removeAnnotations(currentAnnotations)
+        
+        let newAnnotations = annotationItems.compactMap { activity -> MKAnnotation? in
+            guard let location = activity.location else { return nil }
+            let coord = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+            let icon = (activity.icon?.isEmpty == false) ? activity.icon! : "⭐️"
+            let color = UIColor(ActivityColorService.shared.getColorForActivity(activity.id))
+            return ActivityAnnotation(activityId: activity.id, title: activity.title, coordinate: coord, icon: icon, color: color)
+        }
+        mapView.addAnnotations(newAnnotations)
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+    
+    class Coordinator: NSObject, MKMapViewDelegate {
+        var parent: ActivityMapViewRepresentable
+        
+        init(_ parent: ActivityMapViewRepresentable) {
+            self.parent = parent
+        }
+        
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            // Safely handle region changes to prevent crashes
+            guard CLLocationCoordinate2DIsValid(mapView.region.center) else {
+                return
+            }
+            
+            // Only update region binding if not in 3D mode to prevent conflicts
+            if !parent.is3DMode {
+                DispatchQueue.main.async {
+                    self.parent.region = mapView.region
+                }
+            }
+        }
+        
+        func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
+            if annotation is MKUserLocation {
+                return nil
+            }
+            
+            let identifier = "ActivityPin"
+            var annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: identifier)
+            
+            if annotationView == nil {
+                annotationView = MKAnnotationView(annotation: annotation, reuseIdentifier: identifier)
+                annotationView?.canShowCallout = false
+                annotationView?.isDraggable = false
+                annotationView?.isEnabled = true
+                annotationView?.isUserInteractionEnabled = true
+            } else {
+                annotationView?.annotation = annotation
+            }
+            
+            // Resolve activity for this annotation (ID preferred, else coordinate fallback)
+            let resolvedActivity: FullFeedActivityDTO? = {
+                if let activityAnnotation = annotation as? ActivityAnnotation {
+                    return parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId })
+                }
+                // Fallback: coordinate proximity match
+                let coord = annotation.coordinate
+                let epsilon = 0.000001
+                return parent.annotationItems.first(where: { act in
+                    guard let loc = act.location else { return false }
+                    return abs(loc.latitude - coord.latitude) < epsilon && abs(loc.longitude - coord.longitude) < epsilon
+                })
+            }()
+            
+            if let activityAnnotation = annotation as? ActivityAnnotation {
+                if let customImage = createCustomPinImage(icon: activityAnnotation.activityIcon, color: activityAnnotation.activityUIColor) {
+                    annotationView?.image = customImage
+                    annotationView?.centerOffset = CGPoint(x: 0, y: -customImage.size.height / 2)
+                }
+            } else if let resolvedActivity = resolvedActivity {
+                let activityIcon = getActivityIcon(for: resolvedActivity)
+                let activityColor = UIColor(ActivityColorService.shared.getColorForActivity(resolvedActivity.id))
+                if let customImage = createCustomPinImage(icon: activityIcon, color: activityColor) {
+                    annotationView?.image = customImage
+                    annotationView?.centerOffset = CGPoint(x: 0, y: -customImage.size.height / 2)
+                }
+            } else {
+                if let fallbackImage = createCustomPinImage(icon: "⭐️", color: UIColor(Color(hex: "#333333"))) {
+                    annotationView?.image = fallbackImage
+                    annotationView?.centerOffset = CGPoint(x: 0, y: -fallbackImage.size.height / 2)
+                }
+            }
+            
+            annotationView?.isEnabled = true
+            annotationView?.canShowCallout = false
+            annotationView?.isUserInteractionEnabled = true
+            
+            return annotationView
+        }
+        
+        // Helper method to create custom pin images using Core Graphics
+        func createCustomPinImage(icon: String, color: UIColor) -> UIImage? {
+            let circleDiameter: CGFloat = 44
+            let pointerHeight: CGFloat = 14
+            let size = CGSize(width: circleDiameter, height: circleDiameter + pointerHeight)
+            let renderer = UIGraphicsImageRenderer(size: size)
+            
+            let image = renderer.image { context in
+                let cgContext = context.cgContext
+                
+                // Draw the circular head
+                let circleRect = CGRect(x: 0, y: 0, width: circleDiameter, height: circleDiameter)
+                cgContext.setFillColor(color.cgColor)
+                cgContext.addEllipse(in: circleRect)
+                cgContext.fillPath()
+                
+                // Draw the downward triangle pointer
+                let baseY = circleRect.maxY - 5 // Slight overlap with circle
+                let tipPoint = CGPoint(x: size.width / 2, y: size.height)
+                let leftBase = CGPoint(x: size.width / 2 - 15, y: baseY)
+                let rightBase = CGPoint(x: size.width / 2 + 15, y: baseY)
+                
+                cgContext.beginPath()
+                cgContext.move(to: tipPoint)
+                cgContext.addLine(to: leftBase)
+                cgContext.addLine(to: rightBase)
+                cgContext.closePath()
+                cgContext.setFillColor(color.cgColor)
+                cgContext.fillPath()
+                
+                // Draw the emoji centered within the circle
+                let iconString = NSString(string: icon)
+                let font = UIFont.systemFont(ofSize: 20)
+                let textAttributes: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: UIColor.white
+                ]
+                let textSize = iconString.size(withAttributes: textAttributes)
+                let textRect = CGRect(
+                    x: (circleDiameter - textSize.width) / 2,
+                    y: (circleDiameter - textSize.height) / 2,
+                    width: textSize.width,
+                    height: textSize.height
+                )
+                iconString.draw(in: textRect, withAttributes: textAttributes)
+            }
+            
+            return image
+        }
+        
+        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+            if let activityAnnotation = view.annotation as? ActivityAnnotation,
+               let activity = parent.annotationItems.first(where: { $0.id == activityAnnotation.activityId }) {
+                parent.onActivityTap(activity)
+            } else if let annotation = view.annotation {
+                // Fallback: coordinate proximity match
+                let coord = annotation.coordinate
+                let epsilon = 0.000001
+                if let activity = parent.annotationItems.first(where: { act in
+                    guard let loc = act.location else { return false }
+                    return abs(loc.latitude - coord.latitude) < epsilon && abs(loc.longitude - coord.longitude) < epsilon
+                }) {
+                    parent.onActivityTap(activity)
+                } else if let title = annotation.title ?? nil {
+                    if let activity = parent.annotationItems.first(where: { $0.title == title }) {
+                        parent.onActivityTap(activity)
+                    }
+                }
+            }
+        }
+        
+        // Helper method to get appropriate activity icon with fallback logic
+        func getActivityIcon(for activity: FullFeedActivityDTO) -> String {
+            // First check if the activity has its own icon
+            if let activityIcon = activity.icon, !activityIcon.isEmpty {
+                return activityIcon
+            }
+            
+            // Fall back to the activity type's icon if activityTypeId exists
+            if let activityTypeId = activity.activityTypeId,
+               let activityType = AppCache.shared.activityTypes.first(where: { $0.id == activityTypeId }),
+               !activityType.icon.isEmpty {
+                return activityType.icon
+            }
+            
+            // Final fallback to default star emoji
+            return "⭐️"
+        }
+        
+        func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
+            print("🗺️ Map pin deselected!")
+        }
+        
+    }
+}
 
 @available(iOS 17.0, *)
 #Preview {
