@@ -9,6 +9,8 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
+// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
+
 // MARK: - Custom Activity Pin View
 struct ActivityPinView: View {
     let icon: String
@@ -42,7 +44,7 @@ struct MapView: View {
 
     // Add state for tracking mode
     @State private var userTrackingMode: MapUserTrackingMode = .none
-    @State private var is3DMode: Bool = false
+    @State private var is3DMode: Bool = false // Only used on iOS 17+
 
     // MARK - Activity Description State Vars - now using global popup system
 
@@ -142,12 +144,15 @@ struct MapView: View {
             // Base layer - Map and its components
             VStack {
                 ZStack {
-                    // Map layer
-                    ActivityMapViewRepresentable(
+                    // Map layer using unified component
+                    UnifiedMapViewRepresentable(
                         region: $region,
                         is3DMode: $is3DMode,
-                        userTrackingMode: $userTrackingMode,
+                        showsUserLocation: true,
                         annotationItems: filteredActivities.filter { $0.location != nil },
+                        isLocationSelectionMode: false,
+                        onMapWillChange: nil,
+                        onMapDidChange: { _ in },
                         onActivityTap: { activity in
                             // Use global popup system with fromMapView flag
                             NotificationCenter.default.post(
@@ -168,40 +173,38 @@ struct MapView: View {
                         HStack {
                             Spacer()
                             VStack(spacing: 8) {
-                                // 3D mode toggle button (iOS 17+ only)
-                                if #available(iOS 17.0, *) {
-                                    Button(action: {
-                                        // Haptic feedback
-                                        let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                        impactGenerator.impactOccurred()
-                                        
-                                        withAnimation(.easeInOut(duration: 0.3)) {
-                                            is3DMode.toggle()
-                                        }
-                                    }) {
-                                        Image(systemName: is3DMode ? "view.3d" : "view.2d")
-                                            .font(.system(size: 18))
-                                            .foregroundColor(universalAccentColor)
-                                            .padding(12)
-                                            .background(universalBackgroundColor)
-                                            .clipShape(Circle())
-                                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                            .scaleEffect(toggle3DScale)
+                                // 3D mode toggle button (works on iOS 9+ with MapKit camera)
+                                Button(action: {
+                                    // Haptic feedback
+                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                    impactGenerator.impactOccurred()
+                                    
+                                    withAnimation(.easeInOut(duration: 0.3)) {
+                                        is3DMode.toggle()
                                     }
-                                    .buttonStyle(PlainButtonStyle())
-                                    .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
-                                    .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
-                                    .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                                        toggle3DPressed = pressing
-                                        toggle3DScale = pressing ? 0.95 : 1.0
-                                        
-                                        // Additional haptic feedback for press down
-                                        if pressing {
-                                            let selectionGenerator = UISelectionFeedbackGenerator()
-                                            selectionGenerator.selectionChanged()
-                                        }
-                                    }, perform: {})
+                                }) {
+                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(universalAccentColor)
+                                        .padding(12)
+                                        .background(universalBackgroundColor)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                        .scaleEffect(toggle3DScale)
                                 }
+                                .buttonStyle(PlainButtonStyle())
+                                .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
+                                .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
+                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                                    toggle3DPressed = pressing
+                                    toggle3DScale = pressing ? 0.95 : 1.0
+                                    
+                                    // Additional haptic feedback for press down
+                                    if pressing {
+                                        let selectionGenerator = UISelectionFeedbackGenerator()
+                                        selectionGenerator.selectionChanged()
+                                    }
+                                }, perform: {})
                                 
                                 // Location button
                                 Button(action: {
@@ -262,24 +265,24 @@ struct MapView: View {
                     }
                 }
             }
-            .onChange(of: locationManager.locationUpdated) { _ in
+            .onChange(of: locationManager.locationUpdated, perform: { _ in
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
                    abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
                    abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
                     adjustRegionToUserLocation()
                 }
-            }
-            .onChange(of: viewModel.activities) { _ in
+            })
+            .onChange(of: viewModel.activities, perform: { _ in
                 if locationManager.userLocation != nil {
                     adjustRegionForActivities()
                 }
-            }
-            .onChange(of: locationManager.locationError) { error in
+            })
+            .onChange(of: locationManager.locationError, perform: { error in
                 if let error = error {
                     locationErrorMessage = error
                     showLocationError = true
                 }
-            }
+            })
             .alert("Location Error", isPresented: $showLocationError) {
                 Button("OK") {
                     showLocationError = false
@@ -293,6 +296,12 @@ struct MapView: View {
                 }
             } message: {
                 Text(locationErrorMessage)
+            }
+            .onAppear {
+                Task {
+                    // Force refresh activities when map appears to ensure no stale data
+                    await viewModel.forceRefreshActivities()
+                }
             }
 
 
@@ -327,7 +336,7 @@ struct MapView: View {
                     }
             }
 
-            // Filter buttons - always on top
+            // Filter buttons - positioned above nav bar
             VStack {
                 Spacer()
                 HStack {
@@ -402,9 +411,9 @@ struct MapView: View {
                         }
                     }
                     .frame(maxWidth: 155)
-                    .padding(.trailing)
+                    .padding(.trailing, 20)
                 }
-                .padding(.bottom)
+                .padding(.bottom, 120) // Position filter above nav bar with proper spacing
             }
         }
     }
@@ -515,17 +524,12 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
         
         print("🗺️ MapView created with delegate set")
         
-        if #available(iOS 17.0, *) {
-            // Configure initial camera safely
-            let camera = MKMapCamera(lookingAtCenter: region.center, 
-                                   fromDistance: 2000, // Initial distance in meters
-                                   pitch: 0, // Initial pitch (0 for top-down)
-                                   heading: 0) // Initial heading (0 for north)
-            mapView.camera = camera
-        } else {
-            // For iOS 16 and below, just set the region
-            mapView.setRegion(region, animated: false)
-        }
+        // Configure initial camera - MapKit camera is available on iOS 9+
+        let camera = MKMapCamera(lookingAtCenter: region.center, 
+                               fromDistance: 2000, // Initial distance in meters
+                               pitch: 0, // Initial pitch (0 for top-down)
+                               heading: 0) // Initial heading (0 for north)
+        mapView.camera = camera
         
         return mapView
     }
@@ -534,41 +538,37 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
         // Keep coordinator in sync with latest parent values
         context.coordinator.parent = self
         
-        if #available(iOS 17.0, *) {
-            // Get current camera state
-            let currentCamera = mapView.camera
-            let targetPitch = is3DMode ? 45.0 : 0.0
+        // 3D mode functionality works on iOS 9+ with MapKit camera
+        // Get current camera state
+        let currentCamera = mapView.camera
+        let targetPitch = is3DMode ? 45.0 : 0.0
+        
+        // Only update camera if mode changed or significant location change
+        let isLocationChange = abs(mapView.region.center.latitude - region.center.latitude) > 0.0001 || 
+                             abs(mapView.region.center.longitude - region.center.longitude) > 0.0001
+        
+        if isLocationChange || abs(currentCamera.pitch - targetPitch) > 1.0 {
+            // Create new camera while preserving current altitude and heading
+            let newCamera = MKMapCamera(
+                lookingAtCenter: region.center,
+                fromDistance: max(currentCamera.altitude, 500), // Ensure minimum altitude
+                pitch: targetPitch,
+                heading: currentCamera.heading
+            )
             
-            // Only update camera if mode changed or significant location change
-            let isLocationChange = abs(mapView.region.center.latitude - region.center.latitude) > 0.0001 || 
-                                 abs(mapView.region.center.longitude - region.center.longitude) > 0.0001
-            
-            if isLocationChange || abs(currentCamera.pitch - targetPitch) > 1.0 {
-                // Create new camera while preserving current altitude and heading
-                let newCamera = MKMapCamera(
-                    lookingAtCenter: region.center,
-                    fromDistance: max(currentCamera.altitude, 500), // Ensure minimum altitude
-                    pitch: targetPitch,
-                    heading: currentCamera.heading
-                )
-                
-                UIView.animate(
-                    withDuration: 0.75,
-                    delay: 0,
-                    options: [.curveEaseInOut],
-                    animations: {
-                        mapView.camera = newCamera
-                    },
-                    completion: nil
-                )
-            }
-            
-            // Update region only if not in 3D mode or if it's a significant change
-            if !is3DMode || isLocationChange {
-                mapView.setRegion(region, animated: true)
-            }
-        } else {
-            // For iOS 16 and below, just update the region
+            UIView.animate(
+                withDuration: 0.75,
+                delay: 0,
+                options: [.curveEaseInOut],
+                animations: {
+                    mapView.camera = newCamera
+                },
+                completion: nil
+            )
+        }
+        
+        // Update region only if not in 3D mode or if it's a significant change
+        if !is3DMode || isLocationChange {
             mapView.setRegion(region, animated: true)
         }
         
@@ -603,14 +603,8 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
                 return
             }
             
-            if #available(iOS 17.0, *) {
-                // Only update region binding if not in 3D mode
-                if !parent.is3DMode {
-                    DispatchQueue.main.async {
-                        self.parent.region = mapView.region
-                    }
-                }
-            } else {
+            // Only update region binding if not in 3D mode to prevent conflicts
+            if !parent.is3DMode {
                 DispatchQueue.main.async {
                     self.parent.region = mapView.region
                 }

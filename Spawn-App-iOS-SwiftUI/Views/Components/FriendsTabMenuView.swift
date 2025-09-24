@@ -2,7 +2,7 @@
 //  FriendsTabMenuView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by AI Assistant on 2025-01-27.
+//  Created By Daniel Agapov on 2025-01-27.
 //
 
 import SwiftUI

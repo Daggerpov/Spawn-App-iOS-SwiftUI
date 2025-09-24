@@ -108,6 +108,8 @@ struct ActivityFeedView: View {
                     if !MockAPIService.isMocking {
                         await AppCache.shared.validateCache()
                     }
+                    // Force refresh to ensure no stale activities
+                    await viewModel.forceRefreshActivities()
                     await viewModel.fetchAllData()
                 }
             }

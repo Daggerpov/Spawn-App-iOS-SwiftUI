@@ -62,10 +62,16 @@ class TutorialViewModel: ObservableObject {
     /// This should be called when user reaches the main feed for the first time
     private func shouldStartTutorial() -> Bool {
         // Check if user has completed onboarding and this is their first time in the main app
-		guard UserAuthViewModel.shared.spawnUser != nil else { return false }
+		guard let user = UserAuthViewModel.shared.spawnUser else { return false }
         
         // Always skip tutorial for existing users signing into their account
         print("🎯 TutorialViewModel: Checking if user should start tutorial...")
+        
+        // First check: If backend says user has completed onboarding, skip tutorial
+        if let backendOnboardingStatus = user.hasCompletedOnboarding, backendOnboardingStatus {
+            print("🎯 TutorialViewModel: Skipping tutorial - backend indicates onboarding completed")
+            return false
+        }
         
         // Check if this user has any existing activities or friends
         // If they do, they're likely an existing user who shouldn't see the tutorial
@@ -91,12 +97,15 @@ class TutorialViewModel: ObservableObject {
         // we'll be conservative and skip the tutorial for most cases to avoid annoying existing users.
         
         // Only show tutorial if user has explicitly never completed it AND
-        // this appears to be a completely new user experience
+        // this appears to be a completely new user experience AND
+        // the backend doesn't indicate they've completed onboarding
         let hasNeverCompletedTutorial = !userDefaults.bool(forKey: hasCompletedTutorialKey)
         let hasCompletedOnboarding = UserAuthViewModel.shared.hasCompletedOnboarding
+        let backendOnboardingStatus = user.hasCompletedOnboarding ?? false
 
-        let shouldStart = hasNeverCompletedTutorial && hasCompletedOnboarding
-        print("🎯 TutorialViewModel: shouldStartTutorial = \(shouldStart) (hasNeverCompleted: \(hasNeverCompletedTutorial), hasCompletedOnboarding: \(hasCompletedOnboarding))")
+        // Don't show tutorial if backend says they've completed onboarding
+        let shouldStart = hasNeverCompletedTutorial && hasCompletedOnboarding && !backendOnboardingStatus
+        print("🎯 TutorialViewModel: shouldStartTutorial = \(shouldStart) (hasNeverCompleted: \(hasNeverCompletedTutorial), hasCompletedOnboarding: \(hasCompletedOnboarding), backendOnboarding: \(backendOnboardingStatus))")
         return shouldStart
     }
     
@@ -188,14 +197,16 @@ class TutorialViewModel: ObservableObject {
         }
         
         do {
-            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
-                let preferences: UserPreferencesDTO = try await apiService.fetchData(
+            if let url = URL(string: "\(APIService.baseURL)users/\(userId)") {
+                let user: BaseUserDTO = try await apiService.fetchData(
                     from: url,
                     parameters: nil
                 )
                 
-                if preferences.hasCompletedTutorial {
-                    print("🎯 TutorialViewModel: Server indicates tutorial completed - updating local state")
+                // Check if user has completed onboarding (which indicates they've used the app before)
+                // If they have, we should skip the tutorial
+                if let hasCompletedOnboarding = user.hasCompletedOnboarding, hasCompletedOnboarding {
+                    print("🎯 TutorialViewModel: Server indicates onboarding completed - updating local state")
                     userDefaults.set(true, forKey: hasCompletedTutorialKey)
                     tutorialState = .completed
                     shouldShowCallout = false
@@ -208,8 +219,10 @@ class TutorialViewModel: ObservableObject {
     }
     
     /// Save tutorial completion status to server
+    /// Note: Tutorial completion is automatically handled when the user creates their first activity,
+    /// which sets hasCompletedOnboarding to true on the backend. No separate API call needed.
     private func saveTutorialStatusToServer() async {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+		guard (UserAuthViewModel.shared.spawnUser?.id) != nil else {
             print("🎯 TutorialViewModel: Cannot save tutorial status - no user logged in")
             return
         }
@@ -220,23 +233,11 @@ class TutorialViewModel: ObservableObject {
             return
         }
         
-        let preferences = UserPreferencesDTO(
-            hasCompletedTutorial: true,
-            userId: userId
-        )
+        print("🎯 TutorialViewModel: Tutorial completion will be automatically saved when user creates their first activity")
+        print("🎯 TutorialViewModel: No separate API call needed - tutorial completion is tied to onboarding completion")
         
-        do {
-            if let url = URL(string: "\(APIService.baseURL)users/preferences/\(userId)") {
-                let _: UserPreferencesDTO? = try await apiService.sendData(
-                    preferences,
-                    to: url,
-                    parameters: nil
-                )
-                print("🎯 TutorialViewModel: Successfully saved tutorial completion to server")
-            }
-        } catch {
-            print("🎯 TutorialViewModel: Failed to save tutorial status to server: \(error)")
-            // Local storage is already updated, so this is not critical
-        }
+        // The tutorial completion is actually handled automatically when the user creates their first activity
+        // The backend sets hasCompletedOnboarding to true, which we use to determine tutorial status
+        // So we don't need to make a separate API call here
     }
 } 

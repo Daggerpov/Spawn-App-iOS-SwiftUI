@@ -58,6 +58,7 @@ struct ActivityListView: View {
                     }
                 }
             }
+            .padding(.bottom, 72) // Add bottom padding to ensure last activity shows fully above nav bar
         }
         .background(universalBackgroundColor)
         .refreshable {

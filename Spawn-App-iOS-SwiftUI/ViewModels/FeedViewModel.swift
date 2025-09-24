@@ -19,6 +19,9 @@ class FeedViewModel: ObservableObject {
     var userId: UUID
     private var appCache: AppCache
     private var cancellables = Set<AnyCancellable>()
+    
+    // Periodic refresh timer
+    private var refreshTimer: Timer?
 
     // MARK: - Computed Properties
     
@@ -104,6 +107,44 @@ class FeedViewModel: ObservableObject {
                 }
             }
             .store(in: &cancellables)
+        
+        // Register for activity refresh notifications
+        NotificationCenter.default.publisher(for: .shouldRefreshActivities)
+            .sink { [weak self] _ in
+                Task {
+                    await self?.forceRefreshActivities()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Start periodic refresh timer (every 2 minutes)
+        startPeriodicRefresh()
+    }
+    
+    deinit {
+        stopPeriodicRefresh()
+    }
+    
+    // MARK: - Periodic Refresh
+    
+    private func startPeriodicRefresh() {
+        stopPeriodicRefresh() // Stop any existing timer
+        
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+            Task { [weak self] in
+                await self?.refreshActivitiesInBackground()
+            }
+        }
+    }
+    
+    private func stopPeriodicRefresh() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+    
+    private func refreshActivitiesInBackground() async {
+        print("🔄 FeedViewModel: Performing periodic activity refresh")
+        await fetchActivitiesFromAPI()
     }
 
     func fetchAllData() async {
@@ -118,10 +159,20 @@ class FeedViewModel: ObservableObject {
             await MainActor.run {
                 self.activities = self.filterExpiredActivities(currentUserActivities)
             }
+            // Still fetch from API in background to ensure freshness
+            Task {
+                await fetchActivitiesFromAPI()
+            }
             return
         }
         
         // If not in cache, fetch from API
+        await fetchActivitiesFromAPI()
+    }
+    
+    /// Force refresh activities from the API, bypassing cache
+    func forceRefreshActivities() async {
+        print("🔄 FeedViewModel: Force refreshing activities")
         await fetchActivitiesFromAPI()
     }
     

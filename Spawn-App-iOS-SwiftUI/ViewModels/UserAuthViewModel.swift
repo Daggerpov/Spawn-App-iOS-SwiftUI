@@ -32,7 +32,16 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	
 	@Published var spawnUser: BaseUserDTO? {
 		didSet {
-			if spawnUser != nil {
+			if let user = spawnUser {
+				// Sync the hasCompletedOnboarding from backend with local state
+				if let backendOnboardingStatus = user.hasCompletedOnboarding {
+					if backendOnboardingStatus != hasCompletedOnboarding {
+						print("🔄 DEBUG: Syncing hasCompletedOnboarding from backend: \(backendOnboardingStatus)")
+						hasCompletedOnboarding = backendOnboardingStatus
+						UserDefaults.standard.set(backendOnboardingStatus, forKey: "hasCompletedOnboarding")
+					}
+				}
+				
 				// Only set navigation to feed view if user has completed onboarding
 				// For new users going through onboarding, this will be handled separately
 				if hasCompletedOnboarding {
@@ -455,7 +464,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			GIDSignIn.sharedInstance.signIn(
 				withPresenting: presentingViewController
 			) { [weak self] signInResult, error in
-				guard let self = self else { return }
 				if let error = error {
 					print(error.localizedDescription)
 					return
@@ -816,11 +824,22 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     func continueUserOnboarding(authResponse: AuthResponseDTO) {
         
+        // Check backend onboarding status first, then local status as fallback
+        let backendOnboardingStatus = authResponse.user.hasCompletedOnboarding ?? false
+        let shouldSkipOnboarding = backendOnboardingStatus || hasCompletedOnboarding
+        
         // Guard against calling this method for users who have already completed onboarding
-        if hasCompletedOnboarding {
-            print("🔍 [AUTH] User has already completed onboarding - skipping continueUserOnboarding")
+        if shouldSkipOnboarding {
+            print("🔍 [AUTH] User has already completed onboarding (backend: \(backendOnboardingStatus), local: \(hasCompletedOnboarding)) - skipping continueUserOnboarding")
+            // Ensure local state matches backend
+            if backendOnboardingStatus && !hasCompletedOnboarding {
+                markOnboardingCompleted()
+            }
+            // Navigate directly to feed for users who have completed onboarding
+            navigateTo(.feedView)
             return
         }
+        
         self.continuingUserStatus = authResponse.status
         self.isOAuthUser = authResponse.isOAuthUser ?? false
         guard let status = continuingUserStatus else {
@@ -869,8 +888,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
             // Fully onboarded user - go to feed
             isFormValid = true
             navigateTo(.feedView)
-            // Mark onboarding as completed for active users
-            if !hasCompletedOnboarding {
+            // Mark onboarding as completed for active users if not already marked
+            let backendOnboardingStatus = spawnUser?.hasCompletedOnboarding ?? false
+            if !hasCompletedOnboarding && (backendOnboardingStatus || true) {
                 markOnboardingCompleted()
             }
             print("📍 [AUTH] User status: active - navigating to feed")
@@ -1317,9 +1337,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
                     // This matches the behavior of other authentication methods
                     self.isLoggedIn = true
                     
-                    // Only mark onboarding as completed for users with 'active' status
-                    // Users with other statuses still need to complete onboarding steps
-                    if authResponse.status == .active && !self.hasCompletedOnboarding {
+                    // Check backend onboarding status and sync with local state
+                    let backendOnboardingStatus = authResponse.user.hasCompletedOnboarding ?? false
+                    if backendOnboardingStatus && !self.hasCompletedOnboarding {
+                        self.markOnboardingCompleted()
+                    } else if authResponse.status == .active && !self.hasCompletedOnboarding {
+                        // Fallback: mark onboarding as completed for active users
                         self.markOnboardingCompleted()
                     }
                     

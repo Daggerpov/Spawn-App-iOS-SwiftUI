@@ -50,6 +50,25 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
         }
     }
     
+    // Handle when app will enter foreground
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        print("🔄 CustomAppDelegate: App will enter foreground - refreshing activities")
+        Task {
+            await AppCache.shared.refreshActivities()
+            // Notify all listeners to refresh activities
+            NotificationCenter.default.post(name: .shouldRefreshActivities, object: nil)
+        }
+    }
+    
+    // Handle when app becomes active
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        print("🔄 CustomAppDelegate: App became active")
+        // Additional refresh if needed
+        Task {
+            AppCache.shared.cleanupExpiredActivities()
+        }
+    }
+    
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
         if let deviceToken = fcmToken {
             print("✅ FCM registration token: \(deviceToken)")

@@ -19,6 +19,7 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 	var name: String?
 	var bio: String?
 	var email: String
+	var hasCompletedOnboarding: Bool?
 
 	init(
 		id: UUID,
@@ -27,7 +28,8 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 		profilePicture: String? = nil,
 		name: String? = nil,
 		bio: String? = nil,
-		email: String
+		email: String,
+		hasCompletedOnboarding: Bool? = nil
 	) {
 		self.id = id
 		self.friendUserIds = friendUserIds
@@ -36,6 +38,7 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.name = name
 		self.bio = bio
 		self.email = email
+		self.hasCompletedOnboarding = hasCompletedOnboarding
 	}
 }
 
@@ -50,7 +53,8 @@ extension UserDTO {
 			profilePicture: "Daniel_Agapov_pfp",
 			name: "Daniel Agapov",
 			bio: "This is my bio.",
-			email: "daniel@agapov.com"
+			email: "daniel@agapov.com",
+			hasCompletedOnboarding: true
 		)
 	}()
 
@@ -63,7 +67,8 @@ extension UserDTO {
 			profilePicture: "Daniel_Lee_pfp",
 			name: "Daniel Lee",
 			bio: "This is my bio.",
-			email: "daniel2456@gmail.com"
+			email: "daniel2456@gmail.com",
+			hasCompletedOnboarding: true
 		)
 	}()
 
@@ -74,7 +79,8 @@ extension UserDTO {
 		profilePicture: "Haley_pfp",
 		name: "Haley",
 		bio: "This is my bio.",
-		email: "haley@gmail.com"
+		email: "haley@gmail.com",
+		hasCompletedOnboarding: true
 	)
 
 	static let mockUsers: [UserDTO] = {

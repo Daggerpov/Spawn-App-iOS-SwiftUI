@@ -2,7 +2,7 @@
 //  LoadingView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by AI Assistant on 2024-08-02.
+//  Created By Daniel Agapov on 2024-08-02.
 //
 
 import SwiftUI

@@ -56,12 +56,6 @@ struct ActivityTypeView: View {
                 }
                 
                 Spacer()
-                
-                ActivityNextStepButton(
-                    title: "Create",
-                    isEnabled: selectedActivityType != nil,
-                    action: onNext
-                )
             }
             .onAppear {
                 Task {
@@ -334,8 +328,11 @@ struct ActivityTypeCard: View {
                     // Title and people count
                     VStack {
                         Text(activityTypeDTO.title)
-                            .font(Font.custom("Onest", size: 16).weight(.medium))
+                            .font(Font.custom("Onest", size: 14).weight(.medium))
                             .foregroundColor(adaptiveTitleColor)
+                            .lineLimit(2)
+                            .truncationMode(.tail)
+                            .multilineTextAlignment(.center)
                         
                         Text("\(activityTypeDTO.associatedFriends.count) people")
                             .font(Font.custom("Onest", size: 12))

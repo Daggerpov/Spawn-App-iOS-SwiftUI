@@ -45,8 +45,11 @@ struct ActivityTypeCardView: View {
                 .font(Font.custom("Onest", size: 34).weight(.bold))
                 .foregroundColor(Color(red: 0.07, green: 0.07, blue: 0.07))
             Text(activityType.title)
-                .font(Font.custom("Onest", size: 16).weight(.semibold))
+                .font(Font.custom("Onest", size: 14).weight(.semibold))
                 .foregroundColor(Color(red: 0.07, green: 0.07, blue: 0.07))
+                .lineLimit(2)
+                .truncationMode(.tail)
+                .multilineTextAlignment(.center)
         }
         .padding(16)
         .frame(

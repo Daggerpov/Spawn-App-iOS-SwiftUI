@@ -32,4 +32,7 @@ extension Notification.Name {
     // Friend system notifications
     static let friendRequestsDidChange = Notification.Name("friendRequestsDidChange")
     static let friendsDidChange = Notification.Name("friendsDidChange")
+    
+    // Activity refresh notifications
+    static let shouldRefreshActivities = Notification.Name("shouldRefreshActivities")
 }

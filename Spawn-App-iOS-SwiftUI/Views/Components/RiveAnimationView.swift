@@ -2,7 +2,7 @@
 //  RiveAnimationView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by AI Assistant on 2024-12-30.
+//  Created By Daniel Agapov on 2024-12-30.
 //
 
 import SwiftUI

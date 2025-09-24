@@ -26,6 +26,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var name: String?
 	var bio: String?
 	var email: String?
+	var hasCompletedOnboarding: Bool?
 
 	init(
 		id: UUID,
@@ -33,7 +34,8 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 		profilePicture: String? = nil,
 		name: String? = nil,
 		bio: String? = nil,
-		email: String? = nil
+		email: String? = nil,
+		hasCompletedOnboarding: Bool? = nil
 	) {
 		self.id = id
 		self.username = username
@@ -41,6 +43,7 @@ struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.name = name
 		self.bio = bio
 		self.email = email
+		self.hasCompletedOnboarding = hasCompletedOnboarding
 	}
 }
 
@@ -52,7 +55,8 @@ extension BaseUserDTO {
 			profilePicture: friendUser.profilePicture,
 			name: friendUser.name,
 			bio: friendUser.bio,
-			email: friendUser.email
+			email: friendUser.email,
+			hasCompletedOnboarding: true // Assume existing friends have completed onboarding
 		)
 	}
 
@@ -64,7 +68,8 @@ extension BaseUserDTO {
 			profilePicture: "Daniel_Agapov_pfp",
 			name: "Daniel Agapov",
 			bio: "This is my bio.",
-			email: "daniel@agapov.com"
+			email: "daniel@agapov.com",
+			hasCompletedOnboarding: true
 		)
 	}()
 
@@ -76,7 +81,8 @@ extension BaseUserDTO {
 			profilePicture: "Daniel_Lee_pfp",
 			name: "Daniel Lee",
 			bio: "This is my bio.",
-			email: "daniel2456@gmail.com"
+			email: "daniel2456@gmail.com",
+			hasCompletedOnboarding: true
 		)
 	}()
 
@@ -86,7 +92,8 @@ extension BaseUserDTO {
 		profilePicture: "Haley_pfp",
 		name: "Haley",
 		bio: "This is my bio.",
-		email: "haley@gmail.com"
+		email: "haley@gmail.com",
+		hasCompletedOnboarding: true
 	)
 
 	static let mockUsers: [BaseUserDTO] = {
