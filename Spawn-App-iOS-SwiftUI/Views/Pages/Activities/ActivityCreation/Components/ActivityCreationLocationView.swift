@@ -2,8 +2,6 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
-
 struct ActivityCreationLocationView: View {
 	@ObservedObject var viewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
@@ -37,17 +35,11 @@ struct ActivityCreationLocationView: View {
 	@State private var isUpdatingLocation = false
 	@State private var debounceTimer: Timer?
 
-	// Pin animation states
-	@State private var baseEllipseScale: CGFloat = 1.0
-	@State private var pulseScale: CGFloat = 1.0
-	@State private var pulseOpacity: Double = 0.0
-	@State private var pinOffset: CGFloat = 0
-	@State private var pinScale: CGFloat = 1.0
-	@State private var isMapMoving = false
-	@State private var mapMovementTimer: Timer?
-
 	// Location error handling
 	@State private var showLocationError = false
+	
+	// Pin overlay reference
+	@State private var pinOverlay = LocationSelectionPinOverlay()
 
 	let onNext: () -> Void
 	let onBack: (() -> Void)?
@@ -62,22 +54,20 @@ struct ActivityCreationLocationView: View {
 		print("🔍 DEBUG: Current searchText: \(searchText)")
 		
 		return ZStack {
-			// Unified Map View using the same component as MapView (works on all iOS versions)
-			UnifiedMapViewRepresentable(
+			// Location Selection Map View using new refactored components
+			LocationSelectionMapView(
 				region: $region,
 				is3DMode: $is3DMode,
-				showsUserLocation: true,
-				annotationItems: [],  // No activities to show in location selection mode
-				isLocationSelectionMode: true,
-				onMapWillChange: nil,
+				onMapWillChange: {
+					print("🔍 DEBUG: Map will change")
+					pinOverlay.startMapMoving()
+				},
 				onMapDidChange: { coordinate in
 					print("🔍 DEBUG: Map did change to coordinate: \(coordinate)")
+					pinOverlay.stopMapMoving()
 					// Update location text when map moves (for pin drop)
 					updateLocationText(for: coordinate)
-				},
-				onActivityTap: { _ in 
-					print("🔍 DEBUG: Activity tap received (should not happen in location selection mode)")
-				}  // No activity taps in location selection mode
+				}
 			)
 			.ignoresSafeArea(.all, edges: .top)
 		.onReceive(locationManager.$userLocation) { location in
@@ -154,63 +144,8 @@ struct ActivityCreationLocationView: View {
 			}
 		}
 
-		// Pin in center of map
-		VStack {
-			Spacer()
-			ZStack {
-				// Base ellipse under the pin
-				Ellipse()
-					.fill(Color(red: 0.15, green: 0.55, blue: 1))
-					.frame(width: 19.90, height: 9.95)
-					.scaleEffect(baseEllipseScale)
-					.opacity(0.9)
-					.shadow(
-						color: Color.black.opacity(0.25),
-						radius: 12,
-						x: 0,
-						y: 3
-					)
-					.offset(y: 18)
-					.animation(
-						.spring(response: 0.35, dampingFraction: 0.85),
-						value: baseEllipseScale
-					)
-				// Expanding pulse when dropped
-				Ellipse()
-					.fill(Color(red: 0.15, green: 0.55, blue: 1))
-					.frame(width: 19.90, height: 9.95)
-					.scaleEffect(pulseScale)
-					.opacity(pulseOpacity)
-					.offset(y: 18)
-
-				// Pin icon
-				Image(systemName: "mappin")
-					.font(.system(size: 34))
-					.foregroundColor(.blue)
-					.scaleEffect(pinScale)
-					.offset(y: pinOffset)
-					.shadow(
-						color: .black.opacity(isMapMoving ? 0.35 : 0.25),
-						radius: isMapMoving ? 8 : 6,
-						x: 0,
-						y: isMapMoving ? 6 : 3
-					)
-					.animation(
-						.spring(response: 0.25, dampingFraction: 0.8),
-						value: isMapMoving
-					)
-					.animation(
-						.spring(response: 0.25, dampingFraction: 0.8),
-						value: pinOffset
-					)
-					.animation(
-						.spring(response: 0.25, dampingFraction: 0.8),
-						value: pinScale
-					)
-			}
-			Spacer()
-		}
-		.allowsHitTesting(false)  // Prevent pin from blocking gestures
+		// Pin overlay in center of map
+		pinOverlay
 
 		// Top navigation - back button aligned to safe area like other creation pages
 		VStack {
@@ -247,96 +182,33 @@ struct ActivityCreationLocationView: View {
 		}
 
 		// Top-right controls: 3D toggle and recenter buttons
-		VStack {
-			HStack {
-				Spacer()
-				VStack(spacing: 8) {
-					// 3D mode toggle (works on iOS 9+ with MapKit camera)
-					Button(action: {
-						let impactGenerator = UIImpactFeedbackGenerator(
-							style: .medium
-						)
-						impactGenerator.impactOccurred()
-						withAnimation(.easeInOut(duration: 0.3)) {
-							is3DMode.toggle()
-						}
-					}) {
-						Image(systemName: is3DMode ? "view.3d" : "view.2d")
-							.font(.system(size: 20))
-							.foregroundColor(universalAccentColor)
-							.padding(12)
-							.background(universalBackgroundColor)
-							.clipShape(Circle())
-							.shadow(
-								color: Color.black.opacity(0.2),
-								radius: 4,
-								x: 0,
-								y: 2
-							)
+		LocationSelectionMapControls(
+			is3DMode: $is3DMode,
+			userLocation: locationManager.userLocation,
+			onRecenterTapped: {
+				if let userLocation = locationManager.userLocation {
+					// Validate user location before using it
+					guard MapValidationUtils.validateCoordinate(userLocation) else {
+						print("⚠️ ActivityCreationLocationView: Invalid user location for recenter - \(userLocation)")
+						return
 					}
-					.buttonStyle(PlainButtonStyle())
-
-					// Recenter to user location
-					Button(action: {
-						let impactGenerator = UIImpactFeedbackGenerator(
-							style: .medium
-						)
-						impactGenerator.impactOccurred()
-
-						if let userLocation = locationManager.userLocation {
-							// Validate user location before using it
-							guard CLLocationCoordinate2DIsValid(userLocation) &&
-								  userLocation.latitude.isFinite && userLocation.longitude.isFinite &&
-								  !userLocation.latitude.isNaN && !userLocation.longitude.isNaN else {
-								print(
-									"⚠️ ActivityCreationLocationView: Invalid user location for recenter - \(userLocation)"
-								)
-								return
-							}
-							
-							let newRegion = MKCoordinateRegion(
-								center: userLocation,
-								span: MKCoordinateSpan(
-									latitudeDelta: 0.01,
-									longitudeDelta: 0.01
-								)
-							)
-							
-							// Validate the new region
-							guard CLLocationCoordinate2DIsValid(newRegion.center) &&
-								  newRegion.span.latitudeDelta > 0 && newRegion.span.longitudeDelta > 0 &&
-								  newRegion.span.latitudeDelta.isFinite && newRegion.span.longitudeDelta.isFinite else {
-								print(
-									"⚠️ ActivityCreationLocationView: Invalid region for recenter"
-								)
-								return
-							}
-							
-							withAnimation(.easeInOut(duration: 0.75)) {
-								region = newRegion
-							}
+					
+					if let newRegion = MapValidationUtils.createSafeRegion(
+						center: userLocation,
+						span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+					) {
+						withAnimation(.easeInOut(duration: 0.75)) {
+							region = newRegion
 						}
-					}) {
-						Image(systemName: "location.fill")
-							.font(.system(size: 20))
-							.foregroundColor(universalAccentColor)
-							.padding(12)
-							.background(universalBackgroundColor)
-							.clipShape(Circle())
-							.shadow(
-								color: Color.black.opacity(0.2),
-								radius: 4,
-								x: 0,
-								y: 2
-							)
+					} else {
+						print("⚠️ ActivityCreationLocationView: Failed to create safe region for recenter")
 					}
-					.buttonStyle(PlainButtonStyle())
 				}
-				.padding(.trailing, 16)
+			},
+			on3DToggled: {
+				print("🔍 DEBUG: 3D mode toggled to: \(is3DMode)")
 			}
-			.padding(.top, 24)
-			Spacer()
-		}
+		)
 
 		// Bottom sheet
 		VStack {
@@ -396,7 +268,7 @@ struct ActivityCreationLocationView: View {
 						title: "Confirm Location"
 					) {
 
-						guard CLLocationCoordinate2DIsValid(region.center)
+						guard MapValidationUtils.validateCoordinate(region.center)
 						else {
 							print(
 								"⚠️ Confirm Location: Invalid region center coordinates - \(region.center)"
@@ -481,34 +353,21 @@ struct ActivityCreationLocationView: View {
 			// Update region when app becomes active
 			if let userLocation = locationManager.userLocation {
 				// Enhanced validation for iOS < 17 compatibility
-				guard CLLocationCoordinate2DIsValid(userLocation) &&
-					  userLocation.latitude.isFinite && userLocation.longitude.isFinite &&
-					  !userLocation.latitude.isNaN && !userLocation.longitude.isNaN else {
+				guard MapValidationUtils.validateCoordinate(userLocation) else {
 					print(
 						"⚠️ ActivityCreationLocationView: Invalid user location on foreground - \(userLocation)"
 					)
 					return
 				}
 
-				let newRegion = MKCoordinateRegion(
+				if let newRegion = MapValidationUtils.createSafeRegion(
 					center: userLocation,
-					span: MKCoordinateSpan(
-						latitudeDelta: 0.01,
-						longitudeDelta: 0.01
-					)
-				)
-				
-				// Validate the new region before setting
-				guard CLLocationCoordinate2DIsValid(newRegion.center) &&
-					  newRegion.span.latitudeDelta > 0 && newRegion.span.longitudeDelta > 0 &&
-					  newRegion.span.latitudeDelta.isFinite && newRegion.span.longitudeDelta.isFinite else {
-					print(
-						"⚠️ ActivityCreationLocationView: Invalid region created on foreground"
-					)
-					return
+					span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+				) {
+					region = newRegion
+				} else {
+					print("⚠️ ActivityCreationLocationView: Failed to create safe region on foreground")
 				}
-
-				region = newRegion
 			}
 
 			// Re-request location when app returns to foreground
@@ -559,7 +418,6 @@ struct ActivityCreationLocationView: View {
 			locationManager.stopLocationUpdates()
 			// Clean up timers
 			debounceTimer?.invalidate()
-			mapMovementTimer?.invalidate()
 		}
 		// Removed onChange(of: region) to prevent iOS < 17 compatibility issues
 		.alert("Location Error", isPresented: $showLocationError) {
@@ -610,7 +468,7 @@ struct ActivityCreationLocationView: View {
 		}
 
 		// Validate coordinates before reverse geocoding to prevent NaN values
-		guard CLLocationCoordinate2DIsValid(coordinate) else {
+		guard MapValidationUtils.validateCoordinate(coordinate) else {
 			print("⚠️ performReverseGeocoding: Invalid coordinates - \(coordinate)")
 			return
 		}
@@ -906,7 +764,7 @@ struct LocationPickerView: View {
 		print("🔍 DEBUG: Set naturalLanguageQuery to: '\(searchText)'")
 		if let userLocation = userLocation {
 			// Validate user location before using it in search region
-			guard CLLocationCoordinate2DIsValid(userLocation) else {
+			guard MapValidationUtils.validateCoordinate(userLocation) else {
 				print(
 					"⚠️ searchLocations: Invalid user location - \(userLocation)"
 				)
@@ -929,7 +787,7 @@ struct LocationPickerView: View {
 					DispatchQueue.main.async {
 						// Filter out results with invalid coordinates
 						let validResults = response.mapItems.filter { item in
-							let isValid = CLLocationCoordinate2DIsValid(
+							let isValid = MapValidationUtils.validateCoordinate(
 								item.placemark.coordinate
 							)
 							print("🔍 DEBUG: Result '\(item.name ?? "Unknown")' coordinate valid: \(isValid)")
@@ -968,7 +826,7 @@ struct LocationPickerView: View {
 			DispatchQueue.main.async {
 				// Filter out results with invalid coordinates
 				let validResults = response.mapItems.filter { item in
-					let isValid = CLLocationCoordinate2DIsValid(item.placemark.coordinate)
+					let isValid = MapValidationUtils.validateCoordinate(item.placemark.coordinate)
 					print("🔍 DEBUG: Result '\(item.name ?? "Unknown")' coordinate valid (with region): \(isValid)")
 					return isValid
 				}
@@ -988,8 +846,8 @@ struct LocationPickerView: View {
 
 		// Validate both coordinates before calculating distance to prevent NaN values
 		guard
-			CLLocationCoordinate2DIsValid(userLocation)
-				&& CLLocationCoordinate2DIsValid(coordinate)
+			MapValidationUtils.validateCoordinate(userLocation)
+				&& MapValidationUtils.validateCoordinate(coordinate)
 		else {
 			print(
 				"⚠️ distanceFromUser: Invalid coordinates - user: \(userLocation), target: \(coordinate)"
@@ -1130,8 +988,6 @@ extension MKPlacemark {
 			.joined(separator: ", ")
 	}
 }
-
-// MARK: - Unified Map View now in Views/Components/UnifiedMapView.swift
 
 // Double extension for floating point comparison
 extension Double {

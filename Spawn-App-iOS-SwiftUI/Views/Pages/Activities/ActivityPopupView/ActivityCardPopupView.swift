@@ -85,9 +85,8 @@ struct ActivityCardPopupView: View {
 					.padding(.bottom, 12)
 			} else {
 				// Add equivalent padding when expanded to avoid status bar
-				// Reduce padding when opened from map view since it has additional header padding
 				Spacer()
-					.frame(height: fromMapView ? 8 : 24) // Reduced padding for map view
+					.frame(height: 24) // 8 + 4 + 12 from handle bar
 			}
 
 			// Conditional content based on navigation state
@@ -246,7 +245,7 @@ struct ActivityCardPopupView: View {
 					.contentShape(Circle()) // Better touch area for circular button
 				}
 			}
-            .padding(.top, fromMapView && isExpanded ? 8 : 23)
+            .padding(.top, 23)
 
 			// Event title and time
 			titleAndTime
