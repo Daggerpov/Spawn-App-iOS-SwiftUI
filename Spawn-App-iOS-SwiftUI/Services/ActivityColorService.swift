@@ -44,10 +44,8 @@ class ActivityColorService: ObservableObject {
     
     /// Get color for an activity, assigning a new one if needed
     func getColorForActivity(_ activityId: UUID) -> Color {
-        print("🔍 DEBUG: getColorForActivity called for ID: \(activityId)")
         // Return cached color if available
         if let existingColor = activityColors[activityId] {
-            print("🔍 DEBUG: Found cached color for activity: \(activityId)")
             return existingColor
         }
         
