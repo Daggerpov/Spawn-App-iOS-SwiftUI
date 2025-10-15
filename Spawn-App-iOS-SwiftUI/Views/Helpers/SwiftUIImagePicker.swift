@@ -2,7 +2,7 @@
 //  SwiftUIImagePicker.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by AI Assistant on 2024-05-08.
+//  Created By Daniel Agapov on 2024-05-08.
 //
 
 import SwiftUI

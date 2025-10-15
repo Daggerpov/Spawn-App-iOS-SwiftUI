@@ -36,6 +36,9 @@ class ActivityCreationViewModel: ObservableObject {
 	// Edit state
 	@Published var isEditingExistingActivity: Bool = false
 	
+	// UI state for controlling navigation bar visibility
+	@Published var isOnLocationSelectionStep: Bool = false
+	
 	// MARK: - Change Tracking Properties
 	// Store original values when editing starts to detect changes
 	@Published var originalTitle: String?

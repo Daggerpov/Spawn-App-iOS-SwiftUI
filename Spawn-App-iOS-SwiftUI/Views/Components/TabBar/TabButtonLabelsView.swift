@@ -68,7 +68,17 @@ struct InActiveTabLabel: View {
                 }
                 .symbolEffectsRemoved()
             } else {
-                // Fallback on earlier versions
+                // Fallback for iOS < 17 (without symbol effects)
+                VStack(spacing: 1) {
+                    Image(
+                        uiImage: resizeImage(
+                        UIImage(named: tabItem.inactiveIcon)!,
+                        targetSize: CGSize(width: ICON_SIZE, height: ICON_SIZE)
+                    )!)
+                    Text(tabItem.title)
+                        .font(.onestRegular(size: 12))
+                        .fontWeight(.medium)
+                }
             }
         }
     }

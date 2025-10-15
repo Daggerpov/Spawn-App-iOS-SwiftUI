@@ -60,8 +60,11 @@ struct ActivityCreationView: View {
             let hour12 = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24)
             let isAM = hour24 < 12
             
+            // Ensure minute value is valid for the picker (must be 0, 15, 30, or 45)
+            let validMinute = Self.validateMinuteForPicker(minute)
+            
             self._selectedHour = State(initialValue: hour12)
-            self._selectedMinute = State(initialValue: minute)
+            self._selectedMinute = State(initialValue: validMinute)
             self._isAM = State(initialValue: isAM)
         } else {
             // Calculate the next 15-minute interval after current time
@@ -76,6 +79,12 @@ struct ActivityCreationView: View {
         
         // Initialize duration from view model if editing
         self._selectedDuration = State(initialValue: ActivityCreationViewModel.shared.selectedDuration)
+    }
+    
+    // Helper function to validate minute values for picker compatibility
+    static func validateMinuteForPicker(_ minute: Int) -> Int {
+        let validMinutes = [0, 15, 30, 45]
+        return validMinutes.min(by: { abs($0 - minute) < abs($1 - minute) }) ?? 0
     }
     
     // Helper function to calculate the next 15-minute interval
@@ -225,15 +234,18 @@ struct ActivityCreationView: View {
                 activityTitle: $activityTitle,
                 selectedDuration: $selectedDuration,
                 onNext: {
+                    print("🔍 DEBUG: ActivityCreationView onNext callback started")
                     // Sync the activity title with the view model before proceeding
                     let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                     
                     // Validate the title is not empty
                     if trimmedTitle.isEmpty {
+                        print("🔍 DEBUG: Title is empty, returning early")
                         // The validation is handled in ActivityDateTimeView
                         return
                     }
                     
+                    print("🔍 DEBUG: Setting activity title: '\(trimmedTitle)'")
                     viewModel.activity.title = trimmedTitle
                     
                     // Add safety checks for tutorial mode to prevent crashes during transition
@@ -241,22 +253,32 @@ struct ActivityCreationView: View {
                         print("📍 Tutorial: Transitioning from dateTime to location step")
                     }
                     
+                    print("🔍 DEBUG: About to sync date and duration")
                     // Sync selectedDate and selectedDuration with viewModel
                     let calendar = Calendar.current
                     let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+                    print("🔍 DEBUG: Calculated hour24: \(hour24), selectedMinute: \(selectedMinute)")
+                    
                     var components = calendar.dateComponents([.year, .month, .day], from: Date())
                     components.hour = hour24
                     components.minute = selectedMinute
                     components.second = 0
                     
+                    print("🔍 DEBUG: Created date components: \(components)")
                     if let newDate = calendar.date(from: components) {
+                        print("🔍 DEBUG: Setting selectedDate: \(newDate)")
                         viewModel.selectedDate = newDate
+                    } else {
+                        print("🔍 DEBUG: Failed to create date from components")
                     }
                     viewModel.selectedDuration = selectedDuration
                     
+                    print("🔍 DEBUG: About to transition to location step")
                     // Ensure we're in a safe state before transitioning
                     DispatchQueue.main.async {
+                        print("🔍 DEBUG: Setting currentStep to .location")
                         currentStep = .location
+                        print("🔍 DEBUG: currentStep set to .location")
                     }
                 },
                 onBack: {
@@ -282,6 +304,9 @@ struct ActivityCreationView: View {
         case .location:
             ActivityCreationLocationView(
                 onNext: {
+                    // Update location selection step state
+                    viewModel.isOnLocationSelectionStep = false
+                    
                     // Add safety checks for tutorial mode
                     if case .activityCreation = tutorialViewModel.tutorialState {
                         print("📍 Tutorial: Transitioning from location to preConfirmation step")
@@ -301,9 +326,15 @@ struct ActivityCreationView: View {
                     }
                 },
                 onBack: {
+                    // Update location selection step state
+                    viewModel.isOnLocationSelectionStep = false
                     currentStep = currentStep.previous()
                 }
             )
+            .onAppear {
+                // Set location selection step state when entering this view
+                viewModel.isOnLocationSelectionStep = true
+            }
         case .preConfirmation:
             ActivityPreConfirmationView(
                 onCreateActivity: {

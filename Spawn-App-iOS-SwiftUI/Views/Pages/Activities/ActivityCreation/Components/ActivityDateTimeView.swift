@@ -15,7 +15,7 @@ struct ActivityDateTimeView: View {
     // Environment for color scheme detection
     @Environment(\.colorScheme) private var colorScheme
     
-    // State for day selection
+    // State for day selection - initialize safely
     @State private var selectedDay: DayOption = .today
     
     // State for tomorrow's default time
@@ -56,17 +56,25 @@ struct ActivityDateTimeView: View {
             var options: [DayOption] = [.today, .tomorrow]
             
             // Add yesterday option if editing an existing activity and it was created yesterday
-            if viewModel.isEditingExistingActivity,
-               let activityDate = viewModel.originalDate {
-                let activityDay = calendar.startOfDay(for: activityDate)
-                let yesterday = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: now) ?? now)
-                
-                if activityDay == yesterday {
-                    options.insert(.yesterday, at: 0)
-                }
+            // Add safety checks to prevent crashes
+            guard viewModel.isEditingExistingActivity,
+                  let activityDate = viewModel.originalDate else {
+                return options
             }
             
-            return options
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: now) else {
+                return options
+            }
+            
+            let activityDay = calendar.startOfDay(for: activityDate)
+            let yesterdayDay = calendar.startOfDay(for: yesterday)
+            
+            if activityDay == yesterdayDay {
+                options.insert(.yesterday, at: 0)
+            }
+            
+            // Ensure we always return at least one option to prevent crashes
+            return options.isEmpty ? [.today] : options
         }
     }
     
@@ -174,8 +182,16 @@ struct ActivityDateTimeView: View {
     // MARK: - Picker Views
     
     private var dayPickerView: some View {
-        Picker("Day", selection: $selectedDay) {
-            ForEach(DayOption.availableOptions, id: \.self) { day in
+        let availableOptions = DayOption.availableOptions
+        let safeSelectedDay = availableOptions.contains(selectedDay) ? selectedDay : (availableOptions.first ?? .today)
+        
+        return Picker("Day", selection: Binding(
+            get: { safeSelectedDay },
+            set: { newValue in 
+                selectedDay = newValue
+            }
+        )) {
+            ForEach(availableOptions, id: \.self) { day in
                 Text(day.title)
                     .font(Font.custom("Onest", size: 22))
                     .foregroundColor(pickerTextColor)
@@ -188,7 +204,7 @@ struct ActivityDateTimeView: View {
         .onChange(of: selectedDay) { _ in
             if selectedDay == .tomorrow {
                 selectedHour = tomorrowHour
-                selectedMinute = tomorrowMinute
+                selectedMinute = validateMinuteForPicker(tomorrowMinute)
                 isAM = tomorrowIsAM
             }
             updateSelectedDate()
@@ -196,6 +212,13 @@ struct ActivityDateTimeView: View {
             // Validate time in real-time when day changes
             Task {
                 await viewModel.validateActivityForm()
+            }
+        }
+        .onAppear {
+            // Ensure selectedDay is valid when the picker appears
+            let currentOptions = DayOption.availableOptions
+            if !currentOptions.contains(selectedDay) {
+                selectedDay = currentOptions.first ?? .today
             }
         }
     }
@@ -226,7 +249,15 @@ struct ActivityDateTimeView: View {
     }
     
     private var minutePickerView: some View {
-        Picker("Minute", selection: $selectedMinute) {
+        Picker("Minute", selection: Binding(
+            get: {
+                // Ensure the selected minute is always valid for the picker
+                return minutes.contains(selectedMinute) ? selectedMinute : validateMinuteForPicker(selectedMinute)
+            },
+            set: { newValue in
+                selectedMinute = newValue
+            }
+        )) {
             ForEach(minutes, id: \.self) { m in
                 Text(String(format: "%02d", m))
                     .font(.custom("Onest", size: 26))
@@ -479,28 +510,36 @@ struct ActivityDateTimeView: View {
                     .padding(.bottom, 8)
             }
             
-            // Next Step Button
-            Enhanced3DButton(title: "Next Step (Location)") {
-                let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
-                if trimmedTitle.isEmpty {
-                    showTitleError = true
-                    return
-                }
-                showTitleError = false
-                
-                // Sync current values and validate time
-                syncCurrentValuesToViewModel()
-                Task {
-                    await viewModel.validateActivityForm()
+                // Next Step Button
+                Enhanced3DButton(title: "Next Step (Location)") {
+                    print("🔍 DEBUG: Next Step button tapped in ActivityDateTimeView")
+                    let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+                    if trimmedTitle.isEmpty {
+                        showTitleError = true
+                        return
+                    }
+                    showTitleError = false
                     
-                    await MainActor.run {
-                        if viewModel.isTimeValid {
-                            onNext()
+                    print("🔍 DEBUG: About to sync current values to view model")
+                    // Sync current values and validate time
+                    syncCurrentValuesToViewModel()
+                    print("🔍 DEBUG: Synced values, starting validation task")
+                    Task {
+                        print("🔍 DEBUG: Inside validation task")
+                        await viewModel.validateActivityForm()
+                        print("🔍 DEBUG: Validation completed, about to run on MainActor")
+                        
+                        await MainActor.run {
+                            print("🔍 DEBUG: On MainActor, isTimeValid: \(viewModel.isTimeValid)")
+                            if viewModel.isTimeValid {
+                                print("🔍 DEBUG: Time is valid, calling onNext()")
+                                onNext()
+                                print("🔍 DEBUG: onNext() completed")
+                            }
+                            // If time is invalid, the error message will be displayed
                         }
-                        // If time is invalid, the error message will be displayed
                     }
                 }
-            }
             .padding(.horizontal, 20)
             
             // Step indicators
@@ -547,6 +586,11 @@ struct ActivityDateTimeView: View {
     
     // MARK: - Helper Methods
     
+    // Helper function to validate minute values for picker compatibility
+    private func validateMinuteForPicker(_ minute: Int) -> Int {
+        return minutes.min(by: { abs($0 - minute) < abs($1 - minute) }) ?? 0
+    }
+    
     private func hasAnyLocalChanges() -> Bool {
         guard viewModel.isEditingExistingActivity else { return false }
         
@@ -566,20 +610,29 @@ struct ActivityDateTimeView: View {
     
     
     private func syncCurrentValuesToViewModel() {
+        print("🔍 DEBUG: syncCurrentValuesToViewModel started")
         // Update activity title
         let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
         viewModel.activity.title = trimmedTitle.isEmpty ? nil : trimmedTitle
+        print("🔍 DEBUG: Set activity title to: '\(viewModel.activity.title ?? "nil")'")
         
         // Update selected date
+        print("🔍 DEBUG: About to update selected date")
         updateSelectedDate()
+        print("🔍 DEBUG: Updated selected date to: \(viewModel.selectedDate)")
         
         // Update duration
         viewModel.selectedDuration = selectedDuration
+        print("🔍 DEBUG: Set duration to: \(selectedDuration)")
+        print("🔍 DEBUG: syncCurrentValuesToViewModel completed")
     }
     
     private func updateSelectedDate() {
+        print("🔍 DEBUG: updateSelectedDate started")
         let calendar = Calendar.current
         let now = Date()
+        
+        print("🔍 DEBUG: selectedDay: \(selectedDay), selectedHour: \(selectedHour), selectedMinute: \(selectedMinute), isAM: \(isAM)")
         
         // Get the base date (today or tomorrow)
         let baseDate: Date
@@ -592,17 +645,26 @@ struct ActivityDateTimeView: View {
             baseDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
         }
         
+        print("🔍 DEBUG: baseDate: \(baseDate)")
+        
         // Convert 12-hour to 24-hour format
         let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+        print("🔍 DEBUG: hour24: \(hour24)")
         
         var dateComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
         dateComponents.hour = hour24
         dateComponents.minute = selectedMinute
         dateComponents.second = 0
         
+        print("🔍 DEBUG: dateComponents: \(dateComponents)")
+        
         if let finalDate = calendar.date(from: dateComponents) {
+            print("🔍 DEBUG: Setting viewModel.selectedDate to: \(finalDate)")
             viewModel.selectedDate = finalDate
+        } else {
+            print("🔍 DEBUG: Failed to create finalDate from dateComponents")
         }
+        print("🔍 DEBUG: updateSelectedDate completed")
     }
     
     private func initializeDateAndTime() {
@@ -617,6 +679,12 @@ struct ActivityDateTimeView: View {
         // Determine the correct day option based on the existing activity's date if editing
         if viewModel.isEditingExistingActivity {
             selectedDay = determineDayOptionFromActivityDate()
+        }
+        
+        // Ensure selectedDay is valid for the current available options
+        let currentOptions = DayOption.availableOptions
+        if !currentOptions.contains(selectedDay) {
+            selectedDay = currentOptions.first ?? .today
         }
         
         // Update the selected date with initial values

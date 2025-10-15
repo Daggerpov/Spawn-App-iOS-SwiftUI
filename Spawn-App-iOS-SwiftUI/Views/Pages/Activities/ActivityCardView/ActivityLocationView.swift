@@ -47,12 +47,14 @@ struct ActivityLocationView: View {
                     .truncationMode(.tail)
                     .layoutPriority(0)
 
-                Text("• \(viewModel.getDisplayString(activityInfoType: .distance))")
-                    .foregroundColor(.white)
-                    .font(font)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .layoutPriority(1)
+                if viewModel.isDistanceAvailable() {
+                    Text("• \(viewModel.getDisplayString(activityInfoType: .distance))")
+                        .foregroundColor(.white)
+                        .font(font)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .layoutPriority(1)
+                }
             }
         }
         .padding(.horizontal, 12)
