@@ -8,7 +8,6 @@ struct ActivityBackButton: View {
             Image(systemName: "chevron.left")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundColor(universalAccentColor)
-                .frame(width: 44, height: 44)
         }
         .buttonStyle(PlainButtonStyle())
     }

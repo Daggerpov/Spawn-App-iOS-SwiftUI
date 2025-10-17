@@ -279,7 +279,7 @@ struct ActivityDateTimeView: View {
     
     private func durationButton(for duration: ActivityDuration) -> some View {
         let isSelected = selectedDuration == duration
-        let borderColor = Color(red: 0.33, green: 0.42, blue: 0.93)
+        let borderColor = isSelected ? Color(hex: colorsIndigo500) : secondaryTextColor
         
         return Button(action: { 
             selectedDuration = duration
@@ -293,7 +293,9 @@ struct ActivityDateTimeView: View {
             Text(duration.title)
                 .font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
                 .foregroundColor(isSelected ? borderColor : secondaryTextColor)
-                .padding(12)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 12)
+                .fixedSize(horizontal: true, vertical: false)
                 .background(durationButtonBackground(isSelected: isSelected, borderColor: borderColor))
         }
         .buttonStyle(PlainButtonStyle())
@@ -304,8 +306,7 @@ struct ActivityDateTimeView: View {
             .fill(.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .inset(by: isSelected ? 1 : 0.5)
-                    .stroke(borderColor, lineWidth: isSelected ? 1 : 0.5)
+                    .stroke(borderColor, lineWidth: isSelected ? 2 : 1)
             )
     }
     
@@ -329,38 +330,39 @@ struct ActivityDateTimeView: View {
                     Spacer()
                     
                     Text("What time?")
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(headerTextColor)
                     
                     Spacer()
                     
                     // Invisible chevron to balance the back button
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.clear)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 25)
                 .padding(.vertical, 12)
             } else {
                 HStack {
                     // Invisible chevron to balance layout when no back
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(.clear)
                     Spacer()
                     Text("What time?")
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(headerTextColor)
                     Spacer()
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(.clear)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 25)
                 .padding(.vertical, 12)
             }
+            Text("Set a time for your Activity")
+                .font(.custom("Onest", size: 16))
+                .foregroundColor(secondaryTextColor)
             
             ScrollView {
                 VStack(spacing: 12) {
@@ -386,7 +388,7 @@ struct ActivityDateTimeView: View {
                             }
                             
                             // Picker content
-                            HStack(spacing: 24) {
+                            HStack(spacing: 10) {
                                 dayPickerView
                                 hourPickerView
                                 minutePickerView
@@ -396,7 +398,6 @@ struct ActivityDateTimeView: View {
                         }
                         .frame(height: 265)
                     }
-                    .padding(.horizontal, 20)
                     .padding(.top, 4)
                     .padding(.bottom, 4)
                     
@@ -425,7 +426,7 @@ struct ActivityDateTimeView: View {
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
                                             .inset(by: 0.5)
-                                            .stroke(showTitleError ? .red : textFieldBorderColor, lineWidth: 0.5)
+                                            .stroke(showTitleError ? .red : textFieldBorderColor, lineWidth: 1)
                                     )
                             )
                             .onChange(of: activityTitle) { newValue in
@@ -443,8 +444,9 @@ struct ActivityDateTimeView: View {
                                 .font(.custom("Onest", size: 12))
                                 .foregroundColor(.red)
                         }
+                        
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 50)
                     
                     // Activity Duration Section
                     VStack(alignment: .leading, spacing: 12) {
@@ -460,12 +462,10 @@ struct ActivityDateTimeView: View {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
                                 durationButton(for: duration)
                             }
-                            Spacer()
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 50)
                 }
-                .padding(.bottom, 12)
             }
             
             Spacer()
@@ -475,7 +475,6 @@ struct ActivityDateTimeView: View {
                 Text(viewModel.timeValidationMessage)
                     .font(.custom("Onest", size: 12))
                     .foregroundColor(.red)
-                    .padding(.horizontal, 20)
                     .padding(.bottom, 8)
             }
             
@@ -501,12 +500,11 @@ struct ActivityDateTimeView: View {
                     }
                 }
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 25)
             
             // Step indicators
             StepIndicatorView(currentStep: 1, totalSteps: 3)
                 .padding(.top, 16)
-                .padding(.bottom, 30) // Standard bottom padding
         }
         .background(universalBackgroundColor)
         .onAppear {

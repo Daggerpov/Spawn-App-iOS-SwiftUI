@@ -41,7 +41,7 @@ struct Enhanced3DButton: View {
         }) {
             HStack(alignment: .center, spacing: 8) {
                 Text(title)
-                    .font(.onestSemiBold(size: 16))
+                    .font(.onestSemiBold(size: 20))
                     .foregroundColor(foregroundColor)
             }
             .padding(.vertical, 18)

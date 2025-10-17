@@ -284,10 +284,6 @@ struct ActivityCreationLocationView: View {
                             }
                         }
                         
-                        // Step indicators
-                        StepIndicatorView(currentStep: 2, totalSteps: 3)
-                            .padding(.bottom, 8) // Standard bottom padding
-                        
                         // Confirm button
                         ActivityNextStepButton(
                             title: "Confirm Location"
@@ -308,6 +304,11 @@ struct ActivityCreationLocationView: View {
                             viewModel.setLocation(location)
                             onNext()
                         }
+                        // Step indicators
+                        StepIndicatorView(currentStep: 2, totalSteps: 3)
+                            .padding(.bottom, 8) // Standard bottom padding
+        
+                        
                     }
                     .padding(.horizontal, 20)
                 }
