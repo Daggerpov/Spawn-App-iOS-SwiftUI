@@ -177,7 +177,7 @@ struct ActivityCreationLocationView: View {
             VStack {
                 HStack {
                     Spacer()
-                    VStack(spacing: 8) {
+                    VStack(spacing: 0) {
                         // 3D mode toggle (visual only for SwiftUI Map)
                         if #available(iOS 17.0, *) {
                             Button(action: {
@@ -187,13 +187,19 @@ struct ActivityCreationLocationView: View {
                                     is3DMode.toggle()
                                 }
                             }) {
-                                Image(systemName: is3DMode ? "view.3d" : "view.2d")
-                                    .font(.system(size: 20))
+                                Text("3D")
+                                    .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(universalAccentColor)
-                                    .padding(12)
+                                    .frame(width: 44, height: 44)
                                     .background(universalBackgroundColor)
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                    .clipShape(
+                                        UnevenRoundedRectangle(
+                                            topLeadingRadius: 10,
+                                            bottomLeadingRadius: 0,
+                                            bottomTrailingRadius: 0,
+                                            topTrailingRadius: 10
+                                        )
+                                    )
                             }
                             .buttonStyle(PlainButtonStyle())
                         } else {
@@ -201,10 +207,16 @@ struct ActivityCreationLocationView: View {
                                 Text("3D")
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(universalAccentColor)
-                                    .padding(12)
+                                    .frame(width: 44, height: 44)
                                     .background(universalBackgroundColor)
-                                    .clipShape(Circle())
-                                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                    .clipShape(
+                                        UnevenRoundedRectangle(
+                                            topLeadingRadius: 10,
+                                            bottomLeadingRadius: 0,
+                                            bottomTrailingRadius: 0,
+                                            topTrailingRadius: 10
+                                        )
+                                    )
                             }
                             .buttonStyle(PlainButtonStyle())
                         }
@@ -225,13 +237,20 @@ struct ActivityCreationLocationView: View {
                             Image(systemName: "location.fill")
                                 .font(.system(size: 20))
                                 .foregroundColor(universalAccentColor)
-                                .padding(12)
+                                .frame(width: 44, height: 44)
                                 .background(universalBackgroundColor)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                .clipShape(
+                                    UnevenRoundedRectangle(
+                                        topLeadingRadius: 0,
+                                        bottomLeadingRadius: 10,
+                                        bottomTrailingRadius: 10,
+                                        topTrailingRadius: 0
+                                    )
+                                )
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
+                    .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
                     .padding(.trailing, 16)
                 }
                 .padding(.top, 24)
@@ -254,35 +273,37 @@ struct ActivityCreationLocationView: View {
                         // Title and instruction
                         VStack(spacing: 6) {
                             Text("Set Location")
-                                .font(.title2)
-                                .fontWeight(.semibold)
+                                .font(.onestSemiBold(size: 20))
                                 .foregroundColor(universalAccentColor)
                             
                             Text("Drag map to move pin")
-                                .font(.subheadline)
+                                .font(.onestMedium(size: 16))
                                 .foregroundColor(figmaBlack300)
                         }
                         
                         // Address field
                         HStack {
                             TextField("6133 University Blvd, Vancouver", text: $searchText)
-                                .font(.body)
+                                .font(.onestMedium(size: 16))
+                                .padding(.horizontal, 12)
                                 .foregroundColor(universalAccentColor)
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .background(Color.gray.opacity(0.1))
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                .background(Color.clear)
                             
                             Button(action: {
                                 showingLocationPicker = true
                             }) {
                                 Image(systemName: "magnifyingglass")
-                                    .foregroundColor(figmaBlack300)
+                                    .foregroundColor(universalAccentColor)
                                     .padding(12)
-                                    .background(Color.gray.opacity(0.1))
-                                    .clipShape(Circle())
+                                    .background(Color.clear)
                             }
                         }
+                        .background(Color.clear)
+                        .frame(height: 52)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(hex: colorsGray700), lineWidth: 1)
+                        )
                         
                         // Confirm button
                         ActivityNextStepButton(
@@ -310,8 +331,8 @@ struct ActivityCreationLocationView: View {
         
                         
                     }
-                    .padding(.horizontal, 20)
                 }
+                .padding(.horizontal, 25)
                 .background(
                     universalBackgroundColor
                         .clipShape(

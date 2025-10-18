@@ -138,9 +138,8 @@ struct ActivityConfirmationView: View {
                             .padding(.horizontal, 32)
                         
                     }
-                    .padding(.top, 80)
+                    .padding(.bottom, 30)
                     
-                    Spacer()
                     
                     // Share with your network button
                     Button(action: {
@@ -154,7 +153,7 @@ struct ActivityConfirmationView: View {
                             .aspectRatio(contentMode: .fit)
                             .frame(maxWidth: 280)
                     }
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 12)
                     
                     // Return to Home button
                     Button(action: {
@@ -180,7 +179,8 @@ struct ActivityConfirmationView: View {
                     .shadow(
                         color: Color(red: 0, green: 0, blue: 0, opacity: 0.25), radius: 8, y: 2
                     )
-                    .padding(.bottom, 120) // Standard bottom padding
+                    Spacer()
+
                 }
             }
             
@@ -190,7 +190,6 @@ struct ActivityConfirmationView: View {
             }
         }
         .background(adaptiveBackgroundColor)
-        .ignoresSafeArea()
     }
     
     // MARK: - Header View
@@ -201,7 +200,6 @@ struct ActivityConfirmationView: View {
                 ActivityBackButton {
                     onBack()
                 }
-                .padding(.leading, 24)
             }
             
             Spacer()
@@ -213,15 +211,13 @@ struct ActivityConfirmationView: View {
             
             Spacer()
             
-            // Invisible spacer for balance
-            if onBack != nil {
-                Color.clear
-                    .frame(width: 44, height: 44)
-                    .padding(.trailing, 24)
-            }
+            // Invisible chevron to balance the back button
+            Image(systemName: "chevron.left")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.clear)
         }
-        .padding(.top, 50)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 25)
+        .padding(.vertical, 12)
     }
     
     // MARK: - Share Drawer Overlay

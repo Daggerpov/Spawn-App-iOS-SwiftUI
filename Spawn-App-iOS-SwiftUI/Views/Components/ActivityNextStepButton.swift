@@ -70,7 +70,6 @@ struct ActivityNextStepButton: View {
                     }
             )
         }
-        .padding(.horizontal, 20)
     }
 }
 

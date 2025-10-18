@@ -88,10 +88,6 @@ struct ActivityPreConfirmationView: View {
                 
                 Spacer()
                 
-                // Step indicators
-                StepIndicatorView(currentStep: 3, totalSteps: 3)
-                    .padding(.bottom, 16)
-                
                 // Create/Update Activity button
                 ActivityNextStepButton(
                     title: viewModel.isCreatingActivity ? (viewModel.isEditingExistingActivity ? "Updating..." : "Creating...") : (viewModel.isEditingExistingActivity ? "Update Activity" : "Looks good to me!"),
@@ -108,6 +104,11 @@ struct ActivityPreConfirmationView: View {
                         }
                     }
                 }
+                .padding(.bottom, 20)
+                
+                // Step indicators
+                StepIndicatorView(currentStep: 3, totalSteps: 3)
+                    .padding(.bottom, 16)
                 
                 // Loading indicator
                 if viewModel.isCreatingActivity {
@@ -124,9 +125,9 @@ struct ActivityPreConfirmationView: View {
                 }
             }
         }
+        .padding(.horizontal, 25)
         .padding(.bottom, 80) // Standard bottom padding
         .background(adaptiveBackgroundColor)
-        .ignoresSafeArea()
     }
     
     // MARK: - Header View
@@ -137,7 +138,6 @@ struct ActivityPreConfirmationView: View {
                 ActivityBackButton {
                     onBack()
                 }
-                .padding(.leading, 24)
             }
             
             Spacer()
@@ -149,20 +149,18 @@ struct ActivityPreConfirmationView: View {
             
             Spacer()
             
-            // Invisible spacer for balance
-            if onBack != nil {
-                Color.clear
-                    .frame(width: 44, height: 44)
-                    .padding(.trailing, 24)
-            }
+            // Invisible chevron to balance the back button
+            Image(systemName: "chevron.left")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.clear)
         }
-        .padding(.top, 50)
-        .padding(.bottom, 12)
+        .padding(.horizontal, 25)
+        .padding(.vertical, 12)
     }
     
     // MARK: - Activity Card View
     private var activityCardView: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 8) {
             // Activity icon
             ZStack {
                 Circle()
@@ -174,7 +172,7 @@ struct ActivityPreConfirmationView: View {
             }
             
             // Activity details
-            VStack(spacing: 12) {
+            VStack(spacing: 2) {
                 Text(viewModel.activity.title?.isEmpty == false ? viewModel.activity.title! : (viewModel.selectedActivityType?.title ?? "Morning Stroll"))
                     .font(.onestMedium(size: 24))
                     .foregroundColor(adaptiveTextColor)
@@ -187,6 +185,14 @@ struct ActivityPreConfirmationView: View {
         .padding(24)
         .frame(width: 150, height: 150)
         .background(adaptiveCardBackgroundColor)
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1) // "border"
+                .shadow(color: Color.black.opacity(0.25), radius: 3, x: 0, y: -2) // dark shadow top
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .shadow(color: Color.white.opacity(0.7), radius: 4, x: 0, y: 4) // light shadow bottom
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+        )
         .cornerRadius(18)
     }
     
