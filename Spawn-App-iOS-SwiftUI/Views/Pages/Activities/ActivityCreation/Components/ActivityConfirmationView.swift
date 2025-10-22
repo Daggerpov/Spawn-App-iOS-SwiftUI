@@ -36,9 +36,9 @@ struct ActivityConfirmationView: View {
         case .dark:
             return Color(red: 0.82, green: 0.80, blue: 0.80)
         case .light:
-            return Color(red: 0.52, green: 0.49, blue: 0.49)
+            return Color(hex: colorsGray700)
         @unknown default:
-            return Color(red: 0.52, green: 0.49, blue: 0.49)
+            return Color(hex: colorsGray700)
         }
     }
     
@@ -47,9 +47,9 @@ struct ActivityConfirmationView: View {
         case .dark:
             return Color(red: 0.82, green: 0.80, blue: 0.80)
         case .light:
-            return Color(red: 0.52, green: 0.49, blue: 0.49)
+            return Color(hex: colorsGray700)
         @unknown default:
-            return Color(red: 0.52, green: 0.49, blue: 0.49)
+            return Color(hex: colorsGray700)
         }
     }
     
@@ -126,10 +126,10 @@ struct ActivityConfirmationView: View {
                         Image("success-check")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 80, height: 80)
+                            .frame(width: 144, height: 144)
                         
                         Text("Success!")
-                            .font(Font.custom("Onest", size: 48).weight(.semibold))
+                            .font(Font.custom("Onest", size: 32).weight(.semibold))
                             .foregroundColor(adaptiveTextColor)
                         Text("You've spawned in and \"\(activityTitle)\" is now live for your friends.")
                             .font(Font.custom("Onest", size: 16).weight(.medium))
@@ -148,12 +148,37 @@ struct ActivityConfirmationView: View {
                         impactGenerator.impactOccurred()
                         showShareSheet = true
                     }) {
-                        Image("share_with_network_button")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 280)
+                        HStack(spacing: 8) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            Text("Share with your network")
+                                .font(Font.custom("Onest", size: 20).weight(.semibold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .frame(maxWidth: 324)
+                        .background(
+                            LinearGradient(
+                                    colors: [Color(hex: "04F0D0"), Color(hex: "4360FF")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            .frame(width: 400, height: 400)
+                                .rotationEffect(Angle(degrees: -40))
+                        )
+                        .cornerRadius(100)
+                        .mask(Rectangle()) // keeps only this region visible
+                        .shadow(
+                            color: Color(hex:"000000").opacity(0.25),
+                            radius: 4,
+                            x: 0,
+                            y: 2
+                        )
                     }
-                    .padding(.bottom, 12)
+                    .padding(.bottom, 22)
                     
                     // Return to Home button
                     Button(action: {
