@@ -56,12 +56,6 @@ struct ActivityTypeView: View {
                 }
                 
                 Spacer()
-                
-                ActivityNextStepButton(
-                    title: "Create",
-                    isEnabled: selectedActivityType != nil,
-                    action: onNext
-                )
             }
             .onAppear {
                 Task {

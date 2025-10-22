@@ -333,6 +333,7 @@ struct ActivityCreationLocationView: View {
                     }
                 }
                 .padding(.horizontal, 25)
+                .padding(.bottom, 80)
                 .background(
                     universalBackgroundColor
                         .clipShape(
@@ -374,7 +375,7 @@ struct ActivityCreationLocationView: View {
             }
         }
         .background(universalBackgroundColor)
-        .sheet(isPresented: $showingLocationPicker) {
+                .sheet(isPresented: $showingLocationPicker) {
             LocationPickerView(
                 userLocation: locationManager.userLocation,
                 onLocationSelected: { locationName in
