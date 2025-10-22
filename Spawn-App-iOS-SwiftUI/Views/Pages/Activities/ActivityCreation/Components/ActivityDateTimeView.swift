@@ -365,7 +365,7 @@ struct ActivityDateTimeView: View {
                 .foregroundColor(secondaryTextColor)
             
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: 0) {
                     // Time Picker Section - Updated to match Figma design
                     VStack(spacing: 0) {
                         ZStack {
@@ -447,6 +447,7 @@ struct ActivityDateTimeView: View {
                         
                     }
                     .padding(.horizontal, 50)
+                    .padding(.bottom, 24)
                     
                     // Activity Duration Section
                     VStack(alignment: .leading, spacing: 12) {
@@ -463,48 +464,51 @@ struct ActivityDateTimeView: View {
                                 durationButton(for: duration)
                             }
                         }
+                        
                     }
                     .padding(.horizontal, 50)
-                }
-            }
-            
-            Spacer()
-            
-            // Time validation error message
-            if !viewModel.timeValidationMessage.isEmpty {
-                Text(viewModel.timeValidationMessage)
-                    .font(.custom("Onest", size: 12))
-                    .foregroundColor(.red)
-                    .padding(.bottom, 8)
-            }
-            
-            // Next Step Button
-            Enhanced3DButton(title: "Next Step (Location)") {
-                let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
-                if trimmedTitle.isEmpty {
-                    showTitleError = true
-                    return
-                }
-                showTitleError = false
-                
-                // Sync current values and validate time
-                syncCurrentValuesToViewModel()
-                Task {
-                    await viewModel.validateActivityForm()
+                    .padding(.bottom, 50)
                     
-                    await MainActor.run {
-                        if viewModel.isTimeValid {
-                            onNext()
-                        }
-                        // If time is invalid, the error message will be displayed
+                    
+                    // Time validation error message
+                    if !viewModel.timeValidationMessage.isEmpty {
+                        Text(viewModel.timeValidationMessage)
+                            .font(.custom("Onest", size: 12))
+                            .foregroundColor(.red)
+                            .padding(.bottom, 8)
                     }
+                    
+                    // Next Step Button
+                    Enhanced3DButton(title: "Next Step (Location)") {
+                        let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+                        if trimmedTitle.isEmpty {
+                            showTitleError = true
+                            return
+                        }
+                        showTitleError = false
+                        
+                        // Sync current values and validate time
+                        syncCurrentValuesToViewModel()
+                        Task {
+                            await viewModel.validateActivityForm()
+                            
+                            await MainActor.run {
+                                if viewModel.isTimeValid {
+                                    onNext()
+                                }
+                                // If time is invalid, the error message will be displayed
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 50)
+                    
+                    // Step indicators
+                    StepIndicatorView(currentStep: 1, totalSteps: 3)
+                        .padding(.top, 16)
                 }
             }
-            .padding(.horizontal, 25)
             
-            // Step indicators
-            StepIndicatorView(currentStep: 1, totalSteps: 3)
-                .padding(.top, 16)
+          
         }
         .background(universalBackgroundColor)
         .onAppear {
