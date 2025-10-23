@@ -465,6 +465,6 @@ enum ActivityDuration: CaseIterable {
         creatingUser: .danielAgapov,
         closeCallback: {
         },
-        selectedTab: .constant(TabType.creation)
+        selectedTab: .constant(TabType.activities)
     ).environmentObject(AppCache.shared)
 }

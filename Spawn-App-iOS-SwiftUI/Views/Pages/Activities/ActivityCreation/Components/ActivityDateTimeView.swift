@@ -187,7 +187,7 @@ struct ActivityDateTimeView: View {
         
         return Picker("Day", selection: Binding(
             get: { safeSelectedDay },
-            set: { newValue in 
+            set: { newValue in
                 selectedDay = newValue
             }
         )) {
@@ -310,9 +310,9 @@ struct ActivityDateTimeView: View {
     
     private func durationButton(for duration: ActivityDuration) -> some View {
         let isSelected = selectedDuration == duration
-        let borderColor = Color(red: 0.33, green: 0.42, blue: 0.93)
+        let borderColor = isSelected ? Color(hex: colorsIndigo500) : secondaryTextColor
         
-        return Button(action: { 
+        return Button(action: {
             selectedDuration = duration
             viewModel.selectedDuration = duration
             syncCurrentValuesToViewModel()
@@ -324,7 +324,9 @@ struct ActivityDateTimeView: View {
             Text(duration.title)
                 .font(.custom("Onest", size: 16).weight(isSelected ? .bold : .medium))
                 .foregroundColor(isSelected ? borderColor : secondaryTextColor)
-                .padding(12)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 12)
+                .fixedSize(horizontal: true, vertical: false)
                 .background(durationButtonBackground(isSelected: isSelected, borderColor: borderColor))
         }
         .buttonStyle(PlainButtonStyle())
@@ -335,8 +337,7 @@ struct ActivityDateTimeView: View {
             .fill(.clear)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .inset(by: isSelected ? 1 : 0.5)
-                    .stroke(borderColor, lineWidth: isSelected ? 1 : 0.5)
+                    .stroke(borderColor, lineWidth: isSelected ? 2 : 1)
             )
     }
     
@@ -360,41 +361,42 @@ struct ActivityDateTimeView: View {
                     Spacer()
                     
                     Text("What time?")
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(headerTextColor)
                     
                     Spacer()
                     
                     // Invisible chevron to balance the back button
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.clear)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 25)
                 .padding(.vertical, 12)
             } else {
                 HStack {
                     // Invisible chevron to balance layout when no back
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(.clear)
                     Spacer()
                     Text("What time?")
-                        .font(.title3)
-                        .fontWeight(.semibold)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(headerTextColor)
                     Spacer()
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(.clear)
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 25)
                 .padding(.vertical, 12)
             }
+            Text("Set a time for your Activity")
+                .font(.custom("Onest", size: 16))
+                .foregroundColor(secondaryTextColor)
             
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: 0) {
                     // Time Picker Section - Updated to match Figma design
                     VStack(spacing: 0) {
                         ZStack {
@@ -417,7 +419,7 @@ struct ActivityDateTimeView: View {
                             }
                             
                             // Picker content
-                            HStack(spacing: 24) {
+                            HStack(spacing: 10) {
                                 dayPickerView
                                 hourPickerView
                                 minutePickerView
@@ -427,7 +429,6 @@ struct ActivityDateTimeView: View {
                         }
                         .frame(height: 265)
                     }
-                    .padding(.horizontal, 20)
                     .padding(.top, 4)
                     .padding(.bottom, 4)
                     
@@ -456,7 +457,7 @@ struct ActivityDateTimeView: View {
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
                                             .inset(by: 0.5)
-                                            .stroke(showTitleError ? .red : textFieldBorderColor, lineWidth: 0.5)
+                                            .stroke(showTitleError ? .red : textFieldBorderColor, lineWidth: 1)
                                     )
                             )
                             .onChange(of: activityTitle) { newValue in
@@ -474,8 +475,10 @@ struct ActivityDateTimeView: View {
                                 .font(.custom("Onest", size: 12))
                                 .foregroundColor(.red)
                         }
+                        
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 50)
+                    .padding(.bottom, 24)
                     
                     // Activity Duration Section
                     VStack(alignment: .leading, spacing: 12) {
@@ -491,254 +494,252 @@ struct ActivityDateTimeView: View {
                             ForEach(ActivityDuration.allCases, id: \.self) { duration in
                                 durationButton(for: duration)
                             }
-                            Spacer()
+                        }
+                        
+                    }
+                    .padding(.horizontal, 50)
+                    .padding(.bottom, 50)
+                    
+                    if !viewModel.timeValidationMessage.isEmpty {
+                        Text(viewModel.timeValidationMessage)
+                            .font(.custom("Onest", size: 12))
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 8)
+                    }
+                    
+                    // Next Step Button
+                    Enhanced3DButton(title: "Next Step (Location)") {
+                        print("🔍 DEBUG: Next Step button tapped in ActivityDateTimeView")
+                        let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+                        if trimmedTitle.isEmpty {
+                            showTitleError = true
+                            return
+                        }
+                        showTitleError = false
+                        
+                        print("🔍 DEBUG: About to sync current values to view model")
+                        // Sync current values and validate time
+                        syncCurrentValuesToViewModel()
+                        print("🔍 DEBUG: Synced values, starting validation task")
+                        Task {
+                            print("🔍 DEBUG: Inside validation task")
+                            await viewModel.validateActivityForm()
+                            print("🔍 DEBUG: Validation completed, about to run on MainActor")
+                            
+                            await MainActor.run {
+                                print("🔍 DEBUG: On MainActor, isTimeValid: \(viewModel.isTimeValid)")
+                                if viewModel.isTimeValid {
+                                    print("🔍 DEBUG: Time is valid, calling onNext()")
+                                    onNext()
+                                    print("🔍 DEBUG: onNext() completed")
+                                }
+                                // If time is invalid, the error message will be displayed
+                            }
                         }
                     }
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, 50)
+                    
+                    // Step indicators
+                    StepIndicatorView(currentStep: 1, totalSteps: 3)
+                        .padding(.top, 16)
+                    
+                    }
                 }
-                .padding(.bottom, 12)
             }
-            
-            Spacer()
-            
-            // Time validation error message
-            if !viewModel.timeValidationMessage.isEmpty {
-                Text(viewModel.timeValidationMessage)
-                    .font(.custom("Onest", size: 12))
-                    .foregroundColor(.red)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 8)
+            .background(universalBackgroundColor)
+            .onAppear {
+                initializeDateAndTime()
             }
-            
-                // Next Step Button
-                Enhanced3DButton(title: "Next Step (Location)") {
-                    print("🔍 DEBUG: Next Step button tapped in ActivityDateTimeView")
+            .alert("Save All Changes?", isPresented: $showSaveConfirmation) {
+                Button("Don't Save", role: .destructive) {
+                    // Reset to original values and go back without saving
+                    viewModel.resetToOriginalValues()
+                    onBack?()
+                }
+                Button("Save All Changes") {
+                    // Save changes by calling onNext to proceed through the flow
                     let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
                     if trimmedTitle.isEmpty {
                         showTitleError = true
                         return
                     }
                     showTitleError = false
-                    
-                    print("🔍 DEBUG: About to sync current values to view model")
-                    // Sync current values and validate time
                     syncCurrentValuesToViewModel()
-                    print("🔍 DEBUG: Synced values, starting validation task")
+                    
+                    // For editing flow, we need to save ALL changes and close the flow
+                    // This means updating the activity with all the accumulated changes
                     Task {
-                        print("🔍 DEBUG: Inside validation task")
-                        await viewModel.validateActivityForm()
-                        print("🔍 DEBUG: Validation completed, about to run on MainActor")
-                        
+                        await viewModel.updateActivity()
                         await MainActor.run {
-                            print("🔍 DEBUG: On MainActor, isTimeValid: \(viewModel.isTimeValid)")
-                            if viewModel.isTimeValid {
-                                print("🔍 DEBUG: Time is valid, calling onNext()")
-                                onNext()
-                                print("🔍 DEBUG: onNext() completed")
-                            }
-                            // If time is invalid, the error message will be displayed
+                            onBack?()
                         }
                     }
                 }
-            .padding(.horizontal, 20)
+                Button("Cancel", role: .cancel) {
+                    // Stay on the current screen
+                }
+            } message: {
+                Text("You have unsaved changes.")
+            }
+        }
+        
+        // MARK: - Helper Methods
+        
+        // Helper function to validate minute values for picker compatibility
+        private func validateMinuteForPicker(_ minute: Int) -> Int {
+            return minutes.min(by: { abs($0 - minute) < abs($1 - minute) }) ?? 0
+        }
+        
+        private func hasAnyLocalChanges() -> Bool {
+            guard viewModel.isEditingExistingActivity else { return false }
             
-            // Step indicators
-            StepIndicatorView(currentStep: 1, totalSteps: 3)
-                .padding(.top, 16)
-                .padding(.bottom, 30) // Standard bottom padding
-        }
-        .background(universalBackgroundColor)
-        .onAppear {
-            initializeDateAndTime()
-        }
-        .alert("Save All Changes?", isPresented: $showSaveConfirmation) {
-            Button("Don't Save", role: .destructive) {
-                // Reset to original values and go back without saving
-                viewModel.resetToOriginalValues()
-                onBack?()
+            // Check title changes
+            let currentTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+            let originalTitle = viewModel.originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
+            if currentTitle != originalTitle {
+                return true
             }
-			Button("Save All Changes") {
-                // Save changes by calling onNext to proceed through the flow
-                let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
-                if trimmedTitle.isEmpty {
-                    showTitleError = true
-                    return
-                }
-                showTitleError = false
-                syncCurrentValuesToViewModel()
-                
-                // For editing flow, we need to save ALL changes and close the flow
-                // This means updating the activity with all the accumulated changes
-                Task {
-                    await viewModel.updateActivity()
-                    await MainActor.run {
-                        onBack?()
-                    }
-                }
+            
+            // Check other changes using view model's computed properties
+            // But first sync the current values to make sure they're up to date
+            syncCurrentValuesToViewModel()
+            
+            return viewModel.dateChanged || viewModel.durationChanged || viewModel.locationChanged
+        }
+        
+        
+        private func syncCurrentValuesToViewModel() {
+            print("🔍 DEBUG: syncCurrentValuesToViewModel started")
+            // Update activity title
+            let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
+            viewModel.activity.title = trimmedTitle.isEmpty ? nil : trimmedTitle
+            print("🔍 DEBUG: Set activity title to: '\(viewModel.activity.title ?? "nil")'")
+            
+            // Update selected date
+            print("🔍 DEBUG: About to update selected date")
+            updateSelectedDate()
+            print("🔍 DEBUG: Updated selected date to: \(viewModel.selectedDate)")
+            
+            // Update duration
+            viewModel.selectedDuration = selectedDuration
+            print("🔍 DEBUG: Set duration to: \(selectedDuration)")
+            print("🔍 DEBUG: syncCurrentValuesToViewModel completed")
+        }
+        
+        private func updateSelectedDate() {
+            print("🔍 DEBUG: updateSelectedDate started")
+            let calendar = Calendar.current
+            let now = Date()
+            
+            print("🔍 DEBUG: selectedDay: \(selectedDay), selectedHour: \(selectedHour), selectedMinute: \(selectedMinute), isAM: \(isAM)")
+            
+            // Get the base date (today or tomorrow)
+            let baseDate: Date
+            switch selectedDay {
+            case .yesterday:
+                baseDate = calendar.date(byAdding: .day, value: -1, to: now) ?? now
+            case .today:
+                baseDate = now
+            case .tomorrow:
+                baseDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
             }
-            Button("Cancel", role: .cancel) {
-                // Stay on the current screen
+            
+            print("🔍 DEBUG: baseDate: \(baseDate)")
+            
+            // Convert 12-hour to 24-hour format
+            let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
+            print("🔍 DEBUG: hour24: \(hour24)")
+            
+            var dateComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
+            dateComponents.hour = hour24
+            dateComponents.minute = selectedMinute
+            dateComponents.second = 0
+            
+            print("🔍 DEBUG: dateComponents: \(dateComponents)")
+            
+            if let finalDate = calendar.date(from: dateComponents) {
+                print("🔍 DEBUG: Setting viewModel.selectedDate to: \(finalDate)")
+                viewModel.selectedDate = finalDate
+            } else {
+                print("🔍 DEBUG: Failed to create finalDate from dateComponents")
             }
-        } message: {
-            Text("You have unsaved changes.")
+            print("🔍 DEBUG: updateSelectedDate completed")
+        }
+        
+        private func initializeDateAndTime() {
+            // Set initial duration in view model
+            viewModel.selectedDuration = selectedDuration
+            
+            // Set initial title if not empty
+            if !activityTitle.isEmpty {
+                viewModel.activity.title = activityTitle
+            }
+            
+            // Determine the correct day option based on the existing activity's date if editing
+            if viewModel.isEditingExistingActivity {
+                selectedDay = determineDayOptionFromActivityDate()
+            }
+            
+            // Ensure selectedDay is valid for the current available options
+            let currentOptions = DayOption.availableOptions
+            if !currentOptions.contains(selectedDay) {
+                selectedDay = currentOptions.first ?? .today
+            }
+            
+            // Update the selected date with initial values
+            updateSelectedDate()
+        }
+        
+        private func determineDayOptionFromActivityDate() -> DayOption {
+            guard let activityDate = viewModel.selectedDate != Date() ? viewModel.selectedDate : viewModel.originalDate else {
+                return .today
+            }
+            
+            let calendar = Calendar.current
+            let now = Date()
+            
+            let activityDay = calendar.startOfDay(for: activityDate)
+            let today = calendar.startOfDay(for: now)
+            let yesterday = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: now) ?? now)
+            let tomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: now) ?? now)
+            
+            if activityDay == yesterday {
+                return .yesterday
+            } else if activityDay == today {
+                return .today
+            } else if activityDay == tomorrow {
+                return .tomorrow
+            } else {
+                // For dates beyond yesterday/today/tomorrow, default to today
+                // In the future, we might want to add more options or handle this differently
+                return .today
+            }
         }
     }
     
-    // MARK: - Helper Methods
-    
-    // Helper function to validate minute values for picker compatibility
-    private func validateMinuteForPicker(_ minute: Int) -> Int {
-        return minutes.min(by: { abs($0 - minute) < abs($1 - minute) }) ?? 0
+    @available(iOS 17, *)
+    #Preview {
+        @Previewable @State var selectedHour: Int = 9
+        @Previewable @State var selectedMinute: Int = 30
+        @Previewable @State var isAM: Bool = true
+        @Previewable @State var activityTitle: String = "Morning Coffee"
+        @Previewable @State var selectedDuration: ActivityDuration = .oneHour
+        @Previewable @StateObject var appCache = AppCache.shared
+        
+        ActivityDateTimeView(
+            selectedHour: $selectedHour,
+            selectedMinute: $selectedMinute,
+            isAM: $isAM,
+            activityTitle: $activityTitle,
+            selectedDuration: $selectedDuration,
+            onNext: {
+                print("Next step tapped")
+            },
+            onBack: {
+                print("Back tapped")
+            }
+        )
+        .environmentObject(appCache)
     }
-    
-    private func hasAnyLocalChanges() -> Bool {
-        guard viewModel.isEditingExistingActivity else { return false }
-        
-        // Check title changes
-        let currentTitle = activityTitle.trimmingCharacters(in: .whitespaces)
-        let originalTitle = viewModel.originalTitle?.trimmingCharacters(in: .whitespaces) ?? ""
-        if currentTitle != originalTitle {
-            return true
-        }
-        
-        // Check other changes using view model's computed properties
-        // But first sync the current values to make sure they're up to date
-        syncCurrentValuesToViewModel()
-        
-        return viewModel.dateChanged || viewModel.durationChanged || viewModel.locationChanged
-    }
-    
-    
-    private func syncCurrentValuesToViewModel() {
-        print("🔍 DEBUG: syncCurrentValuesToViewModel started")
-        // Update activity title
-        let trimmedTitle = activityTitle.trimmingCharacters(in: .whitespaces)
-        viewModel.activity.title = trimmedTitle.isEmpty ? nil : trimmedTitle
-        print("🔍 DEBUG: Set activity title to: '\(viewModel.activity.title ?? "nil")'")
-        
-        // Update selected date
-        print("🔍 DEBUG: About to update selected date")
-        updateSelectedDate()
-        print("🔍 DEBUG: Updated selected date to: \(viewModel.selectedDate)")
-        
-        // Update duration
-        viewModel.selectedDuration = selectedDuration
-        print("🔍 DEBUG: Set duration to: \(selectedDuration)")
-        print("🔍 DEBUG: syncCurrentValuesToViewModel completed")
-    }
-    
-    private func updateSelectedDate() {
-        print("🔍 DEBUG: updateSelectedDate started")
-        let calendar = Calendar.current
-        let now = Date()
-        
-        print("🔍 DEBUG: selectedDay: \(selectedDay), selectedHour: \(selectedHour), selectedMinute: \(selectedMinute), isAM: \(isAM)")
-        
-        // Get the base date (today or tomorrow)
-        let baseDate: Date
-        switch selectedDay {
-        case .yesterday:
-            baseDate = calendar.date(byAdding: .day, value: -1, to: now) ?? now
-        case .today:
-            baseDate = now
-        case .tomorrow:
-            baseDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
-        }
-        
-        print("🔍 DEBUG: baseDate: \(baseDate)")
-        
-        // Convert 12-hour to 24-hour format
-        let hour24 = isAM ? (selectedHour == 12 ? 0 : selectedHour) : (selectedHour == 12 ? 12 : selectedHour + 12)
-        print("🔍 DEBUG: hour24: \(hour24)")
-        
-        var dateComponents = calendar.dateComponents([.year, .month, .day], from: baseDate)
-        dateComponents.hour = hour24
-        dateComponents.minute = selectedMinute
-        dateComponents.second = 0
-        
-        print("🔍 DEBUG: dateComponents: \(dateComponents)")
-        
-        if let finalDate = calendar.date(from: dateComponents) {
-            print("🔍 DEBUG: Setting viewModel.selectedDate to: \(finalDate)")
-            viewModel.selectedDate = finalDate
-        } else {
-            print("🔍 DEBUG: Failed to create finalDate from dateComponents")
-        }
-        print("🔍 DEBUG: updateSelectedDate completed")
-    }
-    
-    private func initializeDateAndTime() {
-        // Set initial duration in view model
-        viewModel.selectedDuration = selectedDuration
-        
-        // Set initial title if not empty
-        if !activityTitle.isEmpty {
-            viewModel.activity.title = activityTitle
-        }
-        
-        // Determine the correct day option based on the existing activity's date if editing
-        if viewModel.isEditingExistingActivity {
-            selectedDay = determineDayOptionFromActivityDate()
-        }
-        
-        // Ensure selectedDay is valid for the current available options
-        let currentOptions = DayOption.availableOptions
-        if !currentOptions.contains(selectedDay) {
-            selectedDay = currentOptions.first ?? .today
-        }
-        
-        // Update the selected date with initial values
-        updateSelectedDate()
-    }
-    
-    private func determineDayOptionFromActivityDate() -> DayOption {
-        guard let activityDate = viewModel.selectedDate != Date() ? viewModel.selectedDate : viewModel.originalDate else {
-            return .today
-        }
-        
-        let calendar = Calendar.current
-        let now = Date()
-        
-        let activityDay = calendar.startOfDay(for: activityDate)
-        let today = calendar.startOfDay(for: now)
-        let yesterday = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: now) ?? now)
-        let tomorrow = calendar.startOfDay(for: calendar.date(byAdding: .day, value: 1, to: now) ?? now)
-        
-        if activityDay == yesterday {
-            return .yesterday
-        } else if activityDay == today {
-            return .today
-        } else if activityDay == tomorrow {
-            return .tomorrow
-        } else {
-            // For dates beyond yesterday/today/tomorrow, default to today
-            // In the future, we might want to add more options or handle this differently
-            return .today
-        }
-    }
-}
 
-@available(iOS 17, *)
-#Preview {
-    @Previewable @State var selectedHour: Int = 9
-    @Previewable @State var selectedMinute: Int = 30
-    @Previewable @State var isAM: Bool = true
-    @Previewable @State var activityTitle: String = "Morning Coffee"
-    @Previewable @State var selectedDuration: ActivityDuration = .oneHour
-    @Previewable @StateObject var appCache = AppCache.shared
-    
-    ActivityDateTimeView(
-        selectedHour: $selectedHour,
-        selectedMinute: $selectedMinute,
-        isAM: $isAM,
-        activityTitle: $activityTitle,
-        selectedDuration: $selectedDuration,
-        onNext: {
-            print("Next step tapped")
-        },
-        onBack: {
-            print("Back tapped")
-        }
-    )
-    .environmentObject(appCache)
-} 

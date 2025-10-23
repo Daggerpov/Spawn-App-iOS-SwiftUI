@@ -29,7 +29,7 @@ struct ActivityNextStepButton: View {
             }) {
                 HStack(alignment: .center, spacing: 8) {
                     Text(title)
-                        .font(.onestSemiBold(size: 16))
+                        .font(.onestSemiBold(size: 20))
                         .foregroundColor(.white)
                 }
                 .padding(.vertical, 18)
@@ -70,8 +70,6 @@ struct ActivityNextStepButton: View {
                     }
             )
         }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 34)
     }
 }
 

@@ -250,31 +250,30 @@ struct ActivityCreationLocationView: View {
 		VStack {
 			HStack {
 				Spacer()
-				VStack(spacing: 8) {
+				VStack(spacing: 0) {
 					// 3D mode toggle (works on iOS 9+ with MapKit camera)
 					Button(action: {
-						let impactGenerator = UIImpactFeedbackGenerator(
-							style: .medium
-						)
-						impactGenerator.impactOccurred()
-						withAnimation(.easeInOut(duration: 0.3)) {
-							is3DMode.toggle()
-						}
-					}) {
-						Image(systemName: is3DMode ? "view.3d" : "view.2d")
-							.font(.system(size: 20))
-							.foregroundColor(universalAccentColor)
-							.padding(12)
-							.background(universalBackgroundColor)
-							.clipShape(Circle())
-							.shadow(
-								color: Color.black.opacity(0.2),
-								radius: 4,
-								x: 0,
-								y: 2
-							)
-					}
-					.buttonStyle(PlainButtonStyle())
+                                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                                impactGenerator.impactOccurred()
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    is3DMode.toggle()
+                                }
+                            }) {
+                                Text("3D")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(universalAccentColor)
+                                    .frame(width: 44, height: 44)
+                                    .background(universalBackgroundColor)
+                                    .clipShape(
+                                        UnevenRoundedRectangle(
+                                            topLeadingRadius: 10,
+                                            bottomLeadingRadius: 0,
+                                            bottomTrailingRadius: 0,
+                                            topTrailingRadius: 10
+                                        )
+                                    )
+                            }
+                            .buttonStyle(PlainButtonStyle())
 
 					// Recenter to user location
 					Button(action: {
@@ -320,18 +319,20 @@ struct ActivityCreationLocationView: View {
 						Image(systemName: "location.fill")
 							.font(.system(size: 20))
 							.foregroundColor(universalAccentColor)
-							.padding(12)
-							.background(universalBackgroundColor)
-							.clipShape(Circle())
-							.shadow(
-								color: Color.black.opacity(0.2),
-								radius: 4,
-								x: 0,
-								y: 2
-							)
+							.frame(width: 44, height: 44)
+                                .background(universalBackgroundColor)
+                                .clipShape(
+                                    UnevenRoundedRectangle(
+                                        topLeadingRadius: 0,
+                                        bottomLeadingRadius: 10,
+                                        bottomTrailingRadius: 10,
+                                        topTrailingRadius: 0
+                                    )
+                                )
 					}
 					.buttonStyle(PlainButtonStyle())
 				}
+                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
 				.padding(.trailing, 16)
 			}
 			.padding(.top, 24)
@@ -354,43 +355,38 @@ struct ActivityCreationLocationView: View {
 					// Title and instruction
 					VStack(spacing: 6) {
 						Text("Set Location")
-							.font(.title2)
-							.fontWeight(.semibold)
+							.font(.onestSemiBold(size: 20))
 							.foregroundColor(universalAccentColor)
 
 						Text("Drag map to move pin")
-							.font(.subheadline)
+							.font(.onestMedium(size: 16))
 							.foregroundColor(figmaBlack300)
 					}
 
 					// Address field
 					HStack {
-						TextField(
-							"6133 University Blvd, Vancouver",
-							text: $searchText
-						)
-						.font(.body)
-						.foregroundColor(universalAccentColor)
-						.padding(.vertical, 12)
-						.padding(.horizontal, 16)
-						.background(Color.gray.opacity(0.1))
-						.clipShape(RoundedRectangle(cornerRadius: 12))
+						TextField("6133 University Blvd, Vancouver", text: $searchText)
+                                .font(.onestMedium(size: 16))
+                                .padding(.horizontal, 12)
+                                .foregroundColor(universalAccentColor)
+                                .background(Color.clear)
 
 						Button(action: {
 							showingLocationPicker = true
 						}) {
 							Image(systemName: "magnifyingglass")
-								.foregroundColor(figmaBlack300)
-								.padding(12)
-								.background(Color.gray.opacity(0.1))
-								.clipShape(Circle())
+								 .foregroundColor(universalAccentColor)
+                                    .padding(12)
+                                    .background(Color.clear)
 						}
 					}
-
-					// Step indicators
-					StepIndicatorView(currentStep: 2, totalSteps: 3)
-						.padding(.bottom, 8)  // Standard bottom padding
-
+                    .background(Color.clear)
+                        .frame(height: 52)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(hex: colorsGray700), lineWidth: 1)
+                        )
+				
 					// Confirm button
 					ActivityNextStepButton(
 						title: "Confirm Location"
@@ -415,20 +411,26 @@ struct ActivityCreationLocationView: View {
 						viewModel.setLocation(location)
 						onNext()
 					}
+                        // Step indicators
+                        StepIndicatorView(currentStep: 2, totalSteps: 3)
+                            .padding(.bottom, 8) // Standard bottom padding
+        
+                
 				}
-				.padding(.horizontal, 20)
 			}
+            .padding(.horizontal, 25)
+            .padding(.bottom, 10)
 			.background(
 				universalBackgroundColor
-					.clipShape(
-						TopRoundedRectangle(radius: 20)
-					)
-					.shadow(
-						color: Color.black.opacity(0.1),
-						radius: 10,
-						x: 0,
-						y: -5
-					)
+					 .clipShape(
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 20,
+                                bottomLeadingRadius: 0,
+                                bottomTrailingRadius: 0,
+                                topTrailingRadius: 20
+                            )
+                        )
+                        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: -5)
 			)
 			.offset(y: dragOffset)
 			.gesture(
