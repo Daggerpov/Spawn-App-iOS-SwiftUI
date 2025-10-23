@@ -85,8 +85,9 @@ struct ActivityCardPopupView: View {
 					.padding(.bottom, 12)
 			} else {
 				// Add equivalent padding when expanded to avoid status bar
+				// Reduce padding when opened from map view since it has additional header padding
 				Spacer()
-					.frame(height: 24) // 8 + 4 + 12 from handle bar
+					.frame(height: fromMapView ? 8 : 24) // Reduced padding for map view
 			}
 
 			// Conditional content based on navigation state
@@ -245,7 +246,7 @@ struct ActivityCardPopupView: View {
 					.contentShape(Circle()) // Better touch area for circular button
 				}
 			}
-            .padding(.top, 23)
+            .padding(.top, fromMapView && isExpanded ? 8 : 23)
 
 			// Event title and time
 			titleAndTime
@@ -333,14 +334,16 @@ struct ActivityCardPopupView: View {
 					.truncationMode(.tail)
 					.layoutPriority(0)  // Lower priority for truncation
 
-				Text(
-					"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
-				)
-				.font(Font.custom("Onest", size: 14).weight(.medium))
-				.foregroundColor(.white)
-				.lineLimit(1)
-				.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
-				.layoutPriority(1)  // Higher priority to keep this part visible
+				if viewModel.isDistanceAvailable() {
+					Text(
+						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
+					)
+					.font(Font.custom("Onest", size: 14).weight(.medium))
+					.foregroundColor(.white)
+					.lineLimit(1)
+					.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
+					.layoutPriority(1)  // Higher priority to keep this part visible
+				}
 			}
 		}
 		.padding(EdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10))
@@ -479,11 +482,13 @@ extension ActivityCardPopupView {
 					.foregroundColor(.white)
 					.font(.onestSemiBold(size: 15))
 				}
-				Text(
-					"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
-				)
-				.foregroundColor(.white)
-				.font(.onestRegular(size: 14))
+				if viewModel.isDistanceAvailable() {
+					Text(
+						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
+					)
+					.foregroundColor(.white)
+					.font(.onestRegular(size: 14))
+				}
 			}
 			.padding(.vertical, 12)
 			
@@ -549,14 +554,16 @@ extension ActivityCardPopupView {
 					.truncationMode(.tail)
 					.layoutPriority(0)  // Lower priority for truncation
 					
-					Text(
-						"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
-					)
-					.font(.custom("Onest", size: 14).weight(.medium))
-					.foregroundColor(.white)
-					.lineLimit(1)
-					.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
-					.layoutPriority(1)  // Higher priority to keep this part visible
+					if viewModel.isDistanceAvailable() {
+						Text(
+							"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
+						)
+						.font(.custom("Onest", size: 14).weight(.medium))
+						.foregroundColor(.white)
+						.lineLimit(1)
+						.fixedSize(horizontal: true, vertical: false)  // Prevent truncation of distance
+						.layoutPriority(1)  // Higher priority to keep this part visible
+					}
 				}
 			}
 			.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))

@@ -1,10 +1,3 @@
-//
-//  TabBarView.swift
-//  swiftystuff
-//
-//  Created by Abdulrahim Illo on 21/04/2024.
-//
-
 import MapKit
 import SwiftUI
 

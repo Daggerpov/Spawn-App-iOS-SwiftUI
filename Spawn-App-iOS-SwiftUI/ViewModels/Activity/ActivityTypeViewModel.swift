@@ -93,10 +93,19 @@ class ActivityTypeViewModel: ObservableObject {
     /// Toggles the pin status of an activity type via direct API call
     @MainActor
     func togglePin(for activityTypeDTO: ActivityTypeDTO) async {
-        // Check if we're already at the pin limit when trying to pin
-        if !activityTypeDTO.isPinned {
-            let currentPinnedCount = activityTypes.filter { $0.isPinned }.count
-            
+        let currentPinnedCount = activityTypes.filter { $0.isPinned }.count
+        let isCurrentlyPinned = activityTypeDTO.isPinned
+        let willBePinned = !isCurrentlyPinned
+        
+        // Debug logging
+        print("🔄 Toggle pin for '\(activityTypeDTO.title)':")
+        print("   Currently pinned: \(isCurrentlyPinned)")
+        print("   Will be pinned: \(willBePinned)")
+        print("   Current pinned count: \(currentPinnedCount)")
+        print("   Current pinned items: \(activityTypes.filter { $0.isPinned }.map { $0.title })")
+        
+        // Check if we're already at the pin limit when trying to pin (not when unpinning)
+        if willBePinned {
             if currentPinnedCount >= 4 {
                 print("❌ Cannot pin: Already at maximum of 4 pinned activity types")
                 await MainActor.run {
@@ -112,7 +121,7 @@ class ActivityTypeViewModel: ObservableObject {
             icon: activityTypeDTO.icon,
             associatedFriends: activityTypeDTO.associatedFriends,
             orderNum: activityTypeDTO.orderNum,
-            isPinned: !activityTypeDTO.isPinned
+            isPinned: willBePinned
         )
         
         await updateActivityType(updatedActivityType)
@@ -294,7 +303,10 @@ class ActivityTypeViewModel: ObservableObject {
             }
             
             // Check if error is related to pinning limits
-            if ErrorFormattingService.shared.formatError(error).contains("pinned activity types") {
+            let formattedError = ErrorFormattingService.shared.formatError(error)
+            print("🔍 Formatted error from server: \(formattedError)")
+            if formattedError.contains("pinned activity types") {
+                print("⚠️ Server returned pinning limit error - this might be a server-side validation bug")
                 errorMessage = "You can only pin up to 4 activity types"
             }
             
