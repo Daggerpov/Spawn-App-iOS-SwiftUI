@@ -302,7 +302,7 @@ let figmaGray700: Color = Color(hex: figmaGray700Hex)
 let figmaBlack300Hex: String = colorsGray400
 let figmaBlack300: Color = Color(hex: figmaBlack300Hex)
 
-let figmaGreen: Color = Color(hex: colorsGreen500)
+let figmaGreen: Color = Color(hex: colorsGreen400)
 
 let figmaBlack400Hex: String = colorsGray400
 let figmaBlack400: Color = Color(hex: figmaBlack400Hex)

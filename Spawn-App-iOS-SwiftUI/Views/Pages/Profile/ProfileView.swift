@@ -548,30 +548,19 @@ struct ProfileView: View {
 
 	// Break down body view components into smaller pieces
 	private var friendshipBadge: some View {
-		Group {
-			if !isCurrentUserProfile
-				&& profileViewModel.friendshipStatus == .friends
-			{
 				HStack {
 					Image(systemName: "person.crop.circle.badge.checkmark")
+                        .font(.custom("Onest", size: 14).weight(.bold))
 					Text("Friends")
+                        .font(.custom("Onest", size: 16).weight(.medium))
 				}
-				.font(.caption)
-				.bold()
-				.foregroundColor(figmaGreen)
+				.foregroundColor(universalAccentColor)
 				.padding(.horizontal, 16)
-				.padding(.vertical, 8)
+				.padding(.vertical, 12)
 				.background(
-					RoundedRectangle(
-						cornerRadius: universalRectangleCornerRadius
-					)
-					.stroke(figmaGreen)
+					RoundedRectangle(cornerRadius: 100)
+					.fill(figmaGreen)
 				)
-				.cornerRadius(universalRectangleCornerRadius)
-				.padding(.bottom, 10)
-				.background(universalBackgroundColor)
-			}
-		}
 	}
 
 	private var profileActionButtonsSection: some View {
@@ -1025,8 +1014,11 @@ struct ProfileView: View {
 				}
 
 			case .friends:
-				// Share Profile button removed for other users
-				EmptyView()
+                HStack() {
+                    Text ("Friends")
+                        .font(.caption)
+                        .foregroundColor(universalSecondaryColor)
+                }
 
 			default:
 				EmptyView()
