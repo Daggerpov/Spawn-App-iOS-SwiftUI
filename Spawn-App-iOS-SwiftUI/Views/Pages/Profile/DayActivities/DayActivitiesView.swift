@@ -83,9 +83,6 @@ struct DayActivitiesView: View {
         }
     }
     
-}
-
-extension DayActivitiesView {
     var activitiesListView: some View {
         // Activities list
         ScrollView {
@@ -139,12 +136,10 @@ extension DayActivitiesView {
 }
 
 @available(iOS 17, *)
-struct DayActivitiesView_Previews: PreviewProvider {
-    static var previews: some View {
-        DayActivitiesView(
-            date: Date(),
-            onDismiss: {},
-            onActivitySelected: { _ in }
-        )
-    }
+#Preview {
+    DayActivitiesView(
+        date: Date(),
+        onDismiss: {},
+        onActivitySelected: { _ in }
+    )
 }

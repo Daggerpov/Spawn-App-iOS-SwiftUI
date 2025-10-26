@@ -1,5 +1,5 @@
 //
-//  InnerShadow.swift
+//  IconInnerShadow.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Ethan Hansen on 2025-08-21.
@@ -8,7 +8,7 @@
 
 import SwiftUI
 
-struct InnerShadow: ViewModifier {
+struct IconInnerShadow: ViewModifier {
     var color: Color
     var radius: CGFloat
     var x: CGFloat = 0
@@ -17,13 +17,14 @@ struct InnerShadow: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay(
-                RoundedRectangle(cornerRadius: 100)
+                Circle()
                     .stroke(color.opacity(0.5), lineWidth: radius)
                     .shadow(color: color.opacity(0.3), radius: radius, x: x, y: y)
-                    .clipShape(RoundedRectangle(cornerRadius: 100))
+                    .clipShape(Circle())
             )
             .mask(
-                RoundedRectangle(cornerRadius: 100)
+                Circle()
             )
     }
 }
+

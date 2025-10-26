@@ -252,13 +252,11 @@ struct DayActivitiesPageView: View {
 
 // MARK: - Preview
 @available(iOS 17, *)
-struct DayActivitiesPageView_Previews: PreviewProvider {
-    static var previews: some View {
-        DayActivitiesPageView(
-            date: Date(),
-            activities: [],
-            onDismiss: {},
-            onActivitySelected: { _ in }
-        )
-    }
-} 
+#Preview {
+    DayActivitiesPageView(
+        date: Date(),
+        activities: [],
+        onDismiss: {},
+        onActivitySelected: { _ in }
+    )
+}
