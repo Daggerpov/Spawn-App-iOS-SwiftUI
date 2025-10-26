@@ -185,29 +185,6 @@ struct FriendsTabView: View {
     
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-//			if !viewModel.recentlySpawnedWith.isEmpty {
-//                HStack{
-//                    Text("Recently Spawned With")
-//                        .font(.onestMedium(size: 16))
-//                        .foregroundColor(universalAccentColor)
-//                    Spacer()
-//                    showAllRecentlySpawnedButton
-//                }
-//
-//				ScrollView(showsIndicators: false) {
-//					VStack(spacing: 16) {
-//						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
-//							RecentlySpawnedView(
-//								viewModel: viewModel, 
-//								recentUser: recentUser,
-//								selectedFriend: $selectedFriend,
-//								showProfileMenu: $showProfileMenu
-//							)
-//						}
-//					}
-//				}
-//			} else if !viewModel.recommendedFriends.isEmpty {
-//                // Show "Recommended Friends" when "Recently Spawned With" is empty
                 HStack{
                     Text("Recommended Friends")
                         .font(.onestMedium(size: 16))
