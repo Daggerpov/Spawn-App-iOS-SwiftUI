@@ -14,11 +14,11 @@ struct ActivityMenuView: View {
     @State private var isLoading: Bool = true
     
     var body: some View {
-        MenuContainer {
+        ActivityMenuContainer {
             if isLoading {
                 loadingContent
             } else {
-                MenuContent(
+                ActivityMenuContent(
                     activity: activity,
                     showReportDialog: $showReportDialog,
                     dismiss: dismiss
@@ -58,7 +58,7 @@ struct ActivityMenuView: View {
     }
 }
 
-private struct MenuContainer<Content: View>: View {
+private struct ActivityMenuContainer<Content: View>: View {
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {
@@ -81,7 +81,7 @@ private struct MenuContainer<Content: View>: View {
     }
 }
 
-private struct MenuContent: View {
+private struct ActivityMenuContent: View {
     let activity: FullFeedActivityDTO
     @Binding var showReportDialog: Bool
     let dismiss: DismissAction

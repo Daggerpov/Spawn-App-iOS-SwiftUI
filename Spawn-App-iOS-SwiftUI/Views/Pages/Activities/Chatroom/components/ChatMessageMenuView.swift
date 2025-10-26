@@ -14,11 +14,11 @@ struct ChatMessageMenuView: View {
     @State private var isLoading: Bool = true
     
     var body: some View {
-        MenuContainer {
+        ChatMessageMenuContainer {
             if isLoading {
                 loadingContent
             } else {
-                MenuContent(
+                ChatMessageMenuContent(
                     chatMessage: chatMessage,
                     showReportDialog: $showReportDialog,
                     dismiss: dismiss
@@ -58,7 +58,7 @@ struct ChatMessageMenuView: View {
     }
 }
 
-private struct MenuContainer<Content: View>: View {
+private struct ChatMessageMenuContainer<Content: View>: View {
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {
@@ -81,7 +81,7 @@ private struct MenuContainer<Content: View>: View {
     }
 }
 
-private struct MenuContent: View {
+private struct ChatMessageMenuContent: View {
     let chatMessage: FullActivityChatMessageDTO
     @Binding var showReportDialog: Bool
     let dismiss: DismissAction

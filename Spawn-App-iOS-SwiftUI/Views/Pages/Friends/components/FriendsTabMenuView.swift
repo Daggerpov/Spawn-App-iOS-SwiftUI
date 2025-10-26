@@ -27,11 +27,11 @@ struct FriendsTabMenuView: View {
     }
     
     var body: some View {
-        MenuContainer {
+        FriendsTabMenuContainer {
             if isLoading {
                 loadingContent
             } else {
-                MenuContent(
+                FriendsTabMenuContent(
                     user: user,
                     showReportDialog: $showReportDialog,
                     showBlockDialog: $showBlockDialog,
@@ -86,7 +86,7 @@ struct FriendsTabMenuView: View {
 
 
 // Container view that provides the background and layout
-private struct MenuContainer<Content: View>: View {
+private struct FriendsTabMenuContainer<Content: View>: View {
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {
@@ -105,7 +105,7 @@ private struct MenuContainer<Content: View>: View {
 }
 
 // Content view that contains the actual menu items
-private struct MenuContent: View {
+private struct FriendsTabMenuContent: View {
     let user: Nameable
     @Binding var showReportDialog: Bool
     @Binding var showBlockDialog: Bool

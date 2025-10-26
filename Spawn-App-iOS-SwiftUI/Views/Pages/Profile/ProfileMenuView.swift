@@ -20,11 +20,11 @@ struct ProfileMenuView: View {
     @State private var isLoading: Bool = true
     
     var body: some View {
-        MenuContainer {
+        ProfileMenuContainer {
             if isLoading {
                 loadingContent
             } else {
-                MenuContent(
+                ProfileMenuContent(
                     user: user,
                     showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
                     showReportDialog: $showReportDialog,
@@ -80,7 +80,7 @@ struct ProfileMenuView: View {
 
 
 // Container view that provides the background and layout
-private struct MenuContainer<Content: View>: View {
+private struct ProfileMenuContainer<Content: View>: View {
     let content: Content
     
     init(@ViewBuilder content: () -> Content) {
@@ -99,7 +99,7 @@ private struct MenuContainer<Content: View>: View {
 }
 
 // Content view that contains the actual menu items
-private struct MenuContent: View {
+private struct ProfileMenuContent: View {
     let user: Nameable
     @Binding var showRemoveFriendConfirmation: Bool
     @Binding var showReportDialog: Bool
