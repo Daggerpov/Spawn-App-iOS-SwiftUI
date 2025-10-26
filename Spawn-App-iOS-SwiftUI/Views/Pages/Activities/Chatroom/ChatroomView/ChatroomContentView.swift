@@ -1,30 +1,26 @@
-//
-//  ChatroomView.swift
-//  Spawn-App-iOS-SwiftUI
-//
-//  Created by Shane on 6/20/25.
-//
 import SwiftUI
 
-// MARK: - Standalone Chatroom View (for sheets/full screen presentation)
-struct ChatroomView: View {
+// MARK: - Embedded Chatroom Content View (for use within drawers)
+struct ChatroomContentView: View {
     @State private var messageText = ""
     
     var user: BaseUserDTO = UserAuthViewModel.shared.spawnUser ?? BaseUserDTO.danielAgapov
     @ObservedObject var activity: FullFeedActivityDTO
     var backgroundColor: Color
+    var isExpanded: Bool
     @StateObject var viewModel: ChatViewModel
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.colorScheme) var colorScheme
+    let onBack: () -> Void
     
-    init(activity: FullFeedActivityDTO, backgroundColor: Color) {
+    init(activity: FullFeedActivityDTO, backgroundColor: Color, isExpanded: Bool, onBack: @escaping () -> Void) {
         self.activity = activity
         self.backgroundColor = backgroundColor
+        self.isExpanded = isExpanded
+        self.onBack = onBack
         let userId = user.id
         self._viewModel = StateObject(wrappedValue: ChatViewModel(senderUserId: userId, activity: activity))
     }
     
-    // Helper function to send messages for ChatroomView
+    // Helper function to send messages for ChatroomContentView
     private func sendMessage() {
         Task {
             let messageToSend = messageText
@@ -39,42 +35,35 @@ struct ChatroomView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            ZStack {
-                // Background overlay
-                (colorScheme == .dark ? Color.black.opacity(0.60) : Color.black.opacity(0.40))
-                    .ignoresSafeArea()
-                    .onTapGesture {
-                        dismiss()
-                    }
+            VStack(spacing: 0) {
+                // Header - always visible at top
+                headerView
+                    .padding(.top, isExpanded ? geometry.safeAreaInsets.top + 16 : 0)
                 
-                // Main chatroom container
+                // Messages area - fixed size based on expansion state
+                messagesScrollView
+                    .frame(height: isExpanded ? expandedMessagesHeight : minimizedMessagesHeight)
+                    .clipped()
+                
+                // Input area - always anchored at bottom with no spacing below
                 VStack(spacing: 0) {
-                    headerView
-                    
-                    // Messages area that takes remaining space but leaves room for input
-                    messagesScrollView
-                    
-                    // Error message, input, and handle pinned to bottom
-                    VStack(spacing: 0) {
-                        errorMessageView
-                        messageInputView
-                        bottomHandle
-                    }
+                    errorMessageView
+                    messageInputView
+                        .padding(.bottom, isExpanded ? geometry.safeAreaInsets.bottom : 0)
                 }
-                .background(backgroundColor)
-                .cornerRadius(20)
-                .padding(.horizontal, 20)
-                .padding(.top, geometry.safeAreaInsets.top + 16) // Dynamic safe area + extra padding
-                .padding(.bottom, geometry.safeAreaInsets.bottom + 16) // Dynamic safe area + extra padding
+                .background(backgroundColor.opacity(0.97)) // Match the main background
             }
         }
-        .navigationBarBackButtonHidden(true)
         .onAppear {
             Task {
                 await viewModel.refreshChat()
             }
         }
     }
+    
+    // Fixed heights for messages area
+    private let minimizedMessagesHeight: CGFloat = 480
+    private let expandedMessagesHeight: CGFloat = 710
     
     // MARK: - View Components
     
@@ -92,7 +81,7 @@ struct ChatroomView: View {
     
     private var backButton: some View {
         Button(action: {
-            dismiss()
+            onBack()
         }) {
             Image(systemName: "chevron.left")
                 .font(.system(size: 20, weight: .semibold))
@@ -135,10 +124,19 @@ struct ChatroomView: View {
                     }
                 }
                 .padding(.horizontal, 24)
+                .padding(.top, 8) // Add some top padding
                 .onChange(of: viewModel.chats.count) {
                     // Auto-scroll to newest message when new messages arrive
                     if let lastMessage = sortedMessages.last {
                         withAnimation(.easeOut(duration: 0.3)) {
+                            proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
+                    }
+                }
+                .onChange(of: isExpanded) {
+                    // When expansion state changes, maintain scroll position to bottom
+                    if let lastMessage = sortedMessages.last {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }
                     }
@@ -153,7 +151,7 @@ struct ChatroomView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .layoutPriority(-1) // Give lower priority so input area gets its space first
+			.padding(.vertical)
         }
     }
     
@@ -199,7 +197,6 @@ struct ChatroomView: View {
             sendButton
         }
         .padding(.horizontal, 24)
-        .padding(.bottom, 20) // Increased bottom padding to ensure visibility above tab bar
     }
     
     private var userAvatarView: some View {
@@ -245,17 +242,5 @@ struct ChatroomView: View {
         .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .opacity(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.5 : 1.0)
     }
-    
-    private var bottomHandle: some View {
-        RoundedRectangle(cornerRadius: 2.5)
-            .fill(Color(red: 0.86, green: 0.84, blue: 0.84))
-            .frame(width: 134, height: 5)
-            .padding(.bottom, 8)
-    }
 }
 
-struct ChatRoomView_Previews: PreviewProvider {
-    static var previews: some View {
-        ChatroomView(activity: .mockSelfOwnedActivity, backgroundColor: figmaSoftBlue.opacity(0.90))
-    }
-}
