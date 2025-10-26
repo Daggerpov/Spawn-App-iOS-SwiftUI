@@ -131,7 +131,7 @@ struct ChatroomContentView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 8) // Add some top padding
-                .onChange(of: viewModel.chats.count) { _ in
+                .onChange(of: viewModel.chats.count) {
                     // Auto-scroll to newest message when new messages arrive
                     if let lastMessage = sortedMessages.last {
                         withAnimation(.easeOut(duration: 0.3)) {
@@ -139,7 +139,7 @@ struct ChatroomContentView: View {
                         }
                     }
                 }
-                .onChange(of: isExpanded) { _ in
+                .onChange(of: isExpanded) {
                     // When expansion state changes, maintain scroll position to bottom
                     if let lastMessage = sortedMessages.last {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -226,7 +226,7 @@ struct ChatroomContentView: View {
         .padding(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
         .background(.white)
         .cornerRadius(20)
-        .onChange(of: messageText) { _ in
+        .onChange(of: messageText) {
             if viewModel.creationMessage != nil {
                 viewModel.creationMessage = nil
             }
@@ -379,7 +379,7 @@ struct ChatroomView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .onChange(of: viewModel.chats.count) { _ in
+                .onChange(of: viewModel.chats.count) {
                     // Auto-scroll to newest message when new messages arrive
                     if let lastMessage = sortedMessages.last {
                         withAnimation(.easeOut(duration: 0.3)) {
@@ -467,7 +467,7 @@ struct ChatroomView: View {
         .padding(EdgeInsets(top: 10, leading: 16, bottom: 10, trailing: 16))
         .background(.white)
         .cornerRadius(20)
-        .onChange(of: messageText) { _ in
+        .onChange(of: messageText) {
             if viewModel.creationMessage != nil {
                 viewModel.creationMessage = nil
             }

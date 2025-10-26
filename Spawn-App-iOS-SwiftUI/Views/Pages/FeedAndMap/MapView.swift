@@ -42,8 +42,6 @@ struct MapView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
 
-    // Add state for tracking mode
-    @State private var userTrackingMode: MapUserTrackingMode = .none
     @State private var is3DMode: Bool = false // Only used on iOS 17+
 
     // MARK - Activity Description State Vars - now using global popup system
@@ -485,7 +483,6 @@ struct MapView: View {
 struct ActivityMapViewRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var is3DMode: Bool
-    var userTrackingMode: Binding<MapUserTrackingMode>
     var annotationItems: [FullFeedActivityDTO]
     var onActivityTap: (FullFeedActivityDTO) -> Void
     

@@ -151,7 +151,7 @@ struct InputFieldState {
 // MARK: - Input Field Validation Helper
 extension View {
     func validateInput(condition: Bool, errorMessage: String, state: Binding<InputFieldState>) -> some View {
-        self.onChange(of: condition) { isValid in
+        self.onChange(of: condition) { _, isValid in
             if !isValid {
                 state.wrappedValue.setError(errorMessage)
             } else {
