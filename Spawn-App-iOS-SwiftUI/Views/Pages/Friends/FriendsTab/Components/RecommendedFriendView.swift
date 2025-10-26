@@ -53,12 +53,6 @@ struct RecommendedFriendView: View {
                     Text("@\(friend.username ?? "username")")
                         .font(.onestRegular(size: 12))
                         .foregroundColor(Color.gray)
-//                    // Show mutual friends count if available
-//                    if let mutualCount = friend.mutualFriendCount, mutualCount > 0 {
-//                        Text("\(mutualCount) mutual friend\(mutualCount == 1 ? "" : "s")")
-//                            .font(.onestRegular(size: 12))
-//                            .foregroundColor(Color.gray)
-//                    }
                 }
                 .padding(.leading, 4)
             }

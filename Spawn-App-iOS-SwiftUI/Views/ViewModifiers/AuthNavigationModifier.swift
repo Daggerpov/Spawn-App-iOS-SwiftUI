@@ -43,7 +43,7 @@ struct AuthNavigationModifier: ViewModifier {
                 case .phoneNumberInput:
                     UserDetailsInputView(isOAuthUser: false)
                 case .verificationCode:
-                    VerificationCodeView(viewModel: userAuth)
+                    VerificationCodeView(userAuthViewModel: userAuth)
                 case .feedView:
                     if let loggedInSpawnUser = userAuth.spawnUser {
                         ContentView(user: loggedInSpawnUser)
