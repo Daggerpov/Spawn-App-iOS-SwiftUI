@@ -1,152 +1,204 @@
-# Components Folder Reorganization
+# Views Folder Reorganization - Page-Centric Structure
 
 ## Overview
-The `Views/Components/` folder has been reorganized to better segment components based on their functional area/module. This improves code organization, discoverability, and maintainability.
+The Views folder has been reorganized from a master `Components/` folder approach to a **page-centric structure** where components live close to the pages that use them, with truly shared utilities in a dedicated `Views/Shared/` folder.
 
 ## New Structure
 
 ```
-Views/Components/
-├── Activities/          # Activity-related components
-│   ├── ActivityBackButton.swift
-│   ├── ActivityMenuView.swift
-│   ├── ActivityNextStepButton.swift
-│   ├── ActivityShareDrawer.swift
-│   ├── ActivityTypeNameEditModal.swift
-│   ├── EnhancedActivityShareDrawer.swift
-│   ├── ParticipantLimitSelectionView.swift
-│   ├── ReportActivityDrawer.swift
-│   └── UserActivitiesSection.swift
-│
-├── Chat/                # Chat-related components
-│   ├── ChatMessageMenuView.swift
-│   └── ReportChatMessageDrawer.swift
-│
-├── Forms/               # Input and search components
-│   ├── ErrorInputComponents.swift
-│   ├── SearchBarButtonView.swift
-│   └── SearchBarView.swift
-│
-├── Friends/             # Friend/User-related components
-│   ├── FriendRequestSuccessDrawer.swift
-│   ├── FriendsTabMenuView.swift
-│   └── ReportUserDrawer.swift
-│
-├── Images/              # Image and caching components
-│   └── CachedAsyncImage.swift
-│
-├── Map/                 # Map-related components
-│   └── UnifiedMapView.swift
-│
-├── Notifications/       # Notification and error views
-│   ├── ErrorNotificationView.swift
-│   └── InAppNotificationView.swift
-│
-├── Pickers/             # Picker components
-│   └── ElegantEmojiPickerWrapper.swift
-│
-├── Shared/              # Shared/reusable UI components
-│   ├── Enhanced3DButton.swift
-│   ├── RiveAnimationView.swift
-│   └── StepIndicatorView.swift
-│
-├── Styles/              # Style modifiers
-│   └── InnerShadow.swift
-│
-├── TabBar/              # Tab bar components
-│   ├── TabBar.swift
-│   ├── TabBarView.swift
-│   ├── TabButtonLabelsView.swift
-│   ├── TabButtonStyle.swift
-│   ├── TabItemModel.swift
-│   ├── TabScrollContentView.swift
-│   └── Tabs.swift
-│
-└── Tutorial/            # Tutorial-related components
-    ├── TutorialActivityPreConfirmationView.swift
-    └── TutorialOverlayView.swift
+Views/
+├── Pages/
+│   ├── Activities/
+│   │   ├── components/                    # Activity-specific components
+│   │   │   ├── ActivityBackButton.swift
+│   │   │   ├── ActivityMenuView.swift
+│   │   │   ├── ActivityNextStepButton.swift
+│   │   │   ├── ActivityShareDrawer.swift
+│   │   │   ├── EnhancedActivityShareDrawer.swift
+│   │   │   ├── ActivityTypeNameEditModal.swift
+│   │   │   ├── ParticipantLimitSelectionView.swift
+│   │   │   ├── ReportActivityDrawer.swift
+│   │   │   └── UserActivitiesSection.swift
+│   │   ├── Chatroom/
+│   │   │   ├── components/                # Chat-specific components
+│   │   │   │   ├── ChatMessageMenuView.swift
+│   │   │   │   └── ReportChatMessageDrawer.swift
+│   │   │   ├── ChatMessageView.swift
+│   │   │   └── ChatroomView.swift
+│   │   ├── ActivityCreation/
+│   │   │   ├── Components/
+│   │   │   └── SubComponents/
+│   │   └── [other activity files and folders]
+│   ├── Friends/
+│   │   ├── components/                    # Friend-specific components
+│   │   │   ├── FriendRequestSuccessDrawer.swift
+│   │   │   ├── FriendsTabMenuView.swift
+│   │   │   └── ReportUserDrawer.swift
+│   │   └── [other friend pages]
+│   ├── Profile/
+│   │   ├── Components/
+│   │   └── [other profile pages]
+│   ├── AuthFlow/
+│   ├── FeedAndMap/
+│   └── Events/
+└── Shared/                               # Cross-cutting utilities
+    ├── Forms/
+    │   ├── ErrorInputComponents.swift
+    │   ├── SearchBarButtonView.swift
+    │   └── SearchBarView.swift
+    ├── Images/
+    │   └── CachedAsyncImage.swift
+    ├── Map/
+    │   └── UnifiedMapView.swift
+    ├── Notifications/
+    │   ├── ErrorNotificationView.swift
+    │   └── InAppNotificationView.swift
+    ├── Pickers/
+    │   └── ElegantEmojiPickerWrapper.swift
+    ├── UI/
+    │   ├── Enhanced3DButton.swift
+    │   ├── RiveAnimationView.swift
+    │   └── StepIndicatorView.swift
+    ├── Styles/
+    │   └── InnerShadow.swift
+    ├── TabBar/
+    │   ├── TabBar.swift
+    │   ├── TabBarView.swift
+    │   ├── TabButtonLabelsView.swift
+    │   ├── TabButtonStyle.swift
+    │   ├── TabItemModel.swift
+    │   ├── TabScrollContentView.swift
+    │   └── Tabs.swift
+    └── Tutorial/
+        ├── TutorialActivityPreConfirmationView.swift
+        └── TutorialOverlayView.swift
 ```
 
-## Migration Notes
+## Migration Summary
 
-### Import Path Changes
+### What Changed
 
-If you were importing components from the root `Components` folder, you'll need to update the import paths. However, **Swift's module system typically handles this automatically** as long as the files remain in the same module.
-
-### Example Updates (if needed)
-
-**Before:**
-```swift
-// These imports should still work as-is since they're in the same module
-import SwiftUI
+**OLD Structure:**
+```
+Views/Components/           # Master folder with 40+ components
+├── Activities/
+├── Chat/
+├── Friends/
+├── Forms/
+├── Images/
+├── Map/
+├── Notifications/
+├── Pickers/
+├── Shared/
+├── Styles/
+├── TabBar/
+└── Tutorial/
 ```
 
-**After:**
-The files are still in the same module, so no import changes are needed. The file paths in Xcode will be updated automatically.
+**NEW Structure:**
+- Page-specific components moved to `Pages/{PageName}/components/`
+- Shared utilities moved to `Views/Shared/{Category}/`
+- Components now live near the pages that use them
 
-### Xcode Project Navigation
+### Component Relocation Map
 
-In Xcode, the folder structure will reflect these changes. You can now easily find components by their functional area:
+#### To `Pages/Activities/components/`:
+- ActivityBackButton.swift
+- ActivityMenuView.swift
+- ActivityNextStepButton.swift
+- ActivityShareDrawer.swift
+- EnhancedActivityShareDrawer.swift
+- ActivityTypeNameEditModal.swift
+- ParticipantLimitSelectionView.swift
+- ReportActivityDrawer.swift
+- UserActivitiesSection.swift
 
-- Need an activity component? Look in `Components/Activities/`
-- Need a chat component? Look in `Components/Chat/`
-- Need a form element? Look in `Components/Forms/`
-- And so on...
+#### To `Pages/Activities/Chatroom/components/`:
+- ChatMessageMenuView.swift
+- ReportChatMessageDrawer.swift
 
-## Benefits
+#### To `Pages/Friends/components/`:
+- FriendRequestSuccessDrawer.swift
+- FriendsTabMenuView.swift
+- ReportUserDrawer.swift
 
-1. **Improved Discoverability**: Components are now grouped by their functional purpose
-2. **Better Maintainability**: Related components are co-located
-3. **Reduced Cognitive Load**: Smaller, focused directories instead of 35+ files in one folder
-4. **Scalability**: Easier to add new components to the appropriate category
-5. **Clearer Architecture**: The folder structure now reflects the app's architecture
+#### To `Views/Shared/Forms/`:
+- ErrorInputComponents.swift
+- SearchBarButtonView.swift
+- SearchBarView.swift
 
-## Component Categories Explained
+#### To `Views/Shared/Images/`:
+- CachedAsyncImage.swift
 
-### Activities
-Components specifically used for activity creation, display, management, and interaction.
+#### To `Views/Shared/Map/`:
+- UnifiedMapView.swift
 
-### Chat
-Components for chat message display, reporting, and management.
+#### To `Views/Shared/Notifications/`:
+- ErrorNotificationView.swift
+- InAppNotificationView.swift
 
-### Forms
-Input components, search bars, and form-related UI elements.
+#### To `Views/Shared/Pickers/`:
+- ElegantEmojiPickerWrapper.swift
 
-### Friends
-Components for friend management, friend requests, and user interactions.
+#### To `Views/Shared/UI/`:
+- Enhanced3DButton.swift
+- RiveAnimationView.swift
+- StepIndicatorView.swift
 
-### Images
-Image loading, caching, and display components.
+#### To `Views/Shared/Styles/`:
+- InnerShadow.swift
 
-### Map
-Map-related views and components.
+#### To `Views/Shared/TabBar/`:
+- All 7 tab bar files
 
-### Notifications
-Error messages, in-app notifications, and alert components.
+#### To `Views/Shared/Tutorial/`:
+- TutorialActivityPreConfirmationView.swift
+- TutorialOverlayView.swift
 
-### Pickers
-Various picker components (emoji, date, etc.).
+## Import Path Changes
 
-### Shared
-Reusable UI components used across multiple features (buttons, indicators, animations).
+**No import changes required!** Swift's module system means all files remain in the same target, so no import statements need to be updated. The files are simply reorganized within the project structure.
 
-### Styles
-View modifiers and styling utilities.
+## Benefits of This Reorganization
 
-### TabBar
-Navigation tab bar and related components.
+1. **Page-Centric Organization**: Components live near the pages that use them, making it easier to understand relationships
+2. **Clear Separation**: Truly shared utilities (forms, images, notifications) are clearly distinguished in `Views/Shared/`
+3. **Better Scalability**: New pages can easily add their own `components/` subfolder
+4. **Reduced Cognitive Load**: Instead of one master folder with 40+ files, components are organized by feature
+5. **Intuitive Navigation**: Find components by navigating to the page that uses them
+6. **Future-Proof**: Easy to add new pages and components following this pattern
 
-### Tutorial
-Onboarding and tutorial overlay components.
+## Naming Conventions
 
-## Future Considerations
+- **Page-specific component folders**: lowercase `components/` (following Swift folder conventions)
+- **Shared folders**: Capitalized category names (e.g., `Forms/`, `Images/`, `UI/`)
+- **File names**: Follow existing Swift naming conventions (PascalCase for types)
 
-As the app grows, consider:
-- Further subdividing large categories (e.g., splitting Activities into subfolders)
-- Creating a `Shared/Buttons/` subfolder if button components proliferate
-- Adding a `Shared/Cards/` folder for card-style components
-- Creating module-specific component folders as features become more complex
+## Guidelines for Future Development
+
+### When to Create a New Component
+
+1. **Page-Specific Component**: Create in `Pages/{PageName}/components/`
+   - Used only within one page/section
+   - Specific to that page's functionality
+   - Example: `ActivityBackButton.swift` → `Pages/Activities/components/`
+
+2. **Sub-Page Component**: Create in `Pages/{PageName}/{SubPage}/components/`
+   - Used only within a sub-section of a page
+   - Example: Chat components → `Pages/Activities/Chatroom/components/`
+
+3. **Shared Utility**: Create in `Views/Shared/{Category}/`
+   - Used across multiple pages/sections
+   - General-purpose infrastructure
+   - Example: `CachedAsyncImage.swift` → `Views/Shared/Images/`
+
+### Creating New Pages
+
+When creating a new page:
+1. Create the page folder under `Views/Pages/{NewPageName}/`
+2. Create a `components/` subfolder if needed
+3. Place page-specific components in the `components/` folder
+4. Only move components to `Shared/` if they're truly reused across pages
 
 ## Date
-Reorganized: [Current Date]
-
+Reorganized: October 26, 2025
