@@ -47,8 +47,7 @@ struct ActivityTypeView: View {
                 }
                 
                 if viewModel.isLoading {
-                    ProgressView("Loading activity types...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    LoadingStateView(message: "Loading activity types...")
                 } else if viewModel.activityTypes.isEmpty {
                     emptyStateSection
                 } else {

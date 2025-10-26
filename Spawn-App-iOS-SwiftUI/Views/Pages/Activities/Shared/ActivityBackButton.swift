@@ -1,15 +1,12 @@
 import SwiftUI
 
+/// Wrapper around UnifiedBackButton for backwards compatibility
+/// Now uses the unified button system (DRY refactoring)
 struct ActivityBackButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
-            Image(systemName: "chevron.left")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundColor(universalAccentColor)
-        }
-        .buttonStyle(PlainButtonStyle())
+        UnifiedBackButton(action: action)
     }
 }
 

@@ -57,9 +57,8 @@ struct CircularButtonStyling: ViewModifier {
 			)
 			.overlay(
 				Button(action: {
-					// Haptic feedback
-					let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-					impactGenerator.impactOccurred()
+					// Unified haptic feedback
+					HapticFeedbackService.shared.medium()
 					
 					// Execute action with slight delay for animation
 					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -91,8 +90,7 @@ struct CircularButtonStyling: ViewModifier {
 							scale = 0.95
 							
 							// Additional haptic feedback for press down
-							let selectionGenerator = UISelectionFeedbackGenerator()
-							selectionGenerator.selectionChanged()
+							HapticFeedbackService.shared.selection()
 						}
 					}
 					.onEnded { _ in

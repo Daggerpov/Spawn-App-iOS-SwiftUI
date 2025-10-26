@@ -35,16 +35,7 @@ struct ActivityListView: View {
         ScrollView {
             LazyVStack(spacing: 14) {
                 if viewModel.activities.isEmpty {
-                    Image("NoActivitiesFound")
-                        .resizable()
-                        .frame(width: 125, height: 125)
-                    Text("No Activities Found")
-                        .font(.onestSemiBold(size:32))
-                        .foregroundColor(universalAccentColor)
-                    Text("We couldn't find any activities nearby.\nStart one yourself and be spontaneous!")
-                        .font(.onestRegular(size: 16))
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(figmaBlack300)
+                    EmptyStateView.noActivities()
                 } else {
                     ForEach(0..<min(bound, viewModel.activities.count), id: \.self) { activityIndex in
                         ActivityCardView(
