@@ -57,7 +57,7 @@ struct FriendsView: View {
                 handleDeepLinkedProfile(profileId)
             }
         }
-        .onChange(of: shouldShowDeepLinkedProfile) { shouldShow in
+        .onChange(of: shouldShowDeepLinkedProfile) { _, shouldShow in
             if shouldShow, let profileId = deepLinkedProfileId {
                 handleDeepLinkedProfile(profileId)
             }

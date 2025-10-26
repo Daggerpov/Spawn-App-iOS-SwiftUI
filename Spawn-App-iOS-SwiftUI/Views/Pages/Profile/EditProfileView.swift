@@ -156,7 +156,7 @@ struct EditProfileView: View {
                 instagramLink = socialMedia.instagramUsername ?? ""
             }
         }
-        .onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
+        .onChange(of: profileViewModel.userSocialMedia) { _, newSocialMedia in
             // Update text fields whenever social media data changes
             if let socialMedia = newSocialMedia {
                 whatsappLink = socialMedia.whatsappNumber ?? ""
