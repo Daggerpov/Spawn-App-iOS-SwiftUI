@@ -107,7 +107,7 @@ struct FriendSearchView: View {
                         recommendedFriendsView
                     }
                 }
-                .padding(.top, 16)
+                .padding(.vertical, 16)
             }
             .navigationBarHidden(true)
             .onAppear {
@@ -170,6 +170,7 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .padding(.bottom, viewModel.searchResults.isEmpty ? 0 : 100)
         .background(universalBackgroundColor)
     }
     
@@ -195,6 +196,7 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .padding(.bottom, viewModel.filteredFriends.isEmpty ? 0 : 100)
         .background(universalBackgroundColor)
     }
     
@@ -221,6 +223,7 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .padding(.bottom, viewModel.recentlySpawnedWith.isEmpty ? 0 : 100)
         .background(universalBackgroundColor)
     }
     
@@ -246,6 +249,7 @@ struct FriendSearchView: View {
                 }
             }
         }
+        .padding(.bottom, viewModel.recommendedFriends.isEmpty ? 0 : 100)
         .background(universalBackgroundColor)
     }
 }
