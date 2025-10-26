@@ -42,13 +42,11 @@ struct ErrorNotificationView: View {
     }
 }
 
-struct ErrorNotificationView_Previews: PreviewProvider {
-    static var previews: some View {
-        ErrorNotificationView(
-            title: "Alert",
-            message: "This link has expired or is no longer available"
-        )
-        .padding()
-        .background(Color(red: 0.12, green: 0.12, blue: 0.12))
-    }
-} 
+#Preview {
+    ErrorNotificationView(
+        title: "Alert",
+        message: "This link has expired or is no longer available"
+    )
+    .padding()
+    .background(Color(red: 0.12, green: 0.12, blue: 0.12))
+}

@@ -262,8 +262,6 @@ struct LoginInputView: View {
     }
 }
 
-struct WelcomeBackView_Previews: PreviewProvider {
-    static var previews: some View {
-        LoginInputView()
-    }
+#Preview {
+    LoginInputView()
 }
