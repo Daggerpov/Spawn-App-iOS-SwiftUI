@@ -46,7 +46,6 @@
 		AA40F16B2E579B7D008EDE5D /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/Components/SearchBarView.swift,
 				Views/Components/TabBar/TabBar.swift,
 				Views/Components/TabBar/TabBarView.swift,
 				Views/Components/TabBar/TabButtonLabelsView.swift,
@@ -60,7 +59,6 @@
 		AA40F16C2E579B7D008EDE5D /* Exceptions for "Spawn-App-iOS-SwiftUI" folder in "Spawn-App-iOS-SwiftUIUITests" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Views/Components/SearchBarView.swift,
 				Views/Components/TabBar/TabBar.swift,
 				Views/Components/TabBar/TabBarView.swift,
 				Views/Components/TabBar/TabButtonLabelsView.swift,
