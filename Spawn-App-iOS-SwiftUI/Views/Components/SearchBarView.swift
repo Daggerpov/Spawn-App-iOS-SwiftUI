@@ -25,7 +25,7 @@ struct SearchBarView: View {
                 .font(.onestRegular(size: 16))
                 .foregroundColor(universalAccentColor)
                 .focused($isTextFieldFocused)
-                .onChange(of: searchText) { newValue in
+                .onChange(of: searchText) { _, newValue in
                     isSearching = !newValue.isEmpty
                 }
             

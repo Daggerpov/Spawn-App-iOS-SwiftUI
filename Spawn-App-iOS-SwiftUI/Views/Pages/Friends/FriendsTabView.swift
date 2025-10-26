@@ -219,7 +219,7 @@ struct FriendsTabView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
-                    ForEach(viewModel.recommendedFriends) { friend in
+                    ForEach(viewModel.recommendedFriends.prefix(3)) { friend in
                         RecommendedFriendView(
                             viewModel: viewModel,
                             friend: friend,

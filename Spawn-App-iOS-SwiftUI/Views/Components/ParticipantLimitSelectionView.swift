@@ -86,13 +86,13 @@ struct ParticipantLimitSelectionView: View {
                 TextField("Enter number", text: $customLimit)
                     .keyboardType(.numberPad)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onChange(of: customLimit, perform: { newValue in
+                    .onChange(of: customLimit) { _, newValue in
                         if let number = Int(newValue), number > 0 {
                             selectedLimit = number
                         } else if newValue.isEmpty {
                             selectedLimit = nil
                         }
-                    })
+                    }
                     .padding(.horizontal)
             }
         }

@@ -68,7 +68,7 @@ struct FeedView: View {
                     await viewModel.fetchAllData()
                 }
             }
-            .onChange(of: showingActivityDescriptionPopup) { isShowing in
+            .onChange(of: showingActivityDescriptionPopup) { _, isShowing in
                 if isShowing, let activity = activityInPopup, let color = colorInPopup {
                     // Post notification to show global popup
                     NotificationCenter.default.post(

@@ -280,23 +280,42 @@ struct ActivityCardPopupView: View {
 	var mapAndLocationView: some View {
 		ZStack(alignment: .bottom) {
 			// Map background
-			Map(coordinateRegion: $region, annotationItems: [mapViewModel]) {
-				pin in
-				MapAnnotation(coordinate: pin.coordinate) {
-					Image(systemName: "mappin")
-						.font(.title)
-						.foregroundColor(.red)
+			if #available(iOS 17.0, *) {
+				Map(position: .constant(.region(region))) {
+					Annotation("", coordinate: mapViewModel.coordinate) {
+						Image(systemName: "mappin")
+							.font(.title)
+							.foregroundColor(.red)
+					}
 				}
+				.frame(height: 200)
+				.clipShape(RoundedRectangle(cornerRadius: 12))
+				.background(
+					RoundedRectangle(cornerRadius: 12)
+						.fill(
+							Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
+						)
+				)
+				.allowsHitTesting(false) // Disable map interaction to prevent gesture conflicts
+			} else {
+				Map(coordinateRegion: $region, annotationItems: [mapViewModel]) {
+					pin in
+					MapAnnotation(coordinate: pin.coordinate) {
+						Image(systemName: "mappin")
+							.font(.title)
+							.foregroundColor(.red)
+					}
+				}
+				.frame(height: 200)
+				.clipShape(RoundedRectangle(cornerRadius: 12))
+				.background(
+					RoundedRectangle(cornerRadius: 12)
+						.fill(
+							Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
+						)
+				)
+				.allowsHitTesting(false) // Disable map interaction to prevent gesture conflicts
 			}
-			.frame(height: 200)
-			.clipShape(RoundedRectangle(cornerRadius: 12))
-			.background(
-				RoundedRectangle(cornerRadius: 12)
-					.fill(
-						Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
-					)
-			)
-			.allowsHitTesting(false) // Disable map interaction to prevent gesture conflicts
 
 			// Location info overlay at bottom
 			locationOverlay

@@ -74,7 +74,7 @@ struct ProfileCalendarView: View {
 				}
 			}
 		)
-		.onChange(of: showActivityDetails) { isShowing in
+		.onChange(of: showActivityDetails) { _, isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
 				let activityColor = getActivityColor(for: activity)
 				

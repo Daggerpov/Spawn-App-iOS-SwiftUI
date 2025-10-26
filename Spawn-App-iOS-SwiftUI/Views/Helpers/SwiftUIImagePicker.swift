@@ -32,7 +32,7 @@ struct SwiftUIImagePicker: View {
             }
         }
         .photosPicker(isPresented: $isPresentingPhotoPicker, selection: $photosPickerItem, matching: .images)
-        .onChange(of: photosPickerItem) { newItem in
+        .onChange(of: photosPickerItem) { _, newItem in
             if newItem != nil {
                 Task {
                     if let data = try? await newItem?.loadTransferable(type: Data.self),

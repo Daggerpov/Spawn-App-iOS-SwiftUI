@@ -85,7 +85,7 @@ struct ProfileView: View {
 		profileContent
 			.background(universalBackgroundColor.ignoresSafeArea())
 			.background(universalBackgroundColor)
-		.onChange(of: editingState) { newState in
+		.onChange(of: editingState) { _, newState in
 			switch newState {
 			case .save:
 				// Save original interests when entering edit mode
@@ -190,18 +190,18 @@ struct ProfileView: View {
 				}
 			}
 		}
-		.onChange(of: userAuth.spawnUser) { newUser in
+		.onChange(of: userAuth.spawnUser) { _, newUser in
 			// Update local state whenever spawnUser changes
 			refreshUserData()
 		}
-		.onChange(of: profileViewModel.userSocialMedia) { newSocialMedia in
+		.onChange(of: profileViewModel.userSocialMedia) { _, newSocialMedia in
 			// Update local state when social media changes
 			if let socialMedia = newSocialMedia {
 				whatsappLink = socialMedia.whatsappLink ?? ""
 				instagramLink = socialMedia.instagramLink ?? ""
 			}
 		}
-		.onChange(of: profileViewModel.friendshipStatus) { newStatus in
+		.onChange(of: profileViewModel.friendshipStatus) { _, newStatus in
 			// Fetch activities when friendship status changes to friends
 			if newStatus == .friends {
 				Task {
@@ -211,7 +211,7 @@ struct ProfileView: View {
 				}
 			}
 		}
-		.onChange(of: navigateToDayActivities) { newValue in
+		.onChange(of: navigateToDayActivities) { _, newValue in
 			if newValue {
 				// Ensure navigation happens on main thread
 				DispatchQueue.main.async {
@@ -669,7 +669,7 @@ struct ProfileView: View {
 				EmptyView() // Replaced with global popup system
 			}
 		}
-		.onChange(of: showActivityDetails) { isShowing in
+		.onChange(of: showActivityDetails) { _, isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
 				let activityColor = getActivityColor(for: activity.id)
 				
@@ -1265,7 +1265,7 @@ struct ImagePickerModifier: ViewModifier {
 				SwiftUIImagePicker(selectedImage: $selectedImage)
 					.ignoresSafeArea()
 			}
-			.onChange(of: selectedImage) { newImage in
+			.onChange(of: selectedImage) { _, newImage in
 				if newImage != nil {
 					// Force UI update when image changes
 					DispatchQueue.main.async {

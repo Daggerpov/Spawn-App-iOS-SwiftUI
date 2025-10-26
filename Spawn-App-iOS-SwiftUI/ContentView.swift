@@ -76,11 +76,11 @@ struct ContentView: View {
                     .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 }
             }
-            .onChange(of: selectedTabsEnum) { newTabsValue in
+            .onChange(of: selectedTabsEnum) { _, newTabsValue in
                 // Keep TabType in sync with Tabs enum
                 selectedTab = newTabsValue.toTabType
             }
-            .onChange(of: selectedTab) { newTabTypeValue in
+            .onChange(of: selectedTab) { _, newTabTypeValue in
                 // Keep Tabs enum in sync with TabType (for programmatic navigation)
                 selectedTabsEnum = Tabs(from: newTabTypeValue)
             }
@@ -113,12 +113,12 @@ struct ContentView: View {
                     await friendsViewModel.fetchIncomingFriendRequests()
                 }
             }
-            .onChange(of: deepLinkManager.shouldShowActivity) { shouldShow in
+            .onChange(of: deepLinkManager.shouldShowActivity) { _, shouldShow in
                 if shouldShow, let activityId = deepLinkManager.activityToShow {
                     handleDeepLinkActivity(activityId)
                 }
             }
-            .onChange(of: deepLinkManager.shouldShowProfile) { shouldShow in
+            .onChange(of: deepLinkManager.shouldShowProfile) { _, shouldShow in
                 if shouldShow, let profileId = deepLinkManager.profileToShow {
                     handleDeepLinkProfile(profileId)
                 }

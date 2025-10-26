@@ -787,7 +787,7 @@ struct LocationPickerView: View {
 					TextField("Where at?", text: $searchText)
 						.foregroundColor(universalAccentColor)
 						.font(.system(size: 16))
-						.onChange(of: searchText) { _ in
+						.onChange(of: searchText) {
 							searchLocations()
 						}
 				}

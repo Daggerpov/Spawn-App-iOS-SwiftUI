@@ -116,7 +116,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 		WindowGroup {
 			rootView
 				.preferredColorScheme(themeService.colorScheme.colorScheme)
-				.onChange(of: scenePhase) { phase in
+				.onChange(of: scenePhase) { _, phase in
 					handleScenePhaseChange(phase)
 				}
 		}

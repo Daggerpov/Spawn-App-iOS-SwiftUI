@@ -42,8 +42,6 @@ struct MapView: View {
         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
     )
 
-    // Add state for tracking mode
-    @State private var userTrackingMode: MapUserTrackingMode = .none
     @State private var is3DMode: Bool = false // Only used on iOS 17+
 
     // MARK - Activity Description State Vars - now using global popup system
@@ -265,24 +263,24 @@ struct MapView: View {
                     }
                 }
             }
-            .onChange(of: locationManager.locationUpdated, perform: { _ in
+            .onChange(of: locationManager.locationUpdated) {
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
                    abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
                    abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
                     adjustRegionToUserLocation()
                 }
-            })
-            .onChange(of: viewModel.activities, perform: { _ in
+            }
+            .onChange(of: viewModel.activities) {
                 if locationManager.userLocation != nil {
                     adjustRegionForActivities()
                 }
-            })
-            .onChange(of: locationManager.locationError, perform: { error in
+            }
+            .onChange(of: locationManager.locationError) { _, error in
                 if let error = error {
                     locationErrorMessage = error
                     showLocationError = true
                 }
-            })
+            }
             .alert("Location Error", isPresented: $showLocationError) {
                 Button("OK") {
                     showLocationError = false
@@ -485,7 +483,6 @@ struct MapView: View {
 struct ActivityMapViewRepresentable: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var is3DMode: Bool
-    var userTrackingMode: Binding<MapUserTrackingMode>
     var annotationItems: [FullFeedActivityDTO]
     var onActivityTap: (FullFeedActivityDTO) -> Void
     

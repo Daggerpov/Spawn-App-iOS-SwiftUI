@@ -59,10 +59,10 @@ struct MessageInputView: View {
                             .stroke(borderColor, lineWidth: 1)
                     )
                     .focused($textFieldFocused)
-                    .onChange(of: textFieldFocused) { newValue in
+                    .onChange(of: textFieldFocused) { _, newValue in
                         isFocused = newValue
                     }
-                    .onChange(of: isFocused) { newValue in
+                    .onChange(of: isFocused) { _, newValue in
                         textFieldFocused = newValue
                     }
                     .onSubmit {
@@ -298,7 +298,7 @@ struct FeedbackView: View {
                     
                     // Image picker
                     ImagePickerView(selectedItem: $selectedItem, selectedImage: $selectedImage)
-                        .onChange(of: selectedItem) { newItem in
+                        .onChange(of: selectedItem) { _, newItem in
                             loadTransferable(from: newItem)
                         }
                     

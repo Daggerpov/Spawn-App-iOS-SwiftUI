@@ -152,12 +152,12 @@ struct ActivityEditView: View {
                     isTitleFieldFocused = true
                 }
             }
-            .onChange(of: editedTitle) { _ in
+            .onChange(of: editedTitle) {
                 updateHasChanges()
                 // Apply optimistic update immediately
                 optimisticallyUpdateActivity()
             }
-            .onChange(of: editedIcon) { _ in
+            .onChange(of: editedIcon) {
                 updateHasChanges()
                 // Apply optimistic update immediately
                 optimisticallyUpdateActivity()

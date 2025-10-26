@@ -42,7 +42,7 @@ struct ActivityTypeEditView: View {
             ElegantEmojiPickerView(selectedEmoji: $editedIcon, isPresented: $showEmojiPicker)
         }
 
-        .onChange(of: hasChanges) { newValue in
+        .onChange(of: hasChanges) { _, newValue in
             print("DEBUG: hasChanges updated to: \(newValue)")
         }
         .onAppear {
@@ -52,11 +52,11 @@ struct ActivityTypeEditView: View {
                 isTitleFieldFocused = true
             }
         }
-        .onChange(of: editedTitle) { newValue in
+        .onChange(of: editedTitle) { _, newValue in
             print("DEBUG: editedTitle changed to: \(newValue)")
             updateHasChanges()
         }
-        .onChange(of: editedIcon) { newValue in
+        .onChange(of: editedIcon) { _, newValue in
             print("DEBUG: editedIcon changed to: \(newValue)")
             updateHasChanges()
         }
@@ -146,7 +146,7 @@ struct ActivityTypeEditView: View {
                     .onAppear {
                         print("DEBUG: Icon display onAppear - editedIcon: \(editedIcon)")
                     }
-                    .onChange(of: editedIcon) { newValue in
+                    .onChange(of: editedIcon) { _, newValue in
                         print("DEBUG: Icon display onChange - editedIcon: \(newValue)")
                     }
             }
@@ -221,7 +221,7 @@ struct ActivityTypeEditView: View {
             .onAppear {
                 print("DEBUG: Save button appeared - isButtonEnabled: \(isButtonEnabled)")
             }
-            .onChange(of: isButtonEnabled) { newValue in
+            .onChange(of: isButtonEnabled) { _, newValue in
                 print("DEBUG: Save button enabled state changed to: \(newValue)")
             }
             

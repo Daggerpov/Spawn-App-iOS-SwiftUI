@@ -68,7 +68,7 @@ struct RegisterInputView: View {
                             .textFieldStyle(ErrorTextFieldStyle(hasError: isEmailTaken))
                             .textContentType(.emailAddress)
                             .textInputAutocapitalization(.never)
-                            .onChange(of: emailInput) { newValue in
+                            .onChange(of: emailInput) { _, newValue in
                                 // Simulate email taken error for demo (replace with real check)
                                 if newValue.lowercased() == "user@example.com" {
                                     isEmailTaken = true

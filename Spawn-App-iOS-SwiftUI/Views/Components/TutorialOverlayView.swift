@@ -78,7 +78,7 @@ struct TutorialOverlayView: View {
                 }
             }
         }
-        .onChange(of: tutorialViewModel.tutorialState) { newState in
+        .onChange(of: tutorialViewModel.tutorialState) { _, newState in
             if !newState.shouldShowTutorialOverlay {
                 withAnimation(.easeInOut(duration: 0.3)) {
                     showCallout = false

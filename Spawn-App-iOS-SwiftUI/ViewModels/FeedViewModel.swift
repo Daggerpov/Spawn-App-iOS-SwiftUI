@@ -22,6 +22,9 @@ class FeedViewModel: ObservableObject {
     
     // Periodic refresh timer
     private var refreshTimer: Timer?
+    
+    // Periodic local cleanup timer for expired activities
+    private var cleanupTimer: Timer?
 
     // MARK: - Computed Properties
     
@@ -44,7 +47,7 @@ class FeedViewModel: ObservableObject {
         
         // Initialize the activity type view model
         self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, apiService: apiService)
-        
+
         // Subscribe to activity type changes to update the UI
         activityTypeViewModel.$activityTypes
             .receive(on: DispatchQueue.main)
@@ -119,10 +122,14 @@ class FeedViewModel: ObservableObject {
         
         // Start periodic refresh timer (every 2 minutes)
         startPeriodicRefresh()
+        
+        // Start periodic local cleanup timer (every 30 seconds)
+        startPeriodicCleanup()
     }
     
     deinit {
         stopPeriodicRefresh()
+        stopPeriodicCleanup()
     }
     
     // MARK: - Periodic Refresh
@@ -145,6 +152,34 @@ class FeedViewModel: ObservableObject {
     private func refreshActivitiesInBackground() async {
         print("🔄 FeedViewModel: Performing periodic activity refresh")
         await fetchActivitiesFromAPI()
+    }
+    
+    private func startPeriodicCleanup() {
+        stopPeriodicCleanup() // Stop any existing timer
+        
+        // Run cleanup every 30 seconds to remove expired activities locally
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                let filteredActivities = self.filterExpiredActivities(self.activities)
+                
+                // Only update if activities were actually filtered out
+                if filteredActivities.count < self.activities.count {
+                    print("🧹 FeedViewModel: Removed \(self.activities.count - filteredActivities.count) expired activities from view")
+                    self.activities = filteredActivities
+                    
+                    // Also cleanup the cache
+                    self.appCache.cleanupExpiredActivities()
+                }
+            }
+        }
+    }
+    
+    private func stopPeriodicCleanup() {
+        cleanupTimer?.invalidate()
+        cleanupTimer = nil
     }
 
     func fetchAllData() async {
@@ -210,13 +245,57 @@ class FeedViewModel: ObservableObject {
         }
     }
     
-    /// Filters out expired activities based on server-side expiration status.
-    /// This method now relies on the back-end's isExpired field as the single source of truth
-    /// for consistent expiration logic across all clients.
+    /// Filters out expired activities based on server-side expiration status with client-side fallback.
+    /// Primarily uses the backend's isExpired field, but also performs client-side validation
+    /// as a fallback in case the backend cache has stale expiration data.
     private func filterExpiredActivities(_ activities: [FullFeedActivityDTO]) -> [FullFeedActivityDTO] {
+        let now = Date()
+        
         return activities.filter { activity in
-            // Use server-side expiration status as single source of truth
-            return activity.isExpired != true
+            // First check: Use server-side expiration status if explicitly set to true
+            if activity.isExpired == true {
+                return false // this bool means to filter it out
+            }
+            
+            // Second check: Client-side validation as fallback for stale cache data
+            // This ensures we filter out activities that should be expired even if backend cache is stale
+            
+            // If activity has an explicit end time, check if it has passed
+            if let endTime = activity.endTime {
+                if endTime < now {
+                    return false
+                }
+            } else {
+                // For activities without end time, they expire at midnight (12 AM) of the following day
+                // Use the client timezone if available, otherwise fall back to local timezone
+                if let createdAt = activity.createdAt {
+                    let calendar = Calendar.current
+                    let timeZone: TimeZone
+                    
+                    if let clientTimezone = activity.clientTimezone,
+                       let tz = TimeZone(identifier: clientTimezone) {
+                        timeZone = tz
+                    } else {
+                        timeZone = .current
+                    }
+                    
+                    // Get the date the activity was created in the appropriate timezone
+                    var calendarWithTZ = calendar
+                    calendarWithTZ.timeZone = timeZone
+                    
+                    let createdDate = calendarWithTZ.startOfDay(for: createdAt)
+                    
+                    // Calculate midnight (12 AM) of the following day
+                    if let expirationTime = calendarWithTZ.date(byAdding: .day, value: 1, to: createdDate) {
+                        if now > expirationTime {
+                            return false
+                        }
+                    }
+                }
+            }
+            
+            // Activity is not expired -> don't filter
+            return true
         }
     }
 }

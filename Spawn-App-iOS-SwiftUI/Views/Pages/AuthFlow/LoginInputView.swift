@@ -73,7 +73,7 @@ struct LoginInputView: View {
                         
                         TextField("Enter your email or username", text: $usernameOrEmail)
                             .textFieldStyle(ErrorTextFieldStyle(hasError: hasLoginError))
-                            .onChange(of: usernameOrEmail) { _ in
+                            .onChange(of: usernameOrEmail) {
                                 hasLoginError = false
                             }
                             .textInputAutocapitalization(.never)
@@ -87,7 +87,7 @@ struct LoginInputView: View {
                         
                         SecureField("Enter your password", text: $password)
                             .textFieldStyle(ErrorSecureFieldStyle(hasError: hasLoginError))
-                            .onChange(of: password) { _ in
+                            .onChange(of: password) {
                                 hasLoginError = false
                             }
                     }

@@ -146,7 +146,7 @@ struct UserInfoInputView: View {
 				hasError: usernameErrorState.hasError,
 				errorMessage: usernameErrorState.errorMessage
 			)
-			.onChange(of: username) { newValue in
+			.onChange(of: username) { _, newValue in
 				handleUsernameChange(newValue)
 			}
 		}

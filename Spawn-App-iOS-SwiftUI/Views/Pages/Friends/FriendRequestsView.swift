@@ -41,7 +41,7 @@ struct FriendRequestsView: View {
             }
         }
         .overlay(successDrawerOverlay)
-        .onChange(of: showSuccessDrawer) { isPresented in
+        .onChange(of: showSuccessDrawer) { _, isPresented in
             if !isPresented && !isPreviewMode {
                 Task { await viewModel.fetchFriendRequests() }
             }
