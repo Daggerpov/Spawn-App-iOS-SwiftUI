@@ -32,7 +32,6 @@ struct FriendsTabView: View {
 	@State private var selectedFriend: FullFriendUserDTO?
 	@State private var blockReason: String = ""
 	@State private var navigateToProfile: Bool = false
-	@State private var showAllRecommendedFriends: Bool = false
 
 	init(user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil) {
 		self.user = user
@@ -177,10 +176,8 @@ struct FriendsTabView: View {
     }
     
     var showAllRecommendedButton: some View {
-        Button(action: {
-            showAllRecommendedFriends.toggle()
-        }) {
-            Text(showAllRecommendedFriends ? "Show Less" : "Show All")
+        NavigationLink(destination: FriendSearchView(userId: user.id, displayMode: .recommendedFriends)) {
+            Text("Show All")
                 .font(.onestRegular(size: 14))
                 .foregroundColor(universalSecondaryColor)
         }
@@ -216,15 +213,13 @@ struct FriendsTabView: View {
                         .font(.onestMedium(size: 16))
                         .foregroundColor(universalAccentColor)
                     Spacer()
-                    if viewModel.recommendedFriends.count > 3 {
-                        showAllRecommendedButton
-                    }
+                    showAllRecommendedButton
                 }
                 .padding(.leading, 5)
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 16) {
-                    ForEach(Array(showAllRecommendedFriends ? viewModel.recommendedFriends : Array(viewModel.recommendedFriends.prefix(3)))) { friend in
+                    ForEach(viewModel.recommendedFriends.prefix(3)) { friend in
                         RecommendedFriendView(
                             viewModel: viewModel,
                             friend: friend,
