@@ -73,22 +73,22 @@ struct NotificationSettingsView: View {
                             }
                         } else {
                             Toggle("Friend Requests", isOn: $notificationService.friendRequestsEnabled)
-                                .onChange(of: notificationService.friendRequestsEnabled) {
+                                .onChange(of: notificationService.friendRequestsEnabled) { _ in
                                     updatePreferences()
                                 }
                             
                             Toggle("Activity Invites", isOn: $notificationService.activityInvitesEnabled)
-                                .onChange(of: notificationService.activityInvitesEnabled) {
+                                .onChange(of: notificationService.activityInvitesEnabled) { _ in
                                     updatePreferences()
                                 }
                             
                             Toggle("Activity Updates", isOn: $notificationService.activityUpdatesEnabled)
-                                .onChange(of: notificationService.activityUpdatesEnabled) {
+                                .onChange(of: notificationService.activityUpdatesEnabled) { _ in
                                     updatePreferences()
                                 }
                             
                             Toggle("Chat Messages", isOn: $notificationService.chatMessagesEnabled)
-                                .onChange(of: notificationService.chatMessagesEnabled) {
+                                .onChange(of: notificationService.chatMessagesEnabled) { _ in
                                     updatePreferences()
                                 }
                         }
