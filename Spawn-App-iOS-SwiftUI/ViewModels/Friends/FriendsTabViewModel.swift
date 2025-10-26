@@ -639,4 +639,95 @@ class FriendsTabViewModel: ObservableObject {
     func isFriend(userId: UUID) -> Bool {
         return friends.contains { $0.id == userId }
     }
+    
+    // MARK: - Profile Sharing
+    
+    /// Copy profile URL to clipboard
+    func copyProfileURL(for user: Nameable) {
+        ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
+            let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
+            
+            // Clear the pasteboard first to avoid any contamination
+            UIPasteboard.general.items = []
+            
+            // Set only the URL string to the pasteboard
+            UIPasteboard.general.string = url.absoluteString
+            
+            // Show notification toast
+            DispatchQueue.main.async {
+                InAppNotificationManager.shared.showNotification(
+                    title: "Link copied to clipboard",
+                    message: "Profile link has been copied to your clipboard",
+                    type: .success,
+                    duration: 5.0
+                )
+            }
+        }
+    }
+    
+    /// Share profile using the system share sheet
+    func shareProfile(for user: Nameable, from viewController: UIViewController? = nil) {
+        ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
+            let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
+            let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
+            
+            let activityViewController = UIActivityViewController(
+                activityItems: [shareText],
+                applicationActivities: nil
+            )
+            
+            // Present the activity view controller
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                
+                var topController = window.rootViewController
+                while let presentedViewController = topController?.presentedViewController {
+                    topController = presentedViewController
+                }
+                
+                if let popover = activityViewController.popoverPresentationController {
+                    popover.sourceView = topController?.view
+                    popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+                }
+                
+                topController?.present(activityViewController, animated: true, completion: nil)
+            }
+        }
+    }
+    
+    // MARK: - User Management
+    
+    /// Block a user
+    func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
+        do {
+            let reportingService = ReportingService(apiService: apiService)
+            try await reportingService.blockUser(
+                blockerId: blockerId,
+                blockedId: blockedId,
+                reason: reason
+            )
+            
+            // Refresh friends cache to remove the blocked user from friends list
+            await AppCache.shared.refreshFriends()
+            
+            // Remove the blocked user from local friends list immediately
+            await MainActor.run {
+                self.friends.removeAll { $0.id == blockedId }
+                self.filteredFriends.removeAll { $0.id == blockedId }
+            }
+            
+        } catch {
+            print("Failed to block user: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Remove a friend and refresh data
+    func removeFriendAndRefresh(currentUserId: UUID, friendUserId: UUID) async {
+        // Use the existing removeFriend method which already handles API calls and cache updates
+        await removeFriend(friendUserId: friendUserId)
+        
+        // Refresh cache and data to ensure UI is updated
+        await AppCache.shared.refreshFriends()
+        await fetchAllData()
+    }
 }

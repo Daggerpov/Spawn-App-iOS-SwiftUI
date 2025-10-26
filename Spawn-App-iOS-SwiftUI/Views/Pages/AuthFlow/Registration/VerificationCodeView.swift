@@ -1,27 +1,20 @@
 import SwiftUI
 
 struct VerificationCodeView: View {
-    @ObservedObject var viewModel: UserAuthViewModel
-    @State private var code: [String] = Array(repeating: "", count: 6)
-    @State private var previousCode: [String] = Array(repeating: "", count: 6)
+    @ObservedObject var userAuthViewModel: UserAuthViewModel
+    @StateObject private var viewModel: VerificationCodeViewModel
     @FocusState private var focusedIndex: Int?
-    @State private var timer: Timer? = nil
-    @State private var secondsRemaining: Int = 30
-    @State private var isResendEnabled: Bool = false
     @Environment(\.dismiss) var dismiss
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
     
-    private var isFormValid: Bool {
-        code.allSatisfy { $0.count == 1 && $0.rangeOfCharacter(from: CharacterSet.decimalDigits.inverted) == nil }
-    }
-    
-    private var codeString: String {
-        code.joined()
+    init(userAuthViewModel: UserAuthViewModel) {
+        self.userAuthViewModel = userAuthViewModel
+        self._viewModel = StateObject(wrappedValue: VerificationCodeViewModel(userAuthViewModel: userAuthViewModel))
     }
     
     private var inputBackgroundColor: Color {
-        if viewModel.errorMessage != nil {
+        if userAuthViewModel.errorMessage != nil {
             return Color.red.opacity(0.1)
         }
         return colorScheme == .dark ? Color(hex: "#2C2C2C") : Color(hex: colorsGrayInput)
@@ -32,7 +25,7 @@ struct VerificationCodeView: View {
             HStack {
                 Button(action: {
                     // Clear any error states when going back
-                    viewModel.clearAllErrors()
+                    userAuthViewModel.clearAllErrors()
                     dismiss()
                 }) {
                     Image(systemName: "chevron.left")
@@ -49,16 +42,14 @@ struct VerificationCodeView: View {
         }
         .background(universalBackgroundColor(from: themeService, environment: colorScheme))
         .onAppear {
-            startTimer()
-            focusedIndex = 0
-            previousCode = code
+            viewModel.initialize()
+            focusedIndex = viewModel.focusedIndex
             // Clear any previous error state when this view appears
-            viewModel.clearAllErrors()
+            userAuthViewModel.clearAllErrors()
         }
         .onDisappear {
-            timer?.invalidate()
+            viewModel.stopTimer()
         }
-//        .ignoresSafeArea(.all)
         .navigationBarHidden(true)
     }
     
@@ -96,7 +87,7 @@ struct VerificationCodeView: View {
             Text("Verify Your Email")
                 .font(heading1)
                 .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-            Text("We've sent a 6-digit code to " + (viewModel.email ?? "your email"))
+            Text("We've sent a 6-digit code to " + (userAuthViewModel.email ?? "your email"))
                 .font(.onestRegular(size: 16))
                 .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
                 .multilineTextAlignment(.center)
@@ -133,15 +124,17 @@ struct VerificationCodeView: View {
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(viewModel.errorMessage != nil ? Color.red : Color.clear, lineWidth: 2)
+                        .stroke(userAuthViewModel.errorMessage != nil ? Color.red : Color.clear, lineWidth: 2)
                 )
             BackspaceDetectingTextField(
                 text: createBinding(for: index),
                 onBackspace: {
-                    handleBackspace(at: index)
+                    viewModel.handleBackspace(at: index)
+                    focusedIndex = viewModel.focusedIndex
                 },
                 onPaste: { pastedText in
-                    handlePaste(pastedText: pastedText, startingAt: index)
+                    viewModel.handlePaste(pastedText: pastedText, startingAt: index)
+                    focusedIndex = viewModel.focusedIndex
                 },
                 keyboardType: .numberPad,
                 textAlignment: .center,
@@ -150,54 +143,43 @@ struct VerificationCodeView: View {
             )
             .frame(width: 48, height: 56)
             .focused($focusedIndex, equals: index)
-            .onChange(of: code[index]) { _, newValue in
-                handleTextFieldChange(at: index, oldValue: previousCode[index], newValue: newValue)
-                previousCode[index] = newValue
+            .onChange(of: viewModel.code[index]) { _, newValue in
+                viewModel.handleTextFieldChange(at: index, oldValue: viewModel.previousCode[index], newValue: newValue)
+                viewModel.previousCode[index] = newValue
+                focusedIndex = viewModel.focusedIndex
             }
 
         }
         .onTapGesture {
             focusedIndex = index
+            viewModel.focusedIndex = index
         }
     }
     
     private func createBinding(for index: Int) -> Binding<String> {
         Binding(
-            get: { code[index] },
+            get: { viewModel.code[index] },
             set: { newValue in
                 // The custom text field handles validation, so just update the value
-                code[index] = newValue
+                viewModel.code[index] = newValue
             }
         )
-    }
-    
-    private func handleTextFieldChange(at index: Int, oldValue: String, newValue: String) {
-        // Handle forward navigation when a character is entered
-        if oldValue.isEmpty && !newValue.isEmpty {
-            // New character entered, move to next field
-            if index < 5 {
-                focusedIndex = index + 1
-            }
-        }
-        // Note: Backspace behavior is now handled entirely in BackspaceDetectingTextField
     }
     
     private var verifyButton: some View {
         Button(action: {
             Task {
-                if let email = viewModel.email {
-                    await viewModel.verifyEmailCode(email: email, code: codeString)
-                }
+                await viewModel.verifyCode()
             }
         }) {
             OnboardingButtonCoreView("Verify") {
-                isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+                viewModel.isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
             }
         }
         .padding(.top, -16)
         .padding(.bottom, -30)
         .padding(.horizontal, -22)
-        .disabled(!isFormValid)
+        .disabled(!viewModel.isFormValid)
     }
     
     private var resendSection: some View {
@@ -206,95 +188,35 @@ struct VerificationCodeView: View {
                 .font(.onestRegular(size: 16))
                 .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
             Button(action: {
-                resendCode()
+                Task {
+                    await viewModel.resendCode()
+                }
             }) {
                 Text("Resend code")
                     .underline()
                     .font(.onestRegular(size: 16))
-                    .foregroundColor(isResendEnabled ? figmaIndigo : universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
+                    .foregroundColor(viewModel.isResendEnabled ? figmaIndigo : universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
             }
-            .disabled(!isResendEnabled)
-            Text("in \(String(format: "%02d", secondsRemaining))")
+            .disabled(!viewModel.isResendEnabled)
+            Text("in \(String(format: "%02d", viewModel.secondsRemaining))")
                 .font(.onestRegular(size: 16))
                 .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                .opacity(isResendEnabled ? 0 : 1)
+                .opacity(viewModel.isResendEnabled ? 0 : 1)
         }
         .padding(.top, 8)
     }
     
     @ViewBuilder
     private var errorSection: some View {
-        if viewModel.errorMessage != nil {
+        if userAuthViewModel.errorMessage != nil {
             Text("Invalid code. Try again.")
                 .font(Font.custom("Onest", size: 14).weight(.medium))
                 .foregroundColor(Color(red: 0.92, green: 0.26, blue: 0.21))
                 .padding(.top, 8)
         }
     }
-    
-
-    
-    private func handleBackspace(at index: Int) {
-        // This is called when backspace is pressed on any field
-        if index > 0 {
-            // Move focus to previous field
-            focusedIndex = index - 1
-        }
-    }
-    
-    private func handlePaste(pastedText: String, startingAt startIndex: Int) {
-        // Filter to only digits
-        let digits = pastedText.filter { $0.isNumber }
-        let digitArray = Array(digits)
-        
-        // Only handle if we have digits
-        if !digitArray.isEmpty {
-            // Clear all boxes first
-            code = Array(repeating: "", count: 6)
-            previousCode = Array(repeating: "", count: 6)
-            
-            // Fill boxes with pasted digits starting from the beginning
-            for (i, digit) in digitArray.enumerated() {
-                if i < 6 {
-                    code[i] = String(digit)
-                    previousCode[i] = String(digit)
-                }
-            }
-            
-            // Move focus to the next empty box or the last filled box
-            let nextIndex = min(digitArray.count, 5)
-            focusedIndex = nextIndex
-        }
-    }
-    
-    private func startTimer() {
-        secondsRemaining = viewModel.secondsUntilNextVerificationAttempt
-        isResendEnabled = false
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            if secondsRemaining > 0 {
-                secondsRemaining -= 1
-            }
-            if secondsRemaining == 0 {
-                isResendEnabled = true
-                timer?.invalidate()
-            }
-        }
-    }
-    
-    private func resendCode() {
-        Task {
-            if let email = viewModel.email {
-                await viewModel.sendEmailVerification(email: email)
-                // The timer will be updated with the new seconds from the backend response
-                await MainActor.run {
-                    startTimer()
-                }
-            }
-        }
-    }
 }
 
 #Preview {
-    VerificationCodeView(viewModel: UserAuthViewModel.shared)
+    VerificationCodeView(userAuthViewModel: UserAuthViewModel.shared)
 }

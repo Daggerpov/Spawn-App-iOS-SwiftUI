@@ -93,8 +93,8 @@ struct FriendsTabView: View {
 						showBlockDialog: $showBlockDialog,
 						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
 						showAddToActivityType: $showAddToActivityType,
-						copyProfileURL: { copyProfileURL(for: selectedFriend) },
-						shareProfile: { shareProfile(for: selectedFriend) },
+						copyProfileURL: { viewModel.copyProfileURL(for: selectedFriend) },
+						shareProfile: { viewModel.shareProfile(for: selectedFriend) },
 						navigateToProfile: { navigateToProfile = true }
 					)
 					.background(universalBackgroundColor)
@@ -123,7 +123,7 @@ struct FriendsTabView: View {
 					   let currentUserId = UserAuthViewModel.shared.spawnUser?.id,
 					   !blockReason.isEmpty {
 						Task {
-							await blockUser(blockerId: currentUserId, blockedId: friendToBlock.id, reason: blockReason)
+							await viewModel.blockUser(blockerId: currentUserId, blockedId: friendToBlock.id, reason: blockReason)
 							blockReason = ""
 						}
 					}
@@ -141,7 +141,7 @@ struct FriendsTabView: View {
 					if let friendToRemove = selectedFriend,
 					   let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
 						Task {
-							await removeFriend(currentUserId: currentUserId, friendUserId: friendToRemove.id)
+							await viewModel.removeFriendAndRefresh(currentUserId: currentUserId, friendUserId: friendToRemove.id)
 						}
 					}
 				}
@@ -185,29 +185,7 @@ struct FriendsTabView: View {
     
 	var recentlySpawnedWithFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 16) {
-//			if !viewModel.recentlySpawnedWith.isEmpty {
-//                HStack{
-//                    Text("Recently Spawned With")
-//                        .font(.onestMedium(size: 16))
-//                        .foregroundColor(universalAccentColor)
-//                    Spacer()
-//                    showAllRecentlySpawnedButton
-//                }
-//
-//				ScrollView(showsIndicators: false) {
-//					VStack(spacing: 16) {
-//						ForEach(viewModel.recentlySpawnedWith, id: \.user.id) { recentUser in
-//							RecentlySpawnedView(
-//								viewModel: viewModel, 
-//								recentUser: recentUser,
-//								selectedFriend: $selectedFriend,
-//								showProfileMenu: $showProfileMenu
-//							)
-//						}
-//					}
-//				}
-//			} else if !viewModel.recommendedFriends.isEmpty {
-//                // Show "Recommended Friends" when "Recently Spawned With" is empty
+			if !viewModel.recommendedFriends.isEmpty {
                 HStack{
                     Text("Recommended Friends")
                         .font(.onestMedium(size: 16))
@@ -217,18 +195,19 @@ struct FriendsTabView: View {
                 }
                 .padding(.leading, 5)
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 16) {
-                    ForEach(viewModel.recommendedFriends.prefix(3)) { friend in
-                        RecommendedFriendView(
-                            viewModel: viewModel,
-                            friend: friend,
-                            selectedFriend: $selectedFriend,
-                            showProfileMenu: $showProfileMenu
-                        )
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        ForEach(viewModel.recommendedFriends.prefix(3)) { friend in
+                            RecommendedFriendView(
+                                viewModel: viewModel,
+                                friend: friend,
+                                selectedFriend: $selectedFriend,
+                                showProfileMenu: $showProfileMenu
+                            )
+                        }
                     }
+                    .padding(.trailing, 1)
                 }
-                .padding(.trailing, 1)
             }
 		}
         .padding(.leading, 20)
@@ -331,86 +310,6 @@ struct FriendsTabView: View {
 		}
         .padding(.leading, 20)
         .padding(.trailing, 25)
-	}
-
-	// Helper methods for profile actions
-	private func copyProfileURL(for user: Nameable) {
-		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
-			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
-			
-			// Clear the pasteboard first to avoid any contamination
-			UIPasteboard.general.items = []
-			
-			// Set only the URL string to the pasteboard
-			UIPasteboard.general.string = url.absoluteString
-			
-			// Show notification toast
-			DispatchQueue.main.async {
-				InAppNotificationManager.shared.showNotification(
-					title: "Link copied to clipboard",
-					message: "Profile link has been copied to your clipboard",
-					type: .success,
-					duration: 5.0
-				)
-			}
-		}
-	}
-	
-	private func shareProfile(for user: Nameable) {
-		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
-			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
-			let shareText = "Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
-			
-			let activityViewController = UIActivityViewController(
-				activityItems: [shareText],
-				applicationActivities: nil
-			)
-			
-			// Present the activity view controller
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-			   let window = windowScene.windows.first {
-				
-				var topController = window.rootViewController
-				while let presentedViewController = topController?.presentedViewController {
-					topController = presentedViewController
-				}
-				
-				if let popover = activityViewController.popoverPresentationController {
-					popover.sourceView = topController?.view
-					popover.sourceRect = topController?.view.bounds ?? CGRect.zero
-				}
-				
-				topController?.present(activityViewController, animated: true, completion: nil)
-			}
-		}
-	}
-	
-	// Block user functionality
-	private func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
-		do {
-			let reportingService = ReportingService()
-			try await reportingService.blockUser(
-				blockerId: blockerId,
-				blockedId: blockedId,
-				reason: reason
-			)
-			
-			// Refresh friends cache to remove the blocked user from friends list
-			await AppCache.shared.refreshFriends()
-			
-		} catch {
-			print("Failed to block user: \(error.localizedDescription)")
-		}
-	}
-	
-	// Remove friend functionality
-	private func removeFriend(currentUserId: UUID, friendUserId: UUID) async {
-		// Use the existing viewModel method which already handles API calls and cache updates
-		await viewModel.removeFriend(friendUserId: friendUserId)
-		
-		// Refresh cache and data to ensure UI is updated
-		await AppCache.shared.refreshFriends()
-		await viewModel.fetchAllData()
 	}
 }
 
