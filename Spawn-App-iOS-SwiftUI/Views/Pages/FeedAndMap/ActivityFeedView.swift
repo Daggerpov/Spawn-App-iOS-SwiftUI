@@ -114,7 +114,7 @@ struct ActivityFeedView: View {
                 }
             }
         }
-        .onChange(of: showingActivityPopup) { isShowing in
+        .onChange(of: showingActivityPopup) { _, isShowing in
             if isShowing, let activity = activityInPopup, let color = colorInPopup {
                 // Post notification to show global popup
                 NotificationCenter.default.post(
@@ -165,7 +165,7 @@ struct ActivityFeedView: View {
                 }
             }
         )
-        .onChange(of: showingActivityPopup) { isShowing in
+        .onChange(of: showingActivityPopup) { _, isShowing in
             if !isShowing {
                 // Clean up when popup is dismissed
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -174,7 +174,7 @@ struct ActivityFeedView: View {
                 }
             }
         }
-        .onChange(of: shouldShowDeepLinkedActivity) { shouldShow in
+        .onChange(of: shouldShowDeepLinkedActivity) { _, shouldShow in
             print("🔗 ActivityFeedView onChange: shouldShowDeepLinkedActivity changed to \(shouldShow), activityId: \(deepLinkedActivityId?.uuidString ?? "nil")")
             if shouldShow, let activityId = deepLinkedActivityId {
                 print("🔗 ActivityFeedView onChange: Calling handleDeepLinkedActivity with \(activityId)")

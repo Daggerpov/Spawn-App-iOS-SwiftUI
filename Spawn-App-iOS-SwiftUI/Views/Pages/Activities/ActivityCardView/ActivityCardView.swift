@@ -90,7 +90,7 @@ struct ActivityCardView: View {
             .onAppear {
                 viewModel.fetchIsParticipating()
             }
-            .onChange(of: activity.participationStatus) { _ in
+            .onChange(of: activity.participationStatus) {
                 // Refresh participation status when the activity's participation status changes
                 viewModel.updateActivity(activity)
             }

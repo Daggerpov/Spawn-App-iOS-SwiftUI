@@ -236,7 +236,7 @@ struct VerificationCodeView: View {
             )
             .frame(width: 48, height: 56)
             .focused($focusedIndex, equals: index)
-            .onChange(of: code[index]) { newValue in
+            .onChange(of: code[index]) { _, newValue in
                 handleTextFieldChange(at: index, oldValue: previousCode[index], newValue: newValue)
                 previousCode[index] = newValue
             }

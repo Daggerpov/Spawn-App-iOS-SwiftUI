@@ -472,16 +472,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 guard let signInResult = signInResult else { return }
 				
 				// Get ID token
-                signInResult.user.refreshTokensIfNeeded { [weak self] user, error in
-					guard let self = self else { return }
+                signInResult.user.refreshTokensIfNeeded { user, error in
 					guard error == nil else { 
 						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
 						return 
 					}
 					guard let user = user else { return }
                     
-                    if isOnboarding {
-                        Task {
+                    Task { @MainActor [weak self] in
+                        guard let self = self else { return }
+                        
+                        if isOnboarding {
                             await self.registerWithOAuth(
                                 idToken: user.idToken?.tokenString ?? "",
                                 provider: .google,
@@ -489,12 +490,10 @@ class UserAuthViewModel: NSObject, ObservableObject {
                                 name: user.profile?.name,
                                 profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
                             )
+                            return
                         }
-                        return
-                    }
-                    
-                    // Request a higher resolution image (400px instead of 100px)
-                    Task { @MainActor in
+                        
+                        // Request a higher resolution image (400px instead of 100px)
                         self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
                         self.name = user.profile?.name
                         self.email = user.profile?.email

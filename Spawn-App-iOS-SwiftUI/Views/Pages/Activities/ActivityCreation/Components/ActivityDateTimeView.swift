@@ -201,7 +201,7 @@ struct ActivityDateTimeView: View {
         .pickerStyle(.wheel)
         .frame(width: 130)
         .clipped()
-        .onChange(of: selectedDay) { _ in
+        .onChange(of: selectedDay) {
             if selectedDay == .tomorrow {
                 selectedHour = tomorrowHour
                 selectedMinute = validateMinuteForPicker(tomorrowMinute)
@@ -235,7 +235,7 @@ struct ActivityDateTimeView: View {
         .pickerStyle(.wheel)
         .frame(width: 50)
         .clipped()
-        .onChange(of: selectedHour) { _ in
+        .onChange(of: selectedHour) {
             if selectedDay == .tomorrow {
                 tomorrowHour = selectedHour
             }
@@ -268,7 +268,7 @@ struct ActivityDateTimeView: View {
         .pickerStyle(.wheel)
         .frame(width: 60)
         .clipped()
-        .onChange(of: selectedMinute) { _ in
+        .onChange(of: selectedMinute) {
             if selectedDay == .tomorrow {
                 tomorrowMinute = selectedMinute
             }
@@ -295,7 +295,7 @@ struct ActivityDateTimeView: View {
         .pickerStyle(.wheel)
         .frame(width: 60)
         .clipped()
-        .onChange(of: isAM) { _ in
+        .onChange(of: isAM) {
             if selectedDay == .tomorrow {
                 tomorrowIsAM = isAM
             }
@@ -459,7 +459,7 @@ struct ActivityDateTimeView: View {
                                             .stroke(showTitleError ? .red : textFieldBorderColor, lineWidth: 0.5)
                                     )
                             )
-                            .onChange(of: activityTitle) { newValue in
+                            .onChange(of: activityTitle) { _, newValue in
                                 // Update the activity title in the view model
                                 viewModel.activity.title = newValue.isEmpty ? nil : newValue
                                 // Hide error when user starts typing

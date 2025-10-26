@@ -105,7 +105,7 @@ struct UserDetailsInputView: View {
                             .autocapitalization(.none)
                             .textContentType(.username)
                             .disableAutocorrection(true)
-                            .onChange(of: username) { newValue in
+                            .onChange(of: username) { _, newValue in
                                 // Simulate username taken error for demo (replace with real check)
                                 if newValue == "dagapov" {
                                     isUsernameTaken = true
@@ -122,7 +122,7 @@ struct UserDetailsInputView: View {
                         hasError: isPhoneNumberTaken,
                         errorMessage: phoneError
                     )
-                    .onChange(of: phoneNumber) { newValue in
+                    .onChange(of: phoneNumber) { _, newValue in
                         let formatted = formatPhoneNumber(newValue)
                         if formatted != newValue {
                             phoneNumber = formatted
@@ -153,11 +153,11 @@ struct UserDetailsInputView: View {
                                 .foregroundColor(.primary)
                             SecureField("Re-enter password", text: $confirmPassword)
                                 .textFieldStyle(ErrorSecureFieldStyle(hasError: isPasswordMismatch))
-                                .onChange(of: confirmPassword) { newValue in
+                                .onChange(of: confirmPassword) { _, newValue in
                                     isPasswordMismatch = password != newValue
                                     passwordError = isPasswordMismatch ? "Please ensure that your passwords match." : nil
                                 }
-                                .onChange(of: password) { newValue in
+                                .onChange(of: password) { _, newValue in
                                     isPasswordMismatch = confirmPassword != newValue
                                     passwordError = isPasswordMismatch ? "Please ensure that your passwords match." : nil
                                 }

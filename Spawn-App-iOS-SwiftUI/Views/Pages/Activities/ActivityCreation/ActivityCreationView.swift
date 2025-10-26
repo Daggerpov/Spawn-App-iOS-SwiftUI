@@ -152,7 +152,7 @@ struct ActivityCreationView: View {
                 ActivityCreationViewModel.reInitialize()
             }
         }
-        .onChange(of: selectedTab) { newTab in
+        .onChange(of: selectedTab) { _, newTab in
             // Reset to beginning if activities tab is selected and we're at confirmation
             if newTab == TabType.activities && currentStep == .confirmation {
                 currentStep = .activityType
@@ -203,7 +203,7 @@ struct ActivityCreationView: View {
                 isAM = nextInterval.isAM
             }
         }
-        .onChange(of: viewModel.selectedActivityType) { newActivityType in
+        .onChange(of: viewModel.selectedActivityType) { _, newActivityType in
             // Update activity type immediately when selection changes to ensure icon is set
             if newActivityType != nil {
                 viewModel.updateActivityType()

@@ -265,24 +265,24 @@ struct MapView: View {
                     }
                 }
             }
-            .onChange(of: locationManager.locationUpdated, perform: { _ in
+            .onChange(of: locationManager.locationUpdated) {
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
                    abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
                    abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
                     adjustRegionToUserLocation()
                 }
-            })
-            .onChange(of: viewModel.activities, perform: { _ in
+            }
+            .onChange(of: viewModel.activities) {
                 if locationManager.userLocation != nil {
                     adjustRegionForActivities()
                 }
-            })
-            .onChange(of: locationManager.locationError, perform: { error in
+            }
+            .onChange(of: locationManager.locationError) { _, error in
                 if let error = error {
                     locationErrorMessage = error
                     showLocationError = true
                 }
-            })
+            }
             .alert("Location Error", isPresented: $showLocationError) {
                 Button("OK") {
                     showLocationError = false

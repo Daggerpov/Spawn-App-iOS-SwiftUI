@@ -112,24 +112,18 @@ class ActivityColorService: ObservableObject {
     
     /// Assign the next color using round-robin distribution
     private func assignNextColor() -> Color {
-        print("🔍 DEBUG: assignNextColor called, nextColorIndex: \(nextColorIndex), availableColors.count: \(availableColors.count)")
         // Ensure nextColorIndex is within bounds before accessing array
         guard !availableColors.isEmpty else {
-            print("⚠️ ActivityColorService: No available colors, using default")
             return Color.blue
         }
         
         // Validate and clamp nextColorIndex to prevent out of bounds access
         if nextColorIndex < 0 || nextColorIndex >= availableColors.count {
-            print("⚠️ ActivityColorService: nextColorIndex (\(nextColorIndex)) out of bounds, resetting to 0")
             nextColorIndex = 0
         }
         
-        print("🔍 DEBUG: Accessing availableColors[\(nextColorIndex)]")
         let color = availableColors[nextColorIndex]
-        print("🔍 DEBUG: Got color: \(color)")
         nextColorIndex = (nextColorIndex + 1) % availableColors.count
-        print("🔍 DEBUG: Updated nextColorIndex to: \(nextColorIndex)")
         return color
     }
     
