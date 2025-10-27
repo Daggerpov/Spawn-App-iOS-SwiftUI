@@ -40,7 +40,7 @@ struct CreateNewActivityTypeCard: View {
     var body: some View {
         Button(action: onCreateNew) {
             VStack(spacing: 8) {
-                Image(systemName: "plus.circle")
+                Image("create_new_activity_icon")
                     .resizable()
                     .frame(width: 32, height: 32)
                     .foregroundColor(Color(hex: colorsGreen700))
