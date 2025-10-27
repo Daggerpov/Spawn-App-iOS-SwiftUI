@@ -32,6 +32,11 @@ class AppCache: ObservableObject {
     private var lastChecked: [UUID: [String: Date]] = [:] // User-specific cache timestamps
     private var isInitialized = false
     
+    // MARK: - Background Queue for Disk Operations
+    private let diskQueue = DispatchQueue(label: "com.spawn.appCache.diskQueue", qos: .utility)
+    private var pendingSaveTask: DispatchWorkItem?
+    private let saveDebounceInterval: TimeInterval = 1.0 // Debounce saves to reduce frequency
+    
     // MARK: - Constants
     private enum CacheKeys {
         static let lastChecked = "lastChecked"
@@ -49,11 +54,14 @@ class AppCache: ObservableObject {
     }
     
     private init() {
-        loadFromDisk()
+        // Load from disk in the background to avoid blocking main thread
+        diskQueue.async { [weak self] in
+            self?.loadFromDisk()
+        }
         
-        // Set up a timer to periodically save to disk
+        // Set up a timer to periodically save to disk (debounced)
         Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-            self?.saveToDisk()
+            self?.debouncedSaveToDisk()
         }
     }
     
@@ -86,17 +94,19 @@ class AppCache: ObservableObject {
     
     // MARK: - Public Methods
     
-    /// Initialize the cache and load from disk
+    /// Initialize the cache and load from disk in the background
     func initialize() {
         if !isInitialized {
-            loadFromDisk()
-            isInitialized = true
+            diskQueue.async { [weak self] in
+                self?.loadFromDisk()
+                self?.isInitialized = true
+            }
         }
     }
     
     /// Clear all cached data and reset the cache state
     func clearAllCaches() {
-        // Clear all cached data
+        // Clear all cached data (on main thread since these are @Published)
         friends = [:]
         activities = [:]
         activityTypes = []
@@ -114,19 +124,23 @@ class AppCache: ObservableObject {
         // Clear metadata
         lastChecked = [:]
         
-        // Clear UserDefaults data
-        UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.friends)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.events)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.recommendedFriends)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.sentFriendRequests)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.otherProfiles)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.profileStats)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.profileInterests)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.profileSocialMedia)
-        UserDefaults.standard.removeObject(forKey: CacheKeys.profileEvents)
+        // Clear UserDefaults data on background queue to avoid blocking main thread
+        diskQueue.async {
+            UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.friends)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.events)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.recommendedFriends)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.sentFriendRequests)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.otherProfiles)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.profileStats)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.profileInterests)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.profileSocialMedia)
+            UserDefaults.standard.removeObject(forKey: CacheKeys.profileEvents)
+            
+            print("✅ [CACHE] All UserDefaults cleared on background thread")
+        }
         
         // Clear profile picture cache
         ProfilePictureCache.shared.clearAllCache()
@@ -313,7 +327,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(userId, cacheType: CacheKeys.friends, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for friends
         Task {
@@ -362,7 +376,7 @@ class AppCache: ObservableObject {
         let activityIds = newActivities.values.flatMap { $0 }.map { $0.id }
         ActivityColorService.shared.assignColorsForActivities(activityIds)
         
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for activity creators and participants
         Task {
@@ -425,7 +439,7 @@ class AppCache: ObservableObject {
         if let userId = UserAuthViewModel.shared.spawnUser?.id {
             setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
         }
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     // Remove an activity from the cache
@@ -440,7 +454,7 @@ class AppCache: ObservableObject {
         if let userId = UserAuthViewModel.shared.spawnUser?.id {
             setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
         }
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     /// Optimistically updates an activity in the cache
@@ -458,7 +472,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     func refreshActivityTypes() async {
@@ -501,7 +515,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     // Update a single activity type in the cache (for optimistic updates)
@@ -517,7 +531,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     // MARK: - Other Profiles Methods
@@ -530,7 +544,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(currentUserId, cacheType: CacheKeys.otherProfiles, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     func refreshOtherProfiles() async {
@@ -580,7 +594,7 @@ class AppCache: ObservableObject {
             if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
                 setLastCheckedForUser(currentUserId, cacheType: CacheKeys.otherProfiles, date: Date())
             }
-            saveToDisk()
+            debouncedSaveToDisk()
         }
     }
     
@@ -594,7 +608,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(userId, cacheType: CacheKeys.recommendedFriends, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for recommended friends
         Task {
@@ -654,7 +668,7 @@ class AppCache: ObservableObject {
         }
         friendRequests[userId] = normalized
         setLastCheckedForUser(userId, cacheType: CacheKeys.friendRequests, date: Date())
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for friend request senders
         Task {
@@ -683,7 +697,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(userId, cacheType: CacheKeys.friendRequests, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for friend request senders
         Task {
@@ -723,7 +737,7 @@ class AppCache: ObservableObject {
     /// Clear friend requests for a specific user (useful when user logs out or switches)
     func clearFriendRequestsForUser(_ userId: UUID) {
         friendRequests.removeValue(forKey: userId)
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     // MARK: - Sent Friend Requests Methods
@@ -749,7 +763,7 @@ class AppCache: ObservableObject {
         }
         sentFriendRequests[userId] = normalized
         setLastCheckedForUser(userId, cacheType: CacheKeys.sentFriendRequests, date: Date())
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for sent friend request receivers
         Task {
@@ -777,7 +791,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(userId, cacheType: CacheKeys.sentFriendRequests, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for sent friend request receivers
         Task {
@@ -817,7 +831,7 @@ class AppCache: ObservableObject {
     /// Clear sent friend requests for a specific user (useful when user logs out or switches)
     func clearSentFriendRequestsForUser(_ userId: UUID) {
         sentFriendRequests.removeValue(forKey: userId)
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     /// Force refresh both incoming and sent friend requests (bypasses cache)
@@ -1010,7 +1024,7 @@ class AppCache: ObservableObject {
     func updateFriendsForUser(_ newFriends: [FullFriendUserDTO], userId: UUID) {
         friends[userId] = newFriends
         setLastCheckedForUser(userId, cacheType: CacheKeys.friends, date: Date())
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for friends
         Task {
@@ -1021,7 +1035,7 @@ class AppCache: ObservableObject {
     /// Clear friends for a specific user
     func clearFriendsForUser(_ userId: UUID) {
         friends.removeValue(forKey: userId)
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     /// Get activities for the current user, filtering out expired ones
@@ -1037,7 +1051,7 @@ class AppCache: ObservableObject {
         // If we filtered out expired activities, update the cache to remove them
         if filteredActivities.count != userActivities.count {
             activities[userId] = filteredActivities
-            saveToDisk()
+            debouncedSaveToDisk()
         }
         
         return filteredActivities
@@ -1057,7 +1071,7 @@ class AppCache: ObservableObject {
         let activityIds = filteredActivities.map { $0.id }
         ActivityColorService.shared.assignColorsForActivities(activityIds)
         
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for activities
         Task {
@@ -1068,7 +1082,7 @@ class AppCache: ObservableObject {
     /// Clear activities for a specific user
     func clearActivitiesForUser(_ userId: UUID) {
         activities.removeValue(forKey: userId)
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     /// Clean up expired activities from cache for all users
@@ -1087,7 +1101,7 @@ class AppCache: ObservableObject {
         }
         
         if hasChanges {
-            saveToDisk()
+            debouncedSaveToDisk()
             print("🧹 [CACHE] Cleaned up expired activities from cache")
         }
     }
@@ -1102,7 +1116,7 @@ class AppCache: ObservableObject {
     func updateRecommendedFriendsForUser(_ newRecommendedFriends: [RecommendedFriendUserDTO], userId: UUID) {
         recommendedFriends[userId] = newRecommendedFriends
         setLastCheckedForUser(userId, cacheType: CacheKeys.recommendedFriends, date: Date())
-        saveToDisk()
+        debouncedSaveToDisk()
         
         // Preload profile pictures for recommended friends
         Task {
@@ -1113,7 +1127,7 @@ class AppCache: ObservableObject {
     /// Clear recommended friends for a specific user
     func clearRecommendedFriendsForUser(_ userId: UUID) {
         recommendedFriends.removeValue(forKey: userId)
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     /// Clear all data for a specific user (useful when user logs out or switches)
@@ -1145,7 +1159,7 @@ class AppCache: ObservableObject {
         clearLastCheckedForUser(userId)
         
         print("💾 [CACHE] Cleared all cached data and preferences for user \(userId)")
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     // MARK: - Profile Methods
@@ -1158,7 +1172,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileStats, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     func updateProfileInterests(_ userId: UUID, _ interests: [String]) {
@@ -1169,7 +1183,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileInterests, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     func updateProfileSocialMedia(_ userId: UUID, _ socialMedia: UserSocialMediaDTO) {
@@ -1180,7 +1194,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileSocialMedia, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
 
@@ -1197,7 +1211,7 @@ class AppCache: ObservableObject {
             setLastCheckedForUser(currentUserId, cacheType: CacheKeys.profileEvents, date: Date())
         }
         
-        saveToDisk()
+        debouncedSaveToDisk()
     }
     
     // MARK: - Profile Picture Caching
@@ -1440,87 +1454,243 @@ class AppCache: ObservableObject {
     
     // MARK: - Persistence
     
+    /// Debounced save that prevents excessive disk writes
+    /// Captures data on main thread, then encodes on background thread
+    private func debouncedSaveToDisk() {
+        // Cancel any pending save task
+        pendingSaveTask?.cancel()
+        
+        // Capture current state on main thread (must read @Published properties on main thread)
+        let capturedTimestamps = self.lastChecked
+        let capturedFriends = self.friends
+        let capturedActivities = self.activities
+        let capturedActivityTypes = self.activityTypes
+        let capturedOtherProfiles = self.otherProfiles
+        let capturedRecommendedFriends = self.recommendedFriends
+        let capturedFriendRequests = self.friendRequests
+        let capturedSentFriendRequests = self.sentFriendRequests
+        let capturedProfileStats = self.profileStats
+        let capturedProfileInterests = self.profileInterests
+        let capturedProfileSocialMedia = self.profileSocialMedia
+        let capturedProfileActivities = self.profileActivities
+        
+        // Create a new save task that encodes and writes on background queue
+        let task = DispatchWorkItem { [weak self] in
+            self?.performSaveToDisk(
+                timestamps: capturedTimestamps,
+                friends: capturedFriends,
+                activities: capturedActivities,
+                activityTypes: capturedActivityTypes,
+                otherProfiles: capturedOtherProfiles,
+                recommendedFriends: capturedRecommendedFriends,
+                friendRequests: capturedFriendRequests,
+                sentFriendRequests: capturedSentFriendRequests,
+                profileStats: capturedProfileStats,
+                profileInterests: capturedProfileInterests,
+                profileSocialMedia: capturedProfileSocialMedia,
+                profileActivities: capturedProfileActivities
+            )
+        }
+        
+        // Store the task and schedule it
+        pendingSaveTask = task
+        diskQueue.asyncAfter(deadline: .now() + saveDebounceInterval, execute: task)
+    }
+    
+    /// Immediately save to disk (captures on main thread, encodes on background)
+    private func immediateSaveToDisk() {
+        // Capture current state on main thread
+        let capturedTimestamps = self.lastChecked
+        let capturedFriends = self.friends
+        let capturedActivities = self.activities
+        let capturedActivityTypes = self.activityTypes
+        let capturedOtherProfiles = self.otherProfiles
+        let capturedRecommendedFriends = self.recommendedFriends
+        let capturedFriendRequests = self.friendRequests
+        let capturedSentFriendRequests = self.sentFriendRequests
+        let capturedProfileStats = self.profileStats
+        let capturedProfileInterests = self.profileInterests
+        let capturedProfileSocialMedia = self.profileSocialMedia
+        let capturedProfileActivities = self.profileActivities
+        
+        // Encode and write on background queue
+        diskQueue.async { [weak self] in
+            self?.performSaveToDisk(
+                timestamps: capturedTimestamps,
+                friends: capturedFriends,
+                activities: capturedActivities,
+                activityTypes: capturedActivityTypes,
+                otherProfiles: capturedOtherProfiles,
+                recommendedFriends: capturedRecommendedFriends,
+                friendRequests: capturedFriendRequests,
+                sentFriendRequests: capturedSentFriendRequests,
+                profileStats: capturedProfileStats,
+                profileInterests: capturedProfileInterests,
+                profileSocialMedia: capturedProfileSocialMedia,
+                profileActivities: capturedProfileActivities
+            )
+        }
+    }
+    
     private func loadFromDisk() {
+        // This method should only be called from diskQueue (background thread)
+        // Decode all data on background thread, then update @Published properties on main thread
+        
+        var loadedTimestamps: [UUID: [String: Date]]?
+        var loadedFriends: [UUID: [FullFriendUserDTO]]?
+        var loadedActivities: [UUID: [FullFeedActivityDTO]]?
+        var loadedActivityTypes: [ActivityTypeDTO]?
+        var loadedProfiles: [UUID: BaseUserDTO]?
+        var loadedRecommended: [UUID: [RecommendedFriendUserDTO]]?
+        var loadedRequests: [UUID: [FetchFriendRequestDTO]]?
+        var loadedSentRequests: [UUID: [FetchSentFriendRequestDTO]]?
+        var loadedStats: [UUID: UserStatsDTO]?
+        var loadedInterests: [UUID: [String]]?
+        var loadedSocialMedia: [UUID: UserSocialMediaDTO]?
+        var loadedProfileActivities: [UUID: [ProfileActivityDTO]]?
+        
         // Load cache timestamps (user-specific)
         if let timestampsData = UserDefaults.standard.data(forKey: CacheKeys.lastChecked),
-           let loadedTimestamps = try? JSONDecoder().decode([UUID: [String: Date]].self, from: timestampsData) {
-            lastChecked = loadedTimestamps
+           let decoded = try? JSONDecoder().decode([UUID: [String: Date]].self, from: timestampsData) {
+            loadedTimestamps = decoded
         }
         
         // Load friends
         if let friendsData = UserDefaults.standard.data(forKey: CacheKeys.friends),
-           let loadedFriends = try? JSONDecoder().decode([UUID: [FullFriendUserDTO]].self, from: friendsData) {
-            friends = loadedFriends
+           let decoded = try? JSONDecoder().decode([UUID: [FullFriendUserDTO]].self, from: friendsData) {
+            loadedFriends = decoded
         }
-        
-
         
         // Load activities
         if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.events),
-           let loadedActivities = try? JSONDecoder().decode([UUID: [FullFeedActivityDTO]].self, from: activitiesData) {
-            activities = loadedActivities
+           let decoded = try? JSONDecoder().decode([UUID: [FullFeedActivityDTO]].self, from: activitiesData) {
+            loadedActivities = decoded
         }
         
         // Load activity types
         if let activityTypesData = UserDefaults.standard.data(forKey: CacheKeys.activityTypes),
-           let loadedActivityTypes = try? JSONDecoder().decode([ActivityTypeDTO].self, from: activityTypesData) {
-            activityTypes = loadedActivityTypes
+           let decoded = try? JSONDecoder().decode([ActivityTypeDTO].self, from: activityTypesData) {
+            loadedActivityTypes = decoded
         }
         
         // Load other profiles
         if let profilesData = UserDefaults.standard.data(forKey: CacheKeys.otherProfiles),
-           let loadedProfiles = try? JSONDecoder().decode([UUID: BaseUserDTO].self, from: profilesData) {
-            otherProfiles = loadedProfiles
+           let decoded = try? JSONDecoder().decode([UUID: BaseUserDTO].self, from: profilesData) {
+            loadedProfiles = decoded
         }
         
         // Load recommended friends
         if let recommendedData = UserDefaults.standard.data(forKey: CacheKeys.recommendedFriends),
-           let loadedRecommended = try? JSONDecoder().decode([UUID: [RecommendedFriendUserDTO]].self, from: recommendedData) {
-            recommendedFriends = loadedRecommended
+           let decoded = try? JSONDecoder().decode([UUID: [RecommendedFriendUserDTO]].self, from: recommendedData) {
+            loadedRecommended = decoded
         }
         
         // Load friend requests
         if let requestsData = UserDefaults.standard.data(forKey: CacheKeys.friendRequests),
-           let loadedRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: requestsData) {
-            friendRequests = loadedRequests
+           let decoded = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: requestsData) {
+            loadedRequests = decoded
         }
         
         // Load sent friend requests
         if let sentRequestsData = UserDefaults.standard.data(forKey: CacheKeys.sentFriendRequests),
-           let loadedSentRequests = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: sentRequestsData) {
-            sentFriendRequests = loadedSentRequests
+           let decoded = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: sentRequestsData) {
+            loadedSentRequests = decoded
         }
         
         // Load profile stats
         if let statsData = UserDefaults.standard.data(forKey: CacheKeys.profileStats),
-           let loadedStats = try? JSONDecoder().decode([UUID: UserStatsDTO].self, from: statsData) {
-            profileStats = loadedStats
+           let decoded = try? JSONDecoder().decode([UUID: UserStatsDTO].self, from: statsData) {
+            loadedStats = decoded
         }
         
         // Load profile interests
         if let interestsData = UserDefaults.standard.data(forKey: CacheKeys.profileInterests),
-           let loadedInterests = try? JSONDecoder().decode([UUID: [String]].self, from: interestsData) {
-            profileInterests = loadedInterests
+           let decoded = try? JSONDecoder().decode([UUID: [String]].self, from: interestsData) {
+            loadedInterests = decoded
         }
         
         // Load profile social media
         if let socialMediaData = UserDefaults.standard.data(forKey: CacheKeys.profileSocialMedia),
-           let loadedSocialMedia = try? JSONDecoder().decode([UUID: UserSocialMediaDTO].self, from: socialMediaData) {
-            profileSocialMedia = loadedSocialMedia
+           let decoded = try? JSONDecoder().decode([UUID: UserSocialMediaDTO].self, from: socialMediaData) {
+            loadedSocialMedia = decoded
         }
-        
-
         
         // Load profile activities
         if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.profileEvents),
-           let loadedActivities = try? JSONDecoder().decode([UUID: [ProfileActivityDTO]].self, from: activitiesData) {
-            profileActivities = loadedActivities
+           let decoded = try? JSONDecoder().decode([UUID: [ProfileActivityDTO]].self, from: activitiesData) {
+            loadedProfileActivities = decoded
+        }
+        
+        // Now update @Published properties on main thread
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            if let timestamps = loadedTimestamps {
+                self.lastChecked = timestamps
+            }
+            if let friends = loadedFriends {
+                self.friends = friends
+            }
+            if let activities = loadedActivities {
+                self.activities = activities
+            }
+            if let types = loadedActivityTypes {
+                self.activityTypes = types
+            }
+            if let profiles = loadedProfiles {
+                self.otherProfiles = profiles
+            }
+            if let recommended = loadedRecommended {
+                self.recommendedFriends = recommended
+            }
+            if let requests = loadedRequests {
+                self.friendRequests = requests
+            }
+            if let sentRequests = loadedSentRequests {
+                self.sentFriendRequests = sentRequests
+            }
+            if let stats = loadedStats {
+                self.profileStats = stats
+            }
+            if let interests = loadedInterests {
+                self.profileInterests = interests
+            }
+            if let socialMedia = loadedSocialMedia {
+                self.profileSocialMedia = socialMedia
+            }
+            if let profileActivities = loadedProfileActivities {
+                self.profileActivities = profileActivities
+            }
+            
+            print("✅ [CACHE] Loaded all data from disk on background thread")
         }
     }
     
     private func saveToDisk() {
+        // This method is called from diskQueue (background thread)
+        // NO operations here - all work done in debouncedSaveToDisk which captures data properly
+        print("⚠️ [CACHE] saveToDisk called directly - should use debouncedSaveToDisk or immediateSaveToDisk")
+    }
+    
+    /// Actual save implementation that safely captures data on main thread before encoding on background
+    private func performSaveToDisk(
+        timestamps: [UUID: [String: Date]],
+        friends: [UUID: [FullFriendUserDTO]],
+        activities: [UUID: [FullFeedActivityDTO]],
+        activityTypes: [ActivityTypeDTO],
+        otherProfiles: [UUID: BaseUserDTO],
+        recommendedFriends: [UUID: [RecommendedFriendUserDTO]],
+        friendRequests: [UUID: [FetchFriendRequestDTO]],
+        sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]],
+        profileStats: [UUID: UserStatsDTO],
+        profileInterests: [UUID: [String]],
+        profileSocialMedia: [UUID: UserSocialMediaDTO],
+        profileActivities: [UUID: [ProfileActivityDTO]]
+    ) {
+        // All encoding and disk writes happen on background thread (diskQueue)
+        
         // Save cache timestamps (user-specific)
-        if let timestampsData = try? JSONEncoder().encode(lastChecked) {
+        if let timestampsData = try? JSONEncoder().encode(timestamps) {
             UserDefaults.standard.set(timestampsData, forKey: CacheKeys.lastChecked)
         }
         
@@ -1528,8 +1698,6 @@ class AppCache: ObservableObject {
         if let friendsData = try? JSONEncoder().encode(friends) {
             UserDefaults.standard.set(friendsData, forKey: CacheKeys.friends)
         }
-        
-
         
         // Save activities
         if let activitiesData = try? JSONEncoder().encode(activities) {
@@ -1575,8 +1743,6 @@ class AppCache: ObservableObject {
         if let socialMediaData = try? JSONEncoder().encode(profileSocialMedia) {
             UserDefaults.standard.set(socialMediaData, forKey: CacheKeys.profileSocialMedia)
         }
-        
-
         
         // Save profile activities
         if let activitiesData = try? JSONEncoder().encode(profileActivities) {
