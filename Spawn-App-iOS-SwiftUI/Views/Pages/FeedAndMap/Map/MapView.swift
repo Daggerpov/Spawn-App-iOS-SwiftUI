@@ -117,172 +117,118 @@ struct MapView: View {
     }
 
     var body: some View {
-        ZStack {
-            // Base layer - Map and its components
+        let _ = print("🗺️ MapView body rendering - region: \(region.center)")
+        
+        GeometryReader { geometry in
+            let _ = print("🗺️ MapView GeometryReader - size: \(geometry.size)")
+            
+            ZStack {
+                // Map layer using unified component
+                UnifiedMapViewRepresentable(
+                    region: $region,
+                    is3DMode: $is3DMode,
+                    showsUserLocation: true,
+                    annotationItems: filteredActivities.filter { $0.location != nil },
+                    isLocationSelectionMode: false,
+                    onMapWillChange: nil,
+                    onMapDidChange: { _ in },
+                    onActivityTap: { activity in
+                        // Use global popup system with fromMapView flag
+                        NotificationCenter.default.post(
+                            name: .showGlobalActivityPopup,
+                            object: nil,
+                            userInfo: [
+                                "activity": activity, 
+                                "color": ActivityColorService.shared.getColorForActivity(activity.id),
+                                "fromMapView": true
+                            ]
+                        )
+                    }
+                )
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .ignoresSafeArea()
+            
+            // Top control buttons
             VStack {
-                ZStack {
-                    // Map layer using unified component
-                    UnifiedMapViewRepresentable(
-                        region: $region,
-                        is3DMode: $is3DMode,
-                        showsUserLocation: true,
-                        annotationItems: filteredActivities.filter { $0.location != nil },
-                        isLocationSelectionMode: false,
-                        onMapWillChange: nil,
-                        onMapDidChange: { _ in },
-                        onActivityTap: { activity in
-                            // Use global popup system with fromMapView flag
-                            NotificationCenter.default.post(
-                                name: .showGlobalActivityPopup,
-                                object: nil,
-                                userInfo: [
-                                    "activity": activity, 
-                                    "color": ActivityColorService.shared.getColorForActivity(activity.id),
-                                    "fromMapView": true
-                                ]
-                            )
-                        }
-                    )
-                    .ignoresSafeArea()
-
-                    // Top control buttons
-                    VStack {
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 8) {
-                                // 3D mode toggle button (works on iOS 9+ with MapKit camera)
-                                Button(action: {
-                                    // Haptic feedback
-                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                    impactGenerator.impactOccurred()
-                                    
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        is3DMode.toggle()
-                                    }
-                                }) {
-                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(universalAccentColor)
-                                        .padding(12)
-                                        .background(universalBackgroundColor)
-                                        .clipShape(Circle())
-                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                        .scaleEffect(toggle3DScale)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
-                                .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
-                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                                    toggle3DPressed = pressing
-                                    toggle3DScale = pressing ? 0.95 : 1.0
-                                    
-                                    // Additional haptic feedback for press down
-                                    if pressing {
-                                        let selectionGenerator = UISelectionFeedbackGenerator()
-                                        selectionGenerator.selectionChanged()
-                                    }
-                                }, perform: {})
-                                
-                                // Location button
-                                Button(action: {
-                                    // Haptic feedback
-                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                    impactGenerator.impactOccurred()
-                                    
-                                    if let userLocation = locationManager.userLocation {
-                                        withAnimation(.easeInOut(duration: 0.75)) {
-                                            region = MKCoordinateRegion(
-                                                center: userLocation,
-                                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                                            )
-                                        }
-                                    }
-                                }) {
-                                    Image(systemName: "location.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(universalAccentColor)
-                                        .padding(12)
-                                        .background(universalBackgroundColor)
-                                        .clipShape(Circle())
-                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                        .scaleEffect(locationScale)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .animation(.easeInOut(duration: 0.15), value: locationScale)
-                                .animation(.easeInOut(duration: 0.15), value: locationPressed)
-                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                                    locationPressed = pressing
-                                    locationScale = pressing ? 0.95 : 1.0
-                                    
-                                    // Additional haptic feedback for press down
-                                    if pressing {
-                                        let selectionGenerator = UISelectionFeedbackGenerator()
-                                        selectionGenerator.selectionChanged()
-                                    }
-                                }, perform: {})
+                HStack {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        // 3D mode toggle button (works on iOS 9+ with MapKit camera)
+                        Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                is3DMode.toggle()
                             }
-                            .padding(.trailing, 16)
+                        }) {
+                            Image(systemName: is3DMode ? "view.3d" : "view.2d")
+                                .font(.system(size: 18))
+                                .foregroundColor(universalAccentColor)
+                                .padding(12)
+                                .background(universalBackgroundColor)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                .scaleEffect(toggle3DScale)
                         }
-                        .padding(.top, 16)
+                        .buttonStyle(PlainButtonStyle())
+                        .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
+                        .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
+                        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                            toggle3DPressed = pressing
+                            toggle3DScale = pressing ? 0.95 : 1.0
+                            
+                            // Additional haptic feedback for press down
+                            if pressing {
+                                let selectionGenerator = UISelectionFeedbackGenerator()
+                                selectionGenerator.selectionChanged()
+                            }
+                        }, perform: {})
                         
-                        Spacer()
-                    }
-                }
-            }
-            .task {
-                // Wrap in Task to avoid blocking UI
-                Task {
-                    await viewModel.fetchAllData()
-                    await MainActor.run {
-                        if let userLocation = locationManager.userLocation {
-                            region = MKCoordinateRegion(
-                                center: userLocation,
-                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                            )
-                        } else if !viewModel.activities.isEmpty {
-                            adjustRegionForActivities()
+                        // Location button
+                        Button(action: {
+                            // Haptic feedback
+                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+                            impactGenerator.impactOccurred()
+                            
+                            if let userLocation = locationManager.userLocation {
+                                withAnimation(.easeInOut(duration: 0.75)) {
+                                    region = MKCoordinateRegion(
+                                        center: userLocation,
+                                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                    )
+                                }
+                            }
+                        }) {
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(universalAccentColor)
+                                .padding(12)
+                                .background(universalBackgroundColor)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
+                                .scaleEffect(locationScale)
                         }
+                        .buttonStyle(PlainButtonStyle())
+                        .animation(.easeInOut(duration: 0.15), value: locationScale)
+                        .animation(.easeInOut(duration: 0.15), value: locationPressed)
+                        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+                            locationPressed = pressing
+                            locationScale = pressing ? 0.95 : 1.0
+                            
+                            // Additional haptic feedback for press down
+                            if pressing {
+                                let selectionGenerator = UISelectionFeedbackGenerator()
+                                selectionGenerator.selectionChanged()
+                            }
+                        }, perform: {})
                     }
+                    .padding(.trailing, 16)
                 }
-            }
-            .onChange(of: locationManager.locationUpdated) {
-                if locationManager.locationUpdated && locationManager.userLocation != nil && 
-                   abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
-                   abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
-                    adjustRegionToUserLocation()
-                }
-            }
-            .onChange(of: viewModel.activities) {
-                if locationManager.userLocation != nil {
-                    adjustRegionForActivities()
-                }
-            }
-            .onChange(of: locationManager.locationError) { _, error in
-                if let error = error {
-                    locationErrorMessage = error
-                    showLocationError = true
-                }
-            }
-            .alert("Location Error", isPresented: $showLocationError) {
-                Button("OK") {
-                    showLocationError = false
-                }
-                if locationManager.authorizationStatus == .denied {
-                    Button("Settings") {
-                        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(settingsUrl)
-                        }
-                    }
-                }
-            } message: {
-                Text(locationErrorMessage)
-            }
-            .task {
-                // Wrap in Task to avoid blocking UI
-                Task {
-                    // Force refresh activities when map appears to ensure no stale data
-                    await viewModel.forceRefreshActivities()
-                }
+                .padding(.top, 16)
+                
+                Spacer()
             }
 
 
@@ -396,6 +342,64 @@ struct MapView: View {
                 }
                 .padding(.bottom, 80) // Position filter above nav bar with proper spacing
             }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(universalBackgroundColor)
+        .task {
+            // Wrap in Task to avoid blocking UI - Fetch all data and refresh activities
+            Task {
+                print("🗺️ MapView: Starting data fetch")
+                // Run both operations in parallel for faster loading
+                async let refreshActivities: () = viewModel.forceRefreshActivities()
+                async let fetchData: () = viewModel.fetchAllData()
+                
+                let _ = await (refreshActivities, fetchData)
+                print("🗺️ MapView: Data fetch completed")
+                
+                await MainActor.run {
+                    if let userLocation = locationManager.userLocation {
+                        region = MKCoordinateRegion(
+                            center: userLocation,
+                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                        )
+                    } else if !viewModel.activities.isEmpty {
+                        adjustRegionForActivities()
+                    }
+                }
+            }
+        }
+        .onChange(of: locationManager.locationUpdated) {
+            if locationManager.locationUpdated && locationManager.userLocation != nil && 
+               abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
+               abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
+                adjustRegionToUserLocation()
+            }
+        }
+        .onChange(of: viewModel.activities) {
+            if locationManager.userLocation != nil {
+                adjustRegionForActivities()
+            }
+        }
+        .onChange(of: locationManager.locationError) { _, error in
+            if let error = error {
+                locationErrorMessage = error
+                showLocationError = true
+            }
+        }
+        .alert("Location Error", isPresented: $showLocationError) {
+            Button("OK") {
+                showLocationError = false
+            }
+            if locationManager.authorizationStatus == .denied {
+                Button("Settings") {
+                    if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(settingsUrl)
+                    }
+                }
+            }
+        } message: {
+            Text(locationErrorMessage)
         }
     }
 
