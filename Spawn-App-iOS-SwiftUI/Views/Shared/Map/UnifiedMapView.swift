@@ -46,9 +46,9 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         let mapView = MKMapView()
         print("🔍 DEBUG: Created MKMapView instance")
         
-        // Important: Let SwiftUI handle the sizing
-        mapView.translatesAutoresizingMaskIntoConstraints = true
-        print("🔍 DEBUG: Set autoresizing properties for MKMapView")
+        // Ensure proper initialization for iOS < 17 compatibility
+        mapView.frame = CGRect(x: 0, y: 0, width: 100, height: 100) // Set initial finite frame
+        print("🔍 DEBUG: Set initial frame for MKMapView")
         
         mapView.showsUserLocation = showsUserLocation
         mapView.delegate = context.coordinator
@@ -102,7 +102,7 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
     }
     
     func updateUIView(_ mapView: MKMapView, context: Context) {
-        print("🔍 DEBUG: UnifiedMapView updateUIView called - mapView frame: \(mapView.frame), bounds: \(mapView.bounds)")
+        print("🔍 DEBUG: UnifiedMapView updateUIView called")
         // Keep coordinator in sync with latest parent values
         context.coordinator.parent = self
         
