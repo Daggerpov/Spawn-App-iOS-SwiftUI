@@ -57,8 +57,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 					.onAppear {
 						// Connect the app delegate to the app
 						appDelegate.app = self
-						
-						print("🔄 DEBUG: Showing LoadingView - hasCheckedSpawnUserExistence: \(userAuth.hasCheckedSpawnUserExistence), isFirstLaunch: \(userAuth.isFirstLaunch)")
 					}
 					.task {
 						// If we're mocking, simulate a login with mock user
@@ -73,9 +71,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 			} else if userAuth.isLoggedIn, let spawnUser = userAuth.spawnUser, userAuth.hasCompletedOnboarding {
 				// User is logged in, has user data, and has completed onboarding - go to main content
 				ContentView(user: spawnUser, deepLinkManager: deepLinkManager)
-					.onAppear {
-						print("🔄 DEBUG: Showing ContentView - User is logged in")
-					}
 					.task {
 						// Initialize and validate the cache
 						await appCache.validateCache()
@@ -98,8 +93,6 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 				// User is not logged in or has no user data - show welcome screen
 				WelcomeView()
 					.onAppear {
-						print("🔄 DEBUG: Showing WelcomeView - hasCheckedSpawnUserExistence: \(userAuth.hasCheckedSpawnUserExistence), isLoggedIn: \(userAuth.isLoggedIn), spawnUser: \(userAuth.spawnUser?.id.uuidString ?? "nil")")
-						
 						// Connect the app delegate to the app
 						appDelegate.app = self
 					}
@@ -125,22 +118,18 @@ struct Spawn_App_iOS_SwiftUIApp: App {
     private func handleScenePhaseChange(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            print("🔄 App became active")
             // Only refresh activities if user is logged in
             if userAuth.isLoggedIn, userAuth.spawnUser != nil {
-                print("🔄 Refreshing activities for logged in user")
                 Task {
                     await appCache.refreshActivities()
                     // Clean up any expired activities after refresh
                     appCache.cleanupExpiredActivities()
                 }
-            } else {
-                print("🔄 Skipping activity refresh - no logged in user")
             }
         case .background:
-            print("📱 App entered background")
+            break
         case .inactive:
-            print("📱 App became inactive")
+            break
         @unknown default:
             break
         }

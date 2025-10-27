@@ -36,7 +36,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Sync the hasCompletedOnboarding from backend with local state
 				if let backendOnboardingStatus = user.hasCompletedOnboarding {
 					if backendOnboardingStatus != hasCompletedOnboarding {
-						print("🔄 DEBUG: Syncing hasCompletedOnboarding from backend: \(backendOnboardingStatus)")
 						hasCompletedOnboarding = backendOnboardingStatus
 						UserDefaults.standard.set(backendOnboardingStatus, forKey: "hasCompletedOnboarding")
 					}
@@ -64,11 +63,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var hasSeenPreviewScreens: Bool = false
 	
 	// Track onboarding completion
-	@Published var hasCompletedOnboarding: Bool = false {
-		didSet {
-			print("🔄 DEBUG: hasCompletedOnboarding changed to: \(hasCompletedOnboarding)")
-		}
-	}
+	@Published var hasCompletedOnboarding: Bool = false
 
 	@Published var name: String?
 	@Published var email: String?
@@ -133,7 +128,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
     func navigateTo(_ state: NavigationState, delay: TimeInterval = 0.1) {
         // Prevent multiple concurrent navigation attempts
         guard !isNavigating else {
-            print("🚫 DEBUG: Navigation already in progress, ignoring navigateTo(\(state.description)) call")
             return
         }
         
@@ -145,8 +139,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
             
-            print("📍 Navigating to: \(state.description) with delay: \(delay)s")
-            print("📍 Current state - isLoggedIn: \(isLoggedIn), hasCompletedOnboarding: \(hasCompletedOnboarding), spawnUser: \(spawnUser?.id.uuidString ?? "nil")")
             self.navigationState = state
             
             // Reset the navigation lock after a short delay
@@ -157,7 +149,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
     }
 
 	private init(apiService: IAPIService) {
-		print("🔄 DEBUG: UserAuthViewModel.init() called")
         self.spawnUser = nil
 		self.apiService = apiService
 
@@ -169,26 +160,21 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			// This is a genuine first launch
 			self.isFirstLaunch = true
 			UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
-			print("🔄 DEBUG: First launch detected, marking hasLaunchedBefore as true")
 		} else {
 			// This is an app restart or upgrade
 			self.isFirstLaunch = false
-			print("🔄 DEBUG: App has launched before, setting isFirstLaunch to false")
 		}
 		
 		// Load onboarding completion status from UserDefaults
 		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
-		print("🔄 DEBUG: Loaded hasCompletedOnboarding from UserDefaults: \(self.hasCompletedOnboarding)")
 		
 		// Load preview screens status from UserDefaults
 		self.hasSeenPreviewScreens = UserDefaults.standard.bool(forKey: "hasSeenPreviewScreens")
-		print("🔄 DEBUG: Loaded hasSeenPreviewScreens from UserDefaults: \(self.hasSeenPreviewScreens)")
 
         // Start minimum loading timer
         Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             await MainActor.run {
-                print("🔄 DEBUG: Minimum loading timer completed")
                 self.minimumLoadingCompleted = true
                 self.checkLoadingCompletion()
             }
@@ -196,7 +182,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
         
         // Attempt quick login
         Task {
-            print("🔄 DEBUG: Starting quick login attempt")
             if MockAPIService.isMocking {
                 await setMockUser()
             } else {

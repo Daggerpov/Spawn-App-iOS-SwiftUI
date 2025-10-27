@@ -92,7 +92,6 @@ class ActivityTypeViewModel: ObservableObject {
             if !cachedTypes.isEmpty {
                 // Use cached data immediately - no loading state needed!
                 self.activityTypes = cachedTypes
-                print("✅ Using cached activity types (\(cachedTypes.count) types)")
                 return
             }
         }

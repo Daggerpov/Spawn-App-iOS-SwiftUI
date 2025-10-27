@@ -211,7 +211,6 @@ class FeedViewModel: ObservableObject {
     
     /// Force refresh activities from the API, bypassing cache
     func forceRefreshActivities() async {
-        print("🔄 FeedViewModel: Force refreshing activities")
         await fetchActivitiesFromAPI()
     }
     

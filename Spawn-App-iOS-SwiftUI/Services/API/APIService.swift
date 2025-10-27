@@ -646,8 +646,6 @@ class APIService: IAPIService {
             return
         }
         
-        print("🔐 Processing auth tokens from response headers for: \(url.absoluteString)")
-        
         // Extract access token
 		guard let accessToken = response.allHeaderFields["Authorization"] as? String ?? 
 		                        response.allHeaderFields["authorization"] as? String else {
@@ -662,11 +660,6 @@ class APIService: IAPIService {
         if refreshToken == nil {
             print("⚠️ WARNING: No refresh token found in response headers")
             // Don't throw error here - some endpoints might only return access tokens
-        }
-        
-        print("🔐 Found access token in headers")
-        if refreshToken != nil {
-            print("🔐 Found refresh token in headers")
         }
 
 		// Remove "Bearer " prefix from access token
@@ -693,8 +686,6 @@ class APIService: IAPIService {
             if !saveSuccessful {
                 print("❌ ERROR: Failed to save access token to keychain after \(maxSaveAttempts) attempts")
                 throw APIError.failedTokenSaving(tokenType: "accessToken")
-            } else {
-                print("✅ Access token saved to keychain successfully")
             }
 		}
 		
@@ -717,15 +708,11 @@ class APIService: IAPIService {
                 }
             }
             
-            if !saveSuccessful {
-                print("❌ ERROR: Failed to save refresh token to keychain after \(maxSaveAttempts) attempts")
-                throw APIError.failedTokenSaving(tokenType: "refreshToken")
-            } else {
-                print("✅ Refresh token saved to keychain successfully")
-            }
+			if !saveSuccessful {
+				print("❌ ERROR: Failed to save refresh token to keychain after \(maxSaveAttempts) attempts")
+				throw APIError.failedTokenSaving(tokenType: "refreshToken")
+			}
 		}
-        
-        print("🔐 Token processing completed successfully")
 	}
 
 	fileprivate func setAuthHeader(request: inout URLRequest) {
@@ -746,7 +733,6 @@ class APIService: IAPIService {
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
-			print("🔓 Endpoint \(url.absoluteString) is whitelisted - no auth required")
 			return
 		}
 		

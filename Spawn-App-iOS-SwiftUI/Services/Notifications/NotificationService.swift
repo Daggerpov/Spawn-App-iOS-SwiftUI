@@ -59,10 +59,7 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
                 // Register for remote notifications on main thread
                 DispatchQueue.main.async {
                     UIApplication.shared.registerForRemoteNotifications()
-                    print("[PUSH DEBUG] Registered for remote notifications")
                 }
-            } else {
-                print("[PUSH DEBUG] Permission not granted for notifications")
             }
         }
     }
@@ -566,11 +563,6 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             print("Cannot fetch notification preferences: user not logged in")
             return
-        }
-        
-        // Log user details
-        if let user = UserAuthViewModel.shared.spawnUser {
-            print("Fetching notification preferences for user ID: \(userId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))")
         }
         
         // Don't fetch from backend if in mock mode
