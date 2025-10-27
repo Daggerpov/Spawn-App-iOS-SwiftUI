@@ -260,7 +260,46 @@ class FriendsTabViewModel: ObservableObject {
     }
 
 	func fetchAllData() async {
+        // Check cache first - only show loading if we need to fetch from API
+        let cachedFriends = appCache.getCurrentUserFriends()
+        let cachedRecommendedFriends = appCache.getCurrentUserRecommendedFriends()
+        let cachedIncomingRequests = appCache.getCurrentUserFriendRequests()
+        let cachedOutgoingRequests = appCache.getCurrentUserSentFriendRequests()
         
+        let hasCachedData = !cachedFriends.isEmpty || !cachedRecommendedFriends.isEmpty || 
+                           !cachedIncomingRequests.isEmpty || !cachedOutgoingRequests.isEmpty
+        
+        if hasCachedData {
+            // Load cached data immediately - no loading state needed
+            await MainActor.run {
+                if !cachedFriends.isEmpty {
+                    self.friends = cachedFriends
+                }
+                if !cachedRecommendedFriends.isEmpty {
+                    self.recommendedFriends = cachedRecommendedFriends
+                }
+                if !cachedIncomingRequests.isEmpty {
+                    self.incomingFriendRequests = cachedIncomingRequests
+                }
+                if !cachedOutgoingRequests.isEmpty {
+                    self.outgoingFriendRequests = cachedOutgoingRequests
+                }
+                
+                // Initialize filtered lists
+                self.filteredFriends = self.friends
+                self.filteredRecommendedFriends = self.recommendedFriends
+                self.filteredIncomingFriendRequests = self.incomingFriendRequests
+                self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
+            }
+            
+            print("✅ Using cached friends data")
+            
+            // Refresh profile pictures for cached data
+            await refreshProfilePictures()
+            return
+        }
+        
+        // No cached data - show loading and fetch from API
         await MainActor.run {
             isLoading = true
         }
@@ -274,15 +313,7 @@ class FriendsTabViewModel: ObservableObject {
                 await self.fetchOutgoingFriendRequests() 
             }
             group.addTask { 
-                // Check cache first for recommended friends
-                let cachedUserRecommendedFriends = self.appCache.getCurrentUserRecommendedFriends()
-                if cachedUserRecommendedFriends.isEmpty {
-                    await self.fetchRecommendedFriends()
-                } else {
-                    await MainActor.run {
-                        self.recommendedFriends = cachedUserRecommendedFriends
-                    }
-                }
+                await self.fetchRecommendedFriends()
             }
             group.addTask {
                 await self.fetchFriends() 

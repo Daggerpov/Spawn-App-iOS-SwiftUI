@@ -77,17 +77,34 @@ class ActivityTypeViewModel: ObservableObject {
     
     // MARK: - Backend API Methods
     
-    /// Fetches all activity types for the user from the backend
+    /// Fetches all activity types for the user from the backend or cache
     @MainActor
-    func fetchActivityTypes() async {
+    func fetchActivityTypes(forceRefresh: Bool = false) async {
         // Check if user is still authenticated before making API call
         guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
             print("Cannot fetch activity types: User is not logged in")
             return
         }
         
-        setLoadingState(true)
+        // First, try to load from cache if not forcing a refresh
+        if !forceRefresh {
+            let cachedTypes = appCache.activityTypes
+            if !cachedTypes.isEmpty {
+                // Use cached data immediately - no loading state needed!
+                self.activityTypes = cachedTypes
+                print("✅ Using cached activity types (\(cachedTypes.count) types)")
+                return
+            }
+        }
         
+        // Cache is empty or force refresh requested - show loading and fetch
+        await fetchActivityTypesFromAPI()
+    }
+    
+    /// Internal method to fetch from API with loading state
+    @MainActor
+    private func fetchActivityTypesFromAPI() async {
+        setLoadingState(true)
         defer { setLoadingState(false) }
         
         do {
@@ -108,6 +125,10 @@ class ActivityTypeViewModel: ObservableObject {
 			print("❌ Error fetching activity types: \(error)")
 			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
 		} catch {
+			// Skip logging for cancelled requests (error code -999) - this is expected when navigating away
+			if let urlError = error as? URLError, urlError.code == .cancelled {
+				return
+			}
 			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
     }

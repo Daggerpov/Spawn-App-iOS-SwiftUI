@@ -61,8 +61,14 @@ struct SignInView: View {
                             .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
                             
                         
-                        NavigationLink(destination: LoginInputView()) {
-                            // Handle log in action
+                        Button(action: {
+                            print("🔘 DEBUG: Log in button tapped")
+                            // Haptic feedback
+                            HapticFeedbackService.shared.medium()
+                            
+                            // Use auth navigation system
+                            userAuth.navigateTo(.loginInput)
+                        }) {
                             Text("Log in")
                                 .font(.onestSemiBold(size: 14))
                                 .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))

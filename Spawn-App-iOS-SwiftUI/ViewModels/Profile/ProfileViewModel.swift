@@ -59,16 +59,17 @@ class ProfileViewModel: ObservableObject {
             return
         }
         
-        await MainActor.run { self.isLoadingStats = true }
-        
-        // Check cache first
+        // Check cache first - only show loading if we need to fetch from API
         if let cachedStats = AppCache.shared.profileStats[userId] {
             await MainActor.run {
                 self.userStats = cachedStats
-                self.isLoadingStats = false
             }
+            print("✅ Using cached profile stats for user \(userId)")
             return
         }
+        
+        // No cached data - show loading and fetch from API
+        await MainActor.run { self.isLoadingStats = true }
         
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/stats")!
@@ -92,16 +93,17 @@ class ProfileViewModel: ObservableObject {
     }
     
     func fetchUserInterests(userId: UUID) async {
-        await MainActor.run { self.isLoadingInterests = true }
-        
-        // Check cache first
+        // Check cache first - only show loading if we need to fetch from API
         if let cachedInterests = AppCache.shared.profileInterests[userId] {
             await MainActor.run {
                 self.userInterests = cachedInterests
-                self.isLoadingInterests = false
             }
+            print("✅ Using cached profile interests for user \(userId)")
             return
         }
+        
+        // No cached data - show loading and fetch from API
+        await MainActor.run { self.isLoadingInterests = true }
         
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
@@ -174,16 +176,17 @@ class ProfileViewModel: ObservableObject {
     }
     
     func fetchUserSocialMedia(userId: UUID) async {
-        await MainActor.run { self.isLoadingSocialMedia = true }
-        
-        // Check cache first
+        // Check cache first - only show loading if we need to fetch from API
         if let cachedSocialMedia = AppCache.shared.profileSocialMedia[userId] {
             await MainActor.run {
                 self.userSocialMedia = cachedSocialMedia
-                self.isLoadingSocialMedia = false
             }
+            print("✅ Using cached social media for user \(userId)")
             return
         }
+        
+        // No cached data - show loading and fetch from API
+        await MainActor.run { self.isLoadingSocialMedia = true }
         
         do {
             let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
@@ -1086,17 +1089,17 @@ class ProfileViewModel: ObservableObject {
         print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
         print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
         
-        await MainActor.run { self.isLoadingUserActivities = true }
-        
-        // Check cache first
+        // Check cache first - only show loading if we need to fetch from API
         if let cachedActivities = AppCache.shared.profileActivities[profileUserId] {
-            print("💾 ProfileViewModel: Found cached profile activities: \(cachedActivities.count)")
+            print("✅ Using cached profile activities: \(cachedActivities.count)")
             await MainActor.run {
                 self.profileActivities = cachedActivities
-                self.isLoadingUserActivities = false
             }
             return
         }
+        
+        // No cached data - show loading and fetch from API
+        await MainActor.run { self.isLoadingUserActivities = true }
         
         do {
             let url = URL(string: APIService.baseURL + "activities/profile/\(profileUserId)")!
