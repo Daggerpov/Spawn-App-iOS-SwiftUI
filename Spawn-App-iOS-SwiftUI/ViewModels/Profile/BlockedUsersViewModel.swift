@@ -21,8 +21,11 @@ class BlockedUsersViewModel: ObservableObject {
             // Get full blocked user details instead of just IDs
             let blockedUserDTOs: [BlockedUserDTO] = try await reportingService.getFullBlockedUsers(blockerId: userId)
             blockedUsers = blockedUserDTOs
+        } catch let error as APIError {
+            errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            blockedUsers = []
         } catch {
-            errorMessage = "Failed to load blocked users: \(error.localizedDescription)"
+            errorMessage = ErrorFormattingService.shared.formatError(error)
             blockedUsers = []
         }
         
@@ -37,16 +40,21 @@ class BlockedUsersViewModel: ObservableObject {
             blockedUsers.removeAll { $0.blockedId == blockedId }
             
             errorMessage = nil
+        } catch let error as APIError {
+            errorMessage = ErrorFormattingService.shared.formatAPIError(error)
         } catch {
-            errorMessage = "Failed to unblock user: \(error.localizedDescription)"
+            errorMessage = ErrorFormattingService.shared.formatError(error)
         }
     }
     
     func isUserBlocked(blockerId: UUID, blockedId: UUID) async -> Bool {
         do {
             return try await reportingService.isUserBlocked(blockerId: blockerId, blockedId: blockedId)
+        } catch let error as APIError {
+            errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            return false
         } catch {
-            errorMessage = "Failed to check block status: \(error.localizedDescription)"
+            errorMessage = ErrorFormattingService.shared.formatError(error)
             return false
         }
     }

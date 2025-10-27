@@ -171,8 +171,15 @@ class FriendsTabViewModel: ObservableObject {
                     
                     self.isLoading = false
                 }
+            } catch let error as APIError {
+                print("Error fetching filtered results: \(ErrorFormattingService.shared.formatAPIError(error))")
+                // Fallback to local filtering if the API call fails
+                await localFilterResults(query: query)
+                await MainActor.run {
+                    self.isLoading = false
+                }
             } catch {
-                print("Error fetching filtered results: \(error.localizedDescription)")
+                print("Error fetching filtered results: \(ErrorFormattingService.shared.formatError(error))")
                 // Fallback to local filtering if the API call fails
                 await localFilterResults(query: query)
                 await MainActor.run {
@@ -514,8 +521,10 @@ class FriendsTabViewModel: ObservableObject {
             do {
                 _ = try await self.apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
                 requestSucceeded = true
+            } catch let error as APIError {
+                print("Error removing friend: \(ErrorFormattingService.shared.formatAPIError(error))")
             } catch {
-                print("Error removing friend: \(error.localizedDescription)")
+                print("Error removing friend: \(ErrorFormattingService.shared.formatError(error))")
             }
         }
         
@@ -563,8 +572,15 @@ class FriendsTabViewModel: ObservableObject {
                 self.recentlySpawnedWith = fetchedUsers
                 self.isLoading = false
             }
+        } catch let error as APIError {
+            print("Error fetching recently spawned users: \(ErrorFormattingService.shared.formatAPIError(error))")
+            // If API fails, use empty array
+            await MainActor.run {
+                self.recentlySpawnedWith = []
+                self.isLoading = false
+            }
         } catch {
-            print("Error fetching recently spawned users: \(error.localizedDescription)")
+            print("Error fetching recently spawned users: \(ErrorFormattingService.shared.formatError(error))")
             // If API fails, use empty array
             await MainActor.run {
                 self.recentlySpawnedWith = []
@@ -620,8 +636,13 @@ class FriendsTabViewModel: ObservableObject {
             await MainActor.run {
                 self.searchResults = fetchedUsers
             }
+        } catch let error as APIError {
+            print("Error performing user search: \(ErrorFormattingService.shared.formatAPIError(error))")
+            await MainActor.run {
+                self.searchResults = []
+            }
         } catch {
-            print("Error performing user search: \(error.localizedDescription)")
+            print("Error performing user search: \(ErrorFormattingService.shared.formatError(error))")
             await MainActor.run {
                 self.searchResults = []
             }
@@ -709,8 +730,10 @@ class FriendsTabViewModel: ObservableObject {
                 self.filteredFriends.removeAll { $0.id == blockedId }
             }
             
+        } catch let error as APIError {
+            print("Failed to block user: \(ErrorFormattingService.shared.formatAPIError(error))")
         } catch {
-            print("Failed to block user: \(error.localizedDescription)")
+            print("Failed to block user: \(ErrorFormattingService.shared.formatError(error))")
         }
     }
     

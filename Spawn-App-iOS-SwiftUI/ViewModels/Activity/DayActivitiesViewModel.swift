@@ -106,8 +106,10 @@ class DayActivitiesViewModel: ObservableObject {
                     appCache.addOrUpdateActivity(activity)
                 }
             }
+        } catch let error as APIError {
+            print("Error fetching activity: \(ErrorFormattingService.shared.formatAPIError(error))")
         } catch {
-            print("Error fetching activity: \(error.localizedDescription)")
+            print("Error fetching activity: \(ErrorFormattingService.shared.formatError(error))")
         }
     }
     

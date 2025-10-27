@@ -448,10 +448,17 @@ class ProfileViewModel: ObservableObject {
                 
                 print("✅ ProfileViewModel: All calendar activities updated with \(activities.count) activities")
             }
-        } catch {
-            print("❌ ProfileViewModel: Error fetching friend's all calendar activities: \(error.localizedDescription)")
+        } catch let error as APIError {
+            print("❌ ProfileViewModel: Error fetching friend's all calendar activities: \(ErrorFormattingService.shared.formatAPIError(error))")
             await MainActor.run {
-                self.errorMessage = "Failed to load friend's calendar: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                self.allCalendarActivities = []
+                self.isLoadingCalendar = false
+            }
+        } catch {
+            print("❌ ProfileViewModel: Error fetching friend's all calendar activities: \(ErrorFormattingService.shared.formatError(error))")
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.allCalendarActivities = []
                 self.isLoadingCalendar = false
             }
@@ -520,10 +527,21 @@ class ProfileViewModel: ObservableObject {
                 
                 print("✅ ProfileViewModel: Calendar grid updated with \(activities.count) activities")
             }
-        } catch {
-            print("❌ ProfileViewModel: Error fetching friend's calendar activities: \(error.localizedDescription)")
+        } catch let error as APIError {
+            print("❌ ProfileViewModel: Error fetching friend's calendar activities: \(ErrorFormattingService.shared.formatAPIError(error))")
             await MainActor.run {
-                self.errorMessage = "Failed to load friend's calendar: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                self.calendarActivities = Array(
+                    repeating: Array(repeating: nil, count: 7),
+                    count: 5
+                )
+                self.allCalendarActivities = []
+                self.isLoadingCalendar = false
+            }
+        } catch {
+            print("❌ ProfileViewModel: Error fetching friend's calendar activities: \(ErrorFormattingService.shared.formatError(error))")
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.calendarActivities = Array(
                     repeating: Array(repeating: nil, count: 7),
                     count: 5
@@ -694,8 +712,16 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 objectWillChange.send()
             }
+        } catch let error as APIError {
+            print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatAPIError(error))")
+            
+            // Revert the optimistic update since the API call failed
+            await MainActor.run {
+                self.userInterests = originalInterests
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            }
         } catch {
-            print("❌ Failed to remove interest '\(interest)': \(error.localizedDescription)")
+            print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatError(error))")
             
             // Revert the optimistic update since the API call failed
             await MainActor.run {
@@ -788,14 +814,21 @@ class ProfileViewModel: ObservableObject {
             }
             
             return activity
-        } catch {
-            print("❌ ProfileViewModel: Error fetching activity details: \(error.localizedDescription)")
+        } catch let error as APIError {
+            print("❌ ProfileViewModel: Error fetching activity details: \(ErrorFormattingService.shared.formatAPIError(error))")
             await MainActor.run {
-                self.errorMessage = "Failed to load activity: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                self.isLoadingActivity = false
+            }
+        } catch {
+            print("❌ ProfileViewModel: Error fetching activity details: \(ErrorFormattingService.shared.formatError(error))")
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.isLoadingActivity = false
             }
             return nil
         }
+		return nil
     }
     
     // MARK: - Friendship Management
@@ -885,9 +918,15 @@ class ProfileViewModel: ObservableObject {
                 }
                 self.isLoadingFriendshipStatus = false
             }
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                self.friendshipStatus = .unknown
+                self.isLoadingFriendshipStatus = false
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to check friendship status: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.friendshipStatus = .unknown
                 self.isLoadingFriendshipStatus = false
             }
@@ -917,9 +956,13 @@ class ProfileViewModel: ObservableObject {
                 let updatedRecommendedFriends = currentRecommendedFriends.filter { $0.id != toUserId }
                 AppCache.shared.updateRecommendedFriendsForUser(updatedRecommendedFriends, userId: fromUserId)
             }
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to send friend request: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
         }
     }
@@ -948,9 +991,16 @@ class ProfileViewModel: ObservableObject {
                 await AppCache.shared.forceRefreshAllFriendRequests()
                 NotificationCenter.default.post(name: .friendsDidChange, object: nil)
             }
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                // Revert the optimistic update on failure
+                self.friendshipStatus = .requestReceived
+                self.pendingFriendRequestId = requestId
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to accept friend request: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 // Revert the optimistic update on failure
                 self.friendshipStatus = .requestReceived
                 self.pendingFriendRequestId = requestId
@@ -974,9 +1024,16 @@ class ProfileViewModel: ObservableObject {
                 to: url,
                 parameters: ["friendRequestAction": "reject"]
             )
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                // Revert the optimistic update on failure
+                self.friendshipStatus = .requestReceived
+                self.pendingFriendRequestId = requestId
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to decline friend request: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 // Revert the optimistic update on failure
                 self.friendshipStatus = .requestReceived
                 self.pendingFriendRequestId = requestId
@@ -1001,9 +1058,15 @@ class ProfileViewModel: ObservableObject {
                 let activityIds = activities.map { $0.id }
                 ActivityColorService.shared.assignColorsForActivities(activityIds)
             }
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                self.userActivities = []
+                self.isLoadingUserActivities = false
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to load user activities: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.userActivities = []
                 self.isLoadingUserActivities = false
             }
@@ -1063,10 +1126,17 @@ class ProfileViewModel: ObservableObject {
                 // Update cache
                 AppCache.shared.updateProfileActivities(profileUserId, activities)
             }
-        } catch {
-            print("❌ ProfileViewModel: Error fetching profile activities: \(error.localizedDescription)")
+        } catch let error as APIError {
+            print("❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatAPIError(error))")
             await MainActor.run {
-                self.errorMessage = "Failed to load profile activities: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+                self.profileActivities = []
+                self.isLoadingUserActivities = false
+            }
+        } catch {
+            print("❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatError(error))")
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
                 self.profileActivities = []
                 self.isLoadingUserActivities = false
             }
@@ -1089,9 +1159,13 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.friendshipStatus = .none
             }
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to remove friend: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
         }
     }
@@ -1109,9 +1183,13 @@ class ProfileViewModel: ObservableObject {
             await MainActor.run {
                 self.errorMessage = nil
             }
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to report user: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
         }
     }
@@ -1145,9 +1223,13 @@ class ProfileViewModel: ObservableObject {
             // Refresh friends cache to remove the blocked user from friends list
             await AppCache.shared.refreshFriends()
             
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to block user: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
         }
     }
@@ -1168,9 +1250,13 @@ class ProfileViewModel: ObservableObject {
             // Refresh friends cache for consistency
             await AppCache.shared.refreshFriends()
             
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to unblock user: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
         }
     }
@@ -1182,9 +1268,14 @@ class ProfileViewModel: ObservableObject {
                 blockerId: blockerId,
                 blockedId: blockedId
             )
+        } catch let error as APIError {
+            await MainActor.run {
+                self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            }
+            return false
         } catch {
             await MainActor.run {
-                self.errorMessage = "Failed to check block status: \(error.localizedDescription)"
+                self.errorMessage = ErrorFormattingService.shared.formatError(error)
             }
             return false
         }

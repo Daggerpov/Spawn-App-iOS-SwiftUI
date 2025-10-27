@@ -40,40 +40,13 @@ class ActivityTypeViewModel: ObservableObject {
         errorMessage = error
     }
     
-    /// Updates local state and cache after successful API call
-    @MainActor
-    private func updateStateAfterAPISuccess(_ updatedTypes: [ActivityTypeDTO]) {
-        self.activityTypes = updatedTypes
-        appCache.updateActivityTypes(updatedTypes)
-        NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
-    }
-    
-    /// Handles API errors with consistent error messaging
-    @MainActor
-    private func handleAPIError(_ error: Error, context: String) {
-        print("❌ Error \(context): \(error)")
-        
-        if let apiError = error as? APIError {
-            switch apiError {
-            case .invalidStatusCode(let statusCode):
-                errorMessage = "Server error (status \(statusCode)). Please try again."
-            case .invalidData:
-                errorMessage = "Invalid response format. Please try again."
-            case .URLError:
-                errorMessage = "Network error. Please check your connection."
-            case .failedHTTPRequest(let description):
-                errorMessage = "Request failed: \(description)"
-            case .failedJSONParsing:
-                errorMessage = "Failed to parse server response. Please try again."
-            case .unknownError(let error):
-                errorMessage = "An unexpected error occurred: \(ErrorFormattingService.shared.formatError(error))"
-            case .failedTokenSaving:
-                errorMessage = "Authentication error. Please try logging in again."
-            }
-        } else {
-            errorMessage = "Failed to \(context)"
-        }
-    }
+	/// Updates local state and cache after successful API call
+	@MainActor
+	private func updateStateAfterAPISuccess(_ updatedTypes: [ActivityTypeDTO]) {
+		self.activityTypes = updatedTypes
+		appCache.updateActivityTypes(updatedTypes)
+		NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+	}
     
     init(
         userId: UUID,
@@ -131,9 +104,12 @@ class ActivityTypeViewModel: ObservableObject {
             self.activityTypes = fetchedTypes
             appCache.updateActivityTypes(fetchedTypes)
             
-        } catch {
-            handleAPIError(error, context: "fetching activity types")
-        }
+		} catch let error as APIError {
+			print("❌ Error fetching activity types: \(error)")
+			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+		} catch {
+			errorMessage = ErrorFormattingService.shared.formatError(error)
+		}
     }
     
 
@@ -203,11 +179,14 @@ class ActivityTypeViewModel: ObservableObject {
             
             updateStateAfterAPISuccess(updatedActivityTypes)
             
-            print("✅ Successfully deleted activity type: \(activityTypeDTO.title)")
-            
-        } catch {
-            handleAPIError(error, context: "deleting activity type")
-        }
+			print("✅ Successfully deleted activity type: \(activityTypeDTO.title)")
+			
+		} catch let error as APIError {
+			print("❌ Error deleting activity type: \(error)")
+			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+		} catch {
+			errorMessage = ErrorFormattingService.shared.formatError(error)
+		}
     }
     
     /// Creates a new activity type via direct API call
@@ -236,11 +215,14 @@ class ActivityTypeViewModel: ObservableObject {
             
             updateStateAfterAPISuccess(updatedActivityTypes)
             
-            print("✅ Successfully created activity type: \(activityTypeDTO.title)")
-            
-        } catch {
-            handleAPIError(error, context: "creating activity type")
-        }
+			print("✅ Successfully created activity type: \(activityTypeDTO.title)")
+			
+		} catch let error as APIError {
+			print("❌ Error creating activity type: \(error)")
+			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+		} catch {
+			errorMessage = ErrorFormattingService.shared.formatError(error)
+		}
     }
     
     /// Removes a friend from an activity type
@@ -297,21 +279,24 @@ class ActivityTypeViewModel: ObservableObject {
             
             updateStateAfterAPISuccess(updatedActivityTypes)
             
-        } catch {
-            print("❌ Error details: \(ErrorFormattingService.shared.formatError(error))")
-            
-            handleAPIError(error, context: "updating activity type")
-            
-            // Check if error is related to pinning limits
-            let formattedError = ErrorFormattingService.shared.formatError(error)
-            print("🔍 Formatted error from server: \(formattedError)")
-            if formattedError.contains("pinned activity types") {
-                print("⚠️ Server returned pinning limit error - this might be a server-side validation bug")
-                errorMessage = "You can only pin up to 4 activity types"
-            }
-            
-            // Refresh from API to get correct state
-            await fetchActivityTypes()
+		} catch let error as APIError {
+			print("❌ Error updating activity type: \(error)")
+			print("❌ Error details: \(ErrorFormattingService.shared.formatAPIError(error))")
+			
+			// Check if error is related to pinning limits
+			let formattedError = ErrorFormattingService.shared.formatAPIError(error)
+			print("🔍 Formatted error from server: \(formattedError)")
+			if formattedError.contains("pinned activity types") {
+				print("⚠️ Server returned pinning limit error - this might be a server-side validation bug")
+				errorMessage = "You can only pin up to 4 activity types"
+			} else {
+				errorMessage = formattedError
+			}
+			
+			// Refresh from API to get correct state
+			await fetchActivityTypes()
+		} catch {
+            errorMessage = ErrorFormattingService.shared.formatError(error)
         }
     }
     
