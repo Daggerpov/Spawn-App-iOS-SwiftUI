@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct LoginInputView: View {
-    @StateObject private var userAuth = UserAuthViewModel.shared
+    @ObservedObject private var userAuth = UserAuthViewModel.shared
     @State private var usernameOrEmail = ""
     @State private var password = ""
     @State private var isLoading = false

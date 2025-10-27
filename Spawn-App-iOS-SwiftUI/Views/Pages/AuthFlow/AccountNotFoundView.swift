@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AccountNotFoundView: View {
-    @StateObject private var userAuth = UserAuthViewModel.shared
+    @ObservedObject private var userAuth = UserAuthViewModel.shared
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
     

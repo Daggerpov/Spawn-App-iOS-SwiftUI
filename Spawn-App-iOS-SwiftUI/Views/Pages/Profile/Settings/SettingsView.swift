@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.presentationMode) var presentationMode
-    @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var userAuth = UserAuthViewModel.shared
     
     var body: some View {
         VStack(spacing: 0) {

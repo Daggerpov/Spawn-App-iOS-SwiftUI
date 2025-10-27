@@ -460,6 +460,6 @@ struct MapView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     MapView(user: .danielAgapov).environmentObject(appCache)
 }

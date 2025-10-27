@@ -16,7 +16,7 @@ struct ChangePasswordView: View {
     @State private var showAlert = false
     @State private var alertMessage = ""
     @State private var isSuccess = false
-    @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var userAuth = UserAuthViewModel.shared
     
     // Show/hide password toggles
     @State private var showCurrentPassword = false

@@ -18,6 +18,63 @@ class ActivityTypeViewModel: ObservableObject {
     private var appCache: AppCache
     private var cancellables = Set<AnyCancellable>()
     
+    // MARK: - Constants
+    private enum APIEndpoints {
+        static func activityTypes(userId: UUID) -> String {
+            return "users/\(userId)/activity-types"
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Constructs a URL for the activity types endpoint
+    private func buildActivityTypesURL() -> URL? {
+        let endpoint = APIEndpoints.activityTypes(userId: userId)
+        return URL(string: APIService.baseURL + endpoint)
+    }
+    
+    /// Sets loading state
+    @MainActor
+    private func setLoadingState(_ loading: Bool, error: String? = nil) {
+        isLoading = loading
+        errorMessage = error
+    }
+    
+    /// Updates local state and cache after successful API call
+    @MainActor
+    private func updateStateAfterAPISuccess(_ updatedTypes: [ActivityTypeDTO]) {
+        self.activityTypes = updatedTypes
+        appCache.updateActivityTypes(updatedTypes)
+        NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+    }
+    
+    /// Handles API errors with consistent error messaging
+    @MainActor
+    private func handleAPIError(_ error: Error, context: String) {
+        print("❌ Error \(context): \(error)")
+        
+        if let apiError = error as? APIError {
+            switch apiError {
+            case .invalidStatusCode(let statusCode):
+                errorMessage = "Server error (status \(statusCode)). Please try again."
+            case .invalidData:
+                errorMessage = "Invalid response format. Please try again."
+            case .URLError:
+                errorMessage = "Network error. Please check your connection."
+            case .failedHTTPRequest(let description):
+                errorMessage = "Request failed: \(description)"
+            case .failedJSONParsing:
+                errorMessage = "Failed to parse server response. Please try again."
+            case .unknownError(let error):
+                errorMessage = "An unexpected error occurred: \(ErrorFormattingService.shared.formatError(error))"
+            case .failedTokenSaving:
+                errorMessage = "Authentication error. Please try logging in again."
+            }
+        } else {
+            errorMessage = "Failed to \(context)"
+        }
+    }
+    
     init(
         userId: UUID,
         apiService: IAPIService? = nil
@@ -56,15 +113,13 @@ class ActivityTypeViewModel: ObservableObject {
             return
         }
         
-        isLoading = true
-        errorMessage = nil
+        setLoadingState(true)
         
-        defer { isLoading = false }
+        defer { setLoadingState(false) }
         
         do {
-            let endpoint = "users/\(userId)/activity-types"
-            guard let url = URL(string: APIService.baseURL + endpoint) else {
-                errorMessage = "Invalid URL"
+            guard let url = buildActivityTypesURL() else {
+                setLoadingState(false, error: "Invalid URL")
                 return
             }
             
@@ -74,15 +129,10 @@ class ActivityTypeViewModel: ObservableObject {
             )
             
             self.activityTypes = fetchedTypes
-            
-            // Update cache with fetched data
             appCache.updateActivityTypes(fetchedTypes)
             
-
-            
         } catch {
-            self.errorMessage = "Failed to load activity types"
-            print("❌ Error fetching activity types: \(error)")
+            handleAPIError(error, context: "fetching activity types")
         }
     }
     
@@ -130,15 +180,13 @@ class ActivityTypeViewModel: ObservableObject {
     /// Deletes an activity type via direct API call
     @MainActor
     func deleteActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
-        isLoading = true
-        errorMessage = nil
+        setLoadingState(true)
         
-        defer { isLoading = false }
+        defer { setLoadingState(false) }
         
         do {
-            let endpoint = "users/\(userId)/activity-types"
-            guard let url = URL(string: APIService.baseURL + endpoint) else {
-                errorMessage = "Invalid URL"
+            guard let url = buildActivityTypesURL() else {
+                setLoadingState(false, error: "Invalid URL")
                 return
             }
             
@@ -153,35 +201,25 @@ class ActivityTypeViewModel: ObservableObject {
                 parameters: nil
             )
             
-            // Update local state with confirmed data from API
-            self.activityTypes = updatedActivityTypes
-            
-            // Update cache with confirmed data
-            appCache.updateActivityTypes(updatedActivityTypes)
-            
-            // Post notification for UI updates
-            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            updateStateAfterAPISuccess(updatedActivityTypes)
             
             print("✅ Successfully deleted activity type: \(activityTypeDTO.title)")
             
         } catch {
-            print("❌ Error deleting activity type: \(error)")
-            errorMessage = "Failed to delete activity type"
+            handleAPIError(error, context: "deleting activity type")
         }
     }
     
     /// Creates a new activity type via direct API call
     @MainActor
     func createActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
-        isLoading = true
-        errorMessage = nil
+        setLoadingState(true)
         
-        defer { isLoading = false }
+        defer { setLoadingState(false) }
         
         do {
-            let endpoint = "users/\(userId)/activity-types"
-            guard let url = URL(string: APIService.baseURL + endpoint) else {
-                errorMessage = "Invalid URL"
+            guard let url = buildActivityTypesURL() else {
+                setLoadingState(false, error: "Invalid URL")
                 return
             }
             
@@ -196,20 +234,12 @@ class ActivityTypeViewModel: ObservableObject {
                 parameters: nil
             )
             
-            // Update local state with confirmed data from API
-            self.activityTypes = updatedActivityTypes
-            
-            // Update cache with confirmed data
-            appCache.updateActivityTypes(updatedActivityTypes)
-            
-            // Post notification for UI updates
-            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            updateStateAfterAPISuccess(updatedActivityTypes)
             
             print("✅ Successfully created activity type: \(activityTypeDTO.title)")
             
         } catch {
-            print("❌ Error creating activity type: \(error)")
-            errorMessage = "Failed to create activity type"
+            handleAPIError(error, context: "creating activity type")
         }
     }
     
@@ -241,16 +271,14 @@ class ActivityTypeViewModel: ObservableObject {
     func updateActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
         print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
         
-        isLoading = true
-        errorMessage = nil
+        setLoadingState(true)
         
-        defer { isLoading = false }
+        defer { setLoadingState(false) }
         
         do {
-            let endpoint = "users/\(userId)/activity-types"
-            guard let url = URL(string: APIService.baseURL + endpoint) else {
-                print("❌ Invalid URL for endpoint: \(endpoint)")
-                errorMessage = "Invalid URL"
+            guard let url = buildActivityTypesURL() else {
+                print("❌ Invalid URL for activity types endpoint")
+                setLoadingState(false, error: "Invalid URL")
                 return
             }
             
@@ -267,40 +295,12 @@ class ActivityTypeViewModel: ObservableObject {
                 parameters: nil
             )
             
-            // Update local state with confirmed data from API
-            self.activityTypes = updatedActivityTypes
-            
-            // Update cache with confirmed data
-            appCache.updateActivityTypes(updatedActivityTypes)
-            
-            // Post notification for UI updates
-            NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
+            updateStateAfterAPISuccess(updatedActivityTypes)
             
         } catch {
-            print("❌ Error updating activity type: \(error)")
             print("❌ Error details: \(ErrorFormattingService.shared.formatError(error))")
             
-            // Enhanced error handling
-            if let error = error as? APIError {
-                switch error {
-                case .invalidStatusCode(let statusCode):
-                    errorMessage = "Server error (status \(statusCode)). Please try again."
-                case .invalidData:
-                    errorMessage = "Invalid response format. Please try again."
-                case .URLError:
-                    errorMessage = "Network error. Please check your connection."
-                case .failedHTTPRequest(let description):
-                    errorMessage = "Request failed: \(description)"
-                case .failedJSONParsing:
-                    errorMessage = "Failed to parse server response. Please try again."
-                case .unknownError(let error):
-                    errorMessage = "An unexpected error occurred: \(ErrorFormattingService.shared.formatError(error))"
-                case .failedTokenSaving:
-                    errorMessage = "Authentication error. Please try logging in again."
-                }
-            } else {
-                errorMessage = "Failed to update activity type"
-            }
+            handleAPIError(error, context: "updating activity type")
             
             // Check if error is related to pinning limits
             let formattedError = ErrorFormattingService.shared.formatError(error)

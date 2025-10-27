@@ -39,7 +39,7 @@ struct ActivityCreationButtonView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     @Previewable @State var state: Bool = false
     ActivityCreationButtonView(showActivityCreationDrawer: $state).environmentObject(
         appCache)

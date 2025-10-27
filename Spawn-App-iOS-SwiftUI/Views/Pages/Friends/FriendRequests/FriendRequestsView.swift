@@ -245,7 +245,7 @@ struct FriendRequestsView: View {
 // MARK: - Preview
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     
     // Create a mock view model with pre-populated data (following FriendsView pattern)
     let mockUserId = UUID()

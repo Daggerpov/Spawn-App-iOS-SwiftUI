@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AccountSettingsView: View {
     @Environment(\.presentationMode) var presentationMode
-    @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var userAuth = UserAuthViewModel.shared
     @State private var showDeleteConfirmation = false
     @State private var showLogoutConfirmation = false
     

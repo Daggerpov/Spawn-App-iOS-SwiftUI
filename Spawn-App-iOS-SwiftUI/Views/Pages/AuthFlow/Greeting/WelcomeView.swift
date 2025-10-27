@@ -11,7 +11,7 @@ struct WelcomeView: View {
     @State private var animationCompleted = false
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
-    @StateObject private var userAuth = UserAuthViewModel.shared
+    @ObservedObject private var userAuth = UserAuthViewModel.shared
     @State private var path = NavigationPath()
     
     var body: some View {

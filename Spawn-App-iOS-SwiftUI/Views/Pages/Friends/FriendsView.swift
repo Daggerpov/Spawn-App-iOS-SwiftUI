@@ -216,7 +216,7 @@ extension FriendsView {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     
     // Create a mock view model with hardcoded data
     let mockViewModel = FriendsTabViewModel(userId: BaseUserDTO.danielAgapov.id, apiService: MockAPIService(userId: BaseUserDTO.danielAgapov.id))

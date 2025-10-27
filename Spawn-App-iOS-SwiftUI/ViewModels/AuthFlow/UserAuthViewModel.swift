@@ -90,7 +90,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Auth alerts for authentication-related errors
 	@Published var authAlert: AuthAlertType?
 
-	// Track whether user is being automatically signed in after trying to register with existing account
+    // Track whether user is being automatically signed in after trying to register with existing account
 	@Published var isAutoSigningIn: Bool = false
 	
 	// For handling terms of service acceptance
@@ -106,6 +106,26 @@ class UserAuthViewModel: NSObject, ObservableObject {
     
     private var continuingUserStatus: UserStatus?
     private var isOAuthUser: Bool = false
+    
+    // MARK: - Helper Methods
+    
+    /// Clears authentication tokens from Keychain
+    private func clearKeychainTokens() {
+        let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
+        let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
+        if accessTokenDeleted && refreshTokenDeleted {
+            print("✅ Successfully cleared auth tokens from Keychain")
+        } else {
+            print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
+        }
+    }
+    
+    /// Clears all error states
+    private func clearErrorStates() {
+        self.errorMessage = nil
+        self.authAlert = nil
+        self.isAutoSigningIn = false
+    }
     
     // MARK: - Navigation Helper Methods
     
@@ -209,14 +229,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 
 			// Clear tokens from Keychain
-			let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
-			let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
-
-			if accessTokenDeleted && refreshTokenDeleted {
-				print("✅ Successfully cleared auth tokens from Keychain")
-			} else {
-				print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
-			}
+			clearKeychainTokens()
 			
 			// Preserve OAuth credentials during onboarding logout
 			let wasOnboarding = !self.hasCompletedOnboarding && self.spawnUser != nil
@@ -269,9 +282,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	// Clear all error states - use this when navigating between auth screens
 	func clearAllErrors() {
 		Task { @MainActor in
-			self.errorMessage = nil
-			self.authAlert = nil
-			self.isAutoSigningIn = false
+			clearErrorStates()
 		}
 	}
 	
@@ -286,9 +297,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			}
 			
 			// Clear all error states first
-			self.errorMessage = nil
-			self.authAlert = nil
-			self.isAutoSigningIn = false
+			clearErrorStates()
 			
 			// Reset user authentication data
 			self.authProvider = nil
@@ -579,17 +588,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 		resetState()
 	}
-    
-    private func clearKeychainTokens() {
-        // Clear Keychain
-        let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
-        let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
-        if accessTokenDeleted && refreshTokenDeleted {
-            print("✅ Successfully cleared auth tokens from Keychain")
-        } else {
-            print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
-        }
-    }
 
     func spawnFetchUserIfAlreadyExists() async {
 		
@@ -1021,14 +1019,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 _ = try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
 				
                 // Clear tokens after successful account deletion
-                var success = KeychainService.shared.delete(key: "accessToken")
-                if !success {
-                    print("Failed to delete accessToken from Keychain")
-                }
-                success = KeychainService.shared.delete(key: "refreshToken")
-                if !success {
-                    print("Failed to delete refreshToken from Keychain")
-                }
+                clearKeychainTokens()
 
 				await MainActor.run {
 					activeAlert = .deleteSuccess
@@ -1076,14 +1067,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 		
 		// Clear tokens
-		var success = KeychainService.shared.delete(key: "accessToken")
-		if !success {
-			print("Failed to delete accessToken from Keychain")
-		}
-		success = KeychainService.shared.delete(key: "refreshToken")
-		if !success {
-			print("Failed to delete refreshToken from Keychain")
-		}
+		clearKeychainTokens()
 		
 		// Clear user data
 		await MainActor.run {

@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ProfileNameView: View {
     let user: Nameable
-    @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var userAuth = UserAuthViewModel.shared
     @Binding var refreshFlag: Bool
     
     // Check if this is the current user's profile

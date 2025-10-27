@@ -13,6 +13,26 @@ class ActivityCardViewModel: ObservableObject {
 	var userId: UUID
     var activity: FullFeedActivityDTO
     
+    // MARK: - Helper Methods
+    
+    /// Updates activity and posts notification after successful API call
+    @MainActor
+    private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
+        self.activity = updatedActivity
+        self.isParticipating = updatedActivity.participationStatus == .participating
+        AppCache.shared.addOrUpdateActivity(updatedActivity)
+        NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
+    }
+    
+    /// Handles activity full error (400 status code)
+    @MainActor
+    private func handleActivityFullError() {
+        NotificationCenter.default.post(
+            name: NSNotification.Name("ShowActivityFullAlert"),
+            object: nil,
+            userInfo: ["message": "Sorry, this activity is full"]
+        )
+    }
     
 	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO) {
 		self.apiService = apiService
@@ -69,31 +89,14 @@ class ActivityCardViewModel: ObservableObject {
 				EmptyBody(), to: url, parameters: nil)
 
 			// Update local state after a successful API call
-			await MainActor.run {
-				self.activity = updatedActivity
-				// Derive the participation status from the updated activity instead of toggling
-				self.isParticipating = updatedActivity.participationStatus == .participating
-				
-				// Update the cache with the updated activity so all views stay in sync
-				AppCache.shared.addOrUpdateActivity(updatedActivity)
-				
-				// Post notification for successful update to inform all views
-				NotificationCenter.default.post(
-					name: .activityUpdated,
-					object: updatedActivity
-				)
-			}
+			await updateActivityAfterAPISuccess(updatedActivity)
 		} catch let error as APIError {
 			await MainActor.run {
 				// Handle specific API errors
 				if case .invalidStatusCode(let statusCode) = error {
 					if statusCode == 400 {
 						// Activity is full
-						NotificationCenter.default.post(
-							name: NSNotification.Name("ShowActivityFullAlert"),
-							object: nil,
-							userInfo: ["message": "Sorry, this activity is full"]
-						)
+						handleActivityFullError()
 					} else {
 						print("Error toggling participation (status \(statusCode)): \(error.localizedDescription)")
 					}

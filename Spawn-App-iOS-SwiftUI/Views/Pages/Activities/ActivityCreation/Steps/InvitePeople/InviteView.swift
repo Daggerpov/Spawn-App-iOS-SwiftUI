@@ -300,6 +300,6 @@ extension FullFriendUserDTO {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     InviteView(user: .danielAgapov).environmentObject(appCache)
 }

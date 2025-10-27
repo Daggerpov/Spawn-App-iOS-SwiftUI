@@ -725,7 +725,7 @@ struct ActivityDateTimeView: View {
         @Previewable @State var isAM: Bool = true
         @Previewable @State var activityTitle: String = "Morning Coffee"
         @Previewable @State var selectedDuration: ActivityDuration = .oneHour
-        @Previewable @StateObject var appCache = AppCache.shared
+        @Previewable @ObservedObject var appCache = AppCache.shared
         
         ActivityDateTimeView(
             selectedHour: $selectedHour,

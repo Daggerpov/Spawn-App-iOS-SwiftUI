@@ -17,7 +17,7 @@ struct ActivityCardView: View {
     // State for activity reporting
     @State private var showActivityMenu: Bool = false
     @State private var showReportDialog: Bool = false
-    @StateObject private var userAuth = UserAuthViewModel.shared
+    @ObservedObject private var userAuth = UserAuthViewModel.shared
     
     // State for activity sharing
     @State private var showShareDrawer = false

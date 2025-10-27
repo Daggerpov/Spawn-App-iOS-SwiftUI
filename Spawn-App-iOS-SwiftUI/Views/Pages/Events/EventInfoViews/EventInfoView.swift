@@ -46,7 +46,7 @@ struct EventInfoView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     @Previewable @StateObject var locationManager = LocationManager()
     EventInfoView(event: FullFeedActivityDTO.mockDinnerActivity, eventInfoType: ActivityInfoType.location, locationManager: locationManager).environmentObject(appCache)
 }

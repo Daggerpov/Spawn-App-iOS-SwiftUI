@@ -18,7 +18,7 @@ struct ActivityDescriptionView: View {
 	// State for activity reporting
 	@State private var showActivityMenu: Bool = false
 	@State private var showReportDialog: Bool = false
-	@StateObject private var userAuth = UserAuthViewModel.shared
+	@ObservedObject private var userAuth = UserAuthViewModel.shared
 
 	init(
 		activity: FullFeedActivityDTO, users: [BaseUserDTO]?, color: Color,
@@ -290,7 +290,7 @@ extension ActivityDescriptionView {
 		let chatMessage: FullActivityChatMessageDTO
 		@State private var showMessageMenu: Bool = false
 		@State private var showReportDialog: Bool = false
-		@StateObject private var userAuth = UserAuthViewModel.shared
+		@ObservedObject private var userAuth = UserAuthViewModel.shared
 
 		private func abbreviatedTime(from timestamp: String) -> String {
 			let abbreviations: [String: String] = [
@@ -451,7 +451,7 @@ extension ActivityDescriptionView {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
 	ActivityDescriptionView(
 		activity: FullFeedActivityDTO.mockDinnerActivity,
 		users: BaseUserDTO.mockUsers,

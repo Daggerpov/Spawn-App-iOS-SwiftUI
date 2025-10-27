@@ -37,12 +37,24 @@ class DayActivitiesViewModel: ObservableObject {
 		}
     }
     
+    // MARK: - Constants
+    private enum DateFormat {
+        static let fullDate = "MMMM d, yyyy"
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Formats a date using the standard date format
+    private func formatDateString(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = DateFormat.fullDate
+        return formatter.string(from: date)
+    }
+    
     // Format the date for display in the header
     private func updateHeaderTitle() {
         if let firstActivity = activities.first {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMMM d, yyyy"
-            headerTitle = formatter.string(from: firstActivity.dateAsDate)
+            headerTitle = formatDateString(firstActivity.dateAsDate)
         } else {
             headerTitle = "Activities"
         }
@@ -50,9 +62,7 @@ class DayActivitiesViewModel: ObservableObject {
     
     // Format a specific date
     func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM d, yyyy"
-        return formatter.string(from: date)
+        return formatDateString(date)
     }
     
     // Fetch all activities directly via API without checking cache

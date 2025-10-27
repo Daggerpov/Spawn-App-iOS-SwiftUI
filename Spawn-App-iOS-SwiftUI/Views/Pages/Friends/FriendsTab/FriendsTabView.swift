@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FriendsTabView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
-	@StateObject var userAuth = UserAuthViewModel.shared
+	@ObservedObject var userAuth = UserAuthViewModel.shared
 	let user: BaseUserDTO
 
 	@State private var showingFriendRequestPopup: Bool = false

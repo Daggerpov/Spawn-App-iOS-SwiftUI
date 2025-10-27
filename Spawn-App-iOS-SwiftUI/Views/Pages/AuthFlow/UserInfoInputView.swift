@@ -4,7 +4,7 @@ import UIKit
 import UserNotifications
 
 struct UserInfoInputView: View {
-	@StateObject var userAuth = UserAuthViewModel.shared
+	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	@State private var username: String = ""
 
@@ -391,6 +391,6 @@ struct UserInfoInputView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
 	UserInfoInputView().environmentObject(appCache)
 }

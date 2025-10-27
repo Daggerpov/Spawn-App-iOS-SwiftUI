@@ -270,7 +270,7 @@ struct FriendRowView: View {
     @State private var showBlockDialog: Bool = false
     @State private var showAddToActivityType: Bool = false
     @State private var blockReason: String = ""
-    @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var userAuth = UserAuthViewModel.shared
     
     // Computed property for the user object
     private var userForProfile: Nameable {
