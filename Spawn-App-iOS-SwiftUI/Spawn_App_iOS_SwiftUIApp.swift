@@ -125,12 +125,17 @@ struct Spawn_App_iOS_SwiftUIApp: App {
     private func handleScenePhaseChange(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            print("🔄 App became active - refreshing activities")
-            // Refresh activities when app becomes active to ensure no stale data
-            Task {
-                await appCache.refreshActivities()
-                // Clean up any expired activities after refresh
-                appCache.cleanupExpiredActivities()
+            print("🔄 App became active")
+            // Only refresh activities if user is logged in
+            if userAuth.isLoggedIn, userAuth.spawnUser != nil {
+                print("🔄 Refreshing activities for logged in user")
+                Task {
+                    await appCache.refreshActivities()
+                    // Clean up any expired activities after refresh
+                    appCache.cleanupExpiredActivities()
+                }
+            } else {
+                print("🔄 Skipping activity refresh - no logged in user")
             }
         case .background:
             print("📱 App entered background")
