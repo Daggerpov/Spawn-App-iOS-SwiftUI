@@ -92,6 +92,97 @@ class AppCache: ObservableObject {
         // Does nothing - used for conditional async let statements
     }
     
+    /// Generic refresh function to reduce code duplication
+    private func genericRefresh<T: Decodable>(
+        endpoint: String,
+        parameters: [String: String]? = nil,
+        updateCache: @escaping ([T]) -> Void
+    ) async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("Cannot refresh \(endpoint): No logged in user")
+            return
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh \(endpoint): User is not logged in")
+            return
+        }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            guard let url = URL(string: APIService.baseURL + endpoint) else { return }
+            
+            let fetchedData: [T] = try await apiService.fetchData(from: url, parameters: parameters)
+            
+            await MainActor.run {
+                updateCache(fetchedData)
+            }
+        } catch {
+            print("Failed to refresh \(endpoint): \(error.localizedDescription)")
+        }
+    }
+    
+    /// Generic single item refresh function
+    private func genericSingleRefresh<T: Decodable>(
+        endpoint: String,
+        parameters: [String: String]? = nil,
+        updateCache: @escaping (T) -> Void
+    ) async {
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("Cannot refresh \(endpoint): No logged in user")
+            return
+        }
+        
+        guard UserAuthViewModel.shared.isLoggedIn else {
+            print("Cannot refresh \(endpoint): User is not logged in")
+            return
+        }
+        
+        do {
+            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
+            guard let url = URL(string: APIService.baseURL + endpoint) else { return }
+            
+            let fetchedData: T = try await apiService.fetchData(from: url, parameters: parameters)
+            
+            await MainActor.run {
+                updateCache(fetchedData)
+            }
+        } catch {
+            print("Failed to refresh \(endpoint): \(error.localizedDescription)")
+        }
+    }
+    
+    /// Generic update function with timestamp and save
+    private func genericUpdate<T>(
+        _ data: T,
+        to keyPath: ReferenceWritableKeyPath<AppCache, T>,
+        cacheKey: String
+    ) {
+        self[keyPath: keyPath] = data
+        
+        if let userId = UserAuthViewModel.shared.spawnUser?.id {
+            setLastCheckedForUser(userId, cacheType: cacheKey, date: Date())
+        }
+        
+        debouncedSaveToDisk()
+    }
+    
+    /// Generic encode-save helper
+    private func saveToDefaults<T: Encodable>(_ data: T, key: String) {
+        if let encoded = try? JSONEncoder().encode(data) {
+            UserDefaults.standard.set(encoded, forKey: key)
+        }
+    }
+    
+    /// Generic decode-load helper
+    private func loadFromDefaults<T: Decodable>(key: String) -> T? {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let decoded = try? JSONDecoder().decode(T.self, from: data) else {
+            return nil
+        }
+        return decoded
+    }
+    
     // MARK: - Public Methods
     
     /// Initialize the cache and load from disk in the background
@@ -341,22 +432,8 @@ class AppCache: ObservableObject {
             return 
         }
         
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh friends: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/friends/\(userId)") else { return }
-            
-            let fetchedFriends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateFriendsForUser(fetchedFriends, userId: userId)
-            }
-        } catch {
-            print("Failed to refresh friends: \(error.localizedDescription)")
+        await genericRefresh(endpoint: "users/friends/\(userId)") { (fetchedFriends: [FullFriendUserDTO]) in
+            self.updateFriendsForUser(fetchedFriends, userId: userId)
         }
     }
     
@@ -390,22 +467,8 @@ class AppCache: ObservableObject {
             return 
         }
         
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh activities: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "activities/feedActivities/\(userId)") else { return }
-            
-            let fetchedActivities: [FullFeedActivityDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateActivitiesForUser(fetchedActivities, userId: userId)
-            }
-        } catch {
-            print("Failed to refresh activities: \(error.localizedDescription)")
+        await genericRefresh(endpoint: "activities/feedActivities/\(userId)") { (fetchedActivities: [FullFeedActivityDTO]) in
+            self.updateActivitiesForUser(fetchedActivities, userId: userId)
         }
     }
     
@@ -481,22 +544,8 @@ class AppCache: ObservableObject {
             return 
         }
         
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh activity types: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/activity-types") else { return }
-            
-            let fetchedActivityTypes: [ActivityTypeDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateActivityTypes(fetchedActivityTypes)
-            }
-        } catch {
-            print("Failed to refresh activity types: \(error.localizedDescription)")
+        await genericRefresh(endpoint: "users/\(userId)/activity-types") { (fetchedActivityTypes: [ActivityTypeDTO]) in
+            self.updateActivityTypes(fetchedActivityTypes)
         }
     }
     
@@ -622,22 +671,8 @@ class AppCache: ObservableObject {
             return 
         }
         
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh recommended friends: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/recommended-friends/\(userId)") else { return }
-            
-            let fetchedRecommendedFriends: [RecommendedFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateRecommendedFriendsForUser(fetchedRecommendedFriends, userId: userId)
-            }
-        } catch {
-            print("Failed to refresh recommended friends: \(error.localizedDescription)")
+        await genericRefresh(endpoint: "users/recommended-friends/\(userId)") { (fetchedRecommendedFriends: [RecommendedFriendUserDTO]) in
+            self.updateRecommendedFriendsForUser(fetchedRecommendedFriends, userId: userId)
         }
     }
     
@@ -718,19 +753,9 @@ class AppCache: ObservableObject {
         
         print("🔄 [CACHE] Refreshing incoming friend requests for user: \(userId)")
         
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") else { return }
-            
-            let fetchedFriendRequests: [FetchFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
+        await genericRefresh(endpoint: "friend-requests/incoming/\(userId)") { (fetchedFriendRequests: [FetchFriendRequestDTO]) in
             print("🔄 [CACHE] Retrieved \(fetchedFriendRequests.count) incoming friend requests from API")
-            
-            await MainActor.run {
-                updateFriendRequestsForUser(fetchedFriendRequests, userId: userId)
-            }
-        } catch {
-            print("❌ [CACHE] Failed to refresh friend requests: \(error.localizedDescription)")
+            self.updateFriendRequestsForUser(fetchedFriendRequests, userId: userId)
         }
     }
 
@@ -812,19 +837,9 @@ class AppCache: ObservableObject {
         
         print("🔄 [CACHE] Refreshing sent friend requests for user: \(userId)")
         
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: userId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "friend-requests/sent/\(userId)") else { return }
-            
-            let fetchedSentFriendRequests: [FetchSentFriendRequestDTO] = try await apiService.fetchData(from: url, parameters: nil)
-            
+        await genericRefresh(endpoint: "friend-requests/sent/\(userId)") { (fetchedSentFriendRequests: [FetchSentFriendRequestDTO]) in
             print("🔄 [CACHE] Retrieved \(fetchedSentFriendRequests.count) sent friend requests from API")
-            
-            await MainActor.run {
-                updateSentFriendRequestsForUser(fetchedSentFriendRequests, userId: userId)
-            }
-        } catch {
-            print("❌ [CACHE] Failed to refresh sent friend requests: \(error.localizedDescription)")
+            self.updateSentFriendRequestsForUser(fetchedSentFriendRequests, userId: userId)
         }
     }
 
@@ -1350,80 +1365,22 @@ class AppCache: ObservableObject {
     }
     
     func refreshProfileStats(_ userId: UUID) async {
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
-            print("Cannot refresh profile stats: No logged in user")
-            return 
-        }
-        
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh profile stats: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/stats") else { return }
-            
-            let stats: UserStatsDTO = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateProfileStats(userId, stats)
-            }
-        } catch {
-            print("Failed to refresh profile stats: \(error.localizedDescription)")
+        await genericSingleRefresh(endpoint: "users/\(userId)/stats") { (stats: UserStatsDTO) in
+            self.updateProfileStats(userId, stats)
         }
     }
     
     func refreshProfileInterests(_ userId: UUID) async {
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
-            print("Cannot refresh profile interests: No logged in user")
-            return 
-        }
-        
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh profile interests: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/interests") else { return }
-            
-            let interests: [String] = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateProfileInterests(userId, interests)
-            }
-        } catch {
-            print("Failed to refresh profile interests: \(error.localizedDescription)")
+        await genericRefresh(endpoint: "users/\(userId)/interests") { (interests: [String]) in
+            self.updateProfileInterests(userId, interests)
         }
     }
     
     func refreshProfileSocialMedia(_ userId: UUID) async {
-        guard let myUserId = UserAuthViewModel.shared.spawnUser?.id else { 
-            print("Cannot refresh profile social media: No logged in user")
-            return 
-        }
-        
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh profile social media: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "users/\(userId)/social-media") else { return }
-            
-            let socialMedia: UserSocialMediaDTO = try await apiService.fetchData(from: url, parameters: nil)
-            
-            await MainActor.run {
-                updateProfileSocialMedia(userId, socialMedia)
-            }
-        } catch {
-            print("Failed to refresh profile social media: \(error.localizedDescription)")
+        await genericSingleRefresh(endpoint: "users/\(userId)/social-media") { (socialMedia: UserSocialMediaDTO) in
+            self.updateProfileSocialMedia(userId, socialMedia)
         }
     }
-    
 
     
     func refreshProfileActivities(_ userId: UUID) async {
@@ -1432,23 +1389,9 @@ class AppCache: ObservableObject {
             return 
         }
         
-        guard UserAuthViewModel.shared.isLoggedIn else {
-            print("Cannot refresh profile activities: User is not logged in")
-            return
-        }
-        
-        do {
-            let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: myUserId) : APIService()
-            guard let url = URL(string: APIService.baseURL + "activities/profile/\(userId)") else { return }
-            let parameters = ["requestingUserId": myUserId.uuidString]
-            
-            let activities: [ProfileActivityDTO] = try await apiService.fetchData(from: url, parameters: parameters)
-            
-            await MainActor.run {
-                updateProfileActivities(userId, activities)
-            }
-        } catch {
-            print("Failed to refresh profile activities: \(error.localizedDescription)")
+        let parameters = ["requestingUserId": myUserId.uuidString]
+        await genericRefresh(endpoint: "activities/profile/\(userId)", parameters: parameters) { (activities: [ProfileActivityDTO]) in
+            self.updateProfileActivities(userId, activities)
         }
     }
     
@@ -1536,131 +1479,35 @@ class AppCache: ObservableObject {
         // This method should only be called from diskQueue (background thread)
         // Decode all data on background thread, then update @Published properties on main thread
         
-        var loadedTimestamps: [UUID: [String: Date]]?
-        var loadedFriends: [UUID: [FullFriendUserDTO]]?
-        var loadedActivities: [UUID: [FullFeedActivityDTO]]?
-        var loadedActivityTypes: [ActivityTypeDTO]?
-        var loadedProfiles: [UUID: BaseUserDTO]?
-        var loadedRecommended: [UUID: [RecommendedFriendUserDTO]]?
-        var loadedRequests: [UUID: [FetchFriendRequestDTO]]?
-        var loadedSentRequests: [UUID: [FetchSentFriendRequestDTO]]?
-        var loadedStats: [UUID: UserStatsDTO]?
-        var loadedInterests: [UUID: [String]]?
-        var loadedSocialMedia: [UUID: UserSocialMediaDTO]?
-        var loadedProfileActivities: [UUID: [ProfileActivityDTO]]?
-        
-        // Load cache timestamps (user-specific)
-        if let timestampsData = UserDefaults.standard.data(forKey: CacheKeys.lastChecked),
-           let decoded = try? JSONDecoder().decode([UUID: [String: Date]].self, from: timestampsData) {
-            loadedTimestamps = decoded
-        }
-        
-        // Load friends
-        if let friendsData = UserDefaults.standard.data(forKey: CacheKeys.friends),
-           let decoded = try? JSONDecoder().decode([UUID: [FullFriendUserDTO]].self, from: friendsData) {
-            loadedFriends = decoded
-        }
-        
-        // Load activities
-        if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.events),
-           let decoded = try? JSONDecoder().decode([UUID: [FullFeedActivityDTO]].self, from: activitiesData) {
-            loadedActivities = decoded
-        }
-        
-        // Load activity types
-        if let activityTypesData = UserDefaults.standard.data(forKey: CacheKeys.activityTypes),
-           let decoded = try? JSONDecoder().decode([ActivityTypeDTO].self, from: activityTypesData) {
-            loadedActivityTypes = decoded
-        }
-        
-        // Load other profiles
-        if let profilesData = UserDefaults.standard.data(forKey: CacheKeys.otherProfiles),
-           let decoded = try? JSONDecoder().decode([UUID: BaseUserDTO].self, from: profilesData) {
-            loadedProfiles = decoded
-        }
-        
-        // Load recommended friends
-        if let recommendedData = UserDefaults.standard.data(forKey: CacheKeys.recommendedFriends),
-           let decoded = try? JSONDecoder().decode([UUID: [RecommendedFriendUserDTO]].self, from: recommendedData) {
-            loadedRecommended = decoded
-        }
-        
-        // Load friend requests
-        if let requestsData = UserDefaults.standard.data(forKey: CacheKeys.friendRequests),
-           let decoded = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: requestsData) {
-            loadedRequests = decoded
-        }
-        
-        // Load sent friend requests
-        if let sentRequestsData = UserDefaults.standard.data(forKey: CacheKeys.sentFriendRequests),
-           let decoded = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: sentRequestsData) {
-            loadedSentRequests = decoded
-        }
-        
-        // Load profile stats
-        if let statsData = UserDefaults.standard.data(forKey: CacheKeys.profileStats),
-           let decoded = try? JSONDecoder().decode([UUID: UserStatsDTO].self, from: statsData) {
-            loadedStats = decoded
-        }
-        
-        // Load profile interests
-        if let interestsData = UserDefaults.standard.data(forKey: CacheKeys.profileInterests),
-           let decoded = try? JSONDecoder().decode([UUID: [String]].self, from: interestsData) {
-            loadedInterests = decoded
-        }
-        
-        // Load profile social media
-        if let socialMediaData = UserDefaults.standard.data(forKey: CacheKeys.profileSocialMedia),
-           let decoded = try? JSONDecoder().decode([UUID: UserSocialMediaDTO].self, from: socialMediaData) {
-            loadedSocialMedia = decoded
-        }
-        
-        // Load profile activities
-        if let activitiesData = UserDefaults.standard.data(forKey: CacheKeys.profileEvents),
-           let decoded = try? JSONDecoder().decode([UUID: [ProfileActivityDTO]].self, from: activitiesData) {
-            loadedProfileActivities = decoded
-        }
+        let loadedTimestamps: [UUID: [String: Date]]? = loadFromDefaults(key: CacheKeys.lastChecked)
+        let loadedFriends: [UUID: [FullFriendUserDTO]]? = loadFromDefaults(key: CacheKeys.friends)
+        let loadedActivities: [UUID: [FullFeedActivityDTO]]? = loadFromDefaults(key: CacheKeys.events)
+        let loadedActivityTypes: [ActivityTypeDTO]? = loadFromDefaults(key: CacheKeys.activityTypes)
+        let loadedProfiles: [UUID: BaseUserDTO]? = loadFromDefaults(key: CacheKeys.otherProfiles)
+        let loadedRecommended: [UUID: [RecommendedFriendUserDTO]]? = loadFromDefaults(key: CacheKeys.recommendedFriends)
+        let loadedRequests: [UUID: [FetchFriendRequestDTO]]? = loadFromDefaults(key: CacheKeys.friendRequests)
+        let loadedSentRequests: [UUID: [FetchSentFriendRequestDTO]]? = loadFromDefaults(key: CacheKeys.sentFriendRequests)
+        let loadedStats: [UUID: UserStatsDTO]? = loadFromDefaults(key: CacheKeys.profileStats)
+        let loadedInterests: [UUID: [String]]? = loadFromDefaults(key: CacheKeys.profileInterests)
+        let loadedSocialMedia: [UUID: UserSocialMediaDTO]? = loadFromDefaults(key: CacheKeys.profileSocialMedia)
+        let loadedProfileActivities: [UUID: [ProfileActivityDTO]]? = loadFromDefaults(key: CacheKeys.profileEvents)
         
         // Now update @Published properties on main thread
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             
-            if let timestamps = loadedTimestamps {
-                self.lastChecked = timestamps
-            }
-            if let friends = loadedFriends {
-                self.friends = friends
-            }
-            if let activities = loadedActivities {
-                self.activities = activities
-            }
-            if let types = loadedActivityTypes {
-                self.activityTypes = types
-            }
-            if let profiles = loadedProfiles {
-                self.otherProfiles = profiles
-            }
-            if let recommended = loadedRecommended {
-                self.recommendedFriends = recommended
-            }
-            if let requests = loadedRequests {
-                self.friendRequests = requests
-            }
-            if let sentRequests = loadedSentRequests {
-                self.sentFriendRequests = sentRequests
-            }
-            if let stats = loadedStats {
-                self.profileStats = stats
-            }
-            if let interests = loadedInterests {
-                self.profileInterests = interests
-            }
-            if let socialMedia = loadedSocialMedia {
-                self.profileSocialMedia = socialMedia
-            }
-            if let profileActivities = loadedProfileActivities {
-                self.profileActivities = profileActivities
-            }
+            if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
+            if let friends = loadedFriends { self.friends = friends }
+            if let activities = loadedActivities { self.activities = activities }
+            if let types = loadedActivityTypes { self.activityTypes = types }
+            if let profiles = loadedProfiles { self.otherProfiles = profiles }
+            if let recommended = loadedRecommended { self.recommendedFriends = recommended }
+            if let requests = loadedRequests { self.friendRequests = requests }
+            if let sentRequests = loadedSentRequests { self.sentFriendRequests = sentRequests }
+            if let stats = loadedStats { self.profileStats = stats }
+            if let interests = loadedInterests { self.profileInterests = interests }
+            if let socialMedia = loadedSocialMedia { self.profileSocialMedia = socialMedia }
+            if let profileActivities = loadedProfileActivities { self.profileActivities = profileActivities }
             
             print("✅ [CACHE] Loaded all data from disk on background thread")
         }
@@ -1688,65 +1535,17 @@ class AppCache: ObservableObject {
         profileActivities: [UUID: [ProfileActivityDTO]]
     ) {
         // All encoding and disk writes happen on background thread (diskQueue)
-        
-        // Save cache timestamps (user-specific)
-        if let timestampsData = try? JSONEncoder().encode(timestamps) {
-            UserDefaults.standard.set(timestampsData, forKey: CacheKeys.lastChecked)
-        }
-        
-        // Save friends
-        if let friendsData = try? JSONEncoder().encode(friends) {
-            UserDefaults.standard.set(friendsData, forKey: CacheKeys.friends)
-        }
-        
-        // Save activities
-        if let activitiesData = try? JSONEncoder().encode(activities) {
-            UserDefaults.standard.set(activitiesData, forKey: CacheKeys.events)
-        }
-        
-        // Save activity types
-        if let activityTypesData = try? JSONEncoder().encode(activityTypes) {
-            UserDefaults.standard.set(activityTypesData, forKey: CacheKeys.activityTypes)
-        }
-        
-        // Save other profiles
-        if let profilesData = try? JSONEncoder().encode(otherProfiles) {
-            UserDefaults.standard.set(profilesData, forKey: CacheKeys.otherProfiles)
-        }
-        
-        // Save recommended friends
-        if let recommendedData = try? JSONEncoder().encode(recommendedFriends) {
-            UserDefaults.standard.set(recommendedData, forKey: CacheKeys.recommendedFriends)
-        }
-        
-        // Save friend requests
-        if let requestsData = try? JSONEncoder().encode(friendRequests) {
-            UserDefaults.standard.set(requestsData, forKey: CacheKeys.friendRequests)
-        }
-        
-        // Save sent friend requests
-        if let sentRequestsData = try? JSONEncoder().encode(sentFriendRequests) {
-            UserDefaults.standard.set(sentRequestsData, forKey: CacheKeys.sentFriendRequests)
-        }
-        
-        // Save profile stats
-        if let statsData = try? JSONEncoder().encode(profileStats) {
-            UserDefaults.standard.set(statsData, forKey: CacheKeys.profileStats)
-        }
-        
-        // Save profile interests
-        if let interestsData = try? JSONEncoder().encode(profileInterests) {
-            UserDefaults.standard.set(interestsData, forKey: CacheKeys.profileInterests)
-        }
-        
-        // Save profile social media
-        if let socialMediaData = try? JSONEncoder().encode(profileSocialMedia) {
-            UserDefaults.standard.set(socialMediaData, forKey: CacheKeys.profileSocialMedia)
-        }
-        
-        // Save profile activities
-        if let activitiesData = try? JSONEncoder().encode(profileActivities) {
-            UserDefaults.standard.set(activitiesData, forKey: CacheKeys.profileEvents)
-        }
+        saveToDefaults(timestamps, key: CacheKeys.lastChecked)
+        saveToDefaults(friends, key: CacheKeys.friends)
+        saveToDefaults(activities, key: CacheKeys.events)
+        saveToDefaults(activityTypes, key: CacheKeys.activityTypes)
+        saveToDefaults(otherProfiles, key: CacheKeys.otherProfiles)
+        saveToDefaults(recommendedFriends, key: CacheKeys.recommendedFriends)
+        saveToDefaults(friendRequests, key: CacheKeys.friendRequests)
+        saveToDefaults(sentFriendRequests, key: CacheKeys.sentFriendRequests)
+        saveToDefaults(profileStats, key: CacheKeys.profileStats)
+        saveToDefaults(profileInterests, key: CacheKeys.profileInterests)
+        saveToDefaults(profileSocialMedia, key: CacheKeys.profileSocialMedia)
+        saveToDefaults(profileActivities, key: CacheKeys.profileEvents)
     }
 } 
