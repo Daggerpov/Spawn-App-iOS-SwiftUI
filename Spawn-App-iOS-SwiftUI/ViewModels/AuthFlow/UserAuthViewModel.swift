@@ -470,54 +470,53 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				clientID: "822760465266-1dunhm4jgrcg17137rfjo2idu5qefchk.apps.googleusercontent.com"
 			)
 
-			GIDSignIn.sharedInstance.signIn(
-				withPresenting: presentingViewController
-			) { [weak self] signInResult, error in
-				if let error = error {
-					print(error.localizedDescription)
-					return
-				}
-
-                guard let signInResult = signInResult else { return }
-				
-				// Get ID token
-                signInResult.user.refreshTokensIfNeeded { user, error in
-					guard error == nil else { 
-						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
-						return 
-					}
-					guard let user = user else { return }
-                    
-                    Task { @MainActor [weak self] in
-                        guard let self = self else { return }
-                        
-                        if isOnboarding {
-                            await self.registerWithOAuth(
-                                idToken: user.idToken?.tokenString ?? "",
-                                provider: .google,
-                                email: user.profile?.email,
-                                name: user.profile?.name,
-                                profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
-                            )
-                            return
-                        }
-                        
-                        // Request a higher resolution image (400px instead of 100px)
-                        self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
-                        self.name = user.profile?.name
-                        self.email = user.profile?.email
-                        self.isLoggedIn = true
-                        self.externalUserId = user.userID
-                        self.authProvider = .google
-                        self.idToken = user.idToken?.tokenString
-                    }
-					
-					Task { [weak self] in
-						guard let self = self else { return }
-						await self.spawnFetchUserIfAlreadyExists()
-					}
-				}
+		GIDSignIn.sharedInstance.signIn(
+			withPresenting: presentingViewController
+		) { [weak self] signInResult, error in
+			if let error = error {
+				print(error.localizedDescription)
+				return
 			}
+
+            guard let signInResult = signInResult else { return }
+			
+			// Get ID token
+            signInResult.user.refreshTokensIfNeeded { user, error in
+				guard error == nil else { 
+					print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
+					return 
+				}
+				guard let user = user else { return }
+                
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    
+                    if isOnboarding {
+                        await self.registerWithOAuth(
+                            idToken: user.idToken?.tokenString ?? "",
+                            provider: .google,
+                            email: user.profile?.email,
+                            name: user.profile?.name,
+                            profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
+                        )
+                        return
+                    }
+                    
+                    // Request a higher resolution image (400px instead of 100px)
+                    self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
+                    self.name = user.profile?.name
+                    self.email = user.profile?.email
+                    self.isLoggedIn = true
+                    self.externalUserId = user.userID
+                    self.authProvider = .google
+                    self.idToken = user.idToken?.tokenString
+                    
+                    // Now that all properties are set, check if user exists
+                    // This must happen AFTER setting idToken to avoid race condition
+                    await self.spawnFetchUserIfAlreadyExists()
+                }
+			}
+		}
 		}
 	}
 

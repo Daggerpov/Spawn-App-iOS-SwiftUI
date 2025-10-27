@@ -127,7 +127,7 @@ struct SpawnIntroView: View {
                 
                 // Next Button
                 if currentPage == pages.count - 1 {
-                    OnboardingButtonView("Next", destination: SignInView())
+                    OnboardingButtonView("Next", navigateTo: .signIn)
                         .animation(.easeInOut(duration: 0.3), value: currentPage)
                 } else {
                     Button(action: {

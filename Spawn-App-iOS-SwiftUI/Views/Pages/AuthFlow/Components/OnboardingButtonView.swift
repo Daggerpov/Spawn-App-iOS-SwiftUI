@@ -15,14 +15,15 @@ struct OnboardingButtonStyle: ButtonStyle {
     }
 }
 
-struct OnboardingButtonView<Destination: View>: View {
+/// Onboarding button that uses centralized navigation through UserAuthViewModel
+struct OnboardingButtonView: View {
     let buttonText: String
-    let destination: Destination
-    @State private var isNavigating = false
+    let navigationState: NavigationState
+    @ObservedObject private var userAuth = UserAuthViewModel.shared
     
-    init(_ buttonText: String, destination: Destination) {
+    init(_ buttonText: String, navigateTo navigationState: NavigationState) {
         self.buttonText = buttonText
-        self.destination = destination
+        self.navigationState = navigationState
     }
     
     var body: some View {
@@ -31,21 +32,12 @@ struct OnboardingButtonView<Destination: View>: View {
             // Unified haptic feedback
             HapticFeedbackService.shared.medium()
             
-            // Execute navigation with slight delay for animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                isNavigating = true
-                print("🔘 DEBUG: Setting isNavigating to true for '\(buttonText)'")
-            }
+            // Use centralized navigation system
+            userAuth.navigateTo(navigationState)
         }) {
             OnboardingButtonCoreView(buttonText)
         }
         .buttonStyle(OnboardingButtonStyle())
-        .navigationDestination(isPresented: $isNavigating) {
-            destination
-                .onAppear {
-                    print("🔘 DEBUG: Navigation destination appeared for '\(buttonText)'")
-                }
-        }
         .onAppear {
             print("🔘 DEBUG: OnboardingButtonView appeared with text: '\(buttonText)'")
         }
@@ -53,5 +45,5 @@ struct OnboardingButtonView<Destination: View>: View {
 }
 
 #Preview {
-    OnboardingButtonView("Get Started", destination: LaunchView())
+    OnboardingButtonView("Get Started", navigateTo: .spawnIntro)
 }
