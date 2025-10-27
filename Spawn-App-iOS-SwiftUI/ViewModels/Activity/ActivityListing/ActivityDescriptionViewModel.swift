@@ -16,6 +16,51 @@ class ActivityDescriptionViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	@Published var errorMessage: String?
 	@Published var isLoading: Bool = false
+	
+	// MARK: - Helper Methods
+	
+	/// Sets loading state and optional error message
+	@MainActor
+	private func setLoadingState(_ loading: Bool, error: String? = nil) {
+		isLoading = loading
+		errorMessage = error
+	}
+	
+	/// Updates activity and posts notification after successful API call
+	@MainActor
+	private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
+		self.activity = updatedActivity
+		self.isParticipating = updatedActivity.participationStatus == .participating
+		AppCache.shared.addOrUpdateActivity(updatedActivity)
+		NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
+	}
+	
+	/// Handles API errors with consistent error messaging
+	@MainActor
+	private func handleAPIError(_ error: Error, context: String, customErrorMessage: String? = nil) {
+		print("❌ Error \(context): \(error)")
+		
+		if let apiError = error as? APIError {
+			switch apiError {
+			case .invalidStatusCode(let statusCode):
+				errorMessage = "Server error (status \(statusCode)). Please try again."
+			case .invalidData:
+				errorMessage = "Invalid data format. Please try again."
+			case .URLError:
+				errorMessage = "Network error. Please check your connection."
+			case .failedHTTPRequest(let description):
+				errorMessage = "Request failed: \(description)"
+			case .failedJSONParsing:
+				errorMessage = "Failed to parse server response. Please try again."
+			case .unknownError(let error):
+				errorMessage = ErrorFormattingService.shared.formatError(error)
+			case .failedTokenSaving:
+				errorMessage = "Authentication error. Please try logging in again."
+			}
+		} else {
+			errorMessage = customErrorMessage ?? "An error occurred while \(context)"
+		}
+	}
 
 	init(apiService: IAPIService, activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID) {
 		self.apiService = apiService
@@ -66,14 +111,11 @@ class ActivityDescriptionViewModel: ObservableObject {
 	
 	/// Saves activity changes to the backend using partial update endpoint
 	func saveActivityChanges() async {
-		await MainActor.run {
-			isLoading = true
-			errorMessage = nil
-		}
+		await setLoadingState(true)
 		
 		defer {
 			Task { @MainActor in
-				isLoading = false
+				setLoadingState(false)
 			}
 		}
 		
@@ -81,9 +123,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 		
 		guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)/partial") else {
 			print("❌ Error: Invalid URL for activity partial update")
-			await MainActor.run {
-				errorMessage = "Invalid URL for activity update"
-			}
+			await setLoadingState(false, error: "Invalid URL for activity update")
 			return
 		}
 		
@@ -111,33 +151,11 @@ class ActivityDescriptionViewModel: ObservableObject {
 					object: updatedActivity
 				)
 			}
-		} catch let error as APIError {
-			print("❌ APIError saving activity changes: \(error)")
-			await MainActor.run {
-				switch error {
-				case .invalidStatusCode(let statusCode):
-					errorMessage = "Server error (status \(statusCode)). Please try again."
-				case .invalidData:
-					errorMessage = "Invalid data format. Please try again."
-				case .URLError:
-					errorMessage = "Network error. Please check your connection."
-				case .failedHTTPRequest(let description):
-					errorMessage = "Request failed: \(description)"
-				case .failedJSONParsing:
-					errorMessage = "Failed to parse server response. Please try again."
-				case .unknownError(let error):
-					errorMessage = ErrorFormattingService.shared.formatError(error)
-				case .failedTokenSaving:
-					errorMessage = "Authentication error. Please try logging in again."
-				}
-			}
 		} catch {
 			print("❌ Unknown error saving activity changes: \(error)")
 			print("❌ Error type: \(type(of: error))")
 			print("❌ Error description: \(error.localizedDescription)")
-			await MainActor.run {
-				errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			await handleAPIError(error, context: "saving activity changes")
 		}
 	}
 	
@@ -166,20 +184,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 				EmptyRequestBody(), to: url, parameters: nil)
 
 			// Update local state after a successful API call
-			await MainActor.run {
-				self.activity = updatedActivity
-				// Derive the participation status from the updated activity instead of toggling
-				self.isParticipating = updatedActivity.participationStatus == .participating
-				
-				// Update the cache with the updated activity so all views stay in sync
-				AppCache.shared.addOrUpdateActivity(updatedActivity)
-				
-				// Post notification for successful update to inform all views
-				NotificationCenter.default.post(
-					name: .activityUpdated,
-					object: updatedActivity
-				)
-			}
+			await updateActivityAfterAPISuccess(updatedActivity)
 		} catch let error as APIError {
 			await MainActor.run {
 				// Handle specific API errors

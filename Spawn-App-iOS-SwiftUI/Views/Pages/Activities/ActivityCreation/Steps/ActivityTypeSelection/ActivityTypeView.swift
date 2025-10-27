@@ -211,7 +211,7 @@ extension ActivityTypeView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @State var selectedActivityType: ActivityTypeDTO? = nil
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     
     NavigationView {
         ActivityTypeView(

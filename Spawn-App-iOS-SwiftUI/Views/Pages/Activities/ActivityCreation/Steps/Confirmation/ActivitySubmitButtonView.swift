@@ -34,6 +34,6 @@ struct ActivitySubmitButtonView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     ActivitySubmitButtonView(backgroundColor: universalSecondaryColor).environmentObject(appCache)
 }

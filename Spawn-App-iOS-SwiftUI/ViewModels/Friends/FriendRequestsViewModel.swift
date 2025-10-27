@@ -32,6 +32,22 @@ class FriendRequestsViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Helper Methods
+    
+    /// Normalizes friend requests by filtering out zero UUIDs and deduplicating by ID
+    private func normalizeRequests<T: Identifiable>(_ items: [T]) -> [T] where T.ID == UUID {
+        let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+        var seen = Set<UUID>()
+        var result: [T] = []
+        for item in items where item.id != zeroUUID {
+            if !seen.contains(item.id) {
+                seen.insert(item.id)
+                result.append(item)
+            }
+        }
+        return result
+    }
+    
     private func initializeMockDataInCache() {
         // Only initialize if cache is empty for this user
         let currentIncoming = appCache.friendRequests[userId] ?? []
@@ -69,33 +85,8 @@ class FriendRequestsViewModel: ObservableObject {
             let (fetchedIncomingRequests, fetchedSentRequests) = try await (incoming, sent)
             
             // Normalize: filter out invalid zero UUIDs and de-duplicate by id
-            let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
-            func normalize(_ items: [FetchFriendRequestDTO]) -> [FetchFriendRequestDTO] {
-                var seen = Set<UUID>()
-                var result: [FetchFriendRequestDTO] = []
-                for item in items where item.id != zeroUUID {
-                    if !seen.contains(item.id) {
-                        seen.insert(item.id)
-                        result.append(item)
-                    }
-                }
-                return result
-            }
-            
-            func normalizeSent(_ items: [FetchSentFriendRequestDTO]) -> [FetchSentFriendRequestDTO] {
-                var seen = Set<UUID>()
-                var result: [FetchSentFriendRequestDTO] = []
-                for item in items where item.id != zeroUUID {
-                    if !seen.contains(item.id) {
-                        seen.insert(item.id)
-                        result.append(item)
-                    }
-                }
-                return result
-            }
-            
-            let normalizedIncoming = normalize(fetchedIncomingRequests)
-            let normalizedSent = normalizeSent(fetchedSentRequests)
+            let normalizedIncoming = normalizeRequests(fetchedIncomingRequests)
+            let normalizedSent = normalizeRequests(fetchedSentRequests)
             
             // Update UI first, then cache
             self.incomingFriendRequests = normalizedIncoming

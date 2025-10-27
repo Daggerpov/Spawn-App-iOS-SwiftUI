@@ -10,7 +10,7 @@ import PhotosUI
 
 struct ProfileHeaderView: View {
     let user: Nameable
-    @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var userAuth = UserAuthViewModel.shared
     
     @Binding var selectedImage: UIImage?
     @Binding var showImagePicker: Bool

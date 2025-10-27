@@ -10,7 +10,7 @@ import SwiftUI
 struct SignInView: View {
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
-    @StateObject private var userAuth = UserAuthViewModel.shared
+    @ObservedObject private var userAuth = UserAuthViewModel.shared
     
     var body: some View {
         ZStack {

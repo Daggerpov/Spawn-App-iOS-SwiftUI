@@ -12,10 +12,10 @@ import SwiftUI
 struct Spawn_App_iOS_SwiftUIApp: App {
 	// Add UIApplicationDelegateAdaptor for push notifications
 	@UIApplicationDelegateAdaptor private var appDelegate: CustomAppDelegate
-	@StateObject var userAuth = UserAuthViewModel.shared
-	@StateObject var appCache = AppCache.shared
-	@StateObject var themeService = ThemeService.shared
-	@StateObject var deepLinkManager = DeepLinkManager.shared
+	@ObservedObject var userAuth = UserAuthViewModel.shared
+	@ObservedObject var appCache = AppCache.shared
+	@ObservedObject var themeService = ThemeService.shared
+	@ObservedObject var deepLinkManager = DeepLinkManager.shared
     @Environment(\.scenePhase) private var scenePhase
     
     init() {

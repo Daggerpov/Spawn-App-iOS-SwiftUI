@@ -4,8 +4,8 @@ import SwiftUI
 struct WithTabBarBinding<Content>: View where Content: View {
     @Binding var selection: Tabs
     @ViewBuilder var content: (Tabs) -> Content
-    @StateObject private var activityCreationViewModel = ActivityCreationViewModel.shared
-    
+    @ObservedObject private var activityCreationViewModel = ActivityCreationViewModel.shared
+
     // Calculate the TabBar space needed
     private var tabBarSpacing: CGFloat {
         let buttonHeight: CGFloat = 64 // BTTN_HEIGHT from TabButtonLabelsView

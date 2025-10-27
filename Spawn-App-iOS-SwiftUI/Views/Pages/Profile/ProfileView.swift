@@ -53,7 +53,7 @@ struct ProfileView: View {
 	@State private var denyButtonPressed = false
 	@State private var denyButtonScale: CGFloat = 1.0
 
-	@StateObject var userAuth = UserAuthViewModel.shared
+	@ObservedObject var userAuth = UserAuthViewModel.shared
 	@StateObject var profileViewModel = ProfileViewModel()
 
 	// Add environment object for navigation

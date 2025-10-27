@@ -188,43 +188,35 @@ class FriendsTabViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Helper Methods
+    
+    /// Checks if a user matches a search query
+    private func userMatches(name: String?, username: String?, query: String) -> Bool {
+        let lowercaseQuery = query.lowercased()
+        let lowercasedName = name?.lowercased() ?? ""
+        let lowercasedUsername = username?.lowercased() ?? ""
+        return lowercasedName.contains(lowercaseQuery) || lowercasedUsername.contains(lowercaseQuery)
+    }
+    
     // Local fallback filtering in case the API call fails
     private func localFilterResults(query: String) async {
-        let lowercaseQuery = query.lowercased()
-        
         await MainActor.run {
             self.filteredFriends = self.friends.filter { friend in
-                let name = friend.name?.lowercased() ?? ""
-                let username = (friend.username ?? "").lowercased()
-                
-                return name.contains(lowercaseQuery) || 
-                       username.contains(lowercaseQuery)
+                userMatches(name: friend.name, username: friend.username, query: query)
             }
             
             self.filteredRecommendedFriends = self.recommendedFriends.filter { friend in
-                let name = friend.name?.lowercased() ?? ""
-                let username = (friend.username ?? "").lowercased()
-                
-                return name.contains(lowercaseQuery) || 
-                       username.contains(lowercaseQuery)
+                userMatches(name: friend.name, username: friend.username, query: query)
             }
             
             self.filteredIncomingFriendRequests = self.incomingFriendRequests.filter { request in
                 let friend = request.senderUser
-                let name = friend.name?.lowercased() ?? ""
-                let username = (friend.username ?? "").lowercased()
-                
-                return name.contains(lowercaseQuery) || 
-                       username.contains(lowercaseQuery)
+                return userMatches(name: friend.name, username: friend.username, query: query)
             }
             
             self.filteredOutgoingFriendRequests = self.outgoingFriendRequests.filter { request in
                 let friend = request.receiverUser
-                let name = friend.name?.lowercased() ?? ""
-                let username = (friend.username ?? "").lowercased()
-                
-                return name.contains(lowercaseQuery) || 
-                       username.contains(lowercaseQuery)
+                return userMatches(name: friend.name, username: friend.username, query: query)
             }
         }
     }

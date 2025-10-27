@@ -345,7 +345,7 @@ struct ActivityTypeEditView: View {
 // MARK: - Preview
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     
     NavigationView {
         ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew(), onBack: nil)

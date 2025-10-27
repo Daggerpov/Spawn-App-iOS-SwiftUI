@@ -11,7 +11,7 @@ struct TimeoutError: Error {}
 
 struct ProfileCalendarView: View {
 	@StateObject var profileViewModel: ProfileViewModel
-	@StateObject var userAuth = UserAuthViewModel.shared
+	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	@Binding var showCalendarPopup: Bool
 	@Binding var showActivityDetails: Bool

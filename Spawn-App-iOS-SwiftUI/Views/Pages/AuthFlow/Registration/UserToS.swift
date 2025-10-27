@@ -9,7 +9,7 @@ import SwiftUI
 
 struct UserToS: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var userAuth = UserAuthViewModel.shared
+    @ObservedObject private var userAuth = UserAuthViewModel.shared
     @State private var agreed: Bool = false
     @State private var isSubmitting: Bool = false
     @ObservedObject var themeService = ThemeService.shared

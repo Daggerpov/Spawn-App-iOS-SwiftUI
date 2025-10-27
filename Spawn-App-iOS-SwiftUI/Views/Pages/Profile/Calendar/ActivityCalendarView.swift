@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ActivityCalendarView: View {
     @StateObject var profileViewModel: ProfileViewModel
-    @StateObject var userAuth = UserAuthViewModel.shared
+    @ObservedObject var userAuth = UserAuthViewModel.shared
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) private var dismiss
     

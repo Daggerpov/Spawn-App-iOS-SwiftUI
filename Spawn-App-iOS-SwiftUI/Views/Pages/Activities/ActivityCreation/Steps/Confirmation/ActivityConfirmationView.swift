@@ -511,7 +511,7 @@ struct ActivityConfirmationView: View {
 @available(iOS 17, *)
 #Preview {
     @Previewable @State var showShareSheet: Bool = false
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     
     ActivityConfirmationView(
         showShareSheet: $showShareSheet,

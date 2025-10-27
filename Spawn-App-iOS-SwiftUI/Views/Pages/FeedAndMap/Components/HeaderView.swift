@@ -9,7 +9,7 @@ import SwiftUI
 
 struct HeaderView: View {
 	var user: BaseUserDTO
-	@StateObject private var userAuth = UserAuthViewModel.shared
+	@ObservedObject private var userAuth = UserAuthViewModel.shared
 	@State private var displayUser: BaseUserDTO
 	
 	init(user: BaseUserDTO) {
@@ -66,7 +66,7 @@ struct HeaderView: View {
 
 @available(iOS 17, *)
 #Preview {
-	@Previewable @StateObject var appCache = AppCache.shared
+	@Previewable @ObservedObject var appCache = AppCache.shared
 	HeaderView(user: BaseUserDTO.danielAgapov).environmentObject(
 		appCache
 	)

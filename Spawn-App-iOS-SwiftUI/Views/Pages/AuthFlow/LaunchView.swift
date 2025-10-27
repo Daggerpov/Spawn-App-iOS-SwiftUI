@@ -12,7 +12,7 @@ import SwiftUI
 import UserNotifications // Add this import for notifications
 
 struct LaunchView: View {
-	@StateObject var userAuth = UserAuthViewModel.shared
+	@ObservedObject var userAuth = UserAuthViewModel.shared
 	@ObservedObject var themeService = ThemeService.shared
 	@Environment(\.colorScheme) var colorScheme
     @Environment(\.dismiss) private var dismiss
@@ -127,6 +127,6 @@ struct LaunchView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
 	LaunchView().environmentObject(appCache)
 }

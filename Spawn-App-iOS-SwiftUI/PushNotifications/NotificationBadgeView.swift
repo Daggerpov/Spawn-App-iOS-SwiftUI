@@ -34,7 +34,7 @@ extension View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @StateObject var appCache = AppCache.shared
+    @Previewable @ObservedObject var appCache = AppCache.shared
     VStack(spacing: 20) {
         Image(systemName: "bell.fill")
             .font(.system(size: 24))
