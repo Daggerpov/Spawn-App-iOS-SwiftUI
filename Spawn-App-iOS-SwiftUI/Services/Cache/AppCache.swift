@@ -77,6 +77,13 @@ class AppCache: ObservableObject {
         lastChecked.removeValue(forKey: userId)
     }
     
+    // MARK: - Helper Methods
+    
+    /// No-op async function for conditional parallel execution
+    private func noop() async {
+        // Does nothing - used for conditional async let statements
+    }
+    
     // MARK: - Public Methods
     
     /// Initialize the cache and load from disk
@@ -176,12 +183,7 @@ class AppCache: ObservableObject {
                     async let sentFriendRequestsTask: () = refreshSentFriendRequests()
 
                     // Wait for all tasks to complete
-                    await friendsTask
-                    await activitiesTask
-                    await activityTypesTask
-                    await recommendedFriendsTask
-                    await friendRequestsTask
-                    await sentFriendRequestsTask
+                    let _ = await (friendsTask, activitiesTask, activityTypesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
                     
                     // Clean up any expired activities after refresh
                     cleanupExpiredActivities()
@@ -197,6 +199,15 @@ class AppCache: ObservableObject {
             let result = try await apiService.validateCache(userLastChecked)
             
             await MainActor.run {
+                // Track which caches need refreshing for parallel execution
+                var needsFriendsRefresh = false
+                var needsActivitiesRefresh = false
+                var needsActivityTypesRefresh = false
+                var needsOtherProfilesRefresh = false
+                var needsRecommendedFriendsRefresh = false
+                var needsFriendRequestsRefresh = false
+                var needsSentFriendRequestsRefresh = false
+                
                 // Update each collection based on invalidation results
                 if let friendsResponse = result[CacheKeys.friends], friendsResponse.invalidate {
                     if let updatedItems = friendsResponse.updatedItems,
@@ -204,14 +215,9 @@ class AppCache: ObservableObject {
                         // Backend provided the updated data
                         updateFriends(updatedFriends)
                     } else {
-                        // Need to fetch new data
-                        Task {
-                            await refreshFriends()
-                        }
+                        needsFriendsRefresh = true
                     }
                 }
-                
-
                 
                 if let activitiesResponse = result[CacheKeys.events], activitiesResponse.invalidate {
                     if let updatedItems = activitiesResponse.updatedItems,
@@ -225,10 +231,7 @@ class AppCache: ObservableObject {
                         }
                         updateActivities(filteredUpdatedActivities)
                     } else {
-                        // Need to fetch new data
-                        Task {
-                            await refreshActivities()
-                        }
+                        needsActivitiesRefresh = true
                     }
                 }
                 
@@ -239,18 +242,13 @@ class AppCache: ObservableObject {
                         // Backend provided the updated data
                         updateActivityTypes(updatedActivityTypes)
                     } else {
-                        // Need to fetch new data
-                        Task {
-                            await refreshActivityTypes()
-                        }
+                        needsActivityTypesRefresh = true
                     }
                 }
                 
                 // Other Profiles Cache
                 if let otherProfilesResponse = result[CacheKeys.otherProfiles], otherProfilesResponse.invalidate {
-                    Task {
-                        await refreshOtherProfiles()
-                    }
+                    needsOtherProfilesRefresh = true
                 }
                 
                 // Recommended Friends Cache
@@ -259,9 +257,7 @@ class AppCache: ObservableObject {
                        let updatedRecommendedFriends = try? JSONDecoder().decode([UUID: [RecommendedFriendUserDTO]].self, from: updatedItems) {
                         updateRecommendedFriends(updatedRecommendedFriends)
                     } else {
-                        Task {
-                            await refreshRecommendedFriends()
-                        }
+                        needsRecommendedFriendsRefresh = true
                     }
                 }
                 
@@ -271,9 +267,7 @@ class AppCache: ObservableObject {
                        let updatedFriendRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: updatedItems) {
                         updateFriendRequests(updatedFriendRequests)
                     } else {
-                        Task {
-                            await refreshFriendRequests()
-                        }
+                        needsFriendRequestsRefresh = true
                     }
                 }
                 
@@ -283,9 +277,24 @@ class AppCache: ObservableObject {
                        let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: updatedItems) {
                         updateSentFriendRequests(updatedSentFriendRequests)
                     } else {
-                        Task {
-                            await refreshSentFriendRequests()
-                        }
+                        needsSentFriendRequestsRefresh = true
+                    }
+                }
+                
+                // Refresh all invalidated caches in parallel for faster performance
+                if needsFriendsRefresh || needsActivitiesRefresh || needsActivityTypesRefresh || 
+                   needsOtherProfilesRefresh || needsRecommendedFriendsRefresh || 
+                   needsFriendRequestsRefresh || needsSentFriendRequestsRefresh {
+                    Task {
+                        async let friendsTask: () = needsFriendsRefresh ? refreshFriends() : noop()
+                        async let activitiesTask: () = needsActivitiesRefresh ? refreshActivities() : noop()
+                        async let activityTypesTask: () = needsActivityTypesRefresh ? refreshActivityTypes() : noop()
+                        async let otherProfilesTask: () = needsOtherProfilesRefresh ? refreshOtherProfiles() : noop()
+                        async let recommendedFriendsTask: () = needsRecommendedFriendsRefresh ? refreshRecommendedFriends() : noop()
+                        async let friendRequestsTask: () = needsFriendRequestsRefresh ? refreshFriendRequests() : noop()
+                        async let sentFriendRequestsTask: () = needsSentFriendRequestsRefresh ? refreshSentFriendRequests() : noop()
+                        
+                        let _ = await (friendsTask, activitiesTask, activityTypesTask, otherProfilesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
                     }
                 }
             }

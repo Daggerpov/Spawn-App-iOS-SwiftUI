@@ -183,6 +183,54 @@ await withTaskGroup(of: Void.self) { group in
    - Maintainable: Easy to add/remove tasks from the group
    - Readable: Sequential-looking code that executes in parallel
 
+## Additional Opportunities Evaluated
+
+After thorough analysis of the codebase, the following areas were evaluated and found to be **already optimized**:
+
+### 1. AppCache Initial Cache Refresh ✅
+**Location:** `Services/Cache/AppCache.swift` (lines 166-188)
+- Already using `async let` with tuple await for parallel cache refreshing
+- Refreshes friends, activities, activity types, recommended friends, and friend requests simultaneously
+- **Status:** No changes needed - already optimal
+
+### 2. FriendRequestsViewModel ✅  
+**Location:** `ViewModels/Friends/FriendRequestsViewModel.swift` (lines 64-128)
+- Already using `async let` for parallel fetching of incoming and outgoing friend requests
+- **Status:** No changes needed - already optimal
+
+### 3. ProfileViewModel - Multiple Areas ✅
+- `loadAllProfileData()` - Already uses `async let` for 4 parallel profile data fetches
+- `checkFriendshipStatus()` - Already uses `async let` for 2 parallel friend request fetches
+- **Status:** No changes needed - already optimal
+
+### 4. FeedViewModel ✅
+- `fetchAllData()` - Already uses `async let` for parallel activity and activity type fetching  
+- **Status:** No changes needed - already optimal
+
+### 5. DayActivitiesViewModel ✅
+- `loadActivitiesIfNeeded()` - Already uses `withTaskGroup` for parallel activity detail fetching
+- **Status:** No changes needed - already optimal
+
+### 6. FriendsTabViewModel ✅
+- `fetchAllData()` - Already uses `withTaskGroup` for parallel friend data fetching
+- **Status:** No changes needed - already optimal
+
+## Areas Not Suitable for Task Groups
+
+After analysis, the following were identified as **not suitable** for task group optimization:
+
+### 1. ContactsService.findContactsOnSpawn()
+**Why:** The name matching algorithm (lines 190-237) is CPU-bound synchronous work, not network I/O. Task groups are best for I/O operations.
+
+### 2. ActivityCreationViewModel
+**Why:** Creates single activities with sequential validation steps that depend on each other. No independent parallel operations.
+
+### 3. UserAuthViewModel  
+**Why:** Authentication flows are inherently sequential (sign in → validate → fetch user data). Each step depends on the previous one.
+
+### 4. ChatViewModel
+**Why:** Single chat messages are sent one at a time. No batch operations to parallelize.
+
 ## Conclusion
 
 The implementation of task groups in profile picture loading significantly improves the user experience by:
@@ -190,6 +238,8 @@ The implementation of task groups in profile picture loading significantly impro
 - Efficiently utilizing system resources (network, CPU)
 - Providing a smooth, responsive UI experience
 - Following modern Swift concurrency best practices
+
+**Key Finding:** The codebase was already highly optimized with `async let` and `withTaskGroup` patterns. The remaining opportunities for task groups were **specifically in profile picture preloading**, where we successfully implemented 4 new task group optimizations for parallel image downloads.
 
 The changes are localized to cache and service layers, maintaining separation of concerns while delivering substantial performance improvements across the entire app.
 
