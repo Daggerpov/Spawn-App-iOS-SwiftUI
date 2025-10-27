@@ -61,12 +61,9 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						print("🔄 DEBUG: Showing LoadingView - hasCheckedSpawnUserExistence: \(userAuth.hasCheckedSpawnUserExistence), isFirstLaunch: \(userAuth.isFirstLaunch)")
 					}
 					.task {
-						// Wrap in Task to avoid blocking UI
-						Task {
-							// If we're mocking, simulate a login with mock user
-							if MockAPIService.isMocking {
-								await userAuth.setMockUser()
-							}
+						// If we're mocking, simulate a login with mock user
+						if MockAPIService.isMocking {
+							await userAuth.setMockUser()
 						}
 					}
 					.onOpenURL { url in
@@ -80,13 +77,10 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 						print("🔄 DEBUG: Showing ContentView - User is logged in")
 					}
 					.task {
-						// Wrap in Task to avoid blocking UI
-						Task {
-							// Initialize and validate the cache
-							await appCache.validateCache()
-							// Clean up any expired activities after cache validation
-							appCache.cleanupExpiredActivities()
-						}
+						// Initialize and validate the cache
+						await appCache.validateCache()
+						// Clean up any expired activities after cache validation
+						appCache.cleanupExpiredActivities()
 					}
 					.onOpenURL { url in
 						print("🔗 App: Received URL: \(url.absoluteString)")

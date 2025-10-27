@@ -116,11 +116,8 @@ struct DayActivitiesView: View {
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(10)
                         .task(id: activity.activityId) {
-                            // Wrap in Task to avoid blocking UI during scrolling
-                            Task {
-                                if let activityId = activity.activityId {
-                                    await viewModel.fetchActivity(activityId)
-                                }
+                            if let activityId = activity.activityId {
+                                await viewModel.fetchActivity(activityId)
                             }
                         }
                     }
@@ -129,10 +126,7 @@ struct DayActivitiesView: View {
             .padding()
         }
         .task {
-            // Wrap in Task to avoid blocking UI
-            Task {
-                await viewModel.loadActivitiesIfNeeded()
-            }
+            await viewModel.loadActivitiesIfNeeded()
         }
     }
 }

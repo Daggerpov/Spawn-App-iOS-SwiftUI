@@ -35,12 +35,9 @@ struct FriendRequestsView: View {
         .background(universalBackgroundColor)
         .navigationBarHidden(true)
         .task {
-            // Wrap in Task to avoid blocking UI
-            Task {
-                // Only fetch data from API if we're not in preview mode
-                if !isPreviewMode {
-                    await viewModel.fetchFriendRequests()
-                }
+            // Only fetch data from API if we're not in preview mode
+            if !isPreviewMode {
+                await viewModel.fetchFriendRequests()
             }
         }
         .overlay(successDrawerOverlay)

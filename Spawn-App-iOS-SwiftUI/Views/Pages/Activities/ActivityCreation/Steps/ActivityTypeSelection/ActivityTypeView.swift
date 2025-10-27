@@ -57,10 +57,7 @@ struct ActivityTypeView: View {
                 Spacer()
             }
             .task {
-                // Wrap in Task to avoid blocking UI
-                Task {
-                    await viewModel.fetchActivityTypes()
-                }
+                await viewModel.fetchActivityTypes()
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {

@@ -48,20 +48,7 @@ struct FriendsView: View {
             }
         }
         .task {
-            print("🎬 [TAB SWITCH] FriendsView appeared - starting load operations")
-            let startTime = Date()
-            
-            // Wrap in background task to avoid blocking UI
-            Task {
-                print("🔄 [TAB SWITCH] Starting fetchIncomingFriendRequests")
-                let fetchStartTime = Date()
-                await viewModel.fetchIncomingFriendRequests()
-                let fetchEndTime = Date()
-                print("✅ [TAB SWITCH] fetchIncomingFriendRequests completed in \(fetchEndTime.timeIntervalSince(fetchStartTime) * 1000)ms")
-                
-                let endTime = Date()
-                print("✅ [TAB SWITCH] FriendsView fully loaded in \(endTime.timeIntervalSince(startTime) * 1000)ms")
-            }
+            await viewModel.fetchIncomingFriendRequests()
         }
         .onAppear {
             // Handle deep link if one is pending when view appears

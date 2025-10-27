@@ -70,10 +70,7 @@ struct ChatroomView: View {
         }
         .navigationBarBackButtonHidden(true)
         .task {
-            // Wrap in Task to avoid blocking UI
-            Task {
-                await viewModel.refreshChat()
-            }
+            await viewModel.refreshChat()
         }
     }
     

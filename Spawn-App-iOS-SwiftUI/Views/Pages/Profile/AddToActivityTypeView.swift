@@ -73,10 +73,7 @@ struct AddToActivityTypeView: View {
             }
         }
         .task {
-            // Wrap in Task to avoid blocking UI
-            Task {
-                await viewModel.loadActivityTypes()
-            }
+            await viewModel.loadActivityTypes()
         }
     }
     

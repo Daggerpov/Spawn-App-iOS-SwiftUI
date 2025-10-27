@@ -92,15 +92,12 @@ struct InviteView: View {
                 friendsViewModel.connectSearchViewModel(searchViewModel)
             }
             .task {
-                // Wrap in Task to avoid blocking UI
-                Task {
-                    if appCache.friends.isEmpty {
-                        await friendsViewModel.fetchAllData()
-                    } else {
-                        // Use cached friends data
-                        friendsViewModel.friends = appCache.getCurrentUserFriends()
-                        friendsViewModel.filteredFriends = appCache.getCurrentUserFriends()
-                    }
+                if appCache.friends.isEmpty {
+                    await friendsViewModel.fetchAllData()
+                } else {
+                    // Use cached friends data
+                    friendsViewModel.friends = appCache.getCurrentUserFriends()
+                    friendsViewModel.filteredFriends = appCache.getCurrentUserFriends()
                 }
             }
         }
