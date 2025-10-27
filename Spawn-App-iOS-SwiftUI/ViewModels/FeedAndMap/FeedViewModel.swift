@@ -242,7 +242,8 @@ class FeedViewModel: ObservableObject {
                 self.appCache.updateActivitiesForUser(fetchedActivities, userId: self.userId) // Cache will filter expired activities internally
             }
         } catch {
-            print("❌ DEBUG: Error fetching activities: \(error)")
+            // Don't log cancelled errors - they're expected when navigating away
+            APIError.logIfNotCancellation(error, message: "❌ DEBUG: Error fetching activities")
             await MainActor.run {
                 self.activities = []
             }

@@ -134,7 +134,21 @@ class APIService: IAPIService {
 		request.httpMethod = "GET"
 		setAuthHeader(request: &request)
 
-		var (data, response) = try await URLSession.shared.data(for: request)
+		var (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				// Return empty result for cancelled requests without logging
+				if let emptyResult = emptyResult(for: T.self) {
+					return emptyResult
+				}
+				throw APIError.cancelled
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
@@ -274,7 +288,19 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 		setAuthHeader(request: &request)
-		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		let (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				// Return nil for cancelled POST requests without logging
+				return nil
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(finalURL)"
@@ -385,7 +411,19 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 		setAuthHeader(request: &request)
-		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		let (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				// For cancelled PUT requests, throw the cancellation error silently
+				throw APIError.cancelled
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			let message = "HTTP request failed for \(finalURL)"
@@ -449,7 +487,18 @@ class APIService: IAPIService {
             request.httpBody = try encoder.encode(object)
         }
         
-        let (_, response) = try await URLSession.shared.data(for: request)
+		let response: URLResponse
+		do {
+			(_, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				// For cancelled DELETE requests, just return without logging
+				return
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
@@ -553,7 +602,17 @@ class APIService: IAPIService {
 		request.httpBody = jsonData
 
 		// Perform the request
-		let (data, response) = try await URLSession.shared.data(for: request)
+		let (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				throw APIError.cancelled
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 
 		// Check the HTTP response
 		guard let httpResponse = response as? HTTPURLResponse else {
@@ -751,7 +810,19 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 		setAuthHeader(request: &request)
-		let (data, response) = try await URLSession.shared.data(for: request)
+		
+		let (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				// For cancelled PATCH requests, throw the cancellation error silently
+				throw APIError.cancelled
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 		
 		// Debug: Log the response details
 		print("🔍 RESPONSE: \(response)")
@@ -847,7 +918,17 @@ class APIService: IAPIService {
 		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
 		
 		// Perform the request with detailed logging
-		let (data, response) = try await URLSession.shared.data(for: request)
+		let (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				throw APIError.cancelled
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 		
 		print("🔍 RESPONSE RECEIVED: \(response)")
 		
@@ -940,7 +1021,17 @@ class APIService: IAPIService {
 		request.httpBody = body
 		
 		// Perform the request
-		let (data, response) = try await URLSession.shared.data(for: request)
+		let (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				throw APIError.cancelled
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 		
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
@@ -994,7 +1085,17 @@ class APIService: IAPIService {
 		request.httpMethod = "POST"
 		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "Authorization")
 		
-        let (data, response) = try await URLSession.shared.data(for: request)
+		let (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: request)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				throw APIError.cancelled
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 		
 		guard let httpResponse = response as? HTTPURLResponse else {
 			let message = "HTTP request failed for refresh token endpoint"
@@ -1111,7 +1212,18 @@ class APIService: IAPIService {
 		setAuthHeader(request: &urlRequest)
 		
 		// Send the request
-		var (data, response) = try await URLSession.shared.data(for: urlRequest)
+		var (data, response): (Data, URLResponse)
+		do {
+			(data, response) = try await URLSession.shared.data(for: urlRequest)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				// Return empty result for cancelled requests
+				return [:]
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 		
 		// Validate the response
 		guard let httpResponse = response as? HTTPURLResponse else {
@@ -1154,7 +1266,18 @@ class APIService: IAPIService {
 		setAuthHeader(request: &urlRequest)
 		
 		// Send the request
-		let (_, response) = try await URLSession.shared.data(for: urlRequest)
+		let response: URLResponse
+		do {
+			(_, response) = try await URLSession.shared.data(for: urlRequest)
+		} catch {
+			// Check if this is a cancellation error and handle silently
+			if APIError.isCancellation(error) {
+				// For cancelled requests, just return
+				return
+			}
+			// Re-throw non-cancellation errors
+			throw error
+		}
 
 		// Validate the response
 		guard let httpResponse = response as? HTTPURLResponse else {

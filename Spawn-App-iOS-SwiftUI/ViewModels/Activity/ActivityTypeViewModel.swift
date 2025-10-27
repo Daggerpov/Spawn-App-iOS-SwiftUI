@@ -125,10 +125,6 @@ class ActivityTypeViewModel: ObservableObject {
 			print("❌ Error fetching activity types: \(error)")
 			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
 		} catch {
-			// Skip logging for cancelled requests (error code -999) - this is expected when navigating away
-			if let urlError = error as? URLError, urlError.code == .cancelled {
-				return
-			}
 			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
     }
