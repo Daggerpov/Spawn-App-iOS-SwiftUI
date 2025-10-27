@@ -23,6 +23,14 @@ class ActivityCreationViewModel: ObservableObject {
 
 	@Published var selectedFriends: [FullFriendUserDTO] = []
 	
+	// MARK: - Constants
+	private enum TimeConstants {
+		static let twoHoursInSeconds: TimeInterval = 2 * 60 * 60
+		static let oneHourInSeconds: TimeInterval = 60 * 60
+		static let thirtyMinutesInSeconds: TimeInterval = 30 * 60
+		static let coordinateTolerance: Double = 0.0001
+	}
+	
 	// Validation properties
 	@Published var isTitleValid: Bool = true
 	@Published var isInvitesValid: Bool = true
@@ -93,8 +101,8 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 		
 		return original.name != current.name || 
-			   abs(original.latitude - current.latitude) > 0.0001 ||
-			   abs(original.longitude - current.longitude) > 0.0001
+			   abs(original.latitude - current.latitude) > TimeConstants.coordinateTolerance ||
+			   abs(original.longitude - current.longitude) > TimeConstants.coordinateTolerance
 	}
 	
 	
@@ -141,16 +149,7 @@ class ActivityCreationViewModel: ObservableObject {
 		
 		// Calculate duration based on start and end times
 		if let startTime = activity.startTime, let endTime = activity.endTime {
-			let duration = endTime.timeIntervalSince(startTime)
-			if duration <= 30 * 60 { // 30 minutes
-				shared.selectedDuration = .thirtyMinutes
-			} else if duration <= 60 * 60 { // 1 hour
-				shared.selectedDuration = .oneHour
-			} else if duration <= 2 * 60 * 60 { // 2 hours
-				shared.selectedDuration = .twoHours
-			} else {
-				shared.selectedDuration = .indefinite
-			}
+			shared.selectedDuration = calculateDuration(from: startTime, to: endTime)
 		}
 		
 		// MARK: - Store Original Values for Change Tracking
@@ -167,43 +166,12 @@ class ActivityCreationViewModel: ObservableObject {
 			}
 		}
 		
-		// Set invited friends based on activity participants
-		if let participants = activity.participantUsers {
-			// Filter out the creator from participants to get invited friends
-			let invitedFriends = participants.compactMap { participant -> FullFriendUserDTO? in
-				if participant.id != activity.creatorUser.id {
-					return FullFriendUserDTO(
-						id: participant.id,
-						username: participant.username,
-						profilePicture: participant.profilePicture,
-						name: participant.name,
-						bio: participant.bio,
-						email: participant.email
-					)
-				}
-				return nil
-			}
-			shared.selectedFriends = invitedFriends
-		}
-		
-		// Also include originally invited users who might not be participants yet
-		if let invitedUsers = activity.invitedUsers {
-			let additionalInvitedFriends = invitedUsers.compactMap { invitedUser -> FullFriendUserDTO? in
-				// Only add if not already in selectedFriends
-				if !shared.selectedFriends.contains(where: { $0.id == invitedUser.id }) && invitedUser.id != activity.creatorUser.id {
-					return FullFriendUserDTO(
-						id: invitedUser.id,
-						username: invitedUser.username,
-						profilePicture: invitedUser.profilePicture,
-						name: invitedUser.name,
-						bio: invitedUser.bio,
-						email: invitedUser.email
-					)
-				}
-				return nil
-			}
-			shared.selectedFriends.append(contentsOf: additionalInvitedFriends)
-		}
+		// Set invited friends from participants and invited users
+		shared.selectedFriends = extractInvitedFriends(
+			from: activity,
+			participants: activity.participantUsers,
+			invitedUsers: activity.invitedUsers
+		)
 	}
 	
 	// Helper method to reset the current instance to defaults
@@ -232,18 +200,8 @@ class ActivityCreationViewModel: ObservableObject {
 		originalLocation = nil
 		
 		// Reset the activity DTO
-		let defaultStart = Date()
-		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
-		activity = ActivityDTO(
-			id: UUID(),
-			title: "",
-			startTime: defaultStart,
-			endTime: defaultEnd,
-			icon: "⭐️",
-			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
-			invitedUserIds: []
-		)
-		
+		activity = Self.createDefaultActivity()
+
 		// Reload friends
 		loadAllFriendsAsSelected()
 	}
@@ -253,17 +211,13 @@ class ActivityCreationViewModel: ObservableObject {
 		shared.selectedActivityType = nil
 	}
 
-	// Private initializer to enforce singleton pattern
-	private init() {
-		self.apiService =
-			MockAPIService.isMocking
-			? MockAPIService(
-				userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
-			: APIService()
-
+	// MARK: - Initialization
+	
+	/// Create a default activity DTO
+	public static func createDefaultActivity() -> ActivityDTO {
 		let defaultStart = Date()
-		let defaultEnd = Date().addingTimeInterval(2 * 60 * 60)  // 2 hours later
-		self.activity = ActivityDTO(
+		let defaultEnd = Date().addingTimeInterval(TimeConstants.twoHoursInSeconds)
+		return ActivityDTO(
 			id: UUID(),
 			title: "",
 			startTime: defaultStart,
@@ -272,6 +226,17 @@ class ActivityCreationViewModel: ObservableObject {
 			creatorUserId: UserAuthViewModel.shared.spawnUser?.id ?? UUID(),
 			invitedUserIds: []
 		)
+	}
+	
+	/// Private initializer to enforce singleton pattern
+	private init() {
+		self.apiService =
+			MockAPIService.isMocking
+			? MockAPIService(
+				userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
+			: APIService()
+
+		self.activity = Self.createDefaultActivity()
 		
 		// Ensure selectedActivityType starts as nil by default (no auto-selection)
 		self.selectedActivityType = nil
@@ -319,36 +284,101 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 	}
 	
-	// Method to add a friend to the selected friends list
-	func addFriend(_ friend: FullFriendUserDTO) {
-		DispatchQueue.main.async {
-			if !self.selectedFriends.contains(where: { $0.id == friend.id }) {
-				self.selectedFriends.append(friend)
-			}
+	// MARK: - Helper Methods
+	
+	/// Calculate duration from time interval
+	private static func calculateDuration(from startTime: Date, to endTime: Date) -> ActivityDuration {
+		let duration = endTime.timeIntervalSince(startTime)
+		if duration <= TimeConstants.thirtyMinutesInSeconds {
+			return .thirtyMinutes
+		} else if duration <= TimeConstants.oneHourInSeconds {
+			return .oneHour
+		} else if duration <= TimeConstants.twoHoursInSeconds {
+			return .twoHours
+		} else {
+			return .indefinite
 		}
 	}
 	
-	// Method to remove a friend from the selected friends list
-	func removeFriend(_ friend: FullFriendUserDTO) {
+	/// Convert BaseUserDTO to FullFriendUserDTO
+	private static func convertToFriendDTO(_ user: BaseUserDTO) -> FullFriendUserDTO {
+		return FullFriendUserDTO(
+			id: user.id,
+			username: user.username,
+			profilePicture: user.profilePicture,
+			name: user.name,
+			bio: user.bio,
+			email: user.email
+		)
+	}
+	
+	/// Extract invited friends from activity participants and invited users
+	private static func extractInvitedFriends(
+		from activity: FullFeedActivityDTO,
+		participants: [BaseUserDTO]?,
+		invitedUsers: [BaseUserDTO]?
+	) -> [FullFriendUserDTO] {
+		var friends: [FullFriendUserDTO] = []
+		let creatorId = activity.creatorUser.id
+		
+		// Add participants (excluding creator)
+		if let participants = participants {
+			let participantFriends = participants
+				.filter { $0.id != creatorId }
+				.map { convertToFriendDTO($0) }
+			friends.append(contentsOf: participantFriends)
+		}
+		
+		// Add invited users (excluding creator and duplicates)
+		if let invitedUsers = invitedUsers {
+			let additionalFriends = invitedUsers
+				.filter { $0.id != creatorId && !friends.contains(where: { $0.id == $0.id }) }
+				.map { convertToFriendDTO($0) }
+			friends.append(contentsOf: additionalFriends)
+		}
+		
+		return friends
+	}
+	
+	// MARK: - Friend Selection Helpers
+	
+	/// Helper to execute friend selection changes on main thread
+	private func updateSelectedFriends(_ update: @escaping () -> Void) {
 		DispatchQueue.main.async {
-			self.selectedFriends.removeAll { $0.id == friend.id }
+			update()
 		}
 	}
 	
-	// Method to toggle a friend's selection
-	func toggleFriendSelection(_ friend: FullFriendUserDTO) {
-		DispatchQueue.main.async {
-			if self.selectedFriends.contains(where: { $0.id == friend.id }) {
-				self.selectedFriends.removeAll { $0.id == friend.id }
-			} else if !self.selectedFriends.contains(where: { $0.id == friend.id }) {
-				self.selectedFriends.append(friend)
-			}
-		}
-	}
-	
-	// Method to check if a friend is selected
+	/// Check if a friend is selected
 	func isFriendSelected(_ friend: FullFriendUserDTO) -> Bool {
 		return selectedFriends.contains(where: { $0.id == friend.id })
+	}
+	
+	/// Add a friend to the selected friends list
+	func addFriend(_ friend: FullFriendUserDTO) {
+		updateSelectedFriends { [weak self] in
+			guard let self = self, !self.isFriendSelected(friend) else { return }
+			self.selectedFriends.append(friend)
+		}
+	}
+	
+	/// Remove a friend from the selected friends list
+	func removeFriend(_ friend: FullFriendUserDTO) {
+		updateSelectedFriends { [weak self] in
+			self?.selectedFriends.removeAll { $0.id == friend.id }
+		}
+	}
+	
+	/// Toggle a friend's selection
+	func toggleFriendSelection(_ friend: FullFriendUserDTO) {
+		updateSelectedFriends { [weak self] in
+			guard let self = self else { return }
+			if self.isFriendSelected(friend) {
+				self.selectedFriends.removeAll { $0.id == friend.id }
+			} else {
+				self.selectedFriends.append(friend)
+			}
+		}
 	}
 
 	func validateActivityForm() async {
@@ -447,49 +477,52 @@ class ActivityCreationViewModel: ObservableObject {
 		activity.location = location
 	}
 
+	// MARK: - Activity Creation & Update
+	
+	/// Prepare activity for creation or update
+	private func prepareActivity() {
+		activity.invitedUserIds = selectedFriends.map { $0.id }
+		activity.clientTimezone = TimeZone.current.identifier
+		updateActivityDuration()
+		updateActivityType()
+	}
+	
+	/// Set creation message on main actor
+	private func setCreationMessage(_ message: String) async {
+		await MainActor.run {
+			creationMessage = message
+		}
+	}
+	
+	/// Set loading state on main actor
+	private func setLoadingState(_ isLoading: Bool) async {
+		await MainActor.run {
+			isCreatingActivity = isLoading
+		}
+	}
+	
 	func createActivity() async {
 		// Check if activity creation is already in progress
-		if isCreatingActivity {
+		guard !isCreatingActivity else {
 			print("🔍 DEBUG: Activity creation already in progress, returning early")
 			return
 		}
 
 		print("🔍 DEBUG: Starting activity creation process")
-		await MainActor.run {
-			isCreatingActivity = true
-		}
+		await setLoadingState(true)
 
-		// Map selected friends to their IDs
-		activity.invitedUserIds = selectedFriends.map { $0.id }
-		print("🔍 DEBUG: Selected friends count: \(selectedFriends.count)")
-		
-		// Set the client timezone for timezone-aware expiration
-		activity.clientTimezone = TimeZone.current.identifier
-		print("🔍 DEBUG: Client timezone set to: \(activity.clientTimezone ?? "nil")")
-		
-		// Update the activity with the current date and duration
-		updateActivityDuration()
-		updateActivityType()
+		// Prepare activity data
+		prepareActivity()
 		
 		print("🔍 DEBUG: Activity title: '\(activity.title ?? "nil")'")
-		print("🔍 DEBUG: Activity location: \(activity.location?.name ?? "nil")")
-		print("🔍 DEBUG: Activity location coordinates: \(activity.location?.latitude ?? 0), \(activity.location?.longitude ?? 0)")
-		print("🔍 DEBUG: Selected activity type: \(selectedActivityType?.title ?? "nil")")
+		print("🔍 DEBUG: Selected friends count: \(selectedFriends.count)")
 		
 		// Validate form before creating
 		await validateActivityForm()
 		
-		print("🔍 DEBUG: Form validation results:")
-		print("🔍 DEBUG: - Title valid: \(isTitleValid)")
-		print("🔍 DEBUG: - Invites valid: \(isInvitesValid)")
-		print("🔍 DEBUG: - Location valid: \(isLocationValid)")
-		print("🔍 DEBUG: - Overall form valid: \(isFormValid)")
-		
 		guard isFormValid else {
-			print("🔍 DEBUG: Form validation failed, not making API call")
-			await MainActor.run {
-				isCreatingActivity = false
-			}
+			print("🔍 DEBUG: Form validation failed")
+			await setLoadingState(false)
 			return
 		}
 		
@@ -497,157 +530,113 @@ class ActivityCreationViewModel: ObservableObject {
 		
 		do {
 			guard let url = URL(string: APIService.baseURL + "activities") else {
-				print("🔍 DEBUG: Invalid URL construction")
-				await MainActor.run {
-					creationMessage = "Failed to create activity. Invalid URL."
-				}
-				isCreatingActivity = false
+				await setCreationMessage("Failed to create activity. Invalid URL.")
+				await setLoadingState(false)
 				return
 			}
 			
-			print("🔍 DEBUG: Making API call to: \(url.absoluteString)")
-			print("🔍 DEBUG: Using MockAPIService.isMocking: \(MockAPIService.isMocking)")
-			
 			let response: ActivityCreationResponseDTO? = try await apiService.sendData(activity, to: url, parameters: nil)
 			
-			print("🔍 DEBUG: API call completed")
-			print("🔍 DEBUG: Created activity response: \(response != nil ? "success" : "nil")")
-			
 			if let response = response {
-				let createdActivity = response.activity
+				// Cache and notify
+				AppCache.shared.addOrUpdateActivity(response.activity)
+				NotificationCenter.default.post(name: .activityCreated, object: response.activity)
 				
-				// Cache the created activity
-				AppCache.shared.addOrUpdateActivity(createdActivity)
-				
-				// Post notification for successful creation
-				NotificationCenter.default.post(
-					name: .activityCreated,
-					object: createdActivity
-				)
-				
-				await MainActor.run {
-					creationMessage = "Activity created successfully!"
-				}
+				await setCreationMessage("Activity created successfully!")
 				print("🔍 DEBUG: Activity creation successful")
-				if let suggestion = response.friendSuggestion {
-					print("🔍 DEBUG: Friends were automatically added to activity type: \(suggestion.activityTypeTitle)")
-				}
 			} else {
-				await MainActor.run {
-					creationMessage = "Failed to create activity. Please try again."
-				}
-				print("🔍 DEBUG: Activity creation failed - received nil response")
+				await setCreationMessage("Failed to create activity. Please try again.")
 			}
 			
 		} catch {
 			print("🔍 DEBUG: API call threw error: \(error)")
-			await MainActor.run {
-				creationMessage = "Failed to create activity. Please try again."
-			}
+			await setCreationMessage("Failed to create activity. Please try again.")
 		}
 		
-		await MainActor.run {
-			isCreatingActivity = false
-		}
+		await setLoadingState(false)
 	}
 	
 	func updateActivity() async {
 		// Check if activity update is already in progress
-		if isCreatingActivity {
-			return
-		}
+		guard !isCreatingActivity else { return }
 
-		await MainActor.run {
-			isCreatingActivity = true
-		}
+		await setLoadingState(true)
 
-		// Map selected friends to their IDs
-		activity.invitedUserIds = selectedFriends.map { $0.id }
-		
-		// Update the activity with the current date and duration
-		updateActivityDuration()
-		updateActivityType()
+		// Prepare activity data
+		prepareActivity()
 		
 		// Validate form before updating
 		await validateActivityForm()
 		
 		guard isFormValid else {
-			isCreatingActivity = false
+			await setLoadingState(false)
 			return
 		}
 		
 		do {
 			guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)/partial") else {
-				await MainActor.run {
-					creationMessage = "Failed to update activity. Invalid URL."
-				}
-				isCreatingActivity = false
+				await setCreationMessage("Failed to update activity. Invalid URL.")
+				await setLoadingState(false)
 				return
 			}
 			
-			// Create partial update data with only the fields that should be updated
-			var updateData = ActivityPartialUpdateDTO(
-				title: activity.title ?? "",
-				icon: activity.icon ?? "",
-				startTime: nil,
-				endTime: nil,
-				participantLimit: nil,
-				note: nil
-			)
-			
-			// Add time fields if they've changed
-			if dateChanged {
-				// Convert Date to the format expected by backend
-				let formatter = ISO8601DateFormatter()
-				formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-				
-				updateData.startTime = formatter.string(from: activity.startTime ?? Date())
-				if let endTime = activity.endTime {
-					updateData.endTime = formatter.string(from: endTime)
-				}
-			}
-			
-			// Add participant limit if it's set
-			if let participantLimit = activity.participantLimit, participantLimit > 0 {
-				updateData.participantLimit = participantLimit
-			}
-			
-			// Add note if it's set
-			if let note = activity.note, !note.isEmpty {
-				updateData.note = note
-			}
+			// Create partial update data
+			let updateData = buildPartialUpdateData()
 			
 			let updatedActivity: FullFeedActivityDTO? = try await apiService.patchData(from: url, with: updateData)
 			
 			if let updatedActivity = updatedActivity {
 				await MainActor.run {
-					// Cache the updated activity first
+					// Cache and notify
 					AppCache.shared.addOrUpdateActivity(updatedActivity)
-					
-					// Post notification for successful update immediately on main actor
-					NotificationCenter.default.post(
-						name: .activityUpdated,
-						object: updatedActivity
-					)
-					
+					NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
 					creationMessage = "Activity updated successfully!"
 				}
 			} else {
-				await MainActor.run {
-					creationMessage = "Failed to update activity. Please try again."
-				}
+				await setCreationMessage("Failed to update activity. Please try again.")
 			}
 			
 		} catch {
 			print("Error updating activity: \(error)")
-			await MainActor.run {
-				creationMessage = "Failed to update activity. Please try again."
+			await setCreationMessage("Failed to update activity. Please try again.")
+		}
+		
+		await setLoadingState(false)
+	}
+	
+	/// Build partial update data for activity update
+	private func buildPartialUpdateData() -> ActivityPartialUpdateDTO {
+		var updateData = ActivityPartialUpdateDTO(
+			title: activity.title ?? "",
+			icon: activity.icon ?? "",
+			startTime: nil,
+			endTime: nil,
+			participantLimit: nil,
+			note: nil
+		)
+		
+		// Add time fields if they've changed
+		if dateChanged {
+			let formatter = ISO8601DateFormatter()
+			formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+			
+			updateData.startTime = formatter.string(from: activity.startTime ?? Date())
+			if let endTime = activity.endTime {
+				updateData.endTime = formatter.string(from: endTime)
 			}
 		}
 		
-		await MainActor.run {
-			isCreatingActivity = false
+		// Add participant limit if set
+		if let participantLimit = activity.participantLimit, participantLimit > 0 {
+			updateData.participantLimit = participantLimit
 		}
+		
+		// Add note if set
+		if let note = activity.note, !note.isEmpty {
+			updateData.note = note
+		}
+		
+		return updateData
 	}
 }
 

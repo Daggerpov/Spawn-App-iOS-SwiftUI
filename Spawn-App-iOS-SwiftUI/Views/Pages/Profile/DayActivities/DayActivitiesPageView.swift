@@ -57,13 +57,7 @@ struct DayActivitiesPageView: View {
     
     private var headerView: some View {
         HStack {
-            Button(action: {
-                onDismiss()
-            }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(figmaBlack400)
-            }
+            UnifiedBackButton(action: onDismiss)
             
             Spacer()
             
@@ -80,12 +74,7 @@ struct DayActivitiesPageView: View {
             Spacer()
             
             // Invisible button for spacing balance
-            Button(action: {}) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundColor(.clear)
-            }
-            .disabled(true)
+            Color.clear.frame(width: 24, height: 24)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -106,42 +95,11 @@ struct DayActivitiesPageView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            
-            Image("NoActivitiesFound")
-                .resizable()
-                .frame(width: 125, height: 125)
-            
-            Text("No activities for this day")
-                .font(.onestSemiBold(size: 24))
-                .foregroundColor(universalAccentColor)
-            
-            Text("Check out other days or create\nyour own activity!")
-                .font(.onestMedium(size: 16))
-                .foregroundColor(figmaBlack300)
-                .multilineTextAlignment(.center)
-            
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        EmptyStateView.noActivitiesForDay()
     }
     
     private var loadingStateView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle())
-                .scaleEffect(1.2)
-            
-            Text("Loading activities...")
-                .font(.onestMedium(size: 16))
-                .foregroundColor(figmaBlack300)
-            
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        LoadingStateView(message: "Loading activities...")
     }
     
     private var activitiesListView: some View {

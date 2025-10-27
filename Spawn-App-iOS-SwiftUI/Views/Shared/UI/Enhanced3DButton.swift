@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// Wrapper around UnifiedButton for backwards compatibility
+/// Now uses the unified button system (DRY refactoring)
 struct Enhanced3DButton: View {
     let title: String
     let backgroundColor: Color
@@ -7,10 +9,6 @@ struct Enhanced3DButton: View {
     let borderColor: Color?
     let isEnabled: Bool
     let action: () -> Void
-    
-    // Animation states
-    @State private var isPressed = false
-    @State private var scale: CGFloat = 1.0
     
     init(
         title: String,
@@ -29,61 +27,15 @@ struct Enhanced3DButton: View {
     }
     
     var body: some View {
-        Button(action: {
-            // Haptic feedback
-            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-            impactGenerator.impactOccurred()
-            
-            // Execute action with slight delay for animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                action()
-            }
-        }) {
-            HStack(alignment: .center, spacing: 8) {
-                Text(title)
-                    .font(.onestSemiBold(size: 20))
-                    .foregroundColor(foregroundColor)
-            }
-            .padding(.vertical, 18)
-            .padding(.horizontal, 16)
-            .frame(maxWidth: .infinity, minHeight: 56)
-            .background(isEnabled ? backgroundColor : Color.gray.opacity(0.3))
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(borderColor ?? Color.clear, lineWidth: borderColor != nil ? 1 : 0)
-            )
-            .scaleEffect(scale)
-            .shadow(
-                color: isEnabled ? Color.black.opacity(0.15) : Color.clear,
-                radius: isPressed ? 2 : 8,
-                x: 0,
-                y: isPressed ? 2 : 4
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-        .disabled(!isEnabled)
-        .opacity(isEnabled ? 1.0 : 0.8)
-        .animation(.easeInOut(duration: 0.15), value: scale)
-        .animation(.easeInOut(duration: 0.15), value: isPressed)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    if isEnabled && !isPressed {
-                        isPressed = true
-                        scale = 0.95
-                        
-                        // Additional haptic feedback for press down
-                        let selectionGenerator = UISelectionFeedbackGenerator()
-                        selectionGenerator.selectionChanged()
-                    }
-                }
-                .onEnded { _ in
-                    if isEnabled {
-                        isPressed = false
-                        scale = 1.0
-                    }
-                }
+        UnifiedButton(
+            title,
+            variant: .custom(
+                backgroundColor: backgroundColor,
+                foregroundColor: foregroundColor,
+                borderColor: borderColor
+            ),
+            isEnabled: isEnabled,
+            action: action
         )
     }
 }

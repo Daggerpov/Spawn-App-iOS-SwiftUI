@@ -390,7 +390,7 @@ struct MapView: View {
                     .frame(maxWidth: 155)
                     .padding(.trailing, 20)
                 }
-                .padding(.bottom, 120) // Position filter above nav bar with proper spacing
+                .padding(.bottom, 80) // Position filter above nav bar with proper spacing
             }
         }
     }

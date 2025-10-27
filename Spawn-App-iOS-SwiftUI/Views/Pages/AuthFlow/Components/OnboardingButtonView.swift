@@ -28,9 +28,8 @@ struct OnboardingButtonView<Destination: View>: View {
     var body: some View {
         Button(action: {
             print("🔘 DEBUG: '\(buttonText)' button tapped")
-            // Haptic feedback
-            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-            impactGenerator.impactOccurred()
+            // Unified haptic feedback
+            HapticFeedbackService.shared.medium()
             
             // Execute navigation with slight delay for animation
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {

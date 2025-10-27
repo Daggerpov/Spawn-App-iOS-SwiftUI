@@ -38,8 +38,7 @@ struct BlockedUsersView: View {
             
             // Content
             if viewModel.isLoading {
-                ProgressView("Loading blocked users...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                LoadingStateView(message: "Loading blocked users...")
             } else if viewModel.blockedUsers.isEmpty {
                 emptyStateView
             } else {

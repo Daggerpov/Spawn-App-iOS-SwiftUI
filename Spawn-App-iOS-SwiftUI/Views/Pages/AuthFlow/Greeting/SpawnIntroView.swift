@@ -57,8 +57,7 @@ struct SpawnIntroView: View {
             // Navigation Bar
             HStack {
                 Button(action: {
-                    let impactGenerator = UIImpactFeedbackGenerator(style: .light)
-                    impactGenerator.impactOccurred()
+                    HapticFeedbackService.shared.light()
                     
                     if currentPage > 0 {
                         // Go back to previous page
