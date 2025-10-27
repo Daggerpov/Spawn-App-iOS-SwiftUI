@@ -206,18 +206,26 @@ class ProfilePictureCache: ObservableObject {
     }
     
     /// Refresh profile pictures for multiple users if they're stale
+    /// Uses task groups to download multiple profile pictures in parallel for faster performance
     func refreshStaleProfilePictures(for users: [(userId: UUID, profilePictureUrl: String?)]) async {
         print("🔄 [ProfilePictureCache] Checking \(users.count) users for stale profile pictures")
         
-        for user in users {
-            guard let profilePictureUrl = user.profilePictureUrl else { continue }
-            
-            // Check if the profile picture is stale (older than 24 hours)
-            if isProfilePictureStale(for: user.userId) {
-                print("🔄 [ProfilePictureCache] Refreshing stale profile picture for user: \(user.userId)")
-                _ = await refreshProfilePicture(for: user.userId, from: profilePictureUrl)
+        // Use withTaskGroup to refresh multiple stale profile pictures in parallel
+        await withTaskGroup(of: Void.self) { group in
+            for user in users {
+                guard let profilePictureUrl = user.profilePictureUrl else { continue }
+                
+                // Check if the profile picture is stale (older than 24 hours)
+                if isProfilePictureStale(for: user.userId) {
+                    print("🔄 [ProfilePictureCache] Refreshing stale profile picture for user: \(user.userId)")
+                    group.addTask {
+                        _ = await self.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
+                    }
+                }
             }
         }
+        
+        print("✅ [ProfilePictureCache] Completed parallel refresh of stale profile pictures")
     }
     
     /// Get the cached image with automatic staleness check and refresh
