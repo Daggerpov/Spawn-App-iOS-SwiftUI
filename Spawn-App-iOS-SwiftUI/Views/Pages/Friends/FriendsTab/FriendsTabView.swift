@@ -69,13 +69,11 @@ struct FriendsTabView: View {
                 .padding(.vertical, 20)
                 .padding(.bottom, 60) // Add bottom padding to ensure last friend shows fully above nav bar
 			}
-			.onAppear {
-				Task {
-                    // Ensure cache is aligned with API on entry
-                    await AppCache.shared.forceRefreshAllFriendRequests()
-					await viewModel.fetchAllData()
-					viewModel.connectSearchViewModel(searchViewModel)
-				}
+			.task {
+				// Ensure cache is aligned with API on entry
+				await AppCache.shared.forceRefreshAllFriendRequests()
+				await viewModel.fetchAllData()
+				viewModel.connectSearchViewModel(searchViewModel)
 			}
             .refreshable {
                 // Pull to refresh functionality

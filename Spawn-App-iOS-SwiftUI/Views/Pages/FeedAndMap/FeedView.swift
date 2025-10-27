@@ -52,15 +52,13 @@ struct FeedView: View {
                 )
             }
             .background(universalBackgroundColor)
-            .onAppear {
-                Task {
-                    if !MockAPIService.isMocking {
-                        await AppCache.shared.validateCache()
-                    }
-                    // Force refresh to ensure no stale activities
-                    await viewModel.forceRefreshActivities()
-                    await viewModel.fetchAllData()
+            .task {
+                if !MockAPIService.isMocking {
+                    await AppCache.shared.validateCache()
                 }
+                // Force refresh to ensure no stale activities
+                await viewModel.forceRefreshActivities()
+                await viewModel.fetchAllData()
             }
             .refreshable {
                 Task {

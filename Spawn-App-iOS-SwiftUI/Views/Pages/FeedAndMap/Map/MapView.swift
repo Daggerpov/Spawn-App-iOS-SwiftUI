@@ -274,11 +274,9 @@ struct MapView: View {
             } message: {
                 Text(locationErrorMessage)
             }
-            .onAppear {
-                Task {
-                    // Force refresh activities when map appears to ensure no stale data
-                    await viewModel.forceRefreshActivities()
-                }
+            .task {
+                // Force refresh activities when map appears to ensure no stale data
+                await viewModel.forceRefreshActivities()
             }
 
 

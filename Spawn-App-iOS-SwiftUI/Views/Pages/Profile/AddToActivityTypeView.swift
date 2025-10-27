@@ -72,10 +72,8 @@ struct AddToActivityTypeView: View {
                     .foregroundColor(universalAccentColor)
             }
         }
-        .onAppear {
-            Task {
-                await viewModel.loadActivityTypes()
-            }
+        .task {
+            await viewModel.loadActivityTypes()
         }
     }
     

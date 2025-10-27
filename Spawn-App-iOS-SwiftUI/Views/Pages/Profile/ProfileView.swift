@@ -134,60 +134,59 @@ struct ProfileView: View {
 		.onAppear {
 			// Update local state from userAuth.spawnUser when view appears
 			refreshUserData()
-
+		}
+		.task {
 			// Load profile data
-			Task {
-				await profileViewModel.loadAllProfileData(userId: user.id)
+			await profileViewModel.loadAllProfileData(userId: user.id)
 
-				// Initialize social media links
-				if let socialMedia = profileViewModel.userSocialMedia {
+			// Initialize social media links
+			if let socialMedia = profileViewModel.userSocialMedia {
+				await MainActor.run {
+					whatsappLink = socialMedia.whatsappLink ?? ""
+					instagramLink = socialMedia.instagramLink ?? ""
+				}
+			}
+
+			// Check friendship status if not viewing own profile
+			if !isCurrentUserProfile,
+				let currentUserId = userAuth.spawnUser?.id
+			{
+				// Check if user is a RecommendedFriendUserDTO with relationship status
+				if let recommendedFriend = user as? RecommendedFriendUserDTO,
+				   recommendedFriend.relationshipStatus != nil {
+					// Use the relationship status from the DTO - no API call needed
 					await MainActor.run {
-						whatsappLink = socialMedia.whatsappLink ?? ""
-						instagramLink = socialMedia.instagramLink ?? ""
+						profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
 					}
-				}
-
-				// Check friendship status if not viewing own profile
-				if !isCurrentUserProfile,
-					let currentUserId = userAuth.spawnUser?.id
-				{
-					// Check if user is a RecommendedFriendUserDTO with relationship status
-					if let recommendedFriend = user as? RecommendedFriendUserDTO,
-					   recommendedFriend.relationshipStatus != nil {
-						// Use the relationship status from the DTO - no API call needed
-						await MainActor.run {
-							profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
-						}
-					} else {
-						// For other user types (BaseUserDTO, etc.), use the original API call
-						await profileViewModel.checkFriendshipStatus(
-							currentUserId: currentUserId,
-							profileUserId: user.id
-						)
-					}
-
-					// If they're friends, fetch their activities
-					if profileViewModel.friendshipStatus == .friends {
-						await profileViewModel.fetchProfileActivities(
-							profileUserId: user.id
-						)
-					}
-				}
-
-				// Determine if back button should be shown based on navigation
-				if !isCurrentUserProfile {
-					showBackButton = true
-				}
-				
-				// Refresh profile picture for this user
-				if let profilePictureUrl = user.profilePicture {
-					let profilePictureCache = ProfilePictureCache.shared
-					_ = await profilePictureCache.getCachedImageWithRefresh(
-						for: user.id,
-						from: profilePictureUrl,
-						maxAge: 6 * 60 * 60 // 6 hours
+				} else {
+					// For other user types (BaseUserDTO, etc.), use the original API call
+					await profileViewModel.checkFriendshipStatus(
+						currentUserId: currentUserId,
+						profileUserId: user.id
 					)
 				}
+
+				// If they're friends, fetch their activities
+				if profileViewModel.friendshipStatus == .friends {
+					await profileViewModel.fetchProfileActivities(
+						profileUserId: user.id
+					)
+				}
+			}
+
+			// Determine if back button should be shown based on navigation
+			if !isCurrentUserProfile {
+				showBackButton = true
+			}
+			
+			// Refresh profile picture for this user
+			if let profilePictureUrl = user.profilePicture {
+				let profilePictureCache = ProfilePictureCache.shared
+				_ = await profilePictureCache.getCachedImageWithRefresh(
+					for: user.id,
+					from: profilePictureUrl,
+					maxAge: 6 * 60 * 60 // 6 hours
+				)
 			}
 		}
 		.onChange(of: userAuth.spawnUser) { _, newUser in
