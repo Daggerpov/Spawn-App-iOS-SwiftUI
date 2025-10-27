@@ -262,10 +262,14 @@ class ProfileViewModel: ObservableObject {
     }
     
     func loadAllProfileData(userId: UUID) async {
-        await fetchUserStats(userId: userId)
-        await fetchUserInterests(userId: userId)
-        await fetchUserSocialMedia(userId: userId)
-        await fetchUserProfileInfo(userId: userId)
+        // Use async let to fetch all profile data in parallel for faster loading
+		async let stats: () = fetchUserStats(userId: userId)
+		async let interests: () = fetchUserInterests(userId: userId)
+		async let socialMedia: () = fetchUserSocialMedia(userId: userId)
+		async let profileInfo: () = fetchUserProfileInfo(userId: userId)
+
+        // Wait for all fetches to complete
+		let _ = await (stats, interests, socialMedia, profileInfo)
     }
     
     func fetchCalendarActivities(month: Int, year: Int) async {
@@ -846,13 +850,19 @@ class ProfileViewModel: ObservableObject {
                 return
             }
             
-            // If not friends, check for pending friend requests
-            // Check if current user has received a friend request from the profile user
+            // If not friends, check for pending friend requests in parallel
             let incomingRequestsUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(currentUserId)")!
-            let incomingRequests: [FetchFriendRequestDTO] = try await self.apiService.fetchData(from: incomingRequestsUrl, parameters: nil)
+            let profileUserIncomingUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(profileUserId)")!
+            
+            // Fetch both incoming request lists in parallel for faster loading
+            async let incomingRequests = self.apiService.fetchData(from: incomingRequestsUrl, parameters: nil) as [FetchFriendRequestDTO]
+            async let profileUserIncomingRequests = self.apiService.fetchData(from: profileUserIncomingUrl, parameters: nil) as [FetchFriendRequestDTO]
+            
+            // Wait for both requests to complete
+            let (currentUserRequests, profileUserRequests) = try await (incomingRequests, profileUserIncomingRequests)
             
             // Check if any incoming request is from the profile user
-            let requestFromProfileUser = incomingRequests.first { $0.senderUser.id == profileUserId }
+            let requestFromProfileUser = currentUserRequests.first { $0.senderUser.id == profileUserId }
             
             if let requestFromProfileUser = requestFromProfileUser {
                 await MainActor.run {
@@ -864,12 +874,8 @@ class ProfileViewModel: ObservableObject {
                 return
             }
             
-            // Check if profile user has received a friend request from current user
-            let profileUserIncomingUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(profileUserId)")!
-            let profileUserIncomingRequests: [FetchFriendRequestDTO] = try await self.apiService.fetchData(from: profileUserIncomingUrl, parameters: nil)
-            
             // Check if any incoming request to profile user is from current user
-            let requestToProfileUser = profileUserIncomingRequests.first { $0.senderUser.id == currentUserId }
+            let requestToProfileUser = profileUserRequests.first { $0.senderUser.id == currentUserId }
             
             await MainActor.run {
                 if requestToProfileUser != nil {

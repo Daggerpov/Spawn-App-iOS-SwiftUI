@@ -136,8 +136,21 @@ struct ProfileView: View {
 			refreshUserData()
 		}
 		.task {
-			// Load profile data
-			await profileViewModel.loadAllProfileData(userId: user.id)
+			// Load profile data and refresh profile picture in parallel for faster loading
+			async let profileData: () = profileViewModel.loadAllProfileData(userId: user.id)
+			async let profilePictureTask: () = {
+				if let profilePictureUrl = user.profilePicture {
+					let profilePictureCache = ProfilePictureCache.shared
+					_ = await profilePictureCache.getCachedImageWithRefresh(
+						for: user.id,
+						from: profilePictureUrl,
+						maxAge: 6 * 60 * 60 // 6 hours
+					)
+				}
+			}()
+			
+			// Wait for parallel operations to complete
+			let _ = await (profileData, profilePictureTask)
 
 			// Initialize social media links
 			if let socialMedia = profileViewModel.userSocialMedia {
@@ -177,16 +190,6 @@ struct ProfileView: View {
 			// Determine if back button should be shown based on navigation
 			if !isCurrentUserProfile {
 				showBackButton = true
-			}
-			
-			// Refresh profile picture for this user
-			if let profilePictureUrl = user.profilePicture {
-				let profilePictureCache = ProfilePictureCache.shared
-				_ = await profilePictureCache.getCachedImageWithRefresh(
-					for: user.id,
-					from: profilePictureUrl,
-					maxAge: 6 * 60 * 60 // 6 hours
-				)
 			}
 		}
 		.onChange(of: userAuth.spawnUser) { _, newUser in
