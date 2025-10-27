@@ -108,8 +108,11 @@ struct NotificationSettingsView: View {
                 }
             }
             .task {
-                notificationService.checkNotificationStatus()
-                await notificationService.fetchNotificationPreferences()
+                // Wrap in Task to avoid blocking UI
+                Task {
+                    notificationService.checkNotificationStatus()
+                    await notificationService.fetchNotificationPreferences()
+                }
             }
             .refreshable {
                 Task {

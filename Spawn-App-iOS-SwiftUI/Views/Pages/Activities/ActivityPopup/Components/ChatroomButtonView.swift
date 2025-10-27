@@ -76,8 +76,10 @@ struct ChatroomButtonView: View {
 		.allowsHitTesting(true)
 		.contentShape(Rectangle())
 		.task {
-			// Use .task instead of .onAppear for better async handling
-			await refreshChatAsync()
+			// Wrap in Task to avoid blocking UI
+			Task {
+				await refreshChatAsync()
+			}
 		}
 	}
 

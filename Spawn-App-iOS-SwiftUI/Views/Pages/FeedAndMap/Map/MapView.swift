@@ -230,15 +230,18 @@ struct MapView: View {
                 }
             }
             .task {
-                await viewModel.fetchAllData()
-                await MainActor.run {
-                    if let userLocation = locationManager.userLocation {
-                        region = MKCoordinateRegion(
-                            center: userLocation,
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        )
-                    } else if !viewModel.activities.isEmpty {
-                        adjustRegionForActivities()
+                // Wrap in Task to avoid blocking UI
+                Task {
+                    await viewModel.fetchAllData()
+                    await MainActor.run {
+                        if let userLocation = locationManager.userLocation {
+                            region = MKCoordinateRegion(
+                                center: userLocation,
+                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                            )
+                        } else if !viewModel.activities.isEmpty {
+                            adjustRegionForActivities()
+                        }
                     }
                 }
             }
@@ -275,8 +278,11 @@ struct MapView: View {
                 Text(locationErrorMessage)
             }
             .task {
-                // Force refresh activities when map appears to ensure no stale data
-                await viewModel.forceRefreshActivities()
+                // Wrap in Task to avoid blocking UI
+                Task {
+                    // Force refresh activities when map appears to ensure no stale data
+                    await viewModel.forceRefreshActivities()
+                }
             }
 
 

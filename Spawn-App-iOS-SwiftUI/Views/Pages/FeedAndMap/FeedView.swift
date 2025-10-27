@@ -53,16 +53,19 @@ struct FeedView: View {
             }
             .background(universalBackgroundColor)
             .task {
-                // Run cache validation and data fetching in parallel for faster loading
-                async let cacheValidation: () = {
-                    if !MockAPIService.isMocking {
-                        await AppCache.shared.validateCache()
-                    }
-                }()
-                async let refreshActivities: () = viewModel.forceRefreshActivities()
-                async let fetchData: () = viewModel.fetchAllData()
-                
-                let _ = await (cacheValidation, refreshActivities, fetchData)
+                // Wrap in Task to avoid blocking UI
+                Task {
+                    // Run cache validation and data fetching in parallel for faster loading
+                    async let cacheValidation: () = {
+                        if !MockAPIService.isMocking {
+                            await AppCache.shared.validateCache()
+                        }
+                    }()
+                    async let refreshActivities: () = viewModel.forceRefreshActivities()
+                    async let fetchData: () = viewModel.fetchAllData()
+                    
+                    let _ = await (cacheValidation, refreshActivities, fetchData)
+                }
             }
             .refreshable {
                 Task {

@@ -111,34 +111,37 @@ struct FriendSearchView: View {
             }
             .navigationBarHidden(true)
             .task {
-                // Load appropriate data based on display mode
-                switch displayMode {
-                case .search:
-                    await viewModel.fetchRecentlySpawnedWith()
-                case .allFriends:
-                    // Use cached friends data if available, otherwise fetch
-                    if !AppCache.shared.getCurrentUserFriends().isEmpty {
-                        await MainActor.run {
-                            viewModel.friends = AppCache.shared.getCurrentUserFriends()
-                            viewModel.filteredFriends = AppCache.shared.getCurrentUserFriends()
+                // Wrap in Task to avoid blocking UI
+                Task {
+                    // Load appropriate data based on display mode
+                    switch displayMode {
+                    case .search:
+                        await viewModel.fetchRecentlySpawnedWith()
+                    case .allFriends:
+                        // Use cached friends data if available, otherwise fetch
+                        if !AppCache.shared.getCurrentUserFriends().isEmpty {
+                            await MainActor.run {
+                                viewModel.friends = AppCache.shared.getCurrentUserFriends()
+                                viewModel.filteredFriends = AppCache.shared.getCurrentUserFriends()
+                            }
+                        } else {
+                            await viewModel.fetchAllData()
                         }
-                    } else {
-                        await viewModel.fetchAllData()
-                    }
-                case .recentlySpawnedWith:
-                    await viewModel.fetchRecentlySpawnedWith()
-                case .recommendedFriends:
-                    // Use cached data if available, otherwise fetch
-                    if !AppCache.shared.getCurrentUserRecommendedFriends().isEmpty {
-                        await MainActor.run {
-                            viewModel.recommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
+                    case .recentlySpawnedWith:
+                        await viewModel.fetchRecentlySpawnedWith()
+                    case .recommendedFriends:
+                        // Use cached data if available, otherwise fetch
+                        if !AppCache.shared.getCurrentUserRecommendedFriends().isEmpty {
+                            await MainActor.run {
+                                viewModel.recommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
+                            }
+                        } else {
+                            await viewModel.fetchRecommendedFriends()
                         }
-                    } else {
-                        await viewModel.fetchRecommendedFriends()
                     }
+                    
+                    viewModel.connectSearchViewModel(searchViewModel)
                 }
-                
-                viewModel.connectSearchViewModel(searchViewModel)
             }
         }
         .background(universalBackgroundColor)

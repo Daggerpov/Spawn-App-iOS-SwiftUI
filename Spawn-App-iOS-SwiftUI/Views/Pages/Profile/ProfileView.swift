@@ -136,60 +136,85 @@ struct ProfileView: View {
 			refreshUserData()
 		}
 		.task {
-			// Load profile data and refresh profile picture in parallel for faster loading
-			async let profileData: () = profileViewModel.loadAllProfileData(userId: user.id)
-			async let profilePictureTask: () = {
-				if let profilePictureUrl = user.profilePicture {
-					let profilePictureCache = ProfilePictureCache.shared
-					_ = await profilePictureCache.getCachedImageWithRefresh(
-						for: user.id,
-						from: profilePictureUrl,
-						maxAge: 6 * 60 * 60 // 6 hours
-					)
-				}
-			}()
+			print("🎬 [TAB SWITCH] ProfileView appeared - starting load operations")
+			let startTime = Date()
 			
-			// Wait for parallel operations to complete
-			let _ = await (profileData, profilePictureTask)
-
-			// Initialize social media links
-			if let socialMedia = profileViewModel.userSocialMedia {
-				await MainActor.run {
-					whatsappLink = socialMedia.whatsappLink ?? ""
-					instagramLink = socialMedia.instagramLink ?? ""
-				}
-			}
-
-			// Check friendship status if not viewing own profile
-			if !isCurrentUserProfile,
-				let currentUserId = userAuth.spawnUser?.id
-			{
-				// Check if user is a RecommendedFriendUserDTO with relationship status
-				if let recommendedFriend = user as? RecommendedFriendUserDTO,
-				   recommendedFriend.relationshipStatus != nil {
-					// Use the relationship status from the DTO - no API call needed
-					await MainActor.run {
-						profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
+			// Wrap heavy operations in background task to avoid blocking UI
+			Task {
+				// Load profile data and refresh profile picture in parallel for faster loading
+				print("🔄 [TAB SWITCH] Starting profile data load")
+				let dataStartTime = Date()
+				
+				async let profileData: () = profileViewModel.loadAllProfileData(userId: user.id)
+				async let profilePictureTask: () = {
+					if let profilePictureUrl = user.profilePicture {
+						let profilePictureCache = ProfilePictureCache.shared
+						_ = await profilePictureCache.getCachedImageWithRefresh(
+							for: user.id,
+							from: profilePictureUrl,
+							maxAge: 6 * 60 * 60 // 6 hours
+						)
 					}
-				} else {
-					// For other user types (BaseUserDTO, etc.), use the original API call
-					await profileViewModel.checkFriendshipStatus(
-						currentUserId: currentUserId,
-						profileUserId: user.id
-					)
+				}()
+				
+				// Wait for parallel operations to complete
+				let _ = await (profileData, profilePictureTask)
+				
+				let dataEndTime = Date()
+				print("✅ [TAB SWITCH] Profile data load completed in \(dataEndTime.timeIntervalSince(dataStartTime) * 1000)ms")
+
+				// Initialize social media links
+				if let socialMedia = profileViewModel.userSocialMedia {
+					await MainActor.run {
+						whatsappLink = socialMedia.whatsappLink ?? ""
+						instagramLink = socialMedia.instagramLink ?? ""
+					}
 				}
 
-				// If they're friends, fetch their activities
-				if profileViewModel.friendshipStatus == .friends {
-					await profileViewModel.fetchProfileActivities(
-						profileUserId: user.id
-					)
-				}
-			}
+				// Check friendship status if not viewing own profile
+				if !isCurrentUserProfile,
+					let currentUserId = userAuth.spawnUser?.id
+				{
+					print("🔄 [TAB SWITCH] Starting friendship status check")
+					let friendshipStartTime = Date()
+					
+					// Check if user is a RecommendedFriendUserDTO with relationship status
+					if let recommendedFriend = user as? RecommendedFriendUserDTO,
+					   recommendedFriend.relationshipStatus != nil {
+						// Use the relationship status from the DTO - no API call needed
+						await MainActor.run {
+							profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
+						}
+					} else {
+						// For other user types (BaseUserDTO, etc.), use the original API call
+						await profileViewModel.checkFriendshipStatus(
+							currentUserId: currentUserId,
+							profileUserId: user.id
+						)
+					}
+					
+					let friendshipEndTime = Date()
+					print("✅ [TAB SWITCH] Friendship status check completed in \(friendshipEndTime.timeIntervalSince(friendshipStartTime) * 1000)ms")
 
-			// Determine if back button should be shown based on navigation
-			if !isCurrentUserProfile {
-				showBackButton = true
+					// If they're friends, fetch their activities
+					if profileViewModel.friendshipStatus == .friends {
+						print("🔄 [TAB SWITCH] Starting profile activities fetch")
+						let activitiesStartTime = Date()
+						await profileViewModel.fetchProfileActivities(
+							profileUserId: user.id
+						)
+						let activitiesEndTime = Date()
+						print("✅ [TAB SWITCH] Profile activities fetch completed in \(activitiesEndTime.timeIntervalSince(activitiesStartTime) * 1000)ms")
+					}
+				}
+
+				// Determine if back button should be shown based on navigation
+				if !isCurrentUserProfile {
+					showBackButton = true
+				}
+				
+				let endTime = Date()
+				print("✅ [TAB SWITCH] ProfileView fully loaded in \(endTime.timeIntervalSince(startTime) * 1000)ms")
 			}
 		}
 		.onChange(of: userAuth.spawnUser) { _, newUser in

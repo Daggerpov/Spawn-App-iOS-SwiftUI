@@ -215,7 +215,10 @@ struct UserInfoInputView: View {
 				userAuth.objectWillChange.send()
 			}
 			.task {
-				await userAuth.spawnFetchUserIfAlreadyExists()
+				// Wrap in Task to avoid blocking UI
+				Task {
+					await userAuth.spawnFetchUserIfAlreadyExists()
+				}
 			}
 			.alert(item: $userAuth.authAlert) { alertType in
 				Alert(

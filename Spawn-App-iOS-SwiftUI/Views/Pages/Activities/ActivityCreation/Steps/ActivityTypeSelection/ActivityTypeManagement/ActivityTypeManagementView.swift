@@ -119,8 +119,11 @@ struct ActivityTypeManagementView: View {
                 }
             }
         .task {
-            // Fetch the latest activity types when the view appears
-            await viewModel.fetchActivityTypes()
+            // Wrap in Task to avoid blocking UI
+            Task {
+                // Fetch the latest activity types when the view appears
+                await viewModel.fetchActivityTypes()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .activityTypesChanged)) { _ in
             // Refresh when activity types change

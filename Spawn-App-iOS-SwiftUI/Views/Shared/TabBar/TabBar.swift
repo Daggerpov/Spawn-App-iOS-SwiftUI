@@ -7,6 +7,9 @@ struct TabBar: View {
     @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
 
     func changeTabTo(_ tab: Tabs) {
+        print("🔄 [TAB SWITCH] Switching from \(selection) to \(tab)")
+        let switchStartTime = Date()
+        
         // Check if navigation is restricted during tutorial
         if tutorialViewModel.tutorialState.shouldRestrictNavigation {
             // Only allow activities tab during activity type selection
@@ -14,6 +17,7 @@ struct TabBar: View {
                 // Add haptic feedback to indicate restriction
                 let notificationGenerator = UINotificationFeedbackGenerator()
                 notificationGenerator.notificationOccurred(.warning)
+                print("⚠️ [TAB SWITCH] Tab switch to \(tab) blocked by tutorial")
                 return
             }
         }
@@ -26,6 +30,8 @@ struct TabBar: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             symbolTrigger = false
+            let switchEndTime = Date()
+            print("✅ [TAB SWITCH] Tab animation completed in \(switchEndTime.timeIntervalSince(switchStartTime) * 1000)ms")
         }
     }
     

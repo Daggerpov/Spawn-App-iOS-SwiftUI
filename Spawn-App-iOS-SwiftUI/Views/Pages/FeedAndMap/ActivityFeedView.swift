@@ -103,13 +103,36 @@ struct ActivityFeedView: View {
                     )
                 )
             }
-            .task {
+        }
+        .task {
+            print("🎬 [TAB SWITCH] ActivityFeedView appeared - starting load operations")
+            let startTime = Date()
+            
+            // Wrap all heavy operations in a background task to avoid blocking UI
+            Task {
                 if !MockAPIService.isMocking {
+                    print("🔄 [TAB SWITCH] Starting cache validation")
+                    let cacheStartTime = Date()
                     await AppCache.shared.validateCache()
+                    let cacheEndTime = Date()
+                    print("✅ [TAB SWITCH] Cache validation completed in \(cacheEndTime.timeIntervalSince(cacheStartTime) * 1000)ms")
                 }
-                // Force refresh to ensure no stale activities
+                
+                // Force refresh to ensure no stale activities (runs in background)
+                print("🔄 [TAB SWITCH] Starting activities refresh")
+                let refreshStartTime = Date()
                 await viewModel.forceRefreshActivities()
+                let refreshEndTime = Date()
+                print("✅ [TAB SWITCH] Activities refresh completed in \(refreshEndTime.timeIntervalSince(refreshStartTime) * 1000)ms")
+                
+                print("🔄 [TAB SWITCH] Starting fetchAllData")
+                let fetchStartTime = Date()
                 await viewModel.fetchAllData()
+                let fetchEndTime = Date()
+                print("✅ [TAB SWITCH] fetchAllData completed in \(fetchEndTime.timeIntervalSince(fetchStartTime) * 1000)ms")
+                
+                let endTime = Date()
+                print("✅ [TAB SWITCH] ActivityFeedView fully loaded in \(endTime.timeIntervalSince(startTime) * 1000)ms")
             }
         }
         .onChange(of: showingActivityPopup) { _, isShowing in
