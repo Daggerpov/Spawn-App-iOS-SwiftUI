@@ -69,10 +69,8 @@ struct ChatroomView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .onAppear {
-            Task {
-                await viewModel.refreshChat()
-            }
+        .task {
+            await viewModel.refreshChat()
         }
     }
     

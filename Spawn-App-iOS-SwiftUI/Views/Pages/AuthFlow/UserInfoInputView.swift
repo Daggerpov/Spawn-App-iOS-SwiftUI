@@ -213,9 +213,9 @@ struct UserInfoInputView: View {
 				// Clear any previous error state when this view appears
 				userAuth.clearAllErrors()
 				userAuth.objectWillChange.send()
-				Task {
-					await userAuth.spawnFetchUserIfAlreadyExists()
-				}
+			}
+			.task {
+				await userAuth.spawnFetchUserIfAlreadyExists()
 			}
 			.alert(item: $userAuth.authAlert) { alertType in
 				Alert(

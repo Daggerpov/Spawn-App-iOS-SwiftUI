@@ -183,8 +183,12 @@ class FeedViewModel: ObservableObject {
     }
 
     func fetchAllData() async {
-        await fetchActivitiesForUser()
-        await activityTypeViewModel.fetchActivityTypes()
+        // Fetch activities and activity types in parallel for faster loading
+        async let activities: () = fetchActivitiesForUser()
+        async let activityTypes: () = activityTypeViewModel.fetchActivityTypes()
+        
+        // Wait for both to complete
+        let _ = await (activities, activityTypes)
     }
 
     func fetchActivitiesForUser() async {

@@ -77,6 +77,13 @@ class AppCache: ObservableObject {
         lastChecked.removeValue(forKey: userId)
     }
     
+    // MARK: - Helper Methods
+    
+    /// No-op async function for conditional parallel execution
+    private func noop() async {
+        // Does nothing - used for conditional async let statements
+    }
+    
     // MARK: - Public Methods
     
     /// Initialize the cache and load from disk
@@ -176,12 +183,7 @@ class AppCache: ObservableObject {
                     async let sentFriendRequestsTask: () = refreshSentFriendRequests()
 
                     // Wait for all tasks to complete
-                    await friendsTask
-                    await activitiesTask
-                    await activityTypesTask
-                    await recommendedFriendsTask
-                    await friendRequestsTask
-                    await sentFriendRequestsTask
+                    let _ = await (friendsTask, activitiesTask, activityTypesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
                     
                     // Clean up any expired activities after refresh
                     cleanupExpiredActivities()
@@ -197,6 +199,15 @@ class AppCache: ObservableObject {
             let result = try await apiService.validateCache(userLastChecked)
             
             await MainActor.run {
+                // Track which caches need refreshing for parallel execution
+                var needsFriendsRefresh = false
+                var needsActivitiesRefresh = false
+                var needsActivityTypesRefresh = false
+                var needsOtherProfilesRefresh = false
+                var needsRecommendedFriendsRefresh = false
+                var needsFriendRequestsRefresh = false
+                var needsSentFriendRequestsRefresh = false
+                
                 // Update each collection based on invalidation results
                 if let friendsResponse = result[CacheKeys.friends], friendsResponse.invalidate {
                     if let updatedItems = friendsResponse.updatedItems,
@@ -204,14 +215,9 @@ class AppCache: ObservableObject {
                         // Backend provided the updated data
                         updateFriends(updatedFriends)
                     } else {
-                        // Need to fetch new data
-                        Task {
-                            await refreshFriends()
-                        }
+                        needsFriendsRefresh = true
                     }
                 }
-                
-
                 
                 if let activitiesResponse = result[CacheKeys.events], activitiesResponse.invalidate {
                     if let updatedItems = activitiesResponse.updatedItems,
@@ -225,10 +231,7 @@ class AppCache: ObservableObject {
                         }
                         updateActivities(filteredUpdatedActivities)
                     } else {
-                        // Need to fetch new data
-                        Task {
-                            await refreshActivities()
-                        }
+                        needsActivitiesRefresh = true
                     }
                 }
                 
@@ -239,18 +242,13 @@ class AppCache: ObservableObject {
                         // Backend provided the updated data
                         updateActivityTypes(updatedActivityTypes)
                     } else {
-                        // Need to fetch new data
-                        Task {
-                            await refreshActivityTypes()
-                        }
+                        needsActivityTypesRefresh = true
                     }
                 }
                 
                 // Other Profiles Cache
                 if let otherProfilesResponse = result[CacheKeys.otherProfiles], otherProfilesResponse.invalidate {
-                    Task {
-                        await refreshOtherProfiles()
-                    }
+                    needsOtherProfilesRefresh = true
                 }
                 
                 // Recommended Friends Cache
@@ -259,9 +257,7 @@ class AppCache: ObservableObject {
                        let updatedRecommendedFriends = try? JSONDecoder().decode([UUID: [RecommendedFriendUserDTO]].self, from: updatedItems) {
                         updateRecommendedFriends(updatedRecommendedFriends)
                     } else {
-                        Task {
-                            await refreshRecommendedFriends()
-                        }
+                        needsRecommendedFriendsRefresh = true
                     }
                 }
                 
@@ -271,9 +267,7 @@ class AppCache: ObservableObject {
                        let updatedFriendRequests = try? JSONDecoder().decode([UUID: [FetchFriendRequestDTO]].self, from: updatedItems) {
                         updateFriendRequests(updatedFriendRequests)
                     } else {
-                        Task {
-                            await refreshFriendRequests()
-                        }
+                        needsFriendRequestsRefresh = true
                     }
                 }
                 
@@ -283,9 +277,24 @@ class AppCache: ObservableObject {
                        let updatedSentFriendRequests = try? JSONDecoder().decode([UUID: [FetchSentFriendRequestDTO]].self, from: updatedItems) {
                         updateSentFriendRequests(updatedSentFriendRequests)
                     } else {
-                        Task {
-                            await refreshSentFriendRequests()
-                        }
+                        needsSentFriendRequestsRefresh = true
+                    }
+                }
+                
+                // Refresh all invalidated caches in parallel for faster performance
+                if needsFriendsRefresh || needsActivitiesRefresh || needsActivityTypesRefresh || 
+                   needsOtherProfilesRefresh || needsRecommendedFriendsRefresh || 
+                   needsFriendRequestsRefresh || needsSentFriendRequestsRefresh {
+                    Task {
+                        async let friendsTask: () = needsFriendsRefresh ? refreshFriends() : noop()
+                        async let activitiesTask: () = needsActivitiesRefresh ? refreshActivities() : noop()
+                        async let activityTypesTask: () = needsActivityTypesRefresh ? refreshActivityTypes() : noop()
+                        async let otherProfilesTask: () = needsOtherProfilesRefresh ? refreshOtherProfiles() : noop()
+                        async let recommendedFriendsTask: () = needsRecommendedFriendsRefresh ? refreshRecommendedFriends() : noop()
+                        async let friendRequestsTask: () = needsFriendRequestsRefresh ? refreshFriendRequests() : noop()
+                        async let sentFriendRequestsTask: () = needsSentFriendRequestsRefresh ? refreshSentFriendRequests() : noop()
+                        
+                        let _ = await (friendsTask, activitiesTask, activityTypesTask, otherProfilesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
                     }
                 }
             }
@@ -1221,52 +1230,87 @@ class AppCache: ObservableObject {
     }
     
     /// Preload profile pictures for activity creators and participants
+    /// Uses task groups to download multiple profile pictures in parallel for faster performance
     private func preloadProfilePicturesForActivities(_ activities: [UUID: [FullFeedActivityDTO]]) async {
         let profilePictureCache = ProfilePictureCache.shared
         
-        for (_, activityList) in activities {
-            for activity in activityList {
-                // Preload creator profile picture
-                if let creatorPicture = activity.creatorUser.profilePicture {
-                    _ = await profilePictureCache.getCachedImageWithRefresh(
-                        for: activity.creatorUser.id,
-                        from: creatorPicture,
-                        maxAge: 6 * 60 * 60 // 6 hours
-                    )
-                }
-                
-                // Preload participant profile pictures
-                if let participants = activity.participantUsers {
-                    for participant in participants {
-                        if let participantPicture = participant.profilePicture {
+        // Use withTaskGroup to preload all profile pictures in parallel
+        await withTaskGroup(of: Void.self) { group in
+            for (_, activityList) in activities {
+                for activity in activityList {
+                    // Preload creator profile picture
+                    if let creatorPicture = activity.creatorUser.profilePicture {
+                        group.addTask {
                             _ = await profilePictureCache.getCachedImageWithRefresh(
-                                for: participant.id,
-                                from: participantPicture,
+                                for: activity.creatorUser.id,
+                                from: creatorPicture,
                                 maxAge: 6 * 60 * 60 // 6 hours
                             )
                         }
                     }
-                }
-                
-                // Preload invited user profile pictures
-                if let invitedUsers = activity.invitedUsers {
-                    for invitedUser in invitedUsers {
-                        if let invitedPicture = invitedUser.profilePicture {
-                            _ = await profilePictureCache.getCachedImageWithRefresh(
-                                for: invitedUser.id,
-                                from: invitedPicture,
-                                maxAge: 6 * 60 * 60 // 6 hours
-                            )
+                    
+                    // Preload participant profile pictures
+                    if let participants = activity.participantUsers {
+                        for participant in participants {
+                            if let participantPicture = participant.profilePicture {
+                                group.addTask {
+                                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                                        for: participant.id,
+                                        from: participantPicture,
+                                        maxAge: 6 * 60 * 60 // 6 hours
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Preload invited user profile pictures
+                    if let invitedUsers = activity.invitedUsers {
+                        for invitedUser in invitedUsers {
+                            if let invitedPicture = invitedUser.profilePicture {
+                                group.addTask {
+                                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                                        for: invitedUser.id,
+                                        from: invitedPicture,
+                                        maxAge: 6 * 60 * 60 // 6 hours
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Preload chat message senders' profile pictures
+                    if let chatMessages = activity.chatMessages {
+                        for chatMessage in chatMessages {
+                            if let senderPicture = chatMessage.senderUser.profilePicture {
+                                group.addTask {
+                                    _ = await profilePictureCache.getCachedImageWithRefresh(
+                                        for: chatMessage.senderUser.id,
+                                        from: senderPicture,
+                                        maxAge: 6 * 60 * 60 // 6 hours
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-                
-                // Preload chat message senders' profile pictures
-                if let chatMessages = activity.chatMessages {
-                    for chatMessage in chatMessages {
-                        if let senderPicture = chatMessage.senderUser.profilePicture {
+            }
+        }
+    }
+    
+    /// Preload profile pictures for friend request senders
+    /// Uses task groups to download multiple profile pictures in parallel for faster performance
+    private func preloadProfilePicturesForFriendRequests(_ friendRequests: [UUID: [FetchFriendRequestDTO]]) async {
+        let profilePictureCache = ProfilePictureCache.shared
+        
+        // Use withTaskGroup to preload all profile pictures in parallel
+        await withTaskGroup(of: Void.self) { group in
+            for (_, requests) in friendRequests {
+                for request in requests {
+                    if let senderPicture = request.senderUser.profilePicture {
+                        group.addTask {
                             _ = await profilePictureCache.getCachedImageWithRefresh(
-                                for: chatMessage.senderUser.id,
+                                for: request.senderUser.id,
                                 from: senderPicture,
                                 maxAge: 6 * 60 * 60 // 6 hours
                             )
@@ -1277,35 +1321,24 @@ class AppCache: ObservableObject {
         }
     }
     
-    /// Preload profile pictures for friend request senders
-    private func preloadProfilePicturesForFriendRequests(_ friendRequests: [UUID: [FetchFriendRequestDTO]]) async {
-        let profilePictureCache = ProfilePictureCache.shared
-        
-        for (_, requests) in friendRequests {
-            for request in requests {
-                if let senderPicture = request.senderUser.profilePicture {
-                    _ = await profilePictureCache.getCachedImageWithRefresh(
-                        for: request.senderUser.id,
-                        from: senderPicture,
-                        maxAge: 6 * 60 * 60 // 6 hours
-                    )
-                }
-            }
-        }
-    }
-    
     /// Preload profile pictures for sent friend request receivers
+    /// Uses task groups to download multiple profile pictures in parallel for faster performance
     private func preloadProfilePicturesForSentFriendRequests(_ sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]]) async {
         let profilePictureCache = ProfilePictureCache.shared
         
-        for (_, requests) in sentFriendRequests {
-            for request in requests {
-                if let receiverPicture = request.receiverUser.profilePicture {
-                    _ = await profilePictureCache.getCachedImageWithRefresh(
-                        for: request.receiverUser.id,
-                        from: receiverPicture,
-                        maxAge: 6 * 60 * 60 // 6 hours
-                    )
+        // Use withTaskGroup to preload all profile pictures in parallel
+        await withTaskGroup(of: Void.self) { group in
+            for (_, requests) in sentFriendRequests {
+                for request in requests {
+                    if let receiverPicture = request.receiverUser.profilePicture {
+                        group.addTask {
+                            _ = await profilePictureCache.getCachedImageWithRefresh(
+                                for: request.receiverUser.id,
+                                from: receiverPicture,
+                                maxAge: 6 * 60 * 60 // 6 hours
+                            )
+                        }
+                    }
                 }
             }
         }

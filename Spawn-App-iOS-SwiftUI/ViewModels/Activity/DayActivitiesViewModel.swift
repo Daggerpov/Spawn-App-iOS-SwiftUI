@@ -65,13 +65,18 @@ class DayActivitiesViewModel: ObservableObject {
         return formatDateString(date)
     }
     
-    // Fetch all activities directly via API without checking cache
+    // Fetch all activities directly via API without checking cache, using parallel requests for faster loading
     func loadActivitiesIfNeeded() async {
-        for activity in activities {
-            guard let activityId = activity.activityId else { continue }
-            
-            // Always fetch activity details via API
-            await fetchActivity(activityId)
+        // Use withTaskGroup to fetch all activities in parallel
+        await withTaskGroup(of: Void.self) { group in
+            for activity in activities {
+                guard let activityId = activity.activityId else { continue }
+                
+                group.addTask {
+                    // Always fetch activity details via API
+                    await self.fetchActivity(activityId)
+                }
+            }
         }
     }
     

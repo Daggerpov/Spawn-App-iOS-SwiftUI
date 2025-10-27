@@ -107,11 +107,9 @@ struct NotificationSettingsView: View {
                     }
                 }
             }
-            .onAppear {
+            .task {
                 notificationService.checkNotificationStatus()
-                Task {
-                    await notificationService.fetchNotificationPreferences()
-                }
+                await notificationService.fetchNotificationPreferences()
             }
             .refreshable {
                 Task {

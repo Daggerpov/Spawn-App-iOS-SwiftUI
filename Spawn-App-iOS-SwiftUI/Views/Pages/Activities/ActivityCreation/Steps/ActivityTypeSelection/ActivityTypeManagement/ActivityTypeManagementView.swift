@@ -118,11 +118,9 @@ struct ActivityTypeManagementView: View {
                     ProfileView(user: selectedUser)
                 }
             }
-        .onAppear {
+        .task {
             // Fetch the latest activity types when the view appears
-            Task {
-                await viewModel.fetchActivityTypes()
-            }
+            await viewModel.fetchActivityTypes()
         }
         .onReceive(NotificationCenter.default.publisher(for: .activityTypesChanged)) { _ in
             // Refresh when activity types change

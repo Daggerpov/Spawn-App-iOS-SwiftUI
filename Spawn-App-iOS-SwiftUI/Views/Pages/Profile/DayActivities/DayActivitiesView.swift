@@ -115,11 +115,9 @@ struct DayActivitiesView: View {
                         .padding()
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(10)
-                        .onAppear {
+                        .task(id: activity.activityId) {
                             if let activityId = activity.activityId {
-                                Task {
-                                    await viewModel.fetchActivity(activityId)
-                                }
+                                await viewModel.fetchActivity(activityId)
                             }
                         }
                     }
@@ -127,10 +125,8 @@ struct DayActivitiesView: View {
             }
             .padding()
         }
-        .onAppear {
-            Task {
-                await viewModel.loadActivitiesIfNeeded()
-            }
+        .task {
+            await viewModel.loadActivitiesIfNeeded()
         }
     }
 }

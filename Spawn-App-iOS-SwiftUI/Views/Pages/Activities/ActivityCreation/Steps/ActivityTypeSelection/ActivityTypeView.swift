@@ -56,10 +56,8 @@ struct ActivityTypeView: View {
                 
                 Spacer()
             }
-            .onAppear {
-                Task {
-                    await viewModel.fetchActivityTypes()
-                }
+            .task {
+                await viewModel.fetchActivityTypes()
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {

@@ -47,11 +47,10 @@ struct FriendsView: View {
                 .navigationBarHidden(true)
             }
         }
+        .task {
+            await viewModel.fetchIncomingFriendRequests()
+        }
         .onAppear {
-            Task {
-                await viewModel.fetchIncomingFriendRequests()
-            }
-            
             // Handle deep link if one is pending when view appears
             if shouldShowDeepLinkedProfile, let profileId = deepLinkedProfileId {
                 handleDeepLinkedProfile(profileId)

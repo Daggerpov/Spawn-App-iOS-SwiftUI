@@ -52,20 +52,25 @@ struct FeedView: View {
                 )
             }
             .background(universalBackgroundColor)
-            .onAppear {
-                Task {
+            .task {
+                // Run cache validation and data fetching in parallel for faster loading
+                async let cacheValidation: () = {
                     if !MockAPIService.isMocking {
                         await AppCache.shared.validateCache()
                     }
-                    // Force refresh to ensure no stale activities
-                    await viewModel.forceRefreshActivities()
-                    await viewModel.fetchAllData()
-                }
+                }()
+                async let refreshActivities: () = viewModel.forceRefreshActivities()
+                async let fetchData: () = viewModel.fetchAllData()
+                
+                let _ = await (cacheValidation, refreshActivities, fetchData)
             }
             .refreshable {
                 Task {
-                    await AppCache.shared.refreshActivities()
-                    await viewModel.fetchAllData()
+                    // Refresh activities cache and fetch data in parallel
+                    async let refreshCache: () = AppCache.shared.refreshActivities()
+                    async let fetchData: () = viewModel.fetchAllData()
+                    
+                    let _ = await (refreshCache, fetchData)
                 }
             }
             .onChange(of: showingActivityDescriptionPopup) { _, isShowing in

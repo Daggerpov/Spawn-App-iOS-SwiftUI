@@ -44,36 +44,35 @@ struct InviteFriendsView: View {
 
 					// Suggested friends section - now using real friends data
 					friendsListSection
-				}
-				.padding(.horizontal)
 			}
+			.padding(.horizontal)
 		}
-		.onAppear {
-			friendsViewModel.connectSearchViewModel(searchViewModel)
-			
-			if AppCache.shared.friends.isEmpty {
-				Task {
-					await friendsViewModel.fetchAllData()
-					// After fetching friends, automatically select them all if not already selected
-					await MainActor.run {
-						if activityCreationViewModel.selectedFriends.isEmpty {
-							activityCreationViewModel.selectedFriends = friendsViewModel.friends
-						}
-					}
+	}
+	.onAppear {
+		friendsViewModel.connectSearchViewModel(searchViewModel)
+	}
+	.task {
+		if AppCache.shared.friends.isEmpty {
+			await friendsViewModel.fetchAllData()
+			// After fetching friends, automatically select them all if not already selected
+			await MainActor.run {
+				if activityCreationViewModel.selectedFriends.isEmpty {
+					activityCreationViewModel.selectedFriends = friendsViewModel.friends
 				}
-			} else {
-							// Use cached friends data
+			}
+		} else {
+			// Use cached friends data
 			friendsViewModel.friends = AppCache.shared.getCurrentUserFriends()
 			friendsViewModel.filteredFriends = AppCache.shared.getCurrentUserFriends()
-				
-							// Automatically select all friends if not already selected
+			
+			// Automatically select all friends if not already selected
 			if activityCreationViewModel.selectedFriends.isEmpty {
 				activityCreationViewModel.selectedFriends = AppCache.shared.getCurrentUserFriends()
 			}
-			}
 		}
 	}
-	
+}
+
 	// Invited friends section
 	var invitedFriendsSection: some View {
 		VStack(alignment: .leading, spacing: 10) {
