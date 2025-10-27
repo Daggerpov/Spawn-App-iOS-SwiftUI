@@ -19,8 +19,11 @@ class MyReportsViewModel: ObservableObject {
         
         do {
             reports = try await reportingService.getReportsByUser(reporterId: userId)
+        } catch let error as APIError {
+            errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            reports = []
         } catch {
-            errorMessage = "Failed to load reports: \(error.localizedDescription)"
+            errorMessage = ErrorFormattingService.shared.formatError(error)
             reports = []
         }
         

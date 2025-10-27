@@ -106,8 +106,26 @@ class FriendRequestsViewModel: ObservableObject {
                 if !cachedSent.isEmpty { self.sentFriendRequests = cachedSent }
             }
             
+        } catch let error as APIError {
+            errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            if MockAPIService.isMocking {
+                // Fallback to mock data in mock environment
+                self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
+                self.sentFriendRequests = FetchSentFriendRequestDTO.mockSentFriendRequests
+            } else {
+                // Fallback to cache to avoid showing empty lists if we have cached data
+                let cachedIncoming = appCache.getCurrentUserFriendRequests()
+                let cachedSent = appCache.getCurrentUserSentFriendRequests()
+                if !cachedIncoming.isEmpty || !cachedSent.isEmpty {
+                    self.incomingFriendRequests = cachedIncoming
+                    self.sentFriendRequests = cachedSent
+                } else {
+                    self.incomingFriendRequests = []
+                    self.sentFriendRequests = []
+                }
+            }
         } catch {
-            errorMessage = "Failed to fetch friend requests: \(error.localizedDescription)"
+            errorMessage = ErrorFormattingService.shared.formatError(error)
             if MockAPIService.isMocking {
                 // Fallback to mock data in mock environment
                 self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
@@ -175,8 +193,18 @@ class FriendRequestsViewModel: ObservableObject {
                 }
             }
             
+        } catch let error as APIError {
+            errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+            
+            if MockAPIService.isMocking {
+                // In mock mode, the removal already happened above, so just clear error
+                errorMessage = ""
+            } else {
+                // For real API failures, revert the optimistic update by re-fetching
+                await fetchFriendRequests()
+            }
         } catch {
-            errorMessage = "Failed to \(action == .accept ? "accept" : action == .cancel ? "cancel" : "decline") friend request: \(error.localizedDescription)"
+            errorMessage = ErrorFormattingService.shared.formatError(error)
             
             if MockAPIService.isMocking {
                 // In mock mode, the removal already happened above, so just clear error

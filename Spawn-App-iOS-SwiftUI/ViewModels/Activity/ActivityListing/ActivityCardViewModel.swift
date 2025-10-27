@@ -65,8 +65,10 @@ class ActivityCardViewModel: ObservableObject {
 				description: description
 			)
 			print("Activity reported successfully")
+		} catch let error as APIError {
+			print("Error reporting activity: \(ErrorFormattingService.shared.formatAPIError(error))")
 		} catch {
-			print("Error reporting activity: \(error)")
+			print("Error reporting activity: \(ErrorFormattingService.shared.formatError(error))")
 		}
 	}
 	
@@ -98,17 +100,15 @@ class ActivityCardViewModel: ObservableObject {
 						// Activity is full
 						handleActivityFullError()
 					} else {
-						print("Error toggling participation (status \(statusCode)): \(error.localizedDescription)")
+						print("Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(error))")
 					}
 				} else {
-					print("Error toggling participation: \(error.localizedDescription)")
+					print("Error toggling participation: \(ErrorFormattingService.shared.formatAPIError(error))")
 				}
 			}
 		} catch {
 			await MainActor.run {
-				print(
-					"Error toggling participation: \(error.localizedDescription)"
-				)
+				print("Error toggling participation: \(ErrorFormattingService.shared.formatError(error))")
 			}
 		}
 	}

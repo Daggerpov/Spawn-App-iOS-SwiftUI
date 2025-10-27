@@ -34,33 +34,6 @@ class ActivityDescriptionViewModel: ObservableObject {
 		AppCache.shared.addOrUpdateActivity(updatedActivity)
 		NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
 	}
-	
-	/// Handles API errors with consistent error messaging
-	@MainActor
-	private func handleAPIError(_ error: Error, context: String, customErrorMessage: String? = nil) {
-		print("❌ Error \(context): \(error)")
-		
-		if let apiError = error as? APIError {
-			switch apiError {
-			case .invalidStatusCode(let statusCode):
-				errorMessage = "Server error (status \(statusCode)). Please try again."
-			case .invalidData:
-				errorMessage = "Invalid data format. Please try again."
-			case .URLError:
-				errorMessage = "Network error. Please check your connection."
-			case .failedHTTPRequest(let description):
-				errorMessage = "Request failed: \(description)"
-			case .failedJSONParsing:
-				errorMessage = "Failed to parse server response. Please try again."
-			case .unknownError(let error):
-				errorMessage = ErrorFormattingService.shared.formatError(error)
-			case .failedTokenSaving:
-				errorMessage = "Authentication error. Please try logging in again."
-			}
-		} else {
-			errorMessage = customErrorMessage ?? "An error occurred while \(context)"
-		}
-	}
 
 	init(apiService: IAPIService, activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID) {
 		self.apiService = apiService
@@ -151,11 +124,17 @@ class ActivityDescriptionViewModel: ObservableObject {
 					object: updatedActivity
 				)
 			}
+		} catch let error as APIError {
+			print("❌ API error saving activity changes: \(error)")
+			print("❌ Error description: \(error.localizedDescription)")
+			await MainActor.run {
+				errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+			}
 		} catch {
 			print("❌ Unknown error saving activity changes: \(error)")
-			print("❌ Error type: \(type(of: error))")
-			print("❌ Error description: \(error.localizedDescription)")
-			await handleAPIError(error, context: "saving activity changes")
+			await MainActor.run {
+				errorMessage = ErrorFormattingService.shared.formatError(error)
+			}
 		}
 	}
 	
@@ -208,7 +187,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 		} catch {
 			await MainActor.run {
 				print("Error toggling participation: \(error.localizedDescription)")
-				self.errorMessage = "Failed to update participation status"
+				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
 		}
 	}
@@ -242,10 +221,15 @@ class ActivityDescriptionViewModel: ObservableObject {
 				await MainActor.run {
 					creationMessage = nil
 				}
+			} catch let error as APIError {
+				print("Error sending message: \(error)")
+				await MainActor.run {
+					creationMessage = ErrorFormattingService.shared.formatAPIError(error)
+				}
 			} catch {
 				print("Error sending message: \(error)")
 				await MainActor.run {
-					creationMessage = "There was an error sending your chat message. Please try again"
+					creationMessage = ErrorFormattingService.shared.formatError(error)
 				}
 			}
 		}
@@ -263,8 +247,10 @@ class ActivityDescriptionViewModel: ObservableObject {
 				await MainActor.run {
 					self.activity = updatedActivity
 				}
+			} catch let error as APIError {
+				print("Error fetching updated activity data: \(ErrorFormattingService.shared.formatAPIError(error))")
 			} catch {
-				print("Error fetching updated activity data: \(error)")
+				print("Error fetching updated activity data: \(ErrorFormattingService.shared.formatError(error))")
 			}
 		}
 	}
@@ -280,9 +266,13 @@ class ActivityDescriptionViewModel: ObservableObject {
 				description: description
 			)
 			print("Activity reported successfully")
+		} catch let error as APIError {
+			await MainActor.run {
+				errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+			}
 		} catch {
 			await MainActor.run {
-				errorMessage = "Failed to report activity: \(error.localizedDescription)"
+				errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
 		}
 	}
