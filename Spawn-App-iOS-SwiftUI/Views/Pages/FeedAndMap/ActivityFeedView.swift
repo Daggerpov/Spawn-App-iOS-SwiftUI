@@ -10,7 +10,7 @@ struct ActivityFeedView: View {
     var user: BaseUserDTO
     @StateObject var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
-    @StateObject private var tutorialViewModel = TutorialViewModel.shared
+    @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?

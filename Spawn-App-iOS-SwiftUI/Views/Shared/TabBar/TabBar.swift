@@ -4,7 +4,7 @@ struct TabBar: View {
     @Binding var selection: Tabs
     @State private var symbolTrigger: Bool = false
     @Namespace private var tabItemNameSpace
-    @StateObject private var tutorialViewModel = TutorialViewModel.shared
+    @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
 
     func changeTabTo(_ tab: Tabs) {
         // Check if navigation is restricted during tutorial

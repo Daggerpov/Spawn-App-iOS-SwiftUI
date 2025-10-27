@@ -11,7 +11,7 @@ import Contacts
 struct ContactImportView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var userAuth = UserAuthViewModel.shared
-    @StateObject private var contactsService = ContactsService.shared
+    @ObservedObject private var contactsService = ContactsService.shared
     @ObservedObject var themeService = ThemeService.shared
     @Environment(\.colorScheme) var colorScheme
     
