@@ -165,32 +165,25 @@ class AppCache: ObservableObject {
         let userLastChecked = getLastCheckedForUser(userId)
         
         print("🔍 [CACHE] User cache timestamps: \(userLastChecked)")
-        print("🔍 [CACHE] Current cached friends count: \(friends[userId]?.count ?? 0)")
-        print("🔍 [CACHE] Current cached friend requests count: \(friendRequests[userId]?.count ?? 0)")
-        print("🔍 [CACHE] Current cached sent friend requests count: \(sentFriendRequests[userId]?.count ?? 0)")
-        
+
         // If we have no cached items to validate for this user, request fresh data for all cache types
         if userLastChecked.isEmpty {
             print("🔄 [CACHE] No cached items to validate, requesting fresh data for all cache types")
             // Request fresh data for all standard cache types
-            let _ = await MainActor.run {
-                Task {
-					async let friendsTask: () = refreshFriends()
-					async let activitiesTask: () = refreshActivities()
-                    async let activityTypesTask: () = refreshActivityTypes()
-                    async let recommendedFriendsTask: () = refreshRecommendedFriends()
-                    async let friendRequestsTask: () = refreshFriendRequests()
-                    async let sentFriendRequestsTask: () = refreshSentFriendRequests()
+			async let friendsTask: () = refreshFriends()
+			async let activitiesTask: () = refreshActivities()
+			async let activityTypesTask: () = refreshActivityTypes()
+			async let recommendedFriendsTask: () = refreshRecommendedFriends()
+			async let friendRequestsTask: () = refreshFriendRequests()
+			async let sentFriendRequestsTask: () = refreshSentFriendRequests()
 
-                    // Wait for all tasks to complete
-                    let _ = await (friendsTask, activitiesTask, activityTypesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
-                    
-                    // Clean up any expired activities after refresh
-                    cleanupExpiredActivities()
-                    
-                    print("✅ [CACHE] Completed initial cache refresh for all cache types")
-                }
-            }
+			// Wait for all tasks to complete
+			let _ = await (friendsTask, activitiesTask, activityTypesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
+
+			// Clean up any expired activities after refresh
+			cleanupExpiredActivities()
+
+			print("✅ [CACHE] Completed initial cache refresh for all cache types")
             return
         }
         
@@ -927,8 +920,6 @@ class AppCache: ObservableObject {
             seen.insert(user.userId)
             return user
         }
-        
-        print("🔄 [CACHE] Found \(uniqueUsers.count) unique users to refresh profile pictures for")
         
         // Refresh stale profile pictures
         await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
