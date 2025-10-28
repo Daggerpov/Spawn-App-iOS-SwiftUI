@@ -379,19 +379,41 @@ class AppCache: ObservableObject {
                     }
                 }
                 
-                // Refresh all invalidated caches in parallel for faster performance
-                if needsFriendsRefresh || needsActivitiesRefresh || needsActivityTypesRefresh || 
-                   needsOtherProfilesRefresh || needsRecommendedFriendsRefresh || 
+                // Perform refreshes if needed
+                if needsFriendsRefresh || needsActivitiesRefresh || needsActivityTypesRefresh ||
+                   needsOtherProfilesRefresh || needsRecommendedFriendsRefresh ||
                    needsFriendRequestsRefresh || needsSentFriendRequestsRefresh {
+                    
+                    // Capture refresh flags in a struct to avoid concurrency issues
+                    struct RefreshFlags: Sendable {
+                        let friends: Bool
+                        let activities: Bool
+                        let activityTypes: Bool
+                        let otherProfiles: Bool
+                        let recommendedFriends: Bool
+                        let friendRequests: Bool
+                        let sentFriendRequests: Bool
+                    }
+                    
+                    let flags = RefreshFlags(
+                        friends: needsFriendsRefresh,
+                        activities: needsActivitiesRefresh,
+                        activityTypes: needsActivityTypesRefresh,
+                        otherProfiles: needsOtherProfilesRefresh,
+                        recommendedFriends: needsRecommendedFriendsRefresh,
+                        friendRequests: needsFriendRequestsRefresh,
+                        sentFriendRequests: needsSentFriendRequestsRefresh
+                    )
+                    
                     Task {
-                        async let friendsTask: () = needsFriendsRefresh ? refreshFriends() : noop()
-                        async let activitiesTask: () = needsActivitiesRefresh ? refreshActivities() : noop()
-                        async let activityTypesTask: () = needsActivityTypesRefresh ? refreshActivityTypes() : noop()
-                        async let otherProfilesTask: () = needsOtherProfilesRefresh ? refreshOtherProfiles() : noop()
-                        async let recommendedFriendsTask: () = needsRecommendedFriendsRefresh ? refreshRecommendedFriends() : noop()
-                        async let friendRequestsTask: () = needsFriendRequestsRefresh ? refreshFriendRequests() : noop()
-                        async let sentFriendRequestsTask: () = needsSentFriendRequestsRefresh ? refreshSentFriendRequests() : noop()
-                        
+                        async let friendsTask: () = flags.friends ? refreshFriends() : noop()
+                        async let activitiesTask: () = flags.activities ? refreshActivities() : noop()
+                        async let activityTypesTask: () = flags.activityTypes ? refreshActivityTypes() : noop()
+                        async let otherProfilesTask: () = flags.otherProfiles ? refreshOtherProfiles() : noop()
+                        async let recommendedFriendsTask: () = flags.recommendedFriends ? refreshRecommendedFriends() : noop()
+                        async let friendRequestsTask: () = flags.friendRequests ? refreshFriendRequests() : noop()
+                        async let sentFriendRequestsTask: () = flags.sentFriendRequests ? refreshSentFriendRequests() : noop()
+
                         let _ = await (friendsTask, activitiesTask, activityTypesTask, otherProfilesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
                     }
                 }
@@ -681,8 +703,6 @@ class AppCache: ObservableObject {
     /// Get friend requests for the current user
     func getCurrentUserFriendRequests() -> [FetchFriendRequestDTO] {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-            print("❌ [CACHE] getCurrentUserFriendRequests: No user ID available")
-            print("🔍 [CACHE] UserAuthViewModel.shared.spawnUser is nil")
             return []
         }
         // Always return the latest in-memory value; this map is only mutated by API refresh/update methods
@@ -958,9 +978,7 @@ class AppCache: ObservableObject {
     
     /// Force refresh profile pictures for all cached users (public method for testing)
     func forceRefreshAllProfilePictures() async {
-        print("🔄 [CACHE] Force refreshing ALL profile pictures (bypassing staleness check)")
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-            print("❌ [CACHE] Cannot refresh profile pictures: No user ID available")
             return
         }
         
@@ -1010,15 +1028,11 @@ class AppCache: ObservableObject {
             return user
         }
         
-        print("🔄 [CACHE] Force refreshing \(uniqueUsers.count) unique users' profile pictures")
-        
         // Force refresh all profile pictures
         for user in uniqueUsers {
             guard let profilePictureUrl = user.profilePictureUrl else { continue }
             _ = await profilePictureCache.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
         }
-        
-        print("✅ [CACHE] Completed force refresh of all profile pictures")
     }
     
     // MARK: - User-Specific Data Helper Methods
@@ -1026,12 +1040,9 @@ class AppCache: ObservableObject {
     /// Get friends for the current user
     func getCurrentUserFriends() -> [FullFriendUserDTO] {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
-            print("❌ [CACHE] getCurrentUserFriends: No user ID available")
-            print("🔍 [CACHE] UserAuthViewModel.shared.spawnUser is nil")
             return [] 
         }
         let userFriends = friends[userId] ?? []
-        print("🔍 [CACHE] getCurrentUserFriends for user \(userId): returning \(userFriends.count) friends")
         return userFriends
     }
     
@@ -1117,7 +1128,6 @@ class AppCache: ObservableObject {
         
         if hasChanges {
             debouncedSaveToDisk()
-            print("🧹 [CACHE] Cleaned up expired activities from cache")
         }
     }
     
@@ -1549,3 +1559,4 @@ class AppCache: ObservableObject {
         saveToDefaults(profileActivities, key: CacheKeys.profileEvents)
     }
 } 
+
