@@ -77,17 +77,33 @@ class ActivityTypeViewModel: ObservableObject {
     
     // MARK: - Backend API Methods
     
-    /// Fetches all activity types for the user from the backend
+    /// Fetches all activity types for the user from the backend or cache
     @MainActor
-    func fetchActivityTypes() async {
+    func fetchActivityTypes(forceRefresh: Bool = false) async {
         // Check if user is still authenticated before making API call
         guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
             print("Cannot fetch activity types: User is not logged in")
             return
         }
         
-        setLoadingState(true)
+        // First, try to load from cache if not forcing a refresh
+        if !forceRefresh {
+            let cachedTypes = appCache.activityTypes
+            if !cachedTypes.isEmpty {
+                // Use cached data immediately - no loading state needed!
+                self.activityTypes = cachedTypes
+                return
+            }
+        }
         
+        // Cache is empty or force refresh requested - show loading and fetch
+        await fetchActivityTypesFromAPI()
+    }
+    
+    /// Internal method to fetch from API with loading state
+    @MainActor
+    private func fetchActivityTypesFromAPI() async {
+        setLoadingState(true)
         defer { setLoadingState(false) }
         
         do {

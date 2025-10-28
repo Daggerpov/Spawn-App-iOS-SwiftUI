@@ -9,12 +9,19 @@ import SwiftUI
 
 struct ContentView: View {
 	var user: BaseUserDTO
-    @State private var selectedTab: TabType = .home
     @State private var selectedTabsEnum: Tabs = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
-    @StateObject private var tutorialViewModel = TutorialViewModel.shared
-    @StateObject private var inAppNotificationManager = InAppNotificationManager.shared
+    @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+    @ObservedObject  private var inAppNotificationManager = InAppNotificationManager.shared
     @ObservedObject var deepLinkManager: DeepLinkManager
+    
+    // Computed binding to convert Tabs <-> TabType for child views
+    private var selectedTabBinding: Binding<TabType> {
+        Binding(
+            get: { selectedTabsEnum.toTabType },
+            set: { selectedTabsEnum = Tabs(from: $0) }
+        )
+    }
     
     // Deep link state
     @State private var shouldShowDeepLinkedActivity = false
@@ -45,7 +52,7 @@ struct ContentView: View {
                 case .home:
                     ActivityFeedView(
                         user: user,
-                        selectedTab: $selectedTab,
+                        selectedTab: selectedTabBinding,
                         deepLinkedActivityId: $deepLinkedActivityId,
                         shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
                     )
@@ -59,7 +66,7 @@ struct ContentView: View {
                             // Navigate back to home tab when closing
                             selectedTabsEnum = .home
                         },
-                        selectedTab: $selectedTab
+                        selectedTab: selectedTabBinding
                     )
                 case .friends:
                     FriendsView(
@@ -75,14 +82,6 @@ struct ContentView: View {
                     }
                     .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 }
-            }
-            .onChange(of: selectedTabsEnum) { _, newTabsValue in
-                // Keep TabType in sync with Tabs enum
-                selectedTab = newTabsValue.toTabType
-            }
-            .onChange(of: selectedTab) { _, newTabTypeValue in
-                // Keep Tabs enum in sync with TabType (for programmatic navigation)
-                selectedTabsEnum = Tabs(from: newTabTypeValue)
             }
 			.onAppear {
                 // Configure tab bar appearance for theme compatibility
@@ -191,8 +190,8 @@ struct ContentView: View {
                     activityColor: color,
                     isPresented: $showingGlobalActivityPopup,
                     selectedTab: Binding<TabType?>(
-                        get: { selectedTab },
-                        set: { if let newTab = $0 { selectedTab = newTab } }
+                        get: { selectedTabsEnum.toTabType },
+                        set: { if let newTab = $0 { selectedTabsEnum = Tabs(from: newTab) } }
                     ),
                     fromMapView: globalPopupFromMapView
                 )

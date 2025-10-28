@@ -22,46 +22,6 @@ struct FetchFriendRequestDTO: Identifiable, Codable, Hashable {
         self.senderUser = senderUser
         self.mutualFriendCount = mutualFriendCount
     }
-
-    private enum CodingKeys: String, CodingKey {
-        case id
-        case senderUser
-        case mutualFriendCount
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-
-        // Decode sender first
-        let decodedSenderUser = try container.decode(BaseUserDTO.self, forKey: .senderUser)
-
-        // Try to decode UUID directly; if null or missing, throw an error instead of using sender ID
-        if let uuid = try? container.decode(UUID.self, forKey: .id) {
-            self.id = uuid
-        } else if let idString = try? container.decodeIfPresent(String.self, forKey: .id),
-                  let uuid = UUID(uuidString: idString) {
-            self.id = uuid
-        } else {
-            // If friend request ID is missing or invalid, this indicates a backend serialization issue
-            // Don't use sender ID as fallback since it causes API calls to fail with wrong ID
-            throw DecodingError.dataCorrupted(
-                DecodingError.Context(
-                    codingPath: [CodingKeys.id],
-                    debugDescription: "Friend request ID is missing or invalid. Cannot use sender ID as fallback."
-                )
-            )
-        }
-
-        self.senderUser = decodedSenderUser
-        self.mutualFriendCount = try container.decodeIfPresent(Int.self, forKey: .mutualFriendCount)
-    }
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(id, forKey: .id)
-        try container.encode(senderUser, forKey: .senderUser)
-        try container.encodeIfPresent(mutualFriendCount, forKey: .mutualFriendCount)
-    }
 }
 
 extension FetchFriendRequestDTO {

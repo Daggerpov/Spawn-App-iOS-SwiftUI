@@ -145,7 +145,6 @@ class ProfilePictureCache: ObservableObject {
             // Cache the image
             cacheImage(image, for: userId)
             
-            print("Successfully downloaded and cached profile picture for user \(userId) (forceRefresh: \(forceRefresh))")
             return image
             
         } catch {
@@ -189,7 +188,6 @@ class ProfilePictureCache: ObservableObject {
     
     /// Force refresh a profile picture from the backend
     func refreshProfilePicture(for userId: UUID, from urlString: String) async -> UIImage? {
-        print("🔄 [ProfilePictureCache] Force refreshing profile picture for user: \(userId)")
         return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
     }
     
@@ -208,8 +206,6 @@ class ProfilePictureCache: ObservableObject {
     /// Refresh profile pictures for multiple users if they're stale
     /// Uses task groups to download multiple profile pictures in parallel for faster performance
     func refreshStaleProfilePictures(for users: [(userId: UUID, profilePictureUrl: String?)]) async {
-        print("🔄 [ProfilePictureCache] Checking \(users.count) users for stale profile pictures")
-        
         // Use withTaskGroup to refresh multiple stale profile pictures in parallel
         await withTaskGroup(of: Void.self) { group in
             for user in users {
@@ -217,15 +213,12 @@ class ProfilePictureCache: ObservableObject {
                 
                 // Check if the profile picture is stale (older than 24 hours)
                 if isProfilePictureStale(for: user.userId) {
-                    print("🔄 [ProfilePictureCache] Refreshing stale profile picture for user: \(user.userId)")
                     group.addTask {
                         _ = await self.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
                     }
                 }
             }
         }
-        
-        print("✅ [ProfilePictureCache] Completed parallel refresh of stale profile pictures")
     }
     
     /// Get the cached image with automatic staleness check and refresh

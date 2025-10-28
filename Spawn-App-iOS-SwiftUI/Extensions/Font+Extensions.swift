@@ -24,16 +24,12 @@ extension Font {
                 let errorDescription = CFErrorCopyDescription(error)
                 
                 // Error code 305 means the font is already registered - this is normal for app reinstalls
-                if errorCode == 305 {
-                    print("Font \(fontName) is already registered (this is normal for app reinstalls)")
-                } else {
+                if errorCode != 305 {
                     print("Error registering font \(fontName): Code \(errorCode), Description: \(errorDescription ?? "Unknown error" as CFString)")
                 }
             } else {
                 print("Error registering font \(fontName): Unknown error")
             }
-        } else {
-            print("Successfully registered font: \(fontName)")
         }
     }
     

@@ -139,7 +139,7 @@ struct ProfileView: View {
 			// Load profile data and refresh profile picture in parallel for faster loading
 			async let profileData: () = profileViewModel.loadAllProfileData(userId: user.id)
 			async let profilePictureTask: () = {
-				if let profilePictureUrl = user.profilePicture {
+				if let profilePictureUrl = await user.profilePicture {
 					let profilePictureCache = ProfilePictureCache.shared
 					_ = await profilePictureCache.getCachedImageWithRefresh(
 						for: user.id,

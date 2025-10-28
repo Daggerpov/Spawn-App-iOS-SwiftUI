@@ -10,7 +10,7 @@ struct ActivityFeedView: View {
     var user: BaseUserDTO
     @StateObject var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
-    @StateObject private var tutorialViewModel = TutorialViewModel.shared
+    @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?
     @State private var colorInPopup: Color?
@@ -180,8 +180,6 @@ struct ActivityFeedView: View {
             }
         }
         .onAppear {
-            print("🔗 ActivityFeedView onAppear: shouldShowDeepLinkedActivity = \(shouldShowDeepLinkedActivity), activityId: \(deepLinkedActivityId?.uuidString ?? "nil")")
-            
             // Check if tutorial should start
             if tutorialViewModel.tutorialState == .notStarted {
                 let hasCompleted = UserDefaults.standard.bool(forKey: "HasCompletedFirstActivityTutorial")
@@ -192,7 +190,6 @@ struct ActivityFeedView: View {
             
             // Handle deep link if one is pending when view appears
             if shouldShowDeepLinkedActivity, let activityId = deepLinkedActivityId {
-                print("🔗 ActivityFeedView onAppear: Calling handleDeepLinkedActivity with \(activityId)")
                 handleDeepLinkedActivity(activityId)
             }
         }

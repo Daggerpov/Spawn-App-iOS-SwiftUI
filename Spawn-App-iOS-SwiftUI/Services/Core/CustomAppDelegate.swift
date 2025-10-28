@@ -43,6 +43,13 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
     
     // Handle when the app is launched from a notification
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        // Only validate cache if user is logged in
+        guard UserAuthViewModel.shared.isLoggedIn, UserAuthViewModel.shared.spawnUser != nil else {
+            print("[PUSH DEBUG] Skipping cache validation - no logged in user")
+            completionHandler(.noData)
+            return
+        }
+        
         // Validate cache when app is opened from a notification
         Task {
             await AppCache.shared.validateCache()
@@ -52,7 +59,15 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
     
     // Handle when app will enter foreground
     func applicationWillEnterForeground(_ application: UIApplication) {
-        print("🔄 CustomAppDelegate: App will enter foreground - refreshing activities")
+        print("🔄 CustomAppDelegate: App will enter foreground")
+        
+        // Only refresh if user is logged in
+        guard UserAuthViewModel.shared.isLoggedIn, UserAuthViewModel.shared.spawnUser != nil else {
+            print("🔄 Skipping refresh - no logged in user")
+            return
+        }
+        
+        print("🔄 Refreshing activities for logged in user")
         Task {
             await AppCache.shared.refreshActivities()
             // Notify all listeners to refresh activities
@@ -63,6 +78,13 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
     // Handle when app becomes active
     func applicationDidBecomeActive(_ application: UIApplication) {
         print("🔄 CustomAppDelegate: App became active")
+        
+        // Only cleanup if user is logged in
+        guard UserAuthViewModel.shared.isLoggedIn, UserAuthViewModel.shared.spawnUser != nil else {
+            print("🔄 Skipping cleanup - no logged in user")
+            return
+        }
+        
         // Additional refresh if needed
         Task {
             AppCache.shared.cleanupExpiredActivities()

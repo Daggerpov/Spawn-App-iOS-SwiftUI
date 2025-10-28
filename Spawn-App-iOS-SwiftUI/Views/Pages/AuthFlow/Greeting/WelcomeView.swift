@@ -23,12 +23,10 @@ struct WelcomeView: View {
                     RiveAnimationView.logoAnimation(fileName: "spawn_logo_animation")
                         .frame(width: 300, height: 300)
                         .onAppear {
-                            print("🎬 DEBUG: Starting logo animation in WelcomeView")
                             // Show content after animation completes
                             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                                 withAnimation(.easeInOut(duration: 0.5)) {
                                     animationCompleted = true
-                                    print("🎬 DEBUG: Animation completed, showing Get Started button")
                                 }
                             }
                         }
@@ -54,7 +52,6 @@ struct WelcomeView: View {
                     // Skip onboarding for returning users
                     if userAuth.hasCompletedOnboarding {
                         Button(action: {
-                            print("🔘 DEBUG: Get Started button tapped (for returning users)")
                             // Haptic feedback
                             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                             impactGenerator.impactOccurred()
@@ -69,13 +66,9 @@ struct WelcomeView: View {
                         .buttonStyle(OnboardingButtonStyle())
                         .padding(.bottom, 12)
                         .transition(.opacity)
-                        .onAppear {
-                            print("🔘 DEBUG: Showing Get Started button (for returning users)")
-                        }
                     } else {
 						Spacer()
                         Button(action: {
-                            print("🔘 DEBUG: Get Started button tapped (for new users)")
                             // Haptic feedback
                             let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
                             impactGenerator.impactOccurred()
@@ -90,9 +83,6 @@ struct WelcomeView: View {
                         .buttonStyle(OnboardingButtonStyle())
 						.padding(.top, 12)
                         .transition(.opacity)
-                        .onAppear {
-                            print("🔘 DEBUG: Showing Get Started button (for new users)")
-                        }
                     }
                 }
                 
@@ -100,9 +90,6 @@ struct WelcomeView: View {
             }
             .background(universalBackgroundColor(from: themeService, environment: colorScheme))
             .ignoresSafeArea(.all)
-            .onAppear {
-                print("🔄 DEBUG: WelcomeView appeared - animationCompleted: \(animationCompleted), hasCompletedOnboarding: \(userAuth.hasCompletedOnboarding)")
-            }
             .onReceive(userAuth.$navigationState) { state in
                 if state == .none {
                     path = NavigationPath()

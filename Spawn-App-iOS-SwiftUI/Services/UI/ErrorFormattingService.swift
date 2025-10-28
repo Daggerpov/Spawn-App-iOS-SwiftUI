@@ -43,6 +43,8 @@ class ErrorFormattingService {
             return formatGenericError(error.localizedDescription)
         case .failedTokenSaving:
             return "There was an issue with authentication. Please try signing in again."
+        case .cancelled:
+            return "Request was cancelled." // This typically shouldn't be shown to users
         }
     }
     

@@ -36,7 +36,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Sync the hasCompletedOnboarding from backend with local state
 				if let backendOnboardingStatus = user.hasCompletedOnboarding {
 					if backendOnboardingStatus != hasCompletedOnboarding {
-						print("🔄 DEBUG: Syncing hasCompletedOnboarding from backend: \(backendOnboardingStatus)")
 						hasCompletedOnboarding = backendOnboardingStatus
 						UserDefaults.standard.set(backendOnboardingStatus, forKey: "hasCompletedOnboarding")
 					}
@@ -64,11 +63,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	@Published var hasSeenPreviewScreens: Bool = false
 	
 	// Track onboarding completion
-	@Published var hasCompletedOnboarding: Bool = false {
-		didSet {
-			print("🔄 DEBUG: hasCompletedOnboarding changed to: \(hasCompletedOnboarding)")
-		}
-	}
+	@Published var hasCompletedOnboarding: Bool = false
 
 	@Published var name: String?
 	@Published var email: String?
@@ -133,7 +128,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
     func navigateTo(_ state: NavigationState, delay: TimeInterval = 0.1) {
         // Prevent multiple concurrent navigation attempts
         guard !isNavigating else {
-            print("🚫 DEBUG: Navigation already in progress, ignoring navigateTo(\(state.description)) call")
             return
         }
         
@@ -145,8 +139,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
                 try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             }
             
-            print("📍 Navigating to: \(state.description) with delay: \(delay)s")
-            print("📍 Current state - isLoggedIn: \(isLoggedIn), hasCompletedOnboarding: \(hasCompletedOnboarding), spawnUser: \(spawnUser?.id.uuidString ?? "nil")")
             self.navigationState = state
             
             // Reset the navigation lock after a short delay
@@ -157,7 +149,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
     }
 
 	private init(apiService: IAPIService) {
-		print("🔄 DEBUG: UserAuthViewModel.init() called")
         self.spawnUser = nil
 		self.apiService = apiService
 
@@ -169,26 +160,21 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			// This is a genuine first launch
 			self.isFirstLaunch = true
 			UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
-			print("🔄 DEBUG: First launch detected, marking hasLaunchedBefore as true")
 		} else {
 			// This is an app restart or upgrade
 			self.isFirstLaunch = false
-			print("🔄 DEBUG: App has launched before, setting isFirstLaunch to false")
 		}
 		
 		// Load onboarding completion status from UserDefaults
 		self.hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
-		print("🔄 DEBUG: Loaded hasCompletedOnboarding from UserDefaults: \(self.hasCompletedOnboarding)")
 		
 		// Load preview screens status from UserDefaults
 		self.hasSeenPreviewScreens = UserDefaults.standard.bool(forKey: "hasSeenPreviewScreens")
-		print("🔄 DEBUG: Loaded hasSeenPreviewScreens from UserDefaults: \(self.hasSeenPreviewScreens)")
 
         // Start minimum loading timer
         Task {
             try? await Task.sleep(nanoseconds: 2_000_000_000)
             await MainActor.run {
-                print("🔄 DEBUG: Minimum loading timer completed")
                 self.minimumLoadingCompleted = true
                 self.checkLoadingCompletion()
             }
@@ -196,7 +182,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
         
         // Attempt quick login
         Task {
-            print("🔄 DEBUG: Starting quick login attempt")
             if MockAPIService.isMocking {
                 await setMockUser()
             } else {
@@ -470,54 +455,53 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				clientID: "822760465266-1dunhm4jgrcg17137rfjo2idu5qefchk.apps.googleusercontent.com"
 			)
 
-			GIDSignIn.sharedInstance.signIn(
-				withPresenting: presentingViewController
-			) { [weak self] signInResult, error in
-				if let error = error {
-					print(error.localizedDescription)
-					return
-				}
-
-                guard let signInResult = signInResult else { return }
-				
-				// Get ID token
-                signInResult.user.refreshTokensIfNeeded { user, error in
-					guard error == nil else { 
-						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
-						return 
-					}
-					guard let user = user else { return }
-                    
-                    Task { @MainActor [weak self] in
-                        guard let self = self else { return }
-                        
-                        if isOnboarding {
-                            await self.registerWithOAuth(
-                                idToken: user.idToken?.tokenString ?? "",
-                                provider: .google,
-                                email: user.profile?.email,
-                                name: user.profile?.name,
-                                profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
-                            )
-                            return
-                        }
-                        
-                        // Request a higher resolution image (400px instead of 100px)
-                        self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
-                        self.name = user.profile?.name
-                        self.email = user.profile?.email
-                        self.isLoggedIn = true
-                        self.externalUserId = user.userID
-                        self.authProvider = .google
-                        self.idToken = user.idToken?.tokenString
-                    }
-					
-					Task { [weak self] in
-						guard let self = self else { return }
-						await self.spawnFetchUserIfAlreadyExists()
-					}
-				}
+		GIDSignIn.sharedInstance.signIn(
+			withPresenting: presentingViewController
+		) { [weak self] signInResult, error in
+			if let error = error {
+				print(error.localizedDescription)
+				return
 			}
+
+            guard let signInResult = signInResult else { return }
+			
+			// Get ID token
+            signInResult.user.refreshTokensIfNeeded { user, error in
+				guard error == nil else { 
+					print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
+					return 
+				}
+				guard let user = user else { return }
+                
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    
+                    if isOnboarding {
+                        await self.registerWithOAuth(
+                            idToken: user.idToken?.tokenString ?? "",
+                            provider: .google,
+                            email: user.profile?.email,
+                            name: user.profile?.name,
+                            profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
+                        )
+                        return
+                    }
+                    
+                    // Request a higher resolution image (400px instead of 100px)
+                    self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
+                    self.name = user.profile?.name
+                    self.email = user.profile?.email
+                    self.isLoggedIn = true
+                    self.externalUserId = user.userID
+                    self.authProvider = .google
+                    self.idToken = user.idToken?.tokenString
+                    
+                    // Now that all properties are set, check if user exists
+                    // This must happen AFTER setting idToken to avoid race condition
+                    await self.spawnFetchUserIfAlreadyExists()
+                }
+			}
+		}
 		}
 	}
 
