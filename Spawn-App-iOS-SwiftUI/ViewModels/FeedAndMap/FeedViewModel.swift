@@ -59,7 +59,7 @@ class FeedViewModel: ObservableObject {
         // Only subscribe to AppCache if not mocking
         if !MockAPIService.isMocking {
             // Subscribe to AppCache activities updates
-            appCache.$activities
+            appCache.activitiesPublisher
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] cachedActivities in
                     guard let self = self else { return }

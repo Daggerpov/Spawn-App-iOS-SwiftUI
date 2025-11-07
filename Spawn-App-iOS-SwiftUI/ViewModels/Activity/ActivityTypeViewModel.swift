@@ -65,7 +65,7 @@ class ActivityTypeViewModel: ObservableObject {
         // Subscribe to cache updates if not mocking
         if !MockAPIService.isMocking {
             // Subscribe to cached activity types updates
-            appCache.$activityTypes
+            appCache.activityTypesPublisher
                 .sink { [weak self] cachedActivityTypes in
                     if !cachedActivityTypes.isEmpty {
                         self?.activityTypes = cachedActivityTypes

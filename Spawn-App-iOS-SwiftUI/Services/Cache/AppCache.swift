@@ -35,9 +35,9 @@ class AppCache: ObservableObject {
         coordinator.initialize()
     }
     
-    // MARK: - Computed Properties (Read-only access to cache service data)
+    // MARK: - Published Properties (Exposed from underlying services)
     
-    // Activity-related data
+    // Activity-related data - exposed from ActivityCacheService
     var activities: [UUID: [FullFeedActivityDTO]] {
         activityCacheService.activities
     }
@@ -47,7 +47,16 @@ class AppCache: ObservableObject {
         set { activityCacheService.activityTypes = newValue }
     }
     
-    // Friendship-related data
+    // Expose publishers for SwiftUI subscriptions
+    var activitiesPublisher: Published<[UUID: [FullFeedActivityDTO]]>.Publisher {
+        activityCacheService.$activities
+    }
+    
+    var activityTypesPublisher: Published<[ActivityTypeDTO]>.Publisher {
+        activityCacheService.$activityTypes
+    }
+    
+    // Friendship-related data - exposed from FriendshipCacheService
     var friends: [UUID: [FullFriendUserDTO]] {
         friendshipCacheService.friends
     }
@@ -62,6 +71,23 @@ class AppCache: ObservableObject {
     
     var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] {
         friendshipCacheService.sentFriendRequests
+    }
+    
+    // Expose publishers for SwiftUI subscriptions
+    var friendsPublisher: Published<[UUID: [FullFriendUserDTO]]>.Publisher {
+        friendshipCacheService.$friends
+    }
+    
+    var recommendedFriendsPublisher: Published<[UUID: [RecommendedFriendUserDTO]]>.Publisher {
+        friendshipCacheService.$recommendedFriends
+    }
+    
+    var friendRequestsPublisher: Published<[UUID: [FetchFriendRequestDTO]]>.Publisher {
+        friendshipCacheService.$friendRequests
+    }
+    
+    var sentFriendRequestsPublisher: Published<[UUID: [FetchSentFriendRequestDTO]]>.Publisher {
+        friendshipCacheService.$sentFriendRequests
     }
     
     // Profile-related data

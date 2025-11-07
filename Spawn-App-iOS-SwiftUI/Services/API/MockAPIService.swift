@@ -654,13 +654,18 @@ class MockAPIService: IAPIService {
 		if url.absoluteString.contains("friend-requests/") {
 			let parts = url.absoluteString.components(separatedBy: "/")
 			if let idStr = parts.last, let frId = UUID(uuidString: idStr) {
-				// Remove from mock caches
+				// Remove from mock caches using proper update methods
+				var updatedFriendRequests: [UUID: [FetchFriendRequestDTO]] = [:]
 				for (uid, requests) in AppCache.shared.friendRequests {
-					AppCache.shared.friendRequests[uid] = requests.filter { $0.id != frId }
+					updatedFriendRequests[uid] = requests.filter { $0.id != frId }
 				}
+				AppCache.shared.updateFriendRequests(updatedFriendRequests)
+				
+				var updatedSentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]
 				for (uid, requests) in AppCache.shared.sentFriendRequests {
-					AppCache.shared.sentFriendRequests[uid] = requests.filter { $0.id != frId }
+					updatedSentFriendRequests[uid] = requests.filter { $0.id != frId }
 				}
+				AppCache.shared.updateSentFriendRequests(updatedSentFriendRequests)
 			}
 			return
 		}

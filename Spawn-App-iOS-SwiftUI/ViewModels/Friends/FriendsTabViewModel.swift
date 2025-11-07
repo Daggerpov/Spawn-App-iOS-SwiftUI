@@ -44,7 +44,7 @@ class FriendsTabViewModel: ObservableObject {
 		if !MockAPIService.isMocking {
 			
 			// Subscribe to AppCache friends updates
-			appCache.$friends
+			appCache.friendsPublisher
 				.sink { [weak self] cachedFriends in
 					guard let self = self else { return }
 					let userFriends = cachedFriends[self.userId] ?? []
@@ -56,7 +56,7 @@ class FriendsTabViewModel: ObservableObject {
 				.store(in: &cancellables)
 			
 			// Subscribe to AppCache recommended friends updates
-			appCache.$recommendedFriends
+			appCache.recommendedFriendsPublisher
 				.sink { [weak self] cachedRecommendedFriends in
 					guard let self = self else { return }
 					let userRecommendedFriends = cachedRecommendedFriends[self.userId] ?? []
