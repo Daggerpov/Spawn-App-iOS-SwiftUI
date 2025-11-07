@@ -32,6 +32,7 @@ class FriendsTabViewModel: ObservableObject {
 	var apiService: IAPIService
     private var cancellables = Set<AnyCancellable>()
     private var appCache: AppCache
+	private var notificationObservers: [NSObjectProtocol] = []
 
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
@@ -70,14 +71,26 @@ class FriendsTabViewModel: ObservableObject {
         }
 
         // Listen for friend-related changes to keep this tab in sync
-        NotificationCenter.default.addObserver(forName: .friendRequestsDidChange, object: nil, queue: .main) { [weak self] _ in
+        let friendRequestsObserver = NotificationCenter.default.addObserver(forName: .friendRequestsDidChange, object: nil, queue: .main) { [weak self] _ in
             guard let self = self else { return }
             Task { await self.fetchIncomingFriendRequests(); await self.fetchOutgoingFriendRequests() }
         }
-        NotificationCenter.default.addObserver(forName: .friendsDidChange, object: nil, queue: .main) { [weak self] _ in
+        notificationObservers.append(friendRequestsObserver)
+		
+        let friendsObserver = NotificationCenter.default.addObserver(forName: .friendsDidChange, object: nil, queue: .main) { [weak self] _ in
             guard let self = self else { return }
             Task { await self.fetchFriends() }
         }
+        notificationObservers.append(friendsObserver)
+	}
+	
+	deinit {
+		print("🧹 [VM] FriendsTabViewModel deinit - cleaning up observers")
+		// Remove all notification observers to prevent memory leaks and blocking
+		for observer in notificationObservers {
+			NotificationCenter.default.removeObserver(observer)
+		}
+		notificationObservers.removeAll()
 	}
     
     // Call this method to connect the search view model to this view model
@@ -260,6 +273,9 @@ class FriendsTabViewModel: ObservableObject {
     }
 
 	func fetchAllData() async {
+        print("🔄 [VM] FriendsTabViewModel.fetchAllData started")
+        let startTime = Date()
+        
         // Check cache first - only show loading if we need to fetch from API
         let cachedFriends = appCache.getCurrentUserFriends()
         let cachedRecommendedFriends = appCache.getCurrentUserRecommendedFriends()
@@ -267,22 +283,27 @@ class FriendsTabViewModel: ObservableObject {
         let cachedOutgoingRequests = appCache.getCurrentUserSentFriendRequests()
         
         let hasCachedData = !cachedFriends.isEmpty || !cachedRecommendedFriends.isEmpty || 
-                           !cachedIncomingRequests.isEmpty || !cachedOutgoingRequests.isEmpty
+!cachedIncomingRequests.isEmpty || !cachedOutgoingRequests.isEmpty
         
         if hasCachedData {
+            print("✅ [VM] Using cached data (no loading state)")
             // Load cached data immediately - no loading state needed
             await MainActor.run {
                 if !cachedFriends.isEmpty {
                     self.friends = cachedFriends
+                    print("   Applied \(cachedFriends.count) friends from cache")
                 }
                 if !cachedRecommendedFriends.isEmpty {
                     self.recommendedFriends = cachedRecommendedFriends
+                    print("   Applied \(cachedRecommendedFriends.count) recommended friends from cache")
                 }
                 if !cachedIncomingRequests.isEmpty {
                     self.incomingFriendRequests = cachedIncomingRequests
+                    print("   Applied \(cachedIncomingRequests.count) incoming requests from cache")
                 }
                 if !cachedOutgoingRequests.isEmpty {
                     self.outgoingFriendRequests = cachedOutgoingRequests
+                    print("   Applied \(cachedOutgoingRequests.count) outgoing requests from cache")
                 }
                 
                 // Initialize filtered lists
@@ -292,13 +313,15 @@ class FriendsTabViewModel: ObservableObject {
                 self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
             }
             
-            print("✅ Using cached friends data")
-            
             // Refresh profile pictures for cached data
             await refreshProfilePictures()
+            
+            let duration = Date().timeIntervalSince(startTime)
+            print("⏱️ [VM] fetchAllData (cached) completed in \(String(format: "%.3f", duration))s")
             return
         }
         
+        print("⚠️ [VM] No cached data - fetching from API with loading state")
         // No cached data - show loading and fetch from API
         await MainActor.run {
             isLoading = true
@@ -335,6 +358,11 @@ class FriendsTabViewModel: ObservableObject {
         
         // Refresh profile pictures for all visible users
         await refreshProfilePictures()
+        
+        let duration = Date().timeIntervalSince(startTime)
+        print("⏱️ [VM] fetchAllData (from API) completed in \(String(format: "%.2f", duration))s")
+        print("   Fetched: \(friends.count) friends, \(recommendedFriends.count) recommended")
+        print("   Requests: \(incomingFriendRequests.count) incoming, \(outgoingFriendRequests.count) outgoing")
 	}
 
 	internal func fetchIncomingFriendRequests() async {

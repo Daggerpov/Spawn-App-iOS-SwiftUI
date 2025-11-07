@@ -181,6 +181,22 @@ class FeedViewModel: ObservableObject {
         cleanupTimer?.invalidate()
         cleanupTimer = nil
     }
+    
+    // MARK: - Public Timer Control
+    
+    /// Pause all periodic timers (useful when view is not visible)
+    func pauseTimers() {
+        print("⏸️ FeedViewModel: Pausing periodic timers")
+        stopPeriodicRefresh()
+        stopPeriodicCleanup()
+    }
+    
+    /// Resume all periodic timers (useful when view becomes visible)
+    func resumeTimers() {
+        print("▶️ FeedViewModel: Resuming periodic timers")
+        startPeriodicRefresh()
+        startPeriodicCleanup()
+    }
 
     func fetchAllData() async {
         // Fetch activities and activity types in parallel for faster loading

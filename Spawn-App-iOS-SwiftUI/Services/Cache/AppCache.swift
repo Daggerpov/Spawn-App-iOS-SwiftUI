@@ -241,6 +241,8 @@ class AppCache: ObservableObject {
     
     /// Validate cache with backend and refresh stale items
     func validateCache() async {
+        let startTime = Date()
+        
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
             print("❌ [CACHE] Cannot validate cache: No logged in user")
             print("🔍 [CACHE] UserAuthViewModel.shared.spawnUser is nil")
@@ -428,6 +430,9 @@ class AppCache: ObservableObject {
         Task {
             await refreshAllProfilePictures()
         }
+        
+        let duration = Date().timeIntervalSince(startTime)
+        print("⏱️ [CACHE] Cache validation completed in \(String(format: "%.2f", duration))s")
     }
     
     // MARK: - Friends Methods
@@ -449,6 +454,8 @@ class AppCache: ObservableObject {
     }
     
     func refreshFriends() async {
+        let startTime = Date()
+        
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
             print("Cannot refresh friends: No logged in user")
             return 
@@ -456,6 +463,11 @@ class AppCache: ObservableObject {
         
         await genericRefresh(endpoint: "users/friends/\(userId)") { (fetchedFriends: [FullFriendUserDTO]) in
             self.updateFriendsForUser(fetchedFriends, userId: userId)
+        }
+        
+        let duration = Date().timeIntervalSince(startTime)
+        if duration > 0.5 {
+            print("⏱️ [CACHE] refreshFriends took \(String(format: "%.2f", duration))s")
         }
     }
     
@@ -484,6 +496,8 @@ class AppCache: ObservableObject {
     }
     
     func refreshActivities() async {
+        let startTime = Date()
+        
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
             print("Cannot refresh activities: No logged in user")
             return 
@@ -491,6 +505,11 @@ class AppCache: ObservableObject {
         
         await genericRefresh(endpoint: "activities/feedActivities/\(userId)") { (fetchedActivities: [FullFeedActivityDTO]) in
             self.updateActivitiesForUser(fetchedActivities, userId: userId)
+        }
+        
+        let duration = Date().timeIntervalSince(startTime)
+        if duration > 0.5 {
+            print("⏱️ [CACHE] refreshActivities took \(String(format: "%.2f", duration))s")
         }
     }
     
@@ -703,10 +722,13 @@ class AppCache: ObservableObject {
     /// Get friend requests for the current user
     func getCurrentUserFriendRequests() -> [FetchFriendRequestDTO] {
         guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("⚠️ [CACHE] getCurrentUserFriendRequests: No user ID")
             return []
         }
         // Always return the latest in-memory value; this map is only mutated by API refresh/update methods
-        return friendRequests[userId] ?? []
+        let requests = friendRequests[userId] ?? []
+        print("📦 [CACHE] getCurrentUserFriendRequests returned \(requests.count) requests for user \(userId)")
+        return requests
     }
 
     /// Update friend requests for a specific user
@@ -789,9 +811,14 @@ class AppCache: ObservableObject {
 
     /// Get sent friend requests for the current user
     func getCurrentUserSentFriendRequests() -> [FetchSentFriendRequestDTO] {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("⚠️ [CACHE] getCurrentUserSentFriendRequests: No user ID")
+            return []
+        }
         // Always return the latest in-memory value; this map is only mutated by API refresh/update methods
-        return sentFriendRequests[userId] ?? []
+        let requests = sentFriendRequests[userId] ?? []
+        print("📦 [CACHE] getCurrentUserSentFriendRequests returned \(requests.count) requests for user \(userId)")
+        return requests
     }
 
     /// Update sent friend requests for a specific user
@@ -1039,22 +1066,28 @@ class AppCache: ObservableObject {
     
     /// Get friends for the current user
     func getCurrentUserFriends() -> [FullFriendUserDTO] {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { 
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("⚠️ [CACHE] getCurrentUserFriends: No user ID")
             return [] 
         }
         let userFriends = friends[userId] ?? []
+        print("📦 [CACHE] getCurrentUserFriends returned \(userFriends.count) friends for user \(userId)")
         return userFriends
     }
     
     /// Update friends for a specific user
     func updateFriendsForUser(_ newFriends: [FullFriendUserDTO], userId: UUID) {
+        print("💾 [CACHE] Updating friends cache: \(newFriends.count) friends for user \(userId)")
         friends[userId] = newFriends
         setLastCheckedForUser(userId, cacheType: CacheKeys.friends, date: Date())
         debouncedSaveToDisk()
         
         // Preload profile pictures for friends
-        Task {
-            await preloadProfilePictures(for: [userId: newFriends])
+        if !newFriends.isEmpty {
+            print("🖼️ [CACHE] Starting profile picture preload for \(newFriends.count) friends")
+            Task {
+                await preloadProfilePictures(for: [userId: newFriends])
+            }
         }
     }
     
@@ -1066,7 +1099,10 @@ class AppCache: ObservableObject {
     
     /// Get activities for the current user, filtering out expired ones
     func getCurrentUserActivities() -> [FullFeedActivityDTO] {
-        guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return [] }
+        guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+            print("⚠️ [CACHE] getCurrentUserActivities: No user ID")
+            return []
+        }
         let userActivities = activities[userId] ?? []
         
         // Filter out expired activities based on server-side expiration status
@@ -1076,10 +1112,13 @@ class AppCache: ObservableObject {
         
         // If we filtered out expired activities, update the cache to remove them
         if filteredActivities.count != userActivities.count {
+            let expiredCount = userActivities.count - filteredActivities.count
+            print("🧹 [CACHE] Filtered out \(expiredCount) expired activities")
             activities[userId] = filteredActivities
             debouncedSaveToDisk()
         }
         
+        print("📦 [CACHE] getCurrentUserActivities returned \(filteredActivities.count) activities for user \(userId)")
         return filteredActivities
     }
     
@@ -1089,6 +1128,12 @@ class AppCache: ObservableObject {
         let filteredActivities = newActivities.filter { activity in
             return activity.isExpired != true
         }
+        
+        let expiredCount = newActivities.count - filteredActivities.count
+        if expiredCount > 0 {
+            print("🧹 [CACHE] Filtered out \(expiredCount) expired activities before caching")
+        }
+        print("💾 [CACHE] Updating activities cache: \(filteredActivities.count) activities for user \(userId)")
         
         activities[userId] = filteredActivities
         setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
@@ -1100,8 +1145,11 @@ class AppCache: ObservableObject {
         debouncedSaveToDisk()
         
         // Preload profile pictures for activities
-        Task {
-            await preloadProfilePicturesForActivities([userId: filteredActivities])
+        if !filteredActivities.isEmpty {
+            print("🖼️ [CACHE] Starting profile picture preload for \(filteredActivities.count) activities")
+            Task {
+                await preloadProfilePicturesForActivities([userId: filteredActivities])
+            }
         }
     }
     
@@ -1242,19 +1290,26 @@ class AppCache: ObservableObject {
     // MARK: - Profile Picture Caching
     
     /// Preload profile pictures for a collection of users
+    /// CRITICAL FIX: Uses task groups to download multiple profile pictures in parallel for faster performance
     private func preloadProfilePictures<T: Nameable>(for users: [UUID: [T]]) async {
         let profilePictureCache = ProfilePictureCache.shared
         
-        for (_, userList) in users {
-            for user in userList {
-                guard let profilePictureUrl = user.profilePicture else { continue }
-                
-                // Use the new refresh mechanism that checks for staleness
-                _ = await profilePictureCache.getCachedImageWithRefresh(
-                    for: user.id,
-                    from: profilePictureUrl,
-                    maxAge: 6 * 60 * 60 // 6 hours for more frequent updates
-                )
+        // Use withTaskGroup to preload all profile pictures in parallel
+        await withTaskGroup(of: Void.self) { group in
+            for (_, userList) in users {
+                for user in userList {
+                    guard let profilePictureUrl = user.profilePicture else { continue }
+                    
+                    // Add each download as a parallel task
+                    group.addTask {
+                        // Use the new refresh mechanism that checks for staleness
+                        _ = await profilePictureCache.getCachedImageWithRefresh(
+                            for: user.id,
+                            from: profilePictureUrl,
+                            maxAge: 6 * 60 * 60 // 6 hours for more frequent updates
+                        )
+                    }
+                }
             }
         }
     }

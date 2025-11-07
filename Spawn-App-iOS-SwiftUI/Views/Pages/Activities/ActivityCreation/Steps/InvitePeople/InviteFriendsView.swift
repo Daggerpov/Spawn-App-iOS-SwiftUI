@@ -52,8 +52,19 @@ struct InviteFriendsView: View {
 		friendsViewModel.connectSearchViewModel(searchViewModel)
 	}
 	.task {
+		// Check if task was cancelled (user navigated away)
+		if Task.isCancelled {
+			return
+		}
+		
 		if AppCache.shared.friends.isEmpty {
 			await friendsViewModel.fetchAllData()
+			
+			// Check again after async operation
+			if Task.isCancelled {
+				return
+			}
+			
 			// After fetching friends, automatically select them all if not already selected
 			await MainActor.run {
 				if activityCreationViewModel.selectedFriends.isEmpty {

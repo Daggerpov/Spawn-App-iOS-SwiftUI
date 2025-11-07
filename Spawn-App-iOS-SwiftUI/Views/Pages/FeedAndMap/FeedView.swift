@@ -19,6 +19,9 @@ struct FeedView: View {
     @State private var colorInPopup: Color?
 
     @State private var showActivityCreationDrawer: Bool = false
+    
+    // Store background refresh task so we can cancel it on disappear
+    @State private var backgroundRefreshTask: Task<Void, Never>?
 
     // for popups:
     @State private var creationOffset: CGFloat = 1000
@@ -53,25 +56,79 @@ struct FeedView: View {
             }
             .background(universalBackgroundColor)
             .task {
-                // Run cache validation and data fetching in parallel for faster loading
-                async let cacheValidation: () = {
-                    if !MockAPIService.isMocking {
-                        await AppCache.shared.validateCache()
-                    }
-                }()
-                async let refreshActivities: () = viewModel.forceRefreshActivities()
-                async let fetchData: () = viewModel.fetchAllData()
+                print("📍 [NAV] FeedView .task started")
+                let taskStartTime = Date()
                 
-                let _ = await (cacheValidation, refreshActivities, fetchData)
+                // CRITICAL FIX: Load cached activities immediately to unblock UI
+                // Cache validation is done on app startup, no need to repeat on every view load
+                
+                // Load cached activities synchronously (fast, non-blocking)
+                let cacheLoadStart = Date()
+                let cachedActivities = AppCache.shared.getCurrentUserActivities()
+                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+                
+                print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(cachedActivities.count) activities")
+                
+                // Apply cached data to view model immediately
+                await MainActor.run {
+                    if !cachedActivities.isEmpty {
+                        viewModel.activities = cachedActivities
+                        let totalDuration = Date().timeIntervalSince(taskStartTime)
+                        print("✅ [NAV] Applied \(cachedActivities.count) cached activities to UI in \(String(format: "%.3f", totalDuration))s")
+                    } else {
+                        print("⚠️ [NAV] No cached activities available - will fetch from API")
+                    }
+                }
+                
+                // Refresh from API in background (non-blocking)
+                // Only if cache is empty or user explicitly refreshes
+                if cachedActivities.isEmpty {
+                    print("🔄 [NAV] Fetching activities from API (empty cache)")
+                    let fetchStart = Date()
+                    await viewModel.fetchAllData()
+                    let fetchDuration = Date().timeIntervalSince(fetchStart)
+                    print("⏱️ [NAV] API fetch took \(String(format: "%.2f", fetchDuration))s")
+                } else {
+                    // Check if task was cancelled before starting background refresh
+                    if Task.isCancelled {
+                        print("⚠️ [NAV] Task cancelled before starting background refresh - user navigated away")
+                        return
+                    }
+                    
+                    // Background refresh without blocking UI
+                    // Store the task so we can cancel it if user navigates away
+                    print("🔄 [NAV] Starting background refresh for activities")
+                    backgroundRefreshTask = Task.detached(priority: .userInitiated) {
+                        let refreshStart = Date()
+                        await viewModel.fetchAllData()
+                        let refreshDuration = Date().timeIntervalSince(refreshStart)
+                        print("⏱️ [NAV] Background refresh took \(String(format: "%.2f", refreshDuration))s")
+                        print("✅ [NAV] Background refresh completed")
+                    }
+                }
+            }
+            .onAppear {
+                print("👁️ [NAV] FeedView appeared")
+                // Resume timers when view appears
+                viewModel.resumeTimers()
+            }
+            .onDisappear {
+                print("👋 [NAV] FeedView disappearing - cancelling background tasks")
+                
+                // Pause timers to save resources when view is not visible
+                viewModel.pauseTimers()
+                
+                // Cancel any ongoing background refresh to prevent blocking
+                backgroundRefreshTask?.cancel()
+                backgroundRefreshTask = nil
+                print("👋 [NAV] FeedView disappeared")
             }
             .refreshable {
-                Task {
-                    // Refresh activities cache and fetch data in parallel
-                    async let refreshCache: () = AppCache.shared.refreshActivities()
-                    async let fetchData: () = viewModel.fetchAllData()
-                    
-                    let _ = await (refreshCache, fetchData)
-                }
+                // Pull to refresh - user-initiated refresh
+                async let refreshCache: () = AppCache.shared.refreshActivities()
+                async let fetchData: () = viewModel.fetchAllData()
+                
+                let _ = await (refreshCache, fetchData)
             }
             .onChange(of: showingActivityDescriptionPopup) { _, isShowing in
                 if isShowing, let activity = activityInPopup, let color = colorInPopup {

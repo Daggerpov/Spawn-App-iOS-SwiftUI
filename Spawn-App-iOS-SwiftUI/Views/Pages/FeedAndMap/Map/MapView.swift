@@ -43,6 +43,12 @@ struct MapView: View {
     @State private var toggle3DScale: CGFloat = 1.0
     @State private var locationPressed = false
     @State private var locationScale: CGFloat = 1.0
+	
+	// Store background refresh task so we can cancel it on disappear
+	@State private var backgroundRefreshTask: Task<Void, Never>?
+	
+	// Track if view is currently visible to prevent updates after disappear
+	@State private var isViewVisible = false
     
     enum TimeFilter: String, CaseIterable {
         case lateNight = "Late Night"
@@ -230,8 +236,27 @@ struct MapView: View {
                 }
             }
             .task {
-                await viewModel.fetchAllData()
+                print("📍 [NAV] MapView .task started")
+                let taskStartTime = Date()
+                
+                // CRITICAL FIX: Load cached activities immediately to unblock UI
+                let cachedActivities = AppCache.shared.getCurrentUserActivities()
+                
+				// Check if task was cancelled (user navigated away)
+				if Task.isCancelled {
+					print("⚠️ [NAV] MapView task cancelled before applying cached data")
+					return
+				}
+				
                 await MainActor.run {
+                    if !cachedActivities.isEmpty {
+                        viewModel.activities = cachedActivities
+                        print("✅ [NAV] MapView applied \(cachedActivities.count) cached activities")
+                    } else {
+                        print("⚠️ [NAV] MapView: No cached activities")
+                    }
+                    
+                    // Set initial region
                     if let userLocation = locationManager.userLocation {
                         region = MKCoordinateRegion(
                             center: userLocation,
@@ -240,9 +265,65 @@ struct MapView: View {
                     } else if !viewModel.activities.isEmpty {
                         adjustRegionForActivities()
                     }
+                    
+                    let duration = Date().timeIntervalSince(taskStartTime)
+                    print("⏱️ [NAV] MapView .task completed in \(String(format: "%.3f", duration))s")
+                }
+                
+				// Check if task was cancelled before starting background refresh
+				if Task.isCancelled {
+					print("⚠️ [NAV] MapView task cancelled before starting background refresh")
+					return
+				}
+				
+                // Refresh from API in background (non-blocking)
+                // CRITICAL: Always run in background, even if cache is empty, to avoid blocking UI
+                print("🔄 [NAV] MapView starting background refresh")
+                backgroundRefreshTask = Task.detached(priority: .userInitiated) {
+                    let refreshStart = Date()
+                    await viewModel.fetchAllData()
+                    let refreshDuration = Date().timeIntervalSince(refreshStart)
+                    print("⏱️ [NAV] MapView refresh took \(String(format: "%.2f", refreshDuration))s")
+                    print("✅ [NAV] MapView background refresh completed")
                 }
             }
+            .onAppear {
+                isViewVisible = true
+                print("👁️ [NAV] MapView appeared")
+                
+                // CRITICAL: Resume timers when view appears
+                viewModel.resumeTimers()
+                
+                // Start location updates when view appears
+                if locationManager.authorizationStatus == .authorizedWhenInUse || 
+                   locationManager.authorizationStatus == .authorizedAlways {
+                    print("📍 [NAV] MapView: Starting location updates")
+                    locationManager.startLocationUpdates()
+                }
+            }
+            .onDisappear {
+                isViewVisible = false
+                print("👋 [NAV] MapView disappearing - cancelling background tasks")
+                
+                // CRITICAL: Pause timers to prevent continuous background processing
+                viewModel.pauseTimers()
+                
+                // CRITICAL: Stop location updates to prevent continuous background processing
+                print("📍 [NAV] MapView: Stopping location updates")
+                locationManager.stopLocationUpdates()
+                
+				// Cancel any ongoing background refresh to prevent blocking
+				backgroundRefreshTask?.cancel()
+				backgroundRefreshTask = nil
+                print("👋 [NAV] MapView disappeared")
+            }
             .onChange(of: locationManager.locationUpdated) {
+                // Guard: Only update if view is visible
+                guard isViewVisible else {
+                    print("⚠️ [NAV] MapView: Ignoring location update - view not visible")
+                    return
+                }
+                
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
                    abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
                    abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
@@ -250,11 +331,23 @@ struct MapView: View {
                 }
             }
             .onChange(of: viewModel.activities) {
+                // Guard: Only update if view is visible
+                guard isViewVisible else {
+                    print("⚠️ [NAV] MapView: Ignoring activities update - view not visible")
+                    return
+                }
+                
                 if locationManager.userLocation != nil {
                     adjustRegionForActivities()
                 }
             }
             .onChange(of: locationManager.locationError) { _, error in
+                // Guard: Only update if view is visible
+                guard isViewVisible else {
+                    print("⚠️ [NAV] MapView: Ignoring location error - view not visible")
+                    return
+                }
+                
                 if let error = error {
                     locationErrorMessage = error
                     showLocationError = true
@@ -274,10 +367,8 @@ struct MapView: View {
             } message: {
                 Text(locationErrorMessage)
             }
-            .task {
-                // Force refresh activities when map appears to ensure no stale data
-                await viewModel.forceRefreshActivities()
-            }
+            // REMOVED: This was causing UI freezing on navigation
+            // The first .task block already handles refresh in background
 
 
             // Dimming overlay

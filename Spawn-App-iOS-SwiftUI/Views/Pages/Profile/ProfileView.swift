@@ -45,6 +45,10 @@ struct ProfileView: View {
 	@State private var navigateToAddToActivityType: Bool = false
 	@State private var showProfileShareSheet: Bool = false
 	
+	// Store background refresh tasks so we can cancel them on disappear
+	@State private var backgroundProfilePictureTask: Task<Void, Never>?
+	@State private var backgroundDataLoadTask: Task<Void, Never>?
+	
 	// Animation states for 3D effects
 	@State private var addFriendPressed = false
 	@State private var addFriendScale: CGFloat = 1.0
@@ -136,10 +140,19 @@ struct ProfileView: View {
 			refreshUserData()
 		}
 		.task {
-			// Load profile data and refresh profile picture in parallel for faster loading
-			async let profileData: () = profileViewModel.loadAllProfileData(userId: user.id)
-			async let profilePictureTask: () = {
-				if let profilePictureUrl = await user.profilePicture {
+			print("📍 [NAV] ProfileView .task started for user \(user.id)")
+			let taskStartTime = Date()
+			
+			// Check if task was cancelled (user navigated away)
+			if Task.isCancelled {
+				print("⚠️ [NAV] Task cancelled before loading profile data - user navigated away")
+				return
+			}
+			
+			// CRITICAL FIX: Load profile data in background to avoid blocking navigation
+			// Profile picture can use cached version immediately
+			if let profilePictureUrl = user.profilePicture {
+				backgroundProfilePictureTask = Task.detached(priority: .background) {
 					let profilePictureCache = ProfilePictureCache.shared
 					_ = await profilePictureCache.getCachedImageWithRefresh(
 						for: user.id,
@@ -147,50 +160,80 @@ struct ProfileView: View {
 						maxAge: 6 * 60 * 60 // 6 hours
 					)
 				}
-			}()
+			}
 			
-			// Wait for parallel operations to complete
-			let _ = await (profileData, profilePictureTask)
-
-			// Initialize social media links
-			if let socialMedia = profileViewModel.userSocialMedia {
-				await MainActor.run {
-					whatsappLink = socialMedia.whatsappLink ?? ""
-					instagramLink = socialMedia.instagramLink ?? ""
-				}
-			}
-
-			// Check friendship status if not viewing own profile
-			if !isCurrentUserProfile,
-				let currentUserId = userAuth.spawnUser?.id
-			{
-				// Check if user is a RecommendedFriendUserDTO with relationship status
-				if let recommendedFriend = user as? RecommendedFriendUserDTO,
-				   recommendedFriend.relationshipStatus != nil {
-					// Use the relationship status from the DTO - no API call needed
-					await MainActor.run {
-						profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
-					}
-				} else {
-					// For other user types (BaseUserDTO, etc.), use the original API call
-					await profileViewModel.checkFriendshipStatus(
-						currentUserId: currentUserId,
-						profileUserId: user.id
-					)
-				}
-
-				// If they're friends, fetch their activities
-				if profileViewModel.friendshipStatus == .friends {
-					await profileViewModel.fetchProfileActivities(
-						profileUserId: user.id
-					)
-				}
-			}
-
-			// Determine if back button should be shown based on navigation
+			// Set back button state immediately (no async needed)
 			if !isCurrentUserProfile {
 				showBackButton = true
 			}
+			
+			let setupDuration = Date().timeIntervalSince(taskStartTime)
+			print("⏱️ [NAV] ProfileView initial setup in \(String(format: "%.3f", setupDuration))s")
+			
+			// Check if task was cancelled before starting background data load
+			if Task.isCancelled {
+				print("⚠️ [NAV] Task cancelled before starting background data load - user navigated away")
+				return
+			}
+			
+			// Load all profile data in background (non-blocking)
+			print("🔄 [NAV] ProfileView loading profile data in background")
+			backgroundDataLoadTask = Task.detached(priority: .userInitiated) {
+				let dataLoadStart = Date()
+				
+				// Load profile data
+				await profileViewModel.loadAllProfileData(userId: user.id)
+				
+				// Initialize social media links
+				if let socialMedia = await profileViewModel.userSocialMedia {
+					await MainActor.run {
+						whatsappLink = socialMedia.whatsappLink ?? ""
+						instagramLink = socialMedia.instagramLink ?? ""
+					}
+				}
+
+				// Check friendship status if not viewing own profile
+				if !isCurrentUserProfile,
+					let currentUserId = await userAuth.spawnUser?.id
+				{
+					// Check if user is a RecommendedFriendUserDTO with relationship status
+					if let recommendedFriend = user as? RecommendedFriendUserDTO,
+					   recommendedFriend.relationshipStatus != nil {
+						// Use the relationship status from the DTO - no API call needed
+						await MainActor.run {
+							profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
+						}
+					} else {
+						// For other user types (BaseUserDTO, etc.), use the original API call
+						await profileViewModel.checkFriendshipStatus(
+							currentUserId: currentUserId,
+							profileUserId: user.id
+						)
+					}
+
+					// If they're friends, fetch their activities
+					if await profileViewModel.friendshipStatus == .friends {
+						await profileViewModel.fetchProfileActivities(
+							profileUserId: user.id
+						)
+					}
+				}
+				
+				let dataLoadDuration = Date().timeIntervalSince(dataLoadStart)
+				print("✅ [NAV] ProfileView background data load completed in \(String(format: "%.2f", dataLoadDuration))s")
+			}
+		}
+		.onAppear {
+			print("👁️ [NAV] ProfileView appeared for user \(user.id)")
+		}
+		.onDisappear {
+			print("👋 [NAV] ProfileView disappearing - cancelling background tasks")
+			// Cancel any ongoing background tasks to prevent blocking
+			backgroundProfilePictureTask?.cancel()
+			backgroundProfilePictureTask = nil
+			backgroundDataLoadTask?.cancel()
+			backgroundDataLoadTask = nil
+			print("👋 [NAV] ProfileView disappeared")
 		}
 		.onChange(of: userAuth.spawnUser) { _, newUser in
 			// Update local state whenever spawnUser changes
@@ -238,31 +281,33 @@ struct ProfileView: View {
 
 	// Main content broken into a separate computed property to reduce complexity
 	private var profileContent: some View {
-		profileWithOverlay
-			.modifier(ImagePickerModifier(
-				showImagePicker: $showImagePicker,
-				selectedImage: $selectedImage,
-				isImageLoading: $isImageLoading
-			))
-			.modifier(SheetsAndAlertsModifier(
-				showActivityDetails: $showActivityDetails,
-				activityDetailsView: AnyView(activityDetailsView),
-				showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-				removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
-				showReportDialog: $showReportDialog,
-				reportUserDrawer: AnyView(reportUserDrawer),
-				showBlockDialog: $showBlockDialog,
-				blockUserAlert: AnyView(blockUserAlert),
-				showProfileMenu: $showProfileMenu,
-				profileMenuSheet: AnyView(profileMenuSheet)
-			))
-			.onTapGesture {
-				// Dismiss profile menu if it's showing
-				if showProfileMenu {
-					showProfileMenu = false
+		NavigationStack {
+			profileWithOverlay
+				.modifier(ImagePickerModifier(
+					showImagePicker: $showImagePicker,
+					selectedImage: $selectedImage,
+					isImageLoading: $isImageLoading
+				))
+				.modifier(SheetsAndAlertsModifier(
+					showActivityDetails: $showActivityDetails,
+					activityDetailsView: AnyView(activityDetailsView),
+					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+					removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
+					showReportDialog: $showReportDialog,
+					reportUserDrawer: AnyView(reportUserDrawer),
+					showBlockDialog: $showBlockDialog,
+					blockUserAlert: AnyView(blockUserAlert),
+					showProfileMenu: $showProfileMenu,
+					profileMenuSheet: AnyView(profileMenuSheet)
+				))
+				.onTapGesture {
+					// Dismiss profile menu if it's showing
+					if showProfileMenu {
+						showProfileMenu = false
+					}
 				}
-			}
-			.background(universalBackgroundColor)
+				.background(universalBackgroundColor)
+		}
 	}
 
 	private var profileWithOverlay: some View {

@@ -14,7 +14,7 @@ struct FriendActivitiesShowAllView: View {
     @StateObject private var locationManager = LocationManager()
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 // Background
                 universalBackgroundColor
@@ -38,17 +38,14 @@ struct FriendActivitiesShowAllView: View {
                         .padding(.bottom, 16) // Standard bottom padding
                     }
                 }
-                
-                // Hidden NavigationLink for calendar
-                EmptyView()
             }
-        }
-        .navigationBarHidden(true)
-        .sheet(isPresented: $showActivityDetails) {
-            activityDetailsView
-        }
-        .navigationDestination(isPresented: $navigateToCalendar) {
-            friendCalendarFullScreenView
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showActivityDetails) {
+                activityDetailsView
+            }
+            .navigationDestination(isPresented: $navigateToCalendar) {
+                friendCalendarFullScreenView
+            }
         }
         .onAppear {
             Task {

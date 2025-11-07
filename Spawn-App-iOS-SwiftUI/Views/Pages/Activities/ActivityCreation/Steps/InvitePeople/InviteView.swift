@@ -92,6 +92,11 @@ struct InviteView: View {
                 friendsViewModel.connectSearchViewModel(searchViewModel)
             }
             .task {
+				// Check if task was cancelled (user navigated away)
+				if Task.isCancelled {
+					return
+				}
+				
                 if appCache.friends.isEmpty {
                     await friendsViewModel.fetchAllData()
                 } else {

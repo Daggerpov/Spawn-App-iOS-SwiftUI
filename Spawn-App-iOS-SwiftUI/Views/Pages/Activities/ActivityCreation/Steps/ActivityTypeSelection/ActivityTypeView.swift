@@ -14,6 +14,8 @@ struct ActivityTypeView: View {
     @State private var showDeleteConfirmation = false
     @State private var activityTypeToDelete: ActivityTypeDTO?
     
+    // Store background refresh task so we can cancel it on disappear
+    @State private var backgroundRefreshTask: Task<Void, Never>?
     
     // Initialize the view model with userId
     init(selectedActivityType: Binding<ActivityTypeDTO?>, onNext: @escaping () -> Void) {
@@ -57,7 +59,68 @@ struct ActivityTypeView: View {
                 Spacer()
             }
             .task {
-                await viewModel.fetchActivityTypes()
+                print("📍 [NAV] ActivityTypeView .task started")
+                let taskStartTime = Date()
+                
+                // CRITICAL FIX: Load cached data immediately to unblock UI
+                // This prevents the UI from hanging while waiting for API calls
+                
+                // Load cached data synchronously first (fast, non-blocking)
+                let cacheLoadStart = Date()
+                let cachedActivityTypes = AppCache.shared.activityTypes
+                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+                
+                print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+                print("   Activity Types: \(cachedActivityTypes.count)")
+                
+                // Check if task was cancelled (user navigated away)
+                if Task.isCancelled {
+                    print("⚠️ [NAV] Task cancelled before applying cached data - user navigated away")
+                    return
+                }
+                
+                // Apply cached data to view model immediately
+                await MainActor.run {
+                    let applyStart = Date()
+                    
+                    if !cachedActivityTypes.isEmpty {
+                        viewModel.activityTypes = cachedActivityTypes
+                        print("✅ [NAV] Applied \(cachedActivityTypes.count) cached activity types to UI")
+                    } else {
+                        print("⚠️ [NAV] No cached activity types available")
+                    }
+                    
+                    let applyDuration = Date().timeIntervalSince(applyStart)
+                    let totalDuration = Date().timeIntervalSince(taskStartTime)
+                    print("⏱️ [NAV] UI update took \(String(format: "%.3f", applyDuration))s, total: \(String(format: "%.3f", totalDuration))s")
+                }
+                
+                // Check if task was cancelled before starting background refresh
+                if Task.isCancelled {
+                    print("⚠️ [NAV] Task cancelled before starting background refresh - user navigated away")
+                    return
+                }
+                
+                // Refresh from API in background (non-blocking)
+                // Store the task so we can cancel it if user navigates away
+                print("🔄 [NAV] Starting background refresh for activity types")
+                backgroundRefreshTask = Task.detached(priority: .userInitiated) {
+                    let refreshStart = Date()
+                    await viewModel.fetchActivityTypes(forceRefresh: true)
+                    let refreshDuration = Date().timeIntervalSince(refreshStart)
+                    print("⏱️ [NAV] Activity types refresh took \(String(format: "%.2f", refreshDuration))s")
+                    print("✅ [NAV] Background refresh completed")
+                }
+            }
+            .onAppear {
+                print("👁️ [NAV] ActivityTypeView appeared")
+            }
+            .onDisappear {
+                print("👋 [NAV] ActivityTypeView disappearing - cancelling background tasks")
+                // Cancel any ongoing background refresh to prevent blocking
+                backgroundRefreshTask?.cancel()
+                backgroundRefreshTask = nil
+                print("👋 [NAV] ActivityTypeView disappeared")
             }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
                 Button("OK") {

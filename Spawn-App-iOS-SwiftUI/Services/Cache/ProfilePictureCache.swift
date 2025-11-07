@@ -31,6 +31,11 @@ class ProfilePictureCache: ObservableObject {
     private var downloadingImages: Set<String> = []
     private let downloadingQueue = DispatchQueue(label: "ProfilePictureCache.downloading", attributes: .concurrent)
     
+    // Track failed download URLs to avoid repeated failures
+    private var failedDownloads: [String: Date] = [:]
+    private let failedDownloadsQueue = DispatchQueue(label: "ProfilePictureCache.failedDownloads", attributes: .concurrent)
+    private let failedDownloadCooldown: TimeInterval = 5 * 60 // 5 minutes before retry
+    
     // MARK: - Initialization
     private init() {
         // Create cache directory
@@ -60,6 +65,7 @@ class ProfilePictureCache: ObservableObject {
         
         // Check memory cache first
         if let image = memoryCache.object(forKey: key as NSString) {
+            // Cache hit in memory - very fast
             return image
         }
         
@@ -69,9 +75,11 @@ class ProfilePictureCache: ObservableObject {
         guard fileManager.fileExists(atPath: fileURL.path),
               let imageData = try? Data(contentsOf: fileURL),
               let image = UIImage(data: imageData) else {
+            // Cache miss
             return nil
         }
         
+        // Cache hit on disk - slower but still fast
         // Store in memory cache for next time
         memoryCache.setObject(image, forKey: key as NSString)
         
@@ -104,6 +112,12 @@ class ProfilePictureCache: ObservableObject {
             return cachedImage
         }
         
+        // Check if this URL recently failed and is in cooldown
+        if !forceRefresh && isInFailureCooldown(urlString) {
+            // Return cached image if available during cooldown
+            return getCachedImage(for: userId)
+        }
+        
         // Check if already downloading
         if isDownloading(key) {
             // Wait for the download to complete
@@ -120,37 +134,96 @@ class ProfilePictureCache: ObservableObject {
         
         guard let url = URL(string: urlString) else {
             print("Failed to create URL from string: \(urlString) for user \(userId)")
+            markDownloadFailed(urlString)
             return nil
         }
         
         // Validate that the URL is a proper HTTP/HTTPS URL
         guard url.scheme == "http" || url.scheme == "https" else {
             print("Invalid URL scheme for profile picture: \(urlString) for user \(userId). Only HTTP/HTTPS URLs are supported.")
+            markDownloadFailed(urlString)
             return nil
         }
         
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            
-            guard let image = UIImage(data: data) else {
-                print("Failed to create image from downloaded data for user \(userId)")
-                return nil
+        // Try download with retry mechanism
+        return await downloadWithRetry(url: url, urlString: urlString, userId: userId, forceRefresh: forceRefresh, maxRetries: 2)
+    }
+    
+    /// Download with exponential backoff retry mechanism
+    private func downloadWithRetry(url: URL, urlString: String, userId: UUID, forceRefresh: Bool, maxRetries: Int) async -> UIImage? {
+        var lastError: Error?
+        let startTime = Date()
+        
+        for attempt in 0...maxRetries {
+            do {
+                // Exponential backoff: 0s, 1s, 2s
+                if attempt > 0 {
+                    let delay = UInt64(attempt * 1_000_000_000) // Convert to nanoseconds
+                    try? await Task.sleep(nanoseconds: delay)
+                    print("🔄 [PROFILE PIC] Retry attempt \(attempt)/\(maxRetries) for user \(userId)")
+                }
+                
+                let downloadStartTime = Date()
+                let (data, response) = try await URLSession.shared.data(from: url)
+                let downloadDuration = Date().timeIntervalSince(downloadStartTime)
+                
+                // Log HTTP response for debugging
+                if let httpResponse = response as? HTTPURLResponse {
+                    if httpResponse.statusCode != 200 {
+                        print("⚠️ [PROFILE PIC] HTTP \(httpResponse.statusCode) for user \(userId)")
+                        if httpResponse.statusCode >= 400 && httpResponse.statusCode < 500 {
+                            // Client error - don't retry
+                            markDownloadFailed(urlString)
+                            break
+                        }
+                        continue // Server error - retry
+                    }
+                }
+                
+                guard let image = UIImage(data: data) else {
+                    print("❌ [PROFILE PIC] Failed to create image from data for user \(userId)")
+                    // Return cached image as fallback if available
+                    return getCachedImage(for: userId)
+                }
+                
+                // Success! Clear any failure record
+                clearDownloadFailure(urlString)
+                
+                let totalDuration = Date().timeIntervalSince(startTime)
+                if totalDuration > 1.0 {
+                    print("⏱️ [PROFILE PIC] Download took \(String(format: "%.2f", downloadDuration))s (total: \(String(format: "%.2f", totalDuration))s) for user \(userId)")
+                }
+                
+                // If force refresh, remove old cached image first
+                if forceRefresh {
+                    removeCachedImage(for: userId)
+                }
+                
+                // Cache the image
+                cacheImage(image, for: userId)
+                
+                return image
+                
+            } catch {
+                lastError = error
+                if attempt == maxRetries {
+                    print("❌ [PROFILE PIC] All retry attempts failed for user \(userId)")
+                    print("   URL: \(urlString)")
+                    print("   Final Error: \(error.localizedDescription)")
+                    if let urlError = error as? URLError {
+                        print("   URLError code: \(urlError.code.rawValue)")
+                    }
+                    markDownloadFailed(urlString)
+                }
             }
-            
-            // If force refresh, remove old cached image first
-            if forceRefresh {
-                removeCachedImage(for: userId)
-            }
-            
-            // Cache the image
-            cacheImage(image, for: userId)
-            
-            return image
-            
-        } catch {
-            print("Failed to download profile picture for user \(userId): \(error.localizedDescription)")
-            return nil
         }
+        
+        // All retries failed - return cached image as fallback
+        if let cachedImage = getCachedImage(for: userId) {
+            print("✅ [PROFILE PIC] Using stale cached image as fallback for user \(userId)")
+            return cachedImage
+        }
+        return nil
     }
     
     /// Remove cached image for a user ID
@@ -222,21 +295,32 @@ class ProfilePictureCache: ObservableObject {
     }
     
     /// Get the cached image with automatic staleness check and refresh
+    /// CRITICAL FIX: Returns cached image immediately even if stale, then refreshes in background
     func getCachedImageWithRefresh(for userId: UUID, from urlString: String?, maxAge: TimeInterval = 24 * 60 * 60) async -> UIImage? {
         // First try to get from cache
         if let cachedImage = getCachedImage(for: userId) {
             // Check if it's stale
             if !isProfilePictureStale(for: userId, maxAge: maxAge) {
+                // Fresh cache - return immediately
+                return cachedImage
+            } else {
+                // CRITICAL FIX: Return cached image immediately, refresh in background
+                // This prevents UI blocking while downloading
+                if let urlString = urlString {
+                    Task.detached(priority: .background) {
+                        _ = await self.downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
+                    }
+                }
                 return cachedImage
             }
         }
         
-        // If no cached image or it's stale, download fresh
+        // No cached image - must download
         guard let urlString = urlString else {
-            return getCachedImage(for: userId) // Return cached if no URL provided
+            return nil
         }
         
-        return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
+        return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: false)
     }
     
     /// Get cache size in bytes
@@ -272,6 +356,28 @@ class ProfilePictureCache: ObservableObject {
     private func stopDownloading(_ key: String) {
         downloadingQueue.async(flags: .barrier) {
             self.downloadingImages.remove(key)
+        }
+    }
+    
+    // MARK: - Failed Downloads Tracking
+    
+    private func isInFailureCooldown(_ urlString: String) -> Bool {
+        return failedDownloadsQueue.sync {
+            guard let failureDate = failedDownloads[urlString] else { return false }
+            let timeSinceFailure = Date().timeIntervalSince(failureDate)
+            return timeSinceFailure < failedDownloadCooldown
+        }
+    }
+    
+    private func markDownloadFailed(_ urlString: String) {
+        failedDownloadsQueue.async(flags: .barrier) {
+            self.failedDownloads[urlString] = Date()
+        }
+    }
+    
+    private func clearDownloadFailure(_ urlString: String) {
+        failedDownloadsQueue.async(flags: .barrier) {
+            self.failedDownloads.removeValue(forKey: urlString)
         }
     }
     

@@ -142,16 +142,12 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
         if let userId = UserAuthViewModel.shared.spawnUser?.id,
            let url = URL(string: "\(APIService.baseURL)notifications/device-tokens/register") {
             
-            print("[PUSH DEBUG] Preparing to send device token to backend URL: \(url)")
-            
             // Create device token DTO
             let deviceTokenDTO = DeviceTokenDTO(
                 token: token,
                 deviceType: "IOS",
                 userId: userId
             )
-            
-            print("[PUSH DEBUG] Device token payload: token=\(token), deviceType=IOS, userId=\(userId)")
             
             Task {
                 do {

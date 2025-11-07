@@ -32,6 +32,9 @@ struct FriendsTabView: View {
 	@State private var selectedFriend: FullFriendUserDTO?
 	@State private var blockReason: String = ""
 	@State private var navigateToProfile: Bool = false
+	
+	// Store background refresh task so we can cancel it on disappear
+	@State private var backgroundRefreshTask: Task<Void, Never>?
 
 	init(user: BaseUserDTO, viewModel: FriendsTabViewModel? = nil) {
 		self.user = user
@@ -70,18 +73,104 @@ struct FriendsTabView: View {
                 .padding(.bottom, 60) // Add bottom padding to ensure last friend shows fully above nav bar
 			}
 			.task {
-				// Ensure cache is aligned with API on entry
-				await AppCache.shared.forceRefreshAllFriendRequests()
-				await viewModel.fetchAllData()
-				viewModel.connectSearchViewModel(searchViewModel)
+				print("📍 [NAV] FriendsTabView .task started")
+				let taskStartTime = Date()
+				
+				// CRITICAL FIX: Load cached data immediately to unblock UI
+				// This prevents the UI from hanging while waiting for API calls
+				
+				// Load cached data synchronously first (fast, non-blocking)
+				let cacheLoadStart = Date()
+				let cachedFriends = AppCache.shared.getCurrentUserFriends()
+				let cachedRecommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
+				let cachedIncomingRequests = AppCache.shared.getCurrentUserFriendRequests()
+				let cachedOutgoingRequests = AppCache.shared.getCurrentUserSentFriendRequests()
+				let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+				
+				print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+				print("   Friends: \(cachedFriends.count), Recommended: \(cachedRecommendedFriends.count)")
+				print("   Incoming Requests: \(cachedIncomingRequests.count), Outgoing: \(cachedOutgoingRequests.count)")
+				
+				// Check if task was cancelled (user navigated away)
+				if Task.isCancelled {
+					print("⚠️ [NAV] Task cancelled before applying cached data - user navigated away")
+					return
+				}
+				
+				// Apply cached data to view model immediately
+				await MainActor.run {
+					let applyStart = Date()
+					
+					if !cachedFriends.isEmpty {
+						viewModel.friends = cachedFriends
+						viewModel.filteredFriends = cachedFriends
+						print("✅ [NAV] Applied \(cachedFriends.count) cached friends to UI")
+					} else {
+						print("⚠️ [NAV] No cached friends available")
+					}
+					
+					if !cachedRecommendedFriends.isEmpty {
+						viewModel.recommendedFriends = cachedRecommendedFriends
+						viewModel.filteredRecommendedFriends = cachedRecommendedFriends
+						print("✅ [NAV] Applied \(cachedRecommendedFriends.count) recommended friends to UI")
+					}
+					
+					if !cachedIncomingRequests.isEmpty {
+						viewModel.incomingFriendRequests = cachedIncomingRequests
+						viewModel.filteredIncomingFriendRequests = cachedIncomingRequests
+						print("✅ [NAV] Applied \(cachedIncomingRequests.count) incoming requests to UI")
+					}
+					
+					if !cachedOutgoingRequests.isEmpty {
+						viewModel.outgoingFriendRequests = cachedOutgoingRequests
+						viewModel.filteredOutgoingFriendRequests = cachedOutgoingRequests
+						print("✅ [NAV] Applied \(cachedOutgoingRequests.count) outgoing requests to UI")
+					}
+					
+					viewModel.connectSearchViewModel(searchViewModel)
+					
+					let applyDuration = Date().timeIntervalSince(applyStart)
+					let totalDuration = Date().timeIntervalSince(taskStartTime)
+					print("⏱️ [NAV] UI update took \(String(format: "%.3f", applyDuration))s, total: \(String(format: "%.3f", totalDuration))s")
+				}
+				
+				// Check if task was cancelled before starting background refresh
+				if Task.isCancelled {
+					print("⚠️ [NAV] Task cancelled before starting background refresh - user navigated away")
+					return
+				}
+				
+				// Refresh from API in background (non-blocking)
+				// Store the task so we can cancel it if user navigates away
+				print("🔄 [NAV] Starting background refresh for friends data")
+				backgroundRefreshTask = Task.detached(priority: .userInitiated) {
+					let refreshStart = Date()
+					await AppCache.shared.forceRefreshAllFriendRequests()
+					let requestsRefreshDuration = Date().timeIntervalSince(refreshStart)
+					print("⏱️ [NAV] Friend requests refresh took \(String(format: "%.2f", requestsRefreshDuration))s")
+					
+					let fetchStart = Date()
+					await viewModel.fetchAllData()
+					let fetchDuration = Date().timeIntervalSince(fetchStart)
+					print("⏱️ [NAV] fetchAllData took \(String(format: "%.2f", fetchDuration))s")
+					print("✅ [NAV] Background refresh completed")
+				}
+			}
+			.onAppear {
+				print("👁️ [NAV] FriendsTabView appeared")
+			}
+			.onDisappear {
+				print("👋 [NAV] FriendsTabView disappearing - cancelling background tasks")
+				// Cancel any ongoing background refresh to prevent blocking
+				backgroundRefreshTask?.cancel()
+				backgroundRefreshTask = nil
+				print("👋 [NAV] FriendsTabView disappeared")
 			}
             .refreshable {
-                // Pull to refresh functionality
-                Task {
-                    await AppCache.shared.refreshFriends()
-                    await AppCache.shared.forceRefreshAllFriendRequests()
-                    await viewModel.fetchAllData()
-                }
+                // Pull to refresh functionality - user-initiated refresh
+                await AppCache.shared.refreshFriends()
+                await AppCache.shared.forceRefreshAllFriendRequests()
+                await viewModel.fetchAllData()
             }
 			.sheet(isPresented: $showProfileMenu) {
 				if let selectedFriend = selectedFriend {

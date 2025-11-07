@@ -62,6 +62,8 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
             return
         }
         
+        let loadStartTime = Date()
+        
         // Start loading
         isLoading = true
         
@@ -73,11 +75,16 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 maxAge: 6 * 60 * 60 // 6 hours for more frequent updates
             )
             
+            let loadDuration = Date().timeIntervalSince(loadStartTime)
+            
             await MainActor.run {
                 isLoading = false
                 image = downloadedImage
                 if downloadedImage == nil {
+                    print("❌ [UI] CachedAsyncImage failed to load for user \(userId)")
                     loadError = NSError(domain: "CachedAsyncImage", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to download image"])
+                } else if loadDuration > 1.0 {
+                    print("⏱️ [UI] CachedAsyncImage loaded in \(String(format: "%.2f", loadDuration))s for user \(userId)")
                 }
             }
         }
