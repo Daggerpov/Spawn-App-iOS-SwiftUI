@@ -10,7 +10,7 @@ import Combine
 import SwiftUI
 
 /// Central coordinator for all cache services
-/// Maintains backward compatibility with the original AppCache interface
+/// Orchestrates cache validation, refresh operations, and cross-service coordination
 class CacheCoordinator: ObservableObject {
     static let shared = CacheCoordinator()
     

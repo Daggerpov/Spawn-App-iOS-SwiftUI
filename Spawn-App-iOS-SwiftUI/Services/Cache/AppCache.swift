@@ -5,8 +5,9 @@
 //  Created by Daniel Agapov on 2025-04-20.
 //  Refactored by Daniel Agapov on 2025-11-07.
 //
-//  NOTE: This class now serves as a facade/wrapper around domain-specific cache services.
-//  All actual caching logic is handled by:
+//  Pure facade/wrapper around the CacheCoordinator and domain-specific cache services.
+//  This class provides a convenient interface for accessing cache functionality without
+//  maintaining duplicate state. All data is stored and published by the domain services:
 //  - ActivityCacheService (activities, activityTypes)
 //  - FriendshipCacheService (friends, recommendedFriends, friendRequests, sentFriendRequests)
 //  - ProfileCacheService (otherProfiles, profileStats, profileInterests, profileSocialMedia, profileActivities)
@@ -15,10 +16,9 @@
 
 import Foundation
 import SwiftUI
-import Combine
 
-/// A singleton cache manager that stores app data locally and checks for invalidation on app launch
-/// This class maintains backward compatibility by delegating to domain-specific cache services
+/// A singleton cache manager facade that provides convenient access to all cache services
+/// Conforms to ObservableObject for SwiftUI compatibility, but all reactive state is managed by the underlying cache services
 class AppCache: ObservableObject {
     static let shared = AppCache()
     
@@ -28,84 +28,61 @@ class AppCache: ObservableObject {
     private let friendshipCacheService = FriendshipCacheService.shared
     private let profileCacheService = ProfileCacheService.shared
     
-    // MARK: - Cancellables for syncing
-    private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Published Properties (Synced with underlying cache services)
-    
-    // Activity-related data
-    @Published var activities: [UUID: [FullFeedActivityDTO]] = [:]
-    @Published var activityTypes: [ActivityTypeDTO] = []
-    
-    // Friendship-related data
-    @Published var friends: [UUID: [FullFriendUserDTO]] = [:]
-    @Published var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] = [:]
-    @Published var friendRequests: [UUID: [FetchFriendRequestDTO]] = [:]
-    @Published var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]
-    
-    // Profile-related data
-    @Published var otherProfiles: [UUID: BaseUserDTO] = [:]
-    @Published var profileStats: [UUID: UserStatsDTO] = [:]
-    @Published var profileInterests: [UUID: [String]] = [:]
-    @Published var profileSocialMedia: [UUID: UserSocialMediaDTO] = [:]
-    @Published var profileActivities: [UUID: [ProfileActivityDTO]] = [:]
-    
     // MARK: - Initialization
     
     private init() {
         // Cache services initialize themselves
         coordinator.initialize()
-        
-        // Set up two-way sync between AppCache and cache services
-        setupSyncWithCacheServices()
     }
     
-    /// Set up bidirectional sync between AppCache @Published properties and cache service @Published properties
-    private func setupSyncWithCacheServices() {
-        // Sync from cache services to AppCache (one-way for now to avoid loops)
-        activityCacheService.$activities
-            .assign(to: \.activities, on: self)
-            .store(in: &cancellables)
-        
-        activityCacheService.$activityTypes
-            .assign(to: \.activityTypes, on: self)
-            .store(in: &cancellables)
-        
-        friendshipCacheService.$friends
-            .assign(to: \.friends, on: self)
-            .store(in: &cancellables)
-        
-        friendshipCacheService.$recommendedFriends
-            .assign(to: \.recommendedFriends, on: self)
-            .store(in: &cancellables)
-        
-        friendshipCacheService.$friendRequests
-            .assign(to: \.friendRequests, on: self)
-            .store(in: &cancellables)
-        
-        friendshipCacheService.$sentFriendRequests
-            .assign(to: \.sentFriendRequests, on: self)
-            .store(in: &cancellables)
-        
-        profileCacheService.$otherProfiles
-            .assign(to: \.otherProfiles, on: self)
-            .store(in: &cancellables)
-        
-        profileCacheService.$profileStats
-            .assign(to: \.profileStats, on: self)
-            .store(in: &cancellables)
-        
-        profileCacheService.$profileInterests
-            .assign(to: \.profileInterests, on: self)
-            .store(in: &cancellables)
-        
-        profileCacheService.$profileSocialMedia
-            .assign(to: \.profileSocialMedia, on: self)
-            .store(in: &cancellables)
-        
-        profileCacheService.$profileActivities
-            .assign(to: \.profileActivities, on: self)
-            .store(in: &cancellables)
+    // MARK: - Computed Properties (Read-only access to cache service data)
+    
+    // Activity-related data
+    var activities: [UUID: [FullFeedActivityDTO]] {
+        activityCacheService.activities
+    }
+    
+    var activityTypes: [ActivityTypeDTO] {
+        get { activityCacheService.activityTypes }
+        set { activityCacheService.activityTypes = newValue }
+    }
+    
+    // Friendship-related data
+    var friends: [UUID: [FullFriendUserDTO]] {
+        friendshipCacheService.friends
+    }
+    
+    var recommendedFriends: [UUID: [RecommendedFriendUserDTO]] {
+        friendshipCacheService.recommendedFriends
+    }
+    
+    var friendRequests: [UUID: [FetchFriendRequestDTO]] {
+        friendshipCacheService.friendRequests
+    }
+    
+    var sentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] {
+        friendshipCacheService.sentFriendRequests
+    }
+    
+    // Profile-related data
+    var otherProfiles: [UUID: BaseUserDTO] {
+        profileCacheService.otherProfiles
+    }
+    
+    var profileStats: [UUID: UserStatsDTO] {
+        profileCacheService.profileStats
+    }
+    
+    var profileInterests: [UUID: [String]] {
+        profileCacheService.profileInterests
+    }
+    
+    var profileSocialMedia: [UUID: UserSocialMediaDTO] {
+        profileCacheService.profileSocialMedia
+    }
+    
+    var profileActivities: [UUID: [ProfileActivityDTO]] {
+        profileCacheService.profileActivities
     }
     
     // MARK: - Public Methods
