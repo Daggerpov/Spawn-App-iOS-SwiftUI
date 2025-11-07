@@ -63,11 +63,16 @@ class ProfilePictureCache: ObservableObject {
     func getCachedImage(for userId: UUID) -> UIImage? {
         let key = userId.uuidString
         
+        print("🔍 [CACHE] getCachedImage for user \(userId)")
+        
         // Check memory cache first
         if let image = memoryCache.object(forKey: key as NSString) {
             // Cache hit in memory - very fast
+            print("✅ [CACHE] Memory cache HIT for user \(userId)")
             return image
         }
+        
+        print("⚠️ [CACHE] Memory cache MISS for user \(userId), checking disk...")
         
         // Check disk cache
         let fileURL = cacheDirectory.appendingPathComponent("\(key).jpg")
@@ -76,11 +81,14 @@ class ProfilePictureCache: ObservableObject {
               let imageData = try? Data(contentsOf: fileURL),
               let image = UIImage(data: imageData) else {
             // Cache miss
+            print("❌ [CACHE] Disk cache MISS for user \(userId). File path: \(fileURL.path)")
+            print("   File exists: \(fileManager.fileExists(atPath: fileURL.path))")
             return nil
         }
         
         // Cache hit on disk - slower but still fast
         // Store in memory cache for next time
+        print("✅ [CACHE] Disk cache HIT for user \(userId), storing in memory")
         memoryCache.setObject(image, forKey: key as NSString)
         
         // Update access time
@@ -107,19 +115,26 @@ class ProfilePictureCache: ObservableObject {
     func downloadAndCacheImage(from urlString: String, for userId: UUID, forceRefresh: Bool = false) async -> UIImage? {
         let key = userId.uuidString
         
+        print("🌐 [CACHE] downloadAndCacheImage called for user \(userId)")
+        print("   URL: \(urlString)")
+        print("   Force refresh: \(forceRefresh)")
+        
         // Check if already cached (skip if force refresh is requested)
         if !forceRefresh, let cachedImage = getCachedImage(for: userId) {
+            print("✅ [CACHE] Using cached image for user \(userId)")
             return cachedImage
         }
         
         // Check if this URL recently failed and is in cooldown
         if !forceRefresh && isInFailureCooldown(urlString) {
+            print("⏸️ [CACHE] URL in cooldown for user \(userId), returning cached if available")
             // Return cached image if available during cooldown
             return getCachedImage(for: userId)
         }
         
         // Check if already downloading
         if isDownloading(key) {
+            print("⏳ [CACHE] Already downloading for user \(userId), waiting...")
             // Wait for the download to complete
             while isDownloading(key) {
                 try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
@@ -129,18 +144,19 @@ class ProfilePictureCache: ObservableObject {
         }
         
         // Start download
+        print("⬇️ [CACHE] Starting download for user \(userId)")
         startDownloading(key)
         defer { stopDownloading(key) }
         
         guard let url = URL(string: urlString) else {
-            print("Failed to create URL from string: \(urlString) for user \(userId)")
+            print("❌ [CACHE] Failed to create URL from string: \(urlString) for user \(userId)")
             markDownloadFailed(urlString)
             return nil
         }
         
         // Validate that the URL is a proper HTTP/HTTPS URL
         guard url.scheme == "http" || url.scheme == "https" else {
-            print("Invalid URL scheme for profile picture: \(urlString) for user \(userId). Only HTTP/HTTPS URLs are supported.")
+            print("❌ [CACHE] Invalid URL scheme for profile picture: \(urlString) for user \(userId). Only HTTP/HTTPS URLs are supported.")
             markDownloadFailed(urlString)
             return nil
         }
@@ -297,15 +313,24 @@ class ProfilePictureCache: ObservableObject {
     /// Get the cached image with automatic staleness check and refresh
     /// CRITICAL FIX: Returns cached image immediately even if stale, then refreshes in background
     func getCachedImageWithRefresh(for userId: UUID, from urlString: String?, maxAge: TimeInterval = 24 * 60 * 60) async -> UIImage? {
+        print("🔄 [CACHE] getCachedImageWithRefresh for user \(userId)")
+        print("   URL: \(urlString ?? "nil")")
+        print("   Max age: \(maxAge)s")
+        
         // First try to get from cache
         if let cachedImage = getCachedImage(for: userId) {
             // Check if it's stale
-            if !isProfilePictureStale(for: userId, maxAge: maxAge) {
+            let isStale = isProfilePictureStale(for: userId, maxAge: maxAge)
+            print("   Cached image found. Is stale: \(isStale)")
+            
+            if !isStale {
                 // Fresh cache - return immediately
+                print("✅ [CACHE] Returning fresh cached image for user \(userId)")
                 return cachedImage
             } else {
                 // CRITICAL FIX: Return cached image immediately, refresh in background
                 // This prevents UI blocking while downloading
+                print("⚠️ [CACHE] Cached image is stale for user \(userId), returning stale image and refreshing in background")
                 if let urlString = urlString {
                     Task.detached(priority: .background) {
                         _ = await self.downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
@@ -316,7 +341,9 @@ class ProfilePictureCache: ObservableObject {
         }
         
         // No cached image - must download
+        print("❌ [CACHE] No cached image for user \(userId), downloading...")
         guard let urlString = urlString else {
+            print("❌ [CACHE] No URL provided for user \(userId), cannot download")
             return nil
         }
         

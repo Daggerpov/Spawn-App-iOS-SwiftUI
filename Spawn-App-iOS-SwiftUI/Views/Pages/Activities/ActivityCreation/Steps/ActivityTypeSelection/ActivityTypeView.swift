@@ -65,35 +65,18 @@ struct ActivityTypeView: View {
                 // CRITICAL FIX: Load cached data immediately to unblock UI
                 // This prevents the UI from hanging while waiting for API calls
                 
-                // Load cached data synchronously first (fast, non-blocking)
+                // Load cached data through view model (fast, non-blocking)
                 let cacheLoadStart = Date()
-                let cachedActivityTypes = AppCache.shared.activityTypes
+                let activityTypesCount: Int = await MainActor.run {
+                    viewModel.loadCachedActivityTypes()
+                    return viewModel.activityTypes.count
+                }
                 let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
                 
                 print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
-                print("   Activity Types: \(cachedActivityTypes.count)")
-                
-                // Check if task was cancelled (user navigated away)
-                if Task.isCancelled {
-                    print("⚠️ [NAV] Task cancelled before applying cached data - user navigated away")
-                    return
-                }
-                
-                // Apply cached data to view model immediately
-                await MainActor.run {
-                    let applyStart = Date()
-                    
-                    if !cachedActivityTypes.isEmpty {
-                        viewModel.activityTypes = cachedActivityTypes
-                        print("✅ [NAV] Applied \(cachedActivityTypes.count) cached activity types to UI")
-                    } else {
-                        print("⚠️ [NAV] No cached activity types available")
-                    }
-                    
-                    let applyDuration = Date().timeIntervalSince(applyStart)
-                    let totalDuration = Date().timeIntervalSince(taskStartTime)
-                    print("⏱️ [NAV] UI update took \(String(format: "%.3f", applyDuration))s, total: \(String(format: "%.3f", totalDuration))s")
-                }
+                print("   Activity Types: \(activityTypesCount)")
+                print("⏱️ [NAV] UI update took \(String(format: "%.3f", totalDuration))s")
                 
                 // Check if task was cancelled before starting background refresh
                 if Task.isCancelled {

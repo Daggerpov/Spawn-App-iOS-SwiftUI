@@ -272,6 +272,44 @@ class FriendsTabViewModel: ObservableObject {
         await fetchRecommendedFriends()
     }
 
+    /// Loads cached friends data immediately (synchronous, fast, non-blocking)
+    /// Call this before fetchAllData() to show cached data instantly
+    @MainActor
+    func loadCachedData() {
+        let cachedFriends = appCache.getCurrentUserFriends()
+        let cachedRecommendedFriends = appCache.getCurrentUserRecommendedFriends()
+        let cachedIncomingRequests = appCache.getCurrentUserFriendRequests()
+        let cachedOutgoingRequests = appCache.getCurrentUserSentFriendRequests()
+        
+        if !cachedFriends.isEmpty {
+            self.friends = cachedFriends
+            print("✅ FriendsTabViewModel: Loaded \(cachedFriends.count) friends from cache")
+        }
+        if !cachedRecommendedFriends.isEmpty {
+            self.recommendedFriends = cachedRecommendedFriends
+            print("✅ FriendsTabViewModel: Loaded \(cachedRecommendedFriends.count) recommended friends from cache")
+        }
+        if !cachedIncomingRequests.isEmpty {
+            self.incomingFriendRequests = cachedIncomingRequests
+            print("✅ FriendsTabViewModel: Loaded \(cachedIncomingRequests.count) incoming requests from cache")
+        }
+        if !cachedOutgoingRequests.isEmpty {
+            self.outgoingFriendRequests = cachedOutgoingRequests
+            print("✅ FriendsTabViewModel: Loaded \(cachedOutgoingRequests.count) outgoing requests from cache")
+        }
+        
+        // Initialize filtered lists
+        self.filteredFriends = self.friends
+        self.filteredRecommendedFriends = self.recommendedFriends
+        self.filteredIncomingFriendRequests = self.incomingFriendRequests
+        self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
+        
+        if cachedFriends.isEmpty && cachedRecommendedFriends.isEmpty && 
+           cachedIncomingRequests.isEmpty && cachedOutgoingRequests.isEmpty {
+            print("⚠️ FriendsTabViewModel: No cached data available")
+        }
+    }
+
 	func fetchAllData() async {
         print("🔄 [VM] FriendsTabViewModel.fetchAllData started")
         let startTime = Date()

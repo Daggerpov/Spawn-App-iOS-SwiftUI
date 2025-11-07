@@ -72,13 +72,12 @@ struct InviteFriendsView: View {
 				}
 			}
 		} else {
-			// Use cached friends data
-			friendsViewModel.friends = AppCache.shared.getCurrentUserFriends()
-			friendsViewModel.filteredFriends = AppCache.shared.getCurrentUserFriends()
+			// Load cached friends data through view model
+			friendsViewModel.loadCachedData()
 			
 			// Automatically select all friends if not already selected
 			if activityCreationViewModel.selectedFriends.isEmpty {
-				activityCreationViewModel.selectedFriends = AppCache.shared.getCurrentUserFriends()
+				activityCreationViewModel.selectedFriends = friendsViewModel.friends
 			}
 		}
 	}

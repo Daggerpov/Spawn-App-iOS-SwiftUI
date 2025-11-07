@@ -79,60 +79,17 @@ struct FriendsTabView: View {
 				// CRITICAL FIX: Load cached data immediately to unblock UI
 				// This prevents the UI from hanging while waiting for API calls
 				
-				// Load cached data synchronously first (fast, non-blocking)
-				let cacheLoadStart = Date()
-				let cachedFriends = AppCache.shared.getCurrentUserFriends()
-				let cachedRecommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
-				let cachedIncomingRequests = AppCache.shared.getCurrentUserFriendRequests()
-				let cachedOutgoingRequests = AppCache.shared.getCurrentUserSentFriendRequests()
-				let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
-				
-				print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
-				print("   Friends: \(cachedFriends.count), Recommended: \(cachedRecommendedFriends.count)")
-				print("   Incoming Requests: \(cachedIncomingRequests.count), Outgoing: \(cachedOutgoingRequests.count)")
-				
-				// Check if task was cancelled (user navigated away)
-				if Task.isCancelled {
-					print("⚠️ [NAV] Task cancelled before applying cached data - user navigated away")
-					return
-				}
-				
-				// Apply cached data to view model immediately
-				await MainActor.run {
-					let applyStart = Date()
-					
-					if !cachedFriends.isEmpty {
-						viewModel.friends = cachedFriends
-						viewModel.filteredFriends = cachedFriends
-						print("✅ [NAV] Applied \(cachedFriends.count) cached friends to UI")
-					} else {
-						print("⚠️ [NAV] No cached friends available")
-					}
-					
-					if !cachedRecommendedFriends.isEmpty {
-						viewModel.recommendedFriends = cachedRecommendedFriends
-						viewModel.filteredRecommendedFriends = cachedRecommendedFriends
-						print("✅ [NAV] Applied \(cachedRecommendedFriends.count) recommended friends to UI")
-					}
-					
-					if !cachedIncomingRequests.isEmpty {
-						viewModel.incomingFriendRequests = cachedIncomingRequests
-						viewModel.filteredIncomingFriendRequests = cachedIncomingRequests
-						print("✅ [NAV] Applied \(cachedIncomingRequests.count) incoming requests to UI")
-					}
-					
-					if !cachedOutgoingRequests.isEmpty {
-						viewModel.outgoingFriendRequests = cachedOutgoingRequests
-						viewModel.filteredOutgoingFriendRequests = cachedOutgoingRequests
-						print("✅ [NAV] Applied \(cachedOutgoingRequests.count) outgoing requests to UI")
-					}
-					
-					viewModel.connectSearchViewModel(searchViewModel)
-					
-					let applyDuration = Date().timeIntervalSince(applyStart)
-					let totalDuration = Date().timeIntervalSince(taskStartTime)
-					print("⏱️ [NAV] UI update took \(String(format: "%.3f", applyDuration))s, total: \(String(format: "%.3f", totalDuration))s")
-				}
+			// Load cached data through view model (fast, non-blocking)
+			let cacheLoadStart = Date()
+			await MainActor.run {
+				viewModel.loadCachedData()
+				viewModel.connectSearchViewModel(searchViewModel)
+			}
+			let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+			let totalDuration = Date().timeIntervalSince(taskStartTime)
+			
+			print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+			print("⏱️ [NAV] Total UI update took \(String(format: "%.3f", totalDuration))s")
 				
 				// Check if task was cancelled before starting background refresh
 				if Task.isCancelled {

@@ -103,21 +103,16 @@ struct ContentView: View {
                 // CRITICAL FIX: Load cached activities immediately to unblock UI
                 // This ensures both ActivityFeedView and MapView have data instantly
                 let cacheLoadStart = Date()
-                let cachedActivities = AppCache.shared.getCurrentUserActivities()
-                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
                 
-                print("📊 [NAV] ContentView: Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(cachedActivities.count) activities")
-                
-                // Apply cached data to shared view model immediately
+                // Load cached data through view model instead of directly accessing cache
                 await MainActor.run {
-                    if !cachedActivities.isEmpty {
-                        feedViewModel.activities = cachedActivities
-                        let totalDuration = Date().timeIntervalSince(taskStartTime)
-                        print("✅ [NAV] ContentView: Applied \(cachedActivities.count) cached activities to shared view model in \(String(format: "%.3f", totalDuration))s")
-                    } else {
-                        print("⚠️ [NAV] ContentView: No cached activities available - will fetch from API")
-                    }
+                    feedViewModel.loadCachedActivities()
                 }
+                
+                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
+                print("📊 [NAV] ContentView: Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+                print("⏱️ [NAV] ContentView: Total UI update took \(String(format: "%.3f", totalDuration))s")
                 
                 // Check if task was cancelled before starting background refresh
                 if Task.isCancelled {

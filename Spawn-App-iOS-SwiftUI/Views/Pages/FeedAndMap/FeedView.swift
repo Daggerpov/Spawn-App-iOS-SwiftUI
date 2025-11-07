@@ -62,27 +62,21 @@ struct FeedView: View {
                 // CRITICAL FIX: Load cached activities immediately to unblock UI
                 // Cache validation is done on app startup, no need to repeat on every view load
                 
-                // Load cached activities synchronously (fast, non-blocking)
+                // Load cached activities through view model (fast, non-blocking)
                 let cacheLoadStart = Date()
-                let cachedActivities = AppCache.shared.getCurrentUserActivities()
-                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
-                
-                print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(cachedActivities.count) activities")
-                
-                // Apply cached data to view model immediately
-                await MainActor.run {
-                    if !cachedActivities.isEmpty {
-                        viewModel.activities = cachedActivities
-                        let totalDuration = Date().timeIntervalSince(taskStartTime)
-                        print("✅ [NAV] Applied \(cachedActivities.count) cached activities to UI in \(String(format: "%.3f", totalDuration))s")
-                    } else {
-                        print("⚠️ [NAV] No cached activities available - will fetch from API")
-                    }
+                let activitiesCount: Int = await MainActor.run {
+                    viewModel.loadCachedActivities()
+                    return viewModel.activities.count
                 }
+                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
+                
+                print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(activitiesCount) activities")
+                print("⏱️ [NAV] Total UI update took \(String(format: "%.3f", totalDuration))s")
                 
                 // Refresh from API in background (non-blocking)
                 // Only if cache is empty or user explicitly refreshes
-                if cachedActivities.isEmpty {
+                if activitiesCount == 0 {
                     print("🔄 [NAV] Fetching activities from API (empty cache)")
                     let fetchStart = Date()
                     await viewModel.fetchAllData()
