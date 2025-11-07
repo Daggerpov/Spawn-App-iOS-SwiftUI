@@ -11,6 +11,7 @@ struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTabsEnum: Tabs = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
+    @StateObject private var feedViewModel: FeedViewModel
     @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     @ObservedObject  private var inAppNotificationManager = InAppNotificationManager.shared
     @ObservedObject var deepLinkManager: DeepLinkManager
@@ -38,11 +39,19 @@ struct ContentView: View {
     init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
         self.user = user
         self.deepLinkManager = deepLinkManager
-        let vm = FriendsTabViewModel(
+        let friendsVM = FriendsTabViewModel(
             userId: user.id,
             apiService: MockAPIService.isMocking
                 ? MockAPIService(userId: user.id) : APIService())
-        self._friendsViewModel = StateObject(wrappedValue: vm)
+        self._friendsViewModel = StateObject(wrappedValue: friendsVM)
+        
+        // Create shared FeedViewModel for both ActivityFeedView and MapView
+        let feedVM = FeedViewModel(
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: user.id) : APIService(),
+            userId: user.id
+        )
+        self._feedViewModel = StateObject(wrappedValue: feedVM)
     }
 
 	var body: some View {
@@ -52,12 +61,13 @@ struct ContentView: View {
                 case .home:
                     ActivityFeedView(
                         user: user,
+                        viewModel: feedViewModel,
                         selectedTab: selectedTabBinding,
                         deepLinkedActivityId: $deepLinkedActivityId,
                         shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
                     )
                 case .map:
-                    MapView(user: user)
+                    MapView(user: user, viewModel: feedViewModel)
                         .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 case .activities:
                     ActivityCreationView(

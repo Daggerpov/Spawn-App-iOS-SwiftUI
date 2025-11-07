@@ -12,7 +12,7 @@ import SwiftUI
 // Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
 
 struct MapView: View {
-    @StateObject private var viewModel: FeedViewModel
+    @ObservedObject var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
 
     // Region for Map - using closer zoom level
@@ -111,15 +111,9 @@ struct MapView: View {
 
     var user: BaseUserDTO
 
-    init(user: BaseUserDTO) {
+    init(user: BaseUserDTO, viewModel: FeedViewModel) {
         self.user = user
-        _viewModel = StateObject(
-            wrappedValue: FeedViewModel(
-                apiService: MockAPIService.isMocking
-                    ? MockAPIService(userId: user.id) : APIService(),
-                userId: user.id
-            )
-        )
+        self.viewModel = viewModel
     }
 
     var body: some View {
@@ -550,5 +544,9 @@ struct MapView: View {
 @available(iOS 17.0, *)
 #Preview {
     @Previewable @ObservedObject var appCache = AppCache.shared
-    MapView(user: .danielAgapov).environmentObject(appCache)
+    let previewViewModel = FeedViewModel(
+        apiService: MockAPIService.isMocking ? MockAPIService(userId: BaseUserDTO.danielAgapov.id) : APIService(),
+        userId: BaseUserDTO.danielAgapov.id
+    )
+    MapView(user: .danielAgapov, viewModel: previewViewModel).environmentObject(appCache)
 }

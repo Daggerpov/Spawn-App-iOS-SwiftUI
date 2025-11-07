@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ActivityFeedView: View {
     var user: BaseUserDTO
-    @StateObject var viewModel: FeedViewModel
+    @ObservedObject var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
     @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     @State private var showingActivityPopup: Bool = false
@@ -44,9 +44,9 @@ struct ActivityFeedView: View {
     // Store background refresh task so we can cancel it on disappear
     @State private var backgroundRefreshTask: Task<Void, Never>?
     
-    init(user: BaseUserDTO, selectedTab: Binding<TabType>, deepLinkedActivityId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedActivity: Binding<Bool> = .constant(false)) {
+    init(user: BaseUserDTO, viewModel: FeedViewModel, selectedTab: Binding<TabType>, deepLinkedActivityId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedActivity: Binding<Bool> = .constant(false)) {
         self.user = user
-        self._viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService(), userId: user.id))
+        self.viewModel = viewModel
         self._selectedTab = selectedTab
         self._deepLinkedActivityId = deepLinkedActivityId
         self._shouldShowDeepLinkedActivity = shouldShowDeepLinkedActivity
@@ -442,9 +442,14 @@ extension ActivityFeedView {
     @Previewable @State var tab = TabType.home
     @Previewable @State var deepLinkedActivityId: UUID? = nil
     @Previewable @State var shouldShowDeepLinkedActivity = false
+    let previewViewModel = FeedViewModel(
+        apiService: MockAPIService.isMocking ? MockAPIService(userId: BaseUserDTO.danielAgapov.id) : APIService(),
+        userId: BaseUserDTO.danielAgapov.id
+    )
     NavigationView {
         ActivityFeedView(
-            user: .danielAgapov, 
+            user: .danielAgapov,
+            viewModel: previewViewModel,
             selectedTab: $tab, 
             deepLinkedActivityId: $deepLinkedActivityId, 
             shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
