@@ -36,6 +36,9 @@ struct ContentView: View {
     @State private var globalPopupColor: Color?
     @State private var globalPopupFromMapView = false
     
+    // Store background refresh task so we can cancel it on disappear
+    @State private var backgroundRefreshTask: Task<Void, Never>?
+    
     init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
         self.user = user
         self.deepLinkManager = deepLinkManager
@@ -93,7 +96,51 @@ struct ContentView: View {
                     .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 }
             }
+            .task {
+                print("📍 [NAV] ContentView .task started - initializing shared feed data")
+                let taskStartTime = Date()
+                
+                // CRITICAL FIX: Load cached activities immediately to unblock UI
+                // This ensures both ActivityFeedView and MapView have data instantly
+                let cacheLoadStart = Date()
+                let cachedActivities = AppCache.shared.getCurrentUserActivities()
+                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+                
+                print("📊 [NAV] ContentView: Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(cachedActivities.count) activities")
+                
+                // Apply cached data to shared view model immediately
+                await MainActor.run {
+                    if !cachedActivities.isEmpty {
+                        feedViewModel.activities = cachedActivities
+                        let totalDuration = Date().timeIntervalSince(taskStartTime)
+                        print("✅ [NAV] ContentView: Applied \(cachedActivities.count) cached activities to shared view model in \(String(format: "%.3f", totalDuration))s")
+                    } else {
+                        print("⚠️ [NAV] ContentView: No cached activities available - will fetch from API")
+                    }
+                }
+                
+                // Check if task was cancelled before starting background refresh
+                if Task.isCancelled {
+                    print("⚠️ [NAV] ContentView: Task cancelled before starting background refresh")
+                    return
+                }
+                
+                // Refresh from API in background (non-blocking)
+                // CRITICAL: Always run in background, even if cache is empty, to avoid blocking UI
+                print("🔄 [NAV] ContentView: Starting background refresh for shared view model")
+                backgroundRefreshTask = Task.detached(priority: .userInitiated) {
+                    let refreshStart = Date()
+                    await feedViewModel.fetchAllData()
+                    let refreshDuration = Date().timeIntervalSince(refreshStart)
+                    print("⏱️ [NAV] ContentView: Background refresh took \(String(format: "%.2f", refreshDuration))s")
+                    print("✅ [NAV] ContentView: Background refresh completed")
+                }
+            }
 			.onAppear {
+                print("👁️ [NAV] ContentView appeared")
+                // Resume timers when view appears
+                feedViewModel.resumeTimers()
+                
                 // Configure tab bar appearance for theme compatibility
                 let appearance = UITabBarAppearance()
                 appearance.configureWithOpaqueBackground()
@@ -121,6 +168,17 @@ struct ContentView: View {
                 Task {
                     await friendsViewModel.fetchIncomingFriendRequests()
                 }
+            }
+            .onDisappear {
+                print("👋 [NAV] ContentView disappearing - cancelling background tasks")
+                
+                // Pause timers to save resources when view is not visible
+                feedViewModel.pauseTimers()
+                
+                // Cancel any ongoing background refresh to prevent blocking
+                backgroundRefreshTask?.cancel()
+                backgroundRefreshTask = nil
+                print("👋 [NAV] ContentView disappeared")
             }
             .onChange(of: deepLinkManager.shouldShowActivity) { _, shouldShow in
                 if shouldShow, let activityId = deepLinkManager.activityToShow {

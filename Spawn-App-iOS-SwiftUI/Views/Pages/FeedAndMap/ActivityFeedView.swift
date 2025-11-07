@@ -41,9 +41,6 @@ struct ActivityFeedView: View {
     @State private var showTutorialPreConfirmation = false
     @State private var tutorialSelectedActivityType: ActivityTypeDTO?
     
-    // Store background refresh task so we can cancel it on disappear
-    @State private var backgroundRefreshTask: Task<Void, Never>?
-    
     init(user: BaseUserDTO, viewModel: FeedViewModel, selectedTab: Binding<TabType>, deepLinkedActivityId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedActivity: Binding<Bool> = .constant(false)) {
         self.user = user
         self.viewModel = viewModel
@@ -106,54 +103,13 @@ struct ActivityFeedView: View {
                     )
                 )
             }
-            .task {
-                print("📍 [NAV] ActivityFeedView .task started")
-                let taskStartTime = Date()
-                
-                // CRITICAL FIX: Load cached data immediately to unblock UI
-                let cachedActivities = AppCache.shared.getCurrentUserActivities()
-                
-                await MainActor.run {
-                    if !cachedActivities.isEmpty {
-                        viewModel.activities = cachedActivities
-                        print("✅ [NAV] ActivityFeedView applied \(cachedActivities.count) cached activities")
-                    } else {
-                        print("⚠️ [NAV] ActivityFeedView: No cached activities")
-                    }
-                    
-                    let duration = Date().timeIntervalSince(taskStartTime)
-                    print("⏱️ [NAV] ActivityFeedView .task completed in \(String(format: "%.3f", duration))s")
-                }
-                
-                // Check if task was cancelled before starting background refresh
-                if Task.isCancelled {
-                    print("⚠️ [NAV] Task cancelled before starting background refresh - user navigated away")
-                    return
-                }
-                
-                // Refresh from API in background (non-blocking)
-                // Store the task so we can cancel it if user navigates away
-                print("🔄 [NAV] ActivityFeedView starting background refresh")
-                backgroundRefreshTask = Task.detached(priority: .userInitiated) {
-                    await viewModel.fetchAllData()
-                    print("✅ [NAV] ActivityFeedView background refresh completed")
-                }
-            }
             .onAppear {
                 print("👁️ [NAV] ActivityFeedView appeared")
-                // Resume timers when view appears
-                viewModel.resumeTimers()
+                // Note: Data fetching and timer management now handled globally in ContentView
             }
             .onDisappear {
-                print("👋 [NAV] ActivityFeedView disappearing - cancelling background tasks")
-                
-                // Pause timers to save resources when view is not visible
-                viewModel.pauseTimers()
-                
-                // Cancel any ongoing background refresh to prevent blocking
-                backgroundRefreshTask?.cancel()
-                backgroundRefreshTask = nil
                 print("👋 [NAV] ActivityFeedView disappeared")
+                // Note: Data fetching and timer management now handled globally in ContentView
             }
         }
         .onChange(of: showingActivityPopup) { _, isShowing in
