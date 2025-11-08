@@ -30,6 +30,11 @@ struct UnifiedMapView: UIViewRepresentable {
 	func makeUIView(context: Context) -> MKMapView {
 		let mapView = MKMapView()
 
+		#if targetEnvironment(simulator)
+		print("⚠️ Running on Simulator - Map tiles may not load properly")
+		print("⚠️ If you see a grid, try running on a physical device")
+		#endif
+
 		// Basic setup
 		mapView.mapType = .standard
 		mapView.delegate = context.coordinator
@@ -49,6 +54,12 @@ struct UnifiedMapView: UIViewRepresentable {
 		mapView.showsBuildings = true
 		mapView.pointOfInterestFilter = .includingAll
 
+		// Ensure map tiles can load
+		let configuration = MKStandardMapConfiguration()
+		configuration.elevationStyle = .flat
+		configuration.pointOfInterestFilter = .includingAll
+		mapView.preferredConfiguration = configuration
+
 		// Set initial region
 		if isValidRegion(region) {
 			mapView.setRegion(region, animated: false)
@@ -65,6 +76,15 @@ struct UnifiedMapView: UIViewRepresentable {
 				)
 			)
 			mapView.setRegion(fallbackRegion, animated: false)
+		}
+
+		// Force initial render and tile loading
+		DispatchQueue.main.async {
+			mapView.layoutIfNeeded()
+			// Force a small region change to trigger tile loading
+			let currentRegion = mapView.region
+			mapView.setRegion(currentRegion, animated: false)
+			print("🗺️ Map view initial render forced")
 		}
 
 		return mapView
@@ -312,6 +332,7 @@ struct UnifiedMapView: UIViewRepresentable {
 		// MARK: - Loading Delegates
 
 		func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
+			print("🗺️ mapViewDidFinishLoadingMap called")
 			// Only report load once
 			guard !hasReportedLoad else { return }
 			hasReportedLoad = true
@@ -325,12 +346,31 @@ struct UnifiedMapView: UIViewRepresentable {
 			_ mapView: MKMapView,
 			fullyRendered: Bool
 		) {
+			print("🗺️ mapViewDidFinishRenderingMap called - fullyRendered: \(fullyRendered)")
 			if fullyRendered && !hasReportedLoad {
 				hasReportedLoad = true
 				DispatchQueue.main.async { [weak self] in
 					self?.parent.onMapLoaded?()
 				}
 			}
+		}
+		
+		func mapViewWillStartLoadingMap(_ mapView: MKMapView) {
+			print("🗺️ mapViewWillStartLoadingMap called")
+		}
+		
+		func mapViewWillStartRenderingMap(_ mapView: MKMapView) {
+			print("🗺️ mapViewWillStartRenderingMap called")
+		}
+		
+		func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
+			print("🗺️ Renderer requested for overlay")
+			return MKOverlayRenderer(overlay: overlay)
+		}
+		
+		func mapViewDidFailLoadingMap(_ mapView: MKMapView, withError error: Error) {
+			print("❌ Map failed to load: \(error.localizedDescription)")
+			print("❌ Error details: \(error)")
 		}
 
 		// MARK: - User Location Delegates
