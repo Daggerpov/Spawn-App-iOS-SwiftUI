@@ -38,20 +38,11 @@ struct MapView: View {
     @State private var showLocationError: Bool = false
     @State private var locationErrorMessage: String = ""
     
-    // Animation states for 3D effects on map control buttons
-    @State private var toggle3DPressed = false
-    @State private var toggle3DScale: CGFloat = 1.0
-    @State private var locationPressed = false
-    @State private var locationScale: CGFloat = 1.0
-	
 	// Track if view is currently visible to prevent updates after disappear
 	@State private var isViewVisible = false
     
-    // PERFORMANCE: Cache filtered activities to avoid recalculating on every render
+    // Cache filtered activities to avoid recalculating on every render
     @State private var filteredActivities: [FullFeedActivityDTO] = []
-    
-    // Map loading state
-    @State private var isMapLoaded = false
     
     enum TimeFilter: String, CaseIterable {
         case lateNight = "Late Night"
@@ -121,7 +112,7 @@ struct MapView: View {
 
     var body: some View {
         ZStack {
-            // Base layer - Map
+            // Map
             UnifiedMapViewRepresentable(
                 region: $region,
                 is3DMode: $is3DMode,
@@ -131,7 +122,6 @@ struct MapView: View {
                 onMapWillChange: nil,
                 onMapDidChange: { _ in },
                 onActivityTap: { activity in
-                    // Use global popup system with fromMapView flag
                     NotificationCenter.default.post(
                         name: .showGlobalActivityPopup,
                         object: nil,
@@ -142,44 +132,21 @@ struct MapView: View {
                         ]
                     )
                 },
-                onMapLoaded: {
-                    isMapLoaded = true
-                    print("✅ [NAV] MapView: Map loaded successfully")
-                }
+                onMapLoaded: nil
             )
             .ignoresSafeArea()
             
-            // Loading overlay
-            if !isMapLoaded {
-                ZStack {
-                    Color.black.opacity(0.3)
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(1.5)
-                        Text("Loading Map...")
-                            .font(.onestMedium(size: 16))
-                            .foregroundColor(.white)
-                    }
-                }
-                .ignoresSafeArea()
-            }
-            
-            // Top control buttons layer
+            // Top control buttons
             VStack {
                 HStack {
                     Spacer()
                     VStack(spacing: 8) {
-                        // 3D mode toggle button (works on iOS 9+ with MapKit camera)
-                        Button(action: {
-                            // Haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                            impactGenerator.impactOccurred()
-                            
-                            withAnimation(.easeInOut(duration: 0.3)) {
+                        // 3D mode toggle
+                        Button {
+                            withAnimation {
                                 is3DMode.toggle()
                             }
-                        }) {
+                        } label: {
                             Image(systemName: is3DMode ? "view.3d" : "view.2d")
                                 .font(.system(size: 18))
                                 .foregroundColor(universalAccentColor)
@@ -187,37 +154,19 @@ struct MapView: View {
                                 .background(universalBackgroundColor)
                                 .clipShape(Circle())
                                 .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                .scaleEffect(toggle3DScale)
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
-                        .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
-                        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                            toggle3DPressed = pressing
-                            toggle3DScale = pressing ? 0.95 : 1.0
-                            
-                            // Additional haptic feedback for press down
-                            if pressing {
-                                let selectionGenerator = UISelectionFeedbackGenerator()
-                                selectionGenerator.selectionChanged()
-                            }
-                        }, perform: {})
                         
                         // Location button
-                        Button(action: {
-                            // Haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                            impactGenerator.impactOccurred()
-                            
+                        Button {
                             if let userLocation = locationManager.userLocation {
-                                withAnimation(.easeInOut(duration: 0.75)) {
+                                withAnimation {
                                     region = MKCoordinateRegion(
                                         center: userLocation,
                                         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                                     )
                                 }
                             }
-                        }) {
+                        } label: {
                             Image(systemName: "location.fill")
                                 .font(.system(size: 18))
                                 .foregroundColor(universalAccentColor)
@@ -225,21 +174,7 @@ struct MapView: View {
                                 .background(universalBackgroundColor)
                                 .clipShape(Circle())
                                 .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                .scaleEffect(locationScale)
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .animation(.easeInOut(duration: 0.15), value: locationScale)
-                        .animation(.easeInOut(duration: 0.15), value: locationPressed)
-                        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                            locationPressed = pressing
-                            locationScale = pressing ? 0.95 : 1.0
-                            
-                            // Additional haptic feedback for press down
-                            if pressing {
-                                let selectionGenerator = UISelectionFeedbackGenerator()
-                                selectionGenerator.selectionChanged()
-                            }
-                        }, perform: {})
                     }
                     .padding(.trailing, 16)
                 }
@@ -249,82 +184,47 @@ struct MapView: View {
             }
             .onAppear {
                 isViewVisible = true
-                print("👁️ [NAV] MapView appeared")
-                
-                // Reset map loaded state
-                isMapLoaded = false
-                
-                // PERFORMANCE: Update filtered activities once on appear
                 updateFilteredActivities()
                 
-                // Set initial region based on user location or activities
+                // Set initial region
                 if let userLocation = locationManager.userLocation {
                     region = MKCoordinateRegion(
                         center: userLocation,
                         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
                     )
-                    print("✅ [NAV] MapView: Set initial region to user location")
                 } else if !viewModel.activities.isEmpty {
                     adjustRegionForActivities()
-                    print("✅ [NAV] MapView: Set initial region to activities")
                 }
                 
-                // Start location updates when view appears
+                // Start location updates
                 if locationManager.authorizationStatus == .authorizedWhenInUse || 
                    locationManager.authorizationStatus == .authorizedAlways {
-                    print("📍 [NAV] MapView: Starting location updates")
                     locationManager.startLocationUpdates()
-                }
-                
-                // Timeout for map loading (increased to 10 seconds for slower devices/networks)
-                // This is a safety fallback - the map should call onMapLoaded much sooner via delegate
-                DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-                    if !isMapLoaded {
-                        print("⚠️ [NAV] MapView: Map loading timeout after 10s - forcing loaded state")
-                        isMapLoaded = true
-                    }
                 }
             }
             .onDisappear {
                 isViewVisible = false
-                print("👋 [NAV] MapView disappearing")
-                // Note: Data fetching and timer management now handled globally in ContentView
-                
-                // CRITICAL: Stop location updates to prevent continuous background processing
-                print("📍 [NAV] MapView: Stopping location updates")
                 locationManager.stopLocationUpdates()
-                
-                print("👋 [NAV] MapView disappeared")
             }
             .onChange(of: locationManager.locationUpdated) {
-                // Guard: Only update if view is visible
-                guard isViewVisible else { return }
-                
-                if locationManager.locationUpdated && locationManager.userLocation != nil && 
-                   abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
-                   abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
-                    adjustRegionToUserLocation()
-                }
+                guard isViewVisible, 
+                      locationManager.locationUpdated,
+                      locationManager.userLocation != nil,
+                      abs(region.center.latitude - defaultMapLatitude) < 0.0001,
+                      abs(region.center.longitude - defaultMapLongitude) < 0.0001 else { return }
+                adjustRegionToUserLocation()
             }
             .onChange(of: viewModel.activities) {
-                // Guard: Only update if view is visible
                 guard isViewVisible else { return }
-                
-                // PERFORMANCE: Update filtered activities when activities change
                 updateFilteredActivities()
             }
             .onChange(of: selectedTimeFilter) {
-                // PERFORMANCE: Update filtered activities when filter changes
                 updateFilteredActivities()
             }
             .onChange(of: locationManager.locationError) { _, error in
-                // Guard: Only update if view is visible
-                guard isViewVisible else { return }
-                
-                if let error = error {
-                    locationErrorMessage = error
-                    showLocationError = true
-                }
+                guard isViewVisible, let error = error else { return }
+                locationErrorMessage = error
+                showLocationError = true
             }
             .alert("Location Error", isPresented: $showLocationError) {
                 Button("OK") {

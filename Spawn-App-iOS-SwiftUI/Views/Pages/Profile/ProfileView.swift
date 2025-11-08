@@ -197,7 +197,7 @@ struct ProfileView: View {
 					let currentUserId = await userAuth.spawnUser?.id
 				{
 					// Check if user is a RecommendedFriendUserDTO with relationship status
-					if let recommendedFriend = user as? RecommendedFriendUserDTO,
+					if let recommendedFriend = await user as? RecommendedFriendUserDTO,
 					   recommendedFriend.relationshipStatus != nil {
 						// Use the relationship status from the DTO - no API call needed
 						await MainActor.run {
