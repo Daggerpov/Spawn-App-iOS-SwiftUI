@@ -276,10 +276,11 @@ struct MapView: View {
                     locationManager.startLocationUpdates()
                 }
                 
-                // Timeout for map loading (in case it gets stuck)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                // Timeout for map loading (increased to 10 seconds for slower devices/networks)
+                // This is a safety fallback - the map should call onMapLoaded much sooner via delegate
+                DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
                     if !isMapLoaded {
-                        print("⚠️ [NAV] MapView: Map loading timeout - forcing loaded state")
+                        print("⚠️ [NAV] MapView: Map loading timeout after 10s - forcing loaded state")
                         isMapLoaded = true
                     }
                 }

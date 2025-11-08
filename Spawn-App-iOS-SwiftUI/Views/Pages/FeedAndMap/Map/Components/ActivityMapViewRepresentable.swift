@@ -291,6 +291,18 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
             print("🗺️ Map pin deselected!")
         }
         
+        func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
+            // This delegate method is called when MapKit finishes loading and rendering the map
+            print("✅ ActivityMapViewRepresentable: Map tiles finished loading")
+        }
+        
+        func mapViewDidFinishRenderingMap(_ mapView: MKMapView, fullyRendered: Bool) {
+            // This is called when the map finishes rendering
+            if fullyRendered {
+                print("✅ ActivityMapViewRepresentable: Map fully rendered")
+            }
+        }
+        
     }
 }
 

@@ -45,9 +45,6 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         
-        // Ensure proper initialization for iOS < 17 compatibility
-        mapView.frame = CGRect(x: 0, y: 0, width: 100, height: 100) // Set initial finite frame
-        
         // CRITICAL: Set map type to standard to ensure tiles load
         mapView.mapType = .standard
         
@@ -88,12 +85,7 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         // Set initial region using the basic setRegion method for better iOS < 17 compatibility
         mapView.setRegion(region, animated: false)
         
-        // Notify that map has loaded
-        DispatchQueue.main.async {
-            self.onMapLoaded?()
-        }
-        
-        print("✅ UnifiedMapView: Map initialized successfully with region \(region.center)")
+        print("🗺️ UnifiedMapView: Map view created, waiting for tiles to load...")
         
         return mapView
     }
@@ -367,6 +359,22 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
                     print("📍 UnifiedMapView: Initial user location - \(location)")
                     self.lastLoggedLocation = location
                 }
+            }
+        }
+        
+        func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
+            // This delegate method is called when MapKit finishes loading and rendering the map
+            print("✅ UnifiedMapView: Map tiles finished loading")
+            DispatchQueue.main.async {
+                self.parent.onMapLoaded?()
+            }
+        }
+        
+        func mapViewDidFinishRenderingMap(_ mapView: MKMapView, fullyRendered: Bool) {
+            // This is called when the map finishes rendering
+            // We use mapViewDidFinishLoadingMap instead, but this can be a backup
+            if fullyRendered {
+                print("✅ UnifiedMapView: Map fully rendered")
             }
         }
         
