@@ -13,52 +13,21 @@ struct MapView: View {
 	@ObservedObject var viewModel: FeedViewModel
 	@StateObject private var locationManager = LocationManager()
 
-	// Region for Map - using closer zoom level
 	@State private var region = MKCoordinateRegion(
 		center: CLLocationCoordinate2D(
 			latitude: defaultMapLatitude,
 			longitude: defaultMapLongitude
-		),  // Default to UBC
+		),
 		span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
 	)
 
-	@State private var is3DMode: Bool = false  // Only used on iOS 17+
-
-	// MARK - Activity Description State Vars - now using global popup system
-
-	@State private var showActivityCreationDrawer: Bool = false
-
-	// for pop-ups:
-	@State private var creationOffset: CGFloat = 1000
-
-	// New state variables for filter overlay
+	@State private var is3DMode: Bool = false
 	@State private var showFilterOverlay: Bool = false
-	@State private var selectedTimeFilter: TimeFilter = .allActivities
-
-	// Location error handling
+	@State private var selectedTimeFilter: MapFilterOverlay.TimeFilter = .allActivities
 	@State private var showLocationError: Bool = false
 	@State private var locationErrorMessage: String = ""
-
-	// Animation states for 3D effects on map control buttons
-	@State private var toggle3DPressed = false
-	@State private var toggle3DScale: CGFloat = 1.0
-	@State private var locationPressed = false
-	@State private var locationScale: CGFloat = 1.0
-
-	// Track if view is currently visible to prevent updates after disappear
 	@State private var isViewVisible = false
-
-	// PERFORMANCE: Cache filtered activities to avoid recalculating on every render
 	@State private var filteredActivities: [FullFeedActivityDTO] = []
-
-	enum TimeFilter: String, CaseIterable {
-		case lateNight = "Late Night"
-		case evening = "Evening"
-		case afternoon = "Afternoon"
-		case inTheNextHour = "In the next hour"
-		case happeningNow = "Happening Now"
-		case allActivities = "All Activities"
-	}
 
 	var user: BaseUserDTO
 
@@ -158,365 +127,112 @@ struct MapView: View {
 
 	var body: some View {
 		ZStack {
-			// Base layer - Map
+			// Map layer
 			UnifiedMapView(
 				region: $region,
 				is3DMode: $is3DMode,
 				showsUserLocation: true,
-				annotationItems: filteredActivities.filter {
-					$0.location != nil
-				},
+				annotationItems: filteredActivities.filter { $0.location != nil },
 				isLocationSelectionMode: false,
 				onMapWillChange: nil,
 				onMapDidChange: { _ in },
 				onActivityTap: { activity in
-					// Use global popup system with fromMapView flag
 					NotificationCenter.default.post(
 						name: .showGlobalActivityPopup,
 						object: nil,
 						userInfo: [
 							"activity": activity,
-							"color": ActivityColorService.shared
-								.getColorForActivity(activity.id),
+							"color": ActivityColorService.shared.getColorForActivity(activity.id),
 							"fromMapView": true,
 						]
 					)
 				},
 				onMapLoaded: {
-					print("✅ [NAV] MapView: Map loaded successfully")
+					print("✅ Map loaded successfully")
 				}
 			)
 			.ignoresSafeArea()
 
-			// Top control buttons layer
-			VStack {
-				HStack {
-					Spacer()
-					VStack(spacing: 8) {
-						// 3D mode toggle button (works on iOS 9+ with MapKit camera)
-						Button(action: {
-							// Haptic feedback
-							let impactGenerator = UIImpactFeedbackGenerator(
-								style: .medium
-							)
-							impactGenerator.impactOccurred()
+			// Control buttons (3D toggle, location)
+			MapControlButtons(
+				is3DMode: $is3DMode,
+				region: $region,
+				locationManager: locationManager
+			)
 
-							withAnimation(.easeInOut(duration: 0.3)) {
-								is3DMode.toggle()
-							}
-						}) {
-							Image(systemName: is3DMode ? "view.3d" : "view.2d")
-								.font(.system(size: 18))
-								.foregroundColor(universalAccentColor)
-								.padding(12)
-								.background(universalBackgroundColor)
-								.clipShape(Circle())
-								.shadow(
-									color: Color.black.opacity(0.2),
-									radius: 4,
-									x: 0,
-									y: 2
-								)
-								.scaleEffect(toggle3DScale)
-						}
-						.buttonStyle(PlainButtonStyle())
-						.animation(
-							.easeInOut(duration: 0.15),
-							value: toggle3DScale
-						)
-						.animation(
-							.easeInOut(duration: 0.15),
-							value: toggle3DPressed
-						)
-						.onLongPressGesture(
-							minimumDuration: 0,
-							maximumDistance: .infinity,
-							pressing: { pressing in
-								toggle3DPressed = pressing
-								toggle3DScale = pressing ? 0.95 : 1.0
-
-								// Additional haptic feedback for press down
-								if pressing {
-									let selectionGenerator =
-										UISelectionFeedbackGenerator()
-									selectionGenerator.selectionChanged()
-								}
-							},
-							perform: {}
-						)
-
-						// Location button
-						Button(action: {
-							// Haptic feedback
-							let impactGenerator = UIImpactFeedbackGenerator(
-								style: .medium
-							)
-							impactGenerator.impactOccurred()
-
-							if let userLocation = locationManager.userLocation {
-								withAnimation(.easeInOut(duration: 0.75)) {
-									region = MKCoordinateRegion(
-										center: userLocation,
-										span: MKCoordinateSpan(
-											latitudeDelta: 0.01,
-											longitudeDelta: 0.01
-										)
-									)
-								}
-							}
-						}) {
-							Image(systemName: "location.fill")
-								.font(.system(size: 18))
-								.foregroundColor(universalAccentColor)
-								.padding(12)
-								.background(universalBackgroundColor)
-								.clipShape(Circle())
-								.shadow(
-									color: Color.black.opacity(0.2),
-									radius: 4,
-									x: 0,
-									y: 2
-								)
-								.scaleEffect(locationScale)
-						}
-						.buttonStyle(PlainButtonStyle())
-						.animation(
-							.easeInOut(duration: 0.15),
-							value: locationScale
-						)
-						.animation(
-							.easeInOut(duration: 0.15),
-							value: locationPressed
-						)
-						.onLongPressGesture(
-							minimumDuration: 0,
-							maximumDistance: .infinity,
-							pressing: { pressing in
-								locationPressed = pressing
-								locationScale = pressing ? 0.95 : 1.0
-
-								// Additional haptic feedback for press down
-								if pressing {
-									let selectionGenerator =
-										UISelectionFeedbackGenerator()
-									selectionGenerator.selectionChanged()
-								}
-							},
-							perform: {}
-						)
-					}
-					.padding(.trailing, 16)
-				}
-				.padding(.top, 16)
-
-				Spacer()
+			// Filter overlay
+			MapFilterOverlay(
+				showFilterOverlay: $showFilterOverlay,
+				selectedTimeFilter: $selectedTimeFilter
+			)
+		}
+		.onAppear {
+			isViewVisible = true
+			print("🗺️ MapView appeared")
+			
+			updateFilteredActivities()
+			
+			// Set initial region
+			if let userLocation = locationManager.userLocation {
+				region = MKCoordinateRegion(
+					center: userLocation,
+					span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+				)
+			} else if !viewModel.activities.isEmpty {
+				adjustRegionForActivities()
 			}
-			.onAppear {
-				isViewVisible = true
-				print("👁️ [NAV] MapView appeared")
-
-				// PERFORMANCE: Update filtered activities once on appear
-				updateFilteredActivities()
-
-				// Set initial region based on user location or activities
-				if let userLocation = locationManager.userLocation {
-					region = MKCoordinateRegion(
-						center: userLocation,
-						span: MKCoordinateSpan(
-							latitudeDelta: 0.01,
-							longitudeDelta: 0.01
-						)
-					)
-					print(
-						"✅ [NAV] MapView: Set initial region to user location"
-					)
-				} else if !viewModel.activities.isEmpty {
-					adjustRegionForActivities()
-					print("✅ [NAV] MapView: Set initial region to activities")
-				}
-
-				// Start location updates when view appears
-				if locationManager.authorizationStatus == .authorizedWhenInUse
-					|| locationManager.authorizationStatus == .authorizedAlways
-				{
-					print("📍 [NAV] MapView: Starting location updates")
-					locationManager.startLocationUpdates()
-				}
+			
+			// Start location updates
+			if locationManager.authorizationStatus == .authorizedWhenInUse
+				|| locationManager.authorizationStatus == .authorizedAlways
+			{
+				locationManager.startLocationUpdates()
 			}
-			.onDisappear {
-				isViewVisible = false
-				print("👋 [NAV] MapView disappearing")
-				// Note: Data fetching and timer management now handled globally in ContentView
-
-				// CRITICAL: Stop location updates to prevent continuous background processing
-				print("📍 [NAV] MapView: Stopping location updates")
-				locationManager.stopLocationUpdates()
-
-				print("👋 [NAV] MapView disappeared")
+		}
+		.onDisappear {
+			isViewVisible = false
+			locationManager.stopLocationUpdates()
+			print("🗺️ MapView disappeared")
+		}
+		.onChange(of: locationManager.locationUpdated) {
+			guard isViewVisible else { return }
+			
+			if locationManager.locationUpdated
+				&& locationManager.userLocation != nil
+				&& abs(region.center.latitude - defaultMapLatitude) < 0.0001
+				&& abs(region.center.longitude - defaultMapLongitude) < 0.0001
+			{
+				adjustRegionToUserLocation()
 			}
-			.onChange(of: locationManager.locationUpdated) {
-				// Guard: Only update if view is visible
-				guard isViewVisible else { return }
-
-				if locationManager.locationUpdated
-					&& locationManager.userLocation != nil
-					&& abs(region.center.latitude - defaultMapLatitude) < 0.0001
-					&& abs(region.center.longitude - defaultMapLongitude)
-						< 0.0001
-				{
-					adjustRegionToUserLocation()
-				}
+		}
+		.onChange(of: viewModel.activities) {
+			guard isViewVisible else { return }
+			updateFilteredActivities()
+		}
+		.onChange(of: selectedTimeFilter) {
+			updateFilteredActivities()
+		}
+		.onChange(of: locationManager.locationError) { _, error in
+			guard isViewVisible else { return }
+			
+			if let error = error {
+				locationErrorMessage = error
+				showLocationError = true
 			}
-			.onChange(of: viewModel.activities) {
-				// Guard: Only update if view is visible
-				guard isViewVisible else { return }
-
-				// PERFORMANCE: Update filtered activities when activities change
-				updateFilteredActivities()
+		}
+		.alert("Location Error", isPresented: $showLocationError) {
+			Button("OK") {
+				showLocationError = false
 			}
-			.onChange(of: selectedTimeFilter) {
-				// PERFORMANCE: Update filtered activities when filter changes
-				updateFilteredActivities()
-			}
-			.onChange(of: locationManager.locationError) { _, error in
-				// Guard: Only update if view is visible
-				guard isViewVisible else { return }
-
-				if let error = error {
-					locationErrorMessage = error
-					showLocationError = true
-				}
-			}
-			.alert("Location Error", isPresented: $showLocationError) {
-				Button("OK") {
-					showLocationError = false
-				}
-				if locationManager.authorizationStatus == .denied {
-					Button("Settings") {
-						if let settingsUrl = URL(
-							string: UIApplication.openSettingsURLString
-						) {
-							UIApplication.shared.open(settingsUrl)
-						}
+			if locationManager.authorizationStatus == .denied {
+				Button("Settings") {
+					if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
+						UIApplication.shared.open(settingsUrl)
 					}
 				}
-			} message: {
-				Text(locationErrorMessage)
 			}
-			// REMOVED: This was causing UI freezing on navigation
-			// The first .task block already handles refresh in background
-
-			// Dimming overlay with blur when filters are shown
-			if showFilterOverlay {
-				Color.black.opacity(0.3)
-					.ignoresSafeArea()
-					.transition(.opacity)
-					.contentShape(Rectangle())
-					.onTapGesture {
-						withAnimation(.spring()) {
-							showFilterOverlay = false
-						}
-					}
-			}
-
-			// Filter buttons - positioned above nav bar
-			VStack {
-				Spacer()
-				HStack {
-					Spacer()
-					VStack(spacing: 8) {
-						if showFilterOverlay {
-							// Show "All Activities" at the top if it's not currently selected
-							if selectedTimeFilter != .allActivities {
-								Button(action: {
-									print("Filter selected: All Activities")
-									withAnimation(.spring()) {
-										selectedTimeFilter = .allActivities
-										showFilterOverlay = false
-									}
-								}) {
-									HStack {
-										Text(TimeFilter.allActivities.rawValue)
-											.font(.onestMedium(size: 16))
-											.foregroundColor(
-												universalAccentColor
-											)
-									}
-									.frame(
-										maxWidth: .infinity,
-										alignment: .center
-									)
-									.padding(.vertical, 12)
-									.padding(.horizontal, 16)
-									.background(universalBackgroundColor)
-									.cornerRadius(20)
-								}
-							}
-
-							// Show all other filters except the currently selected one and "All Activities"
-							ForEach(
-								Array(
-									TimeFilter.allCases.dropLast().filter {
-										$0 != selectedTimeFilter
-									}
-								).reversed(),
-								id: \.self
-							) { filter in
-								Button(action: {
-									print("Filter selected: \(filter.rawValue)")
-									withAnimation(.spring()) {
-										selectedTimeFilter = filter
-										showFilterOverlay = false
-									}
-								}) {
-									HStack {
-										Text(filter.rawValue)
-											.font(.onestMedium(size: 16))
-											.foregroundColor(
-												universalAccentColor
-											)
-									}
-									.frame(
-										maxWidth: .infinity,
-										alignment: .center
-									)
-									.padding(.vertical, 12)
-									.padding(.horizontal, 16)
-									.background(universalBackgroundColor)
-									.cornerRadius(20)
-								}
-								.transition(
-									.move(edge: .top).combined(with: .opacity)
-								)
-							}
-						}
-
-						Button(action: {
-							withAnimation(.spring()) {
-								showFilterOverlay.toggle()
-							}
-						}) {
-							HStack {
-								Circle()
-									.fill(figmaGreen)
-									.frame(width: 10, height: 10)
-								Text(selectedTimeFilter.rawValue)
-									.font(.onestMedium(size: 16))
-									.foregroundColor(universalAccentColor)
-							}
-							.frame(maxWidth: .infinity, alignment: .center)
-							.padding(.vertical, 12)
-							.padding(.horizontal, 16)
-							.background(universalBackgroundColor)
-							.cornerRadius(20)
-							.shadow(radius: 2)
-						}
-					}
-					.frame(maxWidth: 155)
-					.padding(.trailing, 20)
-				}
-				.padding(.bottom, 80)  // Position filter above nav bar with proper spacing
-			}
+		} message: {
+			Text(locationErrorMessage)
 		}
 	}
 
@@ -534,32 +250,11 @@ struct MapView: View {
 		}
 	}
 
-	private func adjustRegionForActivitiesOrUserLocation() {
-		if let userLocation = locationManager.userLocation {
-			// Prioritize user location
-			withAnimation {
-				region = MKCoordinateRegion(
-					center: userLocation,
-					span: MKCoordinateSpan(
-						latitudeDelta: 0.01,
-						longitudeDelta: 0.01
-					)
-				)
-			}
-		} else if !viewModel.activities.isEmpty {
-			adjustRegionForActivities()
-		}
-	}
-
 	private func adjustRegionForActivities() {
 		guard !viewModel.activities.isEmpty else { return }
 
-		let latitudes = viewModel.activities.compactMap {
-			$0.location?.latitude
-		}
-		let longitudes = viewModel.activities.compactMap {
-			$0.location?.longitude
-		}
+		let latitudes = viewModel.activities.compactMap { $0.location?.latitude }
+		let longitudes = viewModel.activities.compactMap { $0.location?.longitude }
 
 		guard let minLatitude = latitudes.min(),
 			let maxLatitude = latitudes.max(),
@@ -569,8 +264,8 @@ struct MapView: View {
 
 		let centerLatitude = (minLatitude + maxLatitude) / 2
 		let centerLongitude = (minLongitude + maxLongitude) / 2
-		let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
-		let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
+		let latitudeDelta = (maxLatitude - minLatitude) * 1.5
+		let longitudeDelta = (maxLongitude - minLongitude) * 1.5
 
 		withAnimation {
 			region = MKCoordinateRegion(
@@ -584,12 +279,6 @@ struct MapView: View {
 				)
 			)
 		}
-	}
-
-	func closeCreation() {
-		ActivityCreationViewModel.reInitialize()
-		creationOffset = 1000
-		showActivityCreationDrawer = false
 	}
 }
 

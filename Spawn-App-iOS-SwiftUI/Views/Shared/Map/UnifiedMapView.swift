@@ -81,12 +81,9 @@ struct UnifiedMapView: UIViewRepresentable {
 		// Set initial region using the basic setRegion method for better iOS < 17 compatibility
 		mapView.setRegion(region, animated: false)
 
-		print(
-			"🗺️ UnifiedMapView: Map view created, waiting for tiles to load..."
-		)
+		print("🗺️ Map view created, waiting for tiles to load...")
 
-		// Call onMapLoaded after a short delay as fallback
-		// The delegate method will also call it, but this ensures it gets called
+		// Fallback: Ensure onMapLoaded is called even if delegate methods don't fire
 		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
 			self.onMapLoaded?()
 		}
@@ -415,45 +412,25 @@ struct UnifiedMapView: UIViewRepresentable {
 			_ mapView: MKMapView,
 			didFailToLocateUserWithError error: Error
 		) {
-			print(
-				"⚠️ UnifiedMapView: Failed to locate user - \(error.localizedDescription)"
-			)
+			print("⚠️ Failed to locate user: \(error.localizedDescription)")
 		}
 
 		func mapView(
 			_ mapView: MKMapView,
 			didUpdate userLocation: MKUserLocation
 		) {
-			// Only log significant location changes to avoid console spam
+			// Only log first location update to avoid spam
 			if let location = userLocation.location?.coordinate,
-				CLLocationCoordinate2DIsValid(location)
+				CLLocationCoordinate2DIsValid(location),
+				self.lastLoggedLocation == nil
 			{
-
-				// Only log if location has changed significantly (>10 meters)
-				if let lastLocation = self.lastLoggedLocation {
-					let distance = self.calculateDistance(
-						from: lastLocation,
-						to: location
-					)
-					if distance > 10.0 {  // 10 meters threshold
-						print(
-							"📍 UnifiedMapView: User location updated - \(location) (moved \(String(format: "%.1f", distance))m)"
-						)
-						self.lastLoggedLocation = location
-					}
-				} else {
-					// First location update
-					print(
-						"📍 UnifiedMapView: Initial user location - \(location)"
-					)
-					self.lastLoggedLocation = location
-				}
+				print("📍 User location acquired")
+				self.lastLoggedLocation = location
 			}
 		}
 
 		func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
-			// This delegate method is called when MapKit finishes loading and rendering the map
-			print("✅ UnifiedMapView: Map tiles finished loading")
+			print("✅ Map tiles loaded")
 			DispatchQueue.main.async {
 				self.parent.onMapLoaded?()
 			}
@@ -463,27 +440,9 @@ struct UnifiedMapView: UIViewRepresentable {
 			_ mapView: MKMapView,
 			fullyRendered: Bool
 		) {
-			// This is called when the map finishes rendering
-			// We use mapViewDidFinishLoadingMap instead, but this can be a backup
 			if fullyRendered {
-				print("✅ UnifiedMapView: Map fully rendered")
+				print("✅ Map fully rendered")
 			}
-		}
-
-		// Helper to calculate distance between two coordinates in meters
-		private func calculateDistance(
-			from: CLLocationCoordinate2D,
-			to: CLLocationCoordinate2D
-		) -> Double {
-			let fromLocation = CLLocation(
-				latitude: from.latitude,
-				longitude: from.longitude
-			)
-			let toLocation = CLLocation(
-				latitude: to.latitude,
-				longitude: to.longitude
-			)
-			return fromLocation.distance(from: toLocation)
 		}
 	}
 }
