@@ -198,6 +198,19 @@ class FeedViewModel: ObservableObject {
         startPeriodicCleanup()
     }
 
+    /// Loads cached activities immediately (synchronous, fast, non-blocking)
+    /// Call this before fetchAllData() to show cached data instantly
+    @MainActor
+    func loadCachedActivities() {
+        let cachedActivities = appCache.getCurrentUserActivities()
+        if !cachedActivities.isEmpty {
+            self.activities = self.filterExpiredActivities(cachedActivities)
+            print("✅ FeedViewModel: Loaded \(cachedActivities.count) activities from cache")
+        } else {
+            print("⚠️ FeedViewModel: No cached activities available")
+        }
+    }
+    
     func fetchAllData() async {
         // Fetch activities and activity types in parallel for faster loading
         async let activities: () = fetchActivitiesForUser()
