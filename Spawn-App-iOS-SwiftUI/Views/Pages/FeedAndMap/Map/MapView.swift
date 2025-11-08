@@ -12,7 +12,7 @@ import SwiftUI
 struct MapView: View {
 	// MARK: - Properties
 	@ObservedObject var viewModel: FeedViewModel
-	@StateObject private var locationManager = LocationManager()
+	@ObservedObject private var locationManager = LocationManager.shared
 
 	let user: BaseUserDTO
 
@@ -161,19 +161,19 @@ struct MapView: View {
 					longitudeDelta: 0.01
 				)
 			)
-			print("📍 Set initial region to user location")
+			print("📍 MapView: Set initial region to user location (\(userLocation.latitude), \(userLocation.longitude))")
 			return
 		}
 
 		// Priority 2: Activities location
 		if !viewModel.activities.isEmpty {
 			fitRegionToActivities()
-			print("📍 Set initial region to fit activities")
+			print("📍 MapView: Set initial region to fit activities")
 			return
 		}
 
 		// Priority 3: Default location (already set in @State)
-		print("📍 Using default region")
+		print("📍 MapView: Using default region (user location not yet available, authorization: \(locationManager.authorizationStatus.rawValue))")
 	}
 
 	private func handleUserLocationUpdate() {

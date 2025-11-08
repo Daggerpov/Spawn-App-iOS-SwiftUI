@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FeedView: View {
     @StateObject private var viewModel: FeedViewModel
-    @StateObject private var locationManager = LocationManager()
+    @ObservedObject private var locationManager = LocationManager.shared
     // Using AppCache as a singleton instead of environment object
 
     @Namespace private var animation: Namespace.ID

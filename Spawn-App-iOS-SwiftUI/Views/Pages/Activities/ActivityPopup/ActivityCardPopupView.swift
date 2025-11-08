@@ -11,7 +11,7 @@ struct ActivityCardPopupView: View {
 	@StateObject private var viewModel: ActivityInfoViewModel
 	@StateObject private var mapViewModel: MapViewModel
 	@StateObject private var cardViewModel: ActivityCardViewModel
-	@StateObject private var locationManager = LocationManager()
+	@ObservedObject private var locationManager = LocationManager.shared
 	@ObservedObject var activity: FullFeedActivityDTO
 	var activityColor: Color
 	@State private var region: MKCoordinateRegion
@@ -51,7 +51,7 @@ struct ActivityCardPopupView: View {
 		self._viewModel = StateObject(
 			wrappedValue: ActivityInfoViewModel(
 				activity: cachedActivity,
-				locationManager: LocationManager()
+				locationManager: LocationManager.shared
 			)
 		)
 		let mapVM = MapViewModel(activity: cachedActivity)

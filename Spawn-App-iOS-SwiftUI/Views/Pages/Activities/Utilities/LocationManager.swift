@@ -10,6 +10,9 @@ import SwiftUI
 import CoreLocation
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+    // MARK: - Singleton
+    static let shared = LocationManager()
+    
     @Published var userLocation: CLLocationCoordinate2D?
     @Published var locationUpdated = false
     @Published var authorizationStatus: CLAuthorizationStatus = .notDetermined
@@ -19,8 +22,10 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var lastPublishedLocation: CLLocationCoordinate2D?
     private let significantDistanceThreshold: Double = 10.0 // Only publish updates > 10 meters
 
-    override init() {
+    private override init() {
         super.init()
+        
+        print("📍 LocationManager: Initializing shared singleton instance")
         
         self.locationManager.delegate = self
         // Use balanced accuracy for better performance (not kCLLocationAccuracyBest)
@@ -50,12 +55,15 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private func continueInitialization() {
         // Check current authorization status
         self.authorizationStatus = locationManager.authorizationStatus
+        print("📍 LocationManager: Current authorization status: \(authorizationStatus.rawValue)")
         
         // Handle initial authorization state
         switch authorizationStatus {
         case .notDetermined:
+            print("📍 LocationManager: Requesting location authorization")
             self.locationManager.requestWhenInUseAuthorization()
         case .authorizedWhenInUse, .authorizedAlways:
+            print("📍 LocationManager: Authorization granted, starting location updates")
             self.locationManager.startUpdatingLocation()
         case .denied, .restricted:
             print("⚠️ LocationManager: Location access denied or restricted")
@@ -174,13 +182,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     
     func startLocationUpdates() {
         guard authorizationStatus == .authorizedWhenInUse || authorizationStatus == .authorizedAlways else {
+            print("⚠️ LocationManager: Cannot start location updates - authorization status: \(authorizationStatus.rawValue)")
             locationError = "Location permission not granted"
             return
         }
+        print("📍 LocationManager: Starting location updates (manually requested)")
         locationManager.startUpdatingLocation()
     }
     
     func stopLocationUpdates() {
+        print("📍 LocationManager: Stopping location updates (manually requested)")
         locationManager.stopUpdatingLocation()
     }
 }

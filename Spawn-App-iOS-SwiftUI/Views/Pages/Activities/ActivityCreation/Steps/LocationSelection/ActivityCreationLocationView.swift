@@ -5,7 +5,7 @@ import SwiftUI
 struct ActivityCreationLocationView: View {
 	@ObservedObject var viewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
-	@StateObject private var locationManager = LocationManager()
+	@ObservedObject private var locationManager = LocationManager.shared
 	@State private var region: MKCoordinateRegion = {
 		print("🔍 DEBUG: Initializing default region for ActivityCreationLocationView")
 		// Create a safe default region with validation

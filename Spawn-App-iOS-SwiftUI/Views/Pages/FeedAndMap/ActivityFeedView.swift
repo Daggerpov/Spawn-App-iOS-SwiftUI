@@ -9,7 +9,7 @@ import SwiftUI
 struct ActivityFeedView: View {
     var user: BaseUserDTO
     @ObservedObject var viewModel: FeedViewModel
-    @StateObject private var locationManager = LocationManager()
+    @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?

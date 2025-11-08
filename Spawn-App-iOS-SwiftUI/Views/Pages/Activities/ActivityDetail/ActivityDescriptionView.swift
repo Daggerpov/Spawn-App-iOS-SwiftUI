@@ -13,7 +13,7 @@ struct ActivityDescriptionView: View {
 	var color: Color
 	@State private var showActivityEditView = false
 	@State private var showAttendees = false
-	@StateObject private var locationManager = LocationManager()
+	@ObservedObject private var locationManager = LocationManager.shared
 	
 	// State for activity reporting
 	@State private var showActivityMenu: Bool = false
