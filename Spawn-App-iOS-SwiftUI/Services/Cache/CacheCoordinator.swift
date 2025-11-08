@@ -229,15 +229,24 @@ class CacheCoordinator: ObservableObject {
                 if needsFriendsRefresh || needsActivitiesRefresh || needsActivityTypesRefresh ||
                    needsOtherProfilesRefresh || needsRecommendedFriendsRefresh ||
                    needsFriendRequestsRefresh || needsSentFriendRequestsRefresh {
-                    
+
+                    // Capture the current values to avoid Swift 6 concurrency warnings
+                    let needsFriendsRefreshCapture = needsFriendsRefresh
+                    let needsActivitiesRefreshCapture = needsActivitiesRefresh
+                    let needsActivityTypesRefreshCapture = needsActivityTypesRefresh
+                    let needsOtherProfilesRefreshCapture = needsOtherProfilesRefresh
+                    let needsRecommendedFriendsRefreshCapture = needsRecommendedFriendsRefresh
+                    let needsFriendRequestsRefreshCapture = needsFriendRequestsRefresh
+                    let needsSentFriendRequestsRefreshCapture = needsSentFriendRequestsRefresh
+
                     Task {
-                        async let friendsTask: () = needsFriendsRefresh ? friendshipCache.refreshFriends() : noop()
-                        async let activitiesTask: () = needsActivitiesRefresh ? activityCache.refreshActivities() : noop()
-                        async let activityTypesTask: () = needsActivityTypesRefresh ? activityCache.refreshActivityTypes() : noop()
-                        async let otherProfilesTask: () = needsOtherProfilesRefresh ? profileCache.refreshOtherProfiles() : noop()
-                        async let recommendedFriendsTask: () = needsRecommendedFriendsRefresh ? friendshipCache.refreshRecommendedFriends() : noop()
-                        async let friendRequestsTask: () = needsFriendRequestsRefresh ? friendshipCache.refreshFriendRequests() : noop()
-                        async let sentFriendRequestsTask: () = needsSentFriendRequestsRefresh ? friendshipCache.refreshSentFriendRequests() : noop()
+                        async let friendsTask: () = needsFriendsRefreshCapture ? friendshipCache.refreshFriends() : noop()
+                        async let activitiesTask: () = needsActivitiesRefreshCapture ? activityCache.refreshActivities() : noop()
+                        async let activityTypesTask: () = needsActivityTypesRefreshCapture ? activityCache.refreshActivityTypes() : noop()
+                        async let otherProfilesTask: () = needsOtherProfilesRefreshCapture ? profileCache.refreshOtherProfiles() : noop()
+                        async let recommendedFriendsTask: () = needsRecommendedFriendsRefreshCapture ? friendshipCache.refreshRecommendedFriends() : noop()
+                        async let friendRequestsTask: () = needsFriendRequestsRefreshCapture ? friendshipCache.refreshFriendRequests() : noop()
+                        async let sentFriendRequestsTask: () = needsSentFriendRequestsRefreshCapture ? friendshipCache.refreshSentFriendRequests() : noop()
 
                         let _ = await (friendsTask, activitiesTask, activityTypesTask, otherProfilesTask, recommendedFriendsTask, friendRequestsTask, sentFriendRequestsTask)
                     }
