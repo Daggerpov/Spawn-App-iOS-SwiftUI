@@ -9,9 +9,9 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
-// MARK: - Unified Map View Representable
+// MARK: - Unified Map View
 // This component can be used for both activity display and location selection
-struct UnifiedMapViewRepresentable: UIViewRepresentable {
+struct UnifiedMapView: UIViewRepresentable {
     @Binding var region: MKCoordinateRegion
     @Binding var is3DMode: Bool
     let showsUserLocation: Bool
@@ -23,24 +23,6 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
     var onMapDidChange: ((CLLocationCoordinate2D) -> Void)?
     var onActivityTap: (FullFeedActivityDTO) -> Void
     var onMapLoaded: (() -> Void)?
-    
-    // Custom annotation type that carries the activity data needed for rendering
-    private class ActivityAnnotation: NSObject, MKAnnotation {
-        let activityId: UUID
-        dynamic var coordinate: CLLocationCoordinate2D
-        var title: String?
-        let activityIcon: String
-        let activityUIColor: UIColor
-        
-        init(activityId: UUID, title: String?, coordinate: CLLocationCoordinate2D, icon: String, color: UIColor) {
-            self.activityId = activityId
-            self.title = title
-            self.coordinate = coordinate
-            self.activityIcon = icon
-            self.activityUIColor = color
-            super.init()
-        }
-    }
     
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
@@ -79,6 +61,10 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
                 span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
             )
             mapView.setRegion(defaultRegion, animated: false)
+            // Notify that map is loaded after a short delay to ensure rendering
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.onMapLoaded?()
+            }
             return mapView
         }
         
@@ -86,6 +72,12 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         mapView.setRegion(region, animated: false)
         
         print("🗺️ UnifiedMapView: Map view created, waiting for tiles to load...")
+        
+        // Call onMapLoaded after a short delay as fallback
+        // The delegate method will also call it, but this ensures it gets called
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.onMapLoaded?()
+        }
         
         return mapView
     }
@@ -205,7 +197,7 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
     }
     
     class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: UnifiedMapViewRepresentable
+        var parent: UnifiedMapView
         
         // Track last rendered state to prevent unnecessary updates
         var lastRenderedAnnotationIDs: Set<UUID> = []
@@ -216,7 +208,7 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         // Track last logged location to prevent excessive logging
         var lastLoggedLocation: CLLocationCoordinate2D?
         
-        init(_ parent: UnifiedMapViewRepresentable) {
+        init(_ parent: UnifiedMapView) {
             self.parent = parent
             super.init()
         }
@@ -294,19 +286,19 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
             }()
             
             if let activityAnnotation = annotation as? ActivityAnnotation {
-                if let customImage = createCustomPinImage(icon: activityAnnotation.activityIcon, color: activityAnnotation.activityUIColor) {
+                if let customImage = MapAnnotationHelpers.createCustomPinImage(icon: activityAnnotation.activityIcon, color: activityAnnotation.activityUIColor) {
                     annotationView?.image = customImage
                     annotationView?.centerOffset = CGPoint(x: 0, y: -customImage.size.height / 2)
                 }
             } else if let resolvedActivity = resolvedActivity {
-                let activityIcon = getActivityIcon(for: resolvedActivity)
+                let activityIcon = MapAnnotationHelpers.getActivityIcon(for: resolvedActivity)
                 let activityColor = UIColor(ActivityColorService.shared.getColorForActivity(resolvedActivity.id))
-                if let customImage = createCustomPinImage(icon: activityIcon, color: activityColor) {
+                if let customImage = MapAnnotationHelpers.createCustomPinImage(icon: activityIcon, color: activityColor) {
                     annotationView?.image = customImage
                     annotationView?.centerOffset = CGPoint(x: 0, y: -customImage.size.height / 2)
                 }
             } else {
-                if let fallbackImage = createCustomPinImage(icon: "⭐️", color: UIColor(Color(hex: "#333333"))) {
+                if let fallbackImage = MapAnnotationHelpers.createCustomPinImage(icon: "⭐️", color: UIColor(Color(hex: "#333333"))) {
                     annotationView?.image = fallbackImage
                     annotationView?.centerOffset = CGPoint(x: 0, y: -fallbackImage.size.height / 2)
                 }
@@ -383,74 +375,6 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
             let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
             let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
             return fromLocation.distance(from: toLocation)
-        }
-        
-        // Helper method to create custom pin images using Core Graphics
-        private func createCustomPinImage(icon: String, color: UIColor) -> UIImage? {
-            let circleDiameter: CGFloat = 44
-            let pointerHeight: CGFloat = 14
-            let size = CGSize(width: circleDiameter, height: circleDiameter + pointerHeight)
-            let renderer = UIGraphicsImageRenderer(size: size)
-            
-            let image = renderer.image { context in
-                let cgContext = context.cgContext
-                
-                // Draw the circular head
-                let circleRect = CGRect(x: 0, y: 0, width: circleDiameter, height: circleDiameter)
-                cgContext.setFillColor(color.cgColor)
-                cgContext.addEllipse(in: circleRect)
-                cgContext.fillPath()
-                
-                // Draw the downward triangle pointer
-                let baseY = circleRect.maxY - 5 // Slight overlap with circle
-                let tipPoint = CGPoint(x: size.width / 2, y: size.height)
-                let leftBase = CGPoint(x: size.width / 2 - 15, y: baseY)
-                let rightBase = CGPoint(x: size.width / 2 + 15, y: baseY)
-                
-                cgContext.beginPath()
-                cgContext.move(to: tipPoint)
-                cgContext.addLine(to: leftBase)
-                cgContext.addLine(to: rightBase)
-                cgContext.closePath()
-                cgContext.setFillColor(color.cgColor)
-                cgContext.fillPath()
-                
-                // Draw the emoji centered within the circle
-                let iconString = NSString(string: icon)
-                let font = UIFont.systemFont(ofSize: 20)
-                let textAttributes: [NSAttributedString.Key: Any] = [
-                    .font: font,
-                    .foregroundColor: UIColor.white
-                ]
-                let textSize = iconString.size(withAttributes: textAttributes)
-                let textRect = CGRect(
-                    x: (circleDiameter - textSize.width) / 2,
-                    y: (circleDiameter - textSize.height) / 2,
-                    width: textSize.width,
-                    height: textSize.height
-                )
-                iconString.draw(in: textRect, withAttributes: textAttributes)
-            }
-            
-            return image
-        }
-        
-        // Helper method to get appropriate activity icon with fallback logic
-        private func getActivityIcon(for activity: FullFeedActivityDTO) -> String {
-            // First check if the activity has its own icon
-            if let activityIcon = activity.icon, !activityIcon.isEmpty {
-                return activityIcon
-            }
-            
-            // Fall back to the activity type's icon if activityTypeId exists
-            if let activityTypeId = activity.activityTypeId,
-               let activityType = AppCache.shared.activityTypes.first(where: { $0.id == activityTypeId }),
-               !activityType.icon.isEmpty {
-                return activityType.icon
-            }
-            
-            // Final fallback to default star emoji
-            return "⭐️"
         }
     }
 }

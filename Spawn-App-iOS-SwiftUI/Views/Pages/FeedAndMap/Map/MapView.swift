@@ -9,8 +9,6 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
-
 struct MapView: View {
     @ObservedObject var viewModel: FeedViewModel
     @StateObject private var locationManager = LocationManager()
@@ -49,9 +47,6 @@ struct MapView: View {
     
     // PERFORMANCE: Cache filtered activities to avoid recalculating on every render
     @State private var filteredActivities: [FullFeedActivityDTO] = []
-    
-    // Map loading state
-    @State private var isMapLoaded = false
     
     enum TimeFilter: String, CaseIterable {
         case lateNight = "Late Night"
@@ -122,7 +117,7 @@ struct MapView: View {
     var body: some View {
         ZStack {
             // Base layer - Map
-            UnifiedMapViewRepresentable(
+            UnifiedMapView(
                 region: $region,
                 is3DMode: $is3DMode,
                 showsUserLocation: true,
@@ -143,27 +138,10 @@ struct MapView: View {
                     )
                 },
                 onMapLoaded: {
-                    isMapLoaded = true
                     print("✅ [NAV] MapView: Map loaded successfully")
                 }
             )
             .ignoresSafeArea()
-            
-            // Loading overlay
-            if !isMapLoaded {
-                ZStack {
-                    Color.black.opacity(0.3)
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(1.5)
-                        Text("Loading Map...")
-                            .font(.onestMedium(size: 16))
-                            .foregroundColor(.white)
-                    }
-                }
-                .ignoresSafeArea()
-            }
             
             // Top control buttons layer
             VStack {
@@ -251,9 +229,6 @@ struct MapView: View {
                 isViewVisible = true
                 print("👁️ [NAV] MapView appeared")
                 
-                // Reset map loaded state
-                isMapLoaded = false
-                
                 // PERFORMANCE: Update filtered activities once on appear
                 updateFilteredActivities()
                 
@@ -274,15 +249,6 @@ struct MapView: View {
                    locationManager.authorizationStatus == .authorizedAlways {
                     print("📍 [NAV] MapView: Starting location updates")
                     locationManager.startLocationUpdates()
-                }
-                
-                // Timeout for map loading (increased to 10 seconds for slower devices/networks)
-                // This is a safety fallback - the map should call onMapLoaded much sooner via delegate
-                DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) {
-                    if !isMapLoaded {
-                        print("⚠️ [NAV] MapView: Map loading timeout after 10s - forcing loaded state")
-                        isMapLoaded = true
-                    }
                 }
             }
             .onDisappear {

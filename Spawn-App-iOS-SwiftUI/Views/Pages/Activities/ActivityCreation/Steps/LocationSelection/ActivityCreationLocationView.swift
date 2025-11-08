@@ -2,8 +2,6 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
-
 struct ActivityCreationLocationView: View {
 	@ObservedObject var viewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
@@ -63,7 +61,7 @@ struct ActivityCreationLocationView: View {
 		
 		return ZStack {
 			// Unified Map View using the same component as MapView (works on all iOS versions)
-			UnifiedMapViewRepresentable(
+			UnifiedMapView(
 				region: $region,
 				is3DMode: $is3DMode,
 				showsUserLocation: true,
