@@ -40,18 +40,14 @@ struct UnifiedMapView: UIViewRepresentable {
 		mapView.showsCompass = true
 		mapView.showsScale = true
 		mapView.isUserInteractionEnabled = true
-
-		// Additional iOS < 17 compatibility settings
 		mapView.showsBuildings = true
 		mapView.isPitchEnabled = true
+		mapView.pointOfInterestFilter = .includingAll
 
-		// Use pointOfInterestFilter instead of deprecated showsPointsOfInterest
-		if #available(iOS 13.0, *) {
-			mapView.pointOfInterestFilter = .includingAll
-		} else {
-			mapView.showsPointsOfInterest = true
-		}
-
+		// Set map properties for better tile loading
+		mapView.layoutMargins = .zero
+		mapView.isMultipleTouchEnabled = true
+		
 		// Validate region before setting to prevent crashes
 		guard
 			CLLocationCoordinate2DIsValid(region.center)
@@ -71,22 +67,14 @@ struct UnifiedMapView: UIViewRepresentable {
 				)
 			)
 			mapView.setRegion(defaultRegion, animated: false)
-			// Notify that map is loaded after a short delay to ensure rendering
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-				self.onMapLoaded?()
-			}
+			print("🗺️ Map view created with default region")
 			return mapView
 		}
 
-		// Set initial region using the basic setRegion method for better iOS < 17 compatibility
+		// Set initial region
 		mapView.setRegion(region, animated: false)
-
-		print("🗺️ Map view created, waiting for tiles to load...")
-
-		// Fallback: Ensure onMapLoaded is called even if delegate methods don't fire
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-			self.onMapLoaded?()
-		}
+		
+		print("🗺️ Map view created with region: \(region.center.latitude), \(region.center.longitude)")
 
 		return mapView
 	}
@@ -145,20 +133,25 @@ struct UnifiedMapView: UIViewRepresentable {
 				heading: currentCamera.heading
 			)
 
-			UIView.animate(
-				withDuration: 0.75,
-				delay: 0,
-				options: [.curveEaseInOut],
-				animations: {
-					mapView.camera = newCamera
-				},
-				completion: nil
-			)
+			// Ensure animation happens on main thread to prevent freezing
+			DispatchQueue.main.async {
+				UIView.animate(
+					withDuration: 0.75,
+					delay: 0,
+					options: [.curveEaseInOut, .allowUserInteraction],
+					animations: {
+						mapView.camera = newCamera
+					}
+				)
+			}
 		}
 
 		// Update region only if not in 3D mode and region significantly changed
 		if !is3DMode && regionChanged && isLocationChange {
-			mapView.setRegion(region, animated: true)
+			// Use async to prevent blocking when navigating away
+			DispatchQueue.main.async {
+				mapView.setRegion(region, animated: true)
+			}
 		}
 
 		// Update annotations only if not in location selection mode
@@ -170,36 +163,39 @@ struct UnifiedMapView: UIViewRepresentable {
 				context.coordinator.lastRenderedAnnotationIDs != newActivityIDs
 
 			if annotationsChanged {
-				let currentAnnotations = mapView.annotations.filter {
-					!($0 is MKUserLocation)
-				}
-				mapView.removeAnnotations(currentAnnotations)
+				// Perform annotation updates on main thread to prevent freezing
+				DispatchQueue.main.async {
+					let currentAnnotations = mapView.annotations.filter {
+						!($0 is MKUserLocation)
+					}
+					mapView.removeAnnotations(currentAnnotations)
 
-				let newAnnotations = annotationItems.compactMap {
-					activity -> MKAnnotation? in
-					guard let location = activity.location else { return nil }
-					let coord = CLLocationCoordinate2D(
-						latitude: location.latitude,
-						longitude: location.longitude
-					)
-					let icon =
-						(activity.icon?.isEmpty == false) ? activity.icon! : "⭐️"
-					let color = UIColor(
-						ActivityColorService.shared.getColorForActivity(
-							activity.id
+					let newAnnotations = annotationItems.compactMap {
+						activity -> MKAnnotation? in
+						guard let location = activity.location else { return nil }
+						let coord = CLLocationCoordinate2D(
+							latitude: location.latitude,
+							longitude: location.longitude
 						)
-					)
-					return ActivityAnnotation(
-						activityId: activity.id,
-						title: activity.title,
-						coordinate: coord,
-						icon: icon,
-						color: color
-					)
+						let icon =
+							(activity.icon?.isEmpty == false) ? activity.icon! : "⭐️"
+						let color = UIColor(
+							ActivityColorService.shared.getColorForActivity(
+								activity.id
+							)
+						)
+						return ActivityAnnotation(
+							activityId: activity.id,
+							title: activity.title,
+							coordinate: coord,
+							icon: icon,
+							color: color
+						)
+					}
+					mapView.addAnnotations(newAnnotations)
 				}
-				mapView.addAnnotations(newAnnotations)
 
-				// Update cached annotation IDs
+				// Update cached annotation IDs immediately
 				context.coordinator.lastRenderedAnnotationIDs = newActivityIDs
 			}
 		}
@@ -216,6 +212,13 @@ struct UnifiedMapView: UIViewRepresentable {
 
 	func makeCoordinator() -> Coordinator {
 		Coordinator(self)
+	}
+	
+	static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator) {
+		// Clean up delegate and annotations to prevent crashes on navigation
+		mapView.delegate = nil
+		mapView.removeAnnotations(mapView.annotations)
+		print("🗺️ Map view dismantled and cleaned up")
 	}
 
 	class Coordinator: NSObject, MKMapViewDelegate {
@@ -281,13 +284,18 @@ struct UnifiedMapView: UIViewRepresentable {
 				return
 			}
 
-			DispatchQueue.main.async {
+			// Capture values to avoid accessing parent in async block
+			let isLocationSelection = self.parent.isLocationSelectionMode
+			let onMapDidChange = self.parent.onMapDidChange
+			
+			DispatchQueue.main.async { [weak self] in
+				guard let self = self else { return }
 				// Only update region binding if in location selection mode (needs accurate pin placement)
 				// For map view, don't update binding to prevent feedback loop with animations
-				if self.parent.isLocationSelectionMode {
+				if isLocationSelection {
 					self.parent.region = region
 				}
-				self.parent.onMapDidChange?(region.center)
+				onMapDidChange?(region.center)
 			}
 		}
 

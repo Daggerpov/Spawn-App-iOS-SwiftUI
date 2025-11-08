@@ -172,14 +172,14 @@ struct MapView: View {
 			
 			updateFilteredActivities()
 			
-			// Set initial region
-			if let userLocation = locationManager.userLocation {
-				region = MKCoordinateRegion(
+			// Set initial region immediately - let UnifiedMapView handle initialization
+			if let userLocation = self.locationManager.userLocation {
+				self.region = MKCoordinateRegion(
 					center: userLocation,
 					span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
 				)
-			} else if !viewModel.activities.isEmpty {
-				adjustRegionForActivities()
+			} else if !self.viewModel.activities.isEmpty {
+				self.adjustRegionForActivities()
 			}
 			
 			// Start location updates
