@@ -2,7 +2,7 @@
 //  MapView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 11/11/24.
+//  Rebuilt from scratch for better stability and performance
 //
 
 import CoreLocation
@@ -10,9 +10,13 @@ import MapKit
 import SwiftUI
 
 struct MapView: View {
+	// MARK: - Properties
 	@ObservedObject var viewModel: FeedViewModel
 	@StateObject private var locationManager = LocationManager()
-
+	
+	let user: BaseUserDTO
+	
+	// MARK: - State
 	@State private var region = MKCoordinateRegion(
 		center: CLLocationCoordinate2D(
 			latitude: defaultMapLatitude,
@@ -20,267 +24,254 @@ struct MapView: View {
 		),
 		span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
 	)
-
+	
 	@State private var is3DMode: Bool = false
 	@State private var showFilterOverlay: Bool = false
 	@State private var selectedTimeFilter: MapFilterOverlay.TimeFilter = .allActivities
-	@State private var showLocationError: Bool = false
-	@State private var locationErrorMessage: String = ""
-	@State private var isViewVisible = false
 	@State private var filteredActivities: [FullFeedActivityDTO] = []
-
-	var user: BaseUserDTO
-
+	@State private var isMapLoaded = false
+	@State private var hasInitialized = false
+	@State private var loadingTimeoutTask: Task<Void, Never>?
+	
+	// MARK: - Initialization
+	
 	init(user: BaseUserDTO, viewModel: FeedViewModel) {
 		self.user = user
 		self.viewModel = viewModel
 	}
-
-	// MARK: - Helper Methods
-
-	/// Updates filtered activities based on current filter and activities
-	/// This is called only when needed, not on every render (performance optimization)
-	private func updateFilteredActivities() {
-		let now = Date()
-		let calendar = Calendar.current
-
-		let filtered = viewModel.activities.filter { activity in
-			guard let startTime = activity.startTime else { return false }
-
-			switch selectedTimeFilter {
-			case .allActivities:
-				return true
-
-			case .happeningNow:
-				guard let endTime = activity.endTime else { return false }
-				return startTime <= now && endTime >= now
-
-			case .inTheNextHour:
-				let oneHourFromNow = calendar.date(
-					byAdding: .hour,
-					value: 1,
-					to: now
-				)!
-				return startTime > now && startTime <= oneHourFromNow
-
-			case .afternoon:
-				let noonTime = calendar.date(
-					bySettingHour: 12,
-					minute: 0,
-					second: 0,
-					of: startTime
-				)!
-				let eveningTime = calendar.date(
-					bySettingHour: 17,
-					minute: 0,
-					second: 0,
-					of: startTime
-				)!
-
-				return startTime >= noonTime && startTime < eveningTime
-					&& calendar.isDate(startTime, inSameDayAs: now)
-
-			case .evening:
-				let eveningTime = calendar.date(
-					bySettingHour: 17,
-					minute: 0,
-					second: 0,
-					of: startTime
-				)!
-				let nightTime = calendar.date(
-					bySettingHour: 21,
-					minute: 0,
-					second: 0,
-					of: startTime
-				)!
-
-				return startTime >= eveningTime && startTime < nightTime
-					&& calendar.isDate(startTime, inSameDayAs: now)
-
-			case .lateNight:
-				let startOfDay = calendar.startOfDay(for: startTime)
-				let nightTime = calendar.date(
-					bySettingHour: 21,
-					minute: 0,
-					second: 0,
-					of: startTime
-				)!
-				let nextDay = calendar.date(
-					byAdding: .day,
-					value: 1,
-					to: startOfDay
-				)!
-
-				return (startTime >= nightTime && startTime < nextDay)
-					|| (startTime >= startOfDay
-						&& startTime < calendar.date(
-							bySettingHour: 4,
-							minute: 0,
-							second: 0,
-							of: startTime
-						)!)
-			}
-		}
-
-		filteredActivities = filtered
-	}
-
+	
+	// MARK: - Body
+	
 	var body: some View {
 		ZStack {
-			// Map layer
+			// Map Layer
 			UnifiedMapView(
 				region: $region,
 				is3DMode: $is3DMode,
 				showsUserLocation: true,
-				annotationItems: filteredActivities.filter { $0.location != nil },
+				annotationItems: filteredActivities,
 				isLocationSelectionMode: false,
 				onMapWillChange: nil,
-				onMapDidChange: { _ in },
-				onActivityTap: { activity in
-					NotificationCenter.default.post(
-						name: .showGlobalActivityPopup,
-						object: nil,
-						userInfo: [
-							"activity": activity,
-							"color": ActivityColorService.shared.getColorForActivity(activity.id),
-							"fromMapView": true,
-						]
-					)
-				},
-				onMapLoaded: {
-					print("✅ Map loaded successfully")
-				}
+				onMapDidChange: nil,
+				onActivityTap: handleActivityTap,
+				onMapLoaded: handleMapLoaded
 			)
 			.ignoresSafeArea()
-
-			// Control buttons (3D toggle, location)
+			
+			// Control Buttons Overlay
 			MapControlButtons(
 				is3DMode: $is3DMode,
 				region: $region,
 				locationManager: locationManager
 			)
-
-			// Filter overlay
+			
+			// Filter Overlay
 			MapFilterOverlay(
 				showFilterOverlay: $showFilterOverlay,
 				selectedTimeFilter: $selectedTimeFilter
 			)
-		}
-		.onAppear {
-			isViewVisible = true
-			print("🗺️ MapView appeared")
 			
-			updateFilteredActivities()
-			
-			// Set initial region immediately - let UnifiedMapView handle initialization
-			if let userLocation = self.locationManager.userLocation {
-				self.region = MKCoordinateRegion(
-					center: userLocation,
-					span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-				)
-			} else if !self.viewModel.activities.isEmpty {
-				self.adjustRegionForActivities()
-			}
-			
-			// Start location updates
-			if locationManager.authorizationStatus == .authorizedWhenInUse
-				|| locationManager.authorizationStatus == .authorizedAlways
-			{
-				locationManager.startLocationUpdates()
-			}
-		}
-		.onDisappear {
-			isViewVisible = false
-			locationManager.stopLocationUpdates()
-			print("🗺️ MapView disappeared")
-		}
-		.onChange(of: locationManager.locationUpdated) {
-			guard isViewVisible else { return }
-			
-			if locationManager.locationUpdated
-				&& locationManager.userLocation != nil
-				&& abs(region.center.latitude - defaultMapLatitude) < 0.0001
-				&& abs(region.center.longitude - defaultMapLongitude) < 0.0001
-			{
-				adjustRegionToUserLocation()
-			}
-		}
-		.onChange(of: viewModel.activities) {
-			guard isViewVisible else { return }
-			updateFilteredActivities()
-		}
-		.onChange(of: selectedTimeFilter) {
-			updateFilteredActivities()
-		}
-		.onChange(of: locationManager.locationError) { _, error in
-			guard isViewVisible else { return }
-			
-			if let error = error {
-				locationErrorMessage = error
-				showLocationError = true
-			}
-		}
-		.alert("Location Error", isPresented: $showLocationError) {
-			Button("OK") {
-				showLocationError = false
-			}
-			if locationManager.authorizationStatus == .denied {
-				Button("Settings") {
-					if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-						UIApplication.shared.open(settingsUrl)
-					}
+			// Loading Indicator
+			if !isMapLoaded {
+				ZStack {
+					Color.black.opacity(0.3)
+						.ignoresSafeArea()
+					
+					ProgressView()
+						.progressViewStyle(CircularProgressViewStyle(tint: .white))
+						.scaleEffect(1.5)
 				}
 			}
-		} message: {
-			Text(locationErrorMessage)
+		}
+		.onAppear {
+			handleViewAppeared()
+		}
+		.onDisappear {
+			handleViewDisappeared()
+		}
+		.onChange(of: viewModel.activities) { _, _ in
+			updateFilteredActivities()
+		}
+		.onChange(of: selectedTimeFilter) { _, _ in
+			updateFilteredActivities()
+		}
+		.onChange(of: locationManager.locationUpdated) { _, _ in
+			handleUserLocationUpdate()
 		}
 	}
-
-	private func adjustRegionToUserLocation() {
+	
+	// MARK: - Lifecycle Methods
+	
+	private func handleViewAppeared() {
+		print("🗺️ MapView appeared")
+		
+		// Initialize filtered activities
+		updateFilteredActivities()
+		
+		// Set initial region (only once)
+		if !hasInitialized {
+			setInitialRegion()
+			hasInitialized = true
+		}
+		
+		// Start location updates
+		if locationManager.authorizationStatus == .authorizedWhenInUse ||
+		   locationManager.authorizationStatus == .authorizedAlways {
+			locationManager.startLocationUpdates()
+		}
+		
+		// Safety timeout: dismiss loading indicator after 5 seconds if map doesn't load
+		// This handles simulator cases where MapKit tiles fail to load
+		loadingTimeoutTask = Task { @MainActor in
+			try? await Task.sleep(nanoseconds: 5_000_000_000) // 5 seconds
+			if !isMapLoaded {
+				print("⚠️ Map loading timeout - dismissing loading indicator")
+				isMapLoaded = true
+			}
+		}
+	}
+	
+	private func handleViewDisappeared() {
+		print("🗺️ MapView disappeared")
+		locationManager.stopLocationUpdates()
+		loadingTimeoutTask?.cancel()
+		loadingTimeoutTask = nil
+	}
+	
+	private func handleMapLoaded() {
+		print("✅ Map loaded successfully")
+		loadingTimeoutTask?.cancel()
+		loadingTimeoutTask = nil
+		isMapLoaded = true
+	}
+	
+	// MARK: - Region Management
+	
+	private func setInitialRegion() {
+		// Priority 1: User location
 		if let userLocation = locationManager.userLocation {
+			region = MKCoordinateRegion(
+				center: userLocation,
+				span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+			)
+			print("📍 Set initial region to user location")
+			return
+		}
+		
+		// Priority 2: Activities location
+		if !viewModel.activities.isEmpty {
+			fitRegionToActivities()
+			print("📍 Set initial region to fit activities")
+			return
+		}
+		
+		// Priority 3: Default location (already set in @State)
+		print("📍 Using default region")
+	}
+	
+	private func handleUserLocationUpdate() {
+		// Only auto-center if still at default location
+		guard let userLocation = locationManager.userLocation else { return }
+		
+		let isStillAtDefault = abs(region.center.latitude - defaultMapLatitude) < 0.001
+			&& abs(region.center.longitude - defaultMapLongitude) < 0.001
+		
+		if isStillAtDefault {
 			withAnimation {
 				region = MKCoordinateRegion(
 					center: userLocation,
-					span: MKCoordinateSpan(
-						latitudeDelta: 0.01,
-						longitudeDelta: 0.01
-					)
+					span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
 				)
 			}
+			print("📍 Auto-centered to user location")
 		}
 	}
-
-	private func adjustRegionForActivities() {
-		guard !viewModel.activities.isEmpty else { return }
-
-		let latitudes = viewModel.activities.compactMap { $0.location?.latitude }
-		let longitudes = viewModel.activities.compactMap { $0.location?.longitude }
-
-		guard let minLatitude = latitudes.min(),
-			let maxLatitude = latitudes.max(),
-			let minLongitude = longitudes.min(),
-			let maxLongitude = longitudes.max()
-		else { return }
-
-		let centerLatitude = (minLatitude + maxLatitude) / 2
-		let centerLongitude = (minLongitude + maxLongitude) / 2
-		let latitudeDelta = (maxLatitude - minLatitude) * 1.5
-		let longitudeDelta = (maxLongitude - minLongitude) * 1.5
-
-		withAnimation {
-			region = MKCoordinateRegion(
-				center: CLLocationCoordinate2D(
-					latitude: centerLatitude,
-					longitude: centerLongitude
-				),
-				span: MKCoordinateSpan(
-					latitudeDelta: max(latitudeDelta, 0.01),
-					longitudeDelta: max(longitudeDelta, 0.01)
-				)
-			)
+	
+	private func fitRegionToActivities() {
+		let activitiesWithLocation = viewModel.activities.filter { $0.location != nil }
+		guard !activitiesWithLocation.isEmpty else { return }
+		
+		let latitudes = activitiesWithLocation.compactMap { $0.location?.latitude }
+		let longitudes = activitiesWithLocation.compactMap { $0.location?.longitude }
+		
+		guard let minLat = latitudes.min(),
+			  let maxLat = latitudes.max(),
+			  let minLon = longitudes.min(),
+			  let maxLon = longitudes.max() else {
+			return
 		}
+		
+		let centerLat = (minLat + maxLat) / 2
+		let centerLon = (minLon + maxLon) / 2
+		let latDelta = max((maxLat - minLat) * 1.5, 0.01)
+		let lonDelta = max((maxLon - minLon) * 1.5, 0.01)
+		
+		region = MKCoordinateRegion(
+			center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
+			span: MKCoordinateSpan(latitudeDelta: latDelta, longitudeDelta: lonDelta)
+		)
+	}
+	
+	// MARK: - Activity Filtering
+	
+	private func updateFilteredActivities() {
+		let now = Date()
+		let calendar = Calendar.current
+		
+		let filtered = viewModel.activities.filter { activity in
+			// Must have a location to show on map
+			guard activity.location != nil else { return false }
+			guard let startTime = activity.startTime else { return false }
+			
+			switch selectedTimeFilter {
+			case .allActivities:
+				return true
+				
+			case .happeningNow:
+				guard let endTime = activity.endTime else { return false }
+				return startTime <= now && endTime >= now
+				
+			case .inTheNextHour:
+				let oneHourFromNow = calendar.date(byAdding: .hour, value: 1, to: now) ?? now
+				return startTime > now && startTime <= oneHourFromNow
+				
+			case .afternoon:
+				guard calendar.isDate(startTime, inSameDayAs: now) else { return false }
+				let hour = calendar.component(.hour, from: startTime)
+				return hour >= 12 && hour < 17
+				
+			case .evening:
+				guard calendar.isDate(startTime, inSameDayAs: now) else { return false }
+				let hour = calendar.component(.hour, from: startTime)
+				return hour >= 17 && hour < 21
+				
+			case .lateNight:
+				guard calendar.isDate(startTime, inSameDayAs: now) else { return false }
+				let hour = calendar.component(.hour, from: startTime)
+				return hour >= 21 || hour < 4
+			}
+		}
+		
+		filteredActivities = filtered
+		print("🔍 Filtered activities: \(filtered.count) of \(viewModel.activities.count)")
+	}
+	
+	// MARK: - Activity Interaction
+	
+	private func handleActivityTap(_ activity: FullFeedActivityDTO) {
+		NotificationCenter.default.post(
+			name: .showGlobalActivityPopup,
+			object: nil,
+			userInfo: [
+				"activity": activity,
+				"color": ActivityColorService.shared.getColorForActivity(activity.id),
+				"fromMapView": true
+			]
+		)
 	}
 }
+
+// MARK: - Preview
 
 @available(iOS 17.0, *)
 #Preview {
@@ -291,7 +282,6 @@ struct MapView: View {
 			: APIService(),
 		userId: BaseUserDTO.danielAgapov.id
 	)
-	MapView(user: .danielAgapov, viewModel: previewViewModel).environmentObject(
-		appCache
-	)
+	MapView(user: .danielAgapov, viewModel: previewViewModel)
+		.environmentObject(appCache)
 }
