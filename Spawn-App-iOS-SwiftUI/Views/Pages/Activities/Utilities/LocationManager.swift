@@ -16,13 +16,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var locationError: String?
     
     private var locationManager = CLLocationManager()
+    private var lastPublishedLocation: CLLocationCoordinate2D?
+    private let significantDistanceThreshold: Double = 10.0 // Only publish updates > 10 meters
 
     override init() {
         super.init()
         
         self.locationManager.delegate = self
-        self.locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        self.locationManager.distanceFilter = 5.0 // Update location every 5 meters
+        // Use balanced accuracy for better performance (not kCLLocationAccuracyBest)
+        self.locationManager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        self.locationManager.distanceFilter = 50.0 // Update location every 50 meters (reduced from 5)
         
         // Check if location services are available at all on background queue
         DispatchQueue.global(qos: .userInitiated).async {
@@ -75,10 +78,31 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
             return
         }
         
-        DispatchQueue.main.async {
-            self.userLocation = location.coordinate
-            self.locationUpdated = true
-            self.locationError = nil
+        // Only publish location updates if moved significantly to reduce unnecessary UI updates
+        let shouldPublish: Bool
+        if let lastLocation = lastPublishedLocation {
+            let distance = location.distance(from: CLLocation(latitude: lastLocation.latitude, longitude: lastLocation.longitude))
+            shouldPublish = distance >= significantDistanceThreshold
+        } else {
+            shouldPublish = true // Always publish first location
+        }
+        
+        if shouldPublish {
+            let oldLocation = lastPublishedLocation
+            DispatchQueue.main.async {
+                self.userLocation = location.coordinate
+                self.locationUpdated = true
+                self.locationError = nil
+                
+                if let old = oldLocation {
+                    let distance = location.distance(from: CLLocation(latitude: old.latitude, longitude: old.longitude))
+                    print("📍 LocationManager: Location updated (moved \(String(format: "%.1f", distance))m)")
+                } else {
+                    print("📍 LocationManager: Initial location set")
+                }
+                
+                self.lastPublishedLocation = location.coordinate
+            }
         }
     }
     

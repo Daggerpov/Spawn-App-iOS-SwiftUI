@@ -34,6 +34,10 @@ struct ActivityMapViewRepresentable: UIViewRepresentable {
     
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
+        
+        // CRITICAL: Set map type to standard to ensure tiles load
+        mapView.mapType = .standard
+        
         mapView.showsUserLocation = true
         mapView.delegate = context.coordinator
         

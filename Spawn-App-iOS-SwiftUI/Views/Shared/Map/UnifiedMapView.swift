@@ -22,6 +22,7 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
     var onMapWillChange: (() -> Void)?
     var onMapDidChange: ((CLLocationCoordinate2D) -> Void)?
     var onActivityTap: (FullFeedActivityDTO) -> Void
+    var onMapLoaded: (() -> Void)?
     
     // Custom annotation type that carries the activity data needed for rendering
     private class ActivityAnnotation: NSObject, MKAnnotation {
@@ -46,6 +47,9 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         
         // Ensure proper initialization for iOS < 17 compatibility
         mapView.frame = CGRect(x: 0, y: 0, width: 100, height: 100) // Set initial finite frame
+        
+        // CRITICAL: Set map type to standard to ensure tiles load
+        mapView.mapType = .standard
         
         mapView.showsUserLocation = showsUserLocation
         mapView.delegate = context.coordinator
@@ -83,6 +87,13 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         
         // Set initial region using the basic setRegion method for better iOS < 17 compatibility
         mapView.setRegion(region, animated: false)
+        
+        // Notify that map has loaded
+        DispatchQueue.main.async {
+            self.onMapLoaded?()
+        }
+        
+        print("✅ UnifiedMapView: Map initialized successfully with region \(region.center)")
         
         return mapView
     }
@@ -209,6 +220,9 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         var lastRendered3DMode: Bool = false
         var lastRenderedRegionCenter: CLLocationCoordinate2D?
         var lastRenderedRegionSpan: MKCoordinateSpan?
+        
+        // Track last logged location to prevent excessive logging
+        var lastLoggedLocation: CLLocationCoordinate2D?
         
         init(_ parent: UnifiedMapViewRepresentable) {
             self.parent = parent
@@ -337,10 +351,30 @@ struct UnifiedMapViewRepresentable: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, didUpdate userLocation: MKUserLocation) {
+            // Only log significant location changes to avoid console spam
             if let location = userLocation.location?.coordinate,
                CLLocationCoordinate2DIsValid(location) {
-                print("📍 UnifiedMapView: User location updated - \(location)")
+                
+                // Only log if location has changed significantly (>10 meters)
+                if let lastLocation = self.lastLoggedLocation {
+                    let distance = self.calculateDistance(from: lastLocation, to: location)
+                    if distance > 10.0 { // 10 meters threshold
+                        print("📍 UnifiedMapView: User location updated - \(location) (moved \(String(format: "%.1f", distance))m)")
+                        self.lastLoggedLocation = location
+                    }
+                } else {
+                    // First location update
+                    print("📍 UnifiedMapView: Initial user location - \(location)")
+                    self.lastLoggedLocation = location
+                }
             }
+        }
+        
+        // Helper to calculate distance between two coordinates in meters
+        private func calculateDistance(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Double {
+            let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
+            let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
+            return fromLocation.distance(from: toLocation)
         }
         
         // Helper method to create custom pin images using Core Graphics

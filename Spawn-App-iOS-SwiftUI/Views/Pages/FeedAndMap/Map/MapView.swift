@@ -47,6 +47,12 @@ struct MapView: View {
 	// Track if view is currently visible to prevent updates after disappear
 	@State private var isViewVisible = false
     
+    // PERFORMANCE: Cache filtered activities to avoid recalculating on every render
+    @State private var filteredActivities: [FullFeedActivityDTO] = []
+    
+    // Map loading state
+    @State private var isMapLoaded = false
+    
     enum TimeFilter: String, CaseIterable {
         case lateNight = "Late Night"
         case evening = "Evening"
@@ -56,9 +62,18 @@ struct MapView: View {
         case allActivities = "All Activities"
     }
 
-    // Computed property for filtered activities
-    // Note: viewModel.activities already excludes past activities for feed views
-    private var filteredActivities: [FullFeedActivityDTO] {
+    var user: BaseUserDTO
+
+    init(user: BaseUserDTO, viewModel: FeedViewModel) {
+        self.user = user
+        self.viewModel = viewModel
+    }
+    
+    // MARK: - Helper Methods
+    
+    /// Updates filtered activities based on current filter and activities
+    /// This is called only when needed, not on every render (performance optimization)
+    private func updateFilteredActivities() {
         let now = Date()
         let calendar = Calendar.current
         
@@ -78,7 +93,6 @@ struct MapView: View {
                 return startTime > now && startTime <= oneHourFromNow
                 
             case .afternoon:
-					_ = calendar.startOfDay(for: startTime)
                 let noonTime = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: startTime)!
                 let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
                 
@@ -86,7 +100,6 @@ struct MapView: View {
                        calendar.isDate(startTime, inSameDayAs: now)
                 
             case .evening:
-					_ = calendar.startOfDay(for: startTime)
                 let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
                 let nightTime = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: startTime)!
                 
@@ -103,14 +116,7 @@ struct MapView: View {
             }
         }
         
-        return filtered
-    }
-
-    var user: BaseUserDTO
-
-    init(user: BaseUserDTO, viewModel: FeedViewModel) {
-        self.user = user
-        self.viewModel = viewModel
+        filteredActivities = filtered
     }
 
     var body: some View {
@@ -135,9 +141,29 @@ struct MapView: View {
                             "fromMapView": true
                         ]
                     )
+                },
+                onMapLoaded: {
+                    isMapLoaded = true
+                    print("✅ [NAV] MapView: Map loaded successfully")
                 }
             )
             .ignoresSafeArea()
+            
+            // Loading overlay
+            if !isMapLoaded {
+                ZStack {
+                    Color.black.opacity(0.3)
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
+                        Text("Loading Map...")
+                            .font(.onestMedium(size: 16))
+                            .foregroundColor(.white)
+                    }
+                }
+                .ignoresSafeArea()
+            }
             
             // Top control buttons layer
             VStack {
@@ -221,33 +247,41 @@ struct MapView: View {
                 
                 Spacer()
             }
-            .task {
-                print("📍 [NAV] MapView .task started - setting initial region")
-                
-                // Set initial region based on user location or activities
-                await MainActor.run {
-                    if let userLocation = locationManager.userLocation {
-                        region = MKCoordinateRegion(
-                            center: userLocation,
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        )
-                        print("✅ [NAV] MapView: Set initial region to user location")
-                    } else if !viewModel.activities.isEmpty {
-                        adjustRegionForActivities()
-                        print("✅ [NAV] MapView: Set initial region to activities")
-                    }
-                }
-            }
             .onAppear {
                 isViewVisible = true
                 print("👁️ [NAV] MapView appeared")
-                // Note: Data fetching and timer management now handled globally in ContentView
+                
+                // Reset map loaded state
+                isMapLoaded = false
+                
+                // PERFORMANCE: Update filtered activities once on appear
+                updateFilteredActivities()
+                
+                // Set initial region based on user location or activities
+                if let userLocation = locationManager.userLocation {
+                    region = MKCoordinateRegion(
+                        center: userLocation,
+                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                    )
+                    print("✅ [NAV] MapView: Set initial region to user location")
+                } else if !viewModel.activities.isEmpty {
+                    adjustRegionForActivities()
+                    print("✅ [NAV] MapView: Set initial region to activities")
+                }
                 
                 // Start location updates when view appears
                 if locationManager.authorizationStatus == .authorizedWhenInUse || 
                    locationManager.authorizationStatus == .authorizedAlways {
                     print("📍 [NAV] MapView: Starting location updates")
                     locationManager.startLocationUpdates()
+                }
+                
+                // Timeout for map loading (in case it gets stuck)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                    if !isMapLoaded {
+                        print("⚠️ [NAV] MapView: Map loading timeout - forcing loaded state")
+                        isMapLoaded = true
+                    }
                 }
             }
             .onDisappear {
@@ -263,10 +297,7 @@ struct MapView: View {
             }
             .onChange(of: locationManager.locationUpdated) {
                 // Guard: Only update if view is visible
-                guard isViewVisible else {
-                    print("⚠️ [NAV] MapView: Ignoring location update - view not visible")
-                    return
-                }
+                guard isViewVisible else { return }
                 
                 if locationManager.locationUpdated && locationManager.userLocation != nil && 
                    abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
@@ -276,21 +307,18 @@ struct MapView: View {
             }
             .onChange(of: viewModel.activities) {
                 // Guard: Only update if view is visible
-                guard isViewVisible else {
-                    print("⚠️ [NAV] MapView: Ignoring activities update - view not visible")
-                    return
-                }
+                guard isViewVisible else { return }
                 
-                if locationManager.userLocation != nil {
-                    adjustRegionForActivities()
-                }
+                // PERFORMANCE: Update filtered activities when activities change
+                updateFilteredActivities()
+            }
+            .onChange(of: selectedTimeFilter) {
+                // PERFORMANCE: Update filtered activities when filter changes
+                updateFilteredActivities()
             }
             .onChange(of: locationManager.locationError) { _, error in
                 // Guard: Only update if view is visible
-                guard isViewVisible else {
-                    print("⚠️ [NAV] MapView: Ignoring location error - view not visible")
-                    return
-                }
+                guard isViewVisible else { return }
                 
                 if let error = error {
                     locationErrorMessage = error
