@@ -115,10 +115,7 @@ struct MapView: View {
 
     var body: some View {
         ZStack {
-            // Base layer - Map and its components
-            VStack {
-                ZStack {
-                    // Map layer using unified component
+            // Base layer - Map
                     UnifiedMapViewRepresentable(
                         region: $region,
                         is3DMode: $is3DMode,
@@ -142,7 +139,7 @@ struct MapView: View {
                     )
                     .ignoresSafeArea()
 
-                    // Top control buttons
+            // Top control buttons layer
                     VStack {
                         HStack {
                             Spacer()
@@ -223,8 +220,6 @@ struct MapView: View {
                         .padding(.top, 16)
                         
                         Spacer()
-                    }
-                }
             }
             .task {
                 print("📍 [NAV] MapView .task started - setting initial region")
@@ -320,29 +315,11 @@ struct MapView: View {
             // The first .task block already handles refresh in background
 
 
-            // Dimming overlay
-            if showActivityCreationDrawer || showFilterOverlay {
-                Color.black.opacity(0.5)
+            // Dimming overlay with blur when filters are shown
+            if showFilterOverlay {
+                Color.black.opacity(0.3)
                     .ignoresSafeArea()
                     .transition(.opacity)
-                    .animation(.easeInOut, value: showActivityCreationDrawer || showFilterOverlay)
-                    .blur(radius: 0) // Ensure overlay itself isn't blurred
-            }
-
-            // Base content blur when filters are shown
-            if showFilterOverlay {
-                Rectangle()
-                    .fill(.clear)
-					.background(.ultraThinMaterial)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .animation(.easeInOut, value: showFilterOverlay)
-            }
-
-            // Filter overlay and buttons
-            if showFilterOverlay {
-                // Clear overlay for dismissal
-                Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture {
                         withAnimation(.spring()) {
