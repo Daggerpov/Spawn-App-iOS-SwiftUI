@@ -32,7 +32,6 @@ struct MapView: View {
 	@State private var filteredActivities: [FullFeedActivityDTO] = []
 	@State private var isMapLoaded = false
 	@State private var hasInitialized = false
-	@State private var loadingTimeoutTask: Task<Void, Never>?
 	@State private var mapInitializationTask: Task<Void, Never>?
 	@State private var viewLifecycleState: ViewLifecycleState = .notAppeared
 	
@@ -138,16 +137,6 @@ struct MapView: View {
 		{
 			locationManager.startLocationUpdates()
 		}
-
-		// Safety timeout: dismiss loading indicator after 5 seconds if map doesn't load
-		// This handles simulator cases where MapKit tiles fail to load
-		loadingTimeoutTask = Task { @MainActor in
-			try? await Task.sleep(nanoseconds: 5_000_000_000)  // 5 seconds
-			if !isMapLoaded && viewLifecycleState == .appeared {
-				print("⚠️ Map loading timeout - dismissing loading indicator")
-				isMapLoaded = true
-			}
-		}
 		
 		viewLifecycleState = .appeared
 	}
@@ -162,8 +151,6 @@ struct MapView: View {
 		print("🗺️ MapView disappeared")
 		
 		locationManager.stopLocationUpdates()
-		loadingTimeoutTask?.cancel()
-		loadingTimeoutTask = nil
 		
 		// Cancel any pending map initialization
 		mapInitializationTask?.cancel()
@@ -172,8 +159,6 @@ struct MapView: View {
 
 	private func handleMapLoaded() {
 		print("✅ Map loaded successfully")
-		loadingTimeoutTask?.cancel()
-		loadingTimeoutTask = nil
 		isMapLoaded = true
 	}
 

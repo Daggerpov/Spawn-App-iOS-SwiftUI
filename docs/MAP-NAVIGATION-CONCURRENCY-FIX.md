@@ -220,8 +220,6 @@ backgroundRefreshTask = Task.detached(priority: .userInitiated) {
 ```swift
 backgroundRefreshTask = Task { @MainActor in
     let refreshStart = Date()
-    // Delay to ensure all views are properly initialized
-    try? await Task.sleep(nanoseconds: 100_000_000)  // 100ms
     
     guard !Task.isCancelled else {
         print("⚠️ [NAV] ContentView: Background refresh cancelled before starting")
@@ -237,8 +235,8 @@ backgroundRefreshTask = Task { @MainActor in
 
 **Why This Fixes It:**
 - `@MainActor` ensures all updates happen on the main thread
-- Small delay allows views to complete initialization
 - Proper cancellation check prevents unnecessary work
+- No artificial delays - relies on proper sequencing through MainActor isolation
 - No more priority inversion between map rendering and data fetching
 
 ### Fix 4: Make Coordinator's Parent Reference Thread-Safe
@@ -349,15 +347,6 @@ private func handleViewAppeared() {
     {
         locationManager.startLocationUpdates()
     }
-
-    // Safety timeout: dismiss loading indicator after 5 seconds if map doesn't load
-    loadingTimeoutTask = Task { @MainActor in
-        try? await Task.sleep(nanoseconds: 5_000_000_000)  // 5 seconds
-        if !isMapLoaded && viewLifecycleState == .appeared {
-            print("⚠️ Map loading timeout - dismissing loading indicator")
-            isMapLoaded = true
-        }
-    }
     
     viewLifecycleState = .appeared
 }
@@ -375,8 +364,8 @@ private func handleViewDisappeared() {
     print("🗺️ MapView disappeared")
     
     locationManager.stopLocationUpdates()
-    loadingTimeoutTask?.cancel()
-    loadingTimeoutTask = nil
+    
+    // Cancel any pending map initialization
     mapInitializationTask?.cancel()
     mapInitializationTask = nil
 }
@@ -386,6 +375,7 @@ private func handleViewDisappeared() {
 - Prevents duplicate initialization from rapid tab switches
 - State machine ensures proper lifecycle transitions
 - Prevents operations from running during teardown
+- Map loading relies on delegate callbacks rather than artificial timeouts
 
 ### Fix 6: Optimize FeedViewModel Publishing for MapView
 
