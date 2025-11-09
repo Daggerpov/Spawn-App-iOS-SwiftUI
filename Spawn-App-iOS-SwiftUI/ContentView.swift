@@ -71,6 +71,7 @@ struct ContentView: View {
                     )
                 case .map:
                     MapView(user: user, viewModel: feedViewModel)
+                        .id("MapView-\(user.id)")  // Stable identity prevents recreation
                         .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 case .activities:
                     ActivityCreationView(
@@ -123,8 +124,16 @@ struct ContentView: View {
                 // Refresh from API in background (non-blocking)
                 // CRITICAL: Always run in background, even if cache is empty, to avoid blocking UI
                 print("🔄 [NAV] ContentView: Starting background refresh for shared view model")
-                backgroundRefreshTask = Task.detached(priority: .userInitiated) {
+                backgroundRefreshTask = Task { @MainActor in
                     let refreshStart = Date()
+                    // Delay to ensure all views are properly initialized
+                    try? await Task.sleep(nanoseconds: 100_000_000)  // 100ms
+                    
+                    guard !Task.isCancelled else {
+                        print("⚠️ [NAV] ContentView: Background refresh cancelled before starting")
+                        return
+                    }
+                    
                     await feedViewModel.fetchAllData()
                     let refreshDuration = Date().timeIntervalSince(refreshStart)
                     print("⏱️ [NAV] ContentView: Background refresh took \(String(format: "%.2f", refreshDuration))s")

@@ -20,6 +20,10 @@ class FeedViewModel: ObservableObject {
     private var appCache: AppCache
     private var cancellables = Set<AnyCancellable>()
     
+    // Throttle activities updates to prevent overwhelming MapView
+    private var activitiesUpdateThrottle: AnyCancellable?
+    private let activitiesSubject = PassthroughSubject<[FullFeedActivityDTO], Never>()
+    
     // Periodic refresh timer
     private var refreshTimer: Timer?
     
@@ -48,6 +52,13 @@ class FeedViewModel: ObservableObject {
         // Initialize the activity type view model
         self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, apiService: apiService)
 
+        // Throttle activities updates to prevent overwhelming MapView
+        activitiesUpdateThrottle = activitiesSubject
+            .throttle(for: .milliseconds(500), scheduler: DispatchQueue.main, latest: true)
+            .sink { [weak self] newActivities in
+                self?.activities = newActivities
+            }
+
         // Subscribe to activity type changes to update the UI
         activityTypeViewModel.$activityTypes
             .receive(on: DispatchQueue.main)
@@ -65,7 +76,8 @@ class FeedViewModel: ObservableObject {
                     guard let self = self else { return }
                     let userActivities = cachedActivities[self.userId] ?? []
                     if !userActivities.isEmpty {
-                        self.activities = self.filterExpiredActivities(userActivities)
+                        let filteredActivities = self.filterExpiredActivities(userActivities)
+                        self.activitiesSubject.send(filteredActivities)
                     }
                 }
                 .store(in: &cancellables)
@@ -168,7 +180,7 @@ class FeedViewModel: ObservableObject {
                 // Only update if activities were actually filtered out
                 if filteredActivities.count < self.activities.count {
                     print("🧹 FeedViewModel: Removed \(self.activities.count - filteredActivities.count) expired activities from view")
-                    self.activities = filteredActivities
+                    self.activitiesSubject.send(filteredActivities)
                     
                     // Also cleanup the cache
                     self.appCache.cleanupExpiredActivities()
@@ -204,7 +216,8 @@ class FeedViewModel: ObservableObject {
     func loadCachedActivities() {
         let cachedActivities = appCache.getCurrentUserActivities()
         if !cachedActivities.isEmpty {
-            self.activities = self.filterExpiredActivities(cachedActivities)
+            let filteredActivities = self.filterExpiredActivities(cachedActivities)
+            self.activitiesSubject.send(filteredActivities)
             print("✅ FeedViewModel: Loaded \(cachedActivities.count) activities from cache")
         } else {
             print("⚠️ FeedViewModel: No cached activities available")
@@ -225,7 +238,8 @@ class FeedViewModel: ObservableObject {
         let currentUserActivities = appCache.getCurrentUserActivities()
         if !currentUserActivities.isEmpty {
             await MainActor.run {
-                self.activities = self.filterExpiredActivities(currentUserActivities)
+                let filteredActivities = self.filterExpiredActivities(currentUserActivities)
+                self.activitiesSubject.send(filteredActivities)
             }
             // Still fetch from API in background to ensure freshness
             Task {
@@ -266,14 +280,14 @@ class FeedViewModel: ObservableObject {
             // Filter expired activities and update the cache and view model
             let filteredActivities = self.filterExpiredActivities(fetchedActivities)
             await MainActor.run {
-                self.activities = filteredActivities
+                self.activitiesSubject.send(filteredActivities)
                 self.appCache.updateActivitiesForUser(fetchedActivities, userId: self.userId) // Cache will filter expired activities internally
             }
         } catch {
             // Don't log cancelled errors - they're expected when navigating away
             APIError.logIfNotCancellation(error, message: "❌ DEBUG: Error fetching activities")
             await MainActor.run {
-                self.activities = []
+                self.activitiesSubject.send([])
             }
         }
     }

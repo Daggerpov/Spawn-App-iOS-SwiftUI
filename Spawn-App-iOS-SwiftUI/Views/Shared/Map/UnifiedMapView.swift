@@ -79,7 +79,8 @@ struct UnifiedMapView: UIViewRepresentable {
 		}
 
 		// Force initial render and tile loading
-		DispatchQueue.main.async {
+		DispatchQueue.main.async { [weak mapView] in
+			guard let mapView = mapView else { return }
 			mapView.layoutIfNeeded()
 			// Force a small region change to trigger tile loading
 			let currentRegion = mapView.region
@@ -91,8 +92,10 @@ struct UnifiedMapView: UIViewRepresentable {
 	}
 
 	func updateUIView(_ mapView: MKMapView, context: Context) {
-		// Keep coordinator updated with latest parent state
-		context.coordinator.parent = self
+		// Update parent on main thread only
+		DispatchQueue.main.async {
+			context.coordinator.parent = self
+		}
 
 		// Update region if significantly changed and valid
 		if shouldUpdateRegion(mapView: mapView, context: context) {
@@ -114,6 +117,7 @@ struct UnifiedMapView: UIViewRepresentable {
 
 	static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator)
 	{
+		coordinator.invalidate()  // Mark as invalid
 		mapView.delegate = nil
 		mapView.removeAnnotations(mapView.annotations)
 	}
@@ -222,10 +226,15 @@ struct UnifiedMapView: UIViewRepresentable {
 		var last3DMode: Bool = false
 		var lastAnnotationIDs: Set<UUID> = []
 		var hasReportedLoad = false
+		private var isValid: Bool = true  // Track if coordinator is still valid
 
 		init(_ parent: UnifiedMapView) {
 			self.parent = parent
 			super.init()
+		}
+		
+		func invalidate() {
+			isValid = false
 		}
 
 		// MARK: - Region Change Delegates
@@ -334,11 +343,12 @@ struct UnifiedMapView: UIViewRepresentable {
 		func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
 			print("🗺️ mapViewDidFinishLoadingMap called")
 			// Only report load once
-			guard !hasReportedLoad else { return }
+			guard isValid, !hasReportedLoad else { return }
 			hasReportedLoad = true
 
 			DispatchQueue.main.async { [weak self] in
-				self?.parent.onMapLoaded?()
+				guard let self = self, self.isValid else { return }
+				self.parent.onMapLoaded?()
 			}
 		}
 
@@ -347,10 +357,11 @@ struct UnifiedMapView: UIViewRepresentable {
 			fullyRendered: Bool
 		) {
 			print("🗺️ mapViewDidFinishRenderingMap called - fullyRendered: \(fullyRendered)")
-			if fullyRendered && !hasReportedLoad {
+			if fullyRendered && !hasReportedLoad && isValid {
 				hasReportedLoad = true
 				DispatchQueue.main.async { [weak self] in
-					self?.parent.onMapLoaded?()
+					guard let self = self, self.isValid else { return }
+					self.parent.onMapLoaded?()
 				}
 			}
 		}
@@ -391,3 +402,4 @@ struct UnifiedMapView: UIViewRepresentable {
 		}
 	}
 }
+

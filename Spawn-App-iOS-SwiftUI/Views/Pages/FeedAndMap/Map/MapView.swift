@@ -33,6 +33,15 @@ struct MapView: View {
 	@State private var isMapLoaded = false
 	@State private var hasInitialized = false
 	@State private var loadingTimeoutTask: Task<Void, Never>?
+	@State private var mapInitializationTask: Task<Void, Never>?
+	@State private var viewLifecycleState: ViewLifecycleState = .notAppeared
+	
+	enum ViewLifecycleState {
+		case notAppeared
+		case appearing
+		case appeared
+		case disappearing
+	}
 
 	// MARK: - Initialization
 
@@ -106,6 +115,12 @@ struct MapView: View {
 	// MARK: - Lifecycle Methods
 
 	private func handleViewAppeared() {
+		guard viewLifecycleState != .appeared else {
+			print("🗺️ MapView: Ignoring duplicate onAppear")
+			return
+		}
+		
+		viewLifecycleState = .appearing
 		print("🗺️ MapView appeared")
 
 		// Initialize filtered activities
@@ -128,18 +143,31 @@ struct MapView: View {
 		// This handles simulator cases where MapKit tiles fail to load
 		loadingTimeoutTask = Task { @MainActor in
 			try? await Task.sleep(nanoseconds: 5_000_000_000)  // 5 seconds
-			if !isMapLoaded {
+			if !isMapLoaded && viewLifecycleState == .appeared {
 				print("⚠️ Map loading timeout - dismissing loading indicator")
 				isMapLoaded = true
 			}
 		}
+		
+		viewLifecycleState = .appeared
 	}
 
 	private func handleViewDisappeared() {
+		guard viewLifecycleState == .appeared else {
+			print("🗺️ MapView: Ignoring disappear when not appeared")
+			return
+		}
+		
+		viewLifecycleState = .disappearing
 		print("🗺️ MapView disappeared")
+		
 		locationManager.stopLocationUpdates()
 		loadingTimeoutTask?.cancel()
 		loadingTimeoutTask = nil
+		
+		// Cancel any pending map initialization
+		mapInitializationTask?.cancel()
+		mapInitializationTask = nil
 	}
 
 	private func handleMapLoaded() {
