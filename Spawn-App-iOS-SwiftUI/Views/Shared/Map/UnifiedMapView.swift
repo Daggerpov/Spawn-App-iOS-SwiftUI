@@ -117,9 +117,34 @@ struct UnifiedMapView: UIViewRepresentable {
 
 	static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator)
 	{
-		coordinator.invalidate()  // Mark as invalid
+		print("🗺️ UnifiedMapView: Beginning dismantle")
+		
+		// Invalidate coordinator immediately
+		coordinator.invalidate()
+		
+		// Remove delegate immediately to stop callbacks
 		mapView.delegate = nil
-		mapView.removeAnnotations(mapView.annotations)
+		
+		// CRITICAL: Remove annotations asynchronously to avoid blocking
+		let annotationsToRemove = mapView.annotations.filter { !($0 is MKUserLocation) }
+		
+		if !annotationsToRemove.isEmpty {
+			print("🗺️ UnifiedMapView: Removing \(annotationsToRemove.count) annotations asynchronously")
+			
+			// Dispatch to a background queue with a slight delay
+			// This allows the tab transition to complete before cleanup
+			DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + 0.05) {
+				DispatchQueue.main.async {
+					// Check if mapView still exists and hasn't been reused
+					guard mapView.delegate == nil else {
+						print("🗺️ UnifiedMapView: MapView was reused, skipping cleanup")
+						return
+					}
+					mapView.removeAnnotations(annotationsToRemove)
+					print("🗺️ UnifiedMapView: Annotations removed")
+				}
+			}
+		}
 	}
 
 	func makeCoordinator() -> Coordinator {

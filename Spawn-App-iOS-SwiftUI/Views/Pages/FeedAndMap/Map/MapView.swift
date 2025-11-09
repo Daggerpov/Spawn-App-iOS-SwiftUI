@@ -121,11 +121,16 @@ struct MapView: View {
 		
 		viewLifecycleState = .appearing
 		print("🗺️ MapView appeared")
+		
+		// CRITICAL: Reset map loaded state on each appearance
+		// This ensures tiles reload if they failed previously
+		isMapLoaded = false
+		print("🗺️ MapView: Reset isMapLoaded to force tile loading")
 
 		// Initialize filtered activities
 		updateFilteredActivities()
 
-		// Set initial region (only once)
+		// Set initial region (only once per view lifetime)
 		if !hasInitialized {
 			setInitialRegion()
 			hasInitialized = true
@@ -136,6 +141,21 @@ struct MapView: View {
 			|| locationManager.authorizationStatus == .authorizedAlways
 		{
 			locationManager.startLocationUpdates()
+		}
+		
+		// NEW: Safety timeout that respects lifecycle
+		mapInitializationTask = Task { @MainActor in
+			do {
+				try await Task.sleep(nanoseconds: 3_000_000_000)  // 3 seconds
+				// Only dismiss loading if still in appeared state
+				if viewLifecycleState == .appeared && !isMapLoaded {
+					print("⚠️ Map loading timeout - dismissing loading indicator")
+					isMapLoaded = true
+				}
+			} catch {
+				// Task was cancelled - this is fine
+				print("🗺️ Map initialization task cancelled")
+			}
 		}
 		
 		viewLifecycleState = .appeared
