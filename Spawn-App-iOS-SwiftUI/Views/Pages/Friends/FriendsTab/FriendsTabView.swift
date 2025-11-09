@@ -97,21 +97,39 @@ struct FriendsTabView: View {
 					return
 				}
 				
-				// Refresh from API in background (non-blocking)
-				// Store the task so we can cancel it if user navigates away
-				print("🔄 [NAV] Starting background refresh for friends data")
-				backgroundRefreshTask = Task.detached(priority: .userInitiated) {
-					let refreshStart = Date()
-					await AppCache.shared.forceRefreshAllFriendRequests()
-					let requestsRefreshDuration = Date().timeIntervalSince(refreshStart)
-					print("⏱️ [NAV] Friend requests refresh took \(String(format: "%.2f", requestsRefreshDuration))s")
-					
-					let fetchStart = Date()
-					await viewModel.fetchAllData()
-					let fetchDuration = Date().timeIntervalSince(fetchStart)
-					print("⏱️ [NAV] fetchAllData took \(String(format: "%.2f", fetchDuration))s")
-					print("✅ [NAV] Background refresh completed")
+			// Refresh from API in background (non-blocking)
+			// Store the task so we can cancel it if user navigates away
+			print("🔄 [NAV] Starting background refresh for friends data")
+			backgroundRefreshTask = Task { @MainActor in
+				let refreshStart = Date()
+				
+				guard !Task.isCancelled else {
+					print("⚠️ [NAV] FriendsTabView: Background refresh cancelled before starting")
+					return
 				}
+				
+				await AppCache.shared.forceRefreshAllFriendRequests()
+				
+				guard !Task.isCancelled else {
+					print("⚠️ [NAV] FriendsTabView: Background refresh cancelled after requests")
+					return
+				}
+				
+				let requestsRefreshDuration = Date().timeIntervalSince(refreshStart)
+				print("⏱️ [NAV] Friend requests refresh took \(String(format: "%.2f", requestsRefreshDuration))s")
+				
+				let fetchStart = Date()
+				await viewModel.fetchAllData()
+				
+				guard !Task.isCancelled else {
+					print("⚠️ [NAV] FriendsTabView: Background refresh cancelled after fetchAllData")
+					return
+				}
+				
+				let fetchDuration = Date().timeIntervalSince(fetchStart)
+				print("⏱️ [NAV] fetchAllData took \(String(format: "%.2f", fetchDuration))s")
+				print("✅ [NAV] FriendsTabView: Background refresh completed")
+			}
 			}
 			.onAppear {
 				print("👁️ [NAV] FriendsTabView appeared")

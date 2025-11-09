@@ -41,6 +41,11 @@ struct MapView: View {
 		case appeared
 		case disappearing
 	}
+	
+	/// Checks if view is in a valid state for updates
+	private var shouldProcessUpdates: Bool {
+		return viewLifecycleState == .appeared
+	}
 
 	// MARK: - Initialization
 
@@ -101,12 +106,24 @@ struct MapView: View {
 			handleViewDisappeared()
 		}
 		.onChange(of: viewModel.activities) { _, _ in
+			guard shouldProcessUpdates else {
+				print("🗺️ MapView: Ignoring activity update - view not appeared")
+				return
+			}
 			updateFilteredActivities()
 		}
 		.onChange(of: selectedTimeFilter) { _, _ in
+			guard shouldProcessUpdates else {
+				print("🗺️ MapView: Ignoring filter update - view not appeared")
+				return
+			}
 			updateFilteredActivities()
 		}
 		.onChange(of: locationManager.locationUpdated) { _, _ in
+			guard shouldProcessUpdates else {
+				print("🗺️ MapView: Ignoring location update - view not appeared")
+				return
+			}
 			handleUserLocationUpdate()
 		}
 	}
@@ -146,15 +163,28 @@ struct MapView: View {
 		// NEW: Safety timeout that respects lifecycle
 		mapInitializationTask = Task { @MainActor in
 			do {
+				// Check cancellation before sleep
+				guard !Task.isCancelled else {
+					print("🗺️ Map initialization cancelled before timeout")
+					return
+				}
+				
 				try await Task.sleep(nanoseconds: 3_000_000_000)  // 3 seconds
-				// Only dismiss loading if still in appeared state
-				if viewLifecycleState == .appeared && !isMapLoaded {
+				
+				// Check cancellation after sleep
+				guard !Task.isCancelled else {
+					print("🗺️ Map initialization cancelled after timeout")
+					return
+				}
+				
+				// Only update if still in appeared state AND not cancelled
+				if viewLifecycleState == .appeared && !isMapLoaded && !Task.isCancelled {
 					print("⚠️ Map loading timeout - dismissing loading indicator")
 					isMapLoaded = true
 				}
 			} catch {
-				// Task was cancelled - this is fine
-				print("🗺️ Map initialization task cancelled")
+				// Task was cancelled - this is expected during navigation
+				print("🗺️ Map initialization task cancelled (expected)")
 			}
 		}
 		

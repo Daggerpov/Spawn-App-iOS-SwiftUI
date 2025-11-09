@@ -48,11 +48,23 @@ struct FriendsView: View {
             }
         }
         .task {
-            // CRITICAL FIX: Launch in detached task to prevent blocking navigation
-            // Previous implementation used await directly, which could block the main thread
-            // during tab transitions if MapView cleanup was happening
-            Task.detached(priority: .userInitiated) {
+            // CRITICAL FIX: Use MainActor task to respect navigation lifecycle
+            // Previous implementation used Task.detached which broke automatic cancellation
+            // MainActor tasks respect view lifecycle and cancel automatically on disappear
+            Task { @MainActor in
+                guard !Task.isCancelled else {
+                    print("⚠️ [NAV] FriendsView: Fetch cancelled before starting")
+                    return
+                }
+                
                 await viewModel.fetchIncomingFriendRequests()
+                
+                guard !Task.isCancelled else {
+                    print("⚠️ [NAV] FriendsView: Fetch cancelled after completion")
+                    return
+                }
+                
+                print("✅ [NAV] FriendsView: Friend requests loaded")
             }
         }
         .onAppear {

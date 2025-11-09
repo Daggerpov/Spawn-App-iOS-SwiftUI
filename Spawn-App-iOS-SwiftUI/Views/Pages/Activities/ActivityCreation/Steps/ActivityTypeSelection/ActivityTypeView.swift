@@ -84,16 +84,30 @@ struct ActivityTypeView: View {
                     return
                 }
                 
-                // Refresh from API in background (non-blocking)
-                // Store the task so we can cancel it if user navigates away
-                print("🔄 [NAV] Starting background refresh for activity types")
-                backgroundRefreshTask = Task.detached(priority: .userInitiated) {
-                    let refreshStart = Date()
-                    await viewModel.fetchActivityTypes(forceRefresh: true)
-                    let refreshDuration = Date().timeIntervalSince(refreshStart)
-                    print("⏱️ [NAV] Activity types refresh took \(String(format: "%.2f", refreshDuration))s")
-                    print("✅ [NAV] Background refresh completed")
-                }
+			// Refresh from API in background (non-blocking)
+			// Store the task so we can cancel it if user navigates away
+			print("🔄 [NAV] Starting background refresh for activity types")
+			backgroundRefreshTask = Task { @MainActor in
+				let refreshStart = Date()
+				
+				// Check cancellation before starting expensive work
+				guard !Task.isCancelled else {
+					print("⚠️ [NAV] ActivityTypeView: Background refresh cancelled before starting")
+					return
+				}
+				
+				await viewModel.fetchActivityTypes(forceRefresh: true)
+				
+				// Check cancellation after async work
+				guard !Task.isCancelled else {
+					print("⚠️ [NAV] ActivityTypeView: Background refresh cancelled after fetch")
+					return
+				}
+				
+				let refreshDuration = Date().timeIntervalSince(refreshStart)
+				print("⏱️ [NAV] Activity types refresh took \(String(format: "%.2f", refreshDuration))s")
+				print("✅ [NAV] ActivityTypeView: Background refresh completed")
+			}
             }
             .onAppear {
                 print("👁️ [NAV] ActivityTypeView appeared")
