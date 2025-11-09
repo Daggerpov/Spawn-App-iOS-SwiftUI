@@ -10,8 +10,6 @@ struct CachedProfileImage: View {
 		self.userId = userId
 		self.url = url
 		self.imageType = imageType
-		print("🎨 [CachedProfileImage] Init for user \(userId), imageType: \(imageType)")
-		print("   URL: \(url?.absoluteString ?? "nil")")
 	}
 
 	var body: some View {
