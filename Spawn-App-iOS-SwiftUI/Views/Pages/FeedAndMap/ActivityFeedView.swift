@@ -8,8 +8,8 @@ import SwiftUI
 
 struct ActivityFeedView: View {
     var user: BaseUserDTO
-    @StateObject var viewModel: FeedViewModel
-    @StateObject private var locationManager = LocationManager()
+    @ObservedObject var viewModel: FeedViewModel
+    @ObservedObject private var locationManager = LocationManager.shared
     @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     @State private var showingActivityPopup: Bool = false
     @State private var activityInPopup: FullFeedActivityDTO?
@@ -41,9 +41,9 @@ struct ActivityFeedView: View {
     @State private var showTutorialPreConfirmation = false
     @State private var tutorialSelectedActivityType: ActivityTypeDTO?
     
-    init(user: BaseUserDTO, selectedTab: Binding<TabType>, deepLinkedActivityId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedActivity: Binding<Bool> = .constant(false)) {
+    init(user: BaseUserDTO, viewModel: FeedViewModel, selectedTab: Binding<TabType>, deepLinkedActivityId: Binding<UUID?> = .constant(nil), shouldShowDeepLinkedActivity: Binding<Bool> = .constant(false)) {
         self.user = user
-        self._viewModel = StateObject(wrappedValue: FeedViewModel(apiService: MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService(), userId: user.id))
+        self.viewModel = viewModel
         self._selectedTab = selectedTab
         self._deepLinkedActivityId = deepLinkedActivityId
         self._shouldShowDeepLinkedActivity = shouldShowDeepLinkedActivity
@@ -103,13 +103,13 @@ struct ActivityFeedView: View {
                     )
                 )
             }
-            .task {
-                if !MockAPIService.isMocking {
-                    await AppCache.shared.validateCache()
-                }
-                // Force refresh to ensure no stale activities
-                await viewModel.forceRefreshActivities()
-                await viewModel.fetchAllData()
+            .onAppear {
+                print("👁️ [NAV] ActivityFeedView appeared")
+                // Note: Data fetching and timer management now handled globally in ContentView
+            }
+            .onDisappear {
+                print("👋 [NAV] ActivityFeedView disappeared")
+                // Note: Data fetching and timer management now handled globally in ContentView
             }
         }
         .onChange(of: showingActivityPopup) { _, isShowing in
@@ -398,9 +398,14 @@ extension ActivityFeedView {
     @Previewable @State var tab = TabType.home
     @Previewable @State var deepLinkedActivityId: UUID? = nil
     @Previewable @State var shouldShowDeepLinkedActivity = false
+    let previewViewModel = FeedViewModel(
+        apiService: MockAPIService.isMocking ? MockAPIService(userId: BaseUserDTO.danielAgapov.id) : APIService(),
+        userId: BaseUserDTO.danielAgapov.id
+    )
     NavigationView {
         ActivityFeedView(
-            user: .danielAgapov, 
+            user: .danielAgapov,
+            viewModel: previewViewModel,
             selectedTab: $tab, 
             deepLinkedActivityId: $deepLinkedActivityId, 
             shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity

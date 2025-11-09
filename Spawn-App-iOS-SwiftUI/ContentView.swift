@@ -11,6 +11,7 @@ struct ContentView: View {
 	var user: BaseUserDTO
     @State private var selectedTabsEnum: Tabs = .home
     @StateObject private var friendsViewModel: FriendsTabViewModel
+    @StateObject private var feedViewModel: FeedViewModel
     @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
     @ObservedObject  private var inAppNotificationManager = InAppNotificationManager.shared
     @ObservedObject var deepLinkManager: DeepLinkManager
@@ -35,14 +36,25 @@ struct ContentView: View {
     @State private var globalPopupColor: Color?
     @State private var globalPopupFromMapView = false
     
+    // Store background refresh task so we can cancel it on disappear
+    @State private var backgroundRefreshTask: Task<Void, Never>?
+    
     init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
         self.user = user
         self.deepLinkManager = deepLinkManager
-        let vm = FriendsTabViewModel(
+        let friendsVM = FriendsTabViewModel(
             userId: user.id,
             apiService: MockAPIService.isMocking
                 ? MockAPIService(userId: user.id) : APIService())
-        self._friendsViewModel = StateObject(wrappedValue: vm)
+        self._friendsViewModel = StateObject(wrappedValue: friendsVM)
+        
+        // Create shared FeedViewModel for both ActivityFeedView and MapView
+        let feedVM = FeedViewModel(
+            apiService: MockAPIService.isMocking
+                ? MockAPIService(userId: user.id) : APIService(),
+            userId: user.id
+        )
+        self._feedViewModel = StateObject(wrappedValue: feedVM)
     }
 
 	var body: some View {
@@ -52,12 +64,14 @@ struct ContentView: View {
                 case .home:
                     ActivityFeedView(
                         user: user,
+                        viewModel: feedViewModel,
                         selectedTab: selectedTabBinding,
                         deepLinkedActivityId: $deepLinkedActivityId,
                         shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
                     )
                 case .map:
-                    MapView(user: user)
+                    MapView(user: user, viewModel: feedViewModel)
+                        .id("MapView-\(user.id)")  // Stable identity prevents recreation
                         .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 case .activities:
                     ActivityCreationView(
@@ -83,7 +97,53 @@ struct ContentView: View {
                     .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
                 }
             }
+            .task {
+                print("📍 [NAV] ContentView .task started - initializing shared feed data")
+                let taskStartTime = Date()
+                
+                // CRITICAL FIX: Load cached activities immediately to unblock UI
+                // This ensures both ActivityFeedView and MapView have data instantly
+                let cacheLoadStart = Date()
+                
+                // Load cached data through view model instead of directly accessing cache
+                await MainActor.run {
+                    feedViewModel.loadCachedActivities()
+                }
+                
+                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
+                print("📊 [NAV] ContentView: Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+                print("⏱️ [NAV] ContentView: Total UI update took \(String(format: "%.3f", totalDuration))s")
+                
+                // Check if task was cancelled before starting background refresh
+                if Task.isCancelled {
+                    print("⚠️ [NAV] ContentView: Task cancelled before starting background refresh")
+                    return
+                }
+                
+                // Refresh from API in background (non-blocking)
+                // CRITICAL: Always run in background, even if cache is empty, to avoid blocking UI
+                // Run on MainActor to ensure proper sequencing with view updates
+                print("🔄 [NAV] ContentView: Starting background refresh for shared view model")
+                backgroundRefreshTask = Task { @MainActor in
+                    let refreshStart = Date()
+                    
+                    guard !Task.isCancelled else {
+                        print("⚠️ [NAV] ContentView: Background refresh cancelled before starting")
+                        return
+                    }
+                    
+                    await feedViewModel.fetchAllData()
+                    let refreshDuration = Date().timeIntervalSince(refreshStart)
+                    print("⏱️ [NAV] ContentView: Background refresh took \(String(format: "%.2f", refreshDuration))s")
+                    print("✅ [NAV] ContentView: Background refresh completed")
+                }
+            }
 			.onAppear {
+                print("👁️ [NAV] ContentView appeared")
+                // Resume timers when view appears
+                feedViewModel.resumeTimers()
+                
                 // Configure tab bar appearance for theme compatibility
                 let appearance = UITabBarAppearance()
                 appearance.configureWithOpaqueBackground()
@@ -111,6 +171,17 @@ struct ContentView: View {
                 Task {
                     await friendsViewModel.fetchIncomingFriendRequests()
                 }
+            }
+            .onDisappear {
+                print("👋 [NAV] ContentView disappearing - cancelling background tasks")
+                
+                // Pause timers to save resources when view is not visible
+                feedViewModel.pauseTimers()
+                
+                // Cancel any ongoing background refresh to prevent blocking
+                backgroundRefreshTask?.cancel()
+                backgroundRefreshTask = nil
+                print("👋 [NAV] ContentView disappeared")
             }
             .onChange(of: deepLinkManager.shouldShowActivity) { _, shouldShow in
                 if shouldShow, let activityId = deepLinkManager.activityToShow {

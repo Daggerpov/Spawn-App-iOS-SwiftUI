@@ -48,9 +48,27 @@ struct FriendsView: View {
             }
         }
         .task {
-            await viewModel.fetchIncomingFriendRequests()
+            // CRITICAL FIX: Use MainActor task to respect navigation lifecycle
+            // Previous implementation used Task.detached which broke automatic cancellation
+            // MainActor tasks respect view lifecycle and cancel automatically on disappear
+            Task { @MainActor in
+                guard !Task.isCancelled else {
+                    print("⚠️ [NAV] FriendsView: Fetch cancelled before starting")
+                    return
+                }
+                
+                await viewModel.fetchIncomingFriendRequests()
+                
+                guard !Task.isCancelled else {
+                    print("⚠️ [NAV] FriendsView: Fetch cancelled after completion")
+                    return
+                }
+                
+                print("✅ [NAV] FriendsView: Friend requests loaded")
+            }
         }
         .onAppear {
+            print("👁️ [NAV] FriendsView appeared")
             // Handle deep link if one is pending when view appears
             if shouldShowDeepLinkedProfile, let profileId = deepLinkedProfileId {
                 handleDeepLinkedProfile(profileId)

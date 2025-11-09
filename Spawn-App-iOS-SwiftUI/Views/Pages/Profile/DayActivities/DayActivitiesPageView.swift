@@ -9,7 +9,7 @@ struct DayActivitiesPageView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var profileViewModel = ProfileViewModel()
     @ObservedObject private var userAuth = UserAuthViewModel.shared
-    @StateObject private var locationManager = LocationManager()
+    @ObservedObject private var locationManager = LocationManager.shared
     @State private var showActivityDetails: Bool = false
     @State private var fullActivities: [UUID: FullFeedActivityDTO] = [:]
     @State private var isLoadingActivities = false

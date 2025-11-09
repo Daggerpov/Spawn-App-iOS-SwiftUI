@@ -57,13 +57,20 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
         // Reset state
         loadError = nil
         
+        print("🖼️ [UI] CachedAsyncImage loadImage called for user \(userId)")
+        print("   URL: \(url?.absoluteString ?? "nil")")
+        
         // If no URL, nothing to load
         guard let url = url else {
+            print("❌ [UI] CachedAsyncImage: No URL provided for user \(userId)")
             return
         }
         
+        let loadStartTime = Date()
+        
         // Start loading
         isLoading = true
+        print("⏳ [UI] CachedAsyncImage: Starting load for user \(userId)")
         
         Task {
             // Use the new refresh mechanism that checks for staleness
@@ -73,11 +80,22 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
                 maxAge: 6 * 60 * 60 // 6 hours for more frequent updates
             )
             
+            let loadDuration = Date().timeIntervalSince(loadStartTime)
+            
             await MainActor.run {
                 isLoading = false
                 image = downloadedImage
                 if downloadedImage == nil {
+                    print("❌ [UI] CachedAsyncImage failed to load for user \(userId)")
+                    print("   URL was: \(url.absoluteString)")
+                    print("   Load duration: \(String(format: "%.2f", loadDuration))s")
                     loadError = NSError(domain: "CachedAsyncImage", code: 0, userInfo: [NSLocalizedDescriptionKey: "Failed to download image"])
+                } else {
+                    if loadDuration > 1.0 {
+                        print("⏱️ [UI] CachedAsyncImage loaded in \(String(format: "%.2f", loadDuration))s for user \(userId)")
+                    } else {
+                        print("✅ [UI] CachedAsyncImage loaded successfully for user \(userId) in \(String(format: "%.2f", loadDuration))s")
+                    }
                 }
             }
         }

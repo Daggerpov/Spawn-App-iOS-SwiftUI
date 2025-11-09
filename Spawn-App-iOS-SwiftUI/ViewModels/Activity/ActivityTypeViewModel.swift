@@ -65,7 +65,7 @@ class ActivityTypeViewModel: ObservableObject {
         // Subscribe to cache updates if not mocking
         if !MockAPIService.isMocking {
             // Subscribe to cached activity types updates
-            appCache.$activityTypes
+            appCache.activityTypesPublisher
                 .sink { [weak self] cachedActivityTypes in
                     if !cachedActivityTypes.isEmpty {
                         self?.activityTypes = cachedActivityTypes
@@ -76,6 +76,19 @@ class ActivityTypeViewModel: ObservableObject {
     }
     
     // MARK: - Backend API Methods
+    
+    /// Loads cached activity types immediately (synchronous, fast, non-blocking)
+    /// Call this before fetchActivityTypes() to show cached data instantly
+    @MainActor
+    func loadCachedActivityTypes() {
+        let cachedTypes = appCache.activityTypes
+        if !cachedTypes.isEmpty {
+            self.activityTypes = cachedTypes
+            print("✅ ActivityTypeViewModel: Loaded \(cachedTypes.count) activity types from cache")
+        } else {
+            print("⚠️ ActivityTypeViewModel: No cached activity types available")
+        }
+    }
     
     /// Fetches all activity types for the user from the backend or cache
     @MainActor

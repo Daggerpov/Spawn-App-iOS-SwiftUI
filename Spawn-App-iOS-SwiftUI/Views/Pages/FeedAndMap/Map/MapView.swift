@@ -2,462 +2,384 @@
 //  MapView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 11/11/24.
+//  Rebuilt from scratch for better stability and performance
 //
 
 import CoreLocation
 import MapKit
 import SwiftUI
 
-// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
-
 struct MapView: View {
-    @StateObject private var viewModel: FeedViewModel
-    @StateObject private var locationManager = LocationManager()
+	// MARK: - Properties
+	@ObservedObject var viewModel: FeedViewModel
+	@ObservedObject private var locationManager = LocationManager.shared
 
-    // Region for Map - using closer zoom level
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: defaultMapLatitude, longitude: defaultMapLongitude), // Default to UBC
-        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-    )
+	let user: BaseUserDTO
 
-    @State private var is3DMode: Bool = false // Only used on iOS 17+
+	// MARK: - State
+	@State private var region = MKCoordinateRegion(
+		center: CLLocationCoordinate2D(
+			latitude: defaultMapLatitude,
+			longitude: defaultMapLongitude
+		),
+		span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+	)
 
-    // MARK - Activity Description State Vars - now using global popup system
+	@State private var is3DMode: Bool = false
+	@State private var showFilterOverlay: Bool = false
+	@State private var selectedTimeFilter: MapFilterOverlay.TimeFilter =
+		.allActivities
+	@State private var filteredActivities: [FullFeedActivityDTO] = []
+	@State private var isMapLoaded = false
+	@State private var hasInitialized = false
+	@State private var mapInitializationTask: Task<Void, Never>?
+	@State private var viewLifecycleState: ViewLifecycleState = .notAppeared
+	
+	enum ViewLifecycleState {
+		case notAppeared
+		case appearing
+		case appeared
+		case disappearing
+	}
+	
+	/// Checks if view is in a valid state for updates
+	private var shouldProcessUpdates: Bool {
+		return viewLifecycleState == .appeared
+	}
 
-    @State private var showActivityCreationDrawer: Bool = false
+	// MARK: - Initialization
 
-    // for pop-ups:
-    @State private var creationOffset: CGFloat = 1000
+	init(user: BaseUserDTO, viewModel: FeedViewModel) {
+		self.user = user
+		self.viewModel = viewModel
+	}
 
-    // New state variables for filter overlay
-    @State private var showFilterOverlay: Bool = false
-    @State private var selectedTimeFilter: TimeFilter = .allActivities
-    
-    // Location error handling
-    @State private var showLocationError: Bool = false
-    @State private var locationErrorMessage: String = ""
-    
-    // Animation states for 3D effects on map control buttons
-    @State private var toggle3DPressed = false
-    @State private var toggle3DScale: CGFloat = 1.0
-    @State private var locationPressed = false
-    @State private var locationScale: CGFloat = 1.0
-    
-    enum TimeFilter: String, CaseIterable {
-        case lateNight = "Late Night"
-        case evening = "Evening"
-        case afternoon = "Afternoon"
-        case inTheNextHour = "In the next hour"
-        case happeningNow = "Happening Now"
-        case allActivities = "All Activities"
-    }
+	// MARK: - Body
 
-    // Computed property for filtered activities
-    // Note: viewModel.activities already excludes past activities for feed views
-    private var filteredActivities: [FullFeedActivityDTO] {
-        let now = Date()
-        let calendar = Calendar.current
-        
-        let filtered = viewModel.activities.filter { activity in
-            guard let startTime = activity.startTime else { return false }
-            
-            switch selectedTimeFilter {
-            case .allActivities:
-                return true
-                
-            case .happeningNow:
-                guard let endTime = activity.endTime else { return false }
-                return startTime <= now && endTime >= now
-                
-            case .inTheNextHour:
-                let oneHourFromNow = calendar.date(byAdding: .hour, value: 1, to: now)!
-                return startTime > now && startTime <= oneHourFromNow
-                
-            case .afternoon:
-					_ = calendar.startOfDay(for: startTime)
-                let noonTime = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: startTime)!
-                let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
-                
-                return startTime >= noonTime && startTime < eveningTime &&
-                       calendar.isDate(startTime, inSameDayAs: now)
-                
-            case .evening:
-					_ = calendar.startOfDay(for: startTime)
-                let eveningTime = calendar.date(bySettingHour: 17, minute: 0, second: 0, of: startTime)!
-                let nightTime = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: startTime)!
-                
-                return startTime >= eveningTime && startTime < nightTime &&
-                       calendar.isDate(startTime, inSameDayAs: now)
-                
-            case .lateNight:
-                let startOfDay = calendar.startOfDay(for: startTime)
-                let nightTime = calendar.date(bySettingHour: 21, minute: 0, second: 0, of: startTime)!
-                let nextDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-                
-                return (startTime >= nightTime && startTime < nextDay) ||
-                       (startTime >= startOfDay && startTime < calendar.date(bySettingHour: 4, minute: 0, second: 0, of: startTime)!)
-            }
-        }
-        
-        return filtered
-    }
+	var body: some View {
+		ZStack {
+			// Map Layer
+			UnifiedMapView(
+				region: $region,
+				is3DMode: $is3DMode,
+				showsUserLocation: true,
+				annotationItems: filteredActivities,
+				isLocationSelectionMode: false,
+				onMapWillChange: nil,
+				onMapDidChange: nil,
+				onActivityTap: handleActivityTap,
+				onMapLoaded: handleMapLoaded
+			)
+			.ignoresSafeArea()
 
-    var user: BaseUserDTO
+			// Control Buttons Overlay
+			MapControlButtons(
+				is3DMode: $is3DMode,
+				region: $region,
+				locationManager: locationManager
+			)
 
-    init(user: BaseUserDTO) {
-        self.user = user
-        _viewModel = StateObject(
-            wrappedValue: FeedViewModel(
-                apiService: MockAPIService.isMocking
-                    ? MockAPIService(userId: user.id) : APIService(),
-                userId: user.id
-            )
-        )
-    }
+			// Filter Overlay
+			MapFilterOverlay(
+				showFilterOverlay: $showFilterOverlay,
+				selectedTimeFilter: $selectedTimeFilter
+			)
 
-    var body: some View {
-        ZStack {
-            // Base layer - Map and its components
-            VStack {
-                ZStack {
-                    // Map layer using unified component
-                    UnifiedMapViewRepresentable(
-                        region: $region,
-                        is3DMode: $is3DMode,
-                        showsUserLocation: true,
-                        annotationItems: filteredActivities.filter { $0.location != nil },
-                        isLocationSelectionMode: false,
-                        onMapWillChange: nil,
-                        onMapDidChange: { _ in },
-                        onActivityTap: { activity in
-                            // Use global popup system with fromMapView flag
-                            NotificationCenter.default.post(
-                                name: .showGlobalActivityPopup,
-                                object: nil,
-                                userInfo: [
-                                    "activity": activity, 
-                                    "color": ActivityColorService.shared.getColorForActivity(activity.id),
-                                    "fromMapView": true
-                                ]
-                            )
-                        }
-                    )
-                    .ignoresSafeArea()
+			// Loading Indicator
+			if !isMapLoaded {
+				ZStack {
+					Color.black.opacity(0.3)
+						.ignoresSafeArea()
 
-                    // Top control buttons
-                    VStack {
-                        HStack {
-                            Spacer()
-                            VStack(spacing: 8) {
-                                // 3D mode toggle button (works on iOS 9+ with MapKit camera)
-                                Button(action: {
-                                    // Haptic feedback
-                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                    impactGenerator.impactOccurred()
-                                    
-                                    withAnimation(.easeInOut(duration: 0.3)) {
-                                        is3DMode.toggle()
-                                    }
-                                }) {
-                                    Image(systemName: is3DMode ? "view.3d" : "view.2d")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(universalAccentColor)
-                                        .padding(12)
-                                        .background(universalBackgroundColor)
-                                        .clipShape(Circle())
-                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                        .scaleEffect(toggle3DScale)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .animation(.easeInOut(duration: 0.15), value: toggle3DScale)
-                                .animation(.easeInOut(duration: 0.15), value: toggle3DPressed)
-                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                                    toggle3DPressed = pressing
-                                    toggle3DScale = pressing ? 0.95 : 1.0
-                                    
-                                    // Additional haptic feedback for press down
-                                    if pressing {
-                                        let selectionGenerator = UISelectionFeedbackGenerator()
-                                        selectionGenerator.selectionChanged()
-                                    }
-                                }, perform: {})
-                                
-                                // Location button
-                                Button(action: {
-                                    // Haptic feedback
-                                    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                    impactGenerator.impactOccurred()
-                                    
-                                    if let userLocation = locationManager.userLocation {
-                                        withAnimation(.easeInOut(duration: 0.75)) {
-                                            region = MKCoordinateRegion(
-                                                center: userLocation,
-                                                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                                            )
-                                        }
-                                    }
-                                }) {
-                                    Image(systemName: "location.fill")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(universalAccentColor)
-                                        .padding(12)
-                                        .background(universalBackgroundColor)
-                                        .clipShape(Circle())
-                                        .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-                                        .scaleEffect(locationScale)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .animation(.easeInOut(duration: 0.15), value: locationScale)
-                                .animation(.easeInOut(duration: 0.15), value: locationPressed)
-                                .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-                                    locationPressed = pressing
-                                    locationScale = pressing ? 0.95 : 1.0
-                                    
-                                    // Additional haptic feedback for press down
-                                    if pressing {
-                                        let selectionGenerator = UISelectionFeedbackGenerator()
-                                        selectionGenerator.selectionChanged()
-                                    }
-                                }, perform: {})
-                            }
-                            .padding(.trailing, 16)
-                        }
-                        .padding(.top, 16)
-                        
-                        Spacer()
-                    }
-                }
-            }
-            .task {
-                await viewModel.fetchAllData()
-                await MainActor.run {
-                    if let userLocation = locationManager.userLocation {
-                        region = MKCoordinateRegion(
-                            center: userLocation,
-                            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                        )
-                    } else if !viewModel.activities.isEmpty {
-                        adjustRegionForActivities()
-                    }
-                }
-            }
-            .onChange(of: locationManager.locationUpdated) {
-                if locationManager.locationUpdated && locationManager.userLocation != nil && 
-                   abs(region.center.latitude - defaultMapLatitude) < 0.0001 && 
-                   abs(region.center.longitude - defaultMapLongitude) < 0.0001 {
-                    adjustRegionToUserLocation()
-                }
-            }
-            .onChange(of: viewModel.activities) {
-                if locationManager.userLocation != nil {
-                    adjustRegionForActivities()
-                }
-            }
-            .onChange(of: locationManager.locationError) { _, error in
-                if let error = error {
-                    locationErrorMessage = error
-                    showLocationError = true
-                }
-            }
-            .alert("Location Error", isPresented: $showLocationError) {
-                Button("OK") {
-                    showLocationError = false
-                }
-                if locationManager.authorizationStatus == .denied {
-                    Button("Settings") {
-                        if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-                            UIApplication.shared.open(settingsUrl)
-                        }
-                    }
-                }
-            } message: {
-                Text(locationErrorMessage)
-            }
-            .task {
-                // Force refresh activities when map appears to ensure no stale data
-                await viewModel.forceRefreshActivities()
-            }
+					ProgressView()
+						.progressViewStyle(
+							CircularProgressViewStyle(tint: .white)
+						)
+						.scaleEffect(1.5)
+				}
+			}
+		}
+		.onAppear {
+			handleViewAppeared()
+		}
+		.onDisappear {
+			handleViewDisappeared()
+		}
+		.onChange(of: viewModel.activities) { _, _ in
+			guard shouldProcessUpdates else {
+				print("🗺️ MapView: Ignoring activity update - view not appeared")
+				return
+			}
+			updateFilteredActivities()
+		}
+		.onChange(of: selectedTimeFilter) { _, _ in
+			guard shouldProcessUpdates else {
+				print("🗺️ MapView: Ignoring filter update - view not appeared")
+				return
+			}
+			updateFilteredActivities()
+		}
+		.onChange(of: locationManager.locationUpdated) { _, _ in
+			guard shouldProcessUpdates else {
+				print("🗺️ MapView: Ignoring location update - view not appeared")
+				return
+			}
+			handleUserLocationUpdate()
+		}
+	}
 
+	// MARK: - Lifecycle Methods
 
-            // Dimming overlay
-            if showActivityCreationDrawer || showFilterOverlay {
-                Color.black.opacity(0.5)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .animation(.easeInOut, value: showActivityCreationDrawer || showFilterOverlay)
-                    .blur(radius: 0) // Ensure overlay itself isn't blurred
-            }
+	private func handleViewAppeared() {
+		guard viewLifecycleState != .appeared else {
+			print("🗺️ MapView: Ignoring duplicate onAppear")
+			return
+		}
+		
+		viewLifecycleState = .appearing
+		print("🗺️ MapView appeared")
+		
+		// CRITICAL: Reset map loaded state on each appearance
+		// This ensures tiles reload if they failed previously
+		isMapLoaded = false
+		print("🗺️ MapView: Reset isMapLoaded to force tile loading")
 
-            // Base content blur when filters are shown
-            if showFilterOverlay {
-                Rectangle()
-                    .fill(.clear)
-					.background(.ultraThinMaterial)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .animation(.easeInOut, value: showFilterOverlay)
-            }
+		// Initialize filtered activities
+		updateFilteredActivities()
 
-            // Filter overlay and buttons
-            if showFilterOverlay {
-                // Clear overlay for dismissal
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.spring()) {
-                            showFilterOverlay = false
-                        }
-                    }
-            }
+		// Set initial region (only once per view lifetime)
+		if !hasInitialized {
+			setInitialRegion()
+			hasInitialized = true
+		}
 
-            // Filter buttons - positioned above nav bar
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    VStack(spacing: 8) {
-                        if showFilterOverlay {
-                            // Show "All Activities" at the top if it's not currently selected
-                            if selectedTimeFilter != .allActivities {
-                                Button(action: {
-                                    print("Filter selected: All Activities")
-                                    withAnimation(.spring()) {
-                                        selectedTimeFilter = .allActivities
-                                        showFilterOverlay = false
-                                    }
-                                }) {
-                                    HStack {
-                                        Text(TimeFilter.allActivities.rawValue)
-                                            .font(.onestMedium(size: 16))
-                                            .foregroundColor(universalAccentColor)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
-                                    .background(universalBackgroundColor)
-                                    .cornerRadius(20)
-                                }
-                            }
-                            
-                            // Show all other filters except the currently selected one and "All Activities"
-                            ForEach(Array(TimeFilter.allCases.dropLast().filter { $0 != selectedTimeFilter }).reversed(), id: \.self) { filter in
-                                Button(action: {
-                                    print("Filter selected: \(filter.rawValue)")
-                                    withAnimation(.spring()) {
-                                        selectedTimeFilter = filter
-                                        showFilterOverlay = false
-                                    }
-                                }) {
-                                    HStack {
-                                        Text(filter.rawValue)
-                                            .font(.onestMedium(size: 16))
-                                            .foregroundColor(universalAccentColor)
-                                    }
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                    .padding(.vertical, 12)
-                                    .padding(.horizontal, 16)
-                                    .background(universalBackgroundColor)
-                                    .cornerRadius(20)
-                                }
-                                .transition(.move(edge: .top).combined(with: .opacity))
-                            }
-                        }
-                        
-                        Button(action: {
-                            withAnimation(.spring()) {
-                                showFilterOverlay.toggle()
-                            }
-                        }) {
-                            HStack {
-                                Circle()
-                                    .fill(figmaGreen)
-                                    .frame(width: 10, height: 10)
-                                Text(selectedTimeFilter.rawValue)
-                                    .font(.onestMedium(size: 16))
-                                    .foregroundColor(universalAccentColor)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 12)
-                            .padding(.horizontal, 16)
-                            .background(universalBackgroundColor)
-                            .cornerRadius(20)
-                            .shadow(radius: 2)
-                        }
-                    }
-                    .frame(maxWidth: 155)
-                    .padding(.trailing, 20)
-                }
-                .padding(.bottom, 80) // Position filter above nav bar with proper spacing
-            }
-        }
-    }
+		// Start location updates
+		if locationManager.authorizationStatus == .authorizedWhenInUse
+			|| locationManager.authorizationStatus == .authorizedAlways
+		{
+			locationManager.startLocationUpdates()
+		}
+		
+		// NEW: Safety timeout that respects lifecycle
+		mapInitializationTask = Task { @MainActor in
+			do {
+				// Check cancellation before sleep
+				guard !Task.isCancelled else {
+					print("🗺️ Map initialization cancelled before timeout")
+					return
+				}
+				
+				try await Task.sleep(nanoseconds: 3_000_000_000)  // 3 seconds
+				
+				// Check cancellation after sleep
+				guard !Task.isCancelled else {
+					print("🗺️ Map initialization cancelled after timeout")
+					return
+				}
+				
+				// Only update if still in appeared state AND not cancelled
+				if viewLifecycleState == .appeared && !isMapLoaded && !Task.isCancelled {
+					print("⚠️ Map loading timeout - dismissing loading indicator")
+					isMapLoaded = true
+				}
+			} catch {
+				// Task was cancelled - this is expected during navigation
+				print("🗺️ Map initialization task cancelled (expected)")
+			}
+		}
+		
+		viewLifecycleState = .appeared
+	}
 
-    private func adjustRegionToUserLocation() {
-        if let userLocation = locationManager.userLocation {
-            withAnimation {
-                region = MKCoordinateRegion(
-                    center: userLocation,
-                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                )
-            }
-        }
-    }
+	private func handleViewDisappeared() {
+		guard viewLifecycleState == .appeared else {
+			print("🗺️ MapView: Ignoring disappear when not appeared")
+			return
+		}
+		
+		viewLifecycleState = .disappearing
+		print("🗺️ MapView disappeared")
+		
+		locationManager.stopLocationUpdates()
+		
+		// Cancel any pending map initialization
+		mapInitializationTask?.cancel()
+		mapInitializationTask = nil
+	}
 
-    private func adjustRegionForActivitiesOrUserLocation() {
-        if let userLocation = locationManager.userLocation {
-            // Prioritize user location
-            withAnimation {
-                region = MKCoordinateRegion(
-                    center: userLocation,
-                    span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                )
-            }
-        } else if !viewModel.activities.isEmpty {
-            adjustRegionForActivities()
-        }
-    }
+	private func handleMapLoaded() {
+		print("✅ Map loaded successfully")
+		isMapLoaded = true
+	}
 
-    private func adjustRegionForActivities() {
-        guard !viewModel.activities.isEmpty else { return }
-        
-        let latitudes = viewModel.activities.compactMap { $0.location?.latitude }
-        let longitudes = viewModel.activities.compactMap { $0.location?.longitude }
-        
-        guard let minLatitude = latitudes.min(),
-              let maxLatitude = latitudes.max(),
-              let minLongitude = longitudes.min(),
-              let maxLongitude = longitudes.max()
-        else { return }
-        
-        let centerLatitude = (minLatitude + maxLatitude) / 2
-        let centerLongitude = (minLongitude + maxLongitude) / 2
-        let latitudeDelta = (maxLatitude - minLatitude) * 1.5  // Add padding
-        let longitudeDelta = (maxLongitude - minLongitude) * 1.5  // Add padding
-        
-        withAnimation {
-            region = MKCoordinateRegion(
-                center: CLLocationCoordinate2D(
-                    latitude: centerLatitude,
-                    longitude: centerLongitude
-                ),
-                span: MKCoordinateSpan(
-                    latitudeDelta: max(latitudeDelta, 0.01),
-                    longitudeDelta: max(longitudeDelta, 0.01)
-                )
-            )
-        }
-    }
+	// MARK: - Region Management
 
-    func closeCreation() {
-        ActivityCreationViewModel.reInitialize()
-        creationOffset = 1000
-        showActivityCreationDrawer = false
-    }
+	private func setInitialRegion() {
+		// Priority 1: User location
+		if let userLocation = locationManager.userLocation {
+			region = MKCoordinateRegion(
+				center: userLocation,
+				span: MKCoordinateSpan(
+					latitudeDelta: 0.01,
+					longitudeDelta: 0.01
+				)
+			)
+			print("📍 MapView: Set initial region to user location (\(userLocation.latitude), \(userLocation.longitude))")
+			return
+		}
+
+		// Priority 2: Activities location
+		if !viewModel.activities.isEmpty {
+			fitRegionToActivities()
+			print("📍 MapView: Set initial region to fit activities")
+			return
+		}
+
+		// Priority 3: Default location (already set in @State)
+		print("📍 MapView: Using default region (user location not yet available, authorization: \(locationManager.authorizationStatus.rawValue))")
+	}
+
+	private func handleUserLocationUpdate() {
+		// Only auto-center if still at default location
+		guard let userLocation = locationManager.userLocation else { return }
+
+		let isStillAtDefault =
+			abs(region.center.latitude - defaultMapLatitude) < 0.001
+			&& abs(region.center.longitude - defaultMapLongitude) < 0.001
+
+		if isStillAtDefault {
+			withAnimation {
+				region = MKCoordinateRegion(
+					center: userLocation,
+					span: MKCoordinateSpan(
+						latitudeDelta: 0.01,
+						longitudeDelta: 0.01
+					)
+				)
+			}
+			print("📍 Auto-centered to user location")
+		}
+	}
+
+	private func fitRegionToActivities() {
+		let activitiesWithLocation = viewModel.activities.filter {
+			$0.location != nil
+		}
+		guard !activitiesWithLocation.isEmpty else { return }
+
+		let latitudes = activitiesWithLocation.compactMap {
+			$0.location?.latitude
+		}
+		let longitudes = activitiesWithLocation.compactMap {
+			$0.location?.longitude
+		}
+
+		guard let minLat = latitudes.min(),
+			let maxLat = latitudes.max(),
+			let minLon = longitudes.min(),
+			let maxLon = longitudes.max()
+		else {
+			return
+		}
+
+		let centerLat = (minLat + maxLat) / 2
+		let centerLon = (minLon + maxLon) / 2
+		let latDelta = max((maxLat - minLat) * 1.5, 0.01)
+		let lonDelta = max((maxLon - minLon) * 1.5, 0.01)
+
+		region = MKCoordinateRegion(
+			center: CLLocationCoordinate2D(
+				latitude: centerLat,
+				longitude: centerLon
+			),
+			span: MKCoordinateSpan(
+				latitudeDelta: latDelta,
+				longitudeDelta: lonDelta
+			)
+		)
+	}
+
+	// MARK: - Activity Filtering
+
+	private func updateFilteredActivities() {
+		let now = Date()
+		let calendar = Calendar.current
+
+		let filtered = viewModel.activities.filter { activity in
+			// Must have a location to show on map
+			guard activity.location != nil else { return false }
+			guard let startTime = activity.startTime else { return false }
+
+			switch selectedTimeFilter {
+			case .allActivities:
+				return true
+
+			case .happeningNow:
+				guard let endTime = activity.endTime else { return false }
+				return startTime <= now && endTime >= now
+
+			case .inTheNextHour:
+				let oneHourFromNow =
+					calendar.date(byAdding: .hour, value: 1, to: now) ?? now
+				return startTime > now && startTime <= oneHourFromNow
+
+			case .afternoon:
+				guard calendar.isDate(startTime, inSameDayAs: now) else {
+					return false
+				}
+				let hour = calendar.component(.hour, from: startTime)
+				return hour >= 12 && hour < 17
+
+			case .evening:
+				guard calendar.isDate(startTime, inSameDayAs: now) else {
+					return false
+				}
+				let hour = calendar.component(.hour, from: startTime)
+				return hour >= 17 && hour < 21
+
+			case .lateNight:
+				guard calendar.isDate(startTime, inSameDayAs: now) else {
+					return false
+				}
+				let hour = calendar.component(.hour, from: startTime)
+				return hour >= 21 || hour < 4
+			}
+		}
+
+		filteredActivities = filtered
+		print(
+			"🔍 Filtered activities: \(filtered.count) of \(viewModel.activities.count)"
+		)
+	}
+
+	// MARK: - Activity Interaction
+
+	private func handleActivityTap(_ activity: FullFeedActivityDTO) {
+		NotificationCenter.default.post(
+			name: .showGlobalActivityPopup,
+			object: nil,
+			userInfo: [
+				"activity": activity,
+				"color": ActivityColorService.shared.getColorForActivity(
+					activity.id
+				),
+				"fromMapView": true,
+			]
+		)
+	}
 }
+
+// MARK: - Preview
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @ObservedObject var appCache = AppCache.shared
-    MapView(user: .danielAgapov).environmentObject(appCache)
+	@Previewable @ObservedObject var appCache = AppCache.shared
+	let previewViewModel = FeedViewModel(
+		apiService: MockAPIService.isMocking
+			? MockAPIService(userId: BaseUserDTO.danielAgapov.id)
+			: APIService(),
+		userId: BaseUserDTO.danielAgapov.id
+	)
+	MapView(user: .danielAgapov, viewModel: previewViewModel)
+		.environmentObject(appCache)
 }

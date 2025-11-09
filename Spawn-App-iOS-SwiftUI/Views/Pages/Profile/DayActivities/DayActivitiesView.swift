@@ -6,7 +6,7 @@ struct DayActivitiesView: View {
     let onActivitySelected: (CalendarActivityDTO) -> Void
     
     @StateObject private var viewModel: DayActivitiesViewModel
-    @StateObject private var locationManager = LocationManager()
+    @ObservedObject private var locationManager = LocationManager.shared
     
     init(
         date: Date,

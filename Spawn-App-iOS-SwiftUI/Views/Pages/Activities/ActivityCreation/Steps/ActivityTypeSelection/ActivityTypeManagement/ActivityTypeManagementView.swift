@@ -10,6 +10,9 @@ struct ActivityTypeManagementView: View {
     @State private var navigateToProfile = false
     @State private var selectedUserForProfile: BaseUserDTO?
     
+    // Store background refresh task so we can cancel it on disappear
+    @State private var backgroundRefreshTask: Task<Void, Never>?
+    
     // Use the ActivityTypeViewModel for managing activity types
     @StateObject private var viewModel: ActivityTypeViewModel
     
@@ -119,8 +122,73 @@ struct ActivityTypeManagementView: View {
                 }
             }
         .task {
-            // Fetch the latest activity types when the view appears
-            await viewModel.fetchActivityTypes()
+            print("📍 [NAV] ActivityTypeManagementView .task started")
+            let taskStartTime = Date()
+            
+            // CRITICAL FIX: Load cached data immediately to unblock UI
+            // This prevents the UI from hanging while waiting for API calls
+            
+            // Load cached data through view model (fast, non-blocking)
+            let cacheLoadStart = Date()
+            let activityTypesCount: Int = await MainActor.run {
+                viewModel.loadCachedActivityTypes()
+                return viewModel.activityTypes.count
+            }
+            let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+            
+            print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+            print("   Activity Types: \(activityTypesCount)")
+            
+            // Check if task was cancelled
+            guard !Task.isCancelled else {
+                print("⚠️ [NAV] Task cancelled before determining refresh strategy")
+                return
+            }
+            
+            // If cache is empty, block until we have data (critical for UX)
+            if activityTypesCount == 0 {
+                print("🔄 [NAV] No cached activity types - fetching from API on MainActor")
+                await viewModel.fetchActivityTypes(forceRefresh: true)
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
+                print("⏱️ [NAV] Initial fetch completed in \(String(format: "%.2f", totalDuration))s")
+            } else {
+                // Cache exists - refresh in background (progressive enhancement)
+                print("🔄 [NAV] Starting background refresh for activity types")
+                backgroundRefreshTask = Task { @MainActor in
+                    let refreshStart = Date()
+                    
+                    // Check cancellation before starting expensive work
+                    guard !Task.isCancelled else {
+                        print("⚠️ [NAV] ActivityTypeManagementView: Background refresh cancelled before starting")
+                        return
+                    }
+                    
+                    await viewModel.fetchActivityTypes(forceRefresh: true)
+                    
+                    // Check cancellation after async work
+                    guard !Task.isCancelled else {
+                        print("⚠️ [NAV] ActivityTypeManagementView: Background refresh cancelled after fetch")
+                        return
+                    }
+                    
+                    let refreshDuration = Date().timeIntervalSince(refreshStart)
+                    print("⏱️ [NAV] Activity types refresh took \(String(format: "%.2f", refreshDuration))s")
+                    print("✅ [NAV] ActivityTypeManagementView: Background refresh completed")
+                }
+                
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
+                print("⏱️ [NAV] UI update took \(String(format: "%.3f", totalDuration))s")
+            }
+        }
+        .onAppear {
+            print("👁️ [NAV] ActivityTypeManagementView appeared")
+        }
+        .onDisappear {
+            print("👋 [NAV] ActivityTypeManagementView disappearing - cancelling background tasks")
+            // Cancel any ongoing background refresh to prevent blocking
+            backgroundRefreshTask?.cancel()
+            backgroundRefreshTask = nil
+            print("👋 [NAV] ActivityTypeManagementView disappeared")
         }
         .onReceive(NotificationCenter.default.publisher(for: .activityTypesChanged)) { _ in
             // Refresh when activity types change
@@ -129,8 +197,10 @@ struct ActivityTypeManagementView: View {
             }
         }
         .fullScreenCover(isPresented: $showingEditView) {
-            ActivityTypeEditView(activityTypeDTO: displayActivityType) {
-                showingEditView = false
+            NavigationStack {
+                ActivityTypeEditView(activityTypeDTO: displayActivityType) {
+                    showingEditView = false
+                }
             }
         }
             .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {

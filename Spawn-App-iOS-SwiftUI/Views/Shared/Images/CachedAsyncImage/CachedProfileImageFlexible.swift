@@ -7,6 +7,15 @@ struct CachedProfileImageFlexible: View {
     let width: CGFloat
     let height: CGFloat
     
+    init(userId: UUID, url: URL?, width: CGFloat, height: CGFloat) {
+        self.userId = userId
+        self.url = url
+        self.width = width
+        self.height = height
+        print("🎨 [CachedProfileImageFlexible] Init for user \(userId), size: \(width)x\(height)")
+        print("   URL: \(url?.absoluteString ?? "nil")")
+    }
+    
     var body: some View {
         CachedAsyncImage(
             userId: userId,

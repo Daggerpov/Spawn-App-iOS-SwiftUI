@@ -29,7 +29,7 @@ class DayActivitiesViewModel: ObservableObject {
 		if !MockAPIService.isMocking {
 			
 			// Subscribe to changes in the app cache activities
-			appCache.$activities
+			appCache.activitiesPublisher
 				.sink { [weak self] _ in
 					self?.updateCachedActivities()
 				}

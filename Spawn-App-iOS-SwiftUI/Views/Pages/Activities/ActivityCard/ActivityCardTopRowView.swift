@@ -67,6 +67,5 @@ extension ActivityCardTopRowView {
 @available(iOS 17, *)
 #Preview {
     @Previewable @ObservedObject var appCache = AppCache.shared
-    @Previewable @StateObject var locationManager = LocationManager()
-    ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity, locationManager: locationManager).environmentObject(appCache)
+    ActivityCardTopRowView(activity: FullFeedActivityDTO.mockDinnerActivity, locationManager: LocationManager.shared).environmentObject(appCache)
 }

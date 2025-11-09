@@ -36,6 +36,5 @@ struct ActivityInfoView: View {
 @available(iOS 17, *)
 #Preview {
 	@Previewable @ObservedObject var appCache = AppCache.shared
-	@Previewable @StateObject var locationManager = LocationManager()
-	ActivityInfoView(activity: FullFeedActivityDTO.mockDinnerActivity, activityInfoType: ActivityInfoType.location, locationManager: locationManager).environmentObject(appCache)
+	ActivityInfoView(activity: FullFeedActivityDTO.mockDinnerActivity, activityInfoType: ActivityInfoType.location, locationManager: LocationManager.shared).environmentObject(appCache)
 }

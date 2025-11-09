@@ -116,24 +116,21 @@ struct FriendSearchView: View {
                 case .search:
                     await viewModel.fetchRecentlySpawnedWith()
                 case .allFriends:
-                    // Use cached friends data if available, otherwise fetch
-                    if !AppCache.shared.getCurrentUserFriends().isEmpty {
-                        await MainActor.run {
-                            viewModel.friends = AppCache.shared.getCurrentUserFriends()
-                            viewModel.filteredFriends = AppCache.shared.getCurrentUserFriends()
-                        }
-                    } else {
+                    // Load cached friends data through view model, then fetch if needed
+                    await MainActor.run {
+                        viewModel.loadCachedData()
+                    }
+                    if viewModel.friends.isEmpty {
                         await viewModel.fetchAllData()
                     }
                 case .recentlySpawnedWith:
                     await viewModel.fetchRecentlySpawnedWith()
                 case .recommendedFriends:
-                    // Use cached data if available, otherwise fetch
-                    if !AppCache.shared.getCurrentUserRecommendedFriends().isEmpty {
-                        await MainActor.run {
-                            viewModel.recommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
-                        }
-                    } else {
+                    // Load cached recommended friends through view model, then fetch if needed
+                    await MainActor.run {
+                        viewModel.loadCachedData()
+                    }
+                    if viewModel.recommendedFriends.isEmpty {
                         await viewModel.fetchRecommendedFriends()
                     }
                 }

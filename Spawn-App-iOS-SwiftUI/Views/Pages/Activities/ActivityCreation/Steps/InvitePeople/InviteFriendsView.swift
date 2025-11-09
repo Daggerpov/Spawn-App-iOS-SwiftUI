@@ -52,8 +52,19 @@ struct InviteFriendsView: View {
 		friendsViewModel.connectSearchViewModel(searchViewModel)
 	}
 	.task {
+		// Check if task was cancelled (user navigated away)
+		if Task.isCancelled {
+			return
+		}
+		
 		if AppCache.shared.friends.isEmpty {
 			await friendsViewModel.fetchAllData()
+			
+			// Check again after async operation
+			if Task.isCancelled {
+				return
+			}
+			
 			// After fetching friends, automatically select them all if not already selected
 			await MainActor.run {
 				if activityCreationViewModel.selectedFriends.isEmpty {
@@ -61,13 +72,12 @@ struct InviteFriendsView: View {
 				}
 			}
 		} else {
-			// Use cached friends data
-			friendsViewModel.friends = AppCache.shared.getCurrentUserFriends()
-			friendsViewModel.filteredFriends = AppCache.shared.getCurrentUserFriends()
+			// Load cached friends data through view model
+			friendsViewModel.loadCachedData()
 			
 			// Automatically select all friends if not already selected
 			if activityCreationViewModel.selectedFriends.isEmpty {
-				activityCreationViewModel.selectedFriends = AppCache.shared.getCurrentUserFriends()
+				activityCreationViewModel.selectedFriends = friendsViewModel.friends
 			}
 		}
 	}

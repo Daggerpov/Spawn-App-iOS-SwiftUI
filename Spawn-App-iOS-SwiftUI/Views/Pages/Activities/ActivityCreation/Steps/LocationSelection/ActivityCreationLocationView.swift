@@ -2,12 +2,10 @@ import CoreLocation
 import MapKit
 import SwiftUI
 
-// Uses UnifiedMapViewRepresentable from Views/Components/UnifiedMapView.swift
-
 struct ActivityCreationLocationView: View {
 	@ObservedObject var viewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
-	@StateObject private var locationManager = LocationManager()
+	@ObservedObject private var locationManager = LocationManager.shared
 	@State private var region: MKCoordinateRegion = {
 		print("🔍 DEBUG: Initializing default region for ActivityCreationLocationView")
 		// Create a safe default region with validation
@@ -63,7 +61,7 @@ struct ActivityCreationLocationView: View {
 		
 		return ZStack {
 			// Unified Map View using the same component as MapView (works on all iOS versions)
-			UnifiedMapViewRepresentable(
+			UnifiedMapView(
 				region: $region,
 				is3DMode: $is3DMode,
 				showsUserLocation: true,

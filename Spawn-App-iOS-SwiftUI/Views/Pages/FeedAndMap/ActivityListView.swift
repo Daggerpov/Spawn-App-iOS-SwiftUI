@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ActivityListView: View {
     @ObservedObject var viewModel: FeedViewModel
-    @StateObject private var locationManager = LocationManager()
+    @ObservedObject private var locationManager = LocationManager.shared
     var user: BaseUserDTO
     var bound: Int = .max
     let callback: (FullFeedActivityDTO, Color) -> Void

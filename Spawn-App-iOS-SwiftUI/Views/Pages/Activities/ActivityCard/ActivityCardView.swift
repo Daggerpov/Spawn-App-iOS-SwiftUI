@@ -200,7 +200,7 @@ extension Color {
         userId: mockUserId,
         activity: .mockDinnerActivity,
         color: figmaSoftBlue,
-        locationManager: LocationManager(),
+        locationManager: LocationManager.shared,
         callback: { event, color in
             print("Event tapped: \(event.title ?? "Untitled")")
         }
