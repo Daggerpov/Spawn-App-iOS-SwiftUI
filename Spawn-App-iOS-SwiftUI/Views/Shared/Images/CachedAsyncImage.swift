@@ -73,7 +73,7 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
 			let downloadedImage = await cache.getCachedImageWithRefresh(
 				for: userId,
 				from: url.absoluteString,
-				maxAge: 6*60* 60  // 6 hours for more frequent updates
+				maxAge: 6 * 60 * 60  // 6 hours for more frequent updates
 			)
 
 			let loadDuration = Date().timeIntervalSince(loadStartTime)
@@ -83,7 +83,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
 				image = downloadedImage
 				if downloadedImage == nil {
 
-					
 					print("❌ [UI] CachedAsyncImage failed to load for user \(userId)")
 					print("   URL was: \(url.absoluteString)")
 					print("   Load duration: \(String(format: "%.2f", loadDuration))s")
