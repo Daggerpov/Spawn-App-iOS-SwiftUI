@@ -8,9 +8,9 @@
 import Foundation
 
 class LocationDTO: Identifiable, Codable, Equatable {
-    static func == (lhs: LocationDTO, rhs: LocationDTO) -> Bool {
-        lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude && lhs.name == rhs.name
-    }
+	static func == (lhs: LocationDTO, rhs: LocationDTO) -> Bool {
+		lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude && lhs.name == rhs.name
+	}
 
 	var id: UUID
 	var name: String
@@ -35,4 +35,4 @@ extension LocationDTO {
 	static let ikbLibrary = LocationDTO(
 		id: UUID(), name: "IKB Library", latitude: 49.26764036247616,
 		longitude: -123.25272383355049)
-} 
+}

@@ -16,38 +16,39 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 	@ObservedObject var appCache = AppCache.shared
 	@ObservedObject var themeService = ThemeService.shared
 	@ObservedObject var deepLinkManager = DeepLinkManager.shared
-    @Environment(\.scenePhase) private var scenePhase
-    
-    init() {
-        // Register custom fonts
-        Font.registerFonts()
-        
-        // Create font instances for our custom fonts with fallbacks
-        let regularFont = UIFont(name: "Onest-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
-        let mediumFont = UIFont(name: "Onest-Medium", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .medium)
-        let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .semibold)
-        let boldFont = UIFont(name: "Onest-Bold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .bold)
-        
-        // Set default appearance for common UI controls
-        UILabel.appearance().font = regularFont
-        UITextField.appearance().font = regularFont
-        UITextView.appearance().font = regularFont
-        UIButton.appearance().titleLabel?.font = semiboldFont
-        
-        // Set specific fonts for navigation bars, etc.
-        UINavigationBar.appearance().titleTextAttributes = [
-            .font: boldFont.withSize(18)
-        ]
-        
-        UINavigationBar.appearance().largeTitleTextAttributes = [
-            .font: boldFont.withSize(34)
-        ]
-        
-        // Customize tab bar appearance
-        UITabBarItem.appearance().setTitleTextAttributes([
-            .font: mediumFont.withSize(12)
-        ], for: .normal)
-    }
+	@Environment(\.scenePhase) private var scenePhase
+
+	init() {
+		// Register custom fonts
+		Font.registerFonts()
+
+		// Create font instances for our custom fonts with fallbacks
+		let regularFont = UIFont(name: "Onest-Regular", size: 16) ?? UIFont.systemFont(ofSize: 16)
+		let mediumFont = UIFont(name: "Onest-Medium", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .medium)
+		let semiboldFont = UIFont(name: "Onest-SemiBold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .semibold)
+		let boldFont = UIFont(name: "Onest-Bold", size: 16) ?? UIFont.systemFont(ofSize: 16, weight: .bold)
+
+		// Set default appearance for common UI controls
+		UILabel.appearance().font = regularFont
+		UITextField.appearance().font = regularFont
+		UITextView.appearance().font = regularFont
+		UIButton.appearance().titleLabel?.font = semiboldFont
+
+		// Set specific fonts for navigation bars, etc.
+		UINavigationBar.appearance().titleTextAttributes = [
+			.font: boldFont.withSize(18)
+		]
+
+		UINavigationBar.appearance().largeTitleTextAttributes = [
+			.font: boldFont.withSize(34)
+		]
+
+		// Customize tab bar appearance
+		UITabBarItem.appearance().setTitleTextAttributes(
+			[
+				.font: mediumFont.withSize(12)
+			], for: .normal)
+	}
 
 	private var rootView: some View {
 		Group {
@@ -103,7 +104,7 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 			}
 		}
 	}
-	
+
 	var body: some Scene {
 		WindowGroup {
 			rootView
@@ -113,25 +114,25 @@ struct Spawn_App_iOS_SwiftUIApp: App {
 				}
 		}
 	}
-    
-    // MARK: - Scene Phase Handling
-    private func handleScenePhaseChange(_ phase: ScenePhase) {
-        switch phase {
-        case .active:
-            // Only refresh activities if user is logged in
-            if userAuth.isLoggedIn, userAuth.spawnUser != nil {
-                Task {
-                    await appCache.refreshActivities()
-                    // Clean up any expired activities after refresh
-                    appCache.cleanupExpiredActivities()
-                }
-            }
-        case .background:
-            break
-        case .inactive:
-            break
-        @unknown default:
-            break
-        }
-    }
+
+	// MARK: - Scene Phase Handling
+	private func handleScenePhaseChange(_ phase: ScenePhase) {
+		switch phase {
+		case .active:
+			// Only refresh activities if user is logged in
+			if userAuth.isLoggedIn, userAuth.spawnUser != nil {
+				Task {
+					await appCache.refreshActivities()
+					// Clean up any expired activities after refresh
+					appCache.cleanupExpiredActivities()
+				}
+			}
+		case .background:
+			break
+		case .inactive:
+			break
+		@unknown default:
+			break
+		}
+	}
 }

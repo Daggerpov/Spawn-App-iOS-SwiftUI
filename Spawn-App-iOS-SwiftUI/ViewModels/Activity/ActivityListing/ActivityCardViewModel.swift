@@ -11,29 +11,29 @@ class ActivityCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	var apiService: IAPIService
 	var userId: UUID
-    var activity: FullFeedActivityDTO
-    
-    // MARK: - Helper Methods
-    
-    /// Updates activity and posts notification after successful API call
-    @MainActor
-    private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
-        self.activity = updatedActivity
-        self.isParticipating = updatedActivity.participationStatus == .participating
-        AppCache.shared.addOrUpdateActivity(updatedActivity)
-        NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
-    }
-    
-    /// Handles activity full error (400 status code)
-    @MainActor
-    private func handleActivityFullError() {
-        NotificationCenter.default.post(
-            name: NSNotification.Name("ShowActivityFullAlert"),
-            object: nil,
-            userInfo: ["message": "Sorry, this activity is full"]
-        )
-    }
-    
+	var activity: FullFeedActivityDTO
+
+	// MARK: - Helper Methods
+
+	/// Updates activity and posts notification after successful API call
+	@MainActor
+	private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
+		self.activity = updatedActivity
+		self.isParticipating = updatedActivity.participationStatus == .participating
+		AppCache.shared.addOrUpdateActivity(updatedActivity)
+		NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
+	}
+
+	/// Handles activity full error (400 status code)
+	@MainActor
+	private func handleActivityFullError() {
+		NotificationCenter.default.post(
+			name: NSNotification.Name("ShowActivityFullAlert"),
+			object: nil,
+			userInfo: ["message": "Sorry, this activity is full"]
+		)
+	}
+
 	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO) {
 		self.apiService = apiService
 		self.userId = userId
@@ -47,7 +47,7 @@ class ActivityCardViewModel: ObservableObject {
 		// Use the participationStatus from the activity DTO instead of checking the participants array
 		self.isParticipating = activity.participationStatus == .participating
 	}
-	
+
 	/// Updates the activity object and refreshes participation status
 	public func updateActivity(_ updatedActivity: FullFeedActivityDTO) {
 		self.activity = updatedActivity
@@ -71,13 +71,13 @@ class ActivityCardViewModel: ObservableObject {
 			print("Error reporting activity: \(ErrorFormattingService.shared.formatError(error))")
 		}
 	}
-	
+
 	/// Toggles the user's participation status in the activity
 	public func toggleParticipation() async {
-        if userId == activity.creatorUser.id {
-            // Don't allow the creator to revoke participation in their event
-            return
-        }
+		if userId == activity.creatorUser.id {
+			// Don't allow the creator to revoke participation in their event
+			return
+		}
 		let urlString =
 			"\(APIService.baseURL)activities/\(activity.id)/toggleStatus/\(userId)"
 		guard let url = URL(string: urlString) else {
@@ -100,7 +100,9 @@ class ActivityCardViewModel: ObservableObject {
 						// Activity is full
 						handleActivityFullError()
 					} else {
-						print("Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(error))")
+						print(
+							"Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(error))"
+						)
 					}
 				} else {
 					print("Error toggling participation: \(ErrorFormattingService.shared.formatAPIError(error))")
@@ -123,10 +125,10 @@ class ActivityCardViewModel: ObservableObject {
 
 		// Use the deleteData method from APIService
 		try await apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
-		
+
 		// Remove the activity from the cache after successful deletion
 		AppCache.shared.removeActivity(activity.id)
-		
+
 		// Post notification for activity deletion
 		NotificationCenter.default.post(
 			name: .activityDeleted,
@@ -135,4 +137,4 @@ class ActivityCardViewModel: ObservableObject {
 	}
 }
 
-struct EmptyBody: Codable {} 
+struct EmptyBody: Codable {}

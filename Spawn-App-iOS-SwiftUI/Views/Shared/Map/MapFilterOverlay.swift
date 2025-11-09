@@ -10,7 +10,7 @@ import SwiftUI
 struct MapFilterOverlay: View {
 	@Binding var showFilterOverlay: Bool
 	@Binding var selectedTimeFilter: TimeFilter
-	
+
 	enum TimeFilter: String, CaseIterable {
 		case lateNight = "Late Night"
 		case evening = "Evening"
@@ -19,7 +19,7 @@ struct MapFilterOverlay: View {
 		case happeningNow = "Happening Now"
 		case allActivities = "All Activities"
 	}
-	
+
 	var body: some View {
 		ZStack {
 			// Dimming overlay
@@ -34,7 +34,7 @@ struct MapFilterOverlay: View {
 						}
 					}
 			}
-			
+
 			// Filter buttons
 			VStack {
 				Spacer()
@@ -46,7 +46,7 @@ struct MapFilterOverlay: View {
 							if selectedTimeFilter != .allActivities {
 								filterButton(for: .allActivities)
 							}
-							
+
 							// Show all other filters except currently selected and "All Activities"
 							ForEach(
 								Array(TimeFilter.allCases.dropLast().filter { $0 != selectedTimeFilter }).reversed(),
@@ -56,7 +56,7 @@ struct MapFilterOverlay: View {
 									.transition(.move(edge: .top).combined(with: .opacity))
 							}
 						}
-						
+
 						// Main filter button (always visible)
 						Button(action: {
 							withAnimation(.spring()) {
@@ -86,7 +86,7 @@ struct MapFilterOverlay: View {
 			}
 		}
 	}
-	
+
 	private func filterButton(for filter: TimeFilter) -> some View {
 		Button(action: {
 			withAnimation(.spring()) {
@@ -107,5 +107,3 @@ struct MapFilterOverlay: View {
 		}
 	}
 }
-
-

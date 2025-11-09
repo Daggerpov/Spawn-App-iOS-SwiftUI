@@ -9,9 +9,9 @@ import SwiftUI
 
 struct InviteFriendsView: View {
 	@ObservedObject var activityCreationViewModel: ActivityCreationViewModel =
-	ActivityCreationViewModel.shared
+		ActivityCreationViewModel.shared
 	@StateObject private var searchViewModel = SearchViewModel()
-	
+
 	// Add view models for friends
 	@StateObject private var friendsViewModel: FriendsTabViewModel
 
@@ -44,44 +44,44 @@ struct InviteFriendsView: View {
 
 					// Suggested friends section - now using real friends data
 					friendsListSection
+				}
+				.padding(.horizontal)
 			}
-			.padding(.horizontal)
 		}
-	}
-	.onAppear {
-		friendsViewModel.connectSearchViewModel(searchViewModel)
-	}
-	.task {
-		// Check if task was cancelled (user navigated away)
-		if Task.isCancelled {
-			return
+		.onAppear {
+			friendsViewModel.connectSearchViewModel(searchViewModel)
 		}
-		
-		if AppCache.shared.friends.isEmpty {
-			await friendsViewModel.fetchAllData()
-			
-			// Check again after async operation
+		.task {
+			// Check if task was cancelled (user navigated away)
 			if Task.isCancelled {
 				return
 			}
-			
-			// After fetching friends, automatically select them all if not already selected
-			await MainActor.run {
+
+			if AppCache.shared.friends.isEmpty {
+				await friendsViewModel.fetchAllData()
+
+				// Check again after async operation
+				if Task.isCancelled {
+					return
+				}
+
+				// After fetching friends, automatically select them all if not already selected
+				await MainActor.run {
+					if activityCreationViewModel.selectedFriends.isEmpty {
+						activityCreationViewModel.selectedFriends = friendsViewModel.friends
+					}
+				}
+			} else {
+				// Load cached friends data through view model
+				friendsViewModel.loadCachedData()
+
+				// Automatically select all friends if not already selected
 				if activityCreationViewModel.selectedFriends.isEmpty {
 					activityCreationViewModel.selectedFriends = friendsViewModel.friends
 				}
 			}
-		} else {
-			// Load cached friends data through view model
-			friendsViewModel.loadCachedData()
-			
-			// Automatically select all friends if not already selected
-			if activityCreationViewModel.selectedFriends.isEmpty {
-				activityCreationViewModel.selectedFriends = friendsViewModel.friends
-			}
 		}
 	}
-}
 
 	// Invited friends section
 	var invitedFriendsSection: some View {
@@ -104,23 +104,23 @@ struct InviteFriendsView: View {
 								if let profilePicUrl = friend.profilePicture,
 									let url = URL(string: profilePicUrl)
 								{
-																	CachedProfileImageFlexible(
-									userId: friend.id,
-									url: url,
-									width: 30,
-									height: 30
-								)
+									CachedProfileImageFlexible(
+										userId: friend.id,
+										url: url,
+										width: 30,
+										height: 30
+									)
 								} else {
 									Circle()
 										.fill(Color.gray)
 										.frame(width: 30, height: 30)
 								}
-								
+
 								Text(friend.name ?? friend.username ?? "User")
 									.font(.subheadline)
 									.foregroundColor(.white)
 									.lineLimit(1)
-								
+
 								Image(systemName: "xmark")
 									.font(.caption)
 									.foregroundColor(.white)
@@ -181,7 +181,7 @@ struct InviteFriendsView: View {
 
 struct IndividualFriendView: View {
 	@ObservedObject var activityCreationViewModel: ActivityCreationViewModel =
-	ActivityCreationViewModel.shared
+		ActivityCreationViewModel.shared
 
 	var friend: FullFriendUserDTO
 	@State private var isSelected: Bool = false

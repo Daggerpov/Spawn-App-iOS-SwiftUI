@@ -8,224 +8,224 @@
 import SwiftUI
 
 struct ProfileInterestsView: View {
-    let user: Nameable
-    @ObservedObject var profileViewModel: ProfileViewModel
-    @Binding var editingState: ProfileEditText
-    @Binding var newInterest: String
-    
-    var openSocialMediaLink: (String, String) -> Void
-    var removeInterest: (String) -> Void
-    
-    // Check if this is the current user's profile
-    var isCurrentUserProfile: Bool {
-        if MockAPIService.isMocking {
-            return true
-        }
-        guard let currentUser = UserAuthViewModel.shared.spawnUser else { return false }
-        return currentUser.id == user.id
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Main content with overlaid header and social media icons
-            Group {
-                if profileViewModel.isLoadingInterests {
-                    interestsLoadingView
-                } else {
-                    interestsContentView
-                }
-            }
-        }
-        .padding(.horizontal)
-    }
+	let user: Nameable
+	@ObservedObject var profileViewModel: ProfileViewModel
+	@Binding var editingState: ProfileEditText
+	@Binding var newInterest: String
 
-    private var interestsLoadingView: some View {
-        ZStack(alignment: .topLeading) {
-            // Background rectangle
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(figmaBittersweetOrange, lineWidth: 1)
-                .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
-            
-            // Header positioned on the border
-            HStack {
-                Text("Interests + Hobbies")
-                    .font(.onestBold(size: 14))
-                    .foregroundColor(.white)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
-                    .background(figmaBittersweetOrange)
-                    .cornerRadius(12)
-                    .offset(x: 16, y: -20)
-                
-                Spacer()
-                
-                // Social media icons
-                if !profileViewModel.isLoadingSocialMedia {
-                    socialMediaIcons
-                        .offset(x: -16, y: -24)
-                }
-            }
-            
-            // Loading indicator
-            ProgressView()
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 16)
-                .padding(.top, 28)
-                .padding(.bottom, 4)
-        }
-    }
+	var openSocialMediaLink: (String, String) -> Void
+	var removeInterest: (String) -> Void
 
-    private var socialMediaIcons: some View {
-        HStack(spacing: 10) {
-            // Only show WhatsApp if it's the current user's profile OR they are friends
-            if let whatsappLink = profileViewModel.userSocialMedia?
-                .whatsappLink, !whatsappLink.isEmpty,
-               (isCurrentUserProfile || profileViewModel.friendshipStatus == .friends)
-            {
-                Image("whatsapp")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 48, height: 48)
-                    .rotationEffect(.degrees(-8))
-                    .onTapGesture {
-                        openSocialMediaLink(
-                            "WhatsApp",
-                            whatsappLink
-                        )
-                    }
-            }
+	// Check if this is the current user's profile
+	var isCurrentUserProfile: Bool {
+		if MockAPIService.isMocking {
+			return true
+		}
+		guard let currentUser = UserAuthViewModel.shared.spawnUser else { return false }
+		return currentUser.id == user.id
+	}
 
-            if let instagramLink = profileViewModel.userSocialMedia?
-                .instagramLink, !instagramLink.isEmpty
-            {
-                Image("instagram")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 40, height: 40)
-                    .rotationEffect(.degrees(8))
-                    .onTapGesture {
-                        openSocialMediaLink(
-                            "Instagram",
-                            instagramLink
-                        )
-                    }
-            }
-        }
-    }
+	var body: some View {
+		VStack(alignment: .leading, spacing: 0) {
+			// Main content with overlaid header and social media icons
+			Group {
+				if profileViewModel.isLoadingInterests {
+					interestsLoadingView
+				} else {
+					interestsContentView
+				}
+			}
+		}
+		.padding(.horizontal)
+	}
 
-    private var interestsContentView: some View {
-        ZStack(alignment: .topLeading) {
-            // Background rectangle
-            RoundedRectangle(cornerRadius: 15)
-                .stroke(figmaBittersweetOrange, lineWidth: 1)
-                .background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
-            
-            // Header positioned on the border
-            HStack {
-                Text("Interests + Hobbies")
-                    .font(.onestBold(size: 14))
-                    .foregroundColor(.white)
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 12)
-                    .background(figmaBittersweetOrange)
-                    .cornerRadius(12)
-                    .offset(x: 16, y: -20)
-                
-                Spacer()
-                
-                // Social media icons
-                if !profileViewModel.isLoadingSocialMedia {
-                    socialMediaIcons
-                        .offset(x: -16, y: -24)
-                }
-            }
-            
-            // Content area with dynamic height
-            Group {
-                if profileViewModel.userInterests.isEmpty {
-                    emptyInterestsView
-                        .padding(.top, 28)
-                } else {
-                    // Interests as chips with flexible layout
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-                        ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
-                            interestChip(interest: interest)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 28)
-                    .padding(.bottom, 16)
-                    .animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
-                }
-            }
-        }
-    }
+	private var interestsLoadingView: some View {
+		ZStack(alignment: .topLeading) {
+			// Background rectangle
+			RoundedRectangle(cornerRadius: 15)
+				.stroke(figmaBittersweetOrange, lineWidth: 1)
+				.background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
 
-    private var emptyInterestsView: some View {
-        Text("No interests added yet.")
-            .foregroundColor(.secondary)
-            .italic()
-            .font(.onestRegular(size: 14))
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
-    }
+			// Header positioned on the border
+			HStack {
+				Text("Interests + Hobbies")
+					.font(.onestBold(size: 14))
+					.foregroundColor(.white)
+					.padding(.vertical, 8)
+					.padding(.horizontal, 12)
+					.background(figmaBittersweetOrange)
+					.cornerRadius(12)
+					.offset(x: 16, y: -20)
 
-    private func interestChip(interest: String) -> some View {
-        Group {
-            if isCurrentUserProfile && editingState == .save {
-                Text(interest)
-                    .font(.onestSemiBold(size: 12))
-                    .padding(.vertical, 8)
-                    .padding(.horizontal, 14)
-                    .foregroundColor(Color.primary)
-                    .lineLimit(1)
-                    .background(universalBackgroundColor)
-                    .clipShape(Capsule())
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(figmaBittersweetOrange, lineWidth: 1)
-                    )
-                    .shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
-                    .overlay(
-                        HStack {
-                            Spacer()
-                            Button(action: {
-                                removeInterest(interest)
-                            }) {
-                                Image(systemName: "xmark.circle")
-                                    .foregroundColor(.red)
-                                    .font(.caption)
-                                    .background(Color.white)
-                                    .clipShape(Circle())
-                            }
-                            .offset(x: 5, y: -8)
-                        }
-                    )
-            } else {
-                Text(interest)
-                    .font(.onestSemiBold(size: 12))
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .foregroundColor(Color.primary)
-                    .lineLimit(1)
-                    .background(Color.gray.opacity(0.1))
-                    .clipShape(Capsule())
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                    )
-            }
-        }
-    }
+				Spacer()
+
+				// Social media icons
+				if !profileViewModel.isLoadingSocialMedia {
+					socialMediaIcons
+						.offset(x: -16, y: -24)
+				}
+			}
+
+			// Loading indicator
+			ProgressView()
+				.frame(maxWidth: .infinity, alignment: .center)
+				.padding(.horizontal, 16)
+				.padding(.top, 28)
+				.padding(.bottom, 4)
+		}
+	}
+
+	private var socialMediaIcons: some View {
+		HStack(spacing: 10) {
+			// Only show WhatsApp if it's the current user's profile OR they are friends
+			if let whatsappLink = profileViewModel.userSocialMedia?
+				.whatsappLink, !whatsappLink.isEmpty,
+				isCurrentUserProfile || profileViewModel.friendshipStatus == .friends
+			{
+				Image("whatsapp")
+					.resizable()
+					.scaledToFit()
+					.frame(width: 48, height: 48)
+					.rotationEffect(.degrees(-8))
+					.onTapGesture {
+						openSocialMediaLink(
+							"WhatsApp",
+							whatsappLink
+						)
+					}
+			}
+
+			if let instagramLink = profileViewModel.userSocialMedia?
+				.instagramLink, !instagramLink.isEmpty
+			{
+				Image("instagram")
+					.resizable()
+					.scaledToFit()
+					.frame(width: 40, height: 40)
+					.rotationEffect(.degrees(8))
+					.onTapGesture {
+						openSocialMediaLink(
+							"Instagram",
+							instagramLink
+						)
+					}
+			}
+		}
+	}
+
+	private var interestsContentView: some View {
+		ZStack(alignment: .topLeading) {
+			// Background rectangle
+			RoundedRectangle(cornerRadius: 15)
+				.stroke(figmaBittersweetOrange, lineWidth: 1)
+				.background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
+
+			// Header positioned on the border
+			HStack {
+				Text("Interests + Hobbies")
+					.font(.onestBold(size: 14))
+					.foregroundColor(.white)
+					.padding(.vertical, 8)
+					.padding(.horizontal, 12)
+					.background(figmaBittersweetOrange)
+					.cornerRadius(12)
+					.offset(x: 16, y: -20)
+
+				Spacer()
+
+				// Social media icons
+				if !profileViewModel.isLoadingSocialMedia {
+					socialMediaIcons
+						.offset(x: -16, y: -24)
+				}
+			}
+
+			// Content area with dynamic height
+			Group {
+				if profileViewModel.userInterests.isEmpty {
+					emptyInterestsView
+						.padding(.top, 28)
+				} else {
+					// Interests as chips with flexible layout
+					LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+						ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
+							interestChip(interest: interest)
+						}
+					}
+					.padding(.horizontal, 16)
+					.padding(.top, 28)
+					.padding(.bottom, 16)
+					.animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
+				}
+			}
+		}
+	}
+
+	private var emptyInterestsView: some View {
+		Text("No interests added yet.")
+			.foregroundColor(.secondary)
+			.italic()
+			.font(.onestRegular(size: 14))
+			.padding(.horizontal, 16)
+			.padding(.bottom, 16)
+	}
+
+	private func interestChip(interest: String) -> some View {
+		Group {
+			if isCurrentUserProfile && editingState == .save {
+				Text(interest)
+					.font(.onestSemiBold(size: 12))
+					.padding(.vertical, 8)
+					.padding(.horizontal, 14)
+					.foregroundColor(Color.primary)
+					.lineLimit(1)
+					.background(universalBackgroundColor)
+					.clipShape(Capsule())
+					.overlay(
+						RoundedRectangle(cornerRadius: 20)
+							.stroke(figmaBittersweetOrange, lineWidth: 1)
+					)
+					.shadow(color: Color.black.opacity(0.1), radius: 3, x: 0, y: 2)
+					.overlay(
+						HStack {
+							Spacer()
+							Button(action: {
+								removeInterest(interest)
+							}) {
+								Image(systemName: "xmark.circle")
+									.foregroundColor(.red)
+									.font(.caption)
+									.background(Color.white)
+									.clipShape(Circle())
+							}
+							.offset(x: 5, y: -8)
+						}
+					)
+			} else {
+				Text(interest)
+					.font(.onestSemiBold(size: 12))
+					.padding(.vertical, 6)
+					.padding(.horizontal, 12)
+					.foregroundColor(Color.primary)
+					.lineLimit(1)
+					.background(Color.gray.opacity(0.1))
+					.clipShape(Capsule())
+					.overlay(
+						RoundedRectangle(cornerRadius: 20)
+							.stroke(Color.gray.opacity(0.3), lineWidth: 1)
+					)
+			}
+		}
+	}
 }
 
 #Preview {
-    ProfileInterestsView(
-        user: BaseUserDTO.danielAgapov,
+	ProfileInterestsView(
+		user: BaseUserDTO.danielAgapov,
 		profileViewModel: ProfileViewModel(),
-        editingState: .constant(.edit),
-        newInterest: .constant(""),
-        openSocialMediaLink: { _, _ in },
-        removeInterest: { _ in }
-    )
-} 
+		editingState: .constant(.edit),
+		newInterest: .constant(""),
+		openSocialMediaLink: { _, _ in },
+		removeInterest: { _ in }
+	)
+}

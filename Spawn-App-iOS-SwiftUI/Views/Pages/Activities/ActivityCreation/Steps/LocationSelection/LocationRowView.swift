@@ -47,4 +47,3 @@ struct LocationRowView: View {
 		.buttonStyle(PlainButtonStyle())
 	}
 }
-

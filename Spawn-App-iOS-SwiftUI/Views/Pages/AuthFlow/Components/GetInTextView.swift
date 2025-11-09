@@ -8,23 +8,23 @@
 import SwiftUI
 
 struct GetInTextView: View {
-    @ObservedObject var themeService = ThemeService.shared
-    @Environment(\.colorScheme) var colorScheme
-    
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Let's Get You In")
-                .font(heading1)
-                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                .multilineTextAlignment(.center)
-            
-            Text("Join your friends or start a hang. It's\nall happening here.")
-                .font(.onestRegular(size: 20))
-                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .lineSpacing(0)
-        }
-    }
+	@ObservedObject var themeService = ThemeService.shared
+	@Environment(\.colorScheme) var colorScheme
+
+	var body: some View {
+		VStack(spacing: 16) {
+			Text("Let's Get You In")
+				.font(heading1)
+				.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+				.multilineTextAlignment(.center)
+
+			Text("Join your friends or start a hang. It's\nall happening here.")
+				.font(.onestRegular(size: 20))
+				.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+				.multilineTextAlignment(.center)
+				.lineLimit(2)
+				.fixedSize(horizontal: false, vertical: true)
+				.lineSpacing(0)
+		}
+	}
 }

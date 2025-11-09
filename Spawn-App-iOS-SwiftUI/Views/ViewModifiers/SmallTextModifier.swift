@@ -1,9 +1,8 @@
 import SwiftUI
 
 struct SmallTextModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .font(.onestRegular(size: 12))
-    }
+	func body(content: Content) -> some View {
+		content
+			.font(.onestRegular(size: 12))
+	}
 }
-

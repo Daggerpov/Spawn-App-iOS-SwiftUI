@@ -10,7 +10,7 @@ struct ImagePickerModifier: ViewModifier {
 	@Binding var showImagePicker: Bool
 	@Binding var selectedImage: UIImage?
 	@Binding var isImageLoading: Bool
-	
+
 	func body(content: Content) -> some View {
 		content
 			.sheet(isPresented: $showImagePicker) {
@@ -37,4 +37,3 @@ struct ImagePickerModifier: ViewModifier {
 			}
 	}
 }
-

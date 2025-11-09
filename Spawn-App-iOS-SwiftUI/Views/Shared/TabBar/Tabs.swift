@@ -4,27 +4,27 @@ import SwiftUI
 enum Tabs: CaseIterable {
 
 	case home, map, activities, friends, profile
-    
-    // Simple conversion to/from TabType (now that names match)
-    init(from tabType: TabType) {
-        switch tabType {
-        case .home: self = .home
-        case .activities: self = .activities
-        case .map: self = .map
-        case .friends: self = .friends
-        case .profile: self = .profile
-        }
-    }
-    
-    var toTabType: TabType {
-        switch self {
-        case .home: return .home
-        case .activities: return .activities
-        case .map: return .map
-        case .friends: return .friends
-        case .profile: return .profile
-        }
-    }
+
+	// Simple conversion to/from TabType (now that names match)
+	init(from tabType: TabType) {
+		switch tabType {
+		case .home: self = .home
+		case .activities: self = .activities
+		case .map: self = .map
+		case .friends: self = .friends
+		case .profile: self = .profile
+		}
+	}
+
+	var toTabType: TabType {
+		switch self {
+		case .home: return .home
+		case .activities: return .activities
+		case .map: return .map
+		case .friends: return .friends
+		case .profile: return .profile
+		}
+	}
 	var item: TabItem {
 		switch self {
 		case .home:

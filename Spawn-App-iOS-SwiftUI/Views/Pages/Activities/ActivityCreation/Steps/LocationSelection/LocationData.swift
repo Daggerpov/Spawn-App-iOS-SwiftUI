@@ -5,4 +5,3 @@ struct LocationData {
 	let address: String
 	let coordinate: CLLocationCoordinate2D
 }
-

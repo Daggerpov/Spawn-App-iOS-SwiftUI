@@ -31,8 +31,8 @@ struct UnifiedMapView: UIViewRepresentable {
 		let mapView = MKMapView()
 
 		#if targetEnvironment(simulator)
-		print("⚠️ Running on Simulator - Map tiles may not load properly")
-		print("⚠️ If you see a grid, try running on a physical device")
+			print("⚠️ Running on Simulator - Map tiles may not load properly")
+			print("⚠️ If you see a grid, try running on a physical device")
 		#endif
 
 		// Basic setup
@@ -115,23 +115,22 @@ struct UnifiedMapView: UIViewRepresentable {
 		}
 	}
 
-	static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator)
-	{
+	static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator) {
 		print("🗺️ UnifiedMapView: Beginning dismantle")
-		
+
 		// Invalidate coordinator immediately
 		coordinator.invalidate()
-		
+
 		// Remove delegate immediately to stop callbacks
 		mapView.delegate = nil
-		
+
 		// CRITICAL FIX: Remove annotations synchronously to prevent main thread blocking during navigation
 		// Previous implementation used asyncAfter + main.async which caused priority inversion:
 		// - Low priority cleanup work would schedule on main thread
 		// - High priority navigation (like FriendsView appearing) would block waiting for main thread
 		// - Result: Navigation freeze when switching from Activity Types -> Friends
 		let annotationsToRemove = mapView.annotations.filter { !($0 is MKUserLocation) }
-		
+
 		if !annotationsToRemove.isEmpty {
 			print("🗺️ UnifiedMapView: Removing \(annotationsToRemove.count) annotations synchronously")
 			mapView.removeAnnotations(annotationsToRemove)
@@ -251,7 +250,7 @@ struct UnifiedMapView: UIViewRepresentable {
 			self.parent = parent
 			super.init()
 		}
-		
+
 		func invalidate() {
 			isValid = false
 		}
@@ -384,20 +383,20 @@ struct UnifiedMapView: UIViewRepresentable {
 				}
 			}
 		}
-		
+
 		func mapViewWillStartLoadingMap(_ mapView: MKMapView) {
 			print("🗺️ mapViewWillStartLoadingMap called")
 		}
-		
+
 		func mapViewWillStartRenderingMap(_ mapView: MKMapView) {
 			print("🗺️ mapViewWillStartRenderingMap called")
 		}
-		
+
 		func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
 			print("🗺️ Renderer requested for overlay")
 			return MKOverlayRenderer(overlay: overlay)
 		}
-		
+
 		func mapViewDidFailLoadingMap(_ mapView: MKMapView, withError error: Error) {
 			print("❌ Map failed to load: \(error.localizedDescription)")
 			print("❌ Error details: \(error)")
@@ -421,4 +420,3 @@ struct UnifiedMapView: UIViewRepresentable {
 		}
 	}
 }
-

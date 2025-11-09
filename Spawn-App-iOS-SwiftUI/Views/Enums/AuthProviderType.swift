@@ -14,8 +14,8 @@ enum AuthProviderType {
 			return "google"
 		case .apple:
 			return "apple"
-        case .email:
-            return "email"
+		case .email:
+			return "email"
 		}
 	}
 

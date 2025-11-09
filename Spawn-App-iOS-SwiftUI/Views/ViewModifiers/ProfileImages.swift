@@ -24,17 +24,17 @@ extension Image {
 			strokeColor = .white
 			lineWidth = 1
 		case .participantsPopup:
-			imageSize = 42.33 // Figma design specification
+			imageSize = 42.33  // Figma design specification
 			strokeColor = .clear
 			lineWidth = 0
 		case .participantsDrawer:
-			imageSize = 36 // Figma design specification
+			imageSize = 36  // Figma design specification
 			strokeColor = .clear
 			lineWidth = 0
 		case .profilePage:
 			imageSize = 150
 		case .feedCardParticipants:
-			imageSize = 34 // Approximate min(width: 33.53, height: 34.26)
+			imageSize = 34  // Approximate min(width: 33.53, height: 34.26)
 			strokeColor = .clear
 			lineWidth = 0
 		}

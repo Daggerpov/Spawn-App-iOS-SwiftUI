@@ -8,8 +8,8 @@
 import Foundation
 
 protocol Nameable {
-    var id: UUID {get}
-    var name: String? { get }
-    var profilePicture: String? { get }
-    var username: String? { get }
+	var id: UUID { get }
+	var name: String? { get }
+	var profilePicture: String? { get }
+	var username: String? { get }
 }

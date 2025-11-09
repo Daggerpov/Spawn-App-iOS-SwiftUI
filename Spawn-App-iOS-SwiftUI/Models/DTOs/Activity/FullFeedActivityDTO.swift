@@ -18,13 +18,13 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	// MARK: Info
 	var startTime: Date?
 	var endTime: Date?
-    var location: LocationDTO?
+	var location: LocationDTO?
 	var note: String?  // this corresponds to Figma design "my place at 10? I'm cooking guys" note in activity
 	/* The icon is stored as a Unicode emoji character string (e.g. "⭐️", "🎉", "🏀").
 	   This is the literal emoji character, not a shortcode or description.
 	   It's rendered directly in the UI and stored as a single UTF-8 string in the database. */
 	var icon: String?
-	var participantLimit: Int? // nil means unlimited participants
+	var participantLimit: Int?  // nil means unlimited participants
 	var createdAt: Date?
 
 	// MARK: Relations
@@ -35,16 +35,16 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 	var participantUsers: [BaseUserDTO]?
 	var invitedUsers: [BaseUserDTO]?
 	@Published var chatMessages: [FullActivityChatMessageDTO]?
-	@Published 	var participationStatus: ParticipationStatus?
+	@Published var participationStatus: ParticipationStatus?
 	var isSelfOwned: Bool?
-	
+
 	/**
 	 * Indicates whether this activity is expired based on server-side logic.
 	 * This field is computed by the back-end and serves as the single source of truth
 	 * for expiration status across all clients.
 	 */
 	var isExpired: Bool?
-	
+
 	/**
 	 * Timezone of the client creating the activity (e.g., "America/New_York").
 	 * Used for timezone-aware expiration of activities without explicit end times.
@@ -90,65 +90,65 @@ class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
 		self.isExpired = isExpired
 		self.clientTimezone = clientTimezone
 	}
-    
-    // CodingKeys for all properties (including @Published ones)
-    enum CodingKeys: String, CodingKey {
-        case id, title, startTime, endTime, location, activityTypeId, note, icon, participantLimit
-        case createdAt, creatorUser, invitedUsers
-        case participantUsers, chatMessages, participationStatus, isSelfOwned, isExpired, clientTimezone
-    }
-    
-    // Custom decoder
-    required init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        
-        id = try container.decode(UUID.self, forKey: .id)
-        title = try container.decodeIfPresent(String.self, forKey: .title)
-        startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
-        endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
-        location = try container.decodeIfPresent(LocationDTO.self, forKey: .location)
-        activityTypeId = try container.decodeIfPresent(UUID.self, forKey: .activityTypeId)
-        note = try container.decodeIfPresent(String.self, forKey: .note)
-        icon = try container.decodeIfPresent(String.self, forKey: .icon)
-        participantLimit = try container.decodeIfPresent(Int.self, forKey: .participantLimit)
-        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
-        creatorUser = try container.decode(BaseUserDTO.self, forKey: .creatorUser)
-        invitedUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .invitedUsers)
-        
-        // Decode @Published properties to their underlying values
-        participantUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .participantUsers)
-        chatMessages = try container.decodeIfPresent([FullActivityChatMessageDTO].self, forKey: .chatMessages)
-        participationStatus = try container.decodeIfPresent(ParticipationStatus.self, forKey: .participationStatus)
-        isSelfOwned = try container.decodeIfPresent(Bool.self, forKey: .isSelfOwned)
-        isExpired = try container.decodeIfPresent(Bool.self, forKey: .isExpired)
-        clientTimezone = try container.decodeIfPresent(String.self, forKey: .clientTimezone)
-    }
-    
-    // Custom encoder
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        
-        try container.encode(id, forKey: .id)
-        try container.encodeIfPresent(title, forKey: .title)
-        try container.encodeIfPresent(startTime, forKey: .startTime)
-        try container.encodeIfPresent(endTime, forKey: .endTime)
-        try container.encodeIfPresent(location, forKey: .location)
-        try container.encodeIfPresent(activityTypeId, forKey: .activityTypeId)
-        try container.encodeIfPresent(note, forKey: .note)
-        try container.encodeIfPresent(icon, forKey: .icon)
-        try container.encodeIfPresent(participantLimit, forKey: .participantLimit)
-        try container.encodeIfPresent(createdAt, forKey: .createdAt)
-        try container.encode(creatorUser, forKey: .creatorUser)
-        try container.encodeIfPresent(invitedUsers, forKey: .invitedUsers)
-        
-        // Encode @Published properties
-        try container.encodeIfPresent(participantUsers, forKey: .participantUsers)
-        try container.encodeIfPresent(chatMessages, forKey: .chatMessages)
-        try container.encodeIfPresent(participationStatus, forKey: .participationStatus)
-        try container.encodeIfPresent(isSelfOwned, forKey: .isSelfOwned)
-        try container.encodeIfPresent(isExpired, forKey: .isExpired)
-        try container.encodeIfPresent(clientTimezone, forKey: .clientTimezone)
-    }
+
+	// CodingKeys for all properties (including @Published ones)
+	enum CodingKeys: String, CodingKey {
+		case id, title, startTime, endTime, location, activityTypeId, note, icon, participantLimit
+		case createdAt, creatorUser, invitedUsers
+		case participantUsers, chatMessages, participationStatus, isSelfOwned, isExpired, clientTimezone
+	}
+
+	// Custom decoder
+	required init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+
+		id = try container.decode(UUID.self, forKey: .id)
+		title = try container.decodeIfPresent(String.self, forKey: .title)
+		startTime = try container.decodeIfPresent(Date.self, forKey: .startTime)
+		endTime = try container.decodeIfPresent(Date.self, forKey: .endTime)
+		location = try container.decodeIfPresent(LocationDTO.self, forKey: .location)
+		activityTypeId = try container.decodeIfPresent(UUID.self, forKey: .activityTypeId)
+		note = try container.decodeIfPresent(String.self, forKey: .note)
+		icon = try container.decodeIfPresent(String.self, forKey: .icon)
+		participantLimit = try container.decodeIfPresent(Int.self, forKey: .participantLimit)
+		createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt)
+		creatorUser = try container.decode(BaseUserDTO.self, forKey: .creatorUser)
+		invitedUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .invitedUsers)
+
+		// Decode @Published properties to their underlying values
+		participantUsers = try container.decodeIfPresent([BaseUserDTO].self, forKey: .participantUsers)
+		chatMessages = try container.decodeIfPresent([FullActivityChatMessageDTO].self, forKey: .chatMessages)
+		participationStatus = try container.decodeIfPresent(ParticipationStatus.self, forKey: .participationStatus)
+		isSelfOwned = try container.decodeIfPresent(Bool.self, forKey: .isSelfOwned)
+		isExpired = try container.decodeIfPresent(Bool.self, forKey: .isExpired)
+		clientTimezone = try container.decodeIfPresent(String.self, forKey: .clientTimezone)
+	}
+
+	// Custom encoder
+	func encode(to encoder: Encoder) throws {
+		var container = encoder.container(keyedBy: CodingKeys.self)
+
+		try container.encode(id, forKey: .id)
+		try container.encodeIfPresent(title, forKey: .title)
+		try container.encodeIfPresent(startTime, forKey: .startTime)
+		try container.encodeIfPresent(endTime, forKey: .endTime)
+		try container.encodeIfPresent(location, forKey: .location)
+		try container.encodeIfPresent(activityTypeId, forKey: .activityTypeId)
+		try container.encodeIfPresent(note, forKey: .note)
+		try container.encodeIfPresent(icon, forKey: .icon)
+		try container.encodeIfPresent(participantLimit, forKey: .participantLimit)
+		try container.encodeIfPresent(createdAt, forKey: .createdAt)
+		try container.encode(creatorUser, forKey: .creatorUser)
+		try container.encodeIfPresent(invitedUsers, forKey: .invitedUsers)
+
+		// Encode @Published properties
+		try container.encodeIfPresent(participantUsers, forKey: .participantUsers)
+		try container.encodeIfPresent(chatMessages, forKey: .chatMessages)
+		try container.encodeIfPresent(participationStatus, forKey: .participationStatus)
+		try container.encodeIfPresent(isSelfOwned, forKey: .isSelfOwned)
+		try container.encodeIfPresent(isExpired, forKey: .isExpired)
+		try container.encodeIfPresent(clientTimezone, forKey: .clientTimezone)
+	}
 }
 
 extension FullFeedActivityDTO {
@@ -191,82 +191,82 @@ extension FullFeedActivityDTO {
 		],
 		isExpired: false
 	)
-    static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
-        id: UUID(),
-        title: "Basketball Game",
-        startTime: dateFromTimeString("10:00 PM"),
-        endTime: dateFromTimeString("11:30 PM"),
-        location: LocationDTO(
-            id: UUID(), name: "UBC Recreation Center",
-            latitude: 49.26500000000000, longitude: -123.25900000000000),
-        note: "Let's play some basketball!",
-        icon: "🏀",
-        creatorUser: BaseUserDTO.danielAgapov,
-        participantUsers: [
-            BaseUserDTO.danielLee,
-            BaseUserDTO.haley,
-            BaseUserDTO.danielAgapov,
-            BaseUserDTO.haley,
-        ],
-        chatMessages: [.mockChat4, .mockChat1, .mockChat2, .mockChat3],
-        isSelfOwned: true,
-        isExpired: false
-    )
-    
-    static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
-        id: UUID(),
-        title: "Study Session",
-        startTime: dateFromTimeString("2:00 PM"),
-        endTime: nil, // Indefinite activity - no end time
-        location: LocationDTO(
-            id: UUID(), name: "Central Library",
-            latitude: 49.26400000000000, longitude: -123.25800000000000),
-        note: "Come study with us!",
-        icon: "📚",
-        creatorUser: BaseUserDTO.danielAgapov,
-        participantUsers: [
-            BaseUserDTO.danielAgapov,
-            BaseUserDTO.danielLee,
-        ],
-        isSelfOwned: true,
-        isExpired: false
-    )
-    
-    // Mock indefinite activity from yesterday - should be filtered out
-    static let mockExpiredIndefiniteActivity: FullFeedActivityDTO = FullFeedActivityDTO(
-        id: UUID(),
-        title: "Yesterday's Indefinite Study Session",
-        startTime: Calendar.current.date(byAdding: .day, value: -1, to: Date()),
-        endTime: nil, // Indefinite activity - no end time
-        location: LocationDTO(
-            id: UUID(), name: "Library",
-            latitude: 49.26468617023799, longitude: -123.25859833051356),
-        note: "This should be filtered out!",
-        creatorUser: BaseUserDTO.danielAgapov,
-        participantUsers: [
-            BaseUserDTO.danielAgapov,
-        ],
-        isSelfOwned: true,
-        isExpired: true  // This activity should be expired
-    )
-    
-    // Mock past activity that already ended - should be filtered out
-    static let mockPastActivity: FullFeedActivityDTO = FullFeedActivityDTO(
-        id: UUID(),
-        title: "Past Lunch Meeting",
-        startTime: Calendar.current.date(byAdding: .hour, value: -3, to: Date()),
-        endTime: Calendar.current.date(byAdding: .hour, value: -2, to: Date()), // Ended 2 hours ago
-        location: LocationDTO(
-            id: UUID(), name: "Campus Cafe",
-            latitude: 49.26400000000000, longitude: -123.25800000000000),
-        note: "This meeting already happened and should be filtered out!",
-        icon: "🍽️",
-        creatorUser: BaseUserDTO.danielAgapov,
-        participantUsers: [
-            BaseUserDTO.danielAgapov,
-            BaseUserDTO.danielLee,
-        ],
-        isSelfOwned: true,
-        isExpired: true  // This activity should be expired
-    )
-} 
+	static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+		id: UUID(),
+		title: "Basketball Game",
+		startTime: dateFromTimeString("10:00 PM"),
+		endTime: dateFromTimeString("11:30 PM"),
+		location: LocationDTO(
+			id: UUID(), name: "UBC Recreation Center",
+			latitude: 49.26500000000000, longitude: -123.25900000000000),
+		note: "Let's play some basketball!",
+		icon: "🏀",
+		creatorUser: BaseUserDTO.danielAgapov,
+		participantUsers: [
+			BaseUserDTO.danielLee,
+			BaseUserDTO.haley,
+			BaseUserDTO.danielAgapov,
+			BaseUserDTO.haley,
+		],
+		chatMessages: [.mockChat4, .mockChat1, .mockChat2, .mockChat3],
+		isSelfOwned: true,
+		isExpired: false
+	)
+
+	static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
+		id: UUID(),
+		title: "Study Session",
+		startTime: dateFromTimeString("2:00 PM"),
+		endTime: nil,  // Indefinite activity - no end time
+		location: LocationDTO(
+			id: UUID(), name: "Central Library",
+			latitude: 49.26400000000000, longitude: -123.25800000000000),
+		note: "Come study with us!",
+		icon: "📚",
+		creatorUser: BaseUserDTO.danielAgapov,
+		participantUsers: [
+			BaseUserDTO.danielAgapov,
+			BaseUserDTO.danielLee,
+		],
+		isSelfOwned: true,
+		isExpired: false
+	)
+
+	// Mock indefinite activity from yesterday - should be filtered out
+	static let mockExpiredIndefiniteActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+		id: UUID(),
+		title: "Yesterday's Indefinite Study Session",
+		startTime: Calendar.current.date(byAdding: .day, value: -1, to: Date()),
+		endTime: nil,  // Indefinite activity - no end time
+		location: LocationDTO(
+			id: UUID(), name: "Library",
+			latitude: 49.26468617023799, longitude: -123.25859833051356),
+		note: "This should be filtered out!",
+		creatorUser: BaseUserDTO.danielAgapov,
+		participantUsers: [
+			BaseUserDTO.danielAgapov
+		],
+		isSelfOwned: true,
+		isExpired: true  // This activity should be expired
+	)
+
+	// Mock past activity that already ended - should be filtered out
+	static let mockPastActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+		id: UUID(),
+		title: "Past Lunch Meeting",
+		startTime: Calendar.current.date(byAdding: .hour, value: -3, to: Date()),
+		endTime: Calendar.current.date(byAdding: .hour, value: -2, to: Date()),  // Ended 2 hours ago
+		location: LocationDTO(
+			id: UUID(), name: "Campus Cafe",
+			latitude: 49.26400000000000, longitude: -123.25800000000000),
+		note: "This meeting already happened and should be filtered out!",
+		icon: "🍽️",
+		creatorUser: BaseUserDTO.danielAgapov,
+		participantUsers: [
+			BaseUserDTO.danielAgapov,
+			BaseUserDTO.danielLee,
+		],
+		isSelfOwned: true,
+		isExpired: true  // This activity should be expired
+	)
+}

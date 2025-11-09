@@ -6,5 +6,5 @@
 //
 
 enum TabType {
-    case home, activities, map, friends, profile
+	case home, activities, map, friends, profile
 }

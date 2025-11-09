@@ -12,20 +12,20 @@ struct EventInfoView: View {
 
 	init(event: FullFeedActivityDTO, eventInfoType: ActivityInfoType, locationManager: LocationManager) {
 		self.viewModel = ActivityInfoViewModel(
-            activity: event, locationManager: locationManager)
+			activity: event, locationManager: locationManager)
 	}
 
 	var body: some View {
 		HStack {
 			HStack(spacing: 5) {
-//				Image(systemName: viewModel.imageSystemName)
-//					.padding(5)
-//					.background(
-//						RoundedRectangle(cornerRadius: 30)
-//							.fill(Color.white.opacity(0.1))
-//					)
-				
-                Text(viewModel.getDisplayString(activityInfoType: .location))
+				//				Image(systemName: viewModel.imageSystemName)
+				//					.padding(5)
+				//					.background(
+				//						RoundedRectangle(cornerRadius: 30)
+				//							.fill(Color.white.opacity(0.1))
+				//					)
+
+				Text(viewModel.getDisplayString(activityInfoType: .location))
 					.lineLimit(1)
 					.fixedSize()
 					.font(.caption2)
@@ -35,7 +35,7 @@ struct EventInfoView: View {
 			.overlay {
 				// Background for the text bubble
 				RoundedRectangle(cornerRadius: 30)
-					                            .fill(universalBackgroundColor.opacity(0.1))
+					.fill(universalBackgroundColor.opacity(0.1))
 					.frame(height: 30)
 			}
 			.fixedSize()
@@ -46,6 +46,9 @@ struct EventInfoView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @ObservedObject var appCache = AppCache.shared
-    EventInfoView(event: FullFeedActivityDTO.mockDinnerActivity, eventInfoType: ActivityInfoType.location, locationManager: LocationManager.shared).environmentObject(appCache)
+	@Previewable @ObservedObject var appCache = AppCache.shared
+	EventInfoView(
+		event: FullFeedActivityDTO.mockDinnerActivity, eventInfoType: ActivityInfoType.location,
+		locationManager: LocationManager.shared
+	).environmentObject(appCache)
 }

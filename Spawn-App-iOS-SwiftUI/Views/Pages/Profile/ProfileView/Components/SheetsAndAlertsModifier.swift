@@ -17,7 +17,7 @@ struct SheetsAndAlertsModifier: ViewModifier {
 	let blockUserAlert: AnyView
 	@Binding var showProfileMenu: Bool
 	let profileMenuSheet: AnyView
-	
+
 	func body(content: Content) -> some View {
 		content
 			.overlay(
@@ -37,11 +37,12 @@ struct SheetsAndAlertsModifier: ViewModifier {
 			.alert("Block User", isPresented: $showBlockDialog) {
 				blockUserAlert
 			} message: {
-				Text("Blocking this user will remove them from your friends list and they won't be able to see your profile or activities.")
+				Text(
+					"Blocking this user will remove them from your friends list and they won't be able to see your profile or activities."
+				)
 			}
 			.sheet(isPresented: $showProfileMenu) {
 				profileMenuSheet
 			}
 	}
 }
-

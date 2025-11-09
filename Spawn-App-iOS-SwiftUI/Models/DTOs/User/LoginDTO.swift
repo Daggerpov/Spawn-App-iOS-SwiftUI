@@ -6,15 +6,15 @@
 //
 
 struct LoginDTO: Codable, Hashable {
-    static func == (lhs: LoginDTO, rhs: LoginDTO) -> Bool {
-        return lhs.usernameOrEmail == rhs.usernameOrEmail
-    }
-    
-    let usernameOrEmail: String
-    let password: String
-    
-    init(usernameOrEmail: String, password: String) {
-        self.usernameOrEmail = usernameOrEmail
-        self.password = password
-    }
+	static func == (lhs: LoginDTO, rhs: LoginDTO) -> Bool {
+		return lhs.usernameOrEmail == rhs.usernameOrEmail
+	}
+
+	let usernameOrEmail: String
+	let password: String
+
+	init(usernameOrEmail: String, password: String) {
+		self.usernameOrEmail = usernameOrEmail
+		self.password = password
+	}
 }

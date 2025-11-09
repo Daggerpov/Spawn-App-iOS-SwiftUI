@@ -20,40 +20,40 @@ struct ProfileCalendarView: View {
 	@Binding var selectedDayActivities: [CalendarActivityDTO]
 
 	@State private var currentDate = Date()
-	
+
 	private var currentMonth: Int {
 		Calendar.current.component(.month, from: currentDate)
 	}
-	
+
 	private var currentYear: Int {
 		Calendar.current.component(.year, from: currentDate)
 	}
-	
+
 	private var calendarDays: [Date?] {
 		let calendar = Calendar.current
 		let firstDayOfMonth = calendar.date(from: DateComponents(year: currentYear, month: currentMonth, day: 1))!
-		let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) - 1 // 0-indexed
+		let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth) - 1  // 0-indexed
 		let daysInMonth = calendar.range(of: .day, in: .month, for: firstDayOfMonth)!.count
-		
+
 		var days: [Date?] = []
-		
+
 		// Add empty days for the beginning of the month
 		for _ in 0..<firstWeekday {
 			days.append(nil)
 		}
-		
+
 		// Add actual days of the month
 		for day in 1...daysInMonth {
 			if let date = calendar.date(from: DateComponents(year: currentYear, month: currentMonth, day: day)) {
 				days.append(date)
 			}
 		}
-		
+
 		// Fill to 35 days (5 rows × 7 days)
 		while days.count < 35 {
 			days.append(nil)
 		}
-		
+
 		return days
 	}
 
@@ -69,15 +69,15 @@ struct ProfileCalendarView: View {
 		.overlay(
 			// Use the same ActivityPopupDrawer as the feed view for consistency
 			Group {
-				if showActivityDetails, let _ = profileViewModel.selectedActivity {
-					EmptyView() // Replaced with global popup system
+				if showActivityDetails, profileViewModel.selectedActivity != nil {
+					EmptyView()  // Replaced with global popup system
 				}
 			}
 		)
 		.onChange(of: showActivityDetails) { _, isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
 				let activityColor = getActivityColor(for: activity)
-				
+
 				// Post notification to show global popup
 				NotificationCenter.default.post(
 					name: .showGlobalActivityPopup,
@@ -92,7 +92,7 @@ struct ProfileCalendarView: View {
 	}
 
 	// MARK: - Helper Functions
-	
+
 	// Helper function to get consistent activity color for any activity type
 	private func getActivityColor(for activity: FullFeedActivityDTO) -> Color {
 		// Use the global function from Constants.swift for consistency
@@ -100,7 +100,7 @@ struct ProfileCalendarView: View {
 	}
 
 	// MARK: - Computed Properties for Body Components
-	
+
 	private var monthYearHeader: some View {
 		HStack {
 			Text(monthYearString())
@@ -110,7 +110,7 @@ struct ProfileCalendarView: View {
 		}
 		.padding(.horizontal, 4)
 	}
-	
+
 	private var weekDaysHeader: some View {
 		HStack(spacing: 4) {
 			ForEach(0..<weekDays.count, id: \.self) { index in
@@ -122,7 +122,7 @@ struct ProfileCalendarView: View {
 		}
 		.padding(.horizontal, 4)
 	}
-	
+
 	private var calendarContent: some View {
 		Group {
 			if profileViewModel.isLoadingCalendar {
@@ -132,12 +132,12 @@ struct ProfileCalendarView: View {
 			}
 		}
 	}
-	
+
 	private var loadingView: some View {
 		ProgressView()
 			.frame(maxWidth: .infinity, minHeight: 150)
 	}
-	
+
 	private var calendarGrid: some View {
 		VStack(spacing: 4) {
 			ForEach(0..<5, id: \.self) { row in
@@ -146,7 +146,7 @@ struct ProfileCalendarView: View {
 		}
 		.padding(.horizontal, 4)
 	}
-	
+
 	private func calendarRow(_ row: Int) -> some View {
 		HStack(spacing: 4) {
 			ForEach(0..<7, id: \.self) { col in
@@ -154,14 +154,14 @@ struct ProfileCalendarView: View {
 			}
 		}
 	}
-	
+
 	private func calendarDayCell(row: Int, col: Int) -> some View {
 		let dayIndex = row * 7 + col
-		
+
 		return Group {
 			if dayIndex < calendarDays.count, let date = calendarDays[dayIndex] {
 				let dayActivities = getActivitiesForDate(date)
-				
+
 				if dayActivities.isEmpty {
 					emptyDayCell
 				} else {
@@ -175,7 +175,7 @@ struct ProfileCalendarView: View {
 			}
 		}
 	}
-	
+
 	private var emptyDayCell: some View {
 		RoundedRectangle(cornerRadius: 4.5)
 			.fill(figmaCalendarDayIcon)
@@ -185,7 +185,7 @@ struct ProfileCalendarView: View {
 				handleDaySelection(activities: [])
 			}
 	}
-	
+
 	private var outsideMonthCell: some View {
 		RoundedRectangle(cornerRadius: 4.5)
 			.fill(Color.clear)
@@ -219,7 +219,8 @@ struct ProfileCalendarView: View {
 		// Then fetch and show the activity details
 		Task {
 			if let activityId = activity.activityId,
-			   let _ = await profileViewModel.fetchActivityDetails(activityId: activityId) {
+				await profileViewModel.fetchActivityDetails(activityId: activityId) != nil
+			{
 				await MainActor.run {
 					showActivityDetails = true
 				}
@@ -227,19 +228,17 @@ struct ProfileCalendarView: View {
 		}
 	}
 
-
-
 	// Get activities for a specific date
 	private func getActivitiesForDate(_ date: Date) -> [CalendarActivityDTO] {
 		// Use local calendar for date comparison since CalendarActivityDTO now uses local timezone
 		let calendar = Calendar.current
-		
+
 		let filteredActivities = profileViewModel.allCalendarActivities.filter { activity in
 			// Use local calendar for consistent date comparison since we now convert to local timezone
 			let isSameDay = calendar.isDate(activity.dateAsDate, inSameDayAs: date)
 			return isSameDay
 		}
-		
+
 		return filteredActivities
 	}
 
@@ -265,22 +264,22 @@ struct ProfileCalendarView: View {
 		}
 		return "\(currentMonth)/\(currentYear)"
 	}
-	
+
 	private func withTimeout<T>(seconds: Double, operation: @escaping () async throws -> T) async throws -> T {
 		try await withThrowingTaskGroup(of: T.self) { group in
 			group.addTask {
 				try await operation()
 			}
-			
+
 			group.addTask {
 				try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
 				throw TimeoutError()
 			}
-			
+
 			guard let result = try await group.next() else {
 				throw TimeoutError()
 			}
-			
+
 			group.cancelAll()
 			return result
 		}

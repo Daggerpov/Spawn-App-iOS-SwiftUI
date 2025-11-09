@@ -4,7 +4,7 @@ import SwiftUI
 struct CalendarDayCell: View {
 	let activities: [CalendarActivityDTO]
 	let dayNumber: Int
-	
+
 	var body: some View {
 		ZStack {
 			if activities.count == 1, !activities.isEmpty {
@@ -47,23 +47,25 @@ struct CalendarDayCell: View {
 			}
 		}
 	}
-	
+
 	private func activityColor(for activity: CalendarActivityDTO) -> Color {
 		// Use the same logic as the feed view - always use ActivityColorService assignment
 		// Priority: activityId first (main activity), then calendar activity id as fallback
 		if let activityId = activity.activityId {
 			let color = getActivityColor(for: activityId)
 			let hexColor = getActivityColorHex(for: activityId)
-			print("🎨 ProfileCalendarView: Using activityId \(activityId) color \(hexColor) for calendar activity \(activity.id)")
+			print(
+				"🎨 ProfileCalendarView: Using activityId \(activityId) color \(hexColor) for calendar activity \(activity.id)"
+			)
 			return color
 		}
-		
+
 		// For calendar-only activities without activityId, use the calendar activity's own id
 		let color = getActivityColor(for: activity.id)
 		let hexColor = getActivityColorHex(for: activity.id)
 		print("🎨 ProfileCalendarView: Using calendar activity id \(activity.id) color \(hexColor)")
 		return color
-		
+
 		// Note: We ignore backend colorHexCode entirely like the feed view does
 	}
 
@@ -79,4 +81,3 @@ struct CalendarDayCell: View {
 		}
 	}
 }
-

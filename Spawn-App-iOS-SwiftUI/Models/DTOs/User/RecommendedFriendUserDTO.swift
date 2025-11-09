@@ -5,7 +5,6 @@
 //  Created by Daniel Agapov on 3/7/25.
 //
 
-
 import Foundation
 
 struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
@@ -19,10 +18,10 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 	var name: String?
 	var bio: String?
 	var email: String?
-    var mutualFriendCount: Int?
-    var sharedActivitiesCount: Int?
-    var relationshipStatus: UserRelationshipType?
-    var pendingFriendRequestId: UUID?
+	var mutualFriendCount: Int?
+	var sharedActivitiesCount: Int?
+	var relationshipStatus: UserRelationshipType?
+	var pendingFriendRequestId: UUID?
 
 	init(
 		id: UUID,
@@ -31,10 +30,10 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		name: String? = nil,
 		bio: String? = nil,
 		email: String?,
-        mutualFriendCount: Int? = 0,
-        sharedActivitiesCount: Int? = 0,
-        relationshipStatus: UserRelationshipType? = .recommendedFriend,
-        pendingFriendRequestId: UUID? = nil
+		mutualFriendCount: Int? = 0,
+		sharedActivitiesCount: Int? = 0,
+		relationshipStatus: UserRelationshipType? = .recommendedFriend,
+		pendingFriendRequestId: UUID? = nil
 	) {
 		self.id = id
 		self.username = username
@@ -42,10 +41,10 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 		self.name = name
 		self.bio = bio
 		self.email = email
-        self.mutualFriendCount = mutualFriendCount
-        self.sharedActivitiesCount = sharedActivitiesCount
-        self.relationshipStatus = relationshipStatus
-        self.pendingFriendRequestId = pendingFriendRequestId
+		self.mutualFriendCount = mutualFriendCount
+		self.sharedActivitiesCount = sharedActivitiesCount
+		self.relationshipStatus = relationshipStatus
+		self.pendingFriendRequestId = pendingFriendRequestId
 	}
 }
 
@@ -81,8 +80,8 @@ extension RecommendedFriendUserDTO {
 		name: "Haley",
 		bio: "This is my bio.",
 		email: "haley@gmail.com",
-        mutualFriendCount: 0,
-        sharedActivitiesCount: 3
+		mutualFriendCount: 0,
+		sharedActivitiesCount: 3
 	)
 
 	static let mockUsers: [RecommendedFriendUserDTO] = {

@@ -8,11 +8,11 @@
 import Foundation
 
 enum UserStatus: String, Codable, CaseIterable {
-    case emailVerified = "EMAIL_VERIFIED"
-    case usernameAndPhoneNumber = "USERNAME_AND_PHONE_NUMBER"
-    case nameAndPhoto = "NAME_AND_PHOTO"
-    case contactImport = "CONTACT_IMPORT"
-    case active = "ACTIVE"
+	case emailVerified = "EMAIL_VERIFIED"
+	case usernameAndPhoneNumber = "USERNAME_AND_PHONE_NUMBER"
+	case nameAndPhoto = "NAME_AND_PHOTO"
+	case contactImport = "CONTACT_IMPORT"
+	case active = "ACTIVE"
 }
 
 struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
@@ -56,12 +56,12 @@ extension BaseUserDTO {
 			name: friendUser.name,
 			bio: friendUser.bio,
 			email: friendUser.email,
-			hasCompletedOnboarding: true // Assume existing friends have completed onboarding
+			hasCompletedOnboarding: true  // Assume existing friends have completed onboarding
 		)
 	}
 
 	static var danielAgapov: BaseUserDTO = {
-        let id: UUID = UUID(uuidString: "7CF00DD1-D246-4339-8B85-0EC589161DBF") ?? UUID()
+		let id: UUID = UUID(uuidString: "7CF00DD1-D246-4339-8B85-0EC589161DBF") ?? UUID()
 		return BaseUserDTO(
 			id: id,
 			username: "daggerpov",

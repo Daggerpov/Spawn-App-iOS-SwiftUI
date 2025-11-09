@@ -171,7 +171,7 @@ let opacity90: CGFloat = 0.90
 
 // MARK: - Activity Colors (using new design system)
 let activityRedHexCode: String = colorsRed600
-let activityOrangeHexCode: String = "#FF6B35" // Custom orange not in design system
+let activityOrangeHexCode: String = "#FF6B35"  // Custom orange not in design system
 let activityIndigoHexCode: String = colorsIndigo600
 let activityGreenHexCode: String = colorsGreen600
 let activityPinkHexCode: String = colorsPink500
@@ -183,7 +183,7 @@ let activityIndigoDarkHexCode: String = colorsIndigo800
 let activityColorHexCodes: [String] = [
 	activityRedHexCode, activityOrangeHexCode, activityIndigoHexCode,
 	activityGreenHexCode, activityPinkHexCode, activityTealHexCode,
-	activityBlueHexCode, activityPurpleHexCode, activityIndigoDarkHexCode
+	activityBlueHexCode, activityPurpleHexCode, activityIndigoDarkHexCode,
 ]
 let activityColors = activityColorHexCodes.map { colorHexCode in
 	Color(hex: colorHexCode)
@@ -203,79 +203,82 @@ func getActivityColorHex(for activityId: UUID) -> String {
 // These are reactive functions that need to be called within an ObservedObject context
 
 func universalBackgroundColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
-    let currentScheme = themeService.colorScheme
-    
-    switch currentScheme {
-    case .light:
-        return Color(hex: colorsWhite)
-    case .dark:
-        return Color(hex: colorsGray900)
-    case .system:
-        return environment == .dark ? Color(hex: colorsGray900) : Color(hex: colorsWhite)
-    }
+	let currentScheme = themeService.colorScheme
+
+	switch currentScheme {
+	case .light:
+		return Color(hex: colorsWhite)
+	case .dark:
+		return Color(hex: colorsGray900)
+	case .system:
+		return environment == .dark ? Color(hex: colorsGray900) : Color(hex: colorsWhite)
+	}
 }
 
 func universalAccentColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
-    let currentScheme = themeService.colorScheme
-    
-    switch currentScheme {
-    case .light:
-        return Color(hex: colorsGray900)
-    case .dark:
-        return Color(hex: colorsWhite)
-    case .system:
-        return environment == .dark ? Color(hex: colorsWhite) : Color(hex: colorsGray900)
-    }
+	let currentScheme = themeService.colorScheme
+
+	switch currentScheme {
+	case .light:
+		return Color(hex: colorsGray900)
+	case .dark:
+		return Color(hex: colorsWhite)
+	case .system:
+		return environment == .dark ? Color(hex: colorsWhite) : Color(hex: colorsGray900)
+	}
 }
 
 func universalPlaceHolderTextColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
-    let currentScheme = themeService.colorScheme
-    
-    switch currentScheme {
-    case .light:
-        return Color(hex: colorsGray400)
-    case .dark:
-        return Color(hex: colorsGray500)
-    case .system:
-        return environment == .dark ? Color(hex: colorsGray500) : Color(hex: colorsGray400)
-    }
+	let currentScheme = themeService.colorScheme
+
+	switch currentScheme {
+	case .light:
+		return Color(hex: colorsGray400)
+	case .dark:
+		return Color(hex: colorsGray500)
+	case .system:
+		return environment == .dark ? Color(hex: colorsGray500) : Color(hex: colorsGray400)
+	}
 }
 
 // Legacy computed properties for backwards compatibility (will use system theme only)
 @available(iOS 14.0, *)
 var universalBackgroundColor: Color {
-    Color(UIColor { traitCollection in
-        switch traitCollection.userInterfaceStyle {
-        case .dark:
-            return UIColor(Color(hex: colorsGray900))
-        default:
-            return UIColor(Color(hex: colorsWhite))
-        }
-    })
+	Color(
+		UIColor { traitCollection in
+			switch traitCollection.userInterfaceStyle {
+			case .dark:
+				return UIColor(Color(hex: colorsGray900))
+			default:
+				return UIColor(Color(hex: colorsWhite))
+			}
+		})
 }
 
 @available(iOS 14.0, *)
 var universalAccentColor: Color {
-    Color(UIColor { traitCollection in
-        switch traitCollection.userInterfaceStyle {
-        case .dark:
-            return UIColor(Color(hex: colorsWhite))
-        default:
-            return UIColor(Color(hex: colorsGray900))
-        }
-    })
+	Color(
+		UIColor { traitCollection in
+			switch traitCollection.userInterfaceStyle {
+			case .dark:
+				return UIColor(Color(hex: colorsWhite))
+			default:
+				return UIColor(Color(hex: colorsGray900))
+			}
+		})
 }
 
 @available(iOS 14.0, *)
 var universalPlaceHolderTextColor: Color {
-    Color(UIColor { traitCollection in
-        switch traitCollection.userInterfaceStyle {
-        case .dark:
-            return UIColor(Color(hex: colorsGray500))
-        default:
-            return UIColor(Color(hex: colorsGray400))
-        }
-    })
+	Color(
+		UIColor { traitCollection in
+			switch traitCollection.userInterfaceStyle {
+			case .dark:
+				return UIColor(Color(hex: colorsGray500))
+			default:
+				return UIColor(Color(hex: colorsGray400))
+			}
+		})
 }
 
 // MARK: - Static Colors (Theme-independent) - Updated to use new design system
@@ -320,8 +323,8 @@ let figmaCalendarDayIconHex: String = colorsGray200
 let figmaCalendarDayIcon: Color = Color(hex: figmaCalendarDayIconHex)
 
 let figmaGreyGradientColors: [Color] = [
-    Color(hex: colorsGray50), Color(hex: colorsGray100), Color(hex: colorsGray200), 
-    Color(hex: colorsGray300), Color(hex: colorsGray400), Color(hex: colorsGray500)
+	Color(hex: colorsGray50), Color(hex: colorsGray100), Color(hex: colorsGray200),
+	Color(hex: colorsGray300), Color(hex: colorsGray400), Color(hex: colorsGray500),
 ]
 
 let figmaTransparentWhite: Color = Color(hex: colorsTransparentWhite80)

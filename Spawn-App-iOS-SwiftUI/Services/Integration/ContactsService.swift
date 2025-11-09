@@ -90,7 +90,7 @@ class ContactsService: ObservableObject {
 			let fetchedContacts = try await withCheckedThrowingContinuation { continuation in
 				Task.detached {
 					var contacts: [Contact] = []
-					
+
 					do {
 						try await self.contactStore.enumerateContacts(with: request) {
 							(contact, stop) in
@@ -191,17 +191,17 @@ class ContactsService: ObservableObject {
 				// Try to find the best matching contact by name similarity
 				var bestMatchContact: Contact?
 				var bestMatchScore: Double = 0.0
-				
+
 				let userName = (user.name ?? user.username ?? "Unknown").lowercased()
 				let userFirstName = userName.components(separatedBy: " ").first ?? ""
-				
+
 				for contact in contacts {
 					let contactName = contact.name.lowercased()
 					let contactFirstName = contactName.components(separatedBy: " ").first ?? ""
-					
+
 					// Calculate similarity score
 					var score: Double = 0.0
-					
+
 					// Exact name match gets highest score
 					if contactName == userName {
 						score = 1.0
@@ -214,7 +214,7 @@ class ContactsService: ObservableObject {
 					else if contactName.contains(userFirstName) || userName.contains(contactFirstName) {
 						score = 0.6
 					}
-					
+
 					if score > bestMatchScore {
 						bestMatchScore = score
 						bestMatchContact = contact
@@ -222,11 +222,13 @@ class ContactsService: ObservableObject {
 				}
 
 				// Create contact entry - use matched contact if found, otherwise create one
-				let finalContact = bestMatchContact ?? Contact(
-					id: user.id.uuidString,
-					                name: user.name ?? user.username ?? "Unknown User",
-					phoneNumbers: []  // Don't expose phone numbers for privacy
-				)
+				let finalContact =
+					bestMatchContact
+					?? Contact(
+						id: user.id.uuidString,
+						name: user.name ?? user.username ?? "Unknown User",
+						phoneNumbers: []  // Don't expose phone numbers for privacy
+					)
 
 				matchedContacts.append(
 					ContactsOnSpawn(
@@ -258,32 +260,32 @@ class ContactsService: ObservableObject {
 
 	private nonisolated func cleanPhoneNumber(_ phoneNumber: String) -> String {
 		print("🧹 CLEANING PHONE: '\(phoneNumber)'")
-		
+
 		// Check if it's obviously not a phone number
-		if phoneNumber.contains("@") || 
-		   phoneNumber.contains("-") && phoneNumber.count > 20 ||
-		   phoneNumber.range(of: "[a-zA-Z]", options: .regularExpression) != nil && !phoneNumber.contains("@") {
+		if phoneNumber.contains("@") || phoneNumber.contains("-") && phoneNumber.count > 20
+			|| phoneNumber.range(of: "[a-zA-Z]", options: .regularExpression) != nil && !phoneNumber.contains("@")
+		{
 			print("  REJECTED: Not a valid phone number format")
 			return ""
 		}
-		
+
 		// Remove all non-numeric characters except +
 		let cleaned = phoneNumber.replacingOccurrences(of: "[^+\\d]", with: "", options: .regularExpression)
 		print("  Step 1 - cleaned format: '\(cleaned)'")
-		
+
 		// Check minimum length
 		let digitsOnly = cleaned.replacingOccurrences(of: "+", with: "")
 		if digitsOnly.count < 7 || digitsOnly.count > 15 {
 			print("  REJECTED: Invalid digit count (\(digitsOnly.count))")
 			return ""
 		}
-		
+
 		// If it already has a + prefix, keep it as-is
 		if cleaned.hasPrefix("+") {
 			print("  RESULT: Keeping international format: '\(cleaned)'")
 			return cleaned
 		}
-		
+
 		// For numbers without + prefix, preserve them as entered but clean formatting
 		// Don't assume any country code - let the backend handle matching flexibility
 		print("  RESULT: Preserving without country assumption: '\(digitsOnly)'")
@@ -302,7 +304,7 @@ class ContactsService: ObservableObject {
 			print("    [\(index)] '\(phone)'")
 		}
 		print("  👤 Requesting user ID: \(requestingUserId)")
-		
+
 		// Create the request body
 		let requestBody = ContactCrossReferenceRequestDTO(
 			phoneNumbers: phoneNumbers,
@@ -318,7 +320,7 @@ class ContactsService: ObservableObject {
 		}
 
 		print("🔗 API URL: \(url)")
-		
+
 		let result: ContactCrossReferenceResponseDTO? =
 			try await apiService.sendData(
 				requestBody,

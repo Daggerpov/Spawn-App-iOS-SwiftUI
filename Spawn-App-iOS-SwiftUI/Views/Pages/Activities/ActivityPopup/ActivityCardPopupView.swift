@@ -19,7 +19,7 @@ struct ActivityCardPopupView: View {
 
 	// Optional binding to control tab selection for current user navigation
 	@Binding var selectedTab: TabType?
-	
+
 	// Flag to determine if opened from map view
 	let fromMapView: Bool
 
@@ -46,7 +46,7 @@ struct ActivityCardPopupView: View {
 	) {
 		// Get the most up-to-date activity from cache to ensure correct participation status
 		let cachedActivity = AppCache.shared.getActivityById(activity.id) ?? activity
-		
+
 		self.activity = cachedActivity
 		self._viewModel = StateObject(
 			wrappedValue: ActivityInfoViewModel(
@@ -75,22 +75,22 @@ struct ActivityCardPopupView: View {
 
 	var body: some View {
 		NavigationStack {
-					VStack(spacing: 0) {
-			// Handle bar - only show when not expanded
-			if !isExpanded {
-				RoundedRectangle(cornerRadius: 2.5)
-					.fill(Color.white.opacity(0.6))
-					.frame(width: 50, height: 4)
-					.padding(.top, 8)
-					.padding(.bottom, 12)
-			} else {
-				// Add equivalent padding when expanded to avoid status bar
-				// Reduce padding when opened from map view since it has additional header padding
-				Spacer()
-					.frame(height: fromMapView ? 8 : 24) // Reduced padding for map view
-			}
+			VStack(spacing: 0) {
+				// Handle bar - only show when not expanded
+				if !isExpanded {
+					RoundedRectangle(cornerRadius: 2.5)
+						.fill(Color.white.opacity(0.6))
+						.frame(width: 50, height: 4)
+						.padding(.top, 8)
+						.padding(.bottom, 12)
+				} else {
+					// Add equivalent padding when expanded to avoid status bar
+					// Reduce padding when opened from map view since it has additional header padding
+					Spacer()
+						.frame(height: fromMapView ? 8 : 24)  // Reduced padding for map view
+				}
 
-			// Conditional content based on navigation state
+				// Conditional content based on navigation state
 				if showingChatroom {
 					// Chatroom content
 					ChatroomContentView(
@@ -123,7 +123,7 @@ struct ActivityCardPopupView: View {
 				}
 			}
 
-                    .background(activityColor.opacity(0.80).blendMode(.multiply))
+			.background(activityColor.opacity(0.80).blendMode(.multiply))
 			.cornerRadius(isExpanded ? 0 : 20)
 			.shadow(radius: isExpanded ? 0 : 20)
 			.ignoresSafeArea(
@@ -163,25 +163,25 @@ struct ActivityCardPopupView: View {
 				showingChatroom = true
 			}
 		}
-		.onReceive(NotificationCenter.default.publisher(for: .showParticipants))
-		{ _ in
+		.onReceive(NotificationCenter.default.publisher(for: .showParticipants)) { _ in
 			withAnimation(.easeInOut(duration: 0.3)) {
 				showingParticipants = true
 			}
 		}
 		.onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
 			if let updatedActivity = notification.object as? FullFeedActivityDTO,
-			   updatedActivity.id == activity.id {
+				updatedActivity.id == activity.id
+			{
 				print("🔄 ActivityCardPopupView: Received activity update for \(updatedActivity.title ?? "Unknown")")
-				
+
 				// Update all view models with the new activity data
 				viewModel.updateActivity(updatedActivity)
 				mapViewModel.updateActivity(updatedActivity)
 				cardViewModel.updateActivity(updatedActivity)
-				
+
 				// Update the region for the map to reflect new location
 				region = mapViewModel.initialRegion
-				
+
 				print("✅ ActivityCardPopupView: Updated all view models with new activity data")
 			}
 		}
@@ -212,21 +212,21 @@ struct ActivityCardPopupView: View {
 		VStack(alignment: .leading, spacing: 16) {
 			// Header with arrow and title
 			HStack {
-                Button(action: {
-                    if isExpanded {
-                        onMinimize()
-                    } else {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            isExpanded = true
-                        }
-                    }
-                }) {
-                    Image(systemName: isExpanded ? "xmark" : "arrow.up.left.and.arrow.down.right")
-                        .foregroundColor(.white)
-                        .font(.system(size: 24, weight: .regular))
-                }
-                .buttonStyle(PlainButtonStyle())
-                
+				Button(action: {
+					if isExpanded {
+						onMinimize()
+					} else {
+						withAnimation(.easeInOut(duration: 0.3)) {
+							isExpanded = true
+						}
+					}
+				}) {
+					Image(systemName: isExpanded ? "xmark" : "arrow.up.left.and.arrow.down.right")
+						.foregroundColor(.white)
+						.font(.system(size: 24, weight: .regular))
+				}
+				.buttonStyle(PlainButtonStyle())
+
 				Spacer()
 
 				// Only show menu for activities not owned by current user
@@ -239,14 +239,14 @@ struct ActivityCardPopupView: View {
 						Image(systemName: "ellipsis")
 							.foregroundColor(.white)
 							.font(.title3)
-							.padding(12) // Increased padding for better touch targets
+							.padding(12)  // Increased padding for better touch targets
 					}
 					.buttonStyle(PlainButtonStyle())
 					.allowsHitTesting(true)
-					.contentShape(Circle()) // Better touch area for circular button
+					.contentShape(Circle())  // Better touch area for circular button
 				}
 			}
-            .padding(.top, fromMapView && isExpanded ? 8 : 23)
+			.padding(.top, fromMapView && isExpanded ? 8 : 23)
 
 			// Event title and time
 			titleAndTime
@@ -296,7 +296,7 @@ struct ActivityCardPopupView: View {
 							Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
 						)
 				)
-				.allowsHitTesting(false) // Disable map interaction to prevent gesture conflicts
+				.allowsHitTesting(false)  // Disable map interaction to prevent gesture conflicts
 			} else {
 				Map(coordinateRegion: $region, annotationItems: [mapViewModel]) {
 					pin in
@@ -314,7 +314,7 @@ struct ActivityCardPopupView: View {
 							Color(red: 0.50, green: 0.23, blue: 0.27).opacity(0.50)
 						)
 				)
-				.allowsHitTesting(false) // Disable map interaction to prevent gesture conflicts
+				.allowsHitTesting(false)  // Disable map interaction to prevent gesture conflicts
 			}
 
 			// Location info overlay at bottom
@@ -334,8 +334,8 @@ struct ActivityCardPopupView: View {
 		}
 		.padding(.horizontal, 12)
 		.padding(.bottom, 12)
-		.zIndex(1) // Ensure overlay is above the map
-		.allowsHitTesting(true) // Ensure the overlay can receive touches
+		.zIndex(1)  // Ensure overlay is above the map
+		.allowsHitTesting(true)  // Ensure the overlay can receive touches
 	}
 
 	var locationInfoSection: some View {
@@ -383,16 +383,16 @@ struct ActivityCardPopupView: View {
 		.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
 		.background(.white)
 		.cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1) // border matching background
-                .shadow(color: Color.black.opacity(0.25), radius: 2, x: -2, y: -2) // dark shadow top
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .shadow(color: Color.white.opacity(0.7), radius: 4, x: 4, y: 4) // light shadow bottom
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-        )
-        .shadow (color: Color.black.opacity(0.25), radius: 2, x: 0, y: 4)
-		.contentShape(Rectangle()) // Define the entire button area as tappable
+		.overlay(
+			RoundedRectangle(cornerRadius: 10)
+				.stroke(Color(red: 0.95, green: 0.93, blue: 0.93), lineWidth: 1)  // border matching background
+				.shadow(color: Color.black.opacity(0.25), radius: 2, x: -2, y: -2)  // dark shadow top
+				.clipShape(RoundedRectangle(cornerRadius: 12))
+				.shadow(color: Color.white.opacity(0.7), radius: 4, x: 4, y: 4)  // light shadow bottom
+				.clipShape(RoundedRectangle(cornerRadius: 12))
+		)
+		.shadow(color: Color.black.opacity(0.25), radius: 2, x: 0, y: 4)
+		.contentShape(Rectangle())  // Define the entire button area as tappable
 		.simultaneousGesture(
 			TapGesture()
 				.onEnded { _ in
@@ -423,13 +423,12 @@ struct ActivityCardPopupView: View {
 	}
 }
 
-
 extension ActivityCardPopupView {
 	var titleAndTime: some View {
 		VStack(alignment: .leading, spacing: 8) {
 			Text(viewModel.getDisplayString(activityInfoType: .title))
-			.font(.onestSemiBold(size: 32))
-			.foregroundColor(.white)
+				.font(.onestSemiBold(size: 32))
+				.foregroundColor(.white)
 			Text(
 				FormatterService.shared.timeUntil(activity.startTime) + " • "
 					+ viewModel.getDisplayString(activityInfoType: .time)
@@ -438,7 +437,7 @@ extension ActivityCardPopupView {
 			.foregroundColor(.white.opacity(0.9))
 		}
 	}
-	
+
 	var spawnInRow: some View {
 		HStack {
 			Button(action: {}) {
@@ -463,7 +462,7 @@ extension ActivityCardPopupView {
 			)
 		}
 	}
-	
+
 	var directionRow: some View {
 		HStack {
 			Image(systemName: "mappin.and.ellipse")
@@ -487,16 +486,16 @@ extension ActivityCardPopupView {
 				}
 			}
 			.padding(.vertical, 12)
-			
+
 			Spacer()
-			
+
 			Button(action: {
 				// Create source map item from user's current location
 				let sourceMapItem = MKMapItem.forCurrentLocation()
-				
+
 				// Create destination map item from activity location
 				let destinationMapItem = mapViewModel.mapItem
-				
+
 				// Open Maps with directions from current location to activity location
 				MKMapItem.openMaps(
 					with: [sourceMapItem, destinationMapItem],
@@ -531,7 +530,7 @@ extension ActivityCardPopupView {
 		.background(Color.black.opacity(0.2))
 		.cornerRadius(12)
 	}
-	
+
 	var locationInfoView: some View {
 		HStack(spacing: 8) {
 			// Location info pill
@@ -549,7 +548,7 @@ extension ActivityCardPopupView {
 					.lineLimit(1)
 					.truncationMode(.tail)
 					.layoutPriority(0)  // Lower priority for truncation
-					
+
 					if viewModel.isDistanceAvailable() {
 						Text(
 							"• \(viewModel.getDisplayString(activityInfoType: .distance)) away"
@@ -565,15 +564,15 @@ extension ActivityCardPopupView {
 			.padding(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
 			.background(Color(red: 0.33, green: 0.42, blue: 0.93).opacity(0.80))
 			.cornerRadius(12)
-			
+
 			// View in Maps button
 			Button(action: {
 				// Create source map item from user's current location
 				let sourceMapItem = MKMapItem.forCurrentLocation()
-				
+
 				// Create destination map item from activity location
 				let destinationMapItem = mapViewModel.mapItem
-				
+
 				// Open Maps with directions from current location to activity location
 				MKMapItem.openMaps(
 					with: [sourceMapItem, destinationMapItem],
@@ -609,7 +608,7 @@ extension ActivityCardPopupView {
 			}
 		}
 	}
-	
+
 	// Map view location section - simplified version for when opened from map
 	var mapViewLocationSection: some View {
 		HStack(spacing: 8) {
@@ -630,16 +629,16 @@ extension ActivityCardPopupView {
 						.foregroundColor(.white)
 				}
 			}
-			
+
 			Spacer()
-			
+
 			Button(action: {
 				// Create source map item from user's current location
 				let sourceMapItem = MKMapItem.forCurrentLocation()
-				
+
 				// Create destination map item from activity location
 				let destinationMapItem = mapViewModel.mapItem
-				
+
 				// Open Maps with directions from current location to activity location
 				MKMapItem.openMaps(
 					with: [sourceMapItem, destinationMapItem],
@@ -673,8 +672,6 @@ extension ActivityCardPopupView {
 		.cornerRadius(12)
 	}
 }
-
-
 
 struct ActivityCardPopupView_Previews: PreviewProvider {
 	static var previews: some View {

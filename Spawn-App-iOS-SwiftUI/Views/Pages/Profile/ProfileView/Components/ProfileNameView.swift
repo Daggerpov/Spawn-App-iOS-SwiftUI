@@ -8,25 +8,25 @@
 import SwiftUI
 
 struct ProfileNameView: View {
-    let user: Nameable
-    @ObservedObject var userAuth = UserAuthViewModel.shared
-    @Binding var refreshFlag: Bool
-    
-    // Check if this is the current user's profile
-    var isCurrentUserProfile: Bool {
-        if MockAPIService.isMocking {
-            return true
-        }
-        guard let currentUser = userAuth.spawnUser else { return false }
-        return currentUser.id == user.id
-    }
-    
-    var body: some View {
-        // Name and Username - make this more reactive to changes
-        Group {
-            if isCurrentUserProfile,
-               let currentUser = userAuth.spawnUser
-            {
+	let user: Nameable
+	@ObservedObject var userAuth = UserAuthViewModel.shared
+	@Binding var refreshFlag: Bool
+
+	// Check if this is the current user's profile
+	var isCurrentUserProfile: Bool {
+		if MockAPIService.isMocking {
+			return true
+		}
+		guard let currentUser = userAuth.spawnUser else { return false }
+		return currentUser.id == user.id
+	}
+
+	var body: some View {
+		// Name and Username - make this more reactive to changes
+		Group {
+			if isCurrentUserProfile,
+				let currentUser = userAuth.spawnUser
+			{
 				Text(
 					FormatterService.shared.formatName(
 						user: currentUser
@@ -35,11 +35,11 @@ struct ProfileNameView: View {
 				.font(.title3)
 				.bold()
 				.foregroundColor(universalAccentColor)
-                				Text("@\(currentUser.username ?? "username")")
-                    .font(.subheadline)
-                    .foregroundColor(Color.gray)
-                    .padding(.bottom, 5)
-            } else {
+				Text("@\(currentUser.username ?? "username")")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
+			} else {
 				// For other users, use the passed-in user
 				Text(
 					FormatterService.shared.formatName(
@@ -49,19 +49,19 @@ struct ProfileNameView: View {
 				.font(.title3)
 				.bold()
 				.foregroundColor(universalAccentColor)
-                				Text("@\(user.username ?? "username")")
-                    .font(.subheadline)
-                    .foregroundColor(Color.gray)
-                    .padding(.bottom, 5)
-            }
-        }
-        .id(refreshFlag)  // Force refresh when flag changes
-    }
+				Text("@\(user.username ?? "username")")
+					.font(.subheadline)
+					.foregroundColor(Color.gray)
+					.padding(.bottom, 5)
+			}
+		}
+		.id(refreshFlag)  // Force refresh when flag changes
+	}
 }
 
 #Preview {
-    ProfileNameView(
+	ProfileNameView(
 		user: BaseUserDTO.danielAgapov,
-        refreshFlag: .constant(false)
-    )
-} 
+		refreshFlag: .constant(false)
+	)
+}

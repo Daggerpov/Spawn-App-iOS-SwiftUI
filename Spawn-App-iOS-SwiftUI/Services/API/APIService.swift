@@ -6,8 +6,8 @@
 //
 
 import Foundation
-import UIKit
 import Security
+import UIKit
 
 // Protocol to help handle Optional types in a generic way
 protocol OptionalProtocol {
@@ -49,28 +49,28 @@ class APIService: IAPIService {
 			// Try ISO8601 with fractional seconds first
 			let formatterWithFractional = ISO8601DateFormatter()
 			formatterWithFractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-			
+
 			if let date = formatterWithFractional.date(from: dateString) {
 				return date
 			}
-			
+
 			// Try ISO8601 without fractional seconds
 			let formatterWithoutFractional = ISO8601DateFormatter()
 			formatterWithoutFractional.formatOptions = [.withInternetDateTime]
-			
+
 			if let date = formatterWithoutFractional.date(from: dateString) {
 				return date
 			}
-			
+
 			// Try simple YYYY-MM-DD format (for CalendarActivityDTO)
 			let dateFormatter = DateFormatter()
 			dateFormatter.dateFormat = "yyyy-MM-dd"
 			dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-			
+
 			if let date = dateFormatter.date(from: dateString) {
 				return date
 			}
-			
+
 			// If all attempts fail, throw an error
 			throw DecodingError.dataCorruptedError(
 				in: container,
@@ -100,12 +100,13 @@ class APIService: IAPIService {
 		parameters: [String: String]? = nil
 	) async throws -> T where T: Decodable {
 		resetState()
-		
+
 		// Check if user is authenticated for non-auth endpoints
 		let urlString = url.absoluteString
 		let isAuthEndpoint = urlString.contains("/auth/") || urlString.contains("/quick-sign-in")
-		let isWhitelistedEndpoint = urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
-		
+		let isWhitelistedEndpoint =
+			urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
+
 		if !isAuthEndpoint && !isWhitelistedEndpoint {
 			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 				print("❌ Cannot make API call to \(urlString): User is not logged in")
@@ -167,7 +168,7 @@ class APIService: IAPIService {
 				errorStatusCode = 404
 				throw APIError.invalidStatusCode(statusCode: 404)
 			}
-			
+
 			// For non-auth endpoints, try to return an empty result
 			if let emptyArrayResult = emptyArrayResult(for: T.self) {
 				return emptyArrayResult
@@ -183,7 +184,7 @@ class APIService: IAPIService {
 		} else if httpResponse.statusCode != 200 {
 			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
 		}
-		
+
 		// Handle empty responses
 		if data.isEmpty || data.count == 0 {
 			if let emptyResponse = emptyResult(for: T.self) {
@@ -194,7 +195,7 @@ class APIService: IAPIService {
 
 		// Create decoder outside the try/catch scope so it's accessible in all blocks
 		let decoder = APIService.makeDecoder()
-		
+
 		// Try to decode normally first
 		do {
 			let decodedData = try decoder.decode(T.self, from: data)
@@ -203,17 +204,20 @@ class APIService: IAPIService {
 			// If normal decoding fails and we're expecting a single object but got an array,
 			// try to extract the first item from the array
 			let isArrayType = String(describing: T.self).contains("Array")
-			
+
 			// Only attempt array handling if we're not already expecting an array type
 			if !isArrayType {
 				// Try to decode as an array of that type
-				print("Attempting to decode as array and extract the first item for entity type '\(T.self)' from URL: \(finalURL)")
-				
+				print(
+					"Attempting to decode as array and extract the first item for entity type '\(T.self)' from URL: \(finalURL)"
+				)
+
 				do {
 					// Use JSONSerialization first to check if it's an array
 					if let jsonObject = try JSONSerialization.jsonObject(with: data) as? [Any],
-					   !jsonObject.isEmpty {
-						
+						!jsonObject.isEmpty
+					{
+
 						// It is an array, try to decode it as such and take the first element
 						if let firstItemData = try? JSONSerialization.data(withJSONObject: jsonObject[0]) {
 							let firstItem = try decoder.decode(T.self, from: firstItemData)
@@ -225,7 +229,7 @@ class APIService: IAPIService {
 					print("Failed to extract first item from array: \(error)")
 				}
 			}
-			
+
 			// If we got here, throw the original decoding error
 			print("JSON Decoding Error: \(decodingError)")
 			if let jsonString = String(data: data, encoding: .utf8) {
@@ -241,23 +245,24 @@ class APIService: IAPIService {
 		parameters: [String: String]? = nil
 	) async throws -> U? {
 		resetState()
-		
+
 		// Check if user is authenticated for non-auth endpoints
 		let urlString = url.absoluteString
 		let isAuthEndpoint = urlString.contains("/auth/") || urlString.contains("/quick-sign-in")
-		let isWhitelistedEndpoint = urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
-		
+		let isWhitelistedEndpoint =
+			urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
+
 		if !isAuthEndpoint && !isWhitelistedEndpoint {
 			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 				print("❌ Cannot make API call to \(urlString): User is not logged in")
-				
+
 				// DEBUG: Extra logging for blocking endpoints
 				if urlString.contains("blocked-users") {
 					print("🚫 DEBUG: ❌ CRITICAL - User not logged in when attempting to block user!")
 					print("🚫 DEBUG: spawnUser: \(UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil")")
 					print("🚫 DEBUG: isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
 				}
-				
+
 				throw APIError.invalidStatusCode(statusCode: 401)
 			}
 		}
@@ -288,7 +293,7 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 		setAuthHeader(request: &request)
-		
+
 		let (data, response): (Data, URLResponse)
 		do {
 			(data, response) = try await URLSession.shared.data(for: request)
@@ -312,23 +317,25 @@ class APIService: IAPIService {
 		// 200 means success || 201 means created || 204 means no content (successful operation with no response body)
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 || httpResponse.statusCode == 204
 		else {
-            if httpResponse.statusCode == 401 && !(urlString.contains("/auth/sign-in") || urlString.contains("/auth/login")) {
+			if httpResponse.statusCode == 401
+				&& !(urlString.contains("/auth/sign-in") || urlString.contains("/auth/login"))
+			{
 				// DEBUG: Log for blocking endpoints specifically
 				if urlString.contains("blocked-users") {
 					print("🚫 DEBUG: Received 401 for blocking request, attempting token refresh...")
 				}
-				
+
 				// Handle token refresh logic here
 				do {
 					let newAccessToken: String = try await handleRefreshToken()
 					// Retry the request with the new access token
 					let newData = try await retryRequest(request: &request, bearerAccessToken: newAccessToken)
-					
+
 					// DEBUG: Log for blocking endpoints specifically
 					if urlString.contains("blocked-users") {
 						print("🚫 DEBUG: ✅ Token refresh successful, blocking request retried")
 					}
-					
+
 					return try APIService.makeDecoder().decode(U.self, from: newData)
 				} catch {
 					// DEBUG: Log for blocking endpoints specifically
@@ -338,16 +345,16 @@ class APIService: IAPIService {
 					throw error
 				}
 			}
-			
+
 			// DEBUG: Log for blocking endpoints specifically
 			if urlString.contains("blocked-users") {
 				print("🚫 DEBUG: ❌ Blocking request failed with status code: \(httpResponse.statusCode)")
 			}
-			
+
 			throw createAPIError(statusCode: httpResponse.statusCode, data: data)
 		}
-        // Handle auth tokens if present
-        try handleAuthTokens(from: httpResponse, for: finalURL)
+		// Handle auth tokens if present
+		try handleAuthTokens(from: httpResponse, for: finalURL)
 
 		// Handle 204 No Content response
 		if httpResponse.statusCode == 204 {
@@ -360,9 +367,9 @@ class APIService: IAPIService {
 		}
 		if !data.isEmpty {
 			do {
-                if let responseString = String(data: data, encoding: .utf8) {
-                    print("🔄 DEBUG: Raw response data: \(responseString)")
-                }
+				if let responseString = String(data: data, encoding: .utf8) {
+					print("🔄 DEBUG: Raw response data: \(responseString)")
+				}
 				let decoder = APIService.makeDecoder()
 				let decodedData = try decoder.decode(U.self, from: data)
 				return decodedData
@@ -411,7 +418,7 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 		setAuthHeader(request: &request)
-		
+
 		let (data, response): (Data, URLResponse)
 		do {
 			(data, response) = try await URLSession.shared.data(for: request)
@@ -462,31 +469,32 @@ class APIService: IAPIService {
 		return try decoder.decode(R.self, from: data)
 	}
 
-    internal func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T?) async throws {
-        resetState()
-        
-        // Build final URL with query parameters if present
-        var finalUrl = url
-        if let parameters = parameters, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
-            components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
-            guard let urlWithParams = components.url else {
-                errorMessage = "Invalid URL after adding query parameters"
-                print(errorMessage ?? "no error message to log")
-                throw APIError.URLError
-            }
-            finalUrl = urlWithParams
-        }
-        
-        var request = URLRequest(url: finalUrl)
-        request.httpMethod = "DELETE"
-        setAuthHeader(request: &request)
-        
-        if let object = object {
-            let encoder = APIService.makeEncoder()
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try encoder.encode(object)
-        }
-        
+	internal func deleteData<T: Encodable>(from url: URL, parameters: [String: String]? = nil, object: T?) async throws
+	{
+		resetState()
+
+		// Build final URL with query parameters if present
+		var finalUrl = url
+		if let parameters = parameters, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+			components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: $0.value) }
+			guard let urlWithParams = components.url else {
+				errorMessage = "Invalid URL after adding query parameters"
+				print(errorMessage ?? "no error message to log")
+				throw APIError.URLError
+			}
+			finalUrl = urlWithParams
+		}
+
+		var request = URLRequest(url: finalUrl)
+		request.httpMethod = "DELETE"
+		setAuthHeader(request: &request)
+
+		if let object = object {
+			let encoder = APIService.makeEncoder()
+			request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+			request.httpBody = try encoder.encode(object)
+		}
+
 		let response: URLResponse
 		do {
 			(_, response) = try await URLSession.shared.data(for: request)
@@ -574,9 +582,9 @@ class APIService: IAPIService {
 			// If we have a URL from Google/Apple but no selected image, include it
 			// Try both field names that the backend might be expecting
 			userCreationDTO["profilePictureUrl"] = profilePicUrl
-			userCreationDTO["profilePicture"] = profilePicUrl // Try this field name as well
+			userCreationDTO["profilePicture"] = profilePicUrl  // Try this field name as well
 			print("Including profile picture URL from provider: \(profilePicUrl)")
-			
+
 			// Try to download the image from the URL and convert to base64
 			if let url = URL(string: profilePicUrl) {
 				do {
@@ -637,77 +645,81 @@ class APIService: IAPIService {
 		let authEndpoints = [
 			APIService.baseURL + "auth/sign-in",
 			APIService.baseURL + "auth/login",
-            APIService.baseURL + "auth/register/oauth",
-            APIService.baseURL + "auth/register/verification/check",
-            APIService.baseURL + "auth/user/details",
-            APIService.baseURL + "auth/quick-sign-in"
+			APIService.baseURL + "auth/register/oauth",
+			APIService.baseURL + "auth/register/verification/check",
+			APIService.baseURL + "auth/user/details",
+			APIService.baseURL + "auth/quick-sign-in",
 		]
-        guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
-            return
-        }
-        
-        // Extract access token
-		guard let accessToken = response.allHeaderFields["Authorization"] as? String ?? 
-		                        response.allHeaderFields["authorization"] as? String else {
-            print("⚠️ WARNING: No access token found in response headers")
-            return
-        }
-        
-        // Extract refresh token  
-        let refreshToken = response.allHeaderFields["X-Refresh-Token"] as? String ?? 
-                          response.allHeaderFields["x-refresh-token"] as? String
-        
-        if refreshToken == nil {
-            print("⚠️ WARNING: No refresh token found in response headers")
-            // Don't throw error here - some endpoints might only return access tokens
-        }
+		guard authEndpoints.contains(where: { url.absoluteString.contains($0) }) else {
+			return
+		}
+
+		// Extract access token
+		guard
+			let accessToken = response.allHeaderFields["Authorization"] as? String ?? response.allHeaderFields[
+				"authorization"] as? String
+		else {
+			print("⚠️ WARNING: No access token found in response headers")
+			return
+		}
+
+		// Extract refresh token
+		let refreshToken =
+			response.allHeaderFields["X-Refresh-Token"] as? String ?? response.allHeaderFields["x-refresh-token"]
+			as? String
+
+		if refreshToken == nil {
+			print("⚠️ WARNING: No refresh token found in response headers")
+			// Don't throw error here - some endpoints might only return access tokens
+		}
 
 		// Remove "Bearer " prefix from access token
 		let cleanAccessToken = accessToken.replacingOccurrences(of: "Bearer ", with: "")
 
 		// Store access token in keychain with retry logic
 		if let accessTokenData = cleanAccessToken.data(using: .utf8) {
-            var saveAttempts = 0
-            let maxSaveAttempts = 3
-            var saveSuccessful = false
-            
-            while saveAttempts < maxSaveAttempts && !saveSuccessful {
-                saveSuccessful = KeychainService.shared.save(key: "accessToken", data: accessTokenData)
-                if !saveSuccessful {
-                    saveAttempts += 1
-                    print("⚠️ Access token save attempt \(saveAttempts) failed")
-                    if saveAttempts < maxSaveAttempts {
-                        // Brief delay before retry
-                        Thread.sleep(forTimeInterval: 0.1)
-                    }
-                }
-            }
-            
-            if !saveSuccessful {
-                print("❌ ERROR: Failed to save access token to keychain after \(maxSaveAttempts) attempts")
-                throw APIError.failedTokenSaving(tokenType: "accessToken")
-            }
+			var saveAttempts = 0
+			let maxSaveAttempts = 3
+			var saveSuccessful = false
+
+			while saveAttempts < maxSaveAttempts && !saveSuccessful {
+				saveSuccessful = KeychainService.shared.save(key: "accessToken", data: accessTokenData)
+				if !saveSuccessful {
+					saveAttempts += 1
+					print("⚠️ Access token save attempt \(saveAttempts) failed")
+					if saveAttempts < maxSaveAttempts {
+						// Brief delay before retry
+						Thread.sleep(forTimeInterval: 0.1)
+					}
+				}
+			}
+
+			if !saveSuccessful {
+				print("❌ ERROR: Failed to save access token to keychain after \(maxSaveAttempts) attempts")
+				throw APIError.failedTokenSaving(tokenType: "accessToken")
+			}
 		}
-		
+
 		// Store refresh token if present
 		if let refreshToken = refreshToken,
-		   let refreshTokenData = refreshToken.data(using: .utf8) {
-            var saveAttempts = 0
-            let maxSaveAttempts = 3
-            var saveSuccessful = false
-            
-            while saveAttempts < maxSaveAttempts && !saveSuccessful {
-                saveSuccessful = KeychainService.shared.save(key: "refreshToken", data: refreshTokenData)
-                if !saveSuccessful {
-                    saveAttempts += 1
-                    print("⚠️ Refresh token save attempt \(saveAttempts) failed")
-                    if saveAttempts < maxSaveAttempts {
-                        // Brief delay before retry
-                        Thread.sleep(forTimeInterval: 0.1)
-                    }
-                }
-            }
-            
+			let refreshTokenData = refreshToken.data(using: .utf8)
+		{
+			var saveAttempts = 0
+			let maxSaveAttempts = 3
+			var saveSuccessful = false
+
+			while saveAttempts < maxSaveAttempts && !saveSuccessful {
+				saveSuccessful = KeychainService.shared.save(key: "refreshToken", data: refreshTokenData)
+				if !saveSuccessful {
+					saveAttempts += 1
+					print("⚠️ Refresh token save attempt \(saveAttempts) failed")
+					if saveAttempts < maxSaveAttempts {
+						// Brief delay before retry
+						Thread.sleep(forTimeInterval: 0.1)
+					}
+				}
+			}
+
 			if !saveSuccessful {
 				print("❌ ERROR: Failed to save refresh token to keychain after \(maxSaveAttempts) attempts")
 				throw APIError.failedTokenSaving(tokenType: "refreshToken")
@@ -725,37 +737,38 @@ class APIService: IAPIService {
 		let whitelistedEndpoints = [
 			"auth/register/verification/send",
 			"auth/register/oauth",
-            "auth/register/verification/check",
+			"auth/register/verification/check",
 			"auth/sign-in",
 			"auth/login",
 			"optional-details",
-			"contacts/cross-reference"
+			"contacts/cross-reference",
 		]
 		if whitelistedEndpoints.contains(where: { url.absoluteString.contains($0) }) {
 			// Don't set auth headers for these endpoints
 			return
 		}
-		
+
 		// DEBUG: Log for blocking endpoints specifically
 		if url.absoluteString.contains("blocked-users") {
 			print("🚫 DEBUG: Setting auth header for blocking endpoint: \(url.absoluteString)")
 		}
-		
+
 		// Get the access token from keychain
-        guard
-            let accessTokenData = KeychainService.shared.load(key: "accessToken"),
-            let accessToken = String(data: accessTokenData, encoding: .utf8)
-        else {
+		guard
+			let accessTokenData = KeychainService.shared.load(key: "accessToken"),
+			let accessToken = String(data: accessTokenData, encoding: .utf8)
+		else {
 			print("⚠️ Missing access token for authenticated endpoint: \(url.absoluteString)")
-			
+
 			// DEBUG: Extra logging for blocking endpoints
 			if url.absoluteString.contains("blocked-users") {
 				print("🚫 DEBUG: ❌ CRITICAL - No access token available for blocking request!")
 			}
-			
+
 			// Check if we have a refresh token available
 			if let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
-			   let _ = String(data: refreshTokenData, encoding: .utf8) {
+				String(data: refreshTokenData, encoding: .utf8) != nil
+			{
 				// We have a refresh token, but we'll let the API call handle the refresh
 				// This will happen in the 401 handler in fetchData/sendData methods
 				print("🔄 Missing access token but refresh token exists - will refresh during API call")
@@ -775,8 +788,7 @@ class APIService: IAPIService {
 
 		// Set the auth headers
 		request.addValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-	} 
-	 
+	}
 
 	internal func patchData<T: Encodable, U: Decodable>(
 		from url: URL,
@@ -786,7 +798,7 @@ class APIService: IAPIService {
 
 		let encoder = APIService.makeEncoder()
 		let encodedData = try encoder.encode(object)
-		
+
 		// Debug: Log the request details
 		print("🔍 PATCH REQUEST: \(url.absoluteString)")
 		print("🔍 REQUEST BODY: \(String(data: encodedData, encoding: .utf8) ?? "Unable to convert to string")")
@@ -796,7 +808,7 @@ class APIService: IAPIService {
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		request.httpBody = encodedData
 		setAuthHeader(request: &request)
-		
+
 		let (data, response): (Data, URLResponse)
 		do {
 			(data, response) = try await URLSession.shared.data(for: request)
@@ -809,7 +821,7 @@ class APIService: IAPIService {
 			// Re-throw non-cancellation errors
 			throw error
 		}
-		
+
 		// Debug: Log the response details
 		print("🔍 RESPONSE: \(response)")
 		print("🔍 RESPONSE DATA: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
@@ -833,12 +845,12 @@ class APIService: IAPIService {
 			errorMessage =
 				"invalid status code \(httpResponse.statusCode) for \(url)"
 			print("❌ ERROR: Invalid status code \(httpResponse.statusCode) for \(url)")
-			
+
 			// Try to parse error message from response
 			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
 				print("❌ ERROR DETAILS: \(errorJson)")
 			}
-			
+
 			throw APIError.invalidStatusCode(
 				statusCode: httpResponse.statusCode)
 		}
@@ -852,10 +864,11 @@ class APIService: IAPIService {
 			errorMessage =
 				APIError.failedJSONParsing(url: url).localizedDescription
 			print("❌ ERROR: JSON parsing failed for \(url): \(error)")
-			
+
 			// Log the data that couldn't be parsed
-			print("❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
-			
+			print(
+				"❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+
 			throw APIError.failedJSONParsing(url: url)
 		}
 	}
@@ -866,21 +879,21 @@ class APIService: IAPIService {
 		if type is [Any].Type || type is [[String: Any]].Type {
 			return [] as? T
 		}
-		
+
 		// For optional types
 		if let optionalType = type as? OptionalProtocol.Type {
 			return optionalType.nilValue as? T
 		}
-		
+
 		return nil
 	}
-	
+
 	// Helper specifically for empty arrays
 	private func emptyArrayResult<T>(for type: T.Type) -> T? {
 		if type is [Any].Type || type is [[String: Any]].Type {
 			return [] as? T
 		}
-		
+
 		// For single objects, we can't create an empty result so return nil
 		return nil
 	}
@@ -890,19 +903,19 @@ class APIService: IAPIService {
 			print("❌ ERROR: Failed to create URL for profile picture update")
 			throw APIError.URLError
 		}
-		
+
 		print("🔍 UPDATING PROFILE PICTURE: Starting request to \(url.absoluteString)")
 		print("🔍 REQUEST DATA SIZE: \(imageData.count) bytes")
-		
+
 		// Create the request
 		var request = URLRequest(url: url)
 		request.httpMethod = "PATCH"
 		request.setValue("image/jpeg", forHTTPHeaderField: "Content-Type")
 		request.httpBody = imageData
-        setAuthHeader(request: &request)  // Set auth headers if needed
+		setAuthHeader(request: &request)  // Set auth headers if needed
 		// Log request headers
 		print("🔍 REQUEST HEADERS: \(request.allHTTPHeaderFields ?? [:])")
-		
+
 		// Perform the request with detailed logging
 		let (data, response): (Data, URLResponse)
 		do {
@@ -915,23 +928,22 @@ class APIService: IAPIService {
 			// Re-throw non-cancellation errors
 			throw error
 		}
-		
+
 		print("🔍 RESPONSE RECEIVED: \(response)")
-		
+
 		// Check if we can read the response as JSON or text
 		if let responseString = String(data: data, encoding: .utf8) {
 			print("🔍 RESPONSE DATA: \(responseString)")
 		} else {
 			print("🔍 RESPONSE DATA: Unable to convert to string (binary data of \(data.count) bytes)")
 		}
-		
+
 		// Check the HTTP response
 		guard let httpResponse = response as? HTTPURLResponse else {
 			print("❌ ERROR: Failed HTTP request - unable to get HTTP response")
 			throw APIError.failedHTTPRequest(description: "HTTP request failed")
 		}
 
-		
 		guard (200...299).contains(httpResponse.statusCode) else {
 			if httpResponse.statusCode == 401 {
 				// Handle token refresh logic here
@@ -941,15 +953,15 @@ class APIService: IAPIService {
 				return try JSONDecoder().decode(BaseUserDTO.self, from: newData)
 			}
 			print("❌ ERROR: Invalid status code \(httpResponse.statusCode)")
-			
+
 			// Try to parse error details
 			if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
 				print("❌ ERROR DETAILS: \(errorJson)")
 			}
-			
+
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
-		
+
 		// Parse the response
 		do {
 			let decoder = JSONDecoder()
@@ -958,7 +970,8 @@ class APIService: IAPIService {
 			return updatedUser
 		} catch {
 			print("❌ ERROR: Failed to decode user data after profile picture update: \(error)")
-			print("❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
+			print(
+				"❌ DATA THAT FAILED TO PARSE: \(String(data: data, encoding: .utf8) ?? "Unable to convert to string")")
 			throw APIError.failedJSONParsing(url: url)
 		}
 	}
@@ -966,22 +979,25 @@ class APIService: IAPIService {
 	// Add sendMultipartFormData implementation
 	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data {
 		resetState()
-		
+
 		let boundary = "Boundary-\(UUID().uuidString)"
-		
+
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
 		request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 		setAuthHeader(request: &request)  // Set auth headers if needed
 		// Create the body
 		var body = Data()
-		
+
 		for (key, value) in formData {
 			if let data = value as? Data {
 				// Handle image data
 				if let boundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8),
-				   let contentDispositionData = "Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(using: .utf8),
-				   let contentTypeData = "Content-Type: image/jpeg\r\n\r\n".data(using: .utf8) {
+					let contentDispositionData =
+						"Content-Disposition: form-data; name=\"\(key)\"; filename=\"image.jpg\"\r\n".data(
+							using: .utf8),
+					let contentTypeData = "Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)
+				{
 					body.append(boundaryData)
 					body.append(contentDispositionData)
 					body.append(contentTypeData)
@@ -990,22 +1006,24 @@ class APIService: IAPIService {
 			} else {
 				// Handle text fields
 				if let boundaryData = "\r\n--\(boundary)\r\n".data(using: .utf8),
-				   let contentDispositionData = "Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(using: .utf8),
-				   let valueData = "\(value)".data(using: .utf8) {
+					let contentDispositionData = "Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".data(
+						using: .utf8),
+					let valueData = "\(value)".data(using: .utf8)
+				{
 					body.append(boundaryData)
 					body.append(contentDispositionData)
 					body.append(valueData)
 				}
 			}
 		}
-		
+
 		// Add final boundary
 		if let finalBoundaryData = "\r\n--\(boundary)--\r\n".data(using: .utf8) {
 			body.append(finalBoundaryData)
 		}
-		
+
 		request.httpBody = body
-		
+
 		// Perform the request
 		let (data, response): (Data, URLResponse)
 		do {
@@ -1018,14 +1036,13 @@ class APIService: IAPIService {
 			// Re-throw non-cancellation errors
 			throw error
 		}
-		
+
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
-		
-		
+
 		guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
 			errorStatusCode = httpResponse.statusCode
 
@@ -1041,21 +1058,21 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
-		
+
 		return data
 	}
 
-    /// Refresh Token
+	/// Refresh Token
 	fileprivate func handleRefreshToken() async throws -> String {
 		print("🔄 Attempting to refresh access token...")
 		guard let url = URL(string: APIService.baseURL + "auth/refresh-token") else {
-		    print("❌ ERROR: Failed to create refresh token URL")
-		    throw APIError.URLError
+			print("❌ ERROR: Failed to create refresh token URL")
+			throw APIError.URLError
 		}
-		
-		guard 
-		    let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
-		    let refreshToken = String(data: refreshTokenData, encoding: .utf8) 
+
+		guard
+			let refreshTokenData = KeychainService.shared.load(key: "refreshToken"),
+			let refreshToken = String(data: refreshTokenData, encoding: .utf8)
 		else {
 			print("❌ ERROR: Missing refresh token in Keychain - cannot refresh")
 			print("🔄 Logging out user due to missing refresh token")
@@ -1070,7 +1087,7 @@ class APIService: IAPIService {
 		var request = URLRequest(url: url)
 		request.httpMethod = "POST"
 		request.addValue("Bearer \(refreshToken)", forHTTPHeaderField: "Authorization")
-		
+
 		let (data, response): (Data, URLResponse)
 		do {
 			(data, response) = try await URLSession.shared.data(for: request)
@@ -1082,65 +1099,66 @@ class APIService: IAPIService {
 			// Re-throw non-cancellation errors
 			throw error
 		}
-		
+
 		guard let httpResponse = response as? HTTPURLResponse else {
 			let message = "HTTP request failed for refresh token endpoint"
 			print("❌ ERROR: \(message)")
 			throw APIError.failedHTTPRequest(description: message)
 		}
-		
+
 		print("🔄 Refresh token response status: \(httpResponse.statusCode)")
-		
-        if httpResponse.statusCode == 401 {
-            // Refresh token is invalid/expired
-            print("❌ ERROR: Refresh token invalid (401) - token may be expired")
-            print("🔄 Clearing invalid tokens but preserving OAuth credentials for potential re-authentication")
-            
-            // Clear the invalid tokens
-            let _ = KeychainService.shared.delete(key: "accessToken")
-            let _ = KeychainService.shared.delete(key: "refreshToken")
-            
-            // Don't call signOut() here - let the calling code handle re-authentication
-            // This preserves OAuth credentials for potential re-authentication during onboarding
-            throw APIError.invalidStatusCode(statusCode: 401)
-        }
-        
+
+		if httpResponse.statusCode == 401 {
+			// Refresh token is invalid/expired
+			print("❌ ERROR: Refresh token invalid (401) - token may be expired")
+			print("🔄 Clearing invalid tokens but preserving OAuth credentials for potential re-authentication")
+
+			// Clear the invalid tokens
+			let _ = KeychainService.shared.delete(key: "accessToken")
+			let _ = KeychainService.shared.delete(key: "refreshToken")
+
+			// Don't call signOut() here - let the calling code handle re-authentication
+			// This preserves OAuth credentials for potential re-authentication during onboarding
+			throw APIError.invalidStatusCode(statusCode: 401)
+		}
+
 		if httpResponse.statusCode == 200 {
 			print("✅ Refresh token request successful")
-			
+
 			// Successfully refreshed token, extract and save it to Keychain
-			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String ?? 
-			                        httpResponse.allHeaderFields["authorization"] as? String {
+			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String
+				?? httpResponse.allHeaderFields["authorization"] as? String
+			{
 				let cleanAccessToken = newAccessToken.replacingOccurrences(of: "Bearer ", with: "")
 				print("🔐 Received new access token, saving to keychain...")
 
 				if let accessTokenData = cleanAccessToken.data(using: .utf8) {
-				    if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
-				        print("❌ ERROR: Failed to save refreshed access token to keychain")
-				        throw APIError.failedTokenSaving(tokenType: "accessToken")
-				    }
-				    print("✅ New access token saved successfully")
-				    return "Bearer \(cleanAccessToken)"
+					if !KeychainService.shared.save(key: "accessToken", data: accessTokenData) {
+						print("❌ ERROR: Failed to save refreshed access token to keychain")
+						throw APIError.failedTokenSaving(tokenType: "accessToken")
+					}
+					print("✅ New access token saved successfully")
+					return "Bearer \(cleanAccessToken)"
 				} else {
-				    print("❌ ERROR: Failed to convert access token to data")
-				    throw APIError.failedTokenSaving(tokenType: "accessToken")
+					print("❌ ERROR: Failed to convert access token to data")
+					throw APIError.failedTokenSaving(tokenType: "accessToken")
 				}
 			} else {
-			    print("❌ ERROR: No access token found in refresh response headers")
-			    throw APIError.failedHTTPRequest(description: "No access token in refresh response")
+				print("❌ ERROR: No access token found in refresh response headers")
+				throw APIError.failedHTTPRequest(description: "No access token in refresh response")
 			}
 		}
-		
+
 		print("❌ ERROR: Unexpected status code \(httpResponse.statusCode) from refresh endpoint")
-		
+
 		// Log response body for debugging
 		if let responseBody = String(data: data, encoding: .utf8) {
-		    print("🔍 Refresh response body: \(responseBody)")
+			print("🔍 Refresh response body: \(responseBody)")
 		}
-		
+
 		throw APIError.failedHTTPRequest(description: "Failed to refresh token - status \(httpResponse.statusCode)")
 	}
-	
+
 	fileprivate func retryRequest(request: inout URLRequest, bearerAccessToken: String) async throws -> Data {
 		// Retry the request with the new access token
 		print("🔄 Retrying request with new access token")
@@ -1152,7 +1170,8 @@ class APIService: IAPIService {
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
 		guard (200...299).contains(newHttpResponse.statusCode) else {
-			errorMessage = "Invalid status code \(newHttpResponse.statusCode) for \(request.url?.absoluteString ?? "unknown URL")"
+			errorMessage =
+				"Invalid status code \(newHttpResponse.statusCode) for \(request.url?.absoluteString ?? "unknown URL")"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: newHttpResponse.statusCode)
 		}
@@ -1161,42 +1180,42 @@ class APIService: IAPIService {
 
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse] {
 		resetState()
-		
+
 		// Don't send validation request if there are no cached items to validate
 		if cachedItems.isEmpty {
 			print("No cached items to validate, returning empty response")
 			return [:]
 		}
-		
+
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			throw APIError.invalidData
 		}
-		
+
 		// Create the URL for the cache validation endpoint
 		guard let url = URL(string: APIService.baseURL + "cache/validate/\(userId)") else {
 			throw APIError.URLError
 		}
-		
+
 		// Create a wrapper structure that matches the backend DTO
 		struct CacheValidationRequest: Codable {
 			let timestamps: [String: Date]
 		}
-		
+
 		// Wrap the cache items in the expected structure
 		let requestBody = CacheValidationRequest(timestamps: cachedItems)
-		
+
 		// Convert to JSON
 		let encoder = JSONEncoder()
 		encoder.dateEncodingStrategy = .iso8601
 		let jsonData = try encoder.encode(requestBody)
-		
+
 		// Create and configure the request
 		var urlRequest = URLRequest(url: url)
 		urlRequest.httpMethod = "POST"
 		urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		urlRequest.httpBody = jsonData
 		setAuthHeader(request: &urlRequest)
-		
+
 		// Send the request
 		var (data, response): (Data, URLResponse)
 		do {
@@ -1210,47 +1229,47 @@ class APIService: IAPIService {
 			// Re-throw non-cancellation errors
 			throw error
 		}
-		
+
 		// Validate the response
 		guard let httpResponse = response as? HTTPURLResponse else {
 			errorMessage = "HTTP request failed for \(url)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
-		
-        if httpResponse.statusCode == 401 {
-            let bearerAccessToken: String = try await handleRefreshToken()
-            data = try await retryRequest(request: &urlRequest, bearerAccessToken: bearerAccessToken)
-        } else if httpResponse.statusCode != 200 {
+
+		if httpResponse.statusCode == 401 {
+			let bearerAccessToken: String = try await handleRefreshToken()
+			data = try await retryRequest(request: &urlRequest, bearerAccessToken: bearerAccessToken)
+		} else if httpResponse.statusCode != 200 {
 			errorStatusCode = httpResponse.statusCode
 			errorMessage = "invalid status code \(httpResponse.statusCode) for \(url)"
 			print(errorMessage ?? "no error message to log")
 			throw APIError.invalidStatusCode(statusCode: httpResponse.statusCode)
 		}
-		
+
 		// Decode the response
 		let decoder = JSONDecoder()
 		decoder.dateDecodingStrategy = .iso8601
 		let validationResponse = try decoder.decode([String: CacheValidationResponse].self, from: data)
-		
+
 		return validationResponse
 	}
-	
+
 	/// Clear calendar caches on the backend
 	func clearCalendarCaches() async throws {
 		resetState()
-		
+
 		// Create the URL for the clear calendar caches endpoint
 		guard let url = URL(string: APIService.baseURL + "cache/clear-calendar-caches") else {
 			throw APIError.URLError
 		}
-		
+
 		// Create and configure the request
 		var urlRequest = URLRequest(url: url)
 		urlRequest.httpMethod = "POST"
 		urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
 		setAuthHeader(request: &urlRequest)
-		
+
 		// Send the request
 		let response: URLResponse
 		do {
@@ -1271,7 +1290,7 @@ class APIService: IAPIService {
 			print(errorMessage ?? "no error message to log")
 			throw APIError.failedHTTPRequest(description: "The HTTP request has failed.")
 		}
-		
+
 		// Handle auth token refresh if needed
 		if httpResponse.statusCode == 401 {
 			let bearerAccessToken: String = try await handleRefreshToken()
@@ -1290,24 +1309,25 @@ class APIService: IAPIService {
 		if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
 			return errorResponse.message
 		}
-		
+
 		// Try to parse as generic JSON with message field
 		if let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-		   let message = errorJson["message"] as? String {
+			let message = errorJson["message"] as? String
+		{
 			return message
 		}
-		
+
 		// Try to parse as string response
 		if let errorString = String(data: data, encoding: .utf8), !errorString.isEmpty {
 			return errorString
 		}
-		
+
 		return nil
 	}
-	
+
 	private func createAPIError(statusCode: Int, data: Data) -> APIError {
 		let errorMessage = parseErrorMessage(from: data)
-		
+
 		if let message = errorMessage {
 			// Store the error message for the view model to use
 			self.errorMessage = message
@@ -1315,7 +1335,7 @@ class APIService: IAPIService {
 		} else {
 			print("API Error (\(statusCode)): No message available")
 		}
-		
+
 		return APIError.invalidStatusCode(statusCode: statusCode)
 	}
 }
@@ -1325,5 +1345,3 @@ struct EmptyRequestBody: Codable {}
 // for empty responses from requests:
 struct EmptyResponse: Codable {}
 struct EmptyObject: Codable {}
-
-

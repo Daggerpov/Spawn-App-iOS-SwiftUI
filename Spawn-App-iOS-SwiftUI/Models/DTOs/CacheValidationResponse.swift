@@ -8,6 +8,6 @@
 import Foundation
 
 struct CacheValidationResponse: Codable {
-    var invalidate: Bool
-    var updatedItems: Data?
-} 
+	var invalidate: Bool
+	var updatedItems: Data?
+}

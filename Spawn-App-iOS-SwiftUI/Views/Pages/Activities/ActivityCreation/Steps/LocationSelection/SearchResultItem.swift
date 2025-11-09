@@ -8,4 +8,3 @@ struct SearchResultItem: Identifiable {
 		self.mapItem = mapItem
 	}
 }
-

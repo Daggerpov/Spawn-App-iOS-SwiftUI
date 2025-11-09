@@ -14,7 +14,7 @@ struct ActivityDescriptionView: View {
 	@State private var showActivityEditView = false
 	@State private var showAttendees = false
 	@ObservedObject private var locationManager = LocationManager.shared
-	
+
 	// State for activity reporting
 	@State private var showActivityMenu: Bool = false
 	@State private var showReportDialog: Bool = false
@@ -26,7 +26,7 @@ struct ActivityDescriptionView: View {
 	) {
 		// Get the most up-to-date activity from cache to ensure correct participation status
 		let cachedActivity = AppCache.shared.getActivityById(activity.id) ?? activity
-		
+
 		self.viewModel = ActivityDescriptionViewModel(
 			apiService: MockAPIService.isMocking
 				? MockAPIService(
@@ -45,12 +45,13 @@ struct ActivityDescriptionView: View {
 					VStack(alignment: .leading) {
 						ActivityCardTopRowView(activity: viewModel.activity, locationManager: locationManager)
 					}
-					
+
 					Spacer()
-					
+
 					// Only show menu for activities not owned by current user
 					if let currentUserId = userAuth.spawnUser?.id,
-					   currentUserId != viewModel.activity.creatorUser.id {
+						currentUserId != viewModel.activity.creatorUser.id
+					{
 						Button(action: {
 							showActivityMenu = true
 						}) {
@@ -61,14 +62,17 @@ struct ActivityDescriptionView: View {
 						}
 					}
 				}
-				
+
 				// Username display
 				HStack {
-                    Text(ActivityInfoViewModel(activity: viewModel.activity, locationManager: locationManager).getDisplayString(activityInfoType: .time))
-                        .font(.onestSemiBold(size: 14))
-                        .foregroundColor(.white)
-                        .opacity(0.5)
-        
+					Text(
+						ActivityInfoViewModel(activity: viewModel.activity, locationManager: locationManager)
+							.getDisplayString(activityInfoType: .time)
+					)
+					.font(.onestSemiBold(size: 14))
+					.foregroundColor(.white)
+					.opacity(0.5)
+
 					Spacer()
 				}
 
@@ -89,20 +93,23 @@ struct ActivityDescriptionView: View {
 					HStack(spacing: 10) {
 						ActivityInfoView(
 							activity: viewModel.activity, activityInfoType: .time, locationManager: locationManager)
-						
+
 						// Only show location if it exists
-						if viewModel.activity.location?.name != nil && !(viewModel.activity.location?.name.isEmpty ?? true) {
+						if viewModel.activity.location?.name != nil
+							&& !(viewModel.activity.location?.name.isEmpty ?? true)
+						{
 							ActivityInfoView(
-								activity: viewModel.activity, activityInfoType: .location, locationManager: locationManager)
+								activity: viewModel.activity, activityInfoType: .location,
+								locationManager: locationManager)
 						}
-						
+
 						Spacer()
-						
+
 						// Add participation toggle or edit button
 						Circle()
 							.CircularButton(
-								systemName: viewModel.activity.isSelfOwned == true 
-									? "pencil" // Edit icon for self-owned activities
+								systemName: viewModel.activity.isSelfOwned == true
+									? "pencil"  // Edit icon for self-owned activities
 									: (viewModel.isParticipating ? "checkmark" : "star.fill"),
 								buttonActionCallback: {
 									Task {
@@ -135,7 +142,7 @@ struct ActivityDescriptionView: View {
 						Text(
 							"\(chatMessages.count) \(chatMessages.count == 1 ? "reply" : "replies")"
 						)
-						                                .foregroundColor(universalAccentColor)
+						.foregroundColor(universalAccentColor)
 						.opacity(0.7)
 						.font(.caption)
 					}
@@ -181,34 +188,36 @@ struct ActivityDescriptionView: View {
 		}
 		.onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
 			if let updatedActivity = notification.object as? FullFeedActivityDTO,
-			   updatedActivity.id == viewModel.activity.id {
+				updatedActivity.id == viewModel.activity.id
+			{
 				print("🔄 ActivityDescriptionView: Received activity update for \(updatedActivity.title ?? "Unknown")")
-				
+
 				// Update the view model with the new activity data and refresh participation status
 				viewModel.updateActivity(updatedActivity)
-				
+
 				print("✅ ActivityDescriptionView: Updated activity data and participation status")
 			}
 		}
 	}
-	
+
 	var usernamesView: some View {
-		let participantCount = (viewModel.activity.participantUsers?.count ?? 0) - 1 // Subtract 1 to exclude creator
+		let participantCount = (viewModel.activity.participantUsers?.count ?? 0) - 1  // Subtract 1 to exclude creator
 		let invitedCount = viewModel.activity.invitedUsers?.count ?? 0
 		let totalCount = participantCount + invitedCount
-		
+
 		let creatorUsername = viewModel.activity.creatorUser.username ?? "user"
-		let displayText = (viewModel.activity.isSelfOwned == true) 
+		let displayText =
+			(viewModel.activity.isSelfOwned == true)
 			? "You\(totalCount > 0 ? " + \(totalCount) more" : "")"
 			: "@\(creatorUsername)\(totalCount > 0 ? " + \(totalCount) more" : "")"
-		
+
 		return Text(displayText)
 			.foregroundColor(.white)
 			.font(.caption)
 	}
-	
+
 	// MARK: - Participants Section
-	
+
 	private func participantsSection(participants: [BaseUserDTO]) -> some View {
 		Button(action: {
 			showAttendees = true
@@ -221,7 +230,9 @@ struct ActivityDescriptionView: View {
 						.frame(width: 42, height: 42)
 						.overlay(
 							Group {
-								if let profilePictureUrl = participant.profilePicture, let url = URL(string: profilePictureUrl) {
+								if let profilePictureUrl = participant.profilePicture,
+									let url = URL(string: profilePictureUrl)
+								{
 									CachedProfileImage(
 										userId: participant.id,
 										url: url,
@@ -237,7 +248,7 @@ struct ActivityDescriptionView: View {
 						)
 						.shadow(color: .black.opacity(0.25), radius: 4, y: 2)
 				}
-				
+
 				// Show +count if more participants
 				if participants.count > 3 {
 					Circle()
@@ -250,9 +261,9 @@ struct ActivityDescriptionView: View {
 						)
 						.shadow(color: .black.opacity(0.25), radius: 4, y: 2)
 				}
-				
+
 				Spacer()
-				
+
 				Text("View Attendees")
 					.font(.custom("Onest", size: 14).weight(.medium))
 					.foregroundColor(.white.opacity(0.8))
@@ -265,21 +276,21 @@ struct ActivityDescriptionView: View {
 
 extension ActivityDescriptionView {
 	var chatMessagesView: some View {
-        VStack(spacing: 10) {
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 15) {
-                    if let chatMessages = viewModel.activity.chatMessages {
-                        ForEach(chatMessages) { chatMessage in
-                            ChatMessageRow(chatMessage: chatMessage)
-                        }
-                    }
-                }
-                .padding(.horizontal, 5)
-            }
-            .frame(maxHeight: 150)
+		VStack(spacing: 10) {
+			ScrollView(.vertical) {
+				LazyVStack(spacing: 15) {
+					if let chatMessages = viewModel.activity.chatMessages {
+						ForEach(chatMessages) { chatMessage in
+							ChatMessageRow(chatMessage: chatMessage)
+						}
+					}
+				}
+				.padding(.horizontal, 5)
+			}
+			.frame(maxHeight: 150)
 
 			chatBar
-        }
+		}
 		.padding(.top, 10)
 		.padding(.bottom, 10)
 		.background(Color.black.opacity(0.05))
@@ -381,10 +392,10 @@ extension ActivityDescriptionView {
 				.presentationDragIndicator(.visible)
 			}
 		}
-		
+
 		private func reportChatMessage(reportType: ReportType, description: String) async {
 			guard let currentUserId = userAuth.spawnUser?.id else { return }
-			
+
 			do {
 				let reportingService = ReportingService()
 				try await reportingService.reportChatMessage(
@@ -412,13 +423,13 @@ extension ActivityDescriptionView {
 			Button(action: {
 				// Store the current message text in a local constant
 				let currentMessage = messageText
-				
+
 				// Only try to send if message is not empty
 				if !currentMessage.isEmpty {
 					Task {
 						// Use the stored message text
 						await viewModel.sendMessage(message: currentMessage)
-						
+
 						// Clear the text field on the main thread after sending
 						await MainActor.run {
 							messageText = ""
@@ -430,17 +441,17 @@ extension ActivityDescriptionView {
 					.foregroundColor(Color.black)
 			}
 			.padding(.horizontal, 10)
-			.disabled(messageText.isEmpty) // Disable button when text is empty
+			.disabled(messageText.isEmpty)  // Disable button when text is empty
 		}
 		.padding(8)
 		.background(universalBackgroundColor)
 		.cornerRadius(universalRectangleCornerRadius)
 		.padding(.horizontal, 15)
 	}
-	
+
 	private func reportActivity(reportType: ReportType, description: String) async {
 		guard let currentUserId = userAuth.spawnUser?.id else { return }
-		
+
 		await viewModel.reportActivity(
 			reporterUserId: currentUserId,
 			reportType: reportType,
@@ -451,7 +462,7 @@ extension ActivityDescriptionView {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @ObservedObject var appCache = AppCache.shared
+	@Previewable @ObservedObject var appCache = AppCache.shared
 	ActivityDescriptionView(
 		activity: FullFeedActivityDTO.mockDinnerActivity,
 		users: BaseUserDTO.mockUsers,

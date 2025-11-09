@@ -9,8 +9,8 @@ import Foundation
 
 /// Matches the backend UserRelationshipType enum
 enum UserRelationshipType: String, Codable, CaseIterable {
-    case friend = "FRIEND"
-    case recommendedFriend = "RECOMMENDED_FRIEND"
-    case incomingFriendRequest = "INCOMING_FRIEND_REQUEST"
-    case outgoingFriendRequest = "OUTGOING_FRIEND_REQUEST"
-} 
+	case friend = "FRIEND"
+	case recommendedFriend = "RECOMMENDED_FRIEND"
+	case incomingFriendRequest = "INCOMING_FRIEND_REQUEST"
+	case outgoingFriendRequest = "OUTGOING_FRIEND_REQUEST"
+}

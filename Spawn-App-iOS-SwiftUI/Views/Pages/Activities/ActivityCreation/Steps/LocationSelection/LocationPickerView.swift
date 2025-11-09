@@ -214,8 +214,7 @@ struct LocationPickerView: View {
 							return isValid
 						}
 						print("🔍 DEBUG: \(validResults.count) results have valid coordinates")
-						self.searchResults = Array(validResults.prefix(10)).map
-						{ SearchResultItem($0) }
+						self.searchResults = Array(validResults.prefix(10)).map { SearchResultItem($0) }
 						print("🔍 DEBUG: Set searchResults to \(self.searchResults.count) items")
 					}
 				}
@@ -305,4 +304,3 @@ struct LocationPickerView: View {
 		}
 	}
 }
-

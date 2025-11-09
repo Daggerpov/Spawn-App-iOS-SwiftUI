@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import SwiftUI // just for UIImage for `createUser()`
+import SwiftUI  // just for UIImage for `createUser()`
 
 protocol IAPIService {
 	var errorMessage: String? { get set }
@@ -15,12 +15,12 @@ protocol IAPIService {
 	func fetchData<T: Decodable>(from url: URL, parameters: [String: String]?)
 		async throws -> T where T: Decodable
 	/// generic function for sending (POSTing)  data to an API, given a model of type, T
-    func sendData<T: Encodable, U: Decodable>(
+	func sendData<T: Encodable, U: Decodable>(
 		_ object: T, to url: URL, parameters: [String: String]?
 	) async throws -> U? where U: Decodable
-    func sendData<T: Encodable>(
-        _ object: T, to url: URL, parameters: [String: String]?
-    ) async throws -> T? where T: Decodable
+	func sendData<T: Encodable>(
+		_ object: T, to url: URL, parameters: [String: String]?
+	) async throws -> T? where T: Decodable
 	/// generic function for updating (PUTting) data, given a model of type, T, and returning the updated object
 	func updateData<T: Encodable, U: Decodable>(
 		_ object: T, to url: URL, parameters: [String: String]?
@@ -30,7 +30,7 @@ protocol IAPIService {
 		from url: URL,
 		with object: T
 	) async throws -> U
-    func deleteData<T: Encodable>(from url: URL, parameters: [String: String]?, object: T?) async throws
+	func deleteData<T: Encodable>(from url: URL, parameters: [String: String]?, object: T?) async throws
 	func updateProfilePicture(_ imageData: Data, userId: UUID) async throws -> BaseUserDTO
 	func sendMultipartFormData(_ formData: [String: Any], to url: URL) async throws -> Data
 	func validateCache(_ cachedItems: [String: Date]) async throws -> [String: CacheValidationResponse]
