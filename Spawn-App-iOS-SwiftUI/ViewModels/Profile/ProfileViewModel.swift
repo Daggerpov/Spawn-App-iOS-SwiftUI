@@ -264,6 +264,26 @@ class ProfileViewModel: ObservableObject {
         }
     }
     
+    /// Loads critical profile data that's required for the view to render meaningfully
+    /// This should be called on MainActor to block view appearance until data is ready
+    func loadCriticalProfileData(userId: UUID) async {
+        // Fetch critical data in parallel for faster loading
+        // These are essential for the profile to be interactive
+        async let stats: () = fetchUserStats(userId: userId)
+        async let profileInfo: () = fetchUserProfileInfo(userId: userId)
+        async let interests: () = fetchUserInterests(userId: userId)
+        
+        // Wait for all critical data to be ready
+        let _ = await (stats, profileInfo, interests)
+    }
+    
+    /// Loads enhancement data that can be progressively loaded
+    /// This can be called in a background task without blocking the view
+    func loadEnhancementData(userId: UUID) async {
+        // Social media is less critical - can load after view appears
+        await fetchUserSocialMedia(userId: userId)
+    }
+    
     func loadAllProfileData(userId: UUID) async {
         // Use async let to fetch all profile data in parallel for faster loading
 		async let stats: () = fetchUserStats(userId: userId)

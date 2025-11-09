@@ -74,30 +74,42 @@ struct FeedView: View {
                 print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(activitiesCount) activities")
                 print("⏱️ [NAV] Total UI update took \(String(format: "%.3f", totalDuration))s")
                 
-                // Refresh from API in background (non-blocking)
-                // Only if cache is empty or user explicitly refreshes
+                // Check if task was cancelled
+                guard !Task.isCancelled else {
+                    print("⚠️ [NAV] Task cancelled before determining refresh strategy")
+                    return
+                }
+                
+                // If cache is empty, block until we have data (critical for UX)
                 if activitiesCount == 0 {
-                    print("🔄 [NAV] Fetching activities from API (empty cache)")
+                    print("🔄 [NAV] No cached activities - fetching from API on MainActor")
                     let fetchStart = Date()
                     await viewModel.fetchAllData()
                     let fetchDuration = Date().timeIntervalSince(fetchStart)
                     print("⏱️ [NAV] API fetch took \(String(format: "%.2f", fetchDuration))s")
                 } else {
-                    // Check if task was cancelled before starting background refresh
-                    if Task.isCancelled {
-                        print("⚠️ [NAV] Task cancelled before starting background refresh - user navigated away")
-                        return
-                    }
-                    
-                    // Background refresh without blocking UI
-                    // Store the task so we can cancel it if user navigates away
+                    // Cache exists - refresh in background (progressive enhancement)
                     print("🔄 [NAV] Starting background refresh for activities")
-                    backgroundRefreshTask = Task.detached(priority: .userInitiated) {
+                    backgroundRefreshTask = Task { @MainActor in
                         let refreshStart = Date()
+                        
+                        // Check cancellation before starting expensive work
+                        guard !Task.isCancelled else {
+                            print("⚠️ [NAV] FeedView: Background refresh cancelled before starting")
+                            return
+                        }
+                        
                         await viewModel.fetchAllData()
+                        
+                        // Check cancellation after async work
+                        guard !Task.isCancelled else {
+                            print("⚠️ [NAV] FeedView: Background refresh cancelled after fetch")
+                            return
+                        }
+                        
                         let refreshDuration = Date().timeIntervalSince(refreshStart)
                         print("⏱️ [NAV] Background refresh took \(String(format: "%.2f", refreshDuration))s")
-                        print("✅ [NAV] Background refresh completed")
+                        print("✅ [NAV] FeedView: Background refresh completed")
                     }
                 }
             }

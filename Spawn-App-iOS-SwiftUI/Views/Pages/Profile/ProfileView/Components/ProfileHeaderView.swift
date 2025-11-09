@@ -15,7 +15,6 @@ struct ProfileHeaderView: View {
     @Binding var selectedImage: UIImage?
     @Binding var showImagePicker: Bool
     @Binding var isImageLoading: Bool
-    @Binding var refreshFlag: Bool
     @Binding var editingState: ProfileEditText
     
     // Check if this is the current user's profile
@@ -127,7 +126,6 @@ struct ProfileHeaderView: View {
                     .padding(.bottom, 5)
             }
         }
-        .id(refreshFlag)  // Force refresh when flag changes
     }
 }
 
@@ -137,7 +135,6 @@ struct ProfileHeaderView: View {
         selectedImage: .constant(nil),
         showImagePicker: .constant(false),
         isImageLoading: .constant(false),
-        refreshFlag: .constant(false),
         editingState: .constant(.edit)
     )
 } 

@@ -59,56 +59,64 @@ struct ActivityTypeView: View {
                 Spacer()
             }
             .task {
-                print("📍 [NAV] ActivityTypeView .task started")
-                let taskStartTime = Date()
-                
-                // CRITICAL FIX: Load cached data immediately to unblock UI
-                // This prevents the UI from hanging while waiting for API calls
-                
-                // Load cached data through view model (fast, non-blocking)
-                let cacheLoadStart = Date()
-                let activityTypesCount: Int = await MainActor.run {
-                    viewModel.loadCachedActivityTypes()
-                    return viewModel.activityTypes.count
-                }
-                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
-                let totalDuration = Date().timeIntervalSince(taskStartTime)
-                
-                print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
-                print("   Activity Types: \(activityTypesCount)")
-                print("⏱️ [NAV] UI update took \(String(format: "%.3f", totalDuration))s")
-                
-                // Check if task was cancelled before starting background refresh
-                if Task.isCancelled {
-                    print("⚠️ [NAV] Task cancelled before starting background refresh - user navigated away")
-                    return
-                }
-                
-			// Refresh from API in background (non-blocking)
-			// Store the task so we can cancel it if user navigates away
-			print("🔄 [NAV] Starting background refresh for activity types")
-			backgroundRefreshTask = Task { @MainActor in
-				let refreshStart = Date()
-				
-				// Check cancellation before starting expensive work
-				guard !Task.isCancelled else {
-					print("⚠️ [NAV] ActivityTypeView: Background refresh cancelled before starting")
-					return
-				}
-				
-				await viewModel.fetchActivityTypes(forceRefresh: true)
-				
-				// Check cancellation after async work
-				guard !Task.isCancelled else {
-					print("⚠️ [NAV] ActivityTypeView: Background refresh cancelled after fetch")
-					return
-				}
-				
-				let refreshDuration = Date().timeIntervalSince(refreshStart)
-				print("⏱️ [NAV] Activity types refresh took \(String(format: "%.2f", refreshDuration))s")
-				print("✅ [NAV] ActivityTypeView: Background refresh completed")
-			}
+            print("📍 [NAV] ActivityTypeView .task started")
+            let taskStartTime = Date()
+            
+            // CRITICAL FIX: Load cached data immediately to unblock UI
+            // This prevents the UI from hanging while waiting for API calls
+            
+            // Load cached data through view model (fast, non-blocking)
+            let cacheLoadStart = Date()
+            let activityTypesCount: Int = await MainActor.run {
+                viewModel.loadCachedActivityTypes()
+                return viewModel.activityTypes.count
             }
+            let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+            
+            print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+            print("   Activity Types: \(activityTypesCount)")
+            
+            // Check if task was cancelled
+            guard !Task.isCancelled else {
+                print("⚠️ [NAV] Task cancelled before determining refresh strategy")
+                return
+            }
+            
+            // If cache is empty, block until we have data (critical for UX)
+            if activityTypesCount == 0 {
+                print("🔄 [NAV] No cached activity types - fetching from API on MainActor")
+                await viewModel.fetchActivityTypes(forceRefresh: true)
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
+                print("⏱️ [NAV] Initial fetch completed in \(String(format: "%.2f", totalDuration))s")
+            } else {
+                // Cache exists - refresh in background (progressive enhancement)
+                print("🔄 [NAV] Starting background refresh for activity types")
+                backgroundRefreshTask = Task { @MainActor in
+                    let refreshStart = Date()
+                    
+                    // Check cancellation before starting expensive work
+                    guard !Task.isCancelled else {
+                        print("⚠️ [NAV] ActivityTypeView: Background refresh cancelled before starting")
+                        return
+                    }
+                    
+                    await viewModel.fetchActivityTypes(forceRefresh: true)
+                    
+                    // Check cancellation after async work
+                    guard !Task.isCancelled else {
+                        print("⚠️ [NAV] ActivityTypeView: Background refresh cancelled after fetch")
+                        return
+                    }
+                    
+                    let refreshDuration = Date().timeIntervalSince(refreshStart)
+                    print("⏱️ [NAV] Activity types refresh took \(String(format: "%.2f", refreshDuration))s")
+                    print("✅ [NAV] ActivityTypeView: Background refresh completed")
+                }
+                
+                let totalDuration = Date().timeIntervalSince(taskStartTime)
+                print("⏱️ [NAV] UI update took \(String(format: "%.3f", totalDuration))s")
+            }
+        }
             .onAppear {
                 print("👁️ [NAV] ActivityTypeView appeared")
             }
