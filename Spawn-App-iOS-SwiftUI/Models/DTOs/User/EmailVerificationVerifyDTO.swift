@@ -6,6 +6,6 @@
 //
 
 struct EmailVerificationVerifyDTO: Codable {
-    let email: String
-    let verificationCode: String
+	let email: String
+	let verificationCode: String
 }

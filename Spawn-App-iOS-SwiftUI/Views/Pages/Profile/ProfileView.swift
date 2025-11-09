@@ -34,19 +34,19 @@ struct ProfileView: View {
 	@State private var showActivityDetails: Bool = false
 	@State private var navigateToDayActivities: Bool = false
 	@State private var selectedDayActivities: [CalendarActivityDTO] = []
-	    	@State private var showReportDialog: Bool = false
+	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
-    @State private var blockReason: String = ""
+	@State private var blockReason: String = ""
 	@State private var showRemoveFriendConfirmation: Bool = false
 	@State private var showProfileMenu: Bool = false
 	@State private var showAddToActivityType: Bool = false
 	@State private var showSuccessDrawer: Bool = false
 	@State private var navigateToAddToActivityType: Bool = false
 	@State private var showProfileShareSheet: Bool = false
-	
+
 	// Store background refresh task so we can cancel it on disappear
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
-	
+
 	// Animation states for 3D effects
 	@State private var addFriendPressed = false
 	@State private var addFriendScale: CGFloat = 1.0
@@ -63,7 +63,6 @@ struct ProfileView: View {
 
 	// For the back button
 	@State private var showBackButton: Bool = false
-
 
 	// Check if this is the current user's profile
 	private var isCurrentUserProfile: Bool {
@@ -87,210 +86,215 @@ struct ProfileView: View {
 		profileContent
 			.background(universalBackgroundColor.ignoresSafeArea())
 			.background(universalBackgroundColor)
-		.onChange(of: editingState) { _, newState in
-			switch newState {
-			case .save:
-				// Save original interests when entering edit mode
-				profileViewModel.saveOriginalInterests()
-			case .edit:
-				// This handles the case where editingState transitions back to .edit
-				// The cancel button should handle the restoration manually
-				break
+			.onChange(of: editingState) { _, newState in
+				switch newState {
+				case .save:
+					// Save original interests when entering edit mode
+					profileViewModel.saveOriginalInterests()
+				case .edit:
+					// This handles the case where editingState transitions back to .edit
+					// The cancel button should handle the restoration manually
+					break
+				}
 			}
-		}
-		.alert(item: $userAuth.activeAlert) { alertType in
-			switch alertType {
-			case .deleteConfirmation:
-				return Alert(
-					title: Text("Delete Account"),
-					message: Text(
-						"Are you sure you want to delete your account? This action cannot be undone."
-					),
-					primaryButton: .destructive(Text("Delete")) {
-						Task {
-							await userAuth.deleteAccount()
+			.alert(item: $userAuth.activeAlert) { alertType in
+				switch alertType {
+				case .deleteConfirmation:
+					return Alert(
+						title: Text("Delete Account"),
+						message: Text(
+							"Are you sure you want to delete your account? This action cannot be undone."
+						),
+						primaryButton: .destructive(Text("Delete")) {
+							Task {
+								await userAuth.deleteAccount()
+							}
+						},
+						secondaryButton: .cancel()
+					)
+				case .deleteSuccess:
+					return Alert(
+						title: Text("Account Deleted"),
+						message: Text(
+							"Your account has been successfully deleted."
+						),
+						dismissButton: .default(Text("OK")) {
+							userAuth.signOut()
 						}
-					},
-					secondaryButton: .cancel()
-				)
-			case .deleteSuccess:
-				return Alert(
-					title: Text("Account Deleted"),
-					message: Text(
-						"Your account has been successfully deleted."
-					),
-					dismissButton: .default(Text("OK")) {
-						userAuth.signOut()
+					)
+				case .deleteError:
+					return Alert(
+						title: Text("Error"),
+						message: Text(
+							"Failed to delete your account. Please try again later."
+						),
+						dismissButton: .default(Text("OK"))
+					)
+				}
+			}
+			.onAppear {
+				// Update local state from userAuth.spawnUser when view appears
+				refreshUserData()
+			}
+			.task {
+				print("📍 [NAV] ProfileView .task started for user \(user.id)")
+				let taskStartTime = Date()
+
+				// Set back button state immediately (no async needed)
+				if !isCurrentUserProfile {
+					showBackButton = true
+				}
+
+				// Check if task was cancelled (user navigated away)
+				guard !Task.isCancelled else {
+					print("⚠️ [NAV] Task cancelled before loading profile data - user navigated away")
+					return
+				}
+
+				// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
+				// This prevents empty state flashes and ensures view renders with data
+				print("🔄 [NAV] ProfileView loading critical profile data on MainActor")
+				let criticalDataStart = Date()
+
+				// Load critical data that's required for the view to render meaningfully
+				await profileViewModel.loadCriticalProfileData(userId: user.id)
+
+				// Initialize social media links from loaded data
+				if let socialMedia = profileViewModel.userSocialMedia {
+					whatsappLink = socialMedia.whatsappLink ?? ""
+					instagramLink = socialMedia.instagramLink ?? ""
+				}
+
+				// Check friendship status if not viewing own profile (critical for UI)
+				if !isCurrentUserProfile,
+					let currentUserId = userAuth.spawnUser?.id
+				{
+					// Check if user is a RecommendedFriendUserDTO with relationship status
+					if let recommendedFriend = user as? RecommendedFriendUserDTO,
+						recommendedFriend.relationshipStatus != nil
+					{
+						// Use the relationship status from the DTO - no API call needed
+						profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
+					} else {
+						// For other user types (BaseUserDTO, etc.), use the original API call
+						await profileViewModel.checkFriendshipStatus(
+							currentUserId: currentUserId,
+							profileUserId: user.id
+						)
 					}
-				)
-			case .deleteError:
-				return Alert(
-					title: Text("Error"),
-					message: Text(
-						"Failed to delete your account. Please try again later."
-					),
-					dismissButton: .default(Text("OK"))
-				)
-			}
-		}
-		.onAppear {
-			// Update local state from userAuth.spawnUser when view appears
-			refreshUserData()
-		}
-		.task {
-			print("📍 [NAV] ProfileView .task started for user \(user.id)")
-			let taskStartTime = Date()
-			
-			// Set back button state immediately (no async needed)
-			if !isCurrentUserProfile {
-				showBackButton = true
-			}
-			
-			// Check if task was cancelled (user navigated away)
-			guard !Task.isCancelled else {
-				print("⚠️ [NAV] Task cancelled before loading profile data - user navigated away")
-				return
-			}
-			
-			// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
-			// This prevents empty state flashes and ensures view renders with data
-			print("🔄 [NAV] ProfileView loading critical profile data on MainActor")
-			let criticalDataStart = Date()
-			
-			// Load critical data that's required for the view to render meaningfully
-			await profileViewModel.loadCriticalProfileData(userId: user.id)
-			
-			// Initialize social media links from loaded data
-			if let socialMedia = profileViewModel.userSocialMedia {
-				whatsappLink = socialMedia.whatsappLink ?? ""
-				instagramLink = socialMedia.instagramLink ?? ""
-			}
-			
-			// Check friendship status if not viewing own profile (critical for UI)
-			if !isCurrentUserProfile,
-			   let currentUserId = userAuth.spawnUser?.id
-			{
-				// Check if user is a RecommendedFriendUserDTO with relationship status
-				if let recommendedFriend = user as? RecommendedFriendUserDTO,
-				   recommendedFriend.relationshipStatus != nil {
-					// Use the relationship status from the DTO - no API call needed
-					profileViewModel.setFriendshipStatusFromRecommendedFriend(recommendedFriend)
-				} else {
-					// For other user types (BaseUserDTO, etc.), use the original API call
-					await profileViewModel.checkFriendshipStatus(
-						currentUserId: currentUserId,
-						profileUserId: user.id
-					)
+
+					// If they're friends, fetch their activities (critical for profile content)
+					if profileViewModel.friendshipStatus == .friends {
+						await profileViewModel.fetchProfileActivities(
+							profileUserId: user.id
+						)
+					}
 				}
-				
-				// If they're friends, fetch their activities (critical for profile content)
-				if profileViewModel.friendshipStatus == .friends {
-					await profileViewModel.fetchProfileActivities(
-						profileUserId: user.id
-					)
+
+				let criticalDataDuration = Date().timeIntervalSince(criticalDataStart)
+				print("✅ [NAV] ProfileView critical data loaded in \(String(format: "%.2f", criticalDataDuration))s")
+
+				// View will now appear with all critical data ready
+				let totalDuration = Date().timeIntervalSince(taskStartTime)
+				print("⏱️ [NAV] ProfileView total setup took \(String(format: "%.2f", totalDuration))s")
+
+				// Check if task was cancelled before starting background enhancements
+				guard !Task.isCancelled else {
+					print("⚠️ [NAV] Task cancelled before starting background enhancements")
+					return
+				}
+
+				// Load enhancement data in background (non-blocking progressive enhancements)
+				print("🔄 [NAV] ProfileView loading enhancement data in background")
+				backgroundDataLoadTask = Task.detached(priority: .background) {
+					// Profile picture refresh (can use cached version initially)
+					if let profilePictureUrl = await user.profilePicture {
+						let profilePictureCache = ProfilePictureCache.shared
+						_ = await profilePictureCache.getCachedImageWithRefresh(
+							for: await user.id,
+							from: profilePictureUrl,
+							maxAge: 6 * 60 * 60  // 6 hours
+						)
+					}
+
+					// Load non-critical enhancement data
+					await profileViewModel.loadEnhancementData(userId: await user.id)
+
+					print("✅ [NAV] ProfileView enhancement data loaded")
 				}
 			}
-			
-			let criticalDataDuration = Date().timeIntervalSince(criticalDataStart)
-			print("✅ [NAV] ProfileView critical data loaded in \(String(format: "%.2f", criticalDataDuration))s")
-			
-			// View will now appear with all critical data ready
-			let totalDuration = Date().timeIntervalSince(taskStartTime)
-			print("⏱️ [NAV] ProfileView total setup took \(String(format: "%.2f", totalDuration))s")
-			
-			// Check if task was cancelled before starting background enhancements
-			guard !Task.isCancelled else {
-				print("⚠️ [NAV] Task cancelled before starting background enhancements")
-				return
+			.onAppear {
+				print("👁️ [NAV] ProfileView appeared for user \(user.id)")
 			}
-			
-			// Load enhancement data in background (non-blocking progressive enhancements)
-			print("🔄 [NAV] ProfileView loading enhancement data in background")
-			backgroundDataLoadTask = Task.detached(priority: .background) {
-				// Profile picture refresh (can use cached version initially)
-				if let profilePictureUrl = await user.profilePicture {
-					let profilePictureCache = ProfilePictureCache.shared
-					_ = await profilePictureCache.getCachedImageWithRefresh(
-						for: await user.id,
-						from: profilePictureUrl,
-						maxAge: 6 * 60 * 60 // 6 hours
-					)
-				}
-				
-				// Load non-critical enhancement data
-				await profileViewModel.loadEnhancementData(userId: await user.id)
-				
-				print("✅ [NAV] ProfileView enhancement data loaded")
+			.onDisappear {
+				print("👋 [NAV] ProfileView disappearing - cancelling background tasks")
+				// Cancel any ongoing background tasks to prevent blocking
+				backgroundDataLoadTask?.cancel()
+				backgroundDataLoadTask = nil
+				print("👋 [NAV] ProfileView disappeared")
 			}
-		}
-		.onAppear {
-			print("👁️ [NAV] ProfileView appeared for user \(user.id)")
-		}
-		.onDisappear {
-			print("👋 [NAV] ProfileView disappearing - cancelling background tasks")
-			// Cancel any ongoing background tasks to prevent blocking
-			backgroundDataLoadTask?.cancel()
-			backgroundDataLoadTask = nil
-			print("👋 [NAV] ProfileView disappeared")
-		}
-		.onChange(of: userAuth.spawnUser) { _, newUser in
-			// Update local state whenever spawnUser changes
-			refreshUserData()
-		}
-		.onChange(of: profileViewModel.userSocialMedia) { _, newSocialMedia in
-			// Update local state when social media changes
-			if let socialMedia = newSocialMedia {
-				whatsappLink = socialMedia.whatsappLink ?? ""
-				instagramLink = socialMedia.instagramLink ?? ""
+			.onChange(of: userAuth.spawnUser) { _, newUser in
+				// Update local state whenever spawnUser changes
+				refreshUserData()
 			}
-		}
-		.onChange(of: profileViewModel.friendshipStatus) { _, newStatus in
-			// Fetch activities when friendship status changes to friends
-			if newStatus == .friends {
-				Task {
-					await profileViewModel.fetchProfileActivities(
-						profileUserId: user.id
-					)
+			.onChange(of: profileViewModel.userSocialMedia) { _, newSocialMedia in
+				// Update local state when social media changes
+				if let socialMedia = newSocialMedia {
+					whatsappLink = socialMedia.whatsappLink ?? ""
+					instagramLink = socialMedia.instagramLink ?? ""
 				}
 			}
-		}
-		.onChange(of: navigateToDayActivities) { _, newValue in
-			if newValue {
-				// Ensure navigation happens on main thread
-				DispatchQueue.main.async {
-					// Navigation logic handled by the view
+			.onChange(of: profileViewModel.friendshipStatus) { _, newStatus in
+				// Fetch activities when friendship status changes to friends
+				if newStatus == .friends {
+					Task {
+						await profileViewModel.fetchProfileActivities(
+							profileUserId: user.id
+						)
+					}
 				}
 			}
-		}
-		.accentColor(universalAccentColor)
-		.toast(
-			isShowing: $showNotification,
-			message: notificationMessage,
-			duration: 5.0
-		)
+			.onChange(of: navigateToDayActivities) { _, newValue in
+				if newValue {
+					// Ensure navigation happens on main thread
+					DispatchQueue.main.async {
+						// Navigation logic handled by the view
+					}
+				}
+			}
+			.accentColor(universalAccentColor)
+			.toast(
+				isShowing: $showNotification,
+				message: notificationMessage,
+				duration: 5.0
+			)
 	}
 
 	// Main content broken into a separate computed property to reduce complexity
 	private var profileContent: some View {
 		NavigationStack {
 			profileWithOverlay
-				.modifier(ImagePickerModifier(
-					showImagePicker: $showImagePicker,
-					selectedImage: $selectedImage,
-					isImageLoading: $isImageLoading
-				))
-				.modifier(SheetsAndAlertsModifier(
-					showActivityDetails: $showActivityDetails,
-					activityDetailsView: AnyView(activityDetailsView),
-					showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
-					removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
-					showReportDialog: $showReportDialog,
-					reportUserDrawer: AnyView(reportUserDrawer),
-					showBlockDialog: $showBlockDialog,
-					blockUserAlert: AnyView(blockUserAlert),
-					showProfileMenu: $showProfileMenu,
-					profileMenuSheet: AnyView(profileMenuSheet)
-				))
+				.modifier(
+					ImagePickerModifier(
+						showImagePicker: $showImagePicker,
+						selectedImage: $selectedImage,
+						isImageLoading: $isImageLoading
+					)
+				)
+				.modifier(
+					SheetsAndAlertsModifier(
+						showActivityDetails: $showActivityDetails,
+						activityDetailsView: AnyView(activityDetailsView),
+						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
+						removeFriendConfirmationAlert: AnyView(removeFriendConfirmationAlert),
+						showReportDialog: $showReportDialog,
+						reportUserDrawer: AnyView(reportUserDrawer),
+						showBlockDialog: $showBlockDialog,
+						blockUserAlert: AnyView(blockUserAlert),
+						showProfileMenu: $showProfileMenu,
+						profileMenuSheet: AnyView(profileMenuSheet)
+					)
+				)
 				.onTapGesture {
 					// Dismiss profile menu if it's showing
 					if showProfileMenu {
@@ -304,7 +308,7 @@ struct ProfileView: View {
 	private var profileWithOverlay: some View {
 		ZStack {
 			universalBackgroundColor.ignoresSafeArea()
-			
+
 			VStack {
 				profileInnerComponentsView
 					.padding(.horizontal)
@@ -365,7 +369,7 @@ struct ProfileView: View {
 
 			// Overlay for profile menu
 			profileMenuOverlay
-			
+
 			// Success drawer overlay
 			if showSuccessDrawer {
 				FriendRequestSuccessDrawer(
@@ -376,7 +380,7 @@ struct ProfileView: View {
 					}
 				)
 			}
-			
+
 			// Profile share drawer overlay
 			if showProfileShareSheet {
 				ProfileShareDrawer(
@@ -456,16 +460,17 @@ struct ProfileView: View {
 			}
 
 			// Add Friend Button for non-friends or showing Friend Request Sent
-			if !isCurrentUserProfile && 
-				(profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent)
+			if !isCurrentUserProfile
+				&& (profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent)
 			{
 				Button(action: {
-					if profileViewModel.friendshipStatus == .none, 
-					   let currentUserId = userAuth.spawnUser?.id {
+					if profileViewModel.friendshipStatus == .none,
+						let currentUserId = userAuth.spawnUser?.id
+					{
 						// Haptic feedback
 						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
 						impactGenerator.impactOccurred()
-						
+
 						Task {
 							await profileViewModel.sendFriendRequest(
 								fromUserId: currentUserId,
@@ -504,18 +509,20 @@ struct ProfileView: View {
 				.padding(.vertical, 10)
 				.animation(.easeInOut(duration: 0.15), value: addFriendScale)
 				.animation(.easeInOut(duration: 0.15), value: addFriendPressed)
-				.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-					if profileViewModel.friendshipStatus == .none {
-						addFriendPressed = pressing
-						addFriendScale = pressing ? 0.95 : 1.0
-						
-						// Additional haptic feedback for press down
-						if pressing {
-							let selectionGenerator = UISelectionFeedbackGenerator()
-							selectionGenerator.selectionChanged()
+				.onLongPressGesture(
+					minimumDuration: 0, maximumDistance: .infinity,
+					pressing: { pressing in
+						if profileViewModel.friendshipStatus == .none {
+							addFriendPressed = pressing
+							addFriendScale = pressing ? 0.95 : 1.0
+
+							// Additional haptic feedback for press down
+							if pressing {
+								let selectionGenerator = UISelectionFeedbackGenerator()
+								selectionGenerator.selectionChanged()
+							}
 						}
-					}
-				}, perform: {})
+					}, perform: {})
 			}
 
 			// Profile Action Buttons
@@ -567,7 +574,7 @@ struct ProfileView: View {
 					)
 					.padding(.horizontal, 16)
 					.padding(.bottom, 15)
-					
+
 					EmptyView()
 				}
 			} else {
@@ -679,11 +686,11 @@ struct ProfileView: View {
 			}
 		)
 	}
-	
+
 	private var dayActivitiesPageView: some View {
 		// Get the date from the first activity, or use today as fallback
 		let date = selectedDayActivities.first?.dateAsDate ?? Date()
-		
+
 		return DayActivitiesPageView(
 			date: date,
 			activities: selectedDayActivities,
@@ -702,14 +709,14 @@ struct ProfileView: View {
 
 	private var activityDetailsView: some View {
 		Group {
-			if let _ = profileViewModel.selectedActivity {
-				EmptyView() // Replaced with global popup system
+			if profileViewModel.selectedActivity != nil {
+				EmptyView()  // Replaced with global popup system
 			}
 		}
 		.onChange(of: showActivityDetails) { _, isShowing in
 			if isShowing, let activity = profileViewModel.selectedActivity {
 				let activityColor = getActivityColor(for: activity.id)
-				
+
 				// Post notification to show global popup
 				NotificationCenter.default.post(
 					name: .showGlobalActivityPopup,
@@ -724,7 +731,7 @@ struct ProfileView: View {
 	}
 
 	// MARK: - Sub-expressions for better type checking
-	
+
 	private var reportUserDrawer: some View {
 		ReportUserDrawer(
 			user: user,
@@ -737,7 +744,7 @@ struct ProfileView: View {
 							reportType: reportType,
 							description: description
 						)
-						
+
 						// Show success notification
 						notificationMessage = "User reported successfully"
 						showNotification = true
@@ -748,7 +755,7 @@ struct ProfileView: View {
 		.presentationDetents([.medium, .large])
 		.presentationDragIndicator(.visible)
 	}
-	
+
 	private var profileMenuSheet: some View {
 		ProfileMenuView(
 			user: user,
@@ -763,7 +770,7 @@ struct ProfileView: View {
 		.background(universalBackgroundColor)
 		.presentationDetents([.height(profileViewModel.friendshipStatus == .friends ? 364 : 276)])
 	}
-	
+
 	private var removeFriendConfirmationAlert: some View {
 		Group {
 			Button("Remove", role: .destructive) {
@@ -773,14 +780,14 @@ struct ProfileView: View {
 							currentUserId: currentUserId,
 							profileUserId: user.id
 						)
-						
+
 						// Show success notification
 						notificationMessage = "Friend removed successfully"
 						showNotification = true
 					}
 				}
 			}
-			Button("Cancel", role: .cancel) { }
+			Button("Cancel", role: .cancel) {}
 		}
 	}
 
@@ -876,13 +883,13 @@ struct ProfileView: View {
 	private func copyProfileURL() {
 		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
 			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
-			
+
 			// Clear the pasteboard first to avoid any contamination
 			UIPasteboard.general.items = []
-			
+
 			// Set only the URL string to the pasteboard
 			UIPasteboard.general.string = url.absoluteString
-			
+
 			// Show notification toast
 			DispatchQueue.main.async {
 				InAppNotificationManager.shared.showNotification(
@@ -963,7 +970,7 @@ struct ProfileView: View {
 							// Haptic feedback
 							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
 							impactGenerator.impactOccurred()
-							
+
 							Task {
 								await profileViewModel.acceptFriendRequest(
 									requestId: requestId
@@ -997,16 +1004,18 @@ struct ProfileView: View {
 					.buttonStyle(PlainButtonStyle())
 					.animation(.easeInOut(duration: 0.15), value: acceptButtonScale)
 					.animation(.easeInOut(duration: 0.15), value: acceptButtonPressed)
-					.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-						acceptButtonPressed = pressing
-						acceptButtonScale = pressing ? 0.95 : 1.0
-						
-						// Additional haptic feedback for press down
-						if pressing {
-							let selectionGenerator = UISelectionFeedbackGenerator()
-							selectionGenerator.selectionChanged()
-						}
-					}, perform: {})
+					.onLongPressGesture(
+						minimumDuration: 0, maximumDistance: .infinity,
+						pressing: { pressing in
+							acceptButtonPressed = pressing
+							acceptButtonScale = pressing ? 0.95 : 1.0
+
+							// Additional haptic feedback for press down
+							if pressing {
+								let selectionGenerator = UISelectionFeedbackGenerator()
+								selectionGenerator.selectionChanged()
+							}
+						}, perform: {})
 
 					Button(action: {
 						if let requestId = profileViewModel
@@ -1015,7 +1024,7 @@ struct ProfileView: View {
 							// Haptic feedback
 							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
 							impactGenerator.impactOccurred()
-							
+
 							Task {
 								await profileViewModel.declineFriendRequest(
 									requestId: requestId
@@ -1049,16 +1058,18 @@ struct ProfileView: View {
 					.buttonStyle(PlainButtonStyle())
 					.animation(.easeInOut(duration: 0.15), value: denyButtonScale)
 					.animation(.easeInOut(duration: 0.15), value: denyButtonPressed)
-					.onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
-						denyButtonPressed = pressing
-						denyButtonScale = pressing ? 0.95 : 1.0
-						
-						// Additional haptic feedback for press down
-						if pressing {
-							let selectionGenerator = UISelectionFeedbackGenerator()
-							selectionGenerator.selectionChanged()
-						}
-					}, perform: {})
+					.onLongPressGesture(
+						minimumDuration: 0, maximumDistance: .infinity,
+						pressing: { pressing in
+							denyButtonPressed = pressing
+							denyButtonScale = pressing ? 0.95 : 1.0
+
+							// Additional haptic feedback for press down
+							if pressing {
+								let selectionGenerator = UISelectionFeedbackGenerator()
+								selectionGenerator.selectionChanged()
+							}
+						}, perform: {})
 				}
 
 			case .friends:
@@ -1145,10 +1156,10 @@ extension ProfileView {
 						instagramLink = socialMedia.instagramLink ?? ""
 					}
 				}
-				
+
 				// Restore original interests
 				profileViewModel.restoreOriginalInterests()
-				
+
 				editingState = .edit
 			}) {
 				Text("Cancel")
@@ -1247,7 +1258,7 @@ extension ProfileView {
 			selectedImage = nil
 			isImageLoading = false
 			editingState = .edit
-			
+
 			// Invalidate the cached profile picture since we have a new one
 			if let userId = userAuth.spawnUser?.id {
 				ProfilePictureCache.shared.removeCachedImage(for: userId)
@@ -1267,4 +1278,3 @@ extension View {
 #Preview {
 	ProfileView(user: BaseUserDTO.danielAgapov)
 }
-

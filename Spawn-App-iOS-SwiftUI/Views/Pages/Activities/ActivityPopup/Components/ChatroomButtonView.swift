@@ -158,4 +158,3 @@ struct ChatroomButtonView: View {
 		return uniqueSenders
 	}
 }
-

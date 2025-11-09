@@ -9,355 +9,370 @@ import SwiftUI
 
 struct ContentView: View {
 	var user: BaseUserDTO
-    @State private var selectedTabsEnum: Tabs = .home
-    @StateObject private var friendsViewModel: FriendsTabViewModel
-    @StateObject private var feedViewModel: FeedViewModel
-    @ObservedObject private var tutorialViewModel = TutorialViewModel.shared
-    @ObservedObject  private var inAppNotificationManager = InAppNotificationManager.shared
-    @ObservedObject var deepLinkManager: DeepLinkManager
-    
-    // Computed binding to convert Tabs <-> TabType for child views
-    private var selectedTabBinding: Binding<TabType> {
-        Binding(
-            get: { selectedTabsEnum.toTabType },
-            set: { selectedTabsEnum = Tabs(from: $0) }
-        )
-    }
-    
-    // Deep link state
-    @State private var shouldShowDeepLinkedActivity = false
-    @State private var deepLinkedActivityId: UUID?
-    @State private var shouldShowDeepLinkedProfile = false
-    @State private var deepLinkedProfileId: UUID?
-    
-    // Global activity popup state
-    @State private var showingGlobalActivityPopup = false
-    @State private var globalPopupActivity: FullFeedActivityDTO?
-    @State private var globalPopupColor: Color?
-    @State private var globalPopupFromMapView = false
-    
-    // Store background refresh task so we can cancel it on disappear
-    @State private var backgroundRefreshTask: Task<Void, Never>?
-    
-    init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
-        self.user = user
-        self.deepLinkManager = deepLinkManager
-        let friendsVM = FriendsTabViewModel(
-            userId: user.id,
-            apiService: MockAPIService.isMocking
-                ? MockAPIService(userId: user.id) : APIService())
-        self._friendsViewModel = StateObject(wrappedValue: friendsVM)
-        
-        // Create shared FeedViewModel for both ActivityFeedView and MapView
-        let feedVM = FeedViewModel(
-            apiService: MockAPIService.isMocking
-                ? MockAPIService(userId: user.id) : APIService(),
-            userId: user.id
-        )
-        self._feedViewModel = StateObject(wrappedValue: feedVM)
-    }
+	@State private var selectedTabsEnum: Tabs = .home
+	@StateObject private var friendsViewModel: FriendsTabViewModel
+	@StateObject private var feedViewModel: FeedViewModel
+	@ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+	@ObservedObject private var inAppNotificationManager = InAppNotificationManager.shared
+	@ObservedObject var deepLinkManager: DeepLinkManager
+
+	// Computed binding to convert Tabs <-> TabType for child views
+	private var selectedTabBinding: Binding<TabType> {
+		Binding(
+			get: { selectedTabsEnum.toTabType },
+			set: { selectedTabsEnum = Tabs(from: $0) }
+		)
+	}
+
+	// Deep link state
+	@State private var shouldShowDeepLinkedActivity = false
+	@State private var deepLinkedActivityId: UUID?
+	@State private var shouldShowDeepLinkedProfile = false
+	@State private var deepLinkedProfileId: UUID?
+
+	// Global activity popup state
+	@State private var showingGlobalActivityPopup = false
+	@State private var globalPopupActivity: FullFeedActivityDTO?
+	@State private var globalPopupColor: Color?
+	@State private var globalPopupFromMapView = false
+
+	// Store background refresh task so we can cancel it on disappear
+	@State private var backgroundRefreshTask: Task<Void, Never>?
+
+	init(user: BaseUserDTO, deepLinkManager: DeepLinkManager = DeepLinkManager.shared) {
+		self.user = user
+		self.deepLinkManager = deepLinkManager
+		let friendsVM = FriendsTabViewModel(
+			userId: user.id,
+			apiService: MockAPIService.isMocking
+				? MockAPIService(userId: user.id) : APIService())
+		self._friendsViewModel = StateObject(wrappedValue: friendsVM)
+
+		// Create shared FeedViewModel for both ActivityFeedView and MapView
+		let feedVM = FeedViewModel(
+			apiService: MockAPIService.isMocking
+				? MockAPIService(userId: user.id) : APIService(),
+			userId: user.id
+		)
+		self._feedViewModel = StateObject(wrappedValue: feedVM)
+	}
 
 	var body: some View {
-        ZStack {
-            WithTabBarBinding(selection: $selectedTabsEnum) { selectedTab in
-                switch selectedTab {
-                case .home:
-                    ActivityFeedView(
-                        user: user,
-                        viewModel: feedViewModel,
-                        selectedTab: selectedTabBinding,
-                        deepLinkedActivityId: $deepLinkedActivityId,
-                        shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
-                    )
-                case .map:
-                    MapView(user: user, viewModel: feedViewModel)
-                        .id("MapView-\(user.id)")  // Stable identity prevents recreation
-                        .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-                case .activities:
-                    ActivityCreationView(
-                        creatingUser: user,
-                        closeCallback: {
-                            // Navigate back to home tab when closing
-                            selectedTabsEnum = .home
-                        },
-                        selectedTab: selectedTabBinding
-                    )
-                case .friends:
-                    FriendsView(
-                        user: user,
-                        viewModel: friendsViewModel,
-                        deepLinkedProfileId: $deepLinkedProfileId,
-                        shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
-                    )
-                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-                case .profile:
-                    NavigationStack {
-                        ProfileView(user: user)
-                    }
-                    .disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
-                }
-            }
-            .task {
-                print("📍 [NAV] ContentView .task started - initializing shared feed data")
-                let taskStartTime = Date()
-                
-                // CRITICAL FIX: Load cached activities immediately to unblock UI
-                // This ensures both ActivityFeedView and MapView have data instantly
-                let cacheLoadStart = Date()
-                
-                // Load cached data through view model instead of directly accessing cache
-                await MainActor.run {
-                    feedViewModel.loadCachedActivities()
-                }
-                
-                let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
-                let totalDuration = Date().timeIntervalSince(taskStartTime)
-                print("📊 [NAV] ContentView: Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
-                print("⏱️ [NAV] ContentView: Total UI update took \(String(format: "%.3f", totalDuration))s")
-                
-                // Check if task was cancelled before starting background refresh
-                if Task.isCancelled {
-                    print("⚠️ [NAV] ContentView: Task cancelled before starting background refresh")
-                    return
-                }
-                
-                // Refresh from API in background (non-blocking)
-                // CRITICAL: Always run in background, even if cache is empty, to avoid blocking UI
-                // Run on MainActor to ensure proper sequencing with view updates
-                print("🔄 [NAV] ContentView: Starting background refresh for shared view model")
-                backgroundRefreshTask = Task { @MainActor in
-                    let refreshStart = Date()
-                    
-                    guard !Task.isCancelled else {
-                        print("⚠️ [NAV] ContentView: Background refresh cancelled before starting")
-                        return
-                    }
-                    
-                    await feedViewModel.fetchAllData()
-                    let refreshDuration = Date().timeIntervalSince(refreshStart)
-                    print("⏱️ [NAV] ContentView: Background refresh took \(String(format: "%.2f", refreshDuration))s")
-                    print("✅ [NAV] ContentView: Background refresh completed")
-                }
-            }
+		ZStack {
+			WithTabBarBinding(selection: $selectedTabsEnum) { selectedTab in
+				switch selectedTab {
+				case .home:
+					ActivityFeedView(
+						user: user,
+						viewModel: feedViewModel,
+						selectedTab: selectedTabBinding,
+						deepLinkedActivityId: $deepLinkedActivityId,
+						shouldShowDeepLinkedActivity: $shouldShowDeepLinkedActivity
+					)
+				case .map:
+					MapView(user: user, viewModel: feedViewModel)
+						.id("MapView-\(user.id)")  // Stable identity prevents recreation
+						.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+				case .activities:
+					ActivityCreationView(
+						creatingUser: user,
+						closeCallback: {
+							// Navigate back to home tab when closing
+							selectedTabsEnum = .home
+						},
+						selectedTab: selectedTabBinding
+					)
+				case .friends:
+					FriendsView(
+						user: user,
+						viewModel: friendsViewModel,
+						deepLinkedProfileId: $deepLinkedProfileId,
+						shouldShowDeepLinkedProfile: $shouldShowDeepLinkedProfile
+					)
+					.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+				case .profile:
+					NavigationStack {
+						ProfileView(user: user)
+					}
+					.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
+				}
+			}
+			.task {
+				print("📍 [NAV] ContentView .task started - initializing shared feed data")
+				let taskStartTime = Date()
+
+				// CRITICAL FIX: Load cached activities immediately to unblock UI
+				// This ensures both ActivityFeedView and MapView have data instantly
+				let cacheLoadStart = Date()
+
+				// Load cached data through view model instead of directly accessing cache
+				await MainActor.run {
+					feedViewModel.loadCachedActivities()
+				}
+
+				let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
+				let totalDuration = Date().timeIntervalSince(taskStartTime)
+				print("📊 [NAV] ContentView: Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
+				print("⏱️ [NAV] ContentView: Total UI update took \(String(format: "%.3f", totalDuration))s")
+
+				// Check if task was cancelled before starting background refresh
+				if Task.isCancelled {
+					print("⚠️ [NAV] ContentView: Task cancelled before starting background refresh")
+					return
+				}
+
+				// Refresh from API in background (non-blocking)
+				// CRITICAL: Always run in background, even if cache is empty, to avoid blocking UI
+				// Run on MainActor to ensure proper sequencing with view updates
+				print("🔄 [NAV] ContentView: Starting background refresh for shared view model")
+				backgroundRefreshTask = Task { @MainActor in
+					let refreshStart = Date()
+
+					guard !Task.isCancelled else {
+						print("⚠️ [NAV] ContentView: Background refresh cancelled before starting")
+						return
+					}
+
+					await feedViewModel.fetchAllData()
+					let refreshDuration = Date().timeIntervalSince(refreshStart)
+					print("⏱️ [NAV] ContentView: Background refresh took \(String(format: "%.2f", refreshDuration))s")
+					print("✅ [NAV] ContentView: Background refresh completed")
+				}
+			}
 			.onAppear {
-                print("👁️ [NAV] ContentView appeared")
-                // Resume timers when view appears
-                feedViewModel.resumeTimers()
-                
-                // Configure tab bar appearance for theme compatibility
-                let appearance = UITabBarAppearance()
-                appearance.configureWithOpaqueBackground()
-                appearance.backgroundColor = UIColor { traitCollection in
-                    switch traitCollection.userInterfaceStyle {
-                    case .dark:
-                        return UIColor.systemBackground.withAlphaComponent(0.9)
-                    default:
-                        return UIColor.systemBackground.withAlphaComponent(0.9)
-                    }
-                }
-                
-                UITabBar.appearance().standardAppearance = appearance
-                UITabBar.appearance().scrollEdgeAppearance = appearance
-                UITabBar.appearance().unselectedItemTintColor = UIColor { traitCollection in
-                    switch traitCollection.userInterfaceStyle {
-                    case .dark:
-                        return UIColor.label
-                    default:
-                        return UIColor.label
-                    }
-                }
-                
-                // Fetch friend requests to show badge count
-                Task {
-                    await friendsViewModel.fetchIncomingFriendRequests()
-                }
-            }
-            .onDisappear {
-                print("👋 [NAV] ContentView disappearing - cancelling background tasks")
-                
-                // Pause timers to save resources when view is not visible
-                feedViewModel.pauseTimers()
-                
-                // Cancel any ongoing background refresh to prevent blocking
-                backgroundRefreshTask?.cancel()
-                backgroundRefreshTask = nil
-                print("👋 [NAV] ContentView disappeared")
-            }
-            .onChange(of: deepLinkManager.shouldShowActivity) { _, shouldShow in
-                if shouldShow, let activityId = deepLinkManager.activityToShow {
-                    handleDeepLinkActivity(activityId)
-                }
-            }
-            .onChange(of: deepLinkManager.shouldShowProfile) { _, shouldShow in
-                if shouldShow, let profileId = deepLinkManager.profileToShow {
-                    handleDeepLinkProfile(profileId)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .deepLinkActivityReceived)) { notification in
-                if let activityId = notification.userInfo?["activityId"] as? UUID {
-                    handleDeepLinkActivity(activityId)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .deepLinkProfileReceived)) { notification in
-                if let profileId = notification.userInfo?["profileId"] as? UUID {
-                    handleDeepLinkProfile(profileId)
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowActivityFullAlert"))) { notification in
-                if let message = notification.userInfo?["message"] as? String {
-                    inAppNotificationManager.showNotification(
-                        title: "Activity Full",
-                        message: message,
-                        type: .error,
-                        duration: 4.0
-                    )
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .showGlobalActivityPopup)) { notification in
-                if let activity = notification.userInfo?["activity"] as? FullFeedActivityDTO,
-                   let color = notification.userInfo?["color"] as? Color {
-                    globalPopupActivity = activity
-                    globalPopupColor = color
-                    globalPopupFromMapView = notification.userInfo?["fromMapView"] as? Bool ?? false
-                    showingGlobalActivityPopup = true
-                }
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
-                // Update the global popup activity if it's currently being displayed and matches the updated activity
-                if let updatedActivity = notification.object as? FullFeedActivityDTO,
-                   let currentActivity = globalPopupActivity,
-                   updatedActivity.id == currentActivity.id,
-                   showingGlobalActivityPopup {
-                    print("🔄 ContentView: Updating global popup activity for \(updatedActivity.title ?? "Unknown")")
-                    globalPopupActivity = updatedActivity
-                }
-            }
-            
-            // In-app notification overlay
-            VStack {
-                if inAppNotificationManager.isShowingNotification,
-                   let notification = inAppNotificationManager.currentNotification {
-                    InAppNotificationView(
-                        title: notification.title,
-                        message: notification.message,
-                        notificationType: notification.type,
-                        onDismiss: {
-                            inAppNotificationManager.dismissNotification()
-                        }
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-                    .zIndex(1000)
-                }
-                
-                Spacer()
-            }
-            
-            // Global activity popup overlay - covers entire screen including tab bar
-            if showingGlobalActivityPopup, let activity = globalPopupActivity, let color = globalPopupColor {
-                ActivityPopupDrawer(
-                    activity: activity,
-                    activityColor: color,
-                    isPresented: $showingGlobalActivityPopup,
-                    selectedTab: Binding<TabType?>(
-                        get: { selectedTabsEnum.toTabType },
-                        set: { if let newTab = $0 { selectedTabsEnum = Tabs(from: newTab) } }
-                    ),
-                    fromMapView: globalPopupFromMapView
-                )
-                .id("\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)")  // Force recreation when activity changes
-                .allowsHitTesting(true)
-                .ignoresSafeArea(.all, edges: .all) // Cover absolutely everything
-                .zIndex(999) // Below notifications but above everything else
-            }
-        }
-        .testInAppNotification() // Triple-tap anywhere to test in-app notifications
-    }
-    
-    // MARK: - Deep Link Handling
-    private func handleDeepLinkActivity(_ activityId: UUID) {
-        print("🎯 ContentView: Handling deep link for activity: \(activityId)")
-        
-        // Register user as invited to this activity if authenticated
-        if UserAuthViewModel.shared.isLoggedIn {
-            registerUserAsInvitedToActivity(activityId)
-        }
-        
-        // Switch to home tab to show the activity in feed
-        selectedTabsEnum = .home
-        
-        // Add a small delay to ensure tab switching completes before setting deep link state
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Set up the deep linked activity state
-            deepLinkedActivityId = activityId
-            shouldShowDeepLinkedActivity = true
-            
-            print("🎯 ContentView: Set deep link state - activityId: \(activityId), shouldShow: \(shouldShowDeepLinkedActivity)")
-        }
-        
-        // Clear the deep link manager state
-        deepLinkManager.clearPendingDeepLink()
-    }
-    
-    private func registerUserAsInvitedToActivity(_ activityId: UUID) {
-        guard let currentUser = UserAuthViewModel.shared.spawnUser else {
-            print("❌ ContentView: Cannot register invitation - user not authenticated")
-            return
-        }
-        
-        print("🎯 ContentView: Registering user \(currentUser.id) as invited to activity \(activityId)")
-        
-        // Call backend API to register the user as invited to this activity
-        Task {
-            do {
-                let url = URL(string: "\(ServiceConstants.URLs.apiBase)activities/\(activityId.uuidString)/invite/\(currentUser.id.uuidString)")!
-                
-                var request = URLRequest(url: url)
-                request.httpMethod = "POST"
-                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                
-                let (_, response) = try await URLSession.shared.data(for: request)
-                
-                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                    print("✅ ContentView: Successfully registered user as invited to activity")
-                    
-                    // Show success notification
-                    DispatchQueue.main.async {
-                        InAppNotificationManager.shared.showNotification(
-                            title: "You're invited!",
-                            message: "You've been added to this activity. Check it out!",
-                            type: .success,
-                            duration: 4.0
-                        )
-                    }
-                } else {
-                    print("❌ ContentView: Failed to register user as invited - HTTP \(String(describing: (response as? HTTPURLResponse)?.statusCode))")
-                }
-            } catch {
-                print("❌ ContentView: Error registering user as invited: \(error)")
-            }
-        }
-    }
-    
-    private func handleDeepLinkProfile(_ profileId: UUID) {
-        print("🎯 ContentView: Handling deep link for profile: \(profileId)")
-        
-        // Switch to friends tab to show the profile
-        selectedTabsEnum = .friends
-        
-        // Add a small delay to ensure tab switching completes before setting deep link state
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            // Set up the deep linked profile state
-            deepLinkedProfileId = profileId
-            shouldShowDeepLinkedProfile = true
-            
-            print("🎯 ContentView: Set deep link state - profileId: \(profileId), shouldShow: \(shouldShowDeepLinkedProfile)")
-        }
-        
-        // Clear the deep link manager state
-        deepLinkManager.clearPendingDeepLink()
-    }
+				print("👁️ [NAV] ContentView appeared")
+				// Resume timers when view appears
+				feedViewModel.resumeTimers()
+
+				// Configure tab bar appearance for theme compatibility
+				let appearance = UITabBarAppearance()
+				appearance.configureWithOpaqueBackground()
+				appearance.backgroundColor = UIColor { traitCollection in
+					switch traitCollection.userInterfaceStyle {
+					case .dark:
+						return UIColor.systemBackground.withAlphaComponent(0.9)
+					default:
+						return UIColor.systemBackground.withAlphaComponent(0.9)
+					}
+				}
+
+				UITabBar.appearance().standardAppearance = appearance
+				UITabBar.appearance().scrollEdgeAppearance = appearance
+				UITabBar.appearance().unselectedItemTintColor = UIColor { traitCollection in
+					switch traitCollection.userInterfaceStyle {
+					case .dark:
+						return UIColor.label
+					default:
+						return UIColor.label
+					}
+				}
+
+				// Fetch friend requests to show badge count
+				Task {
+					await friendsViewModel.fetchIncomingFriendRequests()
+				}
+			}
+			.onDisappear {
+				print("👋 [NAV] ContentView disappearing - cancelling background tasks")
+
+				// Pause timers to save resources when view is not visible
+				feedViewModel.pauseTimers()
+
+				// Cancel any ongoing background refresh to prevent blocking
+				backgroundRefreshTask?.cancel()
+				backgroundRefreshTask = nil
+				print("👋 [NAV] ContentView disappeared")
+			}
+			.onChange(of: deepLinkManager.shouldShowActivity) { _, shouldShow in
+				if shouldShow, let activityId = deepLinkManager.activityToShow {
+					handleDeepLinkActivity(activityId)
+				}
+			}
+			.onChange(of: deepLinkManager.shouldShowProfile) { _, shouldShow in
+				if shouldShow, let profileId = deepLinkManager.profileToShow {
+					handleDeepLinkProfile(profileId)
+				}
+			}
+			.onReceive(NotificationCenter.default.publisher(for: .deepLinkActivityReceived)) { notification in
+				if let activityId = notification.userInfo?["activityId"] as? UUID {
+					handleDeepLinkActivity(activityId)
+				}
+			}
+			.onReceive(NotificationCenter.default.publisher(for: .deepLinkProfileReceived)) { notification in
+				if let profileId = notification.userInfo?["profileId"] as? UUID {
+					handleDeepLinkProfile(profileId)
+				}
+			}
+			.onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowActivityFullAlert"))) {
+				notification in
+				if let message = notification.userInfo?["message"] as? String {
+					inAppNotificationManager.showNotification(
+						title: "Activity Full",
+						message: message,
+						type: .error,
+						duration: 4.0
+					)
+				}
+			}
+			.onReceive(NotificationCenter.default.publisher(for: .showGlobalActivityPopup)) { notification in
+				if let activity = notification.userInfo?["activity"] as? FullFeedActivityDTO,
+					let color = notification.userInfo?["color"] as? Color
+				{
+					globalPopupActivity = activity
+					globalPopupColor = color
+					globalPopupFromMapView = notification.userInfo?["fromMapView"] as? Bool ?? false
+					showingGlobalActivityPopup = true
+				}
+			}
+			.onReceive(NotificationCenter.default.publisher(for: .activityUpdated)) { notification in
+				// Update the global popup activity if it's currently being displayed and matches the updated activity
+				if let updatedActivity = notification.object as? FullFeedActivityDTO,
+					let currentActivity = globalPopupActivity,
+					updatedActivity.id == currentActivity.id,
+					showingGlobalActivityPopup
+				{
+					print("🔄 ContentView: Updating global popup activity for \(updatedActivity.title ?? "Unknown")")
+					globalPopupActivity = updatedActivity
+				}
+			}
+
+			// In-app notification overlay
+			VStack {
+				if inAppNotificationManager.isShowingNotification,
+					let notification = inAppNotificationManager.currentNotification
+				{
+					InAppNotificationView(
+						title: notification.title,
+						message: notification.message,
+						notificationType: notification.type,
+						onDismiss: {
+							inAppNotificationManager.dismissNotification()
+						}
+					)
+					.padding(.horizontal, 16)
+					.padding(.top, 8)
+					.transition(.move(edge: .top).combined(with: .opacity))
+					.zIndex(1000)
+				}
+
+				Spacer()
+			}
+
+			// Global activity popup overlay - covers entire screen including tab bar
+			if showingGlobalActivityPopup, let activity = globalPopupActivity, let color = globalPopupColor {
+				ActivityPopupDrawer(
+					activity: activity,
+					activityColor: color,
+					isPresented: $showingGlobalActivityPopup,
+					selectedTab: Binding<TabType?>(
+						get: { selectedTabsEnum.toTabType },
+						set: { if let newTab = $0 { selectedTabsEnum = Tabs(from: newTab) } }
+					),
+					fromMapView: globalPopupFromMapView
+				)
+				.id(
+					"\(activity.id.uuidString)-\(activity.title ?? "untitled")-\(activity.icon ?? "")-\(activity.participantUsers?.count ?? 0)"
+				)  // Force recreation when activity changes
+				.allowsHitTesting(true)
+				.ignoresSafeArea(.all, edges: .all)  // Cover absolutely everything
+				.zIndex(999)  // Below notifications but above everything else
+			}
+		}
+		.testInAppNotification()  // Triple-tap anywhere to test in-app notifications
+	}
+
+	// MARK: - Deep Link Handling
+	private func handleDeepLinkActivity(_ activityId: UUID) {
+		print("🎯 ContentView: Handling deep link for activity: \(activityId)")
+
+		// Register user as invited to this activity if authenticated
+		if UserAuthViewModel.shared.isLoggedIn {
+			registerUserAsInvitedToActivity(activityId)
+		}
+
+		// Switch to home tab to show the activity in feed
+		selectedTabsEnum = .home
+
+		// Add a small delay to ensure tab switching completes before setting deep link state
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+			// Set up the deep linked activity state
+			deepLinkedActivityId = activityId
+			shouldShowDeepLinkedActivity = true
+
+			print(
+				"🎯 ContentView: Set deep link state - activityId: \(activityId), shouldShow: \(shouldShowDeepLinkedActivity)"
+			)
+		}
+
+		// Clear the deep link manager state
+		deepLinkManager.clearPendingDeepLink()
+	}
+
+	private func registerUserAsInvitedToActivity(_ activityId: UUID) {
+		guard let currentUser = UserAuthViewModel.shared.spawnUser else {
+			print("❌ ContentView: Cannot register invitation - user not authenticated")
+			return
+		}
+
+		print("🎯 ContentView: Registering user \(currentUser.id) as invited to activity \(activityId)")
+
+		// Call backend API to register the user as invited to this activity
+		Task {
+			do {
+				let url = URL(
+					string:
+						"\(ServiceConstants.URLs.apiBase)activities/\(activityId.uuidString)/invite/\(currentUser.id.uuidString)"
+				)!
+
+				var request = URLRequest(url: url)
+				request.httpMethod = "POST"
+				request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+				let (_, response) = try await URLSession.shared.data(for: request)
+
+				if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+					print("✅ ContentView: Successfully registered user as invited to activity")
+
+					// Show success notification
+					DispatchQueue.main.async {
+						InAppNotificationManager.shared.showNotification(
+							title: "You're invited!",
+							message: "You've been added to this activity. Check it out!",
+							type: .success,
+							duration: 4.0
+						)
+					}
+				} else {
+					print(
+						"❌ ContentView: Failed to register user as invited - HTTP \(String(describing: (response as? HTTPURLResponse)?.statusCode))"
+					)
+				}
+			} catch {
+				print("❌ ContentView: Error registering user as invited: \(error)")
+			}
+		}
+	}
+
+	private func handleDeepLinkProfile(_ profileId: UUID) {
+		print("🎯 ContentView: Handling deep link for profile: \(profileId)")
+
+		// Switch to friends tab to show the profile
+		selectedTabsEnum = .friends
+
+		// Add a small delay to ensure tab switching completes before setting deep link state
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+			// Set up the deep linked profile state
+			deepLinkedProfileId = profileId
+			shouldShowDeepLinkedProfile = true
+
+			print(
+				"🎯 ContentView: Set deep link state - profileId: \(profileId), shouldShow: \(shouldShowDeepLinkedProfile)"
+			)
+		}
+
+		// Clear the deep link manager state
+		deepLinkManager.clearPendingDeepLink()
+	}
 }
 
 @available(iOS 17.0, *)

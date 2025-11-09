@@ -9,22 +9,22 @@ import AuthenticationServices  // apple auth
 import GoogleSignIn
 import GoogleSignInSwift
 import SwiftUI
-import UserNotifications // Add this import for notifications
+import UserNotifications  // Add this import for notifications
 
 struct LaunchView: View {
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 	@ObservedObject var themeService = ThemeService.shared
 	@Environment(\.colorScheme) var colorScheme
-    @Environment(\.dismiss) private var dismiss
-    @State private var showAuthButtons = false
-    @State private var animationCompleted = false
-    @State private var navigationPath = NavigationPath()
+	@Environment(\.dismiss) private var dismiss
+	@State private var showAuthButtons = false
+	@State private var animationCompleted = false
+	@State private var navigationPath = NavigationPath()
 
 	var body: some View {
 		NavigationStack(path: $navigationPath) {
 			VStack(spacing: 16) {
 				Spacer()
-				
+
 				if !animationCompleted {
 					// Initial Rive animation for new users
 					RiveAnimationView.logoAnimation(fileName: "spawn_logo_animation")
@@ -46,14 +46,14 @@ struct LaunchView: View {
 						.frame(width: 200, height: 100)
 						.transition(.opacity)
 				}
-				
+
 				if showAuthButtons {
 					Image("spontaneity_made_easy")
 						.resizable()
 						.scaledToFit()
 						.frame(width: 300, height: 100)
 						.transition(.opacity)
-					
+
 					Spacer().frame(height: 32)
 				}
 
@@ -63,9 +63,9 @@ struct LaunchView: View {
 						// Haptic feedback
 						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
 						impactGenerator.impactOccurred()
-						
+
 						Task {
-                            await userAuth.googleRegister()
+							await userAuth.googleRegister()
 						}
 					}) {
 						AuthProviderButtonView(authProviderType: .google)
@@ -78,7 +78,7 @@ struct LaunchView: View {
 						// Haptic feedback
 						let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
 						impactGenerator.impactOccurred()
-						
+
 						userAuth.appleRegister()
 					}) {
 						AuthProviderButtonView(authProviderType: .apple)
@@ -86,14 +86,17 @@ struct LaunchView: View {
 					.buttonStyle(AuthProviderButtonStyle())
 					.transition(.opacity)
 				}
-				
+
 				// Auto Sign-In Loading State
 				if userAuth.isAutoSigningIn {
 					VStack(spacing: 16) {
 						ProgressView()
-							.progressViewStyle(CircularProgressViewStyle(tint: universalAccentColor(from: themeService, environment: colorScheme)))
+							.progressViewStyle(
+								CircularProgressViewStyle(
+									tint: universalAccentColor(from: themeService, environment: colorScheme))
+							)
 							.scaleEffect(1.2)
-						
+
 						Text("Account found! Signing you in...")
 							.font(.onestMedium(size: 16))
 							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
@@ -102,7 +105,7 @@ struct LaunchView: View {
 					.padding(.horizontal, 40)
 					.transition(.opacity)
 				}
-				
+
 				Spacer()
 			}
 			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
@@ -127,6 +130,6 @@ struct LaunchView: View {
 
 @available(iOS 17, *)
 #Preview {
-    @Previewable @ObservedObject var appCache = AppCache.shared
+	@Previewable @ObservedObject var appCache = AppCache.shared
 	LaunchView().environmentObject(appCache)
 }

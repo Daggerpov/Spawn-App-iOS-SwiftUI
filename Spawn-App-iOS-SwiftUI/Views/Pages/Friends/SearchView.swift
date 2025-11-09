@@ -15,39 +15,39 @@ struct SearchView: View {
 		self.searchPlaceholderText = searchPlaceholderText
 		self.viewModel = viewModel
 	}
-    
+
 	var body: some View {
 		HStack {
 			Image(systemName: "magnifyingglass")
 				.font(.onestRegular(size: 18))
 				.foregroundColor(.gray)
-			
+
 			TextField(searchPlaceholderText, text: $viewModel.searchText)
 				.font(.onestRegular(size: 16))
-                .foregroundColor(universalAccentColor)
+				.foregroundColor(universalAccentColor)
 		}
 		.padding(.vertical, 12)
 		.padding(.horizontal, 16)
-        .background(
-            Rectangle()
-                .foregroundColor(universalBackgroundColor)
-                .frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
-                .cornerRadius(15)
-                .overlay(
-                    RoundedRectangle(
-                        cornerRadius: universalRectangleCornerRadius
-                    )
-                        .inset(by: 0.75)
-                        .stroke(.gray)
-                )
-        )
-        .foregroundColor(universalAccentColor)
+		.background(
+			Rectangle()
+				.foregroundColor(universalBackgroundColor)
+				.frame(maxWidth: .infinity, minHeight: 46, maxHeight: 46)
+				.cornerRadius(15)
+				.overlay(
+					RoundedRectangle(
+						cornerRadius: universalRectangleCornerRadius
+					)
+					.inset(by: 0.75)
+					.stroke(.gray)
+				)
+		)
+		.foregroundColor(universalAccentColor)
 	}
 }
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @ObservedObject var appCache = AppCache.shared
+	@Previewable @ObservedObject var appCache = AppCache.shared
 	@Previewable @StateObject var viewModel: SearchViewModel = SearchViewModel()
 	SearchView(searchPlaceholderText: "Search for friends", viewModel: viewModel).environmentObject(appCache)
 }

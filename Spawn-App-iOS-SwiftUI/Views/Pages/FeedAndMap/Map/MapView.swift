@@ -34,14 +34,14 @@ struct MapView: View {
 	@State private var hasInitialized = false
 	@State private var mapInitializationTask: Task<Void, Never>?
 	@State private var viewLifecycleState: ViewLifecycleState = .notAppeared
-	
+
 	enum ViewLifecycleState {
 		case notAppeared
 		case appearing
 		case appeared
 		case disappearing
 	}
-	
+
 	/// Checks if view is in a valid state for updates
 	private var shouldProcessUpdates: Bool {
 		return viewLifecycleState == .appeared
@@ -135,10 +135,10 @@ struct MapView: View {
 			print("🗺️ MapView: Ignoring duplicate onAppear")
 			return
 		}
-		
+
 		viewLifecycleState = .appearing
 		print("🗺️ MapView appeared")
-		
+
 		// CRITICAL: Reset map loaded state on each appearance
 		// This ensures tiles reload if they failed previously
 		isMapLoaded = false
@@ -159,7 +159,7 @@ struct MapView: View {
 		{
 			locationManager.startLocationUpdates()
 		}
-		
+
 		// NEW: Safety timeout that respects lifecycle
 		mapInitializationTask = Task { @MainActor in
 			do {
@@ -168,15 +168,15 @@ struct MapView: View {
 					print("🗺️ Map initialization cancelled before timeout")
 					return
 				}
-				
+
 				try await Task.sleep(nanoseconds: 3_000_000_000)  // 3 seconds
-				
+
 				// Check cancellation after sleep
 				guard !Task.isCancelled else {
 					print("🗺️ Map initialization cancelled after timeout")
 					return
 				}
-				
+
 				// Only update if still in appeared state AND not cancelled
 				if viewLifecycleState == .appeared && !isMapLoaded && !Task.isCancelled {
 					print("⚠️ Map loading timeout - dismissing loading indicator")
@@ -187,7 +187,7 @@ struct MapView: View {
 				print("🗺️ Map initialization task cancelled (expected)")
 			}
 		}
-		
+
 		viewLifecycleState = .appeared
 	}
 
@@ -196,12 +196,12 @@ struct MapView: View {
 			print("🗺️ MapView: Ignoring disappear when not appeared")
 			return
 		}
-		
+
 		viewLifecycleState = .disappearing
 		print("🗺️ MapView disappeared")
-		
+
 		locationManager.stopLocationUpdates()
-		
+
 		// Cancel any pending map initialization
 		mapInitializationTask?.cancel()
 		mapInitializationTask = nil
@@ -224,7 +224,8 @@ struct MapView: View {
 					longitudeDelta: 0.01
 				)
 			)
-			print("📍 MapView: Set initial region to user location (\(userLocation.latitude), \(userLocation.longitude))")
+			print(
+				"📍 MapView: Set initial region to user location (\(userLocation.latitude), \(userLocation.longitude))")
 			return
 		}
 
@@ -236,7 +237,9 @@ struct MapView: View {
 		}
 
 		// Priority 3: Default location (already set in @State)
-		print("📍 MapView: Using default region (user location not yet available, authorization: \(locationManager.authorizationStatus.rawValue))")
+		print(
+			"📍 MapView: Using default region (user location not yet available, authorization: \(locationManager.authorizationStatus.rawValue))"
+		)
 	}
 
 	private func handleUserLocationUpdate() {

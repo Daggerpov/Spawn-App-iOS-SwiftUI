@@ -1,5 +1,5 @@
-import SwiftUI
 import PhotosUI
+import SwiftUI
 import UIKit
 import UserNotifications
 
@@ -23,7 +23,7 @@ struct UserInfoInputView: View {
 	@State private var showImagePicker: Bool = false
 	@State private var showErrorAlert: Bool = false
 	@State private var errorMessage: String = ""
-	
+
 	// Error states for input fields
 	@State private var nameErrorState = InputFieldState()
 	@State private var emailErrorState = InputFieldState()
@@ -65,11 +65,11 @@ struct UserInfoInputView: View {
 	}
 
 	// MARK: - Subviews for better compilation
-	
+
 	private var backButtonView: some View {
 		HStack {
 			Button(action: {
-				// Clear any error states when going back  
+				// Clear any error states when going back
 				userAuth.clearAllErrors()
 				userAuth.resetState()
 			}) {
@@ -86,7 +86,7 @@ struct UserInfoInputView: View {
 		}
 		.padding(.top, 8)
 	}
-	
+
 	private var titleView: some View {
 		Text("Help your friends recognize you")
 			.font(.system(size: 30, weight: .semibold))
@@ -94,7 +94,7 @@ struct UserInfoInputView: View {
 			.multilineTextAlignment(.center)
 			.padding(.top, 20)
 	}
-	
+
 	private var profilePictureSection: some View {
 		ZStack {
 			ProfilePic()
@@ -117,7 +117,7 @@ struct UserInfoInputView: View {
 			SwiftUIImagePicker(selectedImage: $selectedImage)
 		}
 	}
-	
+
 	private var inputFieldsSection: some View {
 		VStack(spacing: 16) {
 			ErrorInputField(
@@ -152,7 +152,7 @@ struct UserInfoInputView: View {
 		}
 		.padding(.horizontal, 32)
 	}
-	
+
 	private var submitButtonView: some View {
 		Button(action: {
 			handleSubmitAction()
@@ -232,7 +232,7 @@ struct UserInfoInputView: View {
 				handleAuthAlert(alert)
 			}
 			.alert("Error", isPresented: $showErrorAlert) {
-				Button("OK", role: .cancel) { }
+				Button("OK", role: .cancel) {}
 			} message: {
 				Text(errorMessage)
 			}
@@ -240,7 +240,7 @@ struct UserInfoInputView: View {
 	}
 
 	// MARK: - Helper Methods
-	
+
 	private func handleUsernameChange(_ newValue: String) {
 		// Remove @ prefix if user types it
 		if newValue.hasPrefix("@") {
@@ -252,7 +252,7 @@ struct UserInfoInputView: View {
 			isUsernameValid = newValue.allSatisfy {
 				$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
 			}
-			
+
 			if !isUsernameValid {
 				usernameErrorState.setError("Username can only contain letters, numbers, underscores, and periods")
 			} else {
@@ -261,13 +261,13 @@ struct UserInfoInputView: View {
 		} else {
 			usernameErrorState.clearError()
 		}
-		
+
 		// Reset the username alert if username changes
 		if userAuth.authAlert == .usernameAlreadyInUse {
 			userAuth.authAlert = nil
 		}
 	}
-	
+
 	private func handleSubmitAction() {
 		validateFields()
 		if isFormValid {
@@ -302,10 +302,10 @@ struct UserInfoInputView: View {
 
 	private func validateFields() {
 		// Check name
-        isNameValid = !(userAuth.name ?? "").trimmingCharacters(
+		isNameValid = !(userAuth.name ?? "").trimmingCharacters(
 			in: .whitespacesAndNewlines
 		).isEmpty
-		
+
 		if !isNameValid {
 			nameErrorState.setError("Name is required")
 		} else {
@@ -314,11 +314,12 @@ struct UserInfoInputView: View {
 
 		// Check username
 		let trimmedUsername = username.trimmingCharacters(in: .whitespaces)
-		isUsernameValid = !trimmedUsername.isEmpty &&
-		trimmedUsername.allSatisfy {
-			$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
-		}
-		
+		isUsernameValid =
+			!trimmedUsername.isEmpty
+			&& trimmedUsername.allSatisfy {
+				$0.isLetter || $0.isNumber || $0 == "_" || $0 == "."
+			}
+
 		if trimmedUsername.isEmpty {
 			usernameErrorState.setError("Username is required")
 		} else if !isUsernameValid {
@@ -331,7 +332,7 @@ struct UserInfoInputView: View {
 		if needsEmail {
 			let emailRegex = #"^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"#
 			isEmailValid = email.range(of: emailRegex, options: .regularExpression) != nil
-			
+
 			if email.isEmpty {
 				emailErrorState.setError("Email is required")
 			} else if !isEmailValid {
@@ -344,15 +345,15 @@ struct UserInfoInputView: View {
 		// Only set form as valid if all required fields are valid
 		isFormValid = isNameValid && isUsernameValid && (!needsEmail || isEmailValid)
 	}
-	
+
 	private func handleAuthAlert(_ alert: AuthAlertType?) {
 		// Clear previous field errors when an auth alert occurs
 		nameErrorState.clearError()
 		emailErrorState.clearError()
 		usernameErrorState.clearError()
-		
+
 		guard let alert = alert else { return }
-		
+
 		// Set field-specific errors based on the alert type
 		switch alert {
 		case .emailAlreadyInUse:
@@ -375,7 +376,7 @@ struct UserInfoInputView: View {
 			let granted = await NotificationService.shared.requestPermission()
 			if granted {
 				print("Notification permission granted")
-				
+
 				// Send a welcome notification using the NotificationDataBuilder
 				NotificationService.shared.scheduleLocalNotification(
 					title: "Welcome to Spawn!",
@@ -391,6 +392,6 @@ struct UserInfoInputView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-    @Previewable @ObservedObject var appCache = AppCache.shared
+	@Previewable @ObservedObject var appCache = AppCache.shared
 	UserInfoInputView().environmentObject(appCache)
 }

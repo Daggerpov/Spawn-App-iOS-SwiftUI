@@ -8,8 +8,8 @@
 import Foundation
 
 enum ActivityInfoType {
-    case title
-    case location
-    case time
-    case distance
+	case title
+	case location
+	case time
+	case distance
 }

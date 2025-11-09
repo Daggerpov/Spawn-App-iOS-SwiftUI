@@ -6,9 +6,9 @@
 //
 
 struct OAuthRegistrationDTO: Codable {
-    let idToken: String
-    let provider: String
-    let email: String?
-    let name: String?
-    let profilePictureUrl: String?
-} 
+	let idToken: String
+	let provider: String
+	let email: String?
+	let name: String?
+	let profilePictureUrl: String?
+}

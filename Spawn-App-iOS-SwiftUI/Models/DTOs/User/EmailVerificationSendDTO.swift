@@ -6,5 +6,5 @@
 //
 
 struct EmailVerificationSendDTO: Codable {
-    let email: String
-} 
+	let email: String
+}

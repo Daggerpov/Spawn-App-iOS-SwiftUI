@@ -18,7 +18,7 @@ class FullActivityChatMessageDTO: Identifiable, Codable, Equatable {
 	var likedByUsers: [BaseUserDTO]?
 	// tech note: in user's view of activity, check if that user is in
 	// the `ChatMessage`'s `likedBy` array (`[User]`)
-	
+
 	static func == (lhs: FullActivityChatMessageDTO, rhs: FullActivityChatMessageDTO) -> Bool {
 		return lhs.id == rhs.id
 	}

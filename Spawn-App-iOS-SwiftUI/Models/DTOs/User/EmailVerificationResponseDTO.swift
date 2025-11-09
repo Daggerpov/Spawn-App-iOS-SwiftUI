@@ -6,6 +6,6 @@
 //
 
 struct EmailVerificationResponseDTO: Codable {
-    let secondsUntilNextAttempt: Int
-    let message: String
-} 
+	let secondsUntilNextAttempt: Int
+	let message: String
+}

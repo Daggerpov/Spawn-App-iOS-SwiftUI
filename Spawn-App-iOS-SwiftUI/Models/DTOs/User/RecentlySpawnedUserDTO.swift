@@ -8,6 +8,6 @@
 import Foundation
 
 struct RecentlySpawnedUserDTO: Codable, Hashable {
-    var user: BaseUserDTO
-    var dateTime: Date
+	var user: BaseUserDTO
+	var dateTime: Date
 }

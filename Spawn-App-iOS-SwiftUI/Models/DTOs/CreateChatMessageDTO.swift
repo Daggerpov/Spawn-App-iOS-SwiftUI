@@ -22,4 +22,3 @@ class CreateChatMessageDTO: Identifiable, Codable {
 		self.activityId = activityId
 	}
 }
-

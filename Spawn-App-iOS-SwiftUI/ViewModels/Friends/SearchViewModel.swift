@@ -5,17 +5,17 @@
 //  Created by Daniel Agapov on 2024-11-19.
 //
 
+import Combine
 import Foundation
 import SwiftUI
-import Combine
 
 class SearchViewModel: ObservableObject {
 	@Published var searchText: String = ""
 	@Published var isSearching: Bool = false
 	@Published var debouncedSearchText: String = ""
-	
+
 	private var cancellables = Set<AnyCancellable>()
-	
+
 	init() {
 		// Set up a debounce mechanism to avoid too many API calls while typing
 		$searchText
@@ -26,7 +26,7 @@ class SearchViewModel: ObservableObject {
 			}
 			.store(in: &cancellables)
 	}
-	
+
 	func clearSearch() {
 		searchText = ""
 	}

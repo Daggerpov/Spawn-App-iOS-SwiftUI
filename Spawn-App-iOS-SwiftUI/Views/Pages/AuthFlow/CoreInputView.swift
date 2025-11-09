@@ -8,176 +8,177 @@
 import SwiftUI
 
 struct CoreInputView: View {
-    @ObservedObject private var viewModel: UserAuthViewModel = UserAuthViewModel.shared
-    @State var input1 = ""
-    @State var input2 = ""
-    @ObservedObject var themeService = ThemeService.shared
-    @Environment(\.colorScheme) var colorScheme
-    
-    var heading: String
-    var subtitle: String
-    
-    var label1: String
-    var label2: String?
-    
-    var inputText1: String
-    var inputText2: String?
-    
-    var labelSubtitle: String?
-    
-    var continueAction: () -> Void
-    
-    private var isFormValid: Bool {
-        !input1.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-        !input2.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-    
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Navigation Bar
-                HStack {
-                    Button(action: {
-                        // Back action
-                    }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                
-                Spacer()
-                
-                // Main Content
-                VStack(spacing: 32) {
-                    // Title and Subtitle
-                    VStack(spacing: 16) {
-                        Text(heading)
-                            .font(heading1)
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                        
-                        Text(subtitle)
-                            .font(.onestRegular(size: 16))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .padding(.horizontal, 40)
-                    
-                    // Form Fields
-                    VStack(spacing: 24) {
-                        // Username Field
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(label1)
-                                .font(.onestRegular(size: 16))
-                                .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                            
-                            TextField(inputText1, text: $input1)
-                                .textFieldStyle(CustomTextFieldStyle())
-                        }
-                        
-                        // Password Field
-                        if let label2 = self.label2, let inputText2 = self.inputText2 {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text(label2)
-                                    .font(.onestRegular(size: 16))
-                                    .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
-                                
-                                SecureField(inputText2, text: $input2)
-                                    .textFieldStyle(CustomTextFieldStyle())
-                            }
-                            // Continue Button
-                            Button(action: {
-                                // Haptic feedback
-                                let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                                impactGenerator.impactOccurred()
-                                
-                                // Execute action with slight delay for animation
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    continueAction()
-                                }
-                            }) {
-                                OnboardingButtonCoreView("Continue") {
-                                    isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
-                                }
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            .padding(.top, -16)
-                            .padding(.bottom, -30)
-                            .padding(.horizontal, -22)
-                            .disabled(!isFormValid)
-                        }
-                    }
-                    .padding(.horizontal, 40)
-                    
-                    if let buttonSubtitle = labelSubtitle {
-                        Text(buttonSubtitle)
-                            .font(.onestRegular(size: 16))
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    
-                    
-                    // Divider with "or"
-                    HStack {
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: 1)
-                        
-                        Text("or")
-                            .font(.system(size: 16))
-                            .foregroundColor(universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7))
-                            .padding(.horizontal, 16)
-                        
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .frame(height: 1)
-                    }
-                    .padding(.horizontal, 40)
-                    
-                    // External Login Buttons
-                    VStack(spacing: 16) {
-                        // Continue with Apple
-                        Button(action: {
-                            // Haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                            impactGenerator.impactOccurred()
-                            
-                            viewModel.appleRegister()
-                        }) {
-                            AuthProviderButtonView(.apple)
-                        }
-                        .buttonStyle(AuthProviderButtonStyle())
-                       
-                        
-                        // Continue with Google
-                        Button(action: {
-                            // Haptic feedback
-                            let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-                            impactGenerator.impactOccurred()
-                            
-                            Task{
-                                await viewModel.googleRegister()
-                            }
-                        }) {
-                            AuthProviderButtonView(.google)
-                        }
-                        .buttonStyle(AuthProviderButtonStyle())
-                    }
-                    .padding(.horizontal, 40)
-                }
-                
-                Spacer()
-            }
-            .background(universalBackgroundColor(from: themeService, environment: colorScheme))
-        }
-        .navigationBarHidden(true)
-        .withAuthNavigation(viewModel)
-    }
+	@ObservedObject private var viewModel: UserAuthViewModel = UserAuthViewModel.shared
+	@State var input1 = ""
+	@State var input2 = ""
+	@ObservedObject var themeService = ThemeService.shared
+	@Environment(\.colorScheme) var colorScheme
+
+	var heading: String
+	var subtitle: String
+
+	var label1: String
+	var label2: String?
+
+	var inputText1: String
+	var inputText2: String?
+
+	var labelSubtitle: String?
+
+	var continueAction: () -> Void
+
+	private var isFormValid: Bool {
+		!input1.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+			&& !input2.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+	}
+
+	var body: some View {
+		NavigationStack {
+			VStack(spacing: 0) {
+				// Navigation Bar
+				HStack {
+					Button(action: {
+						// Back action
+					}) {
+						Image(systemName: "chevron.left")
+							.font(.title2)
+							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+					}
+					Spacer()
+				}
+				.padding(.horizontal, 20)
+				.padding(.top, 10)
+
+				Spacer()
+
+				// Main Content
+				VStack(spacing: 32) {
+					// Title and Subtitle
+					VStack(spacing: 16) {
+						Text(heading)
+							.font(heading1)
+							.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+
+						Text(subtitle)
+							.font(.onestRegular(size: 16))
+							.foregroundColor(
+								universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7)
+							)
+							.multilineTextAlignment(.center)
+							.lineLimit(2)
+					}
+					.padding(.horizontal, 40)
+
+					// Form Fields
+					VStack(spacing: 24) {
+						// Username Field
+						VStack(alignment: .leading, spacing: 8) {
+							Text(label1)
+								.font(.onestRegular(size: 16))
+								.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+
+							TextField(inputText1, text: $input1)
+								.textFieldStyle(CustomTextFieldStyle())
+						}
+
+						// Password Field
+						if let label2 = self.label2, let inputText2 = self.inputText2 {
+							VStack(alignment: .leading, spacing: 8) {
+								Text(label2)
+									.font(.onestRegular(size: 16))
+									.foregroundColor(universalAccentColor(from: themeService, environment: colorScheme))
+
+								SecureField(inputText2, text: $input2)
+									.textFieldStyle(CustomTextFieldStyle())
+							}
+							// Continue Button
+							Button(action: {
+								// Haptic feedback
+								let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+								impactGenerator.impactOccurred()
+
+								// Execute action with slight delay for animation
+								DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+									continueAction()
+								}
+							}) {
+								OnboardingButtonCoreView("Continue") {
+									isFormValid ? figmaIndigo : Color.gray.opacity(0.6)
+								}
+							}
+							.buttonStyle(PlainButtonStyle())
+							.padding(.top, -16)
+							.padding(.bottom, -30)
+							.padding(.horizontal, -22)
+							.disabled(!isFormValid)
+						}
+					}
+					.padding(.horizontal, 40)
+
+					if let buttonSubtitle = labelSubtitle {
+						Text(buttonSubtitle)
+							.font(.onestRegular(size: 16))
+							.multilineTextAlignment(.center)
+							.lineLimit(2)
+					}
+
+					// Divider with "or"
+					HStack {
+						Rectangle()
+							.fill(Color.gray.opacity(0.3))
+							.frame(height: 1)
+
+						Text("or")
+							.font(.system(size: 16))
+							.foregroundColor(
+								universalAccentColor(from: themeService, environment: colorScheme).opacity(0.7)
+							)
+							.padding(.horizontal, 16)
+
+						Rectangle()
+							.fill(Color.gray.opacity(0.3))
+							.frame(height: 1)
+					}
+					.padding(.horizontal, 40)
+
+					// External Login Buttons
+					VStack(spacing: 16) {
+						// Continue with Apple
+						Button(action: {
+							// Haptic feedback
+							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+							impactGenerator.impactOccurred()
+
+							viewModel.appleRegister()
+						}) {
+							AuthProviderButtonView(.apple)
+						}
+						.buttonStyle(AuthProviderButtonStyle())
+
+						// Continue with Google
+						Button(action: {
+							// Haptic feedback
+							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+							impactGenerator.impactOccurred()
+
+							Task {
+								await viewModel.googleRegister()
+							}
+						}) {
+							AuthProviderButtonView(.google)
+						}
+						.buttonStyle(AuthProviderButtonStyle())
+					}
+					.padding(.horizontal, 40)
+				}
+
+				Spacer()
+			}
+			.background(universalBackgroundColor(from: themeService, environment: colorScheme))
+		}
+		.navigationBarHidden(true)
+		.withAuthNavigation(viewModel)
+	}
 }
 
 // MARK: - Supporting Views

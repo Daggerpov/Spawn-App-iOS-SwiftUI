@@ -17,17 +17,17 @@ struct ActivityInfoView: View {
 
 	var body: some View {
 		HStack {
-//			Image(systemName: viewModel.imageSystemName)
-//				.foregroundColor(.white)
-//				.font(.system(size: 14))
-			
+			//			Image(systemName: viewModel.imageSystemName)
+			//				.foregroundColor(.white)
+			//				.font(.system(size: 14))
+
 			VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.getDisplayString(activityInfoType: .location))
+				Text(viewModel.getDisplayString(activityInfoType: .location))
 					.foregroundColor(.white)
 					.font(.caption)
 					.bold()
 			}
-			
+
 			Spacer()
 		}
 	}
@@ -36,5 +36,8 @@ struct ActivityInfoView: View {
 @available(iOS 17, *)
 #Preview {
 	@Previewable @ObservedObject var appCache = AppCache.shared
-	ActivityInfoView(activity: FullFeedActivityDTO.mockDinnerActivity, activityInfoType: ActivityInfoType.location, locationManager: LocationManager.shared).environmentObject(appCache)
+	ActivityInfoView(
+		activity: FullFeedActivityDTO.mockDinnerActivity, activityInfoType: ActivityInfoType.location,
+		locationManager: LocationManager.shared
+	).environmentObject(appCache)
 }

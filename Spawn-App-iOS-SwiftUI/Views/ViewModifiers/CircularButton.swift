@@ -30,11 +30,11 @@ struct CircularButtonStyling: ViewModifier {
 	var source: String? = "default"
 	var buttonActionCallback: () -> Void
 	var systemName: String
-	
+
 	// Animation states for 3D effect
 	@State private var isPressed = false
 	@State private var scale: CGFloat = 1.0
-	
+
 	func body(content: Content) -> some View {
 		content
 			.frame(width: frameSize, height: frameSize)
@@ -59,7 +59,7 @@ struct CircularButtonStyling: ViewModifier {
 				Button(action: {
 					// Unified haptic feedback
 					HapticFeedbackService.shared.medium()
-					
+
 					// Execute action with slight delay for animation
 					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 						buttonActionCallback()
@@ -88,7 +88,7 @@ struct CircularButtonStyling: ViewModifier {
 						if !isPressed {
 							isPressed = true
 							scale = 0.95
-							
+
 							// Additional haptic feedback for press down
 							HapticFeedbackService.shared.selection()
 						}
@@ -113,7 +113,7 @@ struct CircularButtonStyling: ViewModifier {
 				height: 17.5,
 				frameSize: 40
 			)
-		
+
 		// Map style circular button
 		Circle()
 			.CircularButton(

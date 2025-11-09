@@ -9,9 +9,9 @@ import Foundation
 
 /// Matches the backend SearchedUserResult class
 struct SearchedUserResult: Codable, Hashable {
-    var users: [SearchResultUserDTO]
-    
-    init(users: [SearchResultUserDTO]) {
-        self.users = users
-    }
-} 
+	var users: [SearchResultUserDTO]
+
+	init(users: [SearchResultUserDTO]) {
+		self.users = users
+	}
+}

@@ -13,21 +13,21 @@ struct MapControlButtons: View {
 	// MARK: - Bindings
 	@Binding var is3DMode: Bool
 	@Binding var region: MKCoordinateRegion
-	
+
 	// MARK: - Properties
 	@ObservedObject var locationManager: LocationManager
-	
+
 	// MARK: - State
 	@State private var is3DPressed = false
 	@State private var isLocationPressed = false
-	
+
 	// MARK: - Body
-	
+
 	var body: some View {
 		VStack {
 			HStack {
 				Spacer()
-				
+
 				VStack(spacing: 12) {
 					// 3D Toggle Button
 					Button {
@@ -55,7 +55,7 @@ struct MapControlButtons: View {
 								is3DPressed = false
 							}
 					)
-					
+
 					// Location Center Button
 					Button {
 						handleCenterOnUser()
@@ -88,27 +88,27 @@ struct MapControlButtons: View {
 				.padding(.trailing, 16)
 			}
 			.padding(.top, 16)
-			
+
 			Spacer()
 		}
 		.animation(.easeInOut(duration: 0.2), value: is3DPressed)
 		.animation(.easeInOut(duration: 0.2), value: isLocationPressed)
 	}
-	
+
 	// MARK: - Actions
-	
+
 	private func handleToggle3D() {
 		hapticFeedback(.medium)
 		withAnimation(.easeInOut(duration: 0.3)) {
 			is3DMode.toggle()
 		}
 	}
-	
+
 	private func handleCenterOnUser() {
 		guard let userLocation = locationManager.userLocation else {
 			return
 		}
-		
+
 		hapticFeedback(.medium)
 		withAnimation(.easeInOut(duration: 0.75)) {
 			region = MKCoordinateRegion(
@@ -117,9 +117,9 @@ struct MapControlButtons: View {
 			)
 		}
 	}
-	
+
 	// MARK: - Haptic Feedback
-	
+
 	private func hapticFeedback(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
 		let generator = UIImpactFeedbackGenerator(style: style)
 		generator.impactOccurred()
