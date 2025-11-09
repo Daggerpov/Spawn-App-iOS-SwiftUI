@@ -48,9 +48,15 @@ struct FriendsView: View {
             }
         }
         .task {
-            await viewModel.fetchIncomingFriendRequests()
+            // CRITICAL FIX: Launch in detached task to prevent blocking navigation
+            // Previous implementation used await directly, which could block the main thread
+            // during tab transitions if MapView cleanup was happening
+            Task.detached(priority: .userInitiated) {
+                await viewModel.fetchIncomingFriendRequests()
+            }
         }
         .onAppear {
+            print("👁️ [NAV] FriendsView appeared")
             // Handle deep link if one is pending when view appears
             if shouldShowDeepLinkedProfile, let profileId = deepLinkedProfileId {
                 handleDeepLinkedProfile(profileId)
