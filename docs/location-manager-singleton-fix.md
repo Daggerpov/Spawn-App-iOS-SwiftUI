@@ -104,3 +104,4 @@ When running the app, you should see:
   - Views should observe, not own, the shared instance
   - Prevents accidental deallocation when views disappear
 
+
