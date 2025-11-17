@@ -35,7 +35,7 @@
 
 ## 1. iPhone Simulator (for end-to-end testing)
 
-![alt text](images/onboarding-images/image-4.png)
+<!-- ![alt text](images/onboarding-images/image-4.png)-->
 
 ## 2. Previewing within XCode (for quickly seeing UI changes)
 
