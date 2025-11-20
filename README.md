@@ -1,17 +1,5 @@
 # Spawn-App-iOS-SwiftUI
 
-## Table of contents:
-- [Onboarding](#onboarding)
-  - [Links](#links)
-  - [Setup](#setup)
-- [Code Explanations](#code-explanations)
-    - [API Calls](#api-calls)
-    - [Asynchrony in SwiftUI](#asynchrony-in-swiftui)
-    - [SwiftUI Syntax](#swiftui-syntax)
-    - [MVVM Architecture](#mvvm-architecture)
-
-# Onboarding
-
 ## Links
 
 - [Back-End Repository](https://github.com/Daggerpov/Spawn-App-Back-End)
@@ -53,7 +41,7 @@ More complicated case, to supply initial state and `init()` parameters:
 
 </br>
 
-# Code Explanations
+# iOS/Swift Code Explanations
 
 <details>
 
