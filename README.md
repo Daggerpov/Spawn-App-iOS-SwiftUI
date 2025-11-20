@@ -9,9 +9,6 @@
     - [Asynchrony in SwiftUI](#asynchrony-in-swiftui)
     - [SwiftUI Syntax](#swiftui-syntax)
     - [MVVM Architecture](#mvvm-architecture)
-    - [Mobile Caching Implementation](#mobile-caching-implementation)
-    - [Map Integration](#map-integration)
-    - [Configuring Deeplink Share URLs](#configuring-deeplink-share-urls)
 
 # Onboarding
 
@@ -20,9 +17,6 @@
 - [Back-End Repository](https://github.com/Daggerpov/Spawn-App-Back-End)
 - [Swift Learning Resources](https://danielagapov.notion.site/Coding-Learning-Resources-5e2294e8ffa342b0bd103aafee808f99#12edfd4fb3e380a5b6dee6d78a2c67dd:~:text=File%20Structure-,Swift,-Basics)
 - [SwiftUI Learning Resources](https://danielagapov.notion.site/Coding-Learning-Resources-5e2294e8ffa342b0bd103aafee808f99#12edfd4fb3e380a5b6dee6d78a2c67dd)
-- Ask Daniel for:
-    - Figma link
-    - TestFlight invite, to try the app on your own phone
 
 
 ## Setup
