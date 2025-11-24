@@ -9,6 +9,8 @@
 //  and updating the cache. This reduces code duplication across ViewModels and
 //  simplifies their dependencies.
 //
+//  Refactored to use configuration-based approach with DataType enum for better maintainability.
+//
 
 import Combine
 import Foundation
@@ -42,23 +44,10 @@ enum FetchResult<T> {
 
 /// Protocol defining the DataFetcher interface
 protocol IDataFetcher {
-	/// Fetch data with a specified cache policy
+	/// Fetch data using a DataType configuration
 	func fetch<T: Decodable>(
-		cacheKey: String,
-		cachePolicy: CachePolicy,
-		cacheProvider: @escaping () -> T?,
-		apiProvider: @escaping () async throws -> T,
-		cacheUpdater: @escaping (T) -> Void
-	) async -> FetchResult<T>
-
-	/// Fetch user-specific data (common pattern with UUID key)
-	func fetchUserData<T: Decodable>(
-		userId: UUID,
-		dataType: String,
-		cachePolicy: CachePolicy,
-		cacheProvider: @escaping (UUID) -> T?,
-		apiProvider: @escaping (UUID) async throws -> T,
-		cacheUpdater: @escaping (UUID, T) -> Void
+		_ dataType: DataType,
+		cachePolicy: CachePolicy
 	) async -> FetchResult<T>
 }
 
@@ -75,95 +64,88 @@ class DataFetcher: IDataFetcher {
 		self.appCache = appCache
 	}
 
-	/// Generic fetch method that handles cache-first, then API pattern
+	/// Generic fetch method using DataType configuration
 	func fetch<T: Decodable>(
-		cacheKey: String,
-		cachePolicy: CachePolicy,
-		cacheProvider: @escaping () -> T?,
-		apiProvider: @escaping () async throws -> T,
-		cacheUpdater: @escaping (T) -> Void
+		_ dataType: DataType,
+		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<T> {
+
+		// Get cache operations for this data type
+		guard let cacheOps = CacheOperationsFactory.operations(for: dataType, appCache: appCache) as CacheOperations<T>?
+		else {
+			print("❌ [DataFetcher] No cache operations found for \(dataType.displayName)")
+			return .failure(DataFetcherError.unsupportedDataType)
+		}
+
+		let cacheKey = dataType.cacheKey
 
 		switch cachePolicy {
 		case .cacheOnly:
 			// Only use cache, never fetch from API
-			if let cachedData = cacheProvider() {
-				print("✅ [DataFetcher] Using cached data for key: \(cacheKey)")
+			if let cachedData = cacheOps.provider() {
+				print("✅ [DataFetcher] Using cached \(dataType.displayName)")
 				return .success(cachedData, source: .cache)
 			} else {
-				print("⚠️ [DataFetcher] No cached data available for key: \(cacheKey)")
+				print("⚠️ [DataFetcher] No cached \(dataType.displayName) available")
 				return .failure(DataFetcherError.noCachedData)
 			}
 
 		case .apiOnly:
 			// Always fetch from API, bypass cache
-			print("🔄 [DataFetcher] Fetching from API (cache bypassed) for key: \(cacheKey)")
-			do {
-				let data = try await apiProvider()
-				cacheUpdater(data)
-				print("✅ [DataFetcher] API fetch successful for key: \(cacheKey)")
-				return .success(data, source: .api)
-			} catch {
-				print("❌ [DataFetcher] API fetch failed for key: \(cacheKey) - \(error)")
-				return .failure(error)
-			}
+			print("🔄 [DataFetcher] Fetching \(dataType.displayName) from API (cache bypassed)")
+			return await fetchFromAPI(dataType: dataType, cacheOps: cacheOps)
 
 		case .cacheFirst(let backgroundRefresh):
 			// Check cache first
-			if let cachedData = cacheProvider() {
-				print("✅ [DataFetcher] Using cached data for key: \(cacheKey)")
+			if let cachedData = cacheOps.provider() {
+				print("✅ [DataFetcher] Using cached \(dataType.displayName)")
 
 				// If background refresh is enabled, fetch from API in background
 				if backgroundRefresh {
 					Task {
-						print("🔄 [DataFetcher] Refreshing cache in background for key: \(cacheKey)")
-						do {
-							let freshData = try await apiProvider()
-							cacheUpdater(freshData)
-							print("✅ [DataFetcher] Background refresh successful for key: \(cacheKey)")
-						} catch {
-							print("⚠️ [DataFetcher] Background refresh failed for key: \(cacheKey) - \(error)")
-							// Don't propagate error since we already have cached data
-						}
+						print("🔄 [DataFetcher] Refreshing \(dataType.displayName) in background")
+						let _ = await fetchFromAPI(dataType: dataType, cacheOps: cacheOps)
 					}
 				}
 
 				return .success(cachedData, source: .cache)
 			} else {
 				// No cached data, fetch from API
-				print("🔄 [DataFetcher] No cached data, fetching from API for key: \(cacheKey)")
-				do {
-					let data = try await apiProvider()
-					cacheUpdater(data)
-					print("✅ [DataFetcher] API fetch successful for key: \(cacheKey)")
-					return .success(data, source: .api)
-				} catch {
-					print("❌ [DataFetcher] API fetch failed for key: \(cacheKey) - \(error)")
-					return .failure(error)
-				}
+				print("🔄 [DataFetcher] No cached \(dataType.displayName), fetching from API")
+				return await fetchFromAPI(dataType: dataType, cacheOps: cacheOps)
 			}
 		}
 	}
 
-	/// Convenience method for fetching user-specific data (common pattern)
-	func fetchUserData<T: Decodable>(
-		userId: UUID,
-		dataType: String,
-		cachePolicy: CachePolicy,
-		cacheProvider: @escaping (UUID) -> T?,
-		apiProvider: @escaping (UUID) async throws -> T,
-		cacheUpdater: @escaping (UUID, T) -> Void
+	/// Internal method to fetch from API
+	private func fetchFromAPI<T: Decodable>(
+		dataType: DataType,
+		cacheOps: CacheOperations<T>
 	) async -> FetchResult<T> {
 
-		let cacheKey = "\(dataType)-\(userId)"
+		// Build URL from endpoint
+		guard let url = URL(string: APIService.baseURL + dataType.endpoint) else {
+			print("❌ [DataFetcher] Invalid URL for \(dataType.displayName)")
+			return .failure(DataFetcherError.invalidURL)
+		}
 
-		return await fetch(
-			cacheKey: cacheKey,
-			cachePolicy: cachePolicy,
-			cacheProvider: { cacheProvider(userId) },
-			apiProvider: { try await apiProvider(userId) },
-			cacheUpdater: { data in cacheUpdater(userId, data) }
-		)
+		do {
+			// Fetch from API
+			let data: T = try await apiService.fetchData(
+				from: url,
+				parameters: dataType.parameters
+			)
+
+			// Update cache
+			cacheOps.updater(data)
+
+			print("✅ [DataFetcher] API fetch successful for \(dataType.displayName)")
+			return .success(data, source: .api)
+
+		} catch {
+			print("❌ [DataFetcher] API fetch failed for \(dataType.displayName): \(error)")
+			return .failure(error)
+		}
 	}
 }
 
@@ -171,21 +153,28 @@ class DataFetcher: IDataFetcher {
 
 enum DataFetcherError: Error, LocalizedError {
 	case noCachedData
+	case unsupportedDataType
+	case invalidURL
 	case apiFailed(Error)
 
 	var errorDescription: String? {
 		switch self {
 		case .noCachedData:
 			return "No cached data available"
+		case .unsupportedDataType:
+			return "Unsupported data type configuration"
+		case .invalidURL:
+			return "Invalid API endpoint URL"
 		case .apiFailed(let error):
 			return "API fetch failed: \(error.localizedDescription)"
 		}
 	}
 }
 
-// MARK: - Specialized Data Fetchers
+// MARK: - Convenience Extensions (Optional)
 
-/// Extension with convenience methods for common data types
+/// Optional convenience methods for common use cases
+/// These are just wrappers around the generic fetch method for better discoverability
 extension DataFetcher {
 
 	// MARK: - Activities
@@ -194,49 +183,13 @@ extension DataFetcher {
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[FullFeedActivityDTO]> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "activities",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.activities[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/activities")!
-				let activities: [FullFeedActivityDTO] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return activities
-			},
-			cacheUpdater: { userId, activities in
-				self.appCache.updateActivitiesForUser(activities, userId: userId)
-			}
-		)
+		return await fetch(.activities(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	func fetchActivityTypes(
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[ActivityTypeDTO]> {
-		return await fetch(
-			cacheKey: "activityTypes",
-			cachePolicy: cachePolicy,
-			cacheProvider: {
-				let types = self.appCache.activityTypes
-				return types.isEmpty ? nil : types
-			},
-			apiProvider: {
-				let url = URL(string: APIService.baseURL + "activity-types")!
-				let types: [ActivityTypeDTO] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return types
-			},
-			cacheUpdater: { types in
-				self.appCache.updateActivityTypes(types)
-			}
-		)
+		return await fetch(.activityTypes, cachePolicy: cachePolicy)
 	}
 
 	// MARK: - Friends
@@ -245,100 +198,28 @@ extension DataFetcher {
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[FullFriendUserDTO]> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "friends",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.friends[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/friends")!
-				let friends: [FullFriendUserDTO] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return friends
-			},
-			cacheUpdater: { userId, friends in
-				self.appCache.updateFriendsForUser(friends, userId: userId)
-			}
-		)
+		return await fetch(.friends(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	func fetchRecommendedFriends(
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[RecommendedFriendUserDTO]> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "recommendedFriends",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.recommendedFriends[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/recommended-friends")!
-				let recommendedFriends: [RecommendedFriendUserDTO] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return recommendedFriends
-			},
-			cacheUpdater: { userId, recommendedFriends in
-				self.appCache.updateRecommendedFriendsForUser(recommendedFriends, userId: userId)
-			}
-		)
+		return await fetch(.recommendedFriends(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	func fetchFriendRequests(
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[FetchFriendRequestDTO]> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "friendRequests",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.friendRequests[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/friend-requests")!
-				let requests: [FetchFriendRequestDTO] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return requests
-			},
-			cacheUpdater: { userId, requests in
-				self.appCache.updateFriendRequestsForUser(requests, userId: userId)
-			}
-		)
+		return await fetch(.friendRequests(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	func fetchSentFriendRequests(
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[FetchSentFriendRequestDTO]> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "sentFriendRequests",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.sentFriendRequests[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/sent-friend-requests")!
-				let requests: [FetchSentFriendRequestDTO] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return requests
-			},
-			cacheUpdater: { userId, requests in
-				self.appCache.updateSentFriendRequestsForUser(requests, userId: userId)
-			}
-		)
+		return await fetch(.sentFriendRequests(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	// MARK: - Profile
@@ -347,99 +228,27 @@ extension DataFetcher {
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<UserStatsDTO> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "profileStats",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.profileStats[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/stats")!
-				let stats: UserStatsDTO = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return stats
-			},
-			cacheUpdater: { userId, stats in
-				self.appCache.updateProfileStats(userId, stats)
-			}
-		)
+		return await fetch(.profileStats(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	func fetchProfileInterests(
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[String]> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "profileInterests",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.profileInterests[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
-				let interests: [String] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return interests
-			},
-			cacheUpdater: { userId, interests in
-				self.appCache.updateProfileInterests(userId, interests)
-			}
-		)
+		return await fetch(.profileInterests(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	func fetchProfileSocialMedia(
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<UserSocialMediaDTO> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "profileSocialMedia",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.profileSocialMedia[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
-				let socialMedia: UserSocialMediaDTO = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return socialMedia
-			},
-			cacheUpdater: { userId, socialMedia in
-				self.appCache.updateProfileSocialMedia(userId, socialMedia)
-			}
-		)
+		return await fetch(.profileSocialMedia(userId: userId), cachePolicy: cachePolicy)
 	}
 
 	func fetchProfileActivities(
 		userId: UUID,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> FetchResult<[ProfileActivityDTO]> {
-		return await fetchUserData(
-			userId: userId,
-			dataType: "profileActivities",
-			cachePolicy: cachePolicy,
-			cacheProvider: { userId in
-				return self.appCache.profileActivities[userId]
-			},
-			apiProvider: { userId in
-				let url = URL(string: APIService.baseURL + "users/\(userId)/profile-activities")!
-				let activities: [ProfileActivityDTO] = try await self.apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
-				return activities
-			},
-			cacheUpdater: { userId, activities in
-				self.appCache.updateProfileActivities(userId, activities)
-			}
-		)
+		return await fetch(.profileActivities(userId: userId), cachePolicy: cachePolicy)
 	}
 }
