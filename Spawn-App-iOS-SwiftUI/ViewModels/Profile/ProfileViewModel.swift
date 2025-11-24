@@ -35,12 +35,15 @@ class ProfileViewModel: ObservableObject {
 	@Published var profileActivities: [ProfileActivityDTO] = []
 	@Published var isLoadingUserActivities: Bool = false
 
-	private let apiService: IAPIService
+	private let apiService: IAPIService  // Still needed for write operations
+	private let dataFetcher: DataFetcher
 
 	init(
 		userId: UUID? = nil,
 		apiService: IAPIService? = nil
 	) {
+		self.dataFetcher = DataFetcher.shared
+		
 		if let apiService = apiService {
 			self.apiService = apiService
 		} else {
@@ -60,32 +63,20 @@ class ProfileViewModel: ObservableObject {
 			return
 		}
 
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedStats = AppCache.shared.profileStats[userId] {
-			await MainActor.run {
-				self.userStats = cachedStats
-			}
-			print("✅ Using cached profile stats for user \(userId)")
-			return
-		}
-
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingStats = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/stats")!
-			let stats: UserStatsDTO = try await self.apiService.fetchData(
-				from: url,
-				parameters: nil
-			)
-
+		let result = await dataFetcher.fetchProfileStats(
+			userId: userId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
+		
+		switch result {
+		case .success(let stats, let source):
 			await MainActor.run {
 				self.userStats = stats
 				self.isLoadingStats = false
-				// Update cache
-				AppCache.shared.updateProfileStats(userId, stats)
 			}
-		} catch {
+			print("✅ ProfileViewModel: Loaded stats from \(source == .cache ? "cache" : "API") for user \(userId)")
+			
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.isLoadingStats = false
@@ -94,29 +85,20 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func fetchUserInterests(userId: UUID) async {
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedInterests = AppCache.shared.profileInterests[userId] {
-			await MainActor.run {
-				self.userInterests = cachedInterests
-			}
-			print("✅ Using cached profile interests for user \(userId)")
-			return
-		}
-
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingInterests = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
-			let interests: [String] = try await self.apiService.fetchData(from: url, parameters: nil)
-
+		let result = await dataFetcher.fetchProfileInterests(
+			userId: userId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
+		
+		switch result {
+		case .success(let interests, let source):
 			await MainActor.run {
 				self.userInterests = interests
 				self.isLoadingInterests = false
-				// Update cache
-				AppCache.shared.updateProfileInterests(userId, interests)
 			}
-		} catch {
+			print("✅ ProfileViewModel: Loaded interests from \(source == .cache ? "cache" : "API") for user \(userId)")
+			
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.isLoadingInterests = false
@@ -181,29 +163,20 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func fetchUserSocialMedia(userId: UUID) async {
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedSocialMedia = AppCache.shared.profileSocialMedia[userId] {
-			await MainActor.run {
-				self.userSocialMedia = cachedSocialMedia
-			}
-			print("✅ Using cached social media for user \(userId)")
-			return
-		}
-
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingSocialMedia = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
-			let socialMedia: UserSocialMediaDTO = try await self.apiService.fetchData(from: url, parameters: nil)
-
+		let result = await dataFetcher.fetchProfileSocialMedia(
+			userId: userId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
+		
+		switch result {
+		case .success(let socialMedia, let source):
 			await MainActor.run {
 				self.userSocialMedia = socialMedia
 				self.isLoadingSocialMedia = false
-				// Update cache
-				AppCache.shared.updateProfileSocialMedia(userId, socialMedia)
 			}
-		} catch {
+			print("✅ ProfileViewModel: Loaded social media from \(source == .cache ? "cache" : "API") for user \(userId)")
+			
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.isLoadingSocialMedia = false
@@ -1131,43 +1104,18 @@ class ProfileViewModel: ObservableObject {
 
 	// New method to fetch profile activities (both upcoming and past)
 	func fetchProfileActivities(profileUserId: UUID) async {
-		guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("❌ ProfileViewModel: No requesting user ID available")
-			await MainActor.run {
-				self.errorMessage = "User ID not available"
-			}
-			return
-		}
-
 		print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedActivities = AppCache.shared.profileActivities[profileUserId] {
-			print("✅ Using cached profile activities: \(cachedActivities.count)")
-			await MainActor.run {
-				self.profileActivities = cachedActivities
-			}
-			return
-		}
-
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingUserActivities = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "activities/profile/\(profileUserId)")!
-			let parameters = ["requestingUserId": requestingUserId.uuidString]
-
-			print("📡 ProfileViewModel: Making API call to: \(url.absoluteString)")
-			print("📡 ProfileViewModel: Parameters: \(parameters)")
-
-			let activities: [ProfileActivityDTO] = try await self.apiService.fetchData(
-				from: url,
-				parameters: parameters
-			)
-
-			print("✅ ProfileViewModel: Successfully fetched \(activities.count) profile activities")
-
+		let result = await dataFetcher.fetchProfileActivities(
+			userId: profileUserId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
+		
+		switch result {
+		case .success(let activities, let source):
+			print("✅ ProfileViewModel: Loaded \(activities.count) profile activities from \(source == .cache ? "cache" : "API")")
+			
 			// Log activity details
 			if !activities.isEmpty {
 				print("📋 ProfileViewModel: Activity details:")
@@ -1177,17 +1125,14 @@ class ProfileViewModel: ObservableObject {
 					)
 				}
 			}
-
+			
 			await MainActor.run {
 				self.profileActivities = activities
 				self.isLoadingUserActivities = false
-				// Update cache
-				AppCache.shared.updateProfileActivities(profileUserId, activities)
 			}
-		} catch let error as APIError {
-			print(
-				"❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatAPIError(error))"
-			)
+			
+		case .failure(let error):
+			print("❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatError(error))")
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
 				self.profileActivities = []

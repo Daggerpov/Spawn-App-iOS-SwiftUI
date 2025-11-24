@@ -13,9 +13,10 @@ class ActivityTypeViewModel: ObservableObject {
 	@Published var isLoading: Bool = false
 	@Published var errorMessage: String?
 
-	private let apiService: IAPIService
+	private let apiService: IAPIService  // Still needed for write operations
 	private let userId: UUID
-	private var appCache: AppCache
+	private var dataFetcher: DataFetcher
+	private var appCache: AppCache  // Keep for cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 
 	// MARK: - Constants
@@ -54,6 +55,7 @@ class ActivityTypeViewModel: ObservableObject {
 	) {
 		self.userId = userId
 		self.appCache = AppCache.shared
+		self.dataFetcher = DataFetcher.shared
 
 		if let apiService = apiService {
 			self.apiService = apiService
@@ -100,46 +102,34 @@ class ActivityTypeViewModel: ObservableObject {
 			return
 		}
 
-		// First, try to load from cache if not forcing a refresh
-		if !forceRefresh {
-			let cachedTypes = appCache.activityTypes
-			if !cachedTypes.isEmpty {
-				// Use cached data immediately - no loading state needed!
-				self.activityTypes = cachedTypes
-				return
-			}
-		}
+		// Determine cache policy based on forceRefresh
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
 
-		// Cache is empty or force refresh requested - show loading and fetch
-		await fetchActivityTypesFromAPI()
+		// Use DataFetcher to get activity types
+		let result = await dataFetcher.fetchActivityTypes(cachePolicy: cachePolicy)
+
+		switch result {
+		case .success(let types, let source):
+			self.activityTypes = types
+			if source == .api {
+				// Only set loading state when fetching from API
+				setLoadingState(false)
+			}
+			print(
+				"✅ ActivityTypeViewModel: Loaded \(types.count) activity types from \(source == .cache ? "cache" : "API")"
+			)
+
+		case .failure(let error):
+			setLoadingState(false, error: ErrorFormattingService.shared.formatError(error))
+			print("❌ ActivityTypeViewModel: Error fetching activity types - \(error)")
+		}
 	}
 
 	/// Internal method to fetch from API with loading state
 	@MainActor
 	private func fetchActivityTypesFromAPI() async {
-		setLoadingState(true)
-		defer { setLoadingState(false) }
-
-		do {
-			guard let url = buildActivityTypesURL() else {
-				setLoadingState(false, error: "Invalid URL")
-				return
-			}
-
-			let fetchedTypes: [ActivityTypeDTO] = try await apiService.fetchData(
-				from: url,
-				parameters: nil
-			)
-
-			self.activityTypes = fetchedTypes
-			appCache.updateActivityTypes(fetchedTypes)
-
-		} catch let error as APIError {
-			print("❌ Error fetching activity types: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-		} catch {
-			errorMessage = ErrorFormattingService.shared.formatError(error)
-		}
+		// This method is now a wrapper around fetchActivityTypes with forceRefresh
+		await fetchActivityTypes(forceRefresh: true)
 	}
 
 	// MARK: - Local State Manipulation Methods

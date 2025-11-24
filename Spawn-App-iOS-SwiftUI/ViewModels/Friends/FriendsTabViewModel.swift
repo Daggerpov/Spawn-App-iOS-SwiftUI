@@ -29,14 +29,16 @@ class FriendsTabViewModel: ObservableObject {
 	@Published var createdFriendRequest: FetchFriendRequestDTO?
 
 	var userId: UUID
-	var apiService: IAPIService
+	private var dataFetcher: DataFetcher
+	private var apiService: IAPIService  // Still needed for write operations
 	private var cancellables = Set<AnyCancellable>()
-	private var appCache: AppCache
+	private var appCache: AppCache  // Keep for cache subscriptions
 	private var notificationObservers: [NSObjectProtocol] = []
 
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
 		self.apiService = apiService
+		self.dataFetcher = DataFetcher.shared
 		self.appCache = AppCache.shared
 
 		// FriendsTabViewModel init
@@ -417,123 +419,97 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-		if let url = URL(
-			string: APIService.baseURL + "friend-requests/incoming/\(userId)")
-		{
-			do {
-				let fetchedIncomingFriendRequests: [FetchFriendRequestDTO] =
-					try await self.apiService.fetchData(
-						from: url, parameters: nil)
+		let result = await dataFetcher.fetchFriendRequests(
+			userId: userId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-				// Normalize: filter zero UUIDs and de-duplicate by id
-				let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
-				var seen = Set<UUID>()
-				let normalized = fetchedIncomingFriendRequests.compactMap { req -> FetchFriendRequestDTO? in
-					guard req.id != zeroUUID else { return nil }
-					if seen.contains(req.id) { return nil }
-					seen.insert(req.id)
-					return req
-				}
+		switch result {
+		case .success(let requests, _):
+			// Normalize: filter zero UUIDs and de-duplicate by id
+			let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+			var seen = Set<UUID>()
+			let normalized = requests.compactMap { req -> FetchFriendRequestDTO? in
+				guard req.id != zeroUUID else { return nil }
+				if seen.contains(req.id) { return nil }
+				seen.insert(req.id)
+				return req
+			}
 
-				// Ensure updating on the main thread
-				await MainActor.run {
-					self.incomingFriendRequests = normalized
-					// Update the cache
-					self.appCache.updateFriendRequestsForUser(normalized, userId: userId)
-				}
-			} catch {
-				await MainActor.run {
-					self.incomingFriendRequests = []
-				}
+			await MainActor.run {
+				self.incomingFriendRequests = normalized
+			}
+
+		case .failure:
+			await MainActor.run {
+				self.incomingFriendRequests = []
 			}
 		}
 	}
 
 	internal func fetchOutgoingFriendRequests() async {
-		// Always fetch fresh data from API to ensure we have the latest information
-		// full path: /api/v1/friend-requests/sent/{userId}
-		if let url = URL(
-			string: APIService.baseURL + "friend-requests/sent/\(userId)")
-		{
-			do {
-				let fetchedOutgoingFriendRequests: [FetchSentFriendRequestDTO] =
-					try await self.apiService.fetchData(
-						from: url, parameters: nil)
+		let result = await dataFetcher.fetchSentFriendRequests(
+			userId: userId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-				// Normalize: filter zero UUIDs and de-duplicate by id
-				let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
-				var seen = Set<UUID>()
-				let normalized = fetchedOutgoingFriendRequests.compactMap { req -> FetchSentFriendRequestDTO? in
-					guard req.id != zeroUUID else { return nil }
-					if seen.contains(req.id) { return nil }
-					seen.insert(req.id)
-					return req
-				}
+		switch result {
+		case .success(let requests, _):
+			// Normalize: filter zero UUIDs and de-duplicate by id
+			let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+			var seen = Set<UUID>()
+			let normalized = requests.compactMap { req -> FetchSentFriendRequestDTO? in
+				guard req.id != zeroUUID else { return nil }
+				if seen.contains(req.id) { return nil }
+				seen.insert(req.id)
+				return req
+			}
 
-				// Ensure updating on the main thread
-				await MainActor.run {
-					self.outgoingFriendRequests = normalized
-					// Update the cache
-					self.appCache.updateSentFriendRequestsForUser(normalized, userId: self.userId)
-				}
-			} catch {
-				await MainActor.run {
-					self.outgoingFriendRequests = []
-				}
+			await MainActor.run {
+				self.outgoingFriendRequests = normalized
+			}
+
+		case .failure:
+			await MainActor.run {
+				self.outgoingFriendRequests = []
 			}
 		}
 	}
 
 	internal func fetchRecommendedFriends() async {
-		if let url = URL(
-			string: APIService.baseURL + "users/recommended-friends/\(userId)")
-		{
-			do {
-				let fetchedRecommendedFriends: [RecommendedFriendUserDTO] =
-					try await self.apiService.fetchData(
-						from: url, parameters: nil)
+		let result = await dataFetcher.fetchRecommendedFriends(
+			userId: userId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-				// Ensure updating on the main thread
-				await MainActor.run {
-					self.recommendedFriends = fetchedRecommendedFriends
-					// Update cache with user-specific method
-					self.appCache.updateRecommendedFriendsForUser(fetchedRecommendedFriends, userId: self.userId)
-				}
-			} catch {
-				await MainActor.run {
-					self.recommendedFriends = []
-				}
+		switch result {
+		case .success(let friends, _):
+			await MainActor.run {
+				self.recommendedFriends = friends
+			}
+
+		case .failure:
+			await MainActor.run {
+				self.recommendedFriends = []
 			}
 		}
 	}
 
 	func fetchFriends() async {
-		// First check the cache
-		let cachedUserFriends = appCache.getCurrentUserFriends()
-		if !cachedUserFriends.isEmpty {
+		let result = await dataFetcher.fetchFriends(
+			userId: userId,
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
+
+		switch result {
+		case .success(let friends, _):
 			await MainActor.run {
-				// Use cached data if available
-				self.friends = cachedUserFriends
-				return
+				self.friends = friends
 			}
-		}
 
-		// If cache is empty or we need fresh data, fetch from API
-		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)") {
-			do {
-				let fetchedFriends: [FullFriendUserDTO] = try await self.apiService
-					.fetchData(from: url, parameters: nil)
-
-				// Update cache and view model
-				await MainActor.run {
-					self.friends = fetchedFriends
-					// Update the cache
-					self.appCache.updateFriendsForUser(fetchedFriends, userId: self.userId)
-				}
-			} catch {
-				await MainActor.run {
-					self.friends = []
-				}
+		case .failure:
+			await MainActor.run {
+				self.friends = []
 			}
 		}
 	}
