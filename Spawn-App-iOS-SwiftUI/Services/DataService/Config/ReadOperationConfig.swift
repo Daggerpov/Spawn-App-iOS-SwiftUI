@@ -188,7 +188,7 @@ enum DataType {
 		// Profile
 		case .profileStats(let userId):
 			return "profileStats-\(userId)"
-		case .profileInfo(let userId):
+		case .profileInfo(let userId, _):
 			return "profileInfo_\(userId)"
 		case .profileInterests(let userId):
 			return "profileInterests-\(userId)"

@@ -457,10 +457,10 @@ enum WriteOperationType {
 			return activity as? T
 		case .updateActivity(_, let update):
 			return update as? T
-		case .joinActivity(_, let userId):
+		case .joinActivity(_, _):
 			// Create a DTO for join operation if needed
 			return EmptyRequestBody() as? T
-		case .inviteToActivity(_, let userId):
+		case .inviteToActivity(_, _):
 			// Create a DTO for invite operation if needed
 			return EmptyRequestBody() as? T
 		case .reportUser(let report):

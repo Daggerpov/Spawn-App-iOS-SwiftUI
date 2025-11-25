@@ -47,6 +47,7 @@ class FriendsTabViewModel: ObservableObject {
 
 			// Subscribe to AppCache friends updates
 			appCache.friendsPublisher
+				.receive(on: DispatchQueue.main)
 				.sink { [weak self] cachedFriends in
 					guard let self = self else { return }
 					let userFriends = cachedFriends[self.userId] ?? []
@@ -59,6 +60,7 @@ class FriendsTabViewModel: ObservableObject {
 
 			// Subscribe to AppCache recommended friends updates
 			appCache.recommendedFriendsPublisher
+				.receive(on: DispatchQueue.main)
 				.sink { [weak self] cachedRecommendedFriends in
 					guard let self = self else { return }
 					let userRecommendedFriends = cachedRecommendedFriends[self.userId] ?? []

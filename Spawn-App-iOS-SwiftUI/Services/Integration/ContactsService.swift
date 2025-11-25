@@ -311,11 +311,12 @@ class ContactsService: ObservableObject {
 
 		// Use DataService to perform the cross-reference
 		let result: DataResult<ContactCrossReferenceResponseDTO> = await dataService.write(
-			WriteOperationType.crossReferenceContacts(request: requestBody).toWriteOperation()
+			.crossReferenceContacts(request: requestBody),
+			body: requestBody
 		)
 
 		switch result {
-		case .success(let response):
+		case .success(let response, _):
 			print("✅ API SUCCESS: Returned \(response.users.count) users")
 			return response.users
 		case .failure(let error):

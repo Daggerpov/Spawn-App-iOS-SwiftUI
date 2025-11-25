@@ -78,7 +78,7 @@ class ReportingService {
 			let result: DataResult<[UUID]> = await dataService.read(
 				.blockedUsers(blockerId: blockerId, returnOnlyIds: true))
 			switch result {
-			case .success(let uuids):
+			case .success(let uuids, _):
 				return uuids
 			case .failure(let error):
 				throw error
@@ -87,7 +87,7 @@ class ReportingService {
 			let result: DataResult<[BlockedUserDTO]> = await dataService.read(
 				.blockedUsers(blockerId: blockerId, returnOnlyIds: false))
 			switch result {
-			case .success(let blockedUsers):
+			case .success(let blockedUsers, _):
 				return blockedUsers.map { $0.blockedId }
 			case .failure(let error):
 				throw error
@@ -102,7 +102,7 @@ class ReportingService {
 		let result: DataResult<[BlockedUserDTO]> = await dataService.read(
 			.blockedUsers(blockerId: blockerId, returnOnlyIds: false))
 		switch result {
-		case .success(let blockedUsers):
+		case .success(let blockedUsers, _):
 			return blockedUsers
 		case .failure(let error):
 			throw error
@@ -118,7 +118,7 @@ class ReportingService {
 		let result: DataResult<Bool> = await dataService.read(
 			.isUserBlocked(blockerId: blockerId, blockedId: blockedId))
 		switch result {
-		case .success(let isBlocked):
+		case .success(let isBlocked, _):
 			return isBlocked
 		case .failure(let error):
 			throw error
@@ -209,7 +209,7 @@ class ReportingService {
 		let result: DataResult<[FetchReportedContentDTO]> = await dataService.read(
 			.reportsByUser(reporterId: reporterId))
 		switch result {
-		case .success(let reports):
+		case .success(let reports, _):
 			return reports
 		case .failure(let error):
 			throw error
@@ -222,7 +222,7 @@ class ReportingService {
 	func getReportsAboutUser(userId: UUID) async throws -> [ReportedContentDTO] {
 		let result: DataResult<[ReportedContentDTO]> = await dataService.read(.reportsAboutUser(userId: userId))
 		switch result {
-		case .success(let reports):
+		case .success(let reports, _):
 			return reports
 		case .failure(let error):
 			throw error
