@@ -73,7 +73,7 @@ enum WriteOperationType {
 	// MARK: - Reporting & Blocking Operations
 
 	/// Report a user
-	case reportUser(report: CreateReportedContentDTO)
+	case reportUser(report: CreateReportDTO)
 
 	/// Block a user
 	case blockUser(blockerId: UUID, blockedId: UUID, reason: String)
@@ -108,7 +108,7 @@ enum WriteOperationType {
 	case toggleActivityParticipation(activityId: UUID, userId: UUID)
 
 	/// Report an activity
-	case reportActivity(report: CreateReportedContentDTO)
+	case reportActivity(report: CreateReportDTO)
 
 	// MARK: - Configuration Properties
 
@@ -195,9 +195,8 @@ enum WriteOperationType {
 			return "activities/\(activityId)/remove"
 
 		// Reporting & Blocking
-		case .reportUser,
-			.reportActivity:
-			return "reports/create"
+		case .reportUser:
+			return "reports/users"
 		case .blockUser:
 			return "blocked-users/block"
 		case .unblockUser:
@@ -222,6 +221,8 @@ enum WriteOperationType {
 			return "activities/\(activityId)/partial"
 		case .toggleActivityParticipation(let activityId, let userId):
 			return "activities/\(activityId)/toggleStatus/\(userId)"
+		case .reportActivity:
+			return "reports/activities"
 		}
 	}
 
