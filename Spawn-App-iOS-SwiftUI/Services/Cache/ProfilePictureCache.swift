@@ -56,91 +56,34 @@ class ProfilePictureCache: ObservableObject {
 	func getCachedImageWithRefresh(for userId: UUID, from urlString: String?, maxAge: TimeInterval = 24 * 60 * 60) async
 		-> UIImage?
 	{
-		print("🔄 [DOWNLOAD] getCachedImageWithRefresh for user \(userId)")
-		print("   URL: \(urlString ?? "nil")")
-
 		guard let urlString = urlString else {
-			print("❌ [DOWNLOAD] No URL provided for user \(userId), cannot download")
+			print("❌ [DOWNLOAD] No URL provided for user \(userId)")
 			return nil
 		}
 
 		return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: false)
 	}
 
-	/// Download profile pictures for multiple users in parallel
-	/// Uses task groups to download multiple profile pictures in parallel for faster performance
+	/// Download profile pictures for multiple users (sequentially)
 	func refreshStaleProfilePictures(for users: [(userId: UUID, profilePictureUrl: String?)]) async {
-		// Use withTaskGroup to download multiple profile pictures in parallel
-		await withTaskGroup(of: Void.self) { group in
-			for user in users {
-				guard let profilePictureUrl = user.profilePictureUrl else { continue }
-
-				group.addTask {
-					_ = await self.downloadAndCacheImage(from: profilePictureUrl, for: user.userId, forceRefresh: false)
-				}
-			}
+		for user in users {
+			guard let profilePictureUrl = user.profilePictureUrl else { continue }
+			_ = await downloadAndCacheImage(from: profilePictureUrl, for: user.userId, forceRefresh: false)
 		}
 	}
 
 	/// Force refresh a profile picture from the backend
-	/// This is an alias for downloadAndCacheImage for backwards compatibility
 	func refreshProfilePicture(for userId: UUID, from urlString: String) async -> UIImage? {
 		return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: false)
 	}
 
-	/// Remove cached image for a user ID
-	/// No-op since we don't cache anymore
+	/// Remove cached image for a user ID (no-op)
 	func removeCachedImage(for userId: UUID) {
-		// No-op - we don't have a cache to remove from
-		print("ℹ️ [DOWNLOAD] removeCachedImage called but no cache exists (userId: \(userId))")
+		// No-op - we don't cache
 	}
 
-	/// Clear all cached images
-	/// No-op since we don't cache anymore
+	/// Clear all cached images (no-op)
 	func clearAllCache() {
-		// No-op - we don't have a cache to clear
-		print("ℹ️ [DOWNLOAD] clearAllCache called but no cache exists")
-	}
-
-	// MARK: - Private Methods - Download Task Management
-
-	private func getDownloadTask(_ key: String) -> Task<UIImage?, Never>? {
-		return downloadingQueue.sync {
-			return downloadingImages[key]
-		}
-	}
-
-	private func setDownloadTask(_ task: Task<UIImage?, Never>, for key: String) {
-		downloadingQueue.async(flags: .barrier) {
-			self.downloadingImages[key] = task
-		}
-	}
-
-	private func removeDownloadTask(for key: String) {
-		downloadingQueue.async(flags: .barrier) {
-			self.downloadingImages.removeValue(forKey: key)
-		}
-	}
-
-	// MARK: - Failed Downloads Tracking
-
-	private func isInFailureCooldown(_ urlString: String) -> Bool {
-		return failedDownloadsQueue.sync {
-			guard let failureDate = failedDownloads[urlString] else { return false }
-			let timeSinceFailure = Date().timeIntervalSince(failureDate)
-			return timeSinceFailure < failedDownloadCooldown
-		}
-	}
-
-	private func markDownloadFailed(_ urlString: String) {
-		failedDownloadsQueue.async(flags: .barrier) {
-			self.failedDownloads[urlString] = Date()
-		}
-	}
-
-	private func clearDownloadFailure(_ urlString: String) {
-		failedDownloadsQueue.async(flags: .barrier) {
-			self.failedDownloads.removeValue(forKey: urlString)
-		}
+		// No-op - we don't cache
 	}
 }
