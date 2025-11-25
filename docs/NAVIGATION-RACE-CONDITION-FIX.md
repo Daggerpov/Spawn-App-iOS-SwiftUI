@@ -772,3 +772,4 @@ If you want to implement these fixes gradually:
 
 The most critical change is replacing `Task.detached` with `Task { @MainActor in }`. This single change will eliminate most of the race conditions.
 
+

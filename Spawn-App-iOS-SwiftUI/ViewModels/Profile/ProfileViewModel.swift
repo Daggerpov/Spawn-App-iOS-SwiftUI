@@ -35,19 +35,13 @@ class ProfileViewModel: ObservableObject {
 	@Published var profileActivities: [ProfileActivityDTO] = []
 	@Published var isLoadingUserActivities: Bool = false
 
-	private let apiService: IAPIService
+	private let dataService: DataService
 
 	init(
 		userId: UUID? = nil,
-		apiService: IAPIService? = nil
+		dataService: DataService? = nil
 	) {
-		if let apiService = apiService {
-			self.apiService = apiService
-		} else {
-			self.apiService =
-				MockAPIService.isMocking
-				? MockAPIService(userId: userId) : APIService()
-		}
+		self.dataService = dataService ?? DataService.shared
 	}
 
 	func fetchUserStats(userId: UUID) async {
@@ -60,32 +54,20 @@ class ProfileViewModel: ObservableObject {
 			return
 		}
 
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedStats = AppCache.shared.profileStats[userId] {
-			await MainActor.run {
-				self.userStats = cachedStats
-			}
-			print("✅ Using cached profile stats for user \(userId)")
-			return
-		}
+		let result: DataResult<UserStatsDTO> = await dataService.read(
+			.profileStats(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingStats = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/stats")!
-			let stats: UserStatsDTO = try await self.apiService.fetchData(
-				from: url,
-				parameters: nil
-			)
-
+		switch result {
+		case .success(let stats, let source):
 			await MainActor.run {
 				self.userStats = stats
 				self.isLoadingStats = false
-				// Update cache
-				AppCache.shared.updateProfileStats(userId, stats)
 			}
-		} catch {
+			print("✅ ProfileViewModel: Loaded stats from \(source == .cache ? "cache" : "API") for user \(userId)")
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.isLoadingStats = false
@@ -94,29 +76,20 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func fetchUserInterests(userId: UUID) async {
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedInterests = AppCache.shared.profileInterests[userId] {
-			await MainActor.run {
-				self.userInterests = cachedInterests
-			}
-			print("✅ Using cached profile interests for user \(userId)")
-			return
-		}
+		let result: DataResult<[String]> = await dataService.read(
+			.profileInterests(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingInterests = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
-			let interests: [String] = try await self.apiService.fetchData(from: url, parameters: nil)
-
+		switch result {
+		case .success(let interests, let source):
 			await MainActor.run {
 				self.userInterests = interests
 				self.isLoadingInterests = false
-				// Update cache
-				AppCache.shared.updateProfileInterests(userId, interests)
 			}
-		} catch {
+			print("✅ ProfileViewModel: Loaded interests from \(source == .cache ? "cache" : "API") for user \(userId)")
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.isLoadingInterests = false
@@ -130,47 +103,31 @@ class ProfileViewModel: ObservableObject {
 			self.userInterests.append(interest)
 		}
 
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/interests")!
+		// Use DataService for the POST operation
+		let operation = WriteOperation<String>.post(
+			endpoint: "users/\(userId)/interests",
+			body: interest,
+			cacheInvalidationKeys: ["profileInterests_\(userId)"]
+		)
 
-			// Send interest as raw string data instead of JSON-encoded
-			var request = URLRequest(url: url)
-			request.httpMethod = "POST"
-			request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-			request.httpBody = interest.data(using: .utf8)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
 
-			// Add authorization header
-			if let accessTokenData = KeychainService.shared.load(key: "accessToken"),
-				let accessToken = String(data: accessTokenData, encoding: .utf8)
-			{
-				request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-			}
+		switch result {
+		case .success:
+			// Refresh interests from cache after successful update
+			let refreshResult: DataResult<[String]> = await dataService.read(
+				.profileInterests(userId: userId),
+				cachePolicy: .apiOnly
+			)
 
-			let (_, response) = try await URLSession.shared.data(for: request)
-
-			guard let httpResponse = response as? HTTPURLResponse else {
-				throw NSError(
-					domain: "HTTPError", code: 0, userInfo: [NSLocalizedDescriptionKey: "HTTP request failed"])
-			}
-
-			guard httpResponse.statusCode == 200 || httpResponse.statusCode == 201 else {
-				throw NSError(
-					domain: "HTTPError", code: httpResponse.statusCode,
-					userInfo: [NSLocalizedDescriptionKey: "Invalid status code: \(httpResponse.statusCode)"])
-			}
-
-			// Update cache after successful API call
-			await AppCache.shared.refreshProfileInterests(userId)
-
-			// Update local state with fresh data from cache to ensure consistency
-			await MainActor.run {
-				if let cachedInterests = AppCache.shared.profileInterests[userId] {
-					self.userInterests = cachedInterests
+			if case .success(let interests, _) = refreshResult {
+				await MainActor.run {
+					self.userInterests = interests
 				}
 			}
-
 			return true
-		} catch {
+
+		case .failure(let error):
 			// Revert local state if API call fails
 			await MainActor.run {
 				self.userInterests.removeAll { $0 == interest }
@@ -181,29 +138,21 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func fetchUserSocialMedia(userId: UUID) async {
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedSocialMedia = AppCache.shared.profileSocialMedia[userId] {
-			await MainActor.run {
-				self.userSocialMedia = cachedSocialMedia
-			}
-			print("✅ Using cached social media for user \(userId)")
-			return
-		}
+		let result: DataResult<UserSocialMediaDTO> = await dataService.read(
+			.profileSocialMedia(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingSocialMedia = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
-			let socialMedia: UserSocialMediaDTO = try await self.apiService.fetchData(from: url, parameters: nil)
-
+		switch result {
+		case .success(let socialMedia, let source):
 			await MainActor.run {
 				self.userSocialMedia = socialMedia
 				self.isLoadingSocialMedia = false
-				// Update cache
-				AppCache.shared.updateProfileSocialMedia(userId, socialMedia)
 			}
-		} catch {
+			print(
+				"✅ ProfileViewModel: Loaded social media from \(source == .cache ? "cache" : "API") for user \(userId)")
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.isLoadingSocialMedia = false
@@ -216,25 +165,22 @@ class ProfileViewModel: ObservableObject {
 		whatsappLink: String?,
 		instagramLink: String?
 	) async {
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/social-media")!
-			let updateDTO = UpdateUserSocialMediaDTO(
-				whatsappNumber: whatsappLink,
-				instagramUsername: instagramLink
-			)
+		let updateDTO = UpdateUserSocialMediaDTO(
+			whatsappNumber: whatsappLink,
+			instagramUsername: instagramLink
+		)
 
-			let updatedSocialMedia: UserSocialMediaDTO = try await self.apiService.updateData(
-				updateDTO,
-				to: url,
-				parameters: nil
-			)
+		// Use WriteOperationType configuration
+		let operationType = WriteOperationType.updateSocialMedia(userId: userId, socialMedia: updateDTO)
+		let result: DataResult<UserSocialMediaDTO> = await dataService.write(operationType, body: updateDTO)
 
+		switch result {
+		case .success(let updatedSocialMedia, _):
 			await MainActor.run {
 				self.userSocialMedia = updatedSocialMedia
-				// Update cache
-				AppCache.shared.updateProfileSocialMedia(userId, updatedSocialMedia)
 			}
-		} catch {
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -253,15 +199,18 @@ class ProfileViewModel: ObservableObject {
 
 		await MainActor.run { self.isLoadingProfileInfo = true }
 
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/profile-info")!
-			let profileInfo: UserProfileInfoDTO = try await self.apiService.fetchData(from: url, parameters: nil)
+		// Use centralized DataType configuration
+		let result: DataResult<UserProfileInfoDTO> = await dataService.read(
+			.profileInfo(userId: userId, requestingUserId: nil))
 
+		switch result {
+		case .success(let profileInfo, _):
 			await MainActor.run {
 				self.userProfileInfo = profileInfo
 				self.isLoadingProfileInfo = false
 			}
-		} catch {
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.isLoadingProfileInfo = false
@@ -311,18 +260,13 @@ class ProfileViewModel: ObservableObject {
 			return
 		}
 
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/calendar")!
-			let parameters = [
-				"month": String(month),
-				"year": String(year),
-			]
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendar(userId: userId, month: month, year: year, requestingUserId: nil)
+		)
 
-			let activities: [CalendarActivityDTO] = try await apiService.fetchData(
-				from: url,
-				parameters: parameters
-			)
-
+		switch result {
+		case .success(let activities, _):
 			let grid = convertToCalendarGrid(
 				activities: activities,
 				month: month,
@@ -337,7 +281,8 @@ class ProfileViewModel: ObservableObject {
 				let activityIds = activities.compactMap { $0.activityId }
 				ActivityColorService.shared.assignColorsForActivities(activityIds)
 			}
-		} catch {
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.calendarActivities = Array(
@@ -363,7 +308,6 @@ class ProfileViewModel: ObservableObject {
 
 		print("📡 Calendar: Fetching activities for user \(userId)")
 		print("📡 Calendar: API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
-		print("📡 Calendar: Base URL: \(APIService.baseURL)")
 
 		// Check authentication status
 		if !MockAPIService.isMocking {
@@ -385,12 +329,13 @@ class ProfileViewModel: ObservableObject {
 			}
 		}
 
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(userId)/calendar")!
-			print("📡 Calendar: Making request to: \(url.absoluteString)")
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendarAll(userId: userId, requestingUserId: nil)
+		)
 
-			let activities: [CalendarActivityDTO] = try await apiService.fetchData(from: url, parameters: nil)
-
+		switch result {
+		case .success(let activities, _):
 			print("✅ Calendar: Successfully fetched \(activities.count) activities")
 			if !activities.isEmpty {
 				print("📅 Calendar: Sample activity dates:")
@@ -407,25 +352,10 @@ class ProfileViewModel: ObservableObject {
 				let activityIds = activities.compactMap { $0.activityId }
 				ActivityColorService.shared.assignColorsForActivities(activityIds)
 			}
-		} catch {
+
+		case .failure(let error):
 			print("❌ Calendar: Error fetching activities")
 			print("❌ Calendar: Error details: \(error)")
-			if let apiError = error as? APIError {
-				print("❌ Calendar: API Error type: \(apiError)")
-				switch apiError {
-				case .invalidStatusCode(let statusCode):
-					print("❌ Calendar: HTTP Status Code: \(statusCode)")
-					if statusCode == 401 {
-						print("❌ Calendar: Authentication failed - user may need to log in again")
-					} else if statusCode == 404 {
-						print("❌ Calendar: Endpoint not found - check API URL")
-					}
-				case .failedHTTPRequest(let description):
-					print("❌ Calendar: HTTP Request failed: \(description)")
-				default:
-					break
-				}
-			}
 
 			await MainActor.run {
 				let errorMsg = ErrorFormattingService.shared.formatError(error)
@@ -452,20 +382,13 @@ class ProfileViewModel: ObservableObject {
 		print("🔄 ProfileViewModel: Fetching all calendar activities for friend: \(friendUserId)")
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(friendUserId)/calendar")!
-			let parameters = [
-				"requestingUserId": requestingUserId.uuidString
-			]
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendarAll(userId: friendUserId, requestingUserId: requestingUserId)
+		)
 
-			print("📡 ProfileViewModel: Making calendar API call to: \(url.absoluteString)")
-			print("📡 ProfileViewModel: Parameters: \(parameters)")
-
-			let activities: [CalendarActivityDTO] = try await apiService.fetchData(
-				from: url,
-				parameters: parameters
-			)
-
+		switch result {
+		case .success(let activities, _):
 			print("✅ ProfileViewModel: Successfully fetched \(activities.count) calendar activities")
 
 			await MainActor.run {
@@ -478,16 +401,8 @@ class ProfileViewModel: ObservableObject {
 
 				print("✅ ProfileViewModel: All calendar activities updated with \(activities.count) activities")
 			}
-		} catch let error as APIError {
-			print(
-				"❌ ProfileViewModel: Error fetching friend's all calendar activities: \(ErrorFormattingService.shared.formatAPIError(error))"
-			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				self.allCalendarActivities = []
-				self.isLoadingCalendar = false
-			}
-		} catch {
+
+		case .failure(let error):
 			print(
 				"❌ ProfileViewModel: Error fetching friend's all calendar activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
@@ -516,22 +431,13 @@ class ProfileViewModel: ObservableObject {
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 		print("📅 Month: \(month), Year: \(year)")
 
-		do {
-			let url = URL(string: APIService.baseURL + "users/\(friendUserId)/calendar")!
-			let parameters = [
-				"month": String(month),
-				"year": String(year),
-				"requestingUserId": requestingUserId.uuidString,
-			]
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendar(userId: friendUserId, month: month, year: year, requestingUserId: requestingUserId)
+		)
 
-			print("📡 ProfileViewModel: Making calendar API call to: \(url.absoluteString)")
-			print("📡 ProfileViewModel: Parameters: \(parameters)")
-
-			let activities: [CalendarActivityDTO] = try await apiService.fetchData(
-				from: url,
-				parameters: parameters
-			)
-
+		switch result {
+		case .success(let activities, _):
 			// Log calendar activity details
 			if !activities.isEmpty {
 				print("📅 ProfileViewModel: Calendar activity details:")
@@ -561,20 +467,8 @@ class ProfileViewModel: ObservableObject {
 
 				print("✅ ProfileViewModel: Calendar grid updated with \(activities.count) activities")
 			}
-		} catch let error as APIError {
-			print(
-				"❌ ProfileViewModel: Error fetching friend's calendar activities: \(ErrorFormattingService.shared.formatAPIError(error))"
-			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				self.calendarActivities = Array(
-					repeating: Array(repeating: nil, count: 7),
-					count: 5
-				)
-				self.allCalendarActivities = []
-				self.isLoadingCalendar = false
-			}
-		} catch {
+
+		case .failure(let error):
 			print(
 				"❌ ProfileViewModel: Error fetching friend's calendar activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
@@ -734,92 +628,75 @@ class ProfileViewModel: ObservableObject {
 			self.userInterests.removeAll { $0 == interest }
 		}
 
-		do {
-			// URL encode the interest name to handle spaces and special characters
-			guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-				throw NSError(
-					domain: "EncodingError", code: 0,
-					userInfo: [NSLocalizedDescriptionKey: "Failed to encode interest name"])
-			}
-
-			let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(encodedInterest)")!
-
-			try await apiService.deleteData(
-				from: url,
-				parameters: nil,
-				object: nil as EmptyRequestBody?
-			)
-
-			// Update cache after successful API call
-			await AppCache.shared.refreshProfileInterests(userId)
-
-			await MainActor.run {
-				objectWillChange.send()
-			}
-		} catch let error as APIError {
-			print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatAPIError(error))")
-
-			// Revert the optimistic update since the API call failed
+		// URL encode the interest name to handle spaces and special characters
+		guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
 			await MainActor.run {
 				self.userInterests = originalInterests
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+				self.errorMessage = "Failed to encode interest name"
 			}
-		} catch {
+			return
+		}
+
+		let operation = WriteOperation<EmptyRequestBody>.delete(
+			endpoint: "users/\(userId)/interests/\(encodedInterest)",
+			cacheInvalidationKeys: ["profileInterests_\(userId)"]
+		)
+
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
+
+		switch result {
+		case .success:
+			// Refresh interests from server after successful delete
+			let refreshResult: DataResult<[String]> = await dataService.read(
+				.profileInterests(userId: userId),
+				cachePolicy: .apiOnly
+			)
+
+			if case .success(let interests, _) = refreshResult {
+				await MainActor.run {
+					self.userInterests = interests
+					self.objectWillChange.send()
+				}
+			}
+
+		case .failure(let error):
 			print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatError(error))")
 
 			// Revert the optimistic update since the API call failed
 			await MainActor.run {
 				self.userInterests = originalInterests
-
-				// Provide specific error message based on the error type
-				if (error as NSError).localizedDescription.contains("404") {
-					self.errorMessage =
-						"Interest '\(interest)' was not found in your profile. Your interests have been refreshed."
-					// Force refresh from server to sync cache
-					Task {
-						await self.fetchUserInterests(userId: userId)
-					}
-				} else {
-					self.errorMessage = "Failed to remove interest: \(error.localizedDescription)"
-				}
+				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
 		}
 	}
 
 	// Method for edit profile flow - doesn't revert local state on error
 	func removeUserInterestForEdit(userId: UUID, interest: String) async {
-		do {
-			// URL encode the interest name to handle spaces and special characters
-			guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-				print("❌ Failed to encode interest name: \(interest)")
-				return
-			}
-
-			let url = URL(string: APIService.baseURL + "users/\(userId)/interests/\(encodedInterest)")!
-
-			try await apiService.deleteData(
-				from: url,
-				parameters: nil,
-				object: nil as EmptyRequestBody?
-			)
-
-			print("✅ Successfully removed interest: \(interest)")
-
-		} catch {
-			let nsError = error as NSError
-
-			// Treat 404 as success - the interest is already gone
-			if nsError.localizedDescription.contains("404") {
-				print("✅ Interest '\(interest)' was already removed (404 - treating as success)")
-			} else {
-				print("❌ Failed to remove interest '\(interest)': \(error.localizedDescription)")
-				// For other errors, we could show a warning but still keep the local state
-				// since the user explicitly wanted to remove it
-			}
+		// URL encode the interest name to handle spaces and special characters
+		guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+			print("❌ Failed to encode interest name: \(interest)")
+			return
 		}
 
-		// Update cache after attempting to remove
-		await AppCache.shared.refreshProfileInterests(userId)
+		let operation = WriteOperation<EmptyRequestBody>.delete(
+			endpoint: "users/\(userId)/interests/\(encodedInterest)",
+			cacheInvalidationKeys: ["profileInterests_\(userId)"]
+		)
+
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
+
+		switch result {
+		case .success:
+			print("✅ Successfully removed interest: \(interest)")
+			// Refresh interests from cache
+			let _: DataResult<[String]> = await dataService.read(
+				.profileInterests(userId: userId), cachePolicy: .apiOnly)
+
+		case .failure(let error):
+			print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatError(error))")
+		// For other errors, we could show a warning but still keep the local state
+		// since the user explicitly wanted to remove it
+		}
 	}
 
 	// MARK: - Activity Management
@@ -838,18 +715,13 @@ class ProfileViewModel: ObservableObject {
 
 		await MainActor.run { self.isLoadingActivity = true }
 
-		do {
-			let url = URL(string: APIService.baseURL + "activities/\(activityId)")!
-			let parameters = ["requestingUserId": userId.uuidString]
+		// Use centralized DataType configuration
+		let result: DataResult<FullFeedActivityDTO> = await dataService.read(
+			.activity(activityId: activityId, requestingUserId: userId)
+		)
 
-			print("📡 ProfileViewModel: Making activity details API call to: \(url.absoluteString)")
-			print("📡 ProfileViewModel: Parameters: \(parameters)")
-
-			let activity: FullFeedActivityDTO = try await apiService.fetchData(
-				from: url,
-				parameters: parameters
-			)
-
+		switch result {
+		case .success(let activity, _):
 			print("✅ ProfileViewModel: Successfully fetched activity details: \(activity.title ?? "No title")")
 			print(
 				"📋 Activity Details: ID: \(activity.id), Title: \(activity.title ?? "No title"), Location: \(activity.location?.name ?? "No location")"
@@ -861,15 +733,8 @@ class ProfileViewModel: ObservableObject {
 			}
 
 			return activity
-		} catch let error as APIError {
-			print(
-				"❌ ProfileViewModel: Error fetching activity details: \(ErrorFormattingService.shared.formatAPIError(error))"
-			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				self.isLoadingActivity = false
-			}
-		} catch {
+
+		case .failure(let error):
 			print(
 				"❌ ProfileViewModel: Error fetching activity details: \(ErrorFormattingService.shared.formatError(error))"
 			)
@@ -879,7 +744,6 @@ class ProfileViewModel: ObservableObject {
 			}
 			return nil
 		}
-		return nil
 	}
 
 	// MARK: - Friendship Management
@@ -918,14 +782,13 @@ class ProfileViewModel: ObservableObject {
 
 		await MainActor.run { self.isLoadingFriendshipStatus = true }
 
-		do {
-			// First check if users are friends
-			let url = URL(string: APIService.baseURL + "users/\(currentUserId)/is-friend/\(profileUserId)")!
-			let isFriend: Bool = try await self.apiService.fetchData(
-				from: url,
-				parameters: nil
-			)
+		// First check if users are friends using centralized config
+		let friendResult: DataResult<Bool> = await dataService.read(
+			.isFriend(currentUserId: currentUserId, otherUserId: profileUserId)
+		)
 
+		switch friendResult {
+		case .success(let isFriend, _):
 			if isFriend {
 				await MainActor.run {
 					self.friendshipStatus = .friends
@@ -935,17 +798,24 @@ class ProfileViewModel: ObservableObject {
 			}
 
 			// If not friends, check for pending friend requests in parallel
-			let incomingRequestsUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(currentUserId)")!
-			let profileUserIncomingUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(profileUserId)")!
-
-			// Fetch both incoming request lists in parallel for faster loading
-			async let incomingRequests =
-				self.apiService.fetchData(from: incomingRequestsUrl, parameters: nil) as [FetchFriendRequestDTO]
-			async let profileUserIncomingRequests =
-				self.apiService.fetchData(from: profileUserIncomingUrl, parameters: nil) as [FetchFriendRequestDTO]
+			async let incomingResult: DataResult<[FetchFriendRequestDTO]> = dataService.read(
+				.friendRequests(userId: currentUserId))
+			async let profileIncomingResult: DataResult<[FetchFriendRequestDTO]> = dataService.read(
+				.friendRequests(userId: profileUserId))
 
 			// Wait for both requests to complete
-			let (currentUserRequests, profileUserRequests) = try await (incomingRequests, profileUserIncomingRequests)
+			let (currentUserRequestsResult, profileUserRequestsResult) = await (incomingResult, profileIncomingResult)
+
+			var currentUserRequests: [FetchFriendRequestDTO] = []
+			var profileUserRequests: [FetchFriendRequestDTO] = []
+
+			if case .success(let requests, _) = currentUserRequestsResult {
+				currentUserRequests = requests
+			}
+
+			if case .success(let requests, _) = profileUserRequestsResult {
+				profileUserRequests = requests
+			}
 
 			// Check if any incoming request is from the profile user
 			let requestFromProfileUser = currentUserRequests.first { $0.senderUser.id == profileUserId }
@@ -972,13 +842,8 @@ class ProfileViewModel: ObservableObject {
 				}
 				self.isLoadingFriendshipStatus = false
 			}
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				self.friendshipStatus = .unknown
-				self.isLoadingFriendshipStatus = false
-			}
-		} catch {
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.friendshipStatus = .unknown
@@ -988,35 +853,26 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func sendFriendRequest(fromUserId: UUID, toUserId: UUID) async {
-		do {
-			let url = URL(string: APIService.baseURL + "friend-requests")!
-			let requestDTO = CreateFriendRequestDTO(
-				id: UUID(),
-				senderUserId: fromUserId,
-				receiverUserId: toUserId
-			)
+		let requestDTO = CreateFriendRequestDTO(
+			id: UUID(),
+			senderUserId: fromUserId,
+			receiverUserId: toUserId
+		)
 
-			guard
-				(try await self.apiService.sendData(
-					requestDTO,
-					to: url,
-					parameters: nil
-				)) != nil
-			else { return }
+		// Use WriteOperationType configuration
+		let operationType = WriteOperationType.sendFriendRequest(request: requestDTO)
+		let result: DataResult<CreateFriendRequestDTO> = await dataService.write(operationType, body: requestDTO)
 
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.friendshipStatus = .requestSent
+			}
+			// Refresh recommended friends to update the list
+			let _: DataResult<[RecommendedFriendUserDTO]> = await dataService.read(
+				.recommendedFriends(userId: fromUserId), cachePolicy: .apiOnly)
 
-				// Remove the user from recommended friends cache so they disappear from the friends tab
-				let currentRecommendedFriends = AppCache.shared.getCurrentUserRecommendedFriends()
-				let updatedRecommendedFriends = currentRecommendedFriends.filter { $0.id != toUserId }
-				AppCache.shared.updateRecommendedFriendsForUser(updatedRecommendedFriends, userId: fromUserId)
-			}
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1033,28 +889,22 @@ class ProfileViewModel: ObservableObject {
 		print("[PROFILE] accepted friend request id=\(requestId) -> status=friends")
 		NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
 
-		do {
-			let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)")!
-			let _: EmptyResponse = try await self.apiService.updateData(
-				EmptyRequestBody(),
-				to: url,
-				parameters: ["friendRequestAction": "accept"]
-			)
+		// Use WriteOperationType configuration
+		let operationType = WriteOperationType.acceptFriendRequest(requestId: requestId)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operationType)
 
-			// Refresh caches so other views update immediately
-			Task {
-				await AppCache.shared.refreshFriends()
-				await AppCache.shared.forceRefreshAllFriendRequests()
-				NotificationCenter.default.post(name: .friendsDidChange, object: nil)
+		switch result {
+		case .success:
+			// Refresh friends list to update the cache
+			if let userId = UserAuthViewModel.shared.spawnUser?.id {
+				let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+					.friends(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchFriendRequestDTO]> = await dataService.read(
+					.friendRequests(userId: userId), cachePolicy: .apiOnly)
 			}
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				// Revert the optimistic update on failure
-				self.friendshipStatus = .requestReceived
-				self.pendingFriendRequestId = requestId
-			}
-		} catch {
+			NotificationCenter.default.post(name: .friendsDidChange, object: nil)
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				// Revert the optimistic update on failure
@@ -1073,21 +923,16 @@ class ProfileViewModel: ObservableObject {
 
 		NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
 
-		do {
-			let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)")!
-			let _: EmptyResponse = try await self.apiService.updateData(
-				EmptyRequestBody(),
-				to: url,
-				parameters: ["friendRequestAction": "reject"]
-			)
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				// Revert the optimistic update on failure
-				self.friendshipStatus = .requestReceived
-				self.pendingFriendRequestId = requestId
-			}
-		} catch {
+		// Use WriteOperationType configuration
+		let operationType = WriteOperationType.declineFriendRequest(requestId: requestId)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operationType)
+
+		switch result {
+		case .success:
+			// Successfully declined
+			break
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				// Revert the optimistic update on failure
@@ -1102,10 +947,13 @@ class ProfileViewModel: ObservableObject {
 	func fetchUserUpcomingActivities(userId: UUID) async {
 		await MainActor.run { self.isLoadingUserActivities = true }
 
-		do {
-			let url = URL(string: APIService.baseURL + "activities/user/\(userId)/upcoming")!
-			let activities: [FullFeedActivityDTO] = try await self.apiService.fetchData(from: url, parameters: nil)
+		// Use centralized DataType configuration
+		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
+			.upcomingActivities(userId: userId)
+		)
 
+		switch result {
+		case .success(let activities, _):
 			await MainActor.run {
 				self.userActivities = activities
 				self.isLoadingUserActivities = false
@@ -1114,13 +962,8 @@ class ProfileViewModel: ObservableObject {
 				let activityIds = activities.map { $0.id }
 				ActivityColorService.shared.assignColorsForActivities(activityIds)
 			}
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				self.userActivities = []
-				self.isLoadingUserActivities = false
-			}
-		} catch {
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.userActivities = []
@@ -1131,42 +974,19 @@ class ProfileViewModel: ObservableObject {
 
 	// New method to fetch profile activities (both upcoming and past)
 	func fetchProfileActivities(profileUserId: UUID) async {
-		guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
-			print("❌ ProfileViewModel: No requesting user ID available")
-			await MainActor.run {
-				self.errorMessage = "User ID not available"
-			}
-			return
-		}
-
 		print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
-		// Check cache first - only show loading if we need to fetch from API
-		if let cachedActivities = AppCache.shared.profileActivities[profileUserId] {
-			print("✅ Using cached profile activities: \(cachedActivities.count)")
-			await MainActor.run {
-				self.profileActivities = cachedActivities
-			}
-			return
-		}
+		let result: DataResult<[ProfileActivityDTO]> = await dataService.read(
+			.profileActivities(userId: profileUserId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-		// No cached data - show loading and fetch from API
-		await MainActor.run { self.isLoadingUserActivities = true }
-
-		do {
-			let url = URL(string: APIService.baseURL + "activities/profile/\(profileUserId)")!
-			let parameters = ["requestingUserId": requestingUserId.uuidString]
-
-			print("📡 ProfileViewModel: Making API call to: \(url.absoluteString)")
-			print("📡 ProfileViewModel: Parameters: \(parameters)")
-
-			let activities: [ProfileActivityDTO] = try await self.apiService.fetchData(
-				from: url,
-				parameters: parameters
+		switch result {
+		case .success(let activities, let source):
+			print(
+				"✅ ProfileViewModel: Loaded \(activities.count) profile activities from \(source == .cache ? "cache" : "API")"
 			)
-
-			print("✅ ProfileViewModel: Successfully fetched \(activities.count) profile activities")
 
 			// Log activity details
 			if !activities.isEmpty {
@@ -1181,19 +1001,9 @@ class ProfileViewModel: ObservableObject {
 			await MainActor.run {
 				self.profileActivities = activities
 				self.isLoadingUserActivities = false
-				// Update cache
-				AppCache.shared.updateProfileActivities(profileUserId, activities)
 			}
-		} catch let error as APIError {
-			print(
-				"❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatAPIError(error))"
-			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				self.profileActivities = []
-				self.isLoadingUserActivities = false
-			}
-		} catch {
+
+		case .failure(let error):
 			print(
 				"❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
@@ -1208,24 +1018,23 @@ class ProfileViewModel: ObservableObject {
 	// MARK: - Friend Management
 
 	func removeFriend(currentUserId: UUID, profileUserId: UUID) async {
-		do {
-			let url = URL(string: APIService.baseURL + "api/v1/users/friends/\(currentUserId)/\(profileUserId)")!
+		let operation = WriteOperation<EmptyRequestBody>.delete(
+			endpoint: "api/v1/users/friends/\(currentUserId)/\(profileUserId)",
+			cacheInvalidationKeys: ["friends_\(currentUserId)"]
+		)
 
-			// Use DELETE request to remove friendship
-			_ = try await self.apiService.deleteData(
-				from: url,
-				parameters: nil,
-				object: Optional<String>.none
-			)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operation)
 
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.friendshipStatus = .none
 			}
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+			// Refresh friends list
+			let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+				.friends(userId: currentUserId), cachePolicy: .apiOnly)
+
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1233,23 +1042,25 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func reportUser(reporterUserId: UUID, reportedUserId: UUID, reportType: ReportType, description: String) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.reportUser(
-				reporterUserId: reporterUserId,
-				reportedUserId: reportedUserId,
-				reportType: reportType,
-				description: description
-			)
+		let reportDTO = CreateReportedContentDTO(
+			reporterUserId: reporterUserId,
+			contentId: reportedUserId,
+			contentType: .user,
+			reportType: reportType,
+			description: description
+		)
 
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.reportUser(report: reportDTO)
+		)
+
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.errorMessage = nil
 			}
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1269,14 +1080,13 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.blockUser(
-				blockerId: blockerId,
-				blockedId: blockedId,
-				reason: reason
-			)
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.blockUser(blockerId: blockerId, blockedId: blockedId, reason: reason)
+		)
 
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.friendshipStatus = .blocked
 				self.errorMessage = nil
@@ -1285,11 +1095,7 @@ class ProfileViewModel: ObservableObject {
 			// Refresh friends cache to remove the blocked user from friends list
 			await AppCache.shared.refreshFriends()
 
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1297,13 +1103,13 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func unblockUser(blockerId: UUID, blockedId: UUID) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.unblockUser(
-				blockerId: blockerId,
-				blockedId: blockedId
-			)
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.unblockUser(blockerId: blockerId, blockedId: blockedId)
+		)
 
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.friendshipStatus = .none
 				self.errorMessage = nil
@@ -1312,11 +1118,7 @@ class ProfileViewModel: ObservableObject {
 			// Refresh friends cache for consistency
 			await AppCache.shared.refreshFriends()
 
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1324,18 +1126,16 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func checkIfUserBlocked(blockerId: UUID, blockedId: UUID) async -> Bool {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			return try await reportingService.isUserBlocked(
-				blockerId: blockerId,
-				blockedId: blockedId
-			)
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-			return false
-		} catch {
+		// Use DataService with DataType
+		let result: DataResult<Bool> = await dataService.read(
+			.isUserBlocked(blockerId: blockerId, blockedId: blockedId),
+			cachePolicy: .apiOnly
+		)
+
+		switch result {
+		case .success(let isBlocked, _):
+			return isBlocked
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}

@@ -23,10 +23,10 @@ struct FeedbackView: View {
 	let userId: UUID?
 	let email: String?
 
-	init(userId: UUID?, email: String?, apiService: IAPIService = APIService()) {
+	init(userId: UUID?, email: String?, dataService: DataService = DataService.shared) {
 		self.userId = userId
 		self.email = email
-		_viewModel = StateObject(wrappedValue: FeedbackViewModel(apiService: apiService))
+		_viewModel = StateObject(wrappedValue: FeedbackViewModel(dataService: dataService))
 	}
 
 	var body: some View {

@@ -255,8 +255,9 @@ struct ActivityEditView: View {
 #Preview {
 	ActivityEditView(
 		viewModel: ActivityDescriptionViewModel(
-			apiService: MockAPIService(userId: UUID()),
 			activity: FullFeedActivityDTO.mockDinnerActivity,
-			senderUserId: UUID()
+			users: [],
+			senderUserId: UUID(),
+			dataService: DataService.shared
 		))
 }

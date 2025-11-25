@@ -21,10 +21,8 @@ struct DayActivitiesView: View {
 		// The activities will be loaded based on the date
 		self._viewModel = StateObject(
 			wrappedValue: DayActivitiesViewModel(
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
-					: APIService(),
-				activities: []  // Will be populated in onAppear
+				activities: [],  // Will be populated in onAppear
+				dataService: DataService.shared
 			)
 		)
 	}
@@ -41,10 +39,8 @@ struct DayActivitiesView: View {
 
 		self._viewModel = StateObject(
 			wrappedValue: DayActivitiesViewModel(
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
-					: APIService(),
-				activities: activities
+				activities: activities,
+				dataService: DataService.shared
 			)
 		)
 	}

@@ -97,63 +97,70 @@ struct FriendsView: View {
 
 		Task {
 			do {
-				// Fetch the profile from the API
+				// Fetch the profile from the API using DataService
 				print("🔄 FriendsView: Fetching profile from API")
-				let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService()
+				let dataService = DataService.shared
 
-				guard let url = URL(string: "\(APIService.baseURL)users/\(profileId)") else {
-					throw APIError.URLError
-				}
-
-				let parameters = [
-					"requestingUserId": user.id.uuidString
-				]
-				let fetchedUser: BaseUserDTO = try await apiService.fetchData(from: url, parameters: parameters)
-
-				print(
-					"✅ FriendsView: Successfully fetched deep linked profile: \(fetchedUser.name ?? fetchedUser.username ?? "Unknown")"
+				// Use DataService to fetch profile info
+				let result: DataResult<BaseUserDTO> = await dataService.read(
+					.profileInfo(userId: profileId, requestingUserId: user.id),
+					cachePolicy: .apiOnly  // Always fetch latest for deep links
 				)
 
-				// Navigate to the profile
-				await MainActor.run {
-					let profileView = ProfileView(user: fetchedUser)
+				// Handle the result
+				switch result {
+				case .success(let fetchedUser, source: _):
+					print(
+						"✅ FriendsView: Successfully fetched deep linked profile: \(fetchedUser.name ?? fetchedUser.username ?? "Unknown")"
+					)
 
-					// Get the current window and present the profile
-					if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-						let window = windowScene.windows.first,
-						let rootViewController = window.rootViewController
-					{
+					// Navigate to the profile
+					await MainActor.run {
+						let profileView = ProfileView(user: fetchedUser)
 
-						let hostingController = UIHostingController(rootView: profileView)
-						rootViewController.present(hostingController, animated: true)
+						// Get the current window and present the profile
+						if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+							let window = windowScene.windows.first,
+							let rootViewController = window.rootViewController
+						{
+
+							let hostingController = UIHostingController(rootView: profileView)
+							rootViewController.present(hostingController, animated: true)
+						}
+
+						// Clean up deep link state
+						shouldShowDeepLinkedProfile = false
+						deepLinkedProfileId = nil
+						isFetchingDeepLinkedProfile = false
+
+						print("🎯 FriendsView: Successfully navigated to profile")
 					}
 
-					// Clean up deep link state
-					shouldShowDeepLinkedProfile = false
-					deepLinkedProfileId = nil
-					isFetchingDeepLinkedProfile = false
+				case .failure(let error):
+					print("❌ FriendsView: Failed to fetch deep linked profile: \(error)")
+					print("❌ FriendsView: Error details - Profile ID: \(profileId)")
 
-					print("🎯 FriendsView: Successfully navigated to profile")
+					await MainActor.run {
+						shouldShowDeepLinkedProfile = false
+						deepLinkedProfileId = nil
+						isFetchingDeepLinkedProfile = false
+
+						// Show error to user via InAppNotificationManager
+						InAppNotificationManager.shared.showNotification(
+							title: "Unable to open profile",
+							message:
+								"The profile you're trying to view might not exist or you might not have permission to view it.",
+							type: .error
+						)
+					}
 				}
 
 			} catch {
-				print("❌ FriendsView: Failed to fetch deep linked profile: \(error)")
-				print("❌ FriendsView: Error details - Profile ID: \(profileId), Error: \(error.localizedDescription)")
-
+				print("❌ FriendsView: Unexpected error: \(error)")
 				await MainActor.run {
 					shouldShowDeepLinkedProfile = false
 					deepLinkedProfileId = nil
 					isFetchingDeepLinkedProfile = false
-				}
-
-				// Show error to user via InAppNotificationManager
-				await MainActor.run {
-					InAppNotificationManager.shared.showNotification(
-						title: "Unable to open profile",
-						message:
-							"The profile you're trying to view might not exist or you might not have permission to view it.",
-						type: .error
-					)
 				}
 			}
 		}

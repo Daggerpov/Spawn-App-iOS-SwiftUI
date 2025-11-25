@@ -14,22 +14,13 @@ class FriendRequestsViewModel: ObservableObject {
 	@Published var isLoading: Bool = false
 	@Published var errorMessage: String = ""
 
-	private var apiService: IAPIService
 	private let userId: UUID
-	private var appCache: AppCache
+	private var dataService: DataService
 	private var cancellables = Set<AnyCancellable>()
 
-	init(userId: UUID, apiService: IAPIService = MockAPIService.isMocking ? MockAPIService() : APIService()) {
+	init(userId: UUID, dataService: DataService? = nil) {
 		self.userId = userId
-		self.apiService = apiService
-		self.appCache = AppCache.shared
-
-		// Removed AppCache subscriptions to ensure API results drive UI state for friend requests
-
-		// Initialize cache with mock data if in mock mode and cache is empty
-		if MockAPIService.isMocking {
-			initializeMockDataInCache()
-		}
+		self.dataService = dataService ?? DataService.shared
 	}
 
 	// MARK: - Helper Methods
@@ -48,100 +39,43 @@ class FriendRequestsViewModel: ObservableObject {
 		return result
 	}
 
-	private func initializeMockDataInCache() {
-		// Only initialize if cache is empty for this user
-		let currentIncoming = appCache.friendRequests[userId] ?? []
-		let currentSent = appCache.sentFriendRequests[userId] ?? []
-
-		if currentIncoming.isEmpty && currentSent.isEmpty {
-			// Initialize cache with mock data for this specific user
-			appCache.updateFriendRequestsForUser(FetchFriendRequestDTO.mockFriendRequests, userId: userId)
-			appCache.updateSentFriendRequestsForUser(FetchSentFriendRequestDTO.mockSentFriendRequests, userId: userId)
-		}
-	}
-
 	@MainActor
 	func fetchFriendRequests() async {
 		isLoading = true
 		defer { isLoading = false }
 
-		// Always fetch fresh data from API to ensure we have the latest information
-		do {
-			// Fetch incoming friend requests
-			guard let incomingUrl = URL(string: APIService.baseURL + "friend-requests/incoming/\(userId)") else {
-				errorMessage = "Invalid URL for incoming requests"
-				return
-			}
+		// Fetch both incoming and sent requests in parallel using DataService
+		async let incomingResult: DataResult<[FetchFriendRequestDTO]> = dataService.read(
+			.friendRequests(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
+		async let sentResult: DataResult<[FetchSentFriendRequestDTO]> = dataService.read(
+			.sentFriendRequests(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-			// Fetch sent friend requests
-			guard let sentUrl = URL(string: APIService.baseURL + "friend-requests/sent/\(userId)") else {
-				errorMessage = "Invalid URL for sent requests"
-				return
-			}
+		let (incomingFetch, sentFetch) = await (incomingResult, sentResult)
 
-			async let incoming: [FetchFriendRequestDTO] = apiService.fetchData(from: incomingUrl, parameters: nil)
-			async let sent: [FetchSentFriendRequestDTO] = apiService.fetchData(from: sentUrl, parameters: nil)
+		// Handle incoming requests
+		switch incomingFetch {
+		case .success(let requests, _):
+			let normalized = normalizeRequests(requests)
+			self.incomingFriendRequests = normalized
 
-			let (fetchedIncomingRequests, fetchedSentRequests) = try await (incoming, sent)
-
-			// Normalize: filter out invalid zero UUIDs and de-duplicate by id
-			let normalizedIncoming = normalizeRequests(fetchedIncomingRequests)
-			let normalizedSent = normalizeRequests(fetchedSentRequests)
-
-			// Update UI first, then cache
-			self.incomingFriendRequests = normalizedIncoming
-			self.sentFriendRequests = normalizedSent
-
-			// Update cache for both incoming and sent requests
-			appCache.updateFriendRequestsForUser(normalizedIncoming, userId: userId)
-			appCache.updateSentFriendRequestsForUser(normalizedSent, userId: userId)
-
-			// Fallback to cache if API returned empty but cache has data
-			if self.incomingFriendRequests.isEmpty {
-				let cachedIncoming = appCache.getCurrentUserFriendRequests()
-				if !cachedIncoming.isEmpty { self.incomingFriendRequests = cachedIncoming }
-			}
-			if self.sentFriendRequests.isEmpty {
-				let cachedSent = appCache.getCurrentUserSentFriendRequests()
-				if !cachedSent.isEmpty { self.sentFriendRequests = cachedSent }
-			}
-
-		} catch let error as APIError {
-			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			if MockAPIService.isMocking {
-				// Fallback to mock data in mock environment
-				self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
-				self.sentFriendRequests = FetchSentFriendRequestDTO.mockSentFriendRequests
-			} else {
-				// Fallback to cache to avoid showing empty lists if we have cached data
-				let cachedIncoming = appCache.getCurrentUserFriendRequests()
-				let cachedSent = appCache.getCurrentUserSentFriendRequests()
-				if !cachedIncoming.isEmpty || !cachedSent.isEmpty {
-					self.incomingFriendRequests = cachedIncoming
-					self.sentFriendRequests = cachedSent
-				} else {
-					self.incomingFriendRequests = []
-					self.sentFriendRequests = []
-				}
-			}
-		} catch {
+		case .failure(let error):
 			errorMessage = ErrorFormattingService.shared.formatError(error)
-			if MockAPIService.isMocking {
-				// Fallback to mock data in mock environment
-				self.incomingFriendRequests = FetchFriendRequestDTO.mockFriendRequests
-				self.sentFriendRequests = FetchSentFriendRequestDTO.mockSentFriendRequests
-			} else {
-				// Fallback to cache to avoid showing empty lists if we have cached data
-				let cachedIncoming = appCache.getCurrentUserFriendRequests()
-				let cachedSent = appCache.getCurrentUserSentFriendRequests()
-				if !cachedIncoming.isEmpty || !cachedSent.isEmpty {
-					self.incomingFriendRequests = cachedIncoming
-					self.sentFriendRequests = cachedSent
-				} else {
-					self.incomingFriendRequests = []
-					self.sentFriendRequests = []
-				}
-			}
+			self.incomingFriendRequests = []
+		}
+
+		// Handle sent requests
+		switch sentFetch {
+		case .success(let requests, _):
+			let normalized = normalizeRequests(requests)
+			self.sentFriendRequests = normalized
+
+		case .failure(let error):
+			errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.sentFriendRequests = []
 		}
 	}
 
@@ -157,10 +91,6 @@ class FriendRequestsViewModel: ObservableObject {
 		self.incomingFriendRequests.removeAll { $0.id == requestId }
 		self.sentFriendRequests.removeAll { $0.id == requestId }
 
-		// Update the cache immediately with the modified friend requests
-		appCache.updateFriendRequestsForUser(self.incomingFriendRequests, userId: userId)
-		appCache.updateSentFriendRequestsForUser(self.sentFriendRequests, userId: userId)
-
 		let afterIncoming = incomingFriendRequests.count
 		let afterSent = sentFriendRequests.count
 		print(
@@ -168,53 +98,42 @@ class FriendRequestsViewModel: ObservableObject {
 		)
 		NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
 
-		do {
-			guard let url = URL(string: APIService.baseURL + "friend-requests/\(requestId)") else {
-				errorMessage = "Invalid URL"
-				// Revert the UI change if URL is invalid
-				await fetchFriendRequests()
-				return
-			}
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse>
 
-			if action == .cancel {
-				try await apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
-			} else {
-				let _: EmptyResponse = try await apiService.updateData(
-					EmptyRequestBody(),
-					to: url,
-					parameters: ["friendRequestAction": action.rawValue]
-				)
-			}
+		if action == .cancel {
+			// Delete operation (cancel sent request)
+			let operation = WriteOperation<EmptyRequestBody>.delete(
+				endpoint: "friend-requests/\(requestId)",
+				cacheInvalidationKeys: ["friendRequests-\(userId)", "sentFriendRequests-\(userId)"]
+			)
+			result = await dataService.writeWithoutResponse(operation)
+		} else {
+			// PUT operation (accept or reject)
+			let operationType: WriteOperationType =
+				action == .accept
+				? .acceptFriendRequest(requestId: requestId)
+				: .declineFriendRequest(requestId: requestId)
 
+			result = await dataService.writeWithoutResponse(operationType)
+		}
+
+		switch result {
+		case .success:
 			// If accepted, refresh friends and friend-requests globally so other views update immediately
 			if action == .accept {
-				Task {
-					await AppCache.shared.refreshFriends()
-					await AppCache.shared.forceRefreshAllFriendRequests()
-					NotificationCenter.default.post(name: .friendsDidChange, object: nil)
-				}
+				// Refresh data to update caches
+				let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+					.friends(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchFriendRequestDTO]> = await dataService.read(
+					.friendRequests(userId: userId), cachePolicy: .apiOnly)
+				NotificationCenter.default.post(name: .friendsDidChange, object: nil)
 			}
 
-		} catch let error as APIError {
-			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-
-			if MockAPIService.isMocking {
-				// In mock mode, the removal already happened above, so just clear error
-				errorMessage = ""
-			} else {
-				// For real API failures, revert the optimistic update by re-fetching
-				await fetchFriendRequests()
-			}
-		} catch {
+		case .failure(let error):
 			errorMessage = ErrorFormattingService.shared.formatError(error)
-
-			if MockAPIService.isMocking {
-				// In mock mode, the removal already happened above, so just clear error
-				errorMessage = ""
-			} else {
-				// For real API failures, revert the optimistic update by re-fetching
-				await fetchFriendRequests()
-			}
+			// For real API failures, revert the optimistic update by re-fetching
+			await fetchFriendRequests()
 		}
 	}
 }

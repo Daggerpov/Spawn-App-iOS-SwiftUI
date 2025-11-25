@@ -33,8 +33,6 @@ struct FeedView: View {
 		self.user = user
 		_viewModel = StateObject(
 			wrappedValue: FeedViewModel(
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService(),
 				userId: user.id
 			)
 		)

@@ -50,8 +50,6 @@ struct ContentView: View {
 
 		// Create shared FeedViewModel for both ActivityFeedView and MapView
 		let feedVM = FeedViewModel(
-			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: user.id) : APIService(),
 			userId: user.id
 		)
 		self._feedViewModel = StateObject(wrappedValue: feedVM)

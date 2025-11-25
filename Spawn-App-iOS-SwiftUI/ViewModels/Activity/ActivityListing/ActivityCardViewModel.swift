@@ -9,7 +9,7 @@ import Foundation
 
 class ActivityCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
-	var apiService: IAPIService
+	var dataService: DataService
 	var userId: UUID
 	var activity: FullFeedActivityDTO
 
@@ -20,7 +20,6 @@ class ActivityCardViewModel: ObservableObject {
 	private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
 		self.activity = updatedActivity
 		self.isParticipating = updatedActivity.participationStatus == .participating
-		AppCache.shared.addOrUpdateActivity(updatedActivity)
 		NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
 	}
 
@@ -34,8 +33,8 @@ class ActivityCardViewModel: ObservableObject {
 		)
 	}
 
-	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO) {
-		self.apiService = apiService
+	init(userId: UUID, activity: FullFeedActivityDTO, dataService: DataService? = nil) {
+		self.dataService = dataService ?? DataService.shared
 		self.userId = userId
 		self.activity = activity
 		// Initialize the participation status correctly
@@ -56,18 +55,23 @@ class ActivityCardViewModel: ObservableObject {
 
 	/// Reports the activity for inappropriate content
 	func reportActivity(reporterUserId: UUID, reportType: ReportType, description: String) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.reportActivity(
-				reporterUserId: reporterUserId,
-				activityId: activity.id,
-				reportType: reportType,
-				description: description
-			)
+		let reportDTO = CreateReportedContentDTO(
+			reporterUserId: reporterUserId,
+			contentId: activity.id,
+			contentType: .activity,
+			reportType: reportType,
+			description: description
+		)
+
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.reportActivity(report: reportDTO)
+		)
+
+		switch result {
+		case .success:
 			print("Activity reported successfully")
-		} catch let error as APIError {
-			print("Error reporting activity: \(ErrorFormattingService.shared.formatAPIError(error))")
-		} catch {
+		case .failure(let error):
 			print("Error reporting activity: \(ErrorFormattingService.shared.formatError(error))")
 		}
 	}
@@ -78,39 +82,34 @@ class ActivityCardViewModel: ObservableObject {
 			// Don't allow the creator to revoke participation in their event
 			return
 		}
-		let urlString =
-			"\(APIService.baseURL)activities/\(activity.id)/toggleStatus/\(userId)"
-		guard let url = URL(string: urlString) else {
-			print("Invalid URL")
-			return
-		}
 
-		do {
-			// Send a PUT request and receive the updated activity in response
-			let updatedActivity: FullFeedActivityDTO = try await apiService.updateData(
-				EmptyBody(), to: url, parameters: nil)
+		// Use DataService with WriteOperationType
+		let result: DataResult<FullFeedActivityDTO> = await dataService.write(
+			.toggleActivityParticipation(activityId: activity.id, userId: userId)
+		)
 
+		switch result {
+		case .success(let updatedActivity, _):
 			// Update local state after a successful API call
 			await updateActivityAfterAPISuccess(updatedActivity)
-		} catch let error as APIError {
+
+		case .failure(let error):
 			await MainActor.run {
 				// Handle specific API errors
-				if case .invalidStatusCode(let statusCode) = error {
+				if let apiError = error as? APIError,
+					case .invalidStatusCode(let statusCode) = apiError
+				{
 					if statusCode == 400 {
 						// Activity is full
 						handleActivityFullError()
 					} else {
 						print(
-							"Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(error))"
+							"Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(apiError))"
 						)
 					}
 				} else {
-					print("Error toggling participation: \(ErrorFormattingService.shared.formatAPIError(error))")
+					print("Error toggling participation: \(ErrorFormattingService.shared.formatError(error))")
 				}
-			}
-		} catch {
-			await MainActor.run {
-				print("Error toggling participation: \(ErrorFormattingService.shared.formatError(error))")
 			}
 		}
 	}
@@ -118,23 +117,21 @@ class ActivityCardViewModel: ObservableObject {
 	/// Deletes the activity
 	@MainActor
 	public func deleteActivity() async throws {
-		let urlString = "\(APIService.baseURL)activities/\(activity.id)"
-		guard let url = URL(string: urlString) else {
-			throw NSError(domain: "Invalid URL", code: 0, userInfo: nil)
-		}
-
-		// Use the deleteData method from APIService
-		try await apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
-
-		// Remove the activity from the cache after successful deletion
-		AppCache.shared.removeActivity(activity.id)
-
-		// Post notification for activity deletion
-		NotificationCenter.default.post(
-			name: .activityDeleted,
-			object: activity.id
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.deleteActivity(activityId: activity.id)
 		)
+
+		// Handle the result
+		switch result {
+		case .success:
+			// Post notification for activity deletion
+			NotificationCenter.default.post(
+				name: .activityDeleted,
+				object: activity.id
+			)
+		case .failure(let error):
+			throw error
+		}
 	}
 }
-
-struct EmptyBody: Codable {}

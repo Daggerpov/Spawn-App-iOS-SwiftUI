@@ -31,12 +31,10 @@ class ContactsService: ObservableObject {
 	@Published var errorMessage: String?
 
 	private let contactStore = CNContactStore()
-	private let apiService: IAPIService
+	private let dataService: DataService
 
 	private init() {
-		// Use MockAPIService if in mocking mode, otherwise use regular APIService
-		self.apiService =
-			MockAPIService.isMocking ? MockAPIService() : APIService()
+		self.dataService = DataService.shared
 		self.authorizationStatus = CNContactStore.authorizationStatus(
 			for: .contacts
 		)
@@ -311,30 +309,20 @@ class ContactsService: ObservableObject {
 			requestingUserId: requestingUserId
 		)
 
-		guard
-			let url = URL(
-				string: APIService.baseURL + "users/contacts/cross-reference"
-			)
-		else {
-			throw APIError.URLError
+		// Use DataService to perform the cross-reference
+		let result: DataResult<ContactCrossReferenceResponseDTO> = await dataService.write(
+			.crossReferenceContacts(request: requestBody),
+			body: requestBody
+		)
+
+		switch result {
+		case .success(let response, _):
+			print("✅ API SUCCESS: Returned \(response.users.count) users")
+			return response.users
+		case .failure(let error):
+			print("❌ API returned error: \(error)")
+			throw error
 		}
-
-		print("🔗 API URL: \(url)")
-
-		let result: ContactCrossReferenceResponseDTO? =
-			try await apiService.sendData(
-				requestBody,
-				to: url,
-				parameters: nil
-			)
-
-		guard let result = result else {
-			print("❌ API returned nil result")
-			throw APIError.invalidData
-		}
-
-		print("✅ API SUCCESS: Returned \(result.users.count) users")
-		return result.users
 	}
 }
 
