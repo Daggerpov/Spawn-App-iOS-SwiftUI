@@ -11,7 +11,6 @@ class ActivityDescriptionViewModel: ObservableObject {
 	@Published var users: [BaseUserDTO]?
 	var activity: FullFeedActivityDTO
 	var senderUserId: UUID
-	var apiService: IAPIService  // Keep temporarily for operations not yet in DataService
 	var dataService: DataService
 	var creationMessage: String?
 	@Published var isParticipating: Bool = false
@@ -36,10 +35,9 @@ class ActivityDescriptionViewModel: ObservableObject {
 	}
 
 	init(
-		apiService: IAPIService, activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID,
+		activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID,
 		dataService: DataService? = nil
 	) {
-		self.apiService = apiService  // Keep for operations not yet in DataService
 		self.dataService = dataService ?? DataService.shared
 		self.activity = activity
 		self.users = users
@@ -93,27 +91,21 @@ class ActivityDescriptionViewModel: ObservableObject {
 			}
 		}
 
-		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
+		print("📡 Saving activity changes using DataService")
 
-		guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)/partial") else {
-			print("❌ Error: Invalid URL for activity partial update")
-			await setLoadingState(false, error: "Invalid URL for activity update")
-			return
-		}
+		// Create a partial update DTO with just the fields we want to update
+		let updateData = ActivityPartialUpdateDTO(
+			title: activity.title ?? "",
+			icon: activity.icon ?? ""
+		)
 
-		print("📡 Making API call to: \(url.absoluteString)")
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.partialUpdateActivity(activityId: activity.id, update: updateData)
+		let result: DataResult<FullFeedActivityDTO> = await dataService.write(
+			operationType, body: updateData)
 
-		do {
-			// Create a partial update DTO with just the fields we want to update
-			let updateData = ActivityPartialUpdateDTO(
-				title: activity.title ?? "",
-				icon: activity.icon ?? ""
-			)
-
-			// Use PATCH method for partial updates
-			let updatedActivity: FullFeedActivityDTO = try await apiService.patchData(
-				from: url, with: updateData)
-
+		switch result {
+		case .success(let updatedActivity, _):
 			await MainActor.run {
 				self.activity = updatedActivity
 
@@ -123,14 +115,9 @@ class ActivityDescriptionViewModel: ObservableObject {
 					object: updatedActivity
 				)
 			}
-		} catch let error as APIError {
-			print("❌ API error saving activity changes: \(error)")
-			print("❌ Error description: \(error.localizedDescription)")
-			await MainActor.run {
-				errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
-			print("❌ Unknown error saving activity changes: \(error)")
+
+		case .failure(let error):
+			print("❌ Error saving activity changes: \(error)")
 			await MainActor.run {
 				errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -149,44 +136,34 @@ class ActivityDescriptionViewModel: ObservableObject {
 			return
 		}
 
-		// Use the correct API endpoint that matches the backend
-		let urlString = "\(APIService.baseURL)activities/\(activity.id)/toggleStatus/\(senderUserId)"
-		guard let url = URL(string: urlString) else {
-			print("Invalid URL")
-			return
-		}
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.toggleActivityParticipation(
+			activityId: activity.id, userId: senderUserId)
+		let result: DataResult<FullFeedActivityDTO> = await dataService.write(operationType)
 
-		do {
-			// Send a PUT request and receive the updated activity in response
-			let updatedActivity: FullFeedActivityDTO = try await apiService.updateData(
-				EmptyRequestBody(), to: url, parameters: nil)
-
+		switch result {
+		case .success(let updatedActivity, _):
 			// Update local state after a successful API call
 			await updateActivityAfterAPISuccess(updatedActivity)
-		} catch let error as APIError {
+
+		case .failure(let error):
 			await MainActor.run {
-				// Handle specific API errors
-				if case .invalidStatusCode(let statusCode) = error {
-					if statusCode == 400 {
-						// Activity is full
-						NotificationCenter.default.post(
-							name: NSNotification.Name("ShowActivityFullAlert"),
-							object: nil,
-							userInfo: ["message": "Sorry, this activity is full"]
-						)
-					} else {
-						print("Error toggling participation (status \(statusCode)): \(error.localizedDescription)")
-						self.errorMessage = "Failed to update participation status"
-					}
+				// Check if it's an activity full error (status 400)
+				if let dataError = error as? DataError,
+					case .apiError(let apiError) = dataError,
+					case .invalidStatusCode(let statusCode) = apiError,
+					statusCode == 400
+				{
+					// Activity is full
+					NotificationCenter.default.post(
+						name: NSNotification.Name("ShowActivityFullAlert"),
+						object: nil,
+						userInfo: ["message": "Sorry, this activity is full"]
+					)
 				} else {
-					print("Error toggling participation: \(error.localizedDescription)")
+					print("Error toggling participation: \(error)")
 					self.errorMessage = "Failed to update participation status"
 				}
-			}
-		} catch {
-			await MainActor.run {
-				print("Error toggling participation: \(error.localizedDescription)")
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
 		}
 	}
@@ -208,28 +185,25 @@ class ActivityDescriptionViewModel: ObservableObject {
 			activityId: activity.id
 		)
 
-		if let url = URL(string: APIService.baseURL + "chatMessages") {
-			do {
-				_ = try await self.apiService.sendData(
-					chatMessage, to: url, parameters: nil)
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.sendChatMessage(message: chatMessage)
+		let result: DataResult<FullActivityChatMessageDTO> = await dataService.write(
+			operationType, body: chatMessage)
 
-				// After successfully sending the message, fetch the updated activity data
-				await fetchUpdatedActivityData()
+		switch result {
+		case .success:
+			// After successfully sending the message, fetch the updated activity data
+			await fetchUpdatedActivityData()
 
-				// Clear any error message
-				await MainActor.run {
-					creationMessage = nil
-				}
-			} catch let error as APIError {
-				print("Error sending message: \(error)")
-				await MainActor.run {
-					creationMessage = ErrorFormattingService.shared.formatAPIError(error)
-				}
-			} catch {
-				print("Error sending message: \(error)")
-				await MainActor.run {
-					creationMessage = ErrorFormattingService.shared.formatError(error)
-				}
+			// Clear any error message
+			await MainActor.run {
+				creationMessage = nil
+			}
+
+		case .failure(let error):
+			print("Error sending message: \(error)")
+			await MainActor.run {
+				creationMessage = ErrorFormattingService.shared.formatError(error)
 			}
 		}
 	}
@@ -237,39 +211,48 @@ class ActivityDescriptionViewModel: ObservableObject {
 	// this method gets called after a chat message is sent, to update the
 	// chat messages in the activity popup view, to include this chat message
 	public func fetchUpdatedActivityData() async {
-		if let url = URL(string: APIService.baseURL + "activities/\(activity.id)") {
-			do {
-				let updatedActivity: FullFeedActivityDTO = try await self.apiService.fetchData(
-					from: url, parameters: ["requestingUserId": senderUserId.uuidString])
+		// Use DataService to fetch the updated activity (this should be a read operation)
+		// For now, we'll keep the direct fetch, but this could be optimized later
+		// by adding a DataType for single activity fetch
+		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
+			.activities(userId: senderUserId, filterType: .all),
+			cachePolicy: .networkOnly
+		)
 
-				// Update the activity on the main thread
+		switch result {
+		case .success(let activities, _):
+			// Find the updated activity in the list
+			if let updatedActivity = activities.first(where: { $0.id == activity.id }) {
 				await MainActor.run {
 					self.activity = updatedActivity
 				}
-			} catch let error as APIError {
-				print("Error fetching updated activity data: \(ErrorFormattingService.shared.formatAPIError(error))")
-			} catch {
-				print("Error fetching updated activity data: \(ErrorFormattingService.shared.formatError(error))")
 			}
+
+		case .failure(let error):
+			print("Error fetching updated activity data: \(ErrorFormattingService.shared.formatError(error))")
 		}
 	}
 
 	/// Reports the activity for inappropriate content
 	func reportActivity(reporterUserId: UUID, reportType: ReportType, description: String) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.reportActivity(
-				reporterUserId: reporterUserId,
-				activityId: activity.id,
-				reportType: reportType,
-				description: description
-			)
+		// Create report DTO
+		let report = CreateReportedContentDTO(
+			reporterUserId: reporterUserId,
+			contentId: activity.id,
+			contentType: .activity,
+			reportType: reportType,
+			description: description
+		)
+
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.reportActivity(report: report)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operationType)
+
+		switch result {
+		case .success:
 			print("Activity reported successfully")
-		} catch let error as APIError {
-			await MainActor.run {
-				errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+
+		case .failure(let error):
 			await MainActor.run {
 				errorMessage = ErrorFormattingService.shared.formatError(error)
 			}

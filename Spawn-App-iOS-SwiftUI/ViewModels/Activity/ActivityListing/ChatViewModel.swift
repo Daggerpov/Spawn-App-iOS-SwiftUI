@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 class ChatViewModel: ObservableObject {
-	private let apiService: IAPIService
+	private let dataService: DataService
 	private let senderUserId: UUID
 	@ObservedObject private var activity: FullFeedActivityDTO
 
@@ -27,10 +27,10 @@ class ChatViewModel: ObservableObject {
 		static let genericSendError = "Error sending message. Please try again."
 	}
 
-	init(senderUserId: UUID, activity: FullFeedActivityDTO) {
+	init(senderUserId: UUID, activity: FullFeedActivityDTO, dataService: DataService? = nil) {
 		self.senderUserId = senderUserId
 		self.activity = activity
-		apiService = MockAPIService.isMocking ? MockAPIService(userId: senderUserId) : APIService()
+		self.dataService = dataService ?? DataService.shared
 	}
 
 	// MARK: - Helper Methods
@@ -65,12 +65,6 @@ class ChatViewModel: ObservableObject {
 			return
 		}
 
-		// Construct URL
-		guard let url = URL(string: APIService.baseURL + "chatMessages") else {
-			await setErrorMessage(ErrorMessages.invalidConfig)
-			return
-		}
-
 		// Create chat message
 		let chatMessage = CreateChatMessageDTO(
 			content: trimmedMessage,
@@ -78,37 +72,34 @@ class ChatViewModel: ObservableObject {
 			activityId: activity.id
 		)
 
-		do {
-			let response: FullActivityChatMessageDTO? = try await apiService.sendData(
-				chatMessage, to: url, parameters: nil)
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.sendChatMessage(message: chatMessage)
+		let result: DataResult<FullActivityChatMessageDTO> = await dataService.write(
+			operationType, body: chatMessage)
 
+		switch result {
+		case .success(let newChatMessage, _):
 			await MainActor.run {
-				guard let newChatMessage = response else {
-					print("Error: No chat received from API after creating chat message")
-					creationMessage = ErrorMessages.genericSendError
-					return
-				}
-
 				// Add message and clear error
 				addChatMessage(newChatMessage)
 				creationMessage = nil
 			}
-		} catch {
+
+		case .failure(let error):
 			print("Error sending message: \(error)")
 			await setErrorMessage(ErrorMessages.sendError)
 		}
 	}
 
 	func refreshChat() async {
-		// Construct URL
-		guard let url = URL(string: APIService.baseURL + "activities/" + activity.id.uuidString + "/chats") else {
-			await setErrorMessage(ErrorMessages.invalidConfig)
-			return
-		}
+		// Use DataService to fetch activity chats
+		let result: DataResult<[FullActivityChatMessageDTO]> = await dataService.read(
+			.activityChats(activityId: activity.id),
+			cachePolicy: .networkOnly  // Always fetch latest chat messages
+		)
 
-		do {
-			let chats: [FullActivityChatMessageDTO] = try await apiService.fetchData(from: url, parameters: nil)
-
+		switch result {
+		case .success(let chats):
 			await MainActor.run {
 				// Only update if we actually got data
 				if !chats.isEmpty || activity.chatMessages?.isEmpty == true {
@@ -117,7 +108,7 @@ class ChatViewModel: ObservableObject {
 				// Clear any error messages on successful refresh
 				creationMessage = nil
 			}
-		} catch {
+		case .failure(let error):
 			print("Error refreshing chats: \(error)")
 			// Only show refresh error if there are no existing messages
 			if activity.chatMessages?.isEmpty != false {

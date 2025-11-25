@@ -1,10 +1,12 @@
 import Foundation
 
 class ReportingService {
-	private let apiService: IAPIService
+	private let apiService: IAPIService  // Keep temporarily for operations not yet in DataService
+	private let dataService: DataService
 
-	init(apiService: IAPIService = APIService()) {
-		self.apiService = apiService
+	init(apiService: IAPIService = APIService(), dataService: DataService? = nil) {
+		self.apiService = apiService  // Keep for operations not yet in DataService
+		self.dataService = dataService ?? DataService.shared
 	}
 
 	// MARK: - Blocking Users
@@ -31,25 +33,20 @@ class ReportingService {
 			print("🚫 DEBUG: ⚠️ No access token found in keychain")
 		}
 
-		guard let url = URL(string: APIService.baseURL + "blocked-users/block") else {
-			print("🚫 DEBUG: ❌ Failed to create URL")
-			throw APIError.URLError
-		}
-		print("🚫 DEBUG: Request URL: \(url.absoluteString)")
+		print("🚫 DEBUG: Making API call...")
 
-		let blockDTO = BlockedUserCreationDTO(
-			blockerId: blockerId,
-			blockedId: blockedId,
-			reason: reason
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.blockUser(blockerId: blockerId, blockedId: blockedId, reason: reason)
 		)
 
-		print("🚫 DEBUG: Making API call...")
-		do {
-			let _: EmptyResponse? = try await apiService.sendData(blockDTO, to: url, parameters: nil)
+		// Handle the result
+		switch result {
+		case .success:
 			print("🚫 DEBUG: ✅ Block user request completed successfully")
-		} catch {
+		case .failure(let error):
 			print("🚫 DEBUG: ❌ Block user request failed with error: \(error)")
-			print("🚫 DEBUG: Error details: \(error.localizedDescription)")
+			print("🚫 DEBUG: Error details: \(error)")
 			throw error
 		}
 	}
@@ -59,15 +56,18 @@ class ReportingService {
 	///   - blockerId: ID of the user doing the unblocking
 	///   - blockedId: ID of the user being unblocked
 	func unblockUser(blockerId: UUID, blockedId: UUID) async throws {
-		guard let url = URL(string: APIService.baseURL + "blocked-users/unblock") else {
-			throw APIError.URLError
-		}
-		let parameters = [
-			"blockerId": blockerId.uuidString,
-			"blockedId": blockedId.uuidString,
-		]
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.unblockUser(blockerId: blockerId, blockedId: blockedId)
+		)
 
-		try await apiService.deleteData(from: url, parameters: parameters, object: Optional<String>.none)
+		// Handle the result
+		switch result {
+		case .success:
+			break  // Success
+		case .failure(let error):
+			throw error
+		}
 	}
 
 	/// Get list of blocked users

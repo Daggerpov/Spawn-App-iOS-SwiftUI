@@ -258,61 +258,67 @@ struct ActivityFeedView: View {
 					return
 				}
 
-				// If not found in current activities, fetch from API
+				// If not found in current activities, fetch from API using DataService
 				print("🔄 ActivityFeedView: Activity not in current feed, fetching from API")
-				let apiService: IAPIService = MockAPIService.isMocking ? MockAPIService(userId: user.id) : APIService()
+				let dataService = DataService.shared
 
-				guard let url = URL(string: "\(APIService.baseURL)activities/\(activityId)") else {
-					throw APIError.URLError
-				}
+				// Use DataService to fetch activity with autoJoin
+				let result: DataResult<FullFeedActivityDTO> = await dataService.read(
+					.activity(activityId: activityId, requestingUserId: user.id, autoJoin: true),
+					cachePolicy: .networkOnly  // Always fetch latest for deep links
+				)
 
-				// Add autoJoin parameter to automatically join the user to the activity
-				let parameters = [
-					"requestingUserId": user.id.uuidString,
-					"autoJoin": "true",
-				]
-				let activity: FullFeedActivityDTO = try await apiService.fetchData(from: url, parameters: parameters)
+				// Handle the result
+				switch result {
+				case .success(let activity):
+					print(
+						"✅ ActivityFeedView: Successfully fetched deep linked activity: \(activity.title ?? "No title")"
+					)
 
-				print("✅ ActivityFeedView: Successfully fetched deep linked activity: \(activity.title ?? "No title")")
+					await MainActor.run {
+						// Ensure we're setting all required state atomically
+						activityInPopup = activity
+						colorInPopup = ActivityColorService.shared.getColorForActivity(activityId)
 
-				await MainActor.run {
-					// Ensure we're setting all required state atomically
-					activityInPopup = activity
-					colorInPopup = ActivityColorService.shared.getColorForActivity(activityId)
+						// Clear deep link state first
+						shouldShowDeepLinkedActivity = false
+						deepLinkedActivityId = nil
+						isFetchingDeepLinkedActivity = false
 
-					// Clear deep link state first
-					shouldShowDeepLinkedActivity = false
-					deepLinkedActivityId = nil
-					isFetchingDeepLinkedActivity = false
+						// Force a small delay to ensure UI is ready, then show popup
+						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+							showingActivityPopup = true
+							print(
+								"🎯 ActivityFeedView: Set popup state - showing: \(showingActivityPopup), activity: \(activity.title ?? "No title")"
+							)
+						}
+					}
 
-					// Force a small delay to ensure UI is ready, then show popup
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-						showingActivityPopup = true
-						print(
-							"🎯 ActivityFeedView: Set popup state - showing: \(showingActivityPopup), activity: \(activity.title ?? "No title")"
+				case .failure(let error):
+					print("❌ ActivityFeedView: Failed to fetch deep linked activity: \(error)")
+					print("❌ ActivityFeedView: Error details - Activity ID: \(activityId)")
+
+					await MainActor.run {
+						shouldShowDeepLinkedActivity = false
+						deepLinkedActivityId = nil
+						isFetchingDeepLinkedActivity = false
+
+						// Show error to user via InAppNotificationManager
+						InAppNotificationManager.shared.showNotification(
+							title: "Unable to open activity",
+							message:
+								"The activity you're trying to view might have been deleted or you might not have permission to view it.",
+							type: .error
 						)
 					}
 				}
 
 			} catch {
-				print("❌ ActivityFeedView: Failed to fetch deep linked activity: \(error)")
-				print(
-					"❌ ActivityFeedView: Error details - Activity ID: \(activityId), Error: \(error.localizedDescription)"
-				)
+				print("❌ ActivityFeedView: Unexpected error: \(error)")
 				await MainActor.run {
 					shouldShowDeepLinkedActivity = false
 					deepLinkedActivityId = nil
 					isFetchingDeepLinkedActivity = false
-				}
-
-				// Show error to user via InAppNotificationManager
-				await MainActor.run {
-					InAppNotificationManager.shared.showNotification(
-						title: "Unable to open activity",
-						message:
-							"The activity you're trying to view might have been deleted or you might not have permission to view it.",
-						type: .error
-					)
 				}
 			}
 		}

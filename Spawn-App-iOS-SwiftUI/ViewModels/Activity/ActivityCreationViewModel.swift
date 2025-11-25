@@ -115,7 +115,6 @@ class ActivityCreationViewModel: ObservableObject {
 		selectedLocation = originalLocation
 	}
 
-	private var apiService: IAPIService  // Keep temporarily for operations not yet in DataService
 	private var dataService: DataService
 
 	public static func reInitialize() {
@@ -241,11 +240,6 @@ class ActivityCreationViewModel: ObservableObject {
 
 	/// Private initializer to enforce singleton pattern
 	private init() {
-		self.apiService =
-			MockAPIService.isMocking
-			? MockAPIService(
-				userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
-			: APIService()
 		self.dataService = DataService.shared
 
 		self.activity = Self.createDefaultActivity()
@@ -537,30 +531,23 @@ class ActivityCreationViewModel: ObservableObject {
 			return
 		}
 
-		print("🔍 DEBUG: Form validation passed, making API call")
+		print("🔍 DEBUG: Form validation passed, creating activity using DataService")
 
-		do {
-			guard let url = URL(string: APIService.baseURL + "activities") else {
-				await setCreationMessage("Failed to create activity. Invalid URL.")
-				await setLoadingState(false)
-				return
-			}
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.createActivity(activity: activity)
+		let result: DataResult<ActivityCreationResponseDTO> = await dataService.write(
+			operationType, body: activity)
 
-			let response: ActivityCreationResponseDTO? = try await apiService.sendData(
-				activity, to: url, parameters: nil)
+		switch result {
+		case .success(let response, _):
+			// Notify about successful creation
+			NotificationCenter.default.post(name: .activityCreated, object: response.activity)
 
-			if let response = response {
-				// Notify about successful creation
-				NotificationCenter.default.post(name: .activityCreated, object: response.activity)
+			await setCreationMessage("Activity created successfully!")
+			print("🔍 DEBUG: Activity creation successful")
 
-				await setCreationMessage("Activity created successfully!")
-				print("🔍 DEBUG: Activity creation successful")
-			} else {
-				await setCreationMessage("Failed to create activity. Please try again.")
-			}
-
-		} catch {
-			print("🔍 DEBUG: API call threw error: \(error)")
+		case .failure(let error):
+			print("🔍 DEBUG: Activity creation failed: \(error)")
 			await setCreationMessage("Failed to create activity. Please try again.")
 		}
 
@@ -584,29 +571,23 @@ class ActivityCreationViewModel: ObservableObject {
 			return
 		}
 
-		do {
-			guard let url = URL(string: APIService.baseURL + "activities/\(activity.id)/partial") else {
-				await setCreationMessage("Failed to update activity. Invalid URL.")
-				await setLoadingState(false)
-				return
+		// Create partial update data
+		let updateData = buildPartialUpdateData()
+
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.partialUpdateActivity(activityId: activity.id, update: updateData)
+		let result: DataResult<FullFeedActivityDTO> = await dataService.write(
+			operationType, body: updateData)
+
+		switch result {
+		case .success(let updatedActivity, _):
+			await MainActor.run {
+				// Notify about successful update
+				NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
+				creationMessage = "Activity updated successfully!"
 			}
 
-			// Create partial update data
-			let updateData = buildPartialUpdateData()
-
-			let updatedActivity: FullFeedActivityDTO? = try await apiService.patchData(from: url, with: updateData)
-
-			if let updatedActivity = updatedActivity {
-				await MainActor.run {
-					// Notify about successful update
-					NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
-					creationMessage = "Activity updated successfully!"
-				}
-			} else {
-				await setCreationMessage("Failed to update activity. Please try again.")
-			}
-
-		} catch {
+		case .failure(let error):
 			print("Error updating activity: \(error)")
 			await setCreationMessage("Failed to update activity. Please try again.")
 		}

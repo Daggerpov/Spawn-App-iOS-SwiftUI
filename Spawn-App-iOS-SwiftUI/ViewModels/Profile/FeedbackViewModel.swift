@@ -9,16 +9,16 @@ import Foundation
 import SwiftUI
 
 class FeedbackViewModel: ObservableObject {
-	// API Service injected via dependency injection
-	private var apiService: IAPIService
+	// DataService for all data operations
+	private var dataService: DataService
 
 	// Published properties that the view can observe
 	@Published var isSubmitting = false
 	@Published var successMessage: String?
 	@Published var errorMessage: String?
 
-	init(apiService: IAPIService = APIService()) {
-		self.apiService = apiService
+	init(dataService: DataService? = nil) {
+		self.dataService = dataService ?? DataService.shared
 	}
 
 	func submitFeedback(type: FeedbackType, message: String, userId: UUID? = nil, image: UIImage? = nil) async {
@@ -33,37 +33,36 @@ class FeedbackViewModel: ObservableObject {
 			successMessage = nil
 		}
 
-		do {
-			// Create the feedback endpoint URL
-			guard let url = URL(string: APIService.baseURL + "feedback") else {
-				throw APIError.URLError
+		// Create feedback data model
+		var feedback = FeedbackSubmissionDTO(
+			type: type.rawValue,
+			message: message,
+			fromUserId: userId?.uuidString
+		)
+
+		// Handle image using the resize helper
+		if let image = image {
+			let resizedImage = resizeImageIfNeeded(image, maxDimension: 1024)
+			if let imageData = resizedImage.jpegData(compressionQuality: 0.7) {
+				let base64String = imageData.base64EncodedString()
+				feedback.imageData = base64String
+				print("Including feedback image data of size: \(imageData.count) bytes")
 			}
+		}
 
-			// Create feedback data model
-			var feedback = FeedbackSubmissionDTO(
-				type: type.rawValue,
-				message: message,
-				fromUserId: userId?.uuidString
-			)
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.submitFeedback(feedback: feedback)
+		let result: DataResult<FeedbackSubmissionDTO> = await dataService.write(
+			operationType, body: feedback)
 
-			// Handle image using the resize helper
-			if let image = image {
-				let resizedImage = resizeImageIfNeeded(image, maxDimension: 1024)
-				if let imageData = resizedImage.jpegData(compressionQuality: 0.7) {
-					let base64String = imageData.base64EncodedString()
-					feedback.imageData = base64String
-					print("Including feedback image data of size: \(imageData.count) bytes")
-				}
-			}
-
-			// Use apiService.sendData to handle the POST request
-			let _: FeedbackSubmissionDTO? = try await apiService.sendData(feedback, to: url, parameters: nil)
-
+		switch result {
+		case .success:
 			await MainActor.run {
 				isSubmitting = false
 				successMessage = "Thank you for your feedback!"
 			}
-		} catch {
+
+		case .failure(let error):
 			await setError("Failed to submit feedback: \(ErrorFormattingService.shared.formatError(error))")
 		}
 	}
