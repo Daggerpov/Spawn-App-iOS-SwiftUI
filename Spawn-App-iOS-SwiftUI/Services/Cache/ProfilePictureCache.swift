@@ -9,366 +9,116 @@ import Foundation
 import SwiftUI
 import UIKit
 
-/// A singleton service that manages profile picture caching
+/// A singleton service that manages simple profile picture downloading
 class ProfilePictureCache: ObservableObject {
 	static let shared = ProfilePictureCache()
 
-	// MARK: - Properties
-	private let fileManager = FileManager.default
-	private let cacheDirectory: URL
-	private let maxCacheSize: Int64 = 100 * 1024 * 1024  // 100MB
-	private let maxCacheAge: TimeInterval = 7 * 24 * 60 * 60  // 7 days
-
-	// Metadata about cached images
-	private var cacheMetadata: [String: CacheMetadata] = [:]
-	private let metadataKey = "ProfilePictureCacheMetadata"
-	private let metadataQueue = DispatchQueue(label: "ProfilePictureCache.metadata", attributes: .concurrent)
-
-	// Currently downloading images to prevent duplicate downloads
-	private var downloadingImages: Set<String> = []
-	private let downloadingQueue = DispatchQueue(label: "ProfilePictureCache.downloading", attributes: .concurrent)
-
-	// Track failed download URLs to avoid repeated failures
-	private var failedDownloads: [String: Date] = [:]
-	private let failedDownloadsQueue = DispatchQueue(
-		label: "ProfilePictureCache.failedDownloads", attributes: .concurrent)
-	private let failedDownloadCooldown: TimeInterval = 5 * 60  // 5 minutes before retry
-
 	// MARK: - Initialization
 	private init() {
-		// Create cache directory
-		let cachesDirectory = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first!
-		cacheDirectory = cachesDirectory.appendingPathComponent("ProfilePictures")
-
-		// Create directory if it doesn't exist
-		try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
-
-		// Load metadata
-		loadMetadata()
-
-		// Clean up old cache entries
-		cleanupOldCache()
+		// Simple initialization
 	}
 
 	// MARK: - Public Methods
 
-	/// Get a cached image for a user ID, or nil if not cached
-	func getCachedImage(for userId: UUID) -> UIImage? {
-		let key = userId.uuidString
-
-		print("🔍 [CACHE] getCachedImage for user \(userId)")
-
-		// Check disk cache
-		let fileURL = cacheDirectory.appendingPathComponent("\(key).jpg")
-
-		guard fileManager.fileExists(atPath: fileURL.path),
-			let imageData = try? Data(contentsOf: fileURL),
-			let image = UIImage(data: imageData)
-		else {
-			// Cache miss
-			print("❌ [CACHE] Disk cache MISS for user \(userId). File path: \(fileURL.path)")
-			print("   File exists: \(fileManager.fileExists(atPath: fileURL.path))")
-			return nil
-		}
-
-		// Cache hit on disk
-		print("✅ [CACHE] Disk cache HIT for user \(userId)")
-
-		// Update access time
-		updateLastAccessed(for: key)
-		saveMetadata()
-
-		return image
-	}
-
-	/// Cache an image for a user ID
-	func cacheImage(_ image: UIImage, for userId: UUID) {
-		let key = userId.uuidString
-
-		// Store on disk
-		Task {
-			await saveToDisk(image, for: key)
-		}
-	}
-
-	/// Download and cache an image from a URL for a user ID
+	/// Download an image from a URL for a user ID (no caching, no complexity)
 	func downloadAndCacheImage(from urlString: String, for userId: UUID, forceRefresh: Bool = false) async -> UIImage? {
-		let key = userId.uuidString
-
-		print("🌐 [CACHE] downloadAndCacheImage called for user \(userId)")
+		print("🌐 [DOWNLOAD] Downloading image for user \(userId)")
 		print("   URL: \(urlString)")
-		print("   Force refresh: \(forceRefresh)")
-
-		// Check if already cached (skip if force refresh is requested)
-		if !forceRefresh, let cachedImage = getCachedImage(for: userId) {
-			print("✅ [CACHE] Using cached image for user \(userId)")
-			return cachedImage
-		}
-
-		// Check if this URL recently failed and is in cooldown
-		if !forceRefresh && isInFailureCooldown(urlString) {
-			print("⏸️ [CACHE] URL in cooldown for user \(userId), returning cached if available")
-			// Return cached image if available during cooldown
-			return getCachedImage(for: userId)
-		}
-
-		// Check if already downloading
-		if isDownloading(key) {
-			print("⏳ [CACHE] Already downloading for user \(userId), waiting...")
-			// Wait for the download to complete
-			while isDownloading(key) {
-				try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1 seconds
-			}
-			// Try to get the cached image after download completes
-			return getCachedImage(for: userId)
-		}
-
-		// Start download
-		print("⬇️ [CACHE] Starting download for user \(userId)")
-		startDownloading(key)
-		defer { stopDownloading(key) }
 
 		guard let url = URL(string: urlString) else {
-			print("❌ [CACHE] Failed to create URL from string: \(urlString) for user \(userId)")
-			markDownloadFailed(urlString)
+			print("❌ [DOWNLOAD] Invalid URL: \(urlString)")
 			return nil
 		}
 
-		// Validate that the URL is a proper HTTP/HTTPS URL
-		guard url.scheme == "http" || url.scheme == "https" else {
-			print(
-				"❌ [CACHE] Invalid URL scheme for profile picture: \(urlString) for user \(userId). Only HTTP/HTTPS URLs are supported."
-			)
-			markDownloadFailed(urlString)
+		do {
+			let (data, response) = try await URLSession.shared.data(from: url)
+
+			if let httpResponse = response as? HTTPURLResponse {
+				print("   HTTP Status: \(httpResponse.statusCode)")
+			}
+
+			guard let image = UIImage(data: data) else {
+				print("❌ [DOWNLOAD] Failed to create image from data for user \(userId)")
+				return nil
+			}
+
+			print("✅ [DOWNLOAD] Successfully downloaded image for user \(userId)")
+			return image
+
+		} catch {
+			print("❌ [DOWNLOAD] Download failed for user \(userId): \(error.localizedDescription)")
 			return nil
 		}
-
-		// Try download with retry mechanism
-		return await downloadWithRetry(
-			url: url, urlString: urlString, userId: userId, forceRefresh: forceRefresh, maxRetries: 2)
 	}
 
-	/// Download with exponential backoff retry mechanism
-	private func downloadWithRetry(url: URL, urlString: String, userId: UUID, forceRefresh: Bool, maxRetries: Int) async
-		-> UIImage?
-	{
-		var lastError: Error?
-		let startTime = Date()
-
-		for attempt in 0...maxRetries {
-			do {
-				// Exponential backoff: 0s, 1s, 2s
-				if attempt > 0 {
-					let delay = UInt64(attempt * 1_000_000_000)  // Convert to nanoseconds
-					try? await Task.sleep(nanoseconds: delay)
-					print("🔄 [PROFILE PIC] Retry attempt \(attempt)/\(maxRetries) for user \(userId)")
-				}
-
-				let downloadStartTime = Date()
-				let (data, response) = try await URLSession.shared.data(from: url)
-				let downloadDuration = Date().timeIntervalSince(downloadStartTime)
-
-				// Log HTTP response for debugging
-				if let httpResponse = response as? HTTPURLResponse {
-					if httpResponse.statusCode != 200 {
-						print("⚠️ [PROFILE PIC] HTTP \(httpResponse.statusCode) for user \(userId)")
-						if httpResponse.statusCode >= 400 && httpResponse.statusCode < 500 {
-							// Client error - don't retry
-							markDownloadFailed(urlString)
-							break
-						}
-						continue  // Server error - retry
-					}
-				}
-
-				guard let image = UIImage(data: data) else {
-					print("❌ [PROFILE PIC] Failed to create image from data for user \(userId)")
-					// Return cached image as fallback if available
-					return getCachedImage(for: userId)
-				}
-
-				// Success! Clear any failure record
-				clearDownloadFailure(urlString)
-
-				let totalDuration = Date().timeIntervalSince(startTime)
-				if totalDuration > 1.0 {
-					print(
-						"⏱️ [PROFILE PIC] Download took \(String(format: "%.2f", downloadDuration))s (total: \(String(format: "%.2f", totalDuration))s) for user \(userId)"
-					)
-				}
-
-				// If force refresh, remove old cached image first
-				if forceRefresh {
-					removeCachedImage(for: userId)
-				}
-
-				// Cache the image
-				cacheImage(image, for: userId)
-
-				return image
-
-			} catch {
-				lastError = error
-				if attempt == maxRetries {
-					print("❌ [PROFILE PIC] All retry attempts failed for user \(userId)")
-					print("   URL: \(urlString)")
-					print("   Final Error: \(error.localizedDescription)")
-					if let urlError = error as? URLError {
-						print("   URLError code: \(urlError.code.rawValue)")
-					}
-					markDownloadFailed(urlString)
-				}
-			}
-		}
-
-		// All retries failed - return cached image as fallback
-		if let cachedImage = getCachedImage(for: userId) {
-			print("✅ [PROFILE PIC] Using stale cached image as fallback for user \(userId)")
-			return cachedImage
-		}
-		return nil
-	}
-
-	/// Remove cached image for a user ID
-	func removeCachedImage(for userId: UUID) {
-		let key = userId.uuidString
-
-		// Remove from disk
-		let fileURL = cacheDirectory.appendingPathComponent("\(key).jpg")
-		try? fileManager.removeItem(at: fileURL)
-
-		// Remove metadata
-		removeMetadata(for: key)
-		saveMetadata()
-	}
-
-	/// Clear all cached images
-	func clearAllCache() {
-		// Clear disk cache
-		if let enumerator = fileManager.enumerator(at: cacheDirectory, includingPropertiesForKeys: nil) {
-			for case let fileURL as URL in enumerator {
-				try? fileManager.removeItem(at: fileURL)
-			}
-		}
-
-		// Clear metadata
-		clearAllMetadata()
-		saveMetadata()
-	}
-
-	/// Force refresh a profile picture from the backend
-	func refreshProfilePicture(for userId: UUID, from urlString: String) async -> UIImage? {
-		return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
-	}
-
-	/// Check if a cached profile picture is stale and needs refreshing
-	func isProfilePictureStale(for userId: UUID, maxAge: TimeInterval = 24 * 60 * 60) -> Bool {
-		let key = userId.uuidString
-		guard let metadata = getMetadata(for: key) else {
-			// No metadata means no cached image, so it's "stale"
-			return true
-		}
-
-		let ageInSeconds = Date().timeIntervalSince(metadata.cachedAt)
-		return ageInSeconds > maxAge
-	}
-
-	/// Refresh profile pictures for multiple users if they're stale
-	/// Uses task groups to download multiple profile pictures in parallel for faster performance
-	func refreshStaleProfilePictures(for users: [(userId: UUID, profilePictureUrl: String?)]) async {
-		// Use withTaskGroup to refresh multiple stale profile pictures in parallel
-		await withTaskGroup(of: Void.self) { group in
-			for user in users {
-				guard let profilePictureUrl = user.profilePictureUrl else { continue }
-
-				// Check if the profile picture is stale (older than 24 hours)
-				if isProfilePictureStale(for: user.userId) {
-					group.addTask {
-						_ = await self.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
-					}
-				}
-			}
-		}
-	}
-
-	/// Get the cached image with automatic staleness check and refresh
-	/// CRITICAL FIX: Returns cached image immediately even if stale, then refreshes in background
+	/// Get an image with automatic download (no caching)
+	/// This is the main entry point for UI components
 	func getCachedImageWithRefresh(for userId: UUID, from urlString: String?, maxAge: TimeInterval = 24 * 60 * 60) async
 		-> UIImage?
 	{
-		print("🔄 [CACHE] getCachedImageWithRefresh for user \(userId)")
+		print("🔄 [DOWNLOAD] getCachedImageWithRefresh for user \(userId)")
 		print("   URL: \(urlString ?? "nil")")
-		print("   Max age: \(maxAge)s")
 
-		// First try to get from cache
-		if let cachedImage = getCachedImage(for: userId) {
-			// Check if it's stale
-			let isStale = isProfilePictureStale(for: userId, maxAge: maxAge)
-			print("   Cached image found. Is stale: \(isStale)")
-
-			if !isStale {
-				// Fresh cache - return immediately
-				print("✅ [CACHE] Returning fresh cached image for user \(userId)")
-				return cachedImage
-			} else {
-				// CRITICAL FIX: Return cached image immediately, refresh in background
-				// This prevents UI blocking while downloading
-				print(
-					"⚠️ [CACHE] Cached image is stale for user \(userId), returning stale image and refreshing in background"
-				)
-				if let urlString = urlString {
-					Task.detached(priority: .background) {
-						_ = await self.downloadAndCacheImage(from: urlString, for: userId, forceRefresh: true)
-					}
-				}
-				return cachedImage
-			}
-		}
-
-		// No cached image - must download
-		print("❌ [CACHE] No cached image for user \(userId), downloading...")
 		guard let urlString = urlString else {
-			print("❌ [CACHE] No URL provided for user \(userId), cannot download")
+			print("❌ [DOWNLOAD] No URL provided for user \(userId), cannot download")
 			return nil
 		}
 
 		return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: false)
 	}
 
-	/// Get cache size in bytes
-	func getCacheSize() -> Int64 {
-		var totalSize: Int64 = 0
+	/// Download profile pictures for multiple users in parallel
+	/// Uses task groups to download multiple profile pictures in parallel for faster performance
+	func refreshStaleProfilePictures(for users: [(userId: UUID, profilePictureUrl: String?)]) async {
+		// Use withTaskGroup to download multiple profile pictures in parallel
+		await withTaskGroup(of: Void.self) { group in
+			for user in users {
+				guard let profilePictureUrl = user.profilePictureUrl else { continue }
 
-		if let enumerator = fileManager.enumerator(at: cacheDirectory, includingPropertiesForKeys: [.fileSizeKey]) {
-			for case let fileURL as URL in enumerator {
-				if let resourceValues = try? fileURL.resourceValues(forKeys: [.fileSizeKey]),
-					let fileSize = resourceValues.fileSize
-				{
-					totalSize += Int64(fileSize)
+				group.addTask {
+					_ = await self.downloadAndCacheImage(from: profilePictureUrl, for: user.userId, forceRefresh: false)
 				}
 			}
 		}
-
-		return totalSize
 	}
 
-	// MARK: - Private Methods
+	/// Force refresh a profile picture from the backend
+	/// This is an alias for downloadAndCacheImage for backwards compatibility
+	func refreshProfilePicture(for userId: UUID, from urlString: String) async -> UIImage? {
+		return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: false)
+	}
 
-	private func isDownloading(_ key: String) -> Bool {
+	/// Remove cached image for a user ID
+	/// No-op since we don't cache anymore
+	func removeCachedImage(for userId: UUID) {
+		// No-op - we don't have a cache to remove from
+		print("ℹ️ [DOWNLOAD] removeCachedImage called but no cache exists (userId: \(userId))")
+	}
+
+	/// Clear all cached images
+	/// No-op since we don't cache anymore
+	func clearAllCache() {
+		// No-op - we don't have a cache to clear
+		print("ℹ️ [DOWNLOAD] clearAllCache called but no cache exists")
+	}
+
+	// MARK: - Private Methods - Download Task Management
+
+	private func getDownloadTask(_ key: String) -> Task<UIImage?, Never>? {
 		return downloadingQueue.sync {
-			return downloadingImages.contains(key)
+			return downloadingImages[key]
 		}
 	}
 
-	private func startDownloading(_ key: String) {
+	private func setDownloadTask(_ task: Task<UIImage?, Never>, for key: String) {
 		downloadingQueue.async(flags: .barrier) {
-			self.downloadingImages.insert(key)
+			self.downloadingImages[key] = task
 		}
 	}
 
-	private func stopDownloading(_ key: String) {
+	private func removeDownloadTask(for key: String) {
 		downloadingQueue.async(flags: .barrier) {
-			self.downloadingImages.remove(key)
+			self.downloadingImages.removeValue(forKey: key)
 		}
 	}
 
@@ -393,138 +143,4 @@ class ProfilePictureCache: ObservableObject {
 			self.failedDownloads.removeValue(forKey: urlString)
 		}
 	}
-
-	// MARK: - Thread-Safe Metadata Access
-
-	private func getMetadata(for key: String) -> CacheMetadata? {
-		return metadataQueue.sync {
-			return cacheMetadata[key]
-		}
-	}
-
-	private func setMetadata(_ metadata: CacheMetadata, for key: String) {
-		metadataQueue.async(flags: .barrier) {
-			self.cacheMetadata[key] = metadata
-		}
-	}
-
-	private func updateLastAccessed(for key: String) {
-		metadataQueue.async(flags: .barrier) {
-			self.cacheMetadata[key]?.lastAccessed = Date()
-		}
-	}
-
-	private func removeMetadata(for key: String) {
-		metadataQueue.async(flags: .barrier) {
-			self.cacheMetadata.removeValue(forKey: key)
-		}
-	}
-
-	private func clearAllMetadata() {
-		metadataQueue.async(flags: .barrier) {
-			self.cacheMetadata.removeAll()
-		}
-	}
-
-	private func getAllMetadata() -> [String: CacheMetadata] {
-		return metadataQueue.sync {
-			return cacheMetadata
-		}
-	}
-
-	private func saveToDisk(_ image: UIImage, for key: String) async {
-		guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-			print("Failed to convert image to JPEG data for key \(key)")
-			return
-		}
-
-		let fileURL = cacheDirectory.appendingPathComponent("\(key).jpg")
-
-		do {
-			try imageData.write(to: fileURL)
-
-			// Update metadata
-			let metadata = CacheMetadata(
-				cachedAt: Date(),
-				lastAccessed: Date(),
-				fileSize: Int64(imageData.count)
-			)
-			setMetadata(metadata, for: key)
-			await MainActor.run {
-				self.saveMetadata()
-			}
-
-			// Clean up if cache is too large
-			await cleanupIfNeeded()
-
-		} catch {
-			print("Failed to save image to disk for key \(key): \(error.localizedDescription)")
-		}
-	}
-
-	private func loadMetadata() {
-		guard let data = UserDefaults.standard.data(forKey: metadataKey),
-			let metadata = try? JSONDecoder().decode([String: CacheMetadata].self, from: data)
-		else {
-			return
-		}
-		metadataQueue.async(flags: .barrier) {
-			self.cacheMetadata = metadata
-		}
-	}
-
-	private func saveMetadata() {
-		let metadata = getAllMetadata()
-		guard let data = try? JSONEncoder().encode(metadata) else {
-			return
-		}
-		UserDefaults.standard.set(data, forKey: metadataKey)
-	}
-
-	private func cleanupOldCache() {
-		let cutoffDate = Date().addingTimeInterval(-maxCacheAge)
-		var keysToRemove: [String] = []
-
-		let metadata = getAllMetadata()
-		for (key, metadataEntry) in metadata {
-			if metadataEntry.cachedAt < cutoffDate {
-				keysToRemove.append(key)
-			}
-		}
-
-		for key in keysToRemove {
-			if let userId = UUID(uuidString: key) {
-				removeCachedImage(for: userId)
-			}
-		}
-	}
-
-	private func cleanupIfNeeded() async {
-		let currentSize = getCacheSize()
-
-		if currentSize > maxCacheSize {
-			// Sort by last accessed time and remove oldest
-			let metadata = getAllMetadata()
-			let sortedEntries = metadata.sorted { $0.value.lastAccessed < $1.value.lastAccessed }
-
-			for (key, _) in sortedEntries {
-				if let userId = UUID(uuidString: key) {
-					removeCachedImage(for: userId)
-				}
-
-				// Check if we're under the limit
-				if getCacheSize() < maxCacheSize * 3 / 4 {  // Clean up to 75% of max size
-					break
-				}
-			}
-		}
-	}
-}
-
-// MARK: - Supporting Types
-
-private struct CacheMetadata: Codable {
-	let cachedAt: Date
-	var lastAccessed: Date
-	let fileSize: Int64
 }

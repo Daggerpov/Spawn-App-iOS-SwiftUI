@@ -52,8 +52,6 @@ class DataReader: IDataReader {
 			return .failure(DataServiceError.unsupportedDataType)
 		}
 
-		let cacheKey = dataType.cacheKey
-
 		switch cachePolicy {
 		case .cacheOnly:
 			// Only use cache, never fetch from API
