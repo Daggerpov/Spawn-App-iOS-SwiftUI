@@ -16,14 +16,14 @@ class FriendRequestsViewModel: ObservableObject {
 
 	private var apiService: IAPIService  // Still needed for write operations
 	private let userId: UUID
-	private var dataFetcher: DataFetcher
+	private var dataService: DataService
 	private var appCache: AppCache
 	private var cancellables = Set<AnyCancellable>()
 
 	init(userId: UUID, apiService: IAPIService = MockAPIService.isMocking ? MockAPIService() : APIService()) {
 		self.userId = userId
 		self.apiService = apiService
-		self.dataFetcher = DataFetcher.shared
+		self.dataService = DataService.shared
 		self.appCache = AppCache.shared
 
 		// Removed AppCache subscriptions to ensure API results drive UI state for friend requests
@@ -67,12 +67,12 @@ class FriendRequestsViewModel: ObservableObject {
 		isLoading = true
 		defer { isLoading = false }
 
-		// Fetch both incoming and sent requests in parallel using DataFetcher
-		async let incomingResult = dataFetcher.fetchFriendRequests(
+		// Fetch both incoming and sent requests in parallel using DataService
+		async let incomingResult = dataService.readFriendRequests(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
-		async let sentResult = dataFetcher.fetchSentFriendRequests(
+		async let sentResult = dataService.readSentFriendRequests(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)

@@ -16,7 +16,7 @@ class FeedViewModel: ObservableObject {
 	@Published var activityTypeViewModel: ActivityTypeViewModel
 
 	var userId: UUID
-	private var dataFetcher: DataFetcher
+	private var dataService: DataService
 	private var appCache: AppCache  // Keep for cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 
@@ -46,7 +46,7 @@ class FeedViewModel: ObservableObject {
 
 	init(apiService: IAPIService, userId: UUID) {
 		self.userId = userId
-		self.dataFetcher = DataFetcher.shared
+		self.dataService = DataService.shared
 		self.appCache = AppCache.shared
 
 		// Initialize the activity type view model
@@ -237,8 +237,8 @@ class FeedViewModel: ObservableObject {
 	}
 
 	func fetchActivitiesForUser() async {
-		// Use DataFetcher with cache-first policy and background refresh
-		let result = await dataFetcher.fetchActivities(
+		// Use DataService with cache-first policy and background refresh
+		let result = await dataService.readActivities(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
@@ -271,8 +271,8 @@ class FeedViewModel: ObservableObject {
 			return
 		}
 
-		// Use DataFetcher with API-only policy to force refresh
-		let result = await dataFetcher.fetchActivities(
+		// Use DataService with API-only policy to force refresh
+		let result = await dataService.readActivities(
 			userId: userId,
 			cachePolicy: .apiOnly
 		)

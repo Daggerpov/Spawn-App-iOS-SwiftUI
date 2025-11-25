@@ -36,14 +36,14 @@ class ProfileViewModel: ObservableObject {
 	@Published var isLoadingUserActivities: Bool = false
 
 	private let apiService: IAPIService  // Still needed for write operations
-	private let dataFetcher: DataFetcher
+	private let dataService: DataService
 
 	init(
 		userId: UUID? = nil,
 		apiService: IAPIService? = nil
 	) {
-		self.dataFetcher = DataFetcher.shared
-		
+		self.dataService = DataService.shared
+
 		if let apiService = apiService {
 			self.apiService = apiService
 		} else {
@@ -63,11 +63,11 @@ class ProfileViewModel: ObservableObject {
 			return
 		}
 
-		let result = await dataFetcher.fetchProfileStats(
+		let result = await dataService.readProfileStats(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
-		
+
 		switch result {
 		case .success(let stats, let source):
 			await MainActor.run {
@@ -75,7 +75,7 @@ class ProfileViewModel: ObservableObject {
 				self.isLoadingStats = false
 			}
 			print("✅ ProfileViewModel: Loaded stats from \(source == .cache ? "cache" : "API") for user \(userId)")
-			
+
 		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -85,11 +85,11 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func fetchUserInterests(userId: UUID) async {
-		let result = await dataFetcher.fetchProfileInterests(
+		let result = await dataService.readProfileInterests(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
-		
+
 		switch result {
 		case .success(let interests, let source):
 			await MainActor.run {
@@ -97,7 +97,7 @@ class ProfileViewModel: ObservableObject {
 				self.isLoadingInterests = false
 			}
 			print("✅ ProfileViewModel: Loaded interests from \(source == .cache ? "cache" : "API") for user \(userId)")
-			
+
 		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -163,19 +163,20 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func fetchUserSocialMedia(userId: UUID) async {
-		let result = await dataFetcher.fetchProfileSocialMedia(
+		let result = await dataService.readProfileSocialMedia(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
-		
+
 		switch result {
 		case .success(let socialMedia, let source):
 			await MainActor.run {
 				self.userSocialMedia = socialMedia
 				self.isLoadingSocialMedia = false
 			}
-			print("✅ ProfileViewModel: Loaded social media from \(source == .cache ? "cache" : "API") for user \(userId)")
-			
+			print(
+				"✅ ProfileViewModel: Loaded social media from \(source == .cache ? "cache" : "API") for user \(userId)")
+
 		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
@@ -1107,15 +1108,17 @@ class ProfileViewModel: ObservableObject {
 		print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
-		let result = await dataFetcher.fetchProfileActivities(
+		let result = await dataService.readProfileActivities(
 			userId: profileUserId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
-		
+
 		switch result {
 		case .success(let activities, let source):
-			print("✅ ProfileViewModel: Loaded \(activities.count) profile activities from \(source == .cache ? "cache" : "API")")
-			
+			print(
+				"✅ ProfileViewModel: Loaded \(activities.count) profile activities from \(source == .cache ? "cache" : "API")"
+			)
+
 			// Log activity details
 			if !activities.isEmpty {
 				print("📋 ProfileViewModel: Activity details:")
@@ -1125,25 +1128,18 @@ class ProfileViewModel: ObservableObject {
 					)
 				}
 			}
-			
+
 			await MainActor.run {
 				self.profileActivities = activities
 				self.isLoadingUserActivities = false
 			}
-			
+
 		case .failure(let error):
-			print("❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatError(error))")
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-				self.profileActivities = []
-				self.isLoadingUserActivities = false
-			}
-		} catch {
 			print(
 				"❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
 			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
+				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
 				self.profileActivities = []
 				self.isLoadingUserActivities = false
 			}

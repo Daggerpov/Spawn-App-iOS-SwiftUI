@@ -15,7 +15,7 @@ class ActivityTypeViewModel: ObservableObject {
 
 	private let apiService: IAPIService  // Still needed for write operations
 	private let userId: UUID
-	private var dataFetcher: DataFetcher
+	private var dataService: DataService
 	private var appCache: AppCache  // Keep for cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 
@@ -55,7 +55,7 @@ class ActivityTypeViewModel: ObservableObject {
 	) {
 		self.userId = userId
 		self.appCache = AppCache.shared
-		self.dataFetcher = DataFetcher.shared
+		self.dataService = DataService.shared
 
 		if let apiService = apiService {
 			self.apiService = apiService
@@ -105,8 +105,8 @@ class ActivityTypeViewModel: ObservableObject {
 		// Determine cache policy based on forceRefresh
 		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
 
-		// Use DataFetcher to get activity types
-		let result = await dataFetcher.fetchActivityTypes(cachePolicy: cachePolicy)
+		// Use DataService to get activity types
+		let result = await dataService.readActivityTypes(cachePolicy: cachePolicy)
 
 		switch result {
 		case .success(let types, let source):

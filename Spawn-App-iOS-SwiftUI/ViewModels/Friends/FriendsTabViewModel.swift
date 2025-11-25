@@ -29,7 +29,7 @@ class FriendsTabViewModel: ObservableObject {
 	@Published var createdFriendRequest: FetchFriendRequestDTO?
 
 	var userId: UUID
-	private var dataFetcher: DataFetcher
+	private var dataService: DataService
 	private var apiService: IAPIService  // Still needed for write operations
 	private var cancellables = Set<AnyCancellable>()
 	private var appCache: AppCache  // Keep for cache subscriptions
@@ -38,7 +38,7 @@ class FriendsTabViewModel: ObservableObject {
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
 		self.apiService = apiService
-		self.dataFetcher = DataFetcher.shared
+		self.dataService = DataService.shared
 		self.appCache = AppCache.shared
 
 		// FriendsTabViewModel init
@@ -419,7 +419,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-		let result = await dataFetcher.fetchFriendRequests(
+		let result = await dataService.readFriendRequests(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
@@ -448,7 +448,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchOutgoingFriendRequests() async {
-		let result = await dataFetcher.fetchSentFriendRequests(
+		let result = await dataService.readSentFriendRequests(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
@@ -477,7 +477,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchRecommendedFriends() async {
-		let result = await dataFetcher.fetchRecommendedFriends(
+		let result = await dataService.readRecommendedFriends(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
@@ -496,7 +496,7 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	func fetchFriends() async {
-		let result = await dataFetcher.fetchFriends(
+		let result = await dataService.readFriends(
 			userId: userId,
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
