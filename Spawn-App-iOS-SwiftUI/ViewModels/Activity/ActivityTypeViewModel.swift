@@ -13,10 +13,8 @@ class ActivityTypeViewModel: ObservableObject {
 	@Published var isLoading: Bool = false
 	@Published var errorMessage: String?
 
-	private let apiService: IAPIService  // Still needed for write operations
 	private let userId: UUID
 	private var dataService: DataService
-	private var appCache: AppCache  // Keep for cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 
 	// MARK: - Constants
@@ -41,34 +39,24 @@ class ActivityTypeViewModel: ObservableObject {
 		errorMessage = error
 	}
 
-	/// Updates local state and cache after successful API call
+	/// Updates local state after successful API call
 	@MainActor
 	private func updateStateAfterAPISuccess(_ updatedTypes: [ActivityTypeDTO]) {
 		self.activityTypes = updatedTypes
-		appCache.updateActivityTypes(updatedTypes)
 		NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
 	}
 
 	init(
 		userId: UUID,
-		apiService: IAPIService? = nil
+		dataService: DataService? = nil
 	) {
 		self.userId = userId
-		self.appCache = AppCache.shared
-		self.dataService = DataService.shared
+		self.dataService = dataService ?? DataService.shared
 
-		if let apiService = apiService {
-			self.apiService = apiService
-		} else {
-			self.apiService =
-				MockAPIService.isMocking
-				? MockAPIService(userId: userId) : APIService()
-		}
-
-		// Subscribe to cache updates if not mocking
+		// Subscribe to cache updates if not mocking - using AppCache for reactive updates is acceptable
 		if !MockAPIService.isMocking {
 			// Subscribe to cached activity types updates
-			appCache.activityTypesPublisher
+			AppCache.shared.activityTypesPublisher
 				.sink { [weak self] cachedActivityTypes in
 					if !cachedActivityTypes.isEmpty {
 						self?.activityTypes = cachedActivityTypes
@@ -84,7 +72,7 @@ class ActivityTypeViewModel: ObservableObject {
 	/// Call this before fetchActivityTypes() to show cached data instantly
 	@MainActor
 	func loadCachedActivityTypes() {
-		let cachedTypes = appCache.activityTypes
+		let cachedTypes = AppCache.shared.activityTypes
 		if !cachedTypes.isEmpty {
 			self.activityTypes = cachedTypes
 			print("✅ ActivityTypeViewModel: Loaded \(cachedTypes.count) activity types from cache")
@@ -106,7 +94,7 @@ class ActivityTypeViewModel: ObservableObject {
 		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
 
 		// Use DataService to get activity types
-		let result = await dataService.readActivityTypes(cachePolicy: cachePolicy)
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.read(.activityTypes, cachePolicy: cachePolicy)
 
 		switch result {
 		case .success(let types, let source):
@@ -171,74 +159,56 @@ class ActivityTypeViewModel: ObservableObject {
 		await updateActivityType(updatedActivityType)
 	}
 
-	/// Deletes an activity type via direct API call
+	/// Deletes an activity type via DataService
 	@MainActor
 	func deleteActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
 		setLoadingState(true)
 
 		defer { setLoadingState(false) }
 
-		do {
-			guard let url = buildActivityTypesURL() else {
-				setLoadingState(false, error: "Invalid URL")
-				return
-			}
+		let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+			updatedActivityTypes: [],
+			deletedActivityTypeIds: [activityTypeDTO.id]
+		)
 
-			let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-				updatedActivityTypes: [],
-				deletedActivityTypeIds: [activityTypeDTO.id]
-			)
+		// Use WriteOperationType configuration
+		let operationType = WriteOperationType.batchUpdateActivityTypes(userId: userId, update: batchUpdateDTO)
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.write(operationType, body: batchUpdateDTO)
 
-			let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
-				batchUpdateDTO,
-				to: url,
-				parameters: nil
-			)
-
+		switch result {
+		case .success(let updatedActivityTypes, _):
 			updateStateAfterAPISuccess(updatedActivityTypes)
-
 			print("✅ Successfully deleted activity type: \(activityTypeDTO.title)")
 
-		} catch let error as APIError {
+		case .failure(let error):
 			print("❌ Error deleting activity type: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-		} catch {
 			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
-	/// Creates a new activity type via direct API call
+	/// Creates a new activity type via DataService
 	@MainActor
 	func createActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
 		setLoadingState(true)
 
 		defer { setLoadingState(false) }
 
-		do {
-			guard let url = buildActivityTypesURL() else {
-				setLoadingState(false, error: "Invalid URL")
-				return
-			}
+		let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+			updatedActivityTypes: [activityTypeDTO],
+			deletedActivityTypeIds: []
+		)
 
-			let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-				updatedActivityTypes: [activityTypeDTO],
-				deletedActivityTypeIds: []
-			)
+		// Use WriteOperationType configuration
+		let operationType = WriteOperationType.batchUpdateActivityTypes(userId: userId, update: batchUpdateDTO)
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.write(operationType, body: batchUpdateDTO)
 
-			let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
-				batchUpdateDTO,
-				to: url,
-				parameters: nil
-			)
-
+		switch result {
+		case .success(let updatedActivityTypes, _):
 			updateStateAfterAPISuccess(updatedActivityTypes)
-
 			print("✅ Successfully created activity type: \(activityTypeDTO.title)")
 
-		} catch let error as APIError {
+		case .failure(let error):
 			print("❌ Error creating activity type: \(error)")
-			errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-		} catch {
 			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
@@ -266,7 +236,7 @@ class ActivityTypeViewModel: ObservableObject {
 		await updateActivityType(updatedActivityType)
 	}
 
-	/// Updates an existing activity type via direct API call
+	/// Updates an existing activity type via DataService
 	@MainActor
 	func updateActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
@@ -275,34 +245,28 @@ class ActivityTypeViewModel: ObservableObject {
 
 		defer { setLoadingState(false) }
 
-		do {
-			guard let url = buildActivityTypesURL() else {
-				print("❌ Invalid URL for activity types endpoint")
-				setLoadingState(false, error: "Invalid URL")
-				return
-			}
+		let batchUpdateDTO = BatchActivityTypeUpdateDTO(
+			updatedActivityTypes: [activityTypeDTO],
+			deletedActivityTypeIds: []
+		)
 
-			print("📡 Making API call to: \(url.absoluteString)")
+		// Use WriteOperationType configuration
+		let operationType = WriteOperationType.batchUpdateActivityTypes(userId: userId, update: batchUpdateDTO)
 
-			let batchUpdateDTO = BatchActivityTypeUpdateDTO(
-				updatedActivityTypes: [activityTypeDTO],
-				deletedActivityTypeIds: []
-			)
+		print("📡 Making write operation to: \(operationType.endpoint)")
 
-			let updatedActivityTypes: [ActivityTypeDTO] = try await apiService.updateData(
-				batchUpdateDTO,
-				to: url,
-				parameters: nil
-			)
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.write(operationType, body: batchUpdateDTO)
 
+		switch result {
+		case .success(let updatedActivityTypes, _):
 			updateStateAfterAPISuccess(updatedActivityTypes)
 
-		} catch let error as APIError {
+		case .failure(let error):
 			print("❌ Error updating activity type: \(error)")
-			print("❌ Error details: \(ErrorFormattingService.shared.formatAPIError(error))")
+			print("❌ Error details: \(ErrorFormattingService.shared.formatError(error))")
 
 			// Check if error is related to pinning limits
-			let formattedError = ErrorFormattingService.shared.formatAPIError(error)
+			let formattedError = ErrorFormattingService.shared.formatError(error)
 			print("🔍 Formatted error from server: \(formattedError)")
 			if formattedError.contains("pinned activity types") {
 				print("⚠️ Server returned pinning limit error - this might be a server-side validation bug")
@@ -313,8 +277,6 @@ class ActivityTypeViewModel: ObservableObject {
 
 			// Refresh from API to get correct state
 			await fetchActivityTypes()
-		} catch {
-			errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 

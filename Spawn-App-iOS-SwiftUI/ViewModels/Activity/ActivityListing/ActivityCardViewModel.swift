@@ -9,7 +9,8 @@ import Foundation
 
 class ActivityCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
-	var apiService: IAPIService
+	var apiService: IAPIService  // Keep temporarily for operations not yet in DataService
+	var dataService: DataService
 	var userId: UUID
 	var activity: FullFeedActivityDTO
 
@@ -20,7 +21,6 @@ class ActivityCardViewModel: ObservableObject {
 	private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
 		self.activity = updatedActivity
 		self.isParticipating = updatedActivity.participationStatus == .participating
-		AppCache.shared.addOrUpdateActivity(updatedActivity)
 		NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
 	}
 
@@ -34,8 +34,9 @@ class ActivityCardViewModel: ObservableObject {
 		)
 	}
 
-	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO) {
-		self.apiService = apiService
+	init(apiService: IAPIService, userId: UUID, activity: FullFeedActivityDTO, dataService: DataService? = nil) {
+		self.apiService = apiService  // Keep for operations not yet in DataService
+		self.dataService = dataService ?? DataService.shared
 		self.userId = userId
 		self.activity = activity
 		// Initialize the participation status correctly
@@ -125,9 +126,6 @@ class ActivityCardViewModel: ObservableObject {
 
 		// Use the deleteData method from APIService
 		try await apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
-
-		// Remove the activity from the cache after successful deletion
-		AppCache.shared.removeActivity(activity.id)
 
 		// Post notification for activity deletion
 		NotificationCenter.default.post(

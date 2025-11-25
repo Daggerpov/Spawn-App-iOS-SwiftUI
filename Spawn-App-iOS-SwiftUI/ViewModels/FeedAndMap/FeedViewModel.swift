@@ -17,7 +17,6 @@ class FeedViewModel: ObservableObject {
 
 	var userId: UUID
 	private var dataService: DataService
-	private var appCache: AppCache  // Keep for cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 
 	// Throttle activities updates to prevent overwhelming MapView
@@ -47,10 +46,9 @@ class FeedViewModel: ObservableObject {
 	init(apiService: IAPIService, userId: UUID) {
 		self.userId = userId
 		self.dataService = DataService.shared
-		self.appCache = AppCache.shared
 
 		// Initialize the activity type view model
-		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, apiService: apiService)
+		self.activityTypeViewModel = ActivityTypeViewModel(userId: userId, dataService: dataService)
 
 		// Throttle activities updates to prevent overwhelming MapView
 		activitiesUpdateThrottle =
@@ -67,22 +65,6 @@ class FeedViewModel: ObservableObject {
 				self?.activityTypes = newActivityTypes
 			}
 			.store(in: &cancellables)
-
-		// Only subscribe to AppCache if not mocking
-		if !MockAPIService.isMocking {
-			// Subscribe to AppCache activities updates
-			appCache.activitiesPublisher
-				.receive(on: DispatchQueue.main)
-				.sink { [weak self] cachedActivities in
-					guard let self = self else { return }
-					let userActivities = cachedActivities[self.userId] ?? []
-					if !userActivities.isEmpty {
-						let filteredActivities = self.filterExpiredActivities(userActivities)
-						self.activitiesSubject.send(filteredActivities)
-					}
-				}
-				.store(in: &cancellables)
-		}
 
 		// Register for activity creation notifications
 		NotificationCenter.default.publisher(for: .activityCreated)
@@ -114,10 +96,10 @@ class FeedViewModel: ObservableObject {
 		// Register for activity type changes for immediate UI refresh
 		NotificationCenter.default.publisher(for: .activityTypesChanged)
 			.sink { [weak self] _ in
-				// Force immediate UI refresh by updating activity types from the cache
+				// Force immediate UI refresh by updating activity types from the view model
 				if let self = self {
 					Task { @MainActor in
-						self.activityTypes = self.appCache.activityTypes
+						self.activityTypes = self.activityTypeViewModel.activityTypes
 						self.objectWillChange.send()
 					}
 				}
@@ -184,9 +166,6 @@ class FeedViewModel: ObservableObject {
 						"🧹 FeedViewModel: Removed \(self.activities.count - filteredActivities.count) expired activities from view"
 					)
 					self.activitiesSubject.send(filteredActivities)
-
-					// Also cleanup the cache
-					self.appCache.cleanupExpiredActivities()
 				}
 			}
 		}
@@ -213,17 +192,26 @@ class FeedViewModel: ObservableObject {
 		startPeriodicCleanup()
 	}
 
-	/// Loads cached activities immediately (synchronous, fast, non-blocking)
+	/// Loads cached activities immediately from DataService cache
 	/// Call this before fetchAllData() to show cached data instantly
 	@MainActor
 	func loadCachedActivities() {
-		let cachedActivities = appCache.getCurrentUserActivities()
-		if !cachedActivities.isEmpty {
-			let filteredActivities = self.filterExpiredActivities(cachedActivities)
-			self.activitiesSubject.send(filteredActivities)
-			print("✅ FeedViewModel: Loaded \(cachedActivities.count) activities from cache")
-		} else {
-			print("⚠️ FeedViewModel: No cached activities available")
+		Task {
+			// Use cache-only policy to get instant cache results
+			let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
+				.activities(userId: userId),
+				cachePolicy: .cacheOnly
+			)
+
+			switch result {
+			case .success(let cachedActivities, _):
+				let filteredActivities = self.filterExpiredActivities(cachedActivities)
+				self.activitiesSubject.send(filteredActivities)
+				print("✅ FeedViewModel: Loaded \(cachedActivities.count) activities from cache")
+
+			case .failure:
+				print("⚠️ FeedViewModel: No cached activities available")
+			}
 		}
 	}
 
@@ -238,8 +226,8 @@ class FeedViewModel: ObservableObject {
 
 	func fetchActivitiesForUser() async {
 		// Use DataService with cache-first policy and background refresh
-		let result = await dataService.readActivities(
-			userId: userId,
+		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
+			.activities(userId: userId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
 
@@ -272,8 +260,8 @@ class FeedViewModel: ObservableObject {
 		}
 
 		// Use DataService with API-only policy to force refresh
-		let result = await dataService.readActivities(
-			userId: userId,
+		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
+			.activities(userId: userId),
 			cachePolicy: .apiOnly
 		)
 

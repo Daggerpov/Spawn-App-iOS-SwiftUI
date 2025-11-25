@@ -30,14 +30,14 @@ class FriendsTabViewModel: ObservableObject {
 
 	var userId: UUID
 	private var dataService: DataService
-	private var apiService: IAPIService  // Still needed for write operations
 	private var cancellables = Set<AnyCancellable>()
-	private var appCache: AppCache  // Keep for cache subscriptions
+	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
 	private var notificationObservers: [NSObjectProtocol] = []
+	private var apiService: IAPIService  // Keep temporarily for search/filter operations not yet in DataService
 
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId
-		self.apiService = apiService
+		self.apiService = apiService  // Still needed for search/filter endpoints
 		self.dataService = DataService.shared
 		self.appCache = AppCache.shared
 
@@ -419,8 +419,8 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchIncomingFriendRequests() async {
-		let result = await dataService.readFriendRequests(
-			userId: userId,
+		let result: DataResult<[FetchFriendRequestDTO]> = await dataService.read(
+			.friendRequests(userId: userId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
 
@@ -448,8 +448,8 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchOutgoingFriendRequests() async {
-		let result = await dataService.readSentFriendRequests(
-			userId: userId,
+		let result: DataResult<[FetchSentFriendRequestDTO]> = await dataService.read(
+			.sentFriendRequests(userId: userId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
 
@@ -477,8 +477,8 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	internal func fetchRecommendedFriends() async {
-		let result = await dataService.readRecommendedFriends(
-			userId: userId,
+		let result: DataResult<[RecommendedFriendUserDTO]> = await dataService.read(
+			.recommendedFriends(userId: userId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
 
@@ -496,8 +496,8 @@ class FriendsTabViewModel: ObservableObject {
 	}
 
 	func fetchFriends() async {
-		let result = await dataService.readFriends(
-			userId: userId,
+		let result: DataResult<[FullFriendUserDTO]> = await dataService.read(
+			.friends(userId: userId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
 
@@ -525,27 +525,19 @@ class FriendsTabViewModel: ObservableObject {
 			receiverUserId: friendUserId
 		)
 
-		var requestSucceeded = false
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.sendFriendRequest(request: createdFriendRequest)
+		let result: DataResult<CreateFriendRequestDTO> = await dataService.write(
+			operationType, body: createdFriendRequest)
 
-		// full path: /api/v1/friend-requests
-		if let url = URL(string: APIService.baseURL + "friend-requests") {
-			do {
-				_ = try await self.apiService.sendData(
-					createdFriendRequest, to: url, parameters: nil)
-				requestSucceeded = true
-			} catch {
-				await MainActor.run {
-					friendRequestCreationMessage =
-						"There was an error creating your friend request. Please try again"
-				}
-			}
-		}
-
-		if requestSucceeded {
+		switch result {
+		case .success:
 			// Fetch all data in parallel after successfully adding a friend
 			await fetchAllData()
-		} else {
+
+		case .failure(let error):
 			await MainActor.run {
+				friendRequestCreationMessage = ErrorFormattingService.shared.formatError(error)
 				isLoading = false
 			}
 		}
@@ -600,28 +592,23 @@ class FriendsTabViewModel: ObservableObject {
 			isLoading = true
 		}
 
-		var requestSucceeded = false
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.removeFriend(currentUserId: userId, friendId: friendUserId)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operationType)
 
-		// API endpoint for removing friend: /api/v1/users/friends/{userId}/{friendId}
-		if let url = URL(string: APIService.baseURL + "users/friends/\(userId)/\(friendUserId)") {
-			do {
-				_ = try await self.apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
-				requestSucceeded = true
-			} catch let error as APIError {
-				print("Error removing friend: \(ErrorFormattingService.shared.formatAPIError(error))")
-			} catch {
-				print("Error removing friend: \(ErrorFormattingService.shared.formatError(error))")
-			}
-		}
-
-		if requestSucceeded {
+		switch result {
+		case .success:
 			// Remove from local arrays and refresh data
 			await MainActor.run {
 				self.friends.removeAll { $0.id == friendUserId }
 				self.filteredFriends.removeAll { $0.id == friendUserId }
-				// Update cache
-				self.appCache.updateFriendsForUser(self.friends, userId: self.userId)
 			}
+			// Refresh friends from API to update cache
+			let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+				.friends(userId: userId), cachePolicy: .apiOnly)
+
+		case .failure(let error):
+			print("Error removing friend: \(ErrorFormattingService.shared.formatError(error))")
 		}
 
 		await MainActor.run {
@@ -801,16 +788,15 @@ class FriendsTabViewModel: ObservableObject {
 
 	/// Block a user
 	func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
-		do {
-			let reportingService = ReportingService(apiService: apiService)
-			try await reportingService.blockUser(
-				blockerId: blockerId,
-				blockedId: blockedId,
-				reason: reason
-			)
+		// Use DataService with WriteOperationType
+		let operationType = WriteOperationType.blockUser(blockerId: blockerId, blockedId: blockedId, reason: reason)
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(operationType)
 
-			// Refresh friends cache to remove the blocked user from friends list
-			await AppCache.shared.refreshFriends()
+		switch result {
+		case .success:
+			// Refresh friends from API to update cache
+			let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+				.friends(userId: blockerId), cachePolicy: .apiOnly)
 
 			// Remove the blocked user from local friends list immediately
 			await MainActor.run {
@@ -818,9 +804,7 @@ class FriendsTabViewModel: ObservableObject {
 				self.filteredFriends.removeAll { $0.id == blockedId }
 			}
 
-		} catch let error as APIError {
-			print("Failed to block user: \(ErrorFormattingService.shared.formatAPIError(error))")
-		} catch {
+		case .failure(let error):
 			print("Failed to block user: \(ErrorFormattingService.shared.formatError(error))")
 		}
 	}
@@ -830,8 +814,7 @@ class FriendsTabViewModel: ObservableObject {
 		// Use the existing removeFriend method which already handles API calls and cache updates
 		await removeFriend(friendUserId: friendUserId)
 
-		// Refresh cache and data to ensure UI is updated
-		await AppCache.shared.refreshFriends()
+		// Refresh data to ensure UI is updated
 		await fetchAllData()
 	}
 }

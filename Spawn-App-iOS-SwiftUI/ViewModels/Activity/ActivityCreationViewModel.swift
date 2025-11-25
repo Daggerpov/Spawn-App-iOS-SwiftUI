@@ -115,7 +115,8 @@ class ActivityCreationViewModel: ObservableObject {
 		selectedLocation = originalLocation
 	}
 
-	private var apiService: IAPIService
+	private var apiService: IAPIService  // Keep temporarily for operations not yet in DataService
+	private var dataService: DataService
 
 	public static func reInitialize() {
 		shared.resetToDefaults()
@@ -159,9 +160,20 @@ class ActivityCreationViewModel: ObservableObject {
 
 		// Get activity type if available
 		if let activityTypeId = activity.activityTypeId {
-			// Try to find the activity type in cache
-			if let activityType = AppCache.shared.activityTypes.first(where: { $0.id == activityTypeId }) {
-				shared.selectedActivityType = activityType
+			// Try to fetch the activity type from DataService
+			Task {
+				let result: DataResult<[ActivityTypeDTO]> = await shared.dataService.read(
+					.activityTypes,
+					cachePolicy: .cacheOnly
+				)
+
+				if case .success(let types, _) = result,
+					let activityType = types.first(where: { $0.id == activityTypeId })
+				{
+					await MainActor.run {
+						shared.selectedActivityType = activityType
+					}
+				}
 			}
 		}
 
@@ -234,6 +246,7 @@ class ActivityCreationViewModel: ObservableObject {
 			? MockAPIService(
 				userId: UserAuthViewModel.shared.spawnUser?.id ?? UUID())
 			: APIService()
+		self.dataService = DataService.shared
 
 		self.activity = Self.createDefaultActivity()
 
@@ -251,35 +264,29 @@ class ActivityCreationViewModel: ObservableObject {
 		}
 	}
 
-	// Load all friends from cache or API
+	// Load all friends using DataService
 	private func loadAllFriends() async {
-		do {
-			// Try to get friends from cache first
-			let cachedFriends = AppCache.shared.getCurrentUserFriends()
-			if !cachedFriends.isEmpty {
-				await MainActor.run {
-					selectedFriends = cachedFriends
-				}
-				return
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			await MainActor.run {
+				selectedFriends = []
 			}
+			return
+		}
 
-			// If cache is empty, fetch from API
-			guard
-				let url = URL(
-					string: APIService.baseURL + "users/friends/\(UserAuthViewModel.shared.spawnUser?.id ?? UUID())")
-			else {
-				await MainActor.run {
-					selectedFriends = []
-				}
-				return
-			}
+		// Use DataService with cache-first policy
+		let result: DataResult<[FullFriendUserDTO]> = await dataService.read(
+			.friends(userId: userId),
+			cachePolicy: .cacheFirst(backgroundRefresh: true)
+		)
 
-			let friends: [FullFriendUserDTO] = try await apiService.fetchData(from: url, parameters: nil)
+		switch result {
+		case .success(let friends, _):
 			await MainActor.run {
 				selectedFriends = friends
 			}
-		} catch {
-			print("Error loading friends: \(error)")
+
+		case .failure(let error):
+			print("Error loading friends: \(ErrorFormattingService.shared.formatError(error))")
 			await MainActor.run {
 				selectedFriends = []
 			}
@@ -543,8 +550,7 @@ class ActivityCreationViewModel: ObservableObject {
 				activity, to: url, parameters: nil)
 
 			if let response = response {
-				// Cache and notify
-				AppCache.shared.addOrUpdateActivity(response.activity)
+				// Notify about successful creation
 				NotificationCenter.default.post(name: .activityCreated, object: response.activity)
 
 				await setCreationMessage("Activity created successfully!")
@@ -592,8 +598,7 @@ class ActivityCreationViewModel: ObservableObject {
 
 			if let updatedActivity = updatedActivity {
 				await MainActor.run {
-					// Cache and notify
-					AppCache.shared.addOrUpdateActivity(updatedActivity)
+					// Notify about successful update
 					NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
 					creationMessage = "Activity updated successfully!"
 				}

@@ -11,7 +11,8 @@ class ActivityDescriptionViewModel: ObservableObject {
 	@Published var users: [BaseUserDTO]?
 	var activity: FullFeedActivityDTO
 	var senderUserId: UUID
-	var apiService: IAPIService
+	var apiService: IAPIService  // Keep temporarily for operations not yet in DataService
+	var dataService: DataService
 	var creationMessage: String?
 	@Published var isParticipating: Bool = false
 	@Published var errorMessage: String?
@@ -31,12 +32,15 @@ class ActivityDescriptionViewModel: ObservableObject {
 	private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
 		self.activity = updatedActivity
 		self.isParticipating = updatedActivity.participationStatus == .participating
-		AppCache.shared.addOrUpdateActivity(updatedActivity)
 		NotificationCenter.default.post(name: .activityUpdated, object: updatedActivity)
 	}
 
-	init(apiService: IAPIService, activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID) {
-		self.apiService = apiService
+	init(
+		apiService: IAPIService, activity: FullFeedActivityDTO, users: [BaseUserDTO]? = [], senderUserId: UUID,
+		dataService: DataService? = nil
+	) {
+		self.apiService = apiService  // Keep for operations not yet in DataService
+		self.dataService = dataService ?? DataService.shared
 		self.activity = activity
 		self.users = users
 		self.senderUserId = senderUserId
@@ -58,9 +62,6 @@ class ActivityDescriptionViewModel: ObservableObject {
 	func updateActivityTitle(_ newTitle: String) {
 		activity.title = newTitle
 
-		// Update the activity in the cache
-		AppCache.shared.addOrUpdateActivity(activity)
-
 		// Notify UI
 		objectWillChange.send()
 	}
@@ -68,7 +69,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 	/// Optimistically updates the activity icon immediately in the UI
 	func optimisticallyUpdateActivityIcon(_ newIcon: String) {
 		activity.icon = newIcon
-		AppCache.shared.optimisticallyUpdateActivity(activity)
+		objectWillChange.send()
 	}
 
 	/// Optimistically updates both title and icon
@@ -79,7 +80,7 @@ class ActivityDescriptionViewModel: ObservableObject {
 		if let icon = icon {
 			activity.icon = icon
 		}
-		AppCache.shared.optimisticallyUpdateActivity(activity)
+		objectWillChange.send()
 	}
 
 	/// Saves activity changes to the backend using partial update endpoint
@@ -115,8 +116,6 @@ class ActivityDescriptionViewModel: ObservableObject {
 
 			await MainActor.run {
 				self.activity = updatedActivity
-				// Update cache with confirmed changes
-				AppCache.shared.addOrUpdateActivity(updatedActivity)
 
 				// Post notification for successful update immediately on main actor
 				NotificationCenter.default.post(
