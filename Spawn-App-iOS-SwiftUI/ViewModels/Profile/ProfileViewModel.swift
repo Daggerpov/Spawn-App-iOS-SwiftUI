@@ -199,14 +199,8 @@ class ProfileViewModel: ObservableObject {
 
 		await MainActor.run { self.isLoadingProfileInfo = true }
 
-		// Note: This endpoint is not yet in DataService convenience methods, so we'll use raw read
-		let dataType = DataType(
-			endpoint: "users/\(userId)/profile-info",
-			cacheKey: "profileInfo_\(userId)",
-			parameters: nil
-		)
-
-		let result: DataResult<UserProfileInfoDTO> = await dataService.read(dataType)
+		// Use centralized DataType configuration
+		let result: DataResult<UserProfileInfoDTO> = await dataService.read(.profileInfo(userId: userId))
 
 		switch result {
 		case .success(let profileInfo, _):
@@ -265,18 +259,10 @@ class ProfileViewModel: ObservableObject {
 			return
 		}
 
-		let parameters = [
-			"month": String(month),
-			"year": String(year),
-		]
-
-		let dataType = DataType(
-			endpoint: "users/\(userId)/calendar",
-			cacheKey: "calendar_\(userId)_\(month)_\(year)",
-			parameters: parameters
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendar(userId: userId, month: month, year: year, requestingUserId: nil)
 		)
-
-		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(dataType)
 
 		switch result {
 		case .success(let activities, _):
@@ -342,13 +328,10 @@ class ProfileViewModel: ObservableObject {
 			}
 		}
 
-		let dataType = DataType(
-			endpoint: "users/\(userId)/calendar",
-			cacheKey: "calendar_all_\(userId)",
-			parameters: nil
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendarAll(userId: userId, requestingUserId: nil)
 		)
-
-		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(dataType)
 
 		switch result {
 		case .success(let activities, _):
@@ -398,17 +381,10 @@ class ProfileViewModel: ObservableObject {
 		print("🔄 ProfileViewModel: Fetching all calendar activities for friend: \(friendUserId)")
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
-		let parameters = [
-			"requestingUserId": requestingUserId.uuidString
-		]
-
-		let dataType = DataType(
-			endpoint: "users/\(friendUserId)/calendar",
-			cacheKey: "calendar_all_\(friendUserId)",
-			parameters: parameters
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendarAll(userId: friendUserId, requestingUserId: requestingUserId)
 		)
-
-		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(dataType)
 
 		switch result {
 		case .success(let activities, _):
@@ -454,19 +430,10 @@ class ProfileViewModel: ObservableObject {
 		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 		print("📅 Month: \(month), Year: \(year)")
 
-		let parameters = [
-			"month": String(month),
-			"year": String(year),
-			"requestingUserId": requestingUserId.uuidString,
-		]
-
-		let dataType = DataType(
-			endpoint: "users/\(friendUserId)/calendar",
-			cacheKey: "calendar_\(friendUserId)_\(month)_\(year)",
-			parameters: parameters
+		// Use centralized DataType configuration
+		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
+			.calendar(userId: friendUserId, month: month, year: year, requestingUserId: requestingUserId)
 		)
-
-		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(dataType)
 
 		switch result {
 		case .success(let activities, _):
@@ -747,15 +714,10 @@ class ProfileViewModel: ObservableObject {
 
 		await MainActor.run { self.isLoadingActivity = true }
 
-		let parameters = ["requestingUserId": userId.uuidString]
-
-		let dataType = DataType(
-			endpoint: "activities/\(activityId)",
-			cacheKey: "activity_\(activityId)",
-			parameters: parameters
+		// Use centralized DataType configuration
+		let result: DataResult<FullFeedActivityDTO> = await dataService.read(
+			.activity(activityId: activityId, requestingUserId: userId)
 		)
-
-		let result: DataResult<FullFeedActivityDTO> = await dataService.read(dataType)
 
 		switch result {
 		case .success(let activity, _):
@@ -819,14 +781,10 @@ class ProfileViewModel: ObservableObject {
 
 		await MainActor.run { self.isLoadingFriendshipStatus = true }
 
-		// First check if users are friends
-		let friendDataType = DataType(
-			endpoint: "users/\(currentUserId)/is-friend/\(profileUserId)",
-			cacheKey: "isFriend_\(currentUserId)_\(profileUserId)",
-			parameters: nil
+		// First check if users are friends using centralized config
+		let friendResult: DataResult<Bool> = await dataService.read(
+			.isFriend(currentUserId: currentUserId, otherUserId: profileUserId)
 		)
-
-		let friendResult: DataResult<Bool> = await dataService.read(friendDataType)
 
 		switch friendResult {
 		case .success(let isFriend, _):
@@ -988,13 +946,10 @@ class ProfileViewModel: ObservableObject {
 	func fetchUserUpcomingActivities(userId: UUID) async {
 		await MainActor.run { self.isLoadingUserActivities = true }
 
-		let dataType = DataType(
-			endpoint: "activities/user/\(userId)/upcoming",
-			cacheKey: "upcomingActivities_\(userId)",
-			parameters: nil
+		// Use centralized DataType configuration
+		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
+			.upcomingActivities(userId: userId)
 		)
-
-		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(dataType)
 
 		switch result {
 		case .success(let activities, _):

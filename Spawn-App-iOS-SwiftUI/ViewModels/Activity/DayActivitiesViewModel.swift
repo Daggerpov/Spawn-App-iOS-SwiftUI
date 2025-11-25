@@ -74,16 +74,9 @@ class DayActivitiesViewModel: ObservableObject {
 			return
 		}
 
-		// Use DataService to fetch activity
-		let parameters = ["requestingUserId": requestingUserId.uuidString]
-		let dataType = DataType(
-			endpoint: "activities/\(activityId)",
-			cacheKey: "activity_\(activityId)",
-			parameters: parameters
-		)
-
+		// Use centralized DataType configuration
 		let result: DataResult<FullFeedActivityDTO> = await dataService.read(
-			dataType,
+			.activity(activityId: activityId, requestingUserId: requestingUserId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
 		)
 

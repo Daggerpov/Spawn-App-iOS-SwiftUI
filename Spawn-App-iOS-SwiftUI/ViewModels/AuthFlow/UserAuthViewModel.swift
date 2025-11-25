@@ -16,6 +16,9 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
 	@Published var errorMessage: String?
 
+	// DataService for generic operations
+	private var dataService: DataService = DataService.shared
+
 	@Published var authProvider: AuthProviderType? = nil  // Track the auth provider
 	@Published var externalUserId: String?  // For both Google and Apple
 	@Published var idToken: String?  // ID token for authentication
@@ -1010,21 +1013,25 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 
-		if let url = URL(string: APIService.baseURL + "users/\(userId)") {
-			do {
-				// Try to unregister device token, but don't let it fail the account deletion
-				await NotificationService.shared.unregisterDeviceToken()
+		do {
+			// Try to unregister device token, but don't let it fail the account deletion
+			await NotificationService.shared.unregisterDeviceToken()
 
-				_ = try await self.apiService.deleteData(from: url, parameters: nil, object: EmptyBody())
+			// Use DataService to delete user account
+			let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+				.deleteUser(userId: userId)
+			)
 
+			switch result {
+			case .success:
 				// Clear tokens after successful account deletion
 				clearKeychainTokens()
 
 				await MainActor.run {
 					activeAlert = .deleteSuccess
 				}
-			} catch {
-				print("Error deleting account: \(error.localizedDescription)")
+			case .failure(let error):
+				print("Error deleting account: \(error)")
 
 				// Check if this is an authentication error (missing/invalid refresh token)
 				if let apiError = error as? APIError {
@@ -1055,6 +1062,11 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				await MainActor.run {
 					activeAlert = .deleteError
 				}
+			}
+		} catch {
+			print("Unexpected error during account deletion: \(error)")
+			await MainActor.run {
+				activeAlert = .deleteError
 			}
 		}
 	}

@@ -8,42 +8,53 @@
 import Foundation
 
 class FriendRequestViewModel: ObservableObject {
-	var apiService: IAPIService
+	var apiService: IAPIService  // Keep temporarily for operations not yet in DataService
+	var dataService: DataService
 	var userId: UUID
 	var friendRequestId: UUID
 
 	@Published var creationMessage: String = ""
 
-	init(apiService: IAPIService, userId: UUID, friendRequestId: UUID) {
-		self.apiService = apiService
+	init(apiService: IAPIService, userId: UUID, friendRequestId: UUID, dataService: DataService? = nil) {
+		self.apiService = apiService  // Keep for operations not yet in DataService
+		self.dataService = dataService ?? DataService.shared
 		self.userId = userId
 		self.friendRequestId = friendRequestId
 	}
 
 	func friendRequestAction(action: FriendRequestAction) async {
-		do {
-			// full path: /api/v1/friend-requests/{friendRequestId}
-			guard
-				let url = URL(
-					string: APIService.baseURL
-						+ "friend-requests/\(friendRequestId)"
-				)
-			else { return }
+		let result: DataResult<EmptyResponse>
 
-			// make API call:
-			if action == .cancel {
-				try await self.apiService.deleteData(from: url, parameters: nil, object: Optional<String>.none)
-			} else {
-				let _: EmptyResponse = try await self.apiService.updateData(
-					EmptyRequestBody(), to: url,
-					parameters: ["friendRequestAction": action.rawValue])
-			}
-			print("processed friend request at url: \(url.absoluteString)")
-		} catch {
+		// Use DataService with WriteOperationType
+		switch action {
+		case .accept:
+			result = await dataService.writeWithoutResponse(
+				.acceptFriendRequest(requestId: friendRequestId)
+			)
+		case .decline:
+			result = await dataService.writeWithoutResponse(
+				.declineFriendRequest(requestId: friendRequestId)
+			)
+		case .cancel:
+			// For cancel, we need a generic delete operation
+			let operation = WriteOperation<EmptyRequestBody>.delete(
+				endpoint: "friend-requests/\(friendRequestId)",
+				body: EmptyRequestBody(),
+				cacheInvalidationKeys: ["friendRequests", "sentFriendRequests"]
+			)
+			result = await dataService.writeWithoutResponse(operation)
+		}
+
+		// Handle the result
+		switch result {
+		case .success:
+			print("Successfully processed friend request: \(action.rawValue)")
+		case .failure(let error):
 			await MainActor.run {
 				creationMessage =
 					"There was an error \(action == .accept ? "accepting" : action == .cancel ? "canceling" : "declining") the friend request. Please try again"
 			}
+			print("Error processing friend request: \(error)")
 		}
 	}
 }

@@ -6,7 +6,7 @@
 //
 //  Configuration for write operations (POST, PUT, PATCH, DELETE).
 //  This file centralizes all write operation definitions, making it easy to
-//  add new operations or modify existing ones. Similar to DataTypeConfig for reads.
+//  add new operations or modify existing ones. Pairs with ReadOperationConfig.swift for reads.
 //
 
 import Foundation
@@ -81,6 +81,16 @@ enum WriteOperationType {
 	/// Unblock a user
 	case unblockUser(blockerId: UUID, blockedId: UUID)
 
+	// MARK: - User Management Operations
+
+	/// Delete user account
+	case deleteUser(userId: UUID)
+
+	// MARK: - Chat Operations
+
+	/// Fetch activity chat messages
+	case fetchActivityChats(activityId: UUID)
+
 	// MARK: - Configuration Properties
 
 	/// HTTP method for this operation
@@ -103,13 +113,15 @@ enum WriteOperationType {
 			.removeFriend,
 			.deleteActivity,
 			.leaveActivity,
-			.removeFromActivity:
+			.removeFromActivity,
+			.deleteUser:
 			return .delete
 
 		case .joinActivity,
 			.inviteToActivity,
 			.blockUser,
-			.unblockUser:
+			.unblockUser,
+			.fetchActivityChats:
 			return .post
 		}
 	}
@@ -163,6 +175,14 @@ enum WriteOperationType {
 			return "blocks"
 		case .unblockUser(let blockerId, let blockedId):
 			return "blocks/\(blockerId)/\(blockedId)"
+
+		// User Management
+		case .deleteUser(let userId):
+			return "users/\(userId)"
+
+		// Chats
+		case .fetchActivityChats(let activityId):
+			return "activities/\(activityId)/chats"
 		}
 	}
 
@@ -223,6 +243,15 @@ enum WriteOperationType {
 		case .blockUser(let blockerId, _),
 			.unblockUser(let blockerId, _):
 			return ["friends-\(blockerId)"]
+
+		// User Management
+		case .deleteUser:
+			// Clear all user-related caches
+			return []
+
+		// Chats
+		case .fetchActivityChats(let activityId):
+			return ["activityChats-\(activityId)"]
 		}
 	}
 
@@ -265,6 +294,10 @@ enum WriteOperationType {
 			return "Block User"
 		case .unblockUser:
 			return "Unblock User"
+		case .deleteUser:
+			return "Delete User"
+		case .fetchActivityChats:
+			return "Fetch Activity Chats"
 		}
 	}
 
@@ -300,6 +333,10 @@ enum WriteOperationType {
 			// Create a block DTO with reason
 			return ["reason": reason] as? T
 		case .unblockUser:
+			return EmptyRequestBody() as? T
+		case .deleteUser:
+			return EmptyRequestBody() as? T
+		case .fetchActivityChats:
 			return EmptyRequestBody() as? T
 		}
 	}

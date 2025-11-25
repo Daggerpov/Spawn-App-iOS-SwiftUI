@@ -1,35 +1,80 @@
 //
-//  DataFetcherConfig.swift
+//  ReadOperationConfig.swift
 //  Spawn-App-iOS-SwiftUI
 //
 //  Created by Daniel Agapov on 2025-11-24.
+//  Renamed from DataTypeConfig.swift on 2025-11-25.
 //
-//  Configuration for DataFetcher endpoints and cache keys.
-//  This file centralizes all data type definitions, making it easy to
-//  add new data types or modify existing ones.
+//  Configuration for read operations (GET) for the data service layer.
+//  This file centralizes all read operation definitions, making it easy to
+//  add new operations or modify existing ones. Pairs with WriteOperationConfig.swift.
 //
 
 import Foundation
 
 // MARK: - Data Type Enum
 
-/// Enum representing all data types that can be fetched via DataFetcher
+/// Enum representing all data types that can be fetched via DataService
+/// Each case includes endpoint, cache key, and optional parameters
 enum DataType {
-	// Activities
+	// MARK: - Activities
+
+	/// All activities for a user
 	case activities(userId: UUID)
+
+	/// Single activity by ID
+	case activity(activityId: UUID, requestingUserId: UUID)
+
+	/// Activity types
 	case activityTypes
 
-	// Friends
+	/// Upcoming activities for a user
+	case upcomingActivities(userId: UUID)
+
+	/// Activity chat messages
+	case activityChats(activityId: UUID)
+
+	// MARK: - Friends
+
+	/// All friends for a user
 	case friends(userId: UUID)
+
+	/// Recommended friends for a user
 	case recommendedFriends(userId: UUID)
+
+	/// Incoming friend requests for a user
 	case friendRequests(userId: UUID)
+
+	/// Sent friend requests from a user
 	case sentFriendRequests(userId: UUID)
 
-	// Profile
+	/// Check if two users are friends
+	case isFriend(currentUserId: UUID, otherUserId: UUID)
+
+	// MARK: - Profile
+
+	/// User profile statistics
 	case profileStats(userId: UUID)
+
+	/// User profile information
+	case profileInfo(userId: UUID)
+
+	/// User interests
 	case profileInterests(userId: UUID)
+
+	/// User social media links
 	case profileSocialMedia(userId: UUID)
+
+	/// Profile activities (both upcoming and past)
 	case profileActivities(userId: UUID)
+
+	// MARK: - Calendar
+
+	/// Calendar activities for a specific month
+	case calendar(userId: UUID, month: Int, year: Int, requestingUserId: UUID?)
+
+	/// All calendar activities for a user
+	case calendarAll(userId: UUID, requestingUserId: UUID?)
 
 	// MARK: - Configuration Properties
 
@@ -39,8 +84,14 @@ enum DataType {
 		// Activities
 		case .activities(let userId):
 			return "users/\(userId)/activities"
+		case .activity(let activityId, _):
+			return "activities/\(activityId)"
 		case .activityTypes:
 			return "activity-types"
+		case .upcomingActivities(let userId):
+			return "activities/user/\(userId)/upcoming"
+		case .activityChats(let activityId):
+			return "activities/\(activityId)/chats"
 
 		// Friends
 		case .friends(let userId):
@@ -51,16 +102,26 @@ enum DataType {
 			return "friend-requests/incoming/\(userId)"
 		case .sentFriendRequests(let userId):
 			return "friend-requests/sent/\(userId)"
+		case .isFriend(let currentUserId, let otherUserId):
+			return "users/\(currentUserId)/is-friend/\(otherUserId)"
 
 		// Profile
 		case .profileStats(let userId):
 			return "users/\(userId)/stats"
+		case .profileInfo(let userId):
+			return "users/\(userId)/profile-info"
 		case .profileInterests(let userId):
 			return "users/\(userId)/interests"
 		case .profileSocialMedia(let userId):
 			return "users/\(userId)/social-media"
 		case .profileActivities(let userId):
 			return "activities/profile/\(userId)"
+
+		// Calendar
+		case .calendar(let userId, _, _, _):
+			return "users/\(userId)/calendar"
+		case .calendarAll(let userId, _):
+			return "users/\(userId)/calendar"
 		}
 	}
 
@@ -70,8 +131,14 @@ enum DataType {
 		// Activities
 		case .activities(let userId):
 			return "activities-\(userId)"
+		case .activity(let activityId, _):
+			return "activity_\(activityId)"
 		case .activityTypes:
 			return "activityTypes"
+		case .upcomingActivities(let userId):
+			return "upcomingActivities_\(userId)"
+		case .activityChats(let activityId):
+			return "activityChats-\(activityId)"
 
 		// Friends
 		case .friends(let userId):
@@ -82,28 +149,61 @@ enum DataType {
 			return "friendRequests-\(userId)"
 		case .sentFriendRequests(let userId):
 			return "sentFriendRequests-\(userId)"
+		case .isFriend(let currentUserId, let otherUserId):
+			return "isFriend_\(currentUserId)_\(otherUserId)"
 
 		// Profile
 		case .profileStats(let userId):
 			return "profileStats-\(userId)"
+		case .profileInfo(let userId):
+			return "profileInfo_\(userId)"
 		case .profileInterests(let userId):
 			return "profileInterests-\(userId)"
 		case .profileSocialMedia(let userId):
 			return "profileSocialMedia-\(userId)"
 		case .profileActivities(let userId):
 			return "profileActivities-\(userId)"
+
+		// Calendar
+		case .calendar(let userId, let month, let year, _):
+			return "calendar_\(userId)_\(month)_\(year)"
+		case .calendarAll(let userId, _):
+			return "calendar_all_\(userId)"
 		}
 	}
 
 	/// Optional query parameters for the API request
 	var parameters: [String: String]? {
 		switch self {
-		case .profileActivities(let userId):
+		case .activity(_, let requestingUserId):
+			return ["requestingUserId": requestingUserId.uuidString]
+
+		case .profileActivities:
 			// Profile activities require requesting user ID as parameter
 			guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
 				return nil
 			}
 			return ["requestingUserId": requestingUserId.uuidString]
+
+		case .calendar(_, let month, let year, let requestingUserId):
+			var params = [
+				"month": String(month),
+				"year": String(year),
+			]
+			if let requestingUserId = requestingUserId {
+				params["requestingUserId"] = requestingUserId.uuidString
+			}
+			return params
+
+		case .calendarAll(_, let requestingUserId):
+			if let requestingUserId = requestingUserId {
+				return ["requestingUserId": requestingUserId.uuidString]
+			}
+			return nil
+
+		case .activityChats:
+			return nil
+
 		default:
 			return nil
 		}
@@ -114,8 +214,12 @@ enum DataType {
 		switch self {
 		case .activities:
 			return "Activities"
+		case .activity:
+			return "Activity"
 		case .activityTypes:
 			return "Activity Types"
+		case .upcomingActivities:
+			return "Upcoming Activities"
 		case .friends:
 			return "Friends"
 		case .recommendedFriends:
@@ -124,14 +228,22 @@ enum DataType {
 			return "Friend Requests"
 		case .sentFriendRequests:
 			return "Sent Friend Requests"
+		case .isFriend:
+			return "Is Friend"
 		case .profileStats:
 			return "Profile Stats"
+		case .profileInfo:
+			return "Profile Info"
 		case .profileInterests:
 			return "Profile Interests"
 		case .profileSocialMedia:
 			return "Profile Social Media"
 		case .profileActivities:
 			return "Profile Activities"
+		case .calendar:
+			return "Calendar"
+		case .calendarAll:
+			return "All Calendar Activities"
 		}
 	}
 }
