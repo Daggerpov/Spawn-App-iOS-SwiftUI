@@ -19,9 +19,6 @@ class ProfilePictureCache: ObservableObject {
 	private let maxCacheSize: Int64 = 100 * 1024 * 1024  // 100MB
 	private let maxCacheAge: TimeInterval = 7 * 24 * 60 * 60  // 7 days
 
-	// In-memory cache for recently accessed images
-	private var memoryCache: NSCache<NSString, UIImage>
-
 	// Metadata about cached images
 	private var cacheMetadata: [String: CacheMetadata] = [:]
 	private let metadataKey = "ProfilePictureCacheMetadata"
@@ -46,11 +43,6 @@ class ProfilePictureCache: ObservableObject {
 		// Create directory if it doesn't exist
 		try? fileManager.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
 
-		// Initialize memory cache
-		memoryCache = NSCache<NSString, UIImage>()
-		memoryCache.countLimit = 100  // Cache up to 100 images in memory
-		memoryCache.totalCostLimit = 50 * 1024 * 1024  // 50MB memory limit
-
 		// Load metadata
 		loadMetadata()
 
@@ -66,15 +58,6 @@ class ProfilePictureCache: ObservableObject {
 
 		print("🔍 [CACHE] getCachedImage for user \(userId)")
 
-		// Check memory cache first
-		if let image = memoryCache.object(forKey: key as NSString) {
-			// Cache hit in memory - very fast
-			print("✅ [CACHE] Memory cache HIT for user \(userId)")
-			return image
-		}
-
-		print("⚠️ [CACHE] Memory cache MISS for user \(userId), checking disk...")
-
 		// Check disk cache
 		let fileURL = cacheDirectory.appendingPathComponent("\(key).jpg")
 
@@ -88,10 +71,8 @@ class ProfilePictureCache: ObservableObject {
 			return nil
 		}
 
-		// Cache hit on disk - slower but still fast
-		// Store in memory cache for next time
-		print("✅ [CACHE] Disk cache HIT for user \(userId), storing in memory")
-		memoryCache.setObject(image, forKey: key as NSString)
+		// Cache hit on disk
+		print("✅ [CACHE] Disk cache HIT for user \(userId)")
 
 		// Update access time
 		updateLastAccessed(for: key)
@@ -103,9 +84,6 @@ class ProfilePictureCache: ObservableObject {
 	/// Cache an image for a user ID
 	func cacheImage(_ image: UIImage, for userId: UUID) {
 		let key = userId.uuidString
-
-		// Store in memory cache
-		memoryCache.setObject(image, forKey: key as NSString)
 
 		// Store on disk
 		Task {
@@ -255,9 +233,6 @@ class ProfilePictureCache: ObservableObject {
 	func removeCachedImage(for userId: UUID) {
 		let key = userId.uuidString
 
-		// Remove from memory cache
-		memoryCache.removeObject(forKey: key as NSString)
-
 		// Remove from disk
 		let fileURL = cacheDirectory.appendingPathComponent("\(key).jpg")
 		try? fileManager.removeItem(at: fileURL)
@@ -269,9 +244,6 @@ class ProfilePictureCache: ObservableObject {
 
 	/// Clear all cached images
 	func clearAllCache() {
-		// Clear memory cache
-		memoryCache.removeAllObjects()
-
 		// Clear disk cache
 		if let enumerator = fileManager.enumerator(at: cacheDirectory, includingPropertiesForKeys: nil) {
 			for case let fileURL as URL in enumerator {
