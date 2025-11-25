@@ -536,6 +536,10 @@ class FriendsTabViewModel: ObservableObject {
 		case .success:
 			// Fetch all data in parallel after successfully adding a friend
 			await fetchAllData()
+			// Ensure loading state is cleared
+			await MainActor.run {
+				isLoading = false
+			}
 
 		case .failure(let error):
 			await MainActor.run {
