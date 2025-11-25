@@ -79,7 +79,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	@Published var isLoading: Bool = false
 
-	private var apiService: IAPIService
+	private var apiService: IAPIService  // Keep for specialized auth operations (OAuth, user creation, multipart uploads)
 
 	// delete account:
 

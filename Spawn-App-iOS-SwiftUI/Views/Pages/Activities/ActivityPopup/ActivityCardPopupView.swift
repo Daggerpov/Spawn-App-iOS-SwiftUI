@@ -58,8 +58,6 @@ struct ActivityCardPopupView: View {
 		_mapViewModel = StateObject(wrappedValue: mapVM)
 		self._cardViewModel = StateObject(
 			wrappedValue: ActivityCardViewModel(
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: UUID()) : APIService(),
 				userId: UserAuthViewModel.shared.spawnUser?.id ?? BaseUserDTO.danielAgapov.id,
 				activity: cachedActivity
 			)

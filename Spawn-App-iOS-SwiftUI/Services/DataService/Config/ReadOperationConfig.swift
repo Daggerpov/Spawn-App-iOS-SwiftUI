@@ -76,6 +76,11 @@ enum DataType {
 	/// All calendar activities for a user
 	case calendarAll(userId: UUID, requestingUserId: UUID?)
 
+	// MARK: - Blocking & Reporting
+
+	/// Check if a user is blocked
+	case isUserBlocked(blockerId: UUID, blockedId: UUID)
+
 	// MARK: - Configuration Properties
 
 	/// API endpoint path for this data type
@@ -122,6 +127,10 @@ enum DataType {
 			return "users/\(userId)/calendar"
 		case .calendarAll(let userId, _):
 			return "users/\(userId)/calendar"
+
+		// Blocking & Reporting
+		case .isUserBlocked:
+			return "blocked-users/is-blocked"
 		}
 	}
 
@@ -169,6 +178,10 @@ enum DataType {
 			return "calendar_\(userId)_\(month)_\(year)"
 		case .calendarAll(let userId, _):
 			return "calendar_all_\(userId)"
+
+		// Blocking & Reporting
+		case .isUserBlocked(let blockerId, let blockedId):
+			return "isUserBlocked_\(blockerId)_\(blockedId)"
 		}
 	}
 
@@ -214,6 +227,12 @@ enum DataType {
 		case .activityChats:
 			return nil
 
+		case .isUserBlocked(let blockerId, let blockedId):
+			return [
+				"blockerId": blockerId.uuidString,
+				"blockedId": blockedId.uuidString,
+			]
+
 		default:
 			return nil
 		}
@@ -256,6 +275,8 @@ enum DataType {
 			return "Calendar"
 		case .calendarAll:
 			return "All Calendar Activities"
+		case .isUserBlocked:
+			return "Is User Blocked"
 		}
 	}
 }
@@ -268,134 +289,162 @@ struct CacheOperations<T> {
 	let updater: (T) -> Void
 }
 
-/// Factory for creating cache operations for each data type
-struct CacheOperationsFactory {
-	/// Generic helper for user-specific dictionary caches (data first, userId second pattern)
-	private static func userDictionaryOps<T, Value>(
-		expectedType: T.Type,
-		dictionary: [UUID: Value],
-		userId: UUID,
-		updater: @escaping (Value, UUID) -> Void
-	) -> CacheOperations<T>? {
+/// Protocol for type-erased cache configuration
+private protocol CacheConfigProtocol {
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>?
+}
+
+/// Generic cache configuration for user-specific dictionary caches (data first, userId second pattern)
+private struct UserDictionaryCacheConfig<Value>: CacheConfigProtocol {
+	let dictionary: (AppCache) -> [UUID: Value]
+	let updater: (AppCache) -> (Value, UUID) -> Void
+	let userId: UUID
+
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>? {
 		guard T.self == Value.self else { return nil }
 		return CacheOperations(
-			provider: { dictionary[userId] as? T },
+			provider: { dictionary(appCache)[userId] as? T },
 			updater: { data in
 				guard let value = data as? Value else { return }
-				updater(value, userId)
+				updater(appCache)(value, userId)
 			}
 		)
 	}
+}
 
-	/// Generic helper for user-specific dictionary caches (userId first, data second pattern)
-	private static func profileDictionaryOps<T, Value>(
-		expectedType: T.Type,
-		dictionary: [UUID: Value],
-		userId: UUID,
-		updater: @escaping (UUID, Value) -> Void
-	) -> CacheOperations<T>? {
+/// Generic cache configuration for user-specific dictionary caches (userId first, data second pattern)
+private struct ProfileDictionaryCacheConfig<Value>: CacheConfigProtocol {
+	let dictionary: (AppCache) -> [UUID: Value]
+	let updater: (AppCache) -> (UUID, Value) -> Void
+	let userId: UUID
+
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>? {
 		guard T.self == Value.self else { return nil }
 		return CacheOperations(
-			provider: { dictionary[userId] as? T },
+			provider: { dictionary(appCache)[userId] as? T },
 			updater: { data in
 				guard let value = data as? Value else { return }
-				updater(userId, value)
+				updater(appCache)(userId, value)
 			}
 		)
 	}
+}
 
-	static func operations<T>(for dataType: DataType, appCache: AppCache) -> CacheOperations<T>? {
-		switch dataType {
+/// Generic cache configuration for simple (non-dictionary) caches
+private struct SimpleCacheConfig<Value>: CacheConfigProtocol {
+	let getter: (AppCache) -> Value
+	let updater: (AppCache) -> (Value) -> Void
+	let shouldReturnNilIfEmpty: Bool
+
+	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>? {
+		guard T.self == Value.self else { return nil }
+		return CacheOperations(
+			provider: {
+				let value = getter(appCache)
+				if shouldReturnNilIfEmpty, let array = value as? [Any], array.isEmpty {
+					return nil
+				}
+				return value as? T
+			},
+			updater: { data in
+				guard let value = data as? Value else { return }
+				updater(appCache)(value)
+			}
+		)
+	}
+}
+
+// MARK: - DataType Cache Configuration Extension
+
+extension DataType {
+	/// Returns the cache configuration for this data type, or nil if not cacheable
+	fileprivate var cacheConfig: CacheConfigProtocol? {
+		switch self {
 		// Activities
 		case .activities(let userId):
-			return userDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.activities,
-				userId: userId,
-				updater: appCache.updateActivitiesForUser
+			return UserDictionaryCacheConfig<[FullFeedActivityDTO]>(
+				dictionary: { $0.activities },
+				updater: { appCache in appCache.updateActivitiesForUser },
+				userId: userId
 			)
 
 		case .activityTypes:
-			guard T.self == [ActivityTypeDTO].self else { return nil }
-			return CacheOperations(
-				provider: {
-					let types = appCache.activityTypes
-					return (types.isEmpty ? nil : types) as? T
-				},
-				updater: { data in
-					guard let types = data as? [ActivityTypeDTO] else { return }
-					appCache.updateActivityTypes(types)
-				}
+			return SimpleCacheConfig<[ActivityTypeDTO]>(
+				getter: { $0.activityTypes },
+				updater: { appCache in appCache.updateActivityTypes },
+				shouldReturnNilIfEmpty: true
 			)
 
 		// Friends
 		case .friends(let userId):
-			return userDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.friends,
-				userId: userId,
-				updater: appCache.updateFriendsForUser
+			return UserDictionaryCacheConfig<[FullFriendUserDTO]>(
+				dictionary: { $0.friends },
+				updater: { appCache in appCache.updateFriendsForUser },
+				userId: userId
 			)
 
 		case .recommendedFriends(let userId):
-			return userDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.recommendedFriends,
-				userId: userId,
-				updater: appCache.updateRecommendedFriendsForUser
+			return UserDictionaryCacheConfig<[RecommendedFriendUserDTO]>(
+				dictionary: { $0.recommendedFriends },
+				updater: { appCache in appCache.updateRecommendedFriendsForUser },
+				userId: userId
 			)
 
 		case .friendRequests(let userId):
-			return userDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.friendRequests,
-				userId: userId,
-				updater: appCache.updateFriendRequestsForUser
+			return UserDictionaryCacheConfig<[FetchFriendRequestDTO]>(
+				dictionary: { $0.friendRequests },
+				updater: { appCache in appCache.updateFriendRequestsForUser },
+				userId: userId
 			)
 
 		case .sentFriendRequests(let userId):
-			return userDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.sentFriendRequests,
-				userId: userId,
-				updater: appCache.updateSentFriendRequestsForUser
+			return UserDictionaryCacheConfig<[FetchSentFriendRequestDTO]>(
+				dictionary: { $0.sentFriendRequests },
+				updater: { appCache in appCache.updateSentFriendRequestsForUser },
+				userId: userId
 			)
 
 		// Profile
 		case .profileStats(let userId):
-			return profileDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.profileStats,
-				userId: userId,
-				updater: appCache.updateProfileStats
+			return ProfileDictionaryCacheConfig<UserStatsDTO>(
+				dictionary: { $0.profileStats },
+				updater: { appCache in appCache.updateProfileStats },
+				userId: userId
 			)
 
 		case .profileInterests(let userId):
-			return profileDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.profileInterests,
-				userId: userId,
-				updater: appCache.updateProfileInterests
+			return ProfileDictionaryCacheConfig<[String]>(
+				dictionary: { $0.profileInterests },
+				updater: { appCache in appCache.updateProfileInterests },
+				userId: userId
 			)
 
 		case .profileSocialMedia(let userId):
-			return profileDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.profileSocialMedia,
-				userId: userId,
-				updater: appCache.updateProfileSocialMedia
+			return ProfileDictionaryCacheConfig<UserSocialMediaDTO>(
+				dictionary: { $0.profileSocialMedia },
+				updater: { appCache in appCache.updateProfileSocialMedia },
+				userId: userId
 			)
 
 		case .profileActivities(let userId):
-			return profileDictionaryOps(
-				expectedType: T.self,
-				dictionary: appCache.profileActivities,
-				userId: userId,
-				updater: appCache.updateProfileActivities
+			return ProfileDictionaryCacheConfig<[ProfileActivityDTO]>(
+				dictionary: { $0.profileActivities },
+				updater: { appCache in appCache.updateProfileActivities },
+				userId: userId
 			)
 
+		// Non-cacheable data types
 		default:
 			return nil
 		}
+	}
+}
+
+/// Factory for creating cache operations for each data type
+struct CacheOperationsFactory {
+	/// Generic method to create cache operations for any data type
+	/// This method uses the cache configuration defined in the DataType enum
+	static func operations<T>(for dataType: DataType, appCache: AppCache) -> CacheOperations<T>? {
+		return dataType.cacheConfig?.createOperations(appCache: appCache)
 	}
 }

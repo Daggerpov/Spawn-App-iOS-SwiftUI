@@ -418,7 +418,6 @@ extension ActivityFeedView {
 	@Previewable @State var deepLinkedActivityId: UUID? = nil
 	@Previewable @State var shouldShowDeepLinkedActivity = false
 	let previewViewModel = FeedViewModel(
-		apiService: MockAPIService.isMocking ? MockAPIService(userId: BaseUserDTO.danielAgapov.id) : APIService(),
 		userId: BaseUserDTO.danielAgapov.id
 	)
 	NavigationView {

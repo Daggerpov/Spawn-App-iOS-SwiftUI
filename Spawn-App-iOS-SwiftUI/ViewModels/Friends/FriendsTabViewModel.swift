@@ -33,7 +33,7 @@ class FriendsTabViewModel: ObservableObject {
 	private var cancellables = Set<AnyCancellable>()
 	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
 	private var notificationObservers: [NSObjectProtocol] = []
-	private var apiService: IAPIService  // Keep temporarily for search/filter operations not yet in DataService
+	private var apiService: IAPIService  // Keep for dynamic search operations (query-based, not cacheable)
 
 	init(userId: UUID, apiService: IAPIService) {
 		self.userId = userId

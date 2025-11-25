@@ -1041,23 +1041,25 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func reportUser(reporterUserId: UUID, reportedUserId: UUID, reportType: ReportType, description: String) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.reportUser(
-				reporterUserId: reporterUserId,
-				reportedUserId: reportedUserId,
-				reportType: reportType,
-				description: description
-			)
+		let reportDTO = CreateReportDTO(
+			reporterId: reporterUserId,
+			contentId: reportedUserId,
+			contentType: .user,
+			reportType: reportType,
+			description: description
+		)
 
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.reportUser(report: reportDTO)
+		)
+
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.errorMessage = nil
 			}
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1077,14 +1079,13 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.blockUser(
-				blockerId: blockerId,
-				blockedId: blockedId,
-				reason: reason
-			)
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.blockUser(blockerId: blockerId, blockedId: blockedId, reason: reason)
+		)
 
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.friendshipStatus = .blocked
 				self.errorMessage = nil
@@ -1093,11 +1094,7 @@ class ProfileViewModel: ObservableObject {
 			// Refresh friends cache to remove the blocked user from friends list
 			await AppCache.shared.refreshFriends()
 
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1105,13 +1102,13 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func unblockUser(blockerId: UUID, blockedId: UUID) async {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			try await reportingService.unblockUser(
-				blockerId: blockerId,
-				blockedId: blockedId
-			)
+		// Use DataService with WriteOperationType
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.unblockUser(blockerId: blockerId, blockedId: blockedId)
+		)
 
+		switch result {
+		case .success:
 			await MainActor.run {
 				self.friendshipStatus = .none
 				self.errorMessage = nil
@@ -1120,11 +1117,7 @@ class ProfileViewModel: ObservableObject {
 			// Refresh friends cache for consistency
 			await AppCache.shared.refreshFriends()
 
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-		} catch {
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}
@@ -1132,18 +1125,16 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func checkIfUserBlocked(blockerId: UUID, blockedId: UUID) async -> Bool {
-		do {
-			let reportingService = ReportingService(apiService: self.apiService)
-			return try await reportingService.isUserBlocked(
-				blockerId: blockerId,
-				blockedId: blockedId
-			)
-		} catch let error as APIError {
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
-			}
-			return false
-		} catch {
+		// Use DataService with DataType
+		let result: DataResult<Bool> = await dataService.read(
+			.isUserBlocked(blockerId: blockerId, blockedId: blockedId),
+			cachePolicy: .apiOnly
+		)
+
+		switch result {
+		case .success(let isBlocked, _):
+			return isBlocked
+		case .failure(let error):
 			await MainActor.run {
 				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			}

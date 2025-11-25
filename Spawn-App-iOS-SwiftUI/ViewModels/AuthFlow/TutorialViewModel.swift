@@ -17,11 +17,9 @@ class TutorialViewModel: ObservableObject {
 	private let userDefaults = UserDefaults.standard
 	private let tutorialStateKey = "TutorialState"
 	private let hasCompletedTutorialKey = "HasCompletedFirstActivityTutorial"
-	private let apiService: IAPIService  // Keep for server fetch operations
 	private let dataService: DataService
 
 	private init() {
-		self.apiService = MockAPIService.isMocking ? MockAPIService() : APIService()
 		self.dataService = DataService.shared
 		loadTutorialState()
 	}
@@ -187,23 +185,25 @@ class TutorialViewModel: ObservableObject {
 			return
 		}
 
-		do {
-			if let url = URL(string: "\(APIService.baseURL)users/\(userId)") {
-				let user: BaseUserDTO = try await apiService.fetchData(
-					from: url,
-					parameters: nil
-				)
+		// Use DataService to fetch user profile info
+		let result: DataResult<BaseUserDTO> = await dataService.read(
+			.profileInfo(userId: userId, requestingUserId: nil),
+			cachePolicy: .apiOnly
+		)
 
-				// Check if user has completed onboarding (which indicates they've used the app before)
-				// If they have, we should skip the tutorial
-				if let hasCompletedOnboarding = user.hasCompletedOnboarding, hasCompletedOnboarding {
-					userDefaults.set(true, forKey: hasCompletedTutorialKey)
-					tutorialState = .completed
-					shouldShowCallout = false
-				}
+		switch result {
+		case .success(let user, _):
+			// Check if user has completed onboarding (which indicates they've used the app before)
+			// If they have, we should skip the tutorial
+			if let hasCompletedOnboarding = user.hasCompletedOnboarding, hasCompletedOnboarding {
+				userDefaults.set(true, forKey: hasCompletedTutorialKey)
+				tutorialState = .completed
+				shouldShowCallout = false
 			}
-		} catch {
+
+		case .failure:
 			// Continue with local logic if server fails
+			break
 		}
 	}
 

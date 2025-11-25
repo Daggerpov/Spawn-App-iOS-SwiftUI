@@ -32,8 +32,7 @@ struct ActivityCardView: View {
 		self.color = color
 		self.locationManager = locationManager
 		self.viewModel = ActivityCardViewModel(
-			apiService: MockAPIService.isMocking
-				? MockAPIService(userId: userId) : APIService(), userId: userId,
+			userId: userId,
 			activity: activity)
 		self.callback = callback
 		self._selectedTab = selectedTab

@@ -378,9 +378,6 @@ struct MapView: View {
 #Preview {
 	@Previewable @ObservedObject var appCache = AppCache.shared
 	let previewViewModel = FeedViewModel(
-		apiService: MockAPIService.isMocking
-			? MockAPIService(userId: BaseUserDTO.danielAgapov.id)
-			: APIService(),
 		userId: BaseUserDTO.danielAgapov.id
 	)
 	MapView(user: .danielAgapov, viewModel: previewViewModel)

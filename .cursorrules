@@ -1,5 +1,20 @@
 # Cursor Rules for Spawn App iOS SwiftUI
 
+## Refactoring Philosophy
+
+**CRITICAL: Backwards compatibility is NOT a priority.**
+
+When refactoring or improving code:
+- **Prefer complete, comprehensive refactoring** over incremental changes
+- **Break old patterns** if they're not serving the codebase well
+- **Update all usages** across the entire app when changing interfaces or patterns
+- **Remove deprecated code** rather than maintaining parallel implementations
+- **Don't create compatibility layers** or adapters to support old code
+- Aim for consistency and modern best practices throughout the entire codebase
+- If a better architecture or pattern exists, implement it fully across all affected files
+
+This is an actively developed app where code quality and maintainability take precedence over preserving old implementations.
+
 ## Code Generation Guidelines
 
 ### Figma to Code Plugin Output

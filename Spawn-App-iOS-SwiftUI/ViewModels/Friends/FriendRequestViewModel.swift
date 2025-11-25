@@ -8,15 +8,13 @@
 import Foundation
 
 class FriendRequestViewModel: ObservableObject {
-	var apiService: IAPIService  // Keep temporarily for operations not yet in DataService
 	var dataService: DataService
 	var userId: UUID
 	var friendRequestId: UUID
 
 	@Published var creationMessage: String = ""
 
-	init(apiService: IAPIService, userId: UUID, friendRequestId: UUID, dataService: DataService? = nil) {
-		self.apiService = apiService  // Keep for operations not yet in DataService
+	init(userId: UUID, friendRequestId: UUID, dataService: DataService? = nil) {
 		self.dataService = dataService ?? DataService.shared
 		self.userId = userId
 		self.friendRequestId = friendRequestId

@@ -445,3 +445,4 @@ This inversion causes:
 
 **Key Insight:** In SwiftUI, "blocking" the main thread with async/await is **fast and correct**. What causes UI blocking is **synchronous** work (expensive calculations, file I/O). Async tasks on MainActor don't block - they yield to the run loop.
 
+

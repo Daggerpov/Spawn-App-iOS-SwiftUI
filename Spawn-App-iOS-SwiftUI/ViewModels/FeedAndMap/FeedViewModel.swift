@@ -43,7 +43,7 @@ class FeedViewModel: ObservableObject {
 		}
 	}
 
-	init(apiService: IAPIService, userId: UUID) {
+	init(userId: UUID) {
 		self.userId = userId
 		self.dataService = DataService.shared
 
