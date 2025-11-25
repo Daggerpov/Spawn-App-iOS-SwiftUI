@@ -81,6 +81,20 @@ enum DataType {
 	/// Check if a user is blocked
 	case isUserBlocked(blockerId: UUID, blockedId: UUID)
 
+	/// Get list of blocked users (returns UUIDs or full DTOs based on parameter)
+	case blockedUsers(blockerId: UUID, returnOnlyIds: Bool = true)
+
+	/// Get reports made by a user (simplified DTOs)
+	case reportsByUser(reporterId: UUID)
+
+	/// Get reports about a user (admin only)
+	case reportsAboutUser(userId: UUID)
+
+	// MARK: - Notifications
+
+	/// Get notification preferences for a user
+	case notificationPreferences(userId: UUID)
+
 	// MARK: - Configuration Properties
 
 	/// API endpoint path for this data type
@@ -131,6 +145,16 @@ enum DataType {
 		// Blocking & Reporting
 		case .isUserBlocked:
 			return "blocked-users/is-blocked"
+		case .blockedUsers(let blockerId, _):
+			return "blocked-users/\(blockerId)"
+		case .reportsByUser(let reporterId):
+			return "reports/fetch/reporter/\(reporterId)"
+		case .reportsAboutUser(let userId):
+			return "reports/\(userId)"
+
+		// Notifications
+		case .notificationPreferences(let userId):
+			return "notifications/preferences/\(userId)"
 		}
 	}
 
@@ -182,6 +206,16 @@ enum DataType {
 		// Blocking & Reporting
 		case .isUserBlocked(let blockerId, let blockedId):
 			return "isUserBlocked_\(blockerId)_\(blockedId)"
+		case .blockedUsers(let blockerId, let returnOnlyIds):
+			return "blockedUsers_\(blockerId)_\(returnOnlyIds)"
+		case .reportsByUser(let reporterId):
+			return "reportsByUser_\(reporterId)"
+		case .reportsAboutUser(let userId):
+			return "reportsAboutUser_\(userId)"
+
+		// Notifications
+		case .notificationPreferences(let userId):
+			return "notificationPreferences_\(userId)"
 		}
 	}
 
@@ -233,6 +267,12 @@ enum DataType {
 				"blockedId": blockedId.uuidString,
 			]
 
+		case .blockedUsers(_, let returnOnlyIds):
+			return ["returnOnlyIds": returnOnlyIds ? "true" : "false"]
+
+		case .reportsByUser, .reportsAboutUser, .notificationPreferences:
+			return nil
+
 		default:
 			return nil
 		}
@@ -277,6 +317,14 @@ enum DataType {
 			return "All Calendar Activities"
 		case .isUserBlocked:
 			return "Is User Blocked"
+		case .blockedUsers:
+			return "Blocked Users"
+		case .reportsByUser:
+			return "Reports By User"
+		case .reportsAboutUser:
+			return "Reports About User"
+		case .notificationPreferences:
+			return "Notification Preferences"
 		}
 	}
 }

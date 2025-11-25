@@ -75,6 +75,9 @@ enum WriteOperationType {
 	/// Report a user
 	case reportUser(report: CreateReportedContentDTO)
 
+	/// Report a chat message
+	case reportChatMessage(report: CreateReportedContentDTO)
+
 	/// Block a user
 	case blockUser(blockerId: UUID, blockedId: UUID, reason: String)
 
@@ -99,6 +102,25 @@ enum WriteOperationType {
 	/// Submit user feedback
 	case submitFeedback(feedback: FeedbackSubmissionDTO)
 
+	// MARK: - Contacts Operations
+
+	/// Cross-reference phone numbers with existing users
+	case crossReferenceContacts(request: ContactCrossReferenceRequestDTO)
+
+	// MARK: - Notification Operations
+
+	/// Register device token for push notifications
+	case registerDeviceToken(token: DeviceTokenDTO)
+
+	/// Unregister device token for push notifications
+	case unregisterDeviceToken(token: DeviceTokenDTO)
+
+	/// Update notification preferences
+	case updateNotificationPreferences(preferences: NotificationPreferencesDTO)
+
+	/// Update device token (legacy PATCH method)
+	case patchDeviceToken(userId: UUID, token: String)
+
 	// MARK: - Activity Management Operations
 
 	/// Partial update activity (PATCH)
@@ -119,9 +141,13 @@ enum WriteOperationType {
 			.sendFriendRequest,
 			.createActivity,
 			.reportUser,
+			.reportChatMessage,
 			.sendChatMessage,
 			.submitFeedback,
-			.reportActivity:
+			.reportActivity,
+			.crossReferenceContacts,
+			.registerDeviceToken,
+			.updateNotificationPreferences:
 			return .post
 
 		case .updateSocialMedia,
@@ -137,7 +163,8 @@ enum WriteOperationType {
 			.deleteActivity,
 			.leaveActivity,
 			.removeFromActivity,
-			.deleteUser:
+			.deleteUser,
+			.unregisterDeviceToken:
 			return .delete
 
 		case .joinActivity,
@@ -147,7 +174,8 @@ enum WriteOperationType {
 			.fetchActivityChats:
 			return .post
 
-		case .partialUpdateActivity:
+		case .partialUpdateActivity,
+			.patchDeviceToken:
 			return .patch
 		}
 	}
@@ -196,7 +224,9 @@ enum WriteOperationType {
 
 		// Reporting & Blocking
 		case .reportUser:
-			return "reports/users"
+			return "reports/create"
+		case .reportChatMessage:
+			return "reports/create"
 		case .blockUser:
 			return "blocked-users/block"
 		case .unblockUser:
@@ -223,6 +253,20 @@ enum WriteOperationType {
 			return "activities/\(activityId)/toggleStatus/\(userId)"
 		case .reportActivity:
 			return "reports/activities"
+
+		// Contacts
+		case .crossReferenceContacts:
+			return "users/contacts/cross-reference"
+
+		// Notifications
+		case .registerDeviceToken:
+			return "notifications/device-tokens/register"
+		case .unregisterDeviceToken:
+			return "notifications/device-tokens/unregister"
+		case .updateNotificationPreferences(let preferences):
+			return "notifications/preferences/\(preferences.userId)"
+		case .patchDeviceToken(let userId, _):
+			return "users/\(userId)/device-token"
 		}
 	}
 
@@ -283,8 +327,8 @@ enum WriteOperationType {
 			return ["activities"]
 
 		// Reporting & Blocking
-		case .reportUser:
-			return []
+		case .reportUser, .reportChatMessage:
+			return []  // No cache invalidation needed for reports
 		case .blockUser(let blockerId, _, _):
 			return ["friends-\(blockerId)"]
 		case .unblockUser(let blockerId, _):
@@ -311,6 +355,17 @@ enum WriteOperationType {
 			return ["activities", "activity-\(activityId)"]
 		case .reportActivity:
 			return []  // No cache invalidation needed for reports
+
+		// Contacts
+		case .crossReferenceContacts:
+			return []  // No cache invalidation needed for contact lookup
+
+		// Notifications
+		case .registerDeviceToken,
+			.unregisterDeviceToken,
+			.updateNotificationPreferences,
+			.patchDeviceToken:
+			return []  // No cache invalidation needed for notification operations
 		}
 	}
 
@@ -349,6 +404,8 @@ enum WriteOperationType {
 			return "Remove from Activity"
 		case .reportUser:
 			return "Report User"
+		case .reportChatMessage:
+			return "Report Chat Message"
 		case .blockUser:
 			return "Block User"
 		case .unblockUser:
@@ -367,6 +424,16 @@ enum WriteOperationType {
 			return "Toggle Activity Participation"
 		case .reportActivity:
 			return "Report Activity"
+		case .crossReferenceContacts:
+			return "Cross-Reference Contacts"
+		case .registerDeviceToken:
+			return "Register Device Token"
+		case .unregisterDeviceToken:
+			return "Unregister Device Token"
+		case .updateNotificationPreferences:
+			return "Update Notification Preferences"
+		case .patchDeviceToken:
+			return "Update Device Token"
 		}
 	}
 
@@ -398,6 +465,8 @@ enum WriteOperationType {
 			return EmptyRequestBody() as? T
 		case .reportUser(let report):
 			return report as? T
+		case .reportChatMessage(let report):
+			return report as? T
 		case .blockUser(let blockerId, let blockedId, let reason):
 			// Create a block DTO with all required fields
 			let blockDTO = BlockedUserCreationDTO(blockerId: blockerId, blockedId: blockedId, reason: reason)
@@ -418,6 +487,17 @@ enum WriteOperationType {
 			return EmptyRequestBody() as? T
 		case .reportActivity(let report):
 			return report as? T
+		case .crossReferenceContacts(let request):
+			return request as? T
+		case .registerDeviceToken(let token):
+			return token as? T
+		case .unregisterDeviceToken(let token):
+			return token as? T
+		case .updateNotificationPreferences(let preferences):
+			return preferences as? T
+		case .patchDeviceToken(_, let token):
+			let tokenData = ["deviceToken": token]
+			return tokenData as? T
 		}
 	}
 }
