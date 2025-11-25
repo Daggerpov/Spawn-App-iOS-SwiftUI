@@ -200,7 +200,8 @@ class ProfileViewModel: ObservableObject {
 		await MainActor.run { self.isLoadingProfileInfo = true }
 
 		// Use centralized DataType configuration
-		let result: DataResult<UserProfileInfoDTO> = await dataService.read(.profileInfo(userId: userId))
+		let result: DataResult<UserProfileInfoDTO> = await dataService.read(
+			.profileInfo(userId: userId, requestingUserId: nil))
 
 		switch result {
 		case .success(let profileInfo, _):
@@ -1007,7 +1008,7 @@ class ProfileViewModel: ObservableObject {
 				"❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
 			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatAPIError(error)
+				self.errorMessage = ErrorFormattingService.shared.formatError(error)
 				self.profileActivities = []
 				self.isLoadingUserActivities = false
 			}
@@ -1041,8 +1042,8 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func reportUser(reporterUserId: UUID, reportedUserId: UUID, reportType: ReportType, description: String) async {
-		let reportDTO = CreateReportDTO(
-			reporterId: reporterUserId,
+		let reportDTO = CreateReportedContentDTO(
+			reporterUserId: reporterUserId,
 			contentId: reportedUserId,
 			contentType: .user,
 			reportType: reportType,

@@ -473,17 +473,17 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				guard let signInResult = signInResult else { return }
 
 				// Get ID token
-				signInResult.user.refreshTokensIfNeeded { user, error in
+				signInResult.user.refreshTokensIfNeeded { [weak self] user, error in
 					guard error == nil else {
 						print("Error refreshing token: \(error?.localizedDescription ?? "Unknown error")")
 						return
 					}
 					guard let user = user else { return }
 
-					Task { @MainActor [weak self] in
+					Task { @MainActor in
 						guard let self = self else { return }
 
-						if isOnboarding {
+						if self.isOnboarding {
 							await self.registerWithOAuth(
 								idToken: user.idToken?.tokenString ?? "",
 								provider: .google,
@@ -907,7 +907,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		do {
-			let updatedUser: BaseUserDTO? = try await apiService.sendData(EmptyBody(), to: url, parameters: nil)
+			let updatedUser: BaseUserDTO? = try await apiService.sendData(EmptyRequestBody(), to: url, parameters: nil)
 
 			guard let updatedUser = updatedUser else {
 				await MainActor.run {
@@ -952,7 +952,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 		}
 
 		do {
-			let updatedUser: BaseUserDTO? = try await apiService.sendData(EmptyBody(), to: url, parameters: nil)
+			let updatedUser: BaseUserDTO? = try await apiService.sendData(EmptyRequestBody(), to: url, parameters: nil)
 
 			guard let updatedUser = updatedUser else {
 				await MainActor.run {
@@ -1013,58 +1013,51 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 
-		do {
-			// Try to unregister device token, but don't let it fail the account deletion
-			await NotificationService.shared.unregisterDeviceToken()
+		// Try to unregister device token, but don't let it fail the account deletion
+		await NotificationService.shared.unregisterDeviceToken()
 
-			// Use DataService to delete user account
-			let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
-				.deleteUser(userId: userId)
-			)
+		// Use DataService to delete user account
+		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(
+			.deleteUser(userId: userId)
+		)
 
-			switch result {
-			case .success:
-				// Clear tokens after successful account deletion
-				clearKeychainTokens()
+		switch result {
+		case .success:
+			// Clear tokens after successful account deletion
+			clearKeychainTokens()
 
-				await MainActor.run {
-					activeAlert = .deleteSuccess
-				}
-			case .failure(let error):
-				print("Error deleting account: \(error)")
+			await MainActor.run {
+				activeAlert = .deleteSuccess
+			}
+		case .failure(let error):
+			print("Error deleting account: \(error)")
 
-				// Check if this is an authentication error (missing/invalid refresh token)
-				if let apiError = error as? APIError {
-					switch apiError {
-					case .failedTokenSaving(tokenType: "refreshToken"):
-						// Authentication failed due to missing refresh token
-						// Clear local data and log user out
-						print("Account deletion failed due to missing refresh token - clearing local data")
-						await clearLocalDataAndLogout()
-						await MainActor.run {
-							activeAlert = .deleteSuccess
-						}
-						return
-					case .invalidStatusCode(statusCode: 401):
-						// Authentication failed due to invalid/expired token
-						// Clear local data and log user out
-						print("Account deletion failed due to authentication error (401) - clearing local data")
-						await clearLocalDataAndLogout()
-						await MainActor.run {
-							activeAlert = .deleteSuccess
-						}
-						return
-					default:
-						break
+			// Check if this is an authentication error (missing/invalid refresh token)
+			if let apiError = error as? APIError {
+				switch apiError {
+				case .failedTokenSaving(tokenType: "refreshToken"):
+					// Authentication failed due to missing refresh token
+					// Clear local data and log user out
+					print("Account deletion failed due to missing refresh token - clearing local data")
+					await clearLocalDataAndLogout()
+					await MainActor.run {
+						activeAlert = .deleteSuccess
 					}
-				}
-
-				await MainActor.run {
-					activeAlert = .deleteError
+					return
+				case .invalidStatusCode(statusCode: 401):
+					// Authentication failed due to invalid/expired token
+					// Clear local data and log user out
+					print("Account deletion failed due to authentication error (401) - clearing local data")
+					await clearLocalDataAndLogout()
+					await MainActor.run {
+						activeAlert = .deleteSuccess
+					}
+					return
+				default:
+					break
 				}
 			}
-		} catch {
-			print("Unexpected error during account deletion: \(error)")
+
 			await MainActor.run {
 				activeAlert = .deleteError
 			}

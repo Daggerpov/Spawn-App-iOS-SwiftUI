@@ -104,12 +104,12 @@ struct FriendsView: View {
 				// Use DataService to fetch profile info
 				let result: DataResult<BaseUserDTO> = await dataService.read(
 					.profileInfo(userId: profileId, requestingUserId: user.id),
-					cachePolicy: .networkOnly  // Always fetch latest for deep links
+					cachePolicy: .apiOnly  // Always fetch latest for deep links
 				)
 
 				// Handle the result
 				switch result {
-				case .success(let fetchedUser):
+				case .success(let fetchedUser, source: _):
 					print(
 						"✅ FriendsView: Successfully fetched deep linked profile: \(fetchedUser.name ?? fetchedUser.username ?? "Unknown")"
 					)

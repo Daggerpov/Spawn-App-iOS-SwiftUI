@@ -89,7 +89,7 @@ enum DataType {
 		// Activities
 		case .activities(let userId):
 			return "users/\(userId)/activities"
-		case .activity(let activityId, _):
+		case .activity(let activityId, _, _):
 			return "activities/\(activityId)"
 		case .activityTypes:
 			return "activity-types"
@@ -140,7 +140,7 @@ enum DataType {
 		// Activities
 		case .activities(let userId):
 			return "activities-\(userId)"
-		case .activity(let activityId, _):
+		case .activity(let activityId, _, _):
 			return "activity_\(activityId)"
 		case .activityTypes:
 			return "activityTypes"

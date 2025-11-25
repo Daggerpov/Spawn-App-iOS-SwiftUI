@@ -95,11 +95,11 @@ class ChatViewModel: ObservableObject {
 		// Use DataService to fetch activity chats
 		let result: DataResult<[FullActivityChatMessageDTO]> = await dataService.read(
 			.activityChats(activityId: activity.id),
-			cachePolicy: .networkOnly  // Always fetch latest chat messages
+			cachePolicy: .apiOnly  // Always fetch latest chat messages
 		)
 
 		switch result {
-		case .success(let chats):
+		case .success(let chats, source: _):
 			await MainActor.run {
 				// Only update if we actually got data
 				if !chats.isEmpty || activity.chatMessages?.isEmpty == true {

@@ -270,7 +270,7 @@ struct EditProfileView: View {
 #Preview {
 	@Previewable @StateObject var profileViewModel = ProfileViewModel(
 		userId: BaseUserDTO.danielAgapov.id,
-		apiService: MockAPIService(userId: BaseUserDTO.danielAgapov.id)
+		dataService: DataService.shared
 	)
 
 	EditProfileView(

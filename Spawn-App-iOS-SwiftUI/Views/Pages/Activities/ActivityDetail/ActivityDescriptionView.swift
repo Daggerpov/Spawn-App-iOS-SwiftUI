@@ -28,11 +28,10 @@ struct ActivityDescriptionView: View {
 		let cachedActivity = AppCache.shared.getActivityById(activity.id) ?? activity
 
 		self.viewModel = ActivityDescriptionViewModel(
-			apiService: MockAPIService.isMocking
-				? MockAPIService(
-					userId: userId) : APIService(), activity: cachedActivity,
+			activity: cachedActivity,
 			users: users,
-			senderUserId: userId
+			senderUserId: userId,
+			dataService: DataService.shared
 		)
 		self.color = color
 	}

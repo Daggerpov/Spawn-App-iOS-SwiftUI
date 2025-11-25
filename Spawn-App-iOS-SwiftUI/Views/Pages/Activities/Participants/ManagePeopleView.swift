@@ -23,14 +23,13 @@ struct ManagePeopleView: View {
 			wrappedValue: FriendsTabViewModel(
 				userId: user.id,
 				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService()
+					? MockAPIService(userId: user.id) as IAPIService : APIService() as IAPIService
 			)
 		)
 		self._activityTypeViewModel = StateObject(
 			wrappedValue: ActivityTypeViewModel(
 				userId: user.id,
-				apiService: MockAPIService.isMocking
-					? MockAPIService(userId: user.id) : APIService()
+				dataService: DataService.shared
 			)
 		)
 	}

@@ -50,10 +50,10 @@ enum WriteOperationType {
 	// MARK: - Activity Operations
 
 	/// Create a new activity
-	case createActivity(activity: CreateActivityDTO)
+	case createActivity(activity: ActivityDTO)
 
 	/// Update an existing activity
-	case updateActivity(activityId: UUID, update: UpdateActivityDTO)
+	case updateActivity(activityId: UUID, update: ActivityDTO)
 
 	/// Delete an activity
 	case deleteActivity(activityId: UUID)
@@ -73,7 +73,7 @@ enum WriteOperationType {
 	// MARK: - Reporting & Blocking Operations
 
 	/// Report a user
-	case reportUser(report: CreateReportDTO)
+	case reportUser(report: CreateReportedContentDTO)
 
 	/// Block a user
 	case blockUser(blockerId: UUID, blockedId: UUID, reason: String)
@@ -108,7 +108,7 @@ enum WriteOperationType {
 	case toggleActivityParticipation(activityId: UUID, userId: UUID)
 
 	/// Report an activity
-	case reportActivity(report: CreateReportDTO)
+	case reportActivity(report: CreateReportedContentDTO)
 
 	// MARK: - Configuration Properties
 
@@ -285,8 +285,9 @@ enum WriteOperationType {
 		// Reporting & Blocking
 		case .reportUser:
 			return []
-		case .blockUser(let blockerId, _),
-			.unblockUser(let blockerId, _):
+		case .blockUser(let blockerId, _, _):
+			return ["friends-\(blockerId)"]
+		case .unblockUser(let blockerId, _):
 			return ["friends-\(blockerId)"]
 
 		// User Management

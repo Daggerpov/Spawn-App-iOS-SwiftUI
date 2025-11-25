@@ -265,12 +265,12 @@ struct ActivityFeedView: View {
 				// Use DataService to fetch activity with autoJoin
 				let result: DataResult<FullFeedActivityDTO> = await dataService.read(
 					.activity(activityId: activityId, requestingUserId: user.id, autoJoin: true),
-					cachePolicy: .networkOnly  // Always fetch latest for deep links
+					cachePolicy: .apiOnly  // Always fetch latest for deep links
 				)
 
 				// Handle the result
 				switch result {
-				case .success(let activity):
+				case .success(let activity, source: _):
 					print(
 						"✅ ActivityFeedView: Successfully fetched deep linked activity: \(activity.title ?? "No title")"
 					)

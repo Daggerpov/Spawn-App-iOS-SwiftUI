@@ -173,8 +173,13 @@ class DataWriter: IDataWriter {
 		case .post, .put, .patch:
 			// These can also return no response body (204 No Content)
 			// Use the regular write methods and ignore response
-			let _: EmptyResponse? = try await apiService.sendData(
-				body ?? EmptyRequestBody(), to: url, parameters: parameters)
+			if let body = body {
+				let _: EmptyResponse? = try await apiService.sendData(
+					body, to: url, parameters: parameters)
+			} else {
+				let _: EmptyResponse? = try await apiService.sendData(
+					EmptyRequestBody(), to: url, parameters: parameters)
+			}
 
 		case .get:
 			throw DataServiceError.unsupportedOperation(.get, "GET should use DataReader")

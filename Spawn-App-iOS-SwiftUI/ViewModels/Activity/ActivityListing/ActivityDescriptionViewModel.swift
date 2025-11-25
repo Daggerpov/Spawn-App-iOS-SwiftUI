@@ -149,9 +149,10 @@ class ActivityDescriptionViewModel: ObservableObject {
 		case .failure(let error):
 			await MainActor.run {
 				// Check if it's an activity full error (status 400)
-				if let dataError = error as? DataError,
-					case .apiError(let apiError) = dataError,
-					case .invalidStatusCode(let statusCode) = apiError,
+				if let dataError = error as? DataServiceError,
+					case .apiFailed(let apiError) = dataError,
+					let apiErrorTyped = apiError as? APIError,
+					case .invalidStatusCode(let statusCode) = apiErrorTyped,
 					statusCode == 400
 				{
 					// Activity is full
@@ -215,8 +216,8 @@ class ActivityDescriptionViewModel: ObservableObject {
 		// For now, we'll keep the direct fetch, but this could be optimized later
 		// by adding a DataType for single activity fetch
 		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
-			.activities(userId: senderUserId, filterType: .all),
-			cachePolicy: .networkOnly
+			.activities(userId: senderUserId),
+			cachePolicy: .apiOnly
 		)
 
 		switch result {

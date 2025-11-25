@@ -55,8 +55,8 @@ class ActivityCardViewModel: ObservableObject {
 
 	/// Reports the activity for inappropriate content
 	func reportActivity(reporterUserId: UUID, reportType: ReportType, description: String) async {
-		let reportDTO = CreateReportDTO(
-			reporterId: reporterUserId,
+		let reportDTO = CreateReportedContentDTO(
+			reporterUserId: reporterUserId,
 			contentId: activity.id,
 			contentType: .activity,
 			reportType: reportType,
