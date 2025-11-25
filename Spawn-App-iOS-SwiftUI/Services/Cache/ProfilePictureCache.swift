@@ -24,10 +24,6 @@ class ProfilePictureCache: ObservableObject {
 	private var cacheMetadata: [String: CacheMetadata] = [:]
 	private let metadataKey = "ProfilePictureCacheMetadata"
 
-	// Track ongoing download tasks to prevent duplicates
-	private var downloadTasks: [String: Task<UIImage?, Never>] = [:]
-	private let downloadTasksQueue = DispatchQueue(label: "ProfilePictureCache.downloadTasks", attributes: .concurrent)
-
 	// MARK: - Initialization
 	private init() {
 		// Create cache directory
@@ -103,37 +99,12 @@ class ProfilePictureCache: ObservableObject {
 		print("   URL: \(urlString)")
 		print("   Force refresh: \(forceRefresh)")
 
-		let key = userId.uuidString
-
 		// Check cache first (unless force refresh)
 		if !forceRefresh, let cachedImage = getCachedImage(for: userId) {
 			print("✅ [CACHE] Returning cached image for user \(userId)")
 			return cachedImage
 		}
 
-		// Check if already downloading - wait for existing task
-		if let existingTask = getDownloadTask(for: key) {
-			print("⏳ [DOWNLOAD] Already downloading for user \(userId), waiting for existing task...")
-			return await existingTask.value
-		}
-
-		// Create new download task
-		let downloadTask = Task<UIImage?, Never> {
-			await self.performDownload(urlString: urlString, userId: userId)
-		}
-
-		// Store task to prevent duplicate downloads
-		setDownloadTask(downloadTask, for: key)
-
-		// Wait for result and cleanup
-		let result = await downloadTask.value
-		removeDownloadTask(for: key)
-
-		return result
-	}
-
-	/// Perform the actual download (called from download task)
-	private func performDownload(urlString: String, userId: UUID) async -> UIImage? {
 		guard let url = URL(string: urlString) else {
 			print("❌ [DOWNLOAD] Invalid URL: \(urlString)")
 			return nil
@@ -204,24 +175,15 @@ class ProfilePictureCache: ObservableObject {
 		return await downloadAndCacheImage(from: urlString, for: userId, forceRefresh: false)
 	}
 
-	/// Download profile pictures for multiple users in parallel using task groups
+	/// Download profile pictures for multiple users (sequentially)
 	func refreshStaleProfilePictures(for users: [(userId: UUID, profilePictureUrl: String?)]) async {
-		print("🔄 [CACHE] Refreshing stale profile pictures for \(users.count) users in parallel")
+		for user in users {
+			guard let profilePictureUrl = user.profilePictureUrl else { continue }
 
-		await withTaskGroup(of: Void.self) { group in
-			for user in users {
-				guard let profilePictureUrl = user.profilePictureUrl else { continue }
-
-				if isProfilePictureStale(for: user.userId) {
-					group.addTask {
-						_ = await self.downloadAndCacheImage(
-							from: profilePictureUrl, for: user.userId, forceRefresh: true)
-					}
-				}
+			if isProfilePictureStale(for: user.userId) {
+				_ = await downloadAndCacheImage(from: profilePictureUrl, for: user.userId, forceRefresh: true)
 			}
 		}
-
-		print("✅ [CACHE] Completed parallel refresh of stale profile pictures")
 	}
 
 	/// Force refresh a profile picture from the backend
@@ -275,26 +237,6 @@ class ProfilePictureCache: ObservableObject {
 		saveMetadata()
 
 		print("🗑️ [CACHE] Cleared all cached images")
-	}
-
-	// MARK: - Private Methods - Download Task Management
-
-	private func getDownloadTask(for key: String) -> Task<UIImage?, Never>? {
-		return downloadTasksQueue.sync {
-			return downloadTasks[key]
-		}
-	}
-
-	private func setDownloadTask(_ task: Task<UIImage?, Never>, for key: String) {
-		downloadTasksQueue.async(flags: .barrier) {
-			self.downloadTasks[key] = task
-		}
-	}
-
-	private func removeDownloadTask(for key: String) {
-		downloadTasksQueue.async(flags: .barrier) {
-			self.downloadTasks.removeValue(forKey: key)
-		}
 	}
 
 	// MARK: - Private Methods - Disk Operations
