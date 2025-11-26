@@ -200,9 +200,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 	// Helper method to check if both auth and minimum loading time are completed
 	private func checkLoadingCompletion() {
-		print(
-			"🔄 DEBUG: checkLoadingCompletion called - minimumLoadingCompleted: \(minimumLoadingCompleted), authCheckCompleted: \(authCheckCompleted)"
-		)
 		if minimumLoadingCompleted && authCheckCompleted {
 			hasCheckedSpawnUserExistence = true
 			print("🔄 DEBUG: Setting hasCheckedSpawnUserExistence to true")

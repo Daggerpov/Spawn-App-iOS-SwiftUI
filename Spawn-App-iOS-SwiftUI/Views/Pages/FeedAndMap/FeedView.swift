@@ -69,11 +69,6 @@ struct FeedView: View {
 				let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
 				let totalDuration = Date().timeIntervalSince(taskStartTime)
 
-				print(
-					"📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(activitiesCount) activities"
-				)
-				print("⏱️ [NAV] Total UI update took \(String(format: "%.3f", totalDuration))s")
-
 				// Check if task was cancelled
 				guard !Task.isCancelled else {
 					print("⚠️ [NAV] Task cancelled before determining refresh strategy")

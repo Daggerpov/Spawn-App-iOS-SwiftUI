@@ -90,8 +90,6 @@ actor ProfilePictureCache {
 	func getCachedImageWithRefresh(for userId: UUID, from urlString: String?, maxAge: TimeInterval = 24 * 60 * 60) async
 		-> UIImage?
 	{
-		print("🔄 [CACHE] getCachedImageWithRefresh for user \(userId)")
-
 		guard let urlString = urlString else {
 			print("❌ [DOWNLOAD] No URL provided for user \(userId)")
 			return nil
@@ -105,7 +103,6 @@ actor ProfilePictureCache {
 			let isStale = isProfilePictureStale(for: userId, maxAge: maxAge)
 
 			if !isStale {
-				print("✅ [CACHE] Returning fresh cached image for user \(userId)")
 				return image
 			} else {
 				// Return stale image immediately, refresh in background
@@ -261,7 +258,6 @@ actor ProfilePictureCache {
 
 		if let image = image {
 			// Cache hit on disk - store in memory for next time
-			print("✅ [CACHE] Disk cache HIT for user \(userId)")
 			memoryCache[userId] = image
 
 			// Update metadata

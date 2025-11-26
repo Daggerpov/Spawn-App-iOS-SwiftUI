@@ -44,8 +44,6 @@ class CacheCoordinator: ObservableObject {
 
 	/// Initialize all cache services
 	func initialize() {
-		// Cache services initialize themselves on creation
-		print("✅ [CACHE-COORDINATOR] All cache services initialized")
 	}
 
 	/// Clear all caches

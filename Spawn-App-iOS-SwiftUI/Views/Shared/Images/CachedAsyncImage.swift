@@ -89,16 +89,6 @@ struct CachedAsyncImage<Content: View, Placeholder: View>: View {
 					loadError = NSError(
 						domain: "CachedAsyncImage", code: 0,
 						userInfo: [NSLocalizedDescriptionKey: "Failed to download image"])
-				} else {
-					if loadDuration > 1.0 {
-						print(
-							"⏱️ [UI] CachedAsyncImage loaded in \(String(format: "%.2f", loadDuration))s for user \(userId)"
-						)
-					} else {
-						print(
-							"✅ [UI] CachedAsyncImage loaded successfully for user \(userId) in \(String(format: "%.2f", loadDuration))s"
-						)
-					}
 				}
 			}
 		}

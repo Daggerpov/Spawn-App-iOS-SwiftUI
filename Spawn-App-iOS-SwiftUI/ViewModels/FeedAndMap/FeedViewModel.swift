@@ -207,7 +207,6 @@ class FeedViewModel: ObservableObject {
 			case .success(let cachedActivities, _):
 				let filteredActivities = self.filterExpiredActivities(cachedActivities)
 				self.activitiesSubject.send(filteredActivities)
-				print("✅ FeedViewModel: Loaded \(cachedActivities.count) activities from cache")
 
 			case .failure:
 				print("⚠️ FeedViewModel: No cached activities available")

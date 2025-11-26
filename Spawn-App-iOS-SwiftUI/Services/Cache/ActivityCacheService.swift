@@ -225,9 +225,6 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	/// Update activity types for a specific user
 	func updateActivityTypesForUser(_ newActivityTypes: [ActivityTypeDTO], userId: UUID) {
-		print(
-			"💾 [ACTIVITY-CACHE] Updating activity types cache: \(newActivityTypes.count) activity types for user \(userId)"
-		)
 		activityTypes[userId] = newActivityTypes
 		setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
 		saveToDisk()

@@ -56,7 +56,6 @@ class DataReader: IDataReader {
 		case .cacheOnly:
 			// Only use cache, never fetch from API
 			if let cachedData = cacheOps.provider() {
-				print("✅ [DataReader] Using cached \(dataType.displayName)")
 				return .success(cachedData, source: .cache)
 			} else {
 				print("⚠️ [DataReader] No cached \(dataType.displayName) available")
@@ -71,12 +70,10 @@ class DataReader: IDataReader {
 		case .cacheFirst(let backgroundRefresh):
 			// Check cache first
 			if let cachedData = cacheOps.provider() {
-				print("✅ [DataReader] Using cached \(dataType.displayName)")
 
 				// If background refresh is enabled, fetch from API in background
 				if backgroundRefresh {
 					Task {
-						print("🔄 [DataReader] Refreshing \(dataType.displayName) in background")
 						let _ = await fetchFromAPI(dataType: dataType, cacheOps: cacheOps)
 					}
 				}
@@ -112,7 +109,6 @@ class DataReader: IDataReader {
 			// Update cache
 			cacheOps.updater(data)
 
-			print("✅ [DataReader] API fetch successful for \(dataType.displayName)")
 			return .success(data, source: .api)
 
 		} catch {

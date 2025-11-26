@@ -110,8 +110,6 @@ struct ContentView: View {
 
 				let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
 				let totalDuration = Date().timeIntervalSince(taskStartTime)
-				print("📊 [NAV] ContentView: Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
-				print("⏱️ [NAV] ContentView: Total UI update took \(String(format: "%.3f", totalDuration))s")
 
 				// Check if task was cancelled before starting background refresh
 				if Task.isCancelled {

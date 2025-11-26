@@ -125,10 +125,6 @@ struct FriendsTabView: View {
 							return
 						}
 
-						let requestsRefreshDuration = Date().timeIntervalSince(refreshStart)
-						print(
-							"⏱️ [NAV] Friend requests refresh took \(String(format: "%.2f", requestsRefreshDuration))s")
-
 						let fetchStart = Date()
 						await viewModel.fetchAllData()
 
@@ -138,23 +134,13 @@ struct FriendsTabView: View {
 						}
 
 						let fetchDuration = Date().timeIntervalSince(fetchStart)
-						print("⏱️ [NAV] fetchAllData took \(String(format: "%.2f", fetchDuration))s")
-						print("✅ [NAV] FriendsTabView: Background refresh completed")
 					}
-
-					let totalDuration = Date().timeIntervalSince(taskStartTime)
-					print("⏱️ [NAV] Total UI update took \(String(format: "%.3f", totalDuration))s")
 				}
 			}
-			.onAppear {
-				print("👁️ [NAV] FriendsTabView appeared")
-			}
 			.onDisappear {
-				print("👋 [NAV] FriendsTabView disappearing - cancelling background tasks")
 				// Cancel any ongoing background refresh to prevent blocking
 				backgroundRefreshTask?.cancel()
 				backgroundRefreshTask = nil
-				print("👋 [NAV] FriendsTabView disappeared")
 			}
 			.refreshable {
 				// Pull to refresh functionality - user-initiated refresh
