@@ -1139,12 +1139,13 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			if let apiService = apiService as? APIService {
 				let updatedUser = try await apiService.updateProfilePicture(imageData, userId: userId)
 
+				// Invalidate the cached profile picture since we have a new one
+				await ProfilePictureCache.shared.removeCachedImage(for: userId)
+
 				await MainActor.run {
 					self.spawnUser = updatedUser
 					// Force a UI update
 					self.objectWillChange.send()
-					// Invalidate the cached profile picture since we have a new one
-					ProfilePictureCache.shared.removeCachedImage(for: userId)
 					print("Profile successfully updated with new picture: \(updatedUser.profilePicture ?? "nil")")
 
 					// Post notification for profile update to trigger hot-reload across the app
@@ -1183,11 +1184,12 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				// Decode the response
 				let decoder = JSONDecoder()
 				if let updatedUser = try? decoder.decode(BaseUserDTO.self, from: data) {
+					// Invalidate the cached profile picture since we have a new one
+					await ProfilePictureCache.shared.removeCachedImage(for: userId)
+
 					await MainActor.run {
 						self.spawnUser = updatedUser
 						self.objectWillChange.send()
-						// Invalidate the cached profile picture since we have a new one
-						ProfilePictureCache.shared.removeCachedImage(for: userId)
 						print(
 							"Fallback: Profile picture updated successfully with URL: \(updatedUser.profilePicture ?? "nil")"
 						)

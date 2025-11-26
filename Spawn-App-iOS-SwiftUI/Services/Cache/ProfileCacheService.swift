@@ -229,7 +229,9 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 		profileActivities.removeValue(forKey: userId)
 
 		// Clear profile picture cache for this user
-		ProfilePictureCache.shared.removeCachedImage(for: userId)
+		Task {
+			await ProfilePictureCache.shared.removeCachedImage(for: userId)
+		}
 
 		// Clear cache timestamps for this user
 		clearLastCheckedForUser(userId)

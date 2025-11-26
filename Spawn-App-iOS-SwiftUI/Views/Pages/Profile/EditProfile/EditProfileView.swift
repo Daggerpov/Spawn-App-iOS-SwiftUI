@@ -212,7 +212,7 @@ struct EditProfileView: View {
 			if let newImage = selectedImage {
 				await userAuth.updateProfilePicture(newImage)
 				// Invalidate the cached profile picture since we have a new one
-				ProfilePictureCache.shared.removeCachedImage(for: userId)
+				await ProfilePictureCache.shared.removeCachedImage(for: userId)
 			}
 
 			// Refresh all profile data

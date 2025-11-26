@@ -1252,17 +1252,17 @@ extension ProfileView {
 		// Refresh profile data
 		await profileViewModel.loadAllProfileData(userId: userId)
 
+		// Invalidate the cached profile picture since we have a new one
+		if let userId = userAuth.spawnUser?.id {
+			await ProfilePictureCache.shared.removeCachedImage(for: userId)
+		}
+
 		// Update local state with the latest data from the user object
 		await MainActor.run {
 			// Clear the selected image to force the view to refresh from the server
 			selectedImage = nil
 			isImageLoading = false
 			editingState = .edit
-
-			// Invalidate the cached profile picture since we have a new one
-			if let userId = userAuth.spawnUser?.id {
-				ProfilePictureCache.shared.removeCachedImage(for: userId)
-			}
 		}
 	}
 }
