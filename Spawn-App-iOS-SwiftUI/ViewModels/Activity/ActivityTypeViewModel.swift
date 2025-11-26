@@ -57,6 +57,7 @@ class ActivityTypeViewModel: ObservableObject {
 		if !MockAPIService.isMocking {
 			// Subscribe to cached activity types updates
 			AppCache.shared.activityTypesPublisher
+				.receive(on: DispatchQueue.main)
 				.sink { [weak self] cachedActivityTypes in
 					if !cachedActivityTypes.isEmpty {
 						self?.activityTypes = cachedActivityTypes
@@ -94,7 +95,8 @@ class ActivityTypeViewModel: ObservableObject {
 		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
 
 		// Use DataService to get activity types
-		let result: DataResult<[ActivityTypeDTO]> = await dataService.read(.activityTypes, cachePolicy: cachePolicy)
+		let result: DataResult<[ActivityTypeDTO]> = await dataService.read(
+			.activityTypes(userId: userId), cachePolicy: cachePolicy)
 
 		switch result {
 		case .success(let types, let source):

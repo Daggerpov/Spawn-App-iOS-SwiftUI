@@ -26,7 +26,7 @@ enum DataType {
 	case activity(activityId: UUID, requestingUserId: UUID, autoJoin: Bool = false)
 
 	/// Activity types
-	case activityTypes
+	case activityTypes(userId: UUID)
 
 	/// Upcoming activities for a user
 	case upcomingActivities(userId: UUID)
@@ -105,8 +105,8 @@ enum DataType {
 			return "users/\(userId)/activities"
 		case .activity(let activityId, _, _):
 			return "activities/\(activityId)"
-		case .activityTypes:
-			return "activity-types"
+		case .activityTypes(let userId):
+			return "users/\(userId)/activity-types"
 		case .upcomingActivities(let userId):
 			return "activities/user/\(userId)/upcoming"
 		case .activityChats(let activityId):
@@ -166,8 +166,8 @@ enum DataType {
 			return "activities-\(userId)"
 		case .activity(let activityId, _, _):
 			return "activity_\(activityId)"
-		case .activityTypes:
-			return "activityTypes"
+		case .activityTypes(let userId):
+			return "activityTypes_\(userId)"
 		case .upcomingActivities(let userId):
 			return "upcomingActivities_\(userId)"
 		case .activityChats(let activityId):
@@ -417,6 +417,7 @@ extension DataType {
 			)
 
 		case .activityTypes:
+			// Note: Activity types are stored globally (not per-user) in cache for now
 			return SimpleCacheConfig<[ActivityTypeDTO]>(
 				getter: { $0.activityTypes },
 				updater: { appCache in appCache.updateActivityTypes },

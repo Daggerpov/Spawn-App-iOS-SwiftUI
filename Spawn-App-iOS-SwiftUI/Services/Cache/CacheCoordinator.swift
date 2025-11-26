@@ -53,7 +53,10 @@ class CacheCoordinator: ObservableObject {
 		activityCache.clearAllCaches()
 		friendshipCache.clearAllCaches()
 		profileCache.clearAllCaches()
-		profilePictureCache.clearAllCache()
+
+		Task {
+			await profilePictureCache.clearAllCache()
+		}
 
 		print("✅ [CACHE-COORDINATOR] All caches cleared successfully")
 	}
@@ -63,7 +66,10 @@ class CacheCoordinator: ObservableObject {
 		activityCache.clearDataForUser(userId)
 		friendshipCache.clearDataForUser(userId)
 		profileCache.clearDataForUser(userId)
-		profilePictureCache.removeCachedImage(for: userId)
+
+		Task {
+			await profilePictureCache.removeCachedImage(for: userId)
+		}
 
 		// Clear other profiles cache to prevent data leakage between users
 		profileCache.otherProfiles.removeAll()
@@ -415,7 +421,7 @@ class CacheCoordinator: ObservableObject {
 		// Force refresh all profile pictures
 		for user in uniqueUsers {
 			guard let profilePictureUrl = user.profilePictureUrl else { continue }
-			_ = await profilePictureCache.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
+			_ = await profilePictureCache.refreshProfilePicture(for: user.userId, urlString: profilePictureUrl)
 		}
 	}
 

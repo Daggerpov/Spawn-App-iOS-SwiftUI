@@ -9,8 +9,8 @@ import Foundation
 class ActivityTypeDTO: Identifiable, Codable, Equatable {
 	var id: UUID
 	var title: String
-	var icon: String
 	var associatedFriends: [BaseUserDTO]
+	var icon: String
 	var orderNum: Int
 	var ownerUserId: UUID?
 	var isPinned: Bool
@@ -21,8 +21,8 @@ class ActivityTypeDTO: Identifiable, Codable, Equatable {
 	) {
 		self.id = id
 		self.title = title
-		self.icon = icon
 		self.associatedFriends = associatedFriends
+		self.icon = icon
 		self.orderNum = orderNum
 		self.ownerUserId = ownerUserId
 		self.isPinned = isPinned
