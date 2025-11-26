@@ -368,8 +368,10 @@ class FriendsTabViewModel: ObservableObject {
 				self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
 			}
 
-			// Refresh profile pictures for cached data
-			await refreshProfilePictures()
+			// Refresh profile pictures for all visible users in background (non-blocking)
+			Task.detached(priority: .background) {
+				await self.refreshProfilePictures()
+			}
 
 			let duration = Date().timeIntervalSince(startTime)
 			print("⏱️ [VM] fetchAllData (cached) completed in \(String(format: "%.3f", duration))s")
@@ -411,8 +413,10 @@ class FriendsTabViewModel: ObservableObject {
 			self.isLoading = false
 		}
 
-		// Refresh profile pictures for all visible users
-		await refreshProfilePictures()
+		// Refresh profile pictures for all visible users in background (non-blocking)
+		Task.detached(priority: .background) {
+			await self.refreshProfilePictures()
+		}
 
 		let duration = Date().timeIntervalSince(startTime)
 		print("⏱️ [VM] fetchAllData (from API) completed in \(String(format: "%.2f", duration))s")
