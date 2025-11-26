@@ -357,8 +357,6 @@ struct ManagePeopleView: View {
 			// Post notification for UI updates
 			NotificationCenter.default.post(name: .activityTypesChanged, object: nil)
 
-			print("✅ Successfully updated activity type: \(activityType.title)")
-
 		} catch {
 			print("❌ Error updating activity type: \(error)")
 			// On error, refresh from cache/API to get correct state

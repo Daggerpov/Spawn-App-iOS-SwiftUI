@@ -157,7 +157,6 @@ extension SMSShareService: MFMessageComposeViewControllerDelegate {
 			case .cancelled:
 				print("📱 SMS sharing cancelled")
 			case .sent:
-				print("✅ SMS sent successfully")
 				// Show success notification
 				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
 					InAppNotificationManager.shared.showNotification(

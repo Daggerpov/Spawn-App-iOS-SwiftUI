@@ -306,7 +306,6 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 			UserDefaults.standard.removeObject(forKey: CacheKeys.events)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
-			print("✅ [ACTIVITY-CACHE] All UserDefaults cleared")
 		}
 	}
 
@@ -335,7 +334,6 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 		await activitiesTask
 		await activityTypesTask
-		print("✅ [ACTIVITY-CACHE] Force refresh completed")
 	}
 
 	// MARK: - Persistence
@@ -368,8 +366,6 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 			if let activities = loadedActivities { self.activities = activities }
 			if let types = loadedActivityTypes { self.activityTypes = types }
 			if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
-
-			print("✅ [ACTIVITY-CACHE] Loaded data from disk")
 		}
 	}
 

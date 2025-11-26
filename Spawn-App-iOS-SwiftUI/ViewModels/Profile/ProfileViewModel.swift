@@ -65,7 +65,6 @@ class ProfileViewModel: ObservableObject {
 				self.userStats = stats
 				self.isLoadingStats = false
 			}
-			print("✅ ProfileViewModel: Loaded stats from \(source == .cache ? "cache" : "API") for user \(userId)")
 
 		case .failure(let error):
 			await MainActor.run {
@@ -87,7 +86,6 @@ class ProfileViewModel: ObservableObject {
 				self.userInterests = interests
 				self.isLoadingInterests = false
 			}
-			print("✅ ProfileViewModel: Loaded interests from \(source == .cache ? "cache" : "API") for user \(userId)")
 
 		case .failure(let error):
 			await MainActor.run {
@@ -149,8 +147,6 @@ class ProfileViewModel: ObservableObject {
 				self.userSocialMedia = socialMedia
 				self.isLoadingSocialMedia = false
 			}
-			print(
-				"✅ ProfileViewModel: Loaded social media from \(source == .cache ? "cache" : "API") for user \(userId)")
 
 		case .failure(let error):
 			await MainActor.run {
@@ -336,7 +332,6 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let activities, _):
-			print("✅ Calendar: Successfully fetched \(activities.count) activities")
 			if !activities.isEmpty {
 				print("📅 Calendar: Sample activity dates:")
 				for activity in activities.prefix(3) {
@@ -389,8 +384,6 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let activities, _):
-			print("✅ ProfileViewModel: Successfully fetched \(activities.count) calendar activities")
-
 			await MainActor.run {
 				self.allCalendarActivities = activities
 				self.isLoadingCalendar = false
@@ -398,8 +391,6 @@ class ProfileViewModel: ObservableObject {
 				// Pre-assign colors for calendar activities
 				let activityIds = activities.compactMap { $0.activityId }
 				ActivityColorService.shared.assignColorsForActivities(activityIds)
-
-				print("✅ ProfileViewModel: All calendar activities updated with \(activities.count) activities")
 			}
 
 		case .failure(let error):
@@ -455,8 +446,6 @@ class ProfileViewModel: ObservableObject {
 			)
 
 			await MainActor.run {
-				print("✅ ProfileViewModel: Successfully fetched \(activities.count) calendar activities")
-
 				self.calendarActivities = grid
 				self.allCalendarActivities = activities
 				self.isLoadingCalendar = false
@@ -464,8 +453,6 @@ class ProfileViewModel: ObservableObject {
 				// Pre-assign colors for calendar activities
 				let activityIds = activities.compactMap { $0.activityId }
 				ActivityColorService.shared.assignColorsForActivities(activityIds)
-
-				print("✅ ProfileViewModel: Calendar grid updated with \(activities.count) activities")
 			}
 
 		case .failure(let error):
@@ -687,7 +674,6 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			print("✅ Successfully removed interest: \(interest)")
 			// Refresh interests from cache
 			let _: DataResult<[String]> = await dataService.read(
 				.profileInterests(userId: userId), cachePolicy: .apiOnly)
@@ -722,7 +708,6 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let activity, _):
-			print("✅ ProfileViewModel: Successfully fetched activity details: \(activity.title ?? "No title")")
 			print(
 				"📋 Activity Details: ID: \(activity.id), Title: \(activity.title ?? "No title"), Location: \(activity.location?.name ?? "No location")"
 			)
@@ -984,10 +969,6 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let activities, let source):
-			print(
-				"✅ ProfileViewModel: Loaded \(activities.count) profile activities from \(source == .cache ? "cache" : "API")"
-			)
-
 			// Log activity details
 			if !activities.isEmpty {
 				print("📋 ProfileViewModel: Activity details:")

@@ -100,7 +100,6 @@ class CustomAppDelegate: NSObject, UIApplicationDelegate, ObservableObject, Mess
 
 	func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
 		if let deviceToken = fcmToken {
-			print("✅ FCM registration token: \(deviceToken)")
 			print("Sending registration token to server")
 			NotificationService.shared.registerDeviceToken(deviceToken)
 		} else {

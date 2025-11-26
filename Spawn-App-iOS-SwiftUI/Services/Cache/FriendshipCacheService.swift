@@ -372,7 +372,6 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 
 		await incomingTask
 		await sentTask
-		print("✅ [FRIENDSHIP-CACHE] Force refresh of friend requests completed")
 	}
 
 	// MARK: - CacheService Protocol
@@ -391,7 +390,6 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 			UserDefaults.standard.removeObject(forKey: CacheKeys.friendRequests)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.sentFriendRequests)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
-			print("✅ [FRIENDSHIP-CACHE] All UserDefaults cleared")
 		}
 	}
 
@@ -423,7 +421,6 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		await recommendedTask
 		await requestsTask
 		await sentRequestsTask
-		print("✅ [FRIENDSHIP-CACHE] Force refresh completed")
 	}
 
 	/// Diagnostic method to force refresh all data with detailed logging
@@ -447,7 +444,6 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 		print("   - Friend requests: \(friendRequests[userId]?.count ?? 0)")
 		print("   - Sent friend requests: \(sentFriendRequests[userId]?.count ?? 0)")
 		print("   - Recommended friends: \(recommendedFriends[userId]?.count ?? 0)")
-		print("✅ [DIAGNOSTIC] Diagnostic refresh completed")
 	}
 
 	// MARK: - Persistence
@@ -489,8 +485,6 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 			if let requests = loadedRequests { self.friendRequests = requests }
 			if let sentRequests = loadedSentRequests { self.sentFriendRequests = sentRequests }
 			if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
-
-			print("✅ [FRIENDSHIP-CACHE] Loaded data from disk")
 		}
 	}
 

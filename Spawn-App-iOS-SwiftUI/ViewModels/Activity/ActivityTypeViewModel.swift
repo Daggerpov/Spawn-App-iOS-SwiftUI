@@ -77,7 +77,6 @@ class ActivityTypeViewModel: ObservableObject {
 		let cachedTypes = AppCache.shared.getActivityTypesForUser(userId)
 		if !cachedTypes.isEmpty {
 			self.activityTypes = cachedTypes
-			print("✅ ActivityTypeViewModel: Loaded \(cachedTypes.count) activity types from cache for user \(userId)")
 		} else {
 			print("⚠️ ActivityTypeViewModel: No cached activity types available for user \(userId)")
 		}
@@ -106,9 +105,6 @@ class ActivityTypeViewModel: ObservableObject {
 				// Only set loading state when fetching from API
 				setLoadingState(false)
 			}
-			print(
-				"✅ ActivityTypeViewModel: Loaded \(types.count) activity types from \(source == .cache ? "cache" : "API")"
-			)
 
 		case .failure(let error):
 			setLoadingState(false, error: ErrorFormattingService.shared.formatError(error))
@@ -181,7 +177,6 @@ class ActivityTypeViewModel: ObservableObject {
 		switch result {
 		case .success(let updatedActivityTypes, _):
 			updateStateAfterAPISuccess(updatedActivityTypes)
-			print("✅ Successfully deleted activity type: \(activityTypeDTO.title)")
 
 		case .failure(let error):
 			print("❌ Error deleting activity type: \(error)")
@@ -208,7 +203,6 @@ class ActivityTypeViewModel: ObservableObject {
 		switch result {
 		case .success(let updatedActivityTypes, _):
 			updateStateAfterAPISuccess(updatedActivityTypes)
-			print("✅ Successfully created activity type: \(activityTypeDTO.title)")
 
 		case .failure(let error):
 			print("❌ Error creating activity type: \(error)")

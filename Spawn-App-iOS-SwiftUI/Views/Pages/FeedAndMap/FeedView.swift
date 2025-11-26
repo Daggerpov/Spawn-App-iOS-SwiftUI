@@ -104,7 +104,6 @@ struct FeedView: View {
 
 						let refreshDuration = Date().timeIntervalSince(refreshStart)
 						print("⏱️ [NAV] Background refresh took \(String(format: "%.2f", refreshDuration))s")
-						print("✅ [NAV] FeedView: Background refresh completed")
 					}
 				}
 			}

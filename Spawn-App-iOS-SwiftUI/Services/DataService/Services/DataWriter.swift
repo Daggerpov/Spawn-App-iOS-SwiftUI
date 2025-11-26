@@ -69,7 +69,6 @@ class DataWriter: IDataWriter {
 				invalidateCacheKeys(operation.cacheInvalidationKeys)
 			}
 
-			print("✅ [DataWriter] \(operation.method.rawValue) successful for \(operation.endpoint)")
 			return .success(response, source: .api)
 
 		} catch {
@@ -106,7 +105,6 @@ class DataWriter: IDataWriter {
 				invalidateCacheKeys(operation.cacheInvalidationKeys)
 			}
 
-			print("✅ [DataWriter] \(operation.method.rawValue) successful for \(operation.endpoint)")
 			return .success(EmptyResponse(), source: .api)
 
 		} catch {

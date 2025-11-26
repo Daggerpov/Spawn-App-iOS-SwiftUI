@@ -40,7 +40,6 @@ actor ProfilePictureCache {
 		// Load metadata
 		loadMetadata()
 
-		print("✅ [CACHE] ProfilePictureCache initialized")
 		print("   Cache directory: \(cacheDirectory.path)")
 	}
 
@@ -60,7 +59,6 @@ actor ProfilePictureCache {
 		// Check cache first (unless force refresh)
 		if !forceRefresh {
 			if let cached = try? loadFromDisk(userId: userId) ?? memoryCache[userId] {
-				print("✅ [CACHE] Returning cached image for user \(userId)")
 				return cached
 			}
 		}
@@ -205,8 +203,6 @@ actor ProfilePictureCache {
 			throw URLError(.cannotDecodeContentData)
 		}
 
-		print("✅ [DOWNLOAD] Successfully downloaded image for user \(userId)")
-
 		// Store in memory cache
 		memoryCache[userId] = image
 
@@ -229,7 +225,6 @@ actor ProfilePictureCache {
 
 		do {
 			try imageData.write(to: fileURL)
-			print("✅ [CACHE] Saved to disk for key \(key)")
 
 			// Update metadata
 			let metadata = CacheMetadata(
@@ -295,7 +290,6 @@ actor ProfilePictureCache {
 
 	private func setLoadedMetadata(_ metadata: [UUID: CacheMetadata]) {
 		cacheMetadata = metadata
-		print("✅ [CACHE] Loaded metadata for \(metadata.count) cached images")
 	}
 
 	private func saveMetadata() {

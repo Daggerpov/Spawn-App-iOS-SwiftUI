@@ -193,8 +193,6 @@ struct ActivityDescriptionView: View {
 
 				// Update the view model with the new activity data and refresh participation status
 				viewModel.updateActivity(updatedActivity)
-
-				print("✅ ActivityDescriptionView: Updated activity data and participation status")
 			}
 		}
 	}

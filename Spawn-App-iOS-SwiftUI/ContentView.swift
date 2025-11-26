@@ -132,7 +132,6 @@ struct ContentView: View {
 					await feedViewModel.fetchAllData()
 					let refreshDuration = Date().timeIntervalSince(refreshStart)
 					print("⏱️ [NAV] ContentView: Background refresh took \(String(format: "%.2f", refreshDuration))s")
-					print("✅ [NAV] ContentView: Background refresh completed")
 				}
 			}
 			.onAppear {
@@ -327,8 +326,6 @@ struct ContentView: View {
 				let (_, response) = try await URLSession.shared.data(for: request)
 
 				if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-					print("✅ ContentView: Successfully registered user as invited to activity")
-
 					// Show success notification
 					DispatchQueue.main.async {
 						InAppNotificationManager.shared.showNotification(

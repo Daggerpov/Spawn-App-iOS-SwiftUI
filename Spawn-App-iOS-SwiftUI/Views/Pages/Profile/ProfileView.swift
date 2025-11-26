@@ -192,7 +192,6 @@ struct ProfileView: View {
 				}
 
 				let criticalDataDuration = Date().timeIntervalSince(criticalDataStart)
-				print("✅ [NAV] ProfileView critical data loaded in \(String(format: "%.2f", criticalDataDuration))s")
 
 				// View will now appear with all critical data ready
 				let totalDuration = Date().timeIntervalSince(taskStartTime)
@@ -219,8 +218,6 @@ struct ProfileView: View {
 
 					// Load non-critical enhancement data
 					await profileViewModel.loadEnhancementData(userId: await user.id)
-
-					print("✅ [NAV] ProfileView enhancement data loaded")
 				}
 			}
 			.onAppear {

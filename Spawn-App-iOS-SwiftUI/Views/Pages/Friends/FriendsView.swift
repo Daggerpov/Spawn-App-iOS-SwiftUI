@@ -66,8 +66,6 @@ struct FriendsView: View {
 					print("⚠️ [NAV] FriendsView: Fetch cancelled after completion")
 					return
 				}
-
-				print("✅ [NAV] FriendsView: Friend requests loaded")
 			}
 		}
 		.onAppear {
@@ -110,10 +108,6 @@ struct FriendsView: View {
 				// Handle the result
 				switch result {
 				case .success(let fetchedUser, source: _):
-					print(
-						"✅ FriendsView: Successfully fetched deep linked profile: \(fetchedUser.name ?? fetchedUser.username ?? "Unknown")"
-					)
-
 					// Navigate to the profile
 					await MainActor.run {
 						let profileView = ProfileView(user: fetchedUser)

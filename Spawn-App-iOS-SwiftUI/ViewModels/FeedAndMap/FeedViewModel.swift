@@ -236,7 +236,6 @@ class FeedViewModel: ObservableObject {
 			await MainActor.run {
 				self.activitiesSubject.send(filteredActivities)
 			}
-			print("✅ FeedViewModel: Loaded \(activities.count) activities from \(source == .cache ? "cache" : "API")")
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error fetching activities")
@@ -270,7 +269,6 @@ class FeedViewModel: ObservableObject {
 			await MainActor.run {
 				self.activitiesSubject.send(filteredActivities)
 			}
-			print("✅ FeedViewModel: Force refreshed \(activities.count) activities from API")
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error force refreshing activities")

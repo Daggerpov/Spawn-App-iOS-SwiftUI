@@ -55,8 +55,6 @@ class CacheCoordinator: ObservableObject {
 		Task {
 			await profilePictureCache.clearAllCache()
 		}
-
-		print("✅ [CACHE-COORDINATOR] All caches cleared successfully")
 	}
 
 	/// Clear all data for a specific user
@@ -86,8 +84,6 @@ class CacheCoordinator: ObservableObject {
 			print("❌ [CACHE-COORDINATOR] Cannot validate cache: No logged in user")
 			return
 		}
-
-		print("✅ [CACHE-COORDINATOR] Starting cache validation for user: \(userId)")
 
 		// Double-check authentication state before proceeding
 		guard UserAuthViewModel.shared.isLoggedIn else {
@@ -139,7 +135,6 @@ class CacheCoordinator: ObservableObject {
 			// Clean up any expired activities after refresh
 			activityCache.cleanupExpiredActivities()
 
-			print("✅ [CACHE-COORDINATOR] Completed initial cache refresh for all cache types")
 			return
 		}
 
@@ -359,8 +354,6 @@ class CacheCoordinator: ObservableObject {
 
 		// Refresh stale profile pictures
 		await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
-
-		print("✅ [CACHE-COORDINATOR] Completed profile picture refresh for all cached users")
 	}
 
 	/// Force refresh all profile pictures (public method)
@@ -437,8 +430,6 @@ class CacheCoordinator: ObservableObject {
 		await friendshipCache.diagnosticForceRefresh()
 		await activityCache.forceRefreshAll()
 		await profileCache.forceRefreshAll()
-
-		print("✅ [DIAGNOSTIC] Diagnostic refresh completed")
 	}
 
 	// MARK: - Helper Methods

@@ -298,19 +298,15 @@ class FriendsTabViewModel: ObservableObject {
 
 		if !cachedFriends.isEmpty {
 			self.friends = cachedFriends
-			print("✅ FriendsTabViewModel: Loaded \(cachedFriends.count) friends from cache")
 		}
 		if !cachedRecommendedFriends.isEmpty {
 			self.recommendedFriends = cachedRecommendedFriends
-			print("✅ FriendsTabViewModel: Loaded \(cachedRecommendedFriends.count) recommended friends from cache")
 		}
 		if !cachedIncomingRequests.isEmpty {
 			self.incomingFriendRequests = cachedIncomingRequests
-			print("✅ FriendsTabViewModel: Loaded \(cachedIncomingRequests.count) incoming requests from cache")
 		}
 		if !cachedOutgoingRequests.isEmpty {
 			self.outgoingFriendRequests = cachedOutgoingRequests
-			print("✅ FriendsTabViewModel: Loaded \(cachedOutgoingRequests.count) outgoing requests from cache")
 		}
 
 		// Initialize filtered lists
@@ -341,7 +337,6 @@ class FriendsTabViewModel: ObservableObject {
 			|| !cachedOutgoingRequests.isEmpty
 
 		if hasCachedData {
-			print("✅ [VM] Using cached data (no loading state)")
 			// Load cached data immediately - no loading state needed
 			await MainActor.run {
 				if !cachedFriends.isEmpty {
@@ -593,8 +588,6 @@ class FriendsTabViewModel: ObservableObject {
 
 		// Refresh stale profile pictures
 		await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
-
-		print("✅ [FriendsTabViewModel] Completed profile picture refresh")
 	}
 
 	func removeFriend(friendUserId: UUID) async {

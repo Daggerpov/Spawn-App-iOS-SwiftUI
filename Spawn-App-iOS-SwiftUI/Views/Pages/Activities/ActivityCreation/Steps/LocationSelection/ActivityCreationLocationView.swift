@@ -106,10 +106,6 @@ struct ActivityCreationLocationView: View {
 						return
 					}
 
-					print(
-						"✅ ActivityCreationLocationView: Setting region with valid coordinates - lat: \(location.latitude), lng: \(location.longitude)"
-					)
-
 					let newRegion = MKCoordinateRegion(
 						center: location,
 						span: MKCoordinateSpan(
@@ -143,10 +139,6 @@ struct ActivityCreationLocationView: View {
 							}
 						}
 					}
-
-					print(
-						"✅ ActivityCreationLocationView: Region updated successfully"
-					)
 				}
 			}
 			.onReceive(locationManager.$locationError) { error in

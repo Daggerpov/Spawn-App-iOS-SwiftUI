@@ -75,7 +75,6 @@ class DeepLinkManager: ObservableObject {
 		if type == "activity" {
 			// Check if it's a UUID (legacy format) or share code (new format)
 			if let activityId = UUID(uuidString: identifier) {
-				print("✅ DeepLinkManager: Successfully parsed Universal Link activity ID: \(activityId)")
 				return .activity(activityId)
 			} else {
 				// New share code format: https://getspawn.com/activity/{shareCode}
@@ -86,7 +85,6 @@ class DeepLinkManager: ObservableObject {
 		} else if type == "profile" {
 			// Check if it's a UUID (legacy format) or share code (new format)
 			if let profileId = UUID(uuidString: identifier) {
-				print("✅ DeepLinkManager: Successfully parsed Universal Link profile ID: \(profileId)")
 				return .profile(profileId)
 			} else {
 				// New share code format: https://getspawn.com/profile/{shareCode}
@@ -112,7 +110,6 @@ class DeepLinkManager: ObservableObject {
 			if let activityIdString = activityIdString,
 				let activityId = UUID(uuidString: activityIdString)
 			{
-				print("✅ DeepLinkManager: Successfully parsed custom URL scheme activity ID: \(activityId)")
 				return .activity(activityId)
 			} else {
 				print(
@@ -126,7 +123,6 @@ class DeepLinkManager: ObservableObject {
 			if let profileIdString = profileIdString,
 				let profileId = UUID(uuidString: profileIdString)
 			{
-				print("✅ DeepLinkManager: Successfully parsed custom URL scheme profile ID: \(profileId)")
 				return .profile(profileId)
 			} else {
 				print(
@@ -138,14 +134,12 @@ class DeepLinkManager: ObservableObject {
 
 			if type == "activity" {
 				if let activityId = UUID(uuidString: idString) {
-					print("✅ DeepLinkManager: Successfully parsed custom URL scheme path activity ID: \(activityId)")
 					return .activity(activityId)
 				} else {
 					print("❌ DeepLinkManager: Failed to parse custom URL scheme path activity ID from: \(idString)")
 				}
 			} else if type == "profile" {
 				if let profileId = UUID(uuidString: idString) {
-					print("✅ DeepLinkManager: Successfully parsed custom URL scheme path profile ID: \(profileId)")
 					return .profile(profileId)
 				} else {
 					print("❌ DeepLinkManager: Failed to parse custom URL scheme path profile ID from: \(idString)")
@@ -258,7 +252,6 @@ class DeepLinkManager: ObservableObject {
 			}
 
 			DispatchQueue.main.async {
-				print("✅ DeepLinkManager: Successfully resolved activity share code to ID: \(activityId)")
 				self.processPendingDeepLink(.activity(activityId))
 			}
 		}.resume()
@@ -288,7 +281,6 @@ class DeepLinkManager: ObservableObject {
 			}
 
 			DispatchQueue.main.async {
-				print("✅ DeepLinkManager: Successfully resolved profile share code to ID: \(profileId)")
 				self.processPendingDeepLink(.profile(profileId))
 			}
 		}.resume()

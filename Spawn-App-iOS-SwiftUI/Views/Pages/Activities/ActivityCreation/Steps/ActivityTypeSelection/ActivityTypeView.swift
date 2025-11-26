@@ -110,7 +110,6 @@ struct ActivityTypeView: View {
 
 						let refreshDuration = Date().timeIntervalSince(refreshStart)
 						print("⏱️ [NAV] Activity types refresh took \(String(format: "%.2f", refreshDuration))s")
-						print("✅ [NAV] ActivityTypeView: Background refresh completed")
 					}
 
 					let totalDuration = Date().timeIntervalSince(taskStartTime)

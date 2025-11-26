@@ -111,9 +111,7 @@ class UserAuthViewModel: NSObject, ObservableObject {
 	private func clearKeychainTokens() {
 		let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
 		let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
-		if accessTokenDeleted && refreshTokenDeleted {
-			print("✅ Successfully cleared auth tokens from Keychain")
-		} else {
+		if !(accessTokenDeleted && refreshTokenDeleted) {
 			print("ℹ️ Some tokens were not found in Keychain (this is normal if user wasn't fully authenticated)")
 		}
 	}
@@ -425,12 +423,8 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			print("🔄 DEBUG: Clearing potentially stale cached tokens before OAuth attempt")
 
 			// Clear the tokens from keychain
-			let accessTokenDeleted = KeychainService.shared.delete(key: "accessToken")
-			let refreshTokenDeleted = KeychainService.shared.delete(key: "refreshToken")
-
-			if accessTokenDeleted || refreshTokenDeleted {
-				print("✅ Cleared stale tokens from Keychain before OAuth")
-			}
+			let _ = KeychainService.shared.delete(key: "accessToken")
+			let _ = KeychainService.shared.delete(key: "refreshToken")
 
 			// Reset any authentication state that might interfere
 			await MainActor.run {
@@ -1472,7 +1466,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 
 				await MainActor.run {
 					if let response = response {
-						print("✅ DEBUG: Email verification sent successfully, navigating to verification code view")
 						// Success - navigate to verification code view
 						self.navigationState = .verificationCode
 						self.email = email
@@ -1645,7 +1638,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					if let authResponse = response {
 						self.spawnUser = authResponse.user
 						self.isLoggedIn = true
-						print("✅ OAuth user created successfully without navigation")
 						return
 					}
 				}
@@ -1813,7 +1805,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						// Navigate to the next step which is optional details input
 						self.navigateTo(.userOptionalDetailsInput)
 						self.errorMessage = nil
-						print("✅ User details updated successfully, navigating to optional details input")
 					} else {
 						self.errorMessage = "Failed to update user details."
 					}
@@ -1918,7 +1909,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 						// Navigate to the next step which is contact import
 						self.navigateTo(.contactImport)
 						self.errorMessage = nil
-						print("✅ Optional details updated successfully, navigating to contact import")
 					} else {
 						self.errorMessage = "Failed to update optional details."
 					}

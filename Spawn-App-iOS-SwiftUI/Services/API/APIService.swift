@@ -858,7 +858,6 @@ class APIService: IAPIService {
 		do {
 			let decoder = APIService.makeDecoder()
 			let decodedData = try decoder.decode(U.self, from: data)
-			print("✅ SUCCESS: Data decoded successfully for \(url.absoluteString)")
 			return decodedData
 		} catch {
 			errorMessage =
@@ -966,7 +965,6 @@ class APIService: IAPIService {
 		do {
 			let decoder = JSONDecoder()
 			let updatedUser = try decoder.decode(BaseUserDTO.self, from: data)
-			print("✅ SUCCESS: Profile picture updated, new URL: \(updatedUser.profilePicture ?? "nil")")
 			return updatedUser
 		} catch {
 			print("❌ ERROR: Failed to decode user data after profile picture update: \(error)")
@@ -1123,8 +1121,6 @@ class APIService: IAPIService {
 		}
 
 		if httpResponse.statusCode == 200 {
-			print("✅ Refresh token request successful")
-
 			// Successfully refreshed token, extract and save it to Keychain
 			if let newAccessToken = httpResponse.allHeaderFields["Authorization"] as? String
 				?? httpResponse.allHeaderFields["authorization"] as? String
@@ -1137,7 +1133,6 @@ class APIService: IAPIService {
 						print("❌ ERROR: Failed to save refreshed access token to keychain")
 						throw APIError.failedTokenSaving(tokenType: "accessToken")
 					}
-					print("✅ New access token saved successfully")
 					return "Bearer \(cleanAccessToken)"
 				} else {
 					print("❌ ERROR: Failed to convert access token to data")

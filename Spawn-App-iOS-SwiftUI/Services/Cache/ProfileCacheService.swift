@@ -217,7 +217,6 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 			UserDefaults.standard.removeObject(forKey: CacheKeys.profileSocialMedia)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.profileEvents)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
-			print("✅ [PROFILE-CACHE] All UserDefaults cleared")
 		}
 	}
 
@@ -247,7 +246,6 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 	func forceRefreshAll() async {
 		print("🔄 [PROFILE-CACHE] Force refreshing all profile data")
 		await refreshOtherProfiles()
-		print("✅ [PROFILE-CACHE] Force refresh completed")
 	}
 
 	// MARK: - Persistence
@@ -292,8 +290,6 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 			if let socialMedia = loadedSocialMedia { self.profileSocialMedia = socialMedia }
 			if let activities = loadedActivities { self.profileActivities = activities }
 			if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
-
-			print("✅ [PROFILE-CACHE] Loaded data from disk")
 		}
 	}
 }
