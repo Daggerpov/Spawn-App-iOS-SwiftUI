@@ -620,7 +620,6 @@ class MockAPIService: IAPIService {
 				// Update the cache with the modified activity
 				AppCache.shared.addOrUpdateActivity(activityToUpdate)
 
-				print("✅ MOCK: Successfully updated activity: \(activityToUpdate.title ?? "No title")")
 				return activityToUpdate as! U
 			}
 		}
@@ -780,7 +779,6 @@ class MockAPIService: IAPIService {
 		if let jsonData = try? JSONSerialization.data(
 			withJSONObject: mockResponse
 		) {
-			print("✅ MOCK: Multipart form data sent successfully")
 			return jsonData
 		} else {
 			// If we can't create the mock response, return empty data

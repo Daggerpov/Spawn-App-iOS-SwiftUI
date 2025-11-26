@@ -161,8 +161,9 @@ class ActivityCreationViewModel: ObservableObject {
 		if let activityTypeId = activity.activityTypeId {
 			// Try to fetch the activity type from DataService
 			Task {
+				guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
 				let result: DataResult<[ActivityTypeDTO]> = await shared.dataService.read(
-					.activityTypes,
+					.activityTypes(userId: userId),
 					cachePolicy: .cacheOnly
 				)
 

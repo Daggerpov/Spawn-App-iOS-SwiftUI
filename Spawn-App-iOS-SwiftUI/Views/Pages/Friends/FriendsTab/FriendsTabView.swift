@@ -72,14 +72,10 @@ struct FriendsTabView: View {
 				.padding(.bottom, 60)  // Add bottom padding to ensure last friend shows fully above nav bar
 			}
 			.task {
-				print("📍 [NAV] FriendsTabView .task started")
-				let taskStartTime = Date()
-
 				// CRITICAL FIX: Load cached data immediately to unblock UI
 				// This prevents the UI from hanging while waiting for API calls
 
 				// Load cached data through view model (fast, non-blocking)
-				let cacheLoadStart = Date()
 				let hasCachedData = await MainActor.run {
 					viewModel.loadCachedData()
 					viewModel.connectSearchViewModel(searchViewModel)
@@ -87,74 +83,43 @@ struct FriendsTabView: View {
 					return !viewModel.friends.isEmpty || !viewModel.recommendedFriends.isEmpty
 						|| !viewModel.incomingFriendRequests.isEmpty || !viewModel.outgoingFriendRequests.isEmpty
 				}
-				let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
-
-				print("📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s")
-				print("📊 [NAV] Has cached data: \(hasCachedData)")
 
 				// Check if task was cancelled
 				guard !Task.isCancelled else {
-					print("⚠️ [NAV] Task cancelled before determining refresh strategy")
 					return
 				}
 
 				// If cache is empty, block until we have data (critical for UX)
 				if !hasCachedData {
-					print("🔄 [NAV] No cached friends data - fetching from API on MainActor")
 					// Force refresh friend requests first
 					await AppCache.shared.forceRefreshAllFriendRequests()
 					// Then fetch all data
 					await viewModel.fetchAllData()
-					let totalDuration = Date().timeIntervalSince(taskStartTime)
-					print("⏱️ [NAV] Initial fetch completed in \(String(format: "%.2f", totalDuration))s")
 				} else {
 					// Cache exists - refresh in background (progressive enhancement)
-					print("🔄 [NAV] Starting background refresh for friends data")
 					backgroundRefreshTask = Task { @MainActor in
-						let refreshStart = Date()
-
 						guard !Task.isCancelled else {
-							print("⚠️ [NAV] FriendsTabView: Background refresh cancelled before starting")
 							return
 						}
 
 						await AppCache.shared.forceRefreshAllFriendRequests()
 
 						guard !Task.isCancelled else {
-							print("⚠️ [NAV] FriendsTabView: Background refresh cancelled after requests")
 							return
 						}
 
-						let requestsRefreshDuration = Date().timeIntervalSince(refreshStart)
-						print(
-							"⏱️ [NAV] Friend requests refresh took \(String(format: "%.2f", requestsRefreshDuration))s")
-
-						let fetchStart = Date()
 						await viewModel.fetchAllData()
 
 						guard !Task.isCancelled else {
-							print("⚠️ [NAV] FriendsTabView: Background refresh cancelled after fetchAllData")
 							return
 						}
-
-						let fetchDuration = Date().timeIntervalSince(fetchStart)
-						print("⏱️ [NAV] fetchAllData took \(String(format: "%.2f", fetchDuration))s")
-						print("✅ [NAV] FriendsTabView: Background refresh completed")
 					}
-
-					let totalDuration = Date().timeIntervalSince(taskStartTime)
-					print("⏱️ [NAV] Total UI update took \(String(format: "%.3f", totalDuration))s")
 				}
 			}
-			.onAppear {
-				print("👁️ [NAV] FriendsTabView appeared")
-			}
 			.onDisappear {
-				print("👋 [NAV] FriendsTabView disappearing - cancelling background tasks")
 				// Cancel any ongoing background refresh to prevent blocking
 				backgroundRefreshTask?.cancel()
 				backgroundRefreshTask = nil
-				print("👋 [NAV] FriendsTabView disappeared")
 			}
 			.refreshable {
 				// Pull to refresh functionality - user-initiated refresh

@@ -137,9 +137,6 @@ struct ProfileView: View {
 				refreshUserData()
 			}
 			.task {
-				print("📍 [NAV] ProfileView .task started for user \(user.id)")
-				let taskStartTime = Date()
-
 				// Set back button state immediately (no async needed)
 				if !isCurrentUserProfile {
 					showBackButton = true
@@ -147,14 +144,11 @@ struct ProfileView: View {
 
 				// Check if task was cancelled (user navigated away)
 				guard !Task.isCancelled else {
-					print("⚠️ [NAV] Task cancelled before loading profile data - user navigated away")
 					return
 				}
 
 				// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
 				// This prevents empty state flashes and ensures view renders with data
-				print("🔄 [NAV] ProfileView loading critical profile data on MainActor")
-				let criticalDataStart = Date()
 
 				// Load critical data that's required for the view to render meaningfully
 				await profileViewModel.loadCriticalProfileData(userId: user.id)
@@ -191,21 +185,12 @@ struct ProfileView: View {
 					}
 				}
 
-				let criticalDataDuration = Date().timeIntervalSince(criticalDataStart)
-				print("✅ [NAV] ProfileView critical data loaded in \(String(format: "%.2f", criticalDataDuration))s")
-
-				// View will now appear with all critical data ready
-				let totalDuration = Date().timeIntervalSince(taskStartTime)
-				print("⏱️ [NAV] ProfileView total setup took \(String(format: "%.2f", totalDuration))s")
-
 				// Check if task was cancelled before starting background enhancements
 				guard !Task.isCancelled else {
-					print("⚠️ [NAV] Task cancelled before starting background enhancements")
 					return
 				}
 
 				// Load enhancement data in background (non-blocking progressive enhancements)
-				print("🔄 [NAV] ProfileView loading enhancement data in background")
 				backgroundDataLoadTask = Task.detached(priority: .background) {
 					// Profile picture refresh (can use cached version initially)
 					if let profilePictureUrl = await user.profilePicture {
@@ -219,19 +204,14 @@ struct ProfileView: View {
 
 					// Load non-critical enhancement data
 					await profileViewModel.loadEnhancementData(userId: await user.id)
-
-					print("✅ [NAV] ProfileView enhancement data loaded")
 				}
 			}
 			.onAppear {
-				print("👁️ [NAV] ProfileView appeared for user \(user.id)")
 			}
 			.onDisappear {
-				print("👋 [NAV] ProfileView disappearing - cancelling background tasks")
 				// Cancel any ongoing background tasks to prevent blocking
 				backgroundDataLoadTask?.cancel()
 				backgroundDataLoadTask = nil
-				print("👋 [NAV] ProfileView disappeared")
 			}
 			.onChange(of: userAuth.spawnUser) { _, newUser in
 				// Update local state whenever spawnUser changes
@@ -1252,17 +1232,17 @@ extension ProfileView {
 		// Refresh profile data
 		await profileViewModel.loadAllProfileData(userId: userId)
 
+		// Invalidate the cached profile picture since we have a new one
+		if let userId = userAuth.spawnUser?.id {
+			await ProfilePictureCache.shared.removeCachedImage(for: userId)
+		}
+
 		// Update local state with the latest data from the user object
 		await MainActor.run {
 			// Clear the selected image to force the view to refresh from the server
 			selectedImage = nil
 			isImageLoading = false
 			editingState = .edit
-
-			// Invalidate the cached profile picture since we have a new one
-			if let userId = userAuth.spawnUser?.id {
-				ProfilePictureCache.shared.removeCachedImage(for: userId)
-			}
 		}
 	}
 }

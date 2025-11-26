@@ -98,7 +98,8 @@ enum MapAnnotationHelpers {
 
 		// Fall back to the activity type's icon if activityTypeId exists
 		if let activityTypeId = activity.activityTypeId,
-			let activityType = AppCache.shared.activityTypes.first(where: { $0.id == activityTypeId }),
+			let userId = UserAuthViewModel.shared.spawnUser?.id,
+			let activityType = AppCache.shared.activityTypes[userId]?.first(where: { $0.id == activityTypeId }),
 			!activityType.icon.isEmpty
 		{
 			return activityType.icon

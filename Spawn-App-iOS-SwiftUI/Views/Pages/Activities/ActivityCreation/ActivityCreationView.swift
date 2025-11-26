@@ -481,8 +481,9 @@ enum ActivityDuration: CaseIterable {
 				associatedFriends: [BaseUserDTO.haley, BaseUserDTO.danielAgapov], orderNum: 6, isPinned: true),
 		]
 
-		// Set activity types directly on the shared cache instance
-		AppCache.shared.activityTypes = hardcodedActivityTypes
+		// Set activity types for the preview user (danielAgapov)
+		AppCache.shared.updateActivityTypesForUser(hardcodedActivityTypes, userId: BaseUserDTO.danielAgapov.id)
+		return hardcodedActivityTypes
 	}()
 
 	ActivityCreationView(

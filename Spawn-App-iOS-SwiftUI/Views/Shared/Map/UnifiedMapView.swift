@@ -85,7 +85,6 @@ struct UnifiedMapView: UIViewRepresentable {
 			// Force a small region change to trigger tile loading
 			let currentRegion = mapView.region
 			mapView.setRegion(currentRegion, animated: false)
-			print("🗺️ Map view initial render forced")
 		}
 
 		return mapView
@@ -116,8 +115,6 @@ struct UnifiedMapView: UIViewRepresentable {
 	}
 
 	static func dismantleUIView(_ mapView: MKMapView, coordinator: Coordinator) {
-		print("🗺️ UnifiedMapView: Beginning dismantle")
-
 		// Invalidate coordinator immediately
 		coordinator.invalidate()
 
@@ -132,11 +129,7 @@ struct UnifiedMapView: UIViewRepresentable {
 		let annotationsToRemove = mapView.annotations.filter { !($0 is MKUserLocation) }
 
 		if !annotationsToRemove.isEmpty {
-			print("🗺️ UnifiedMapView: Removing \(annotationsToRemove.count) annotations synchronously")
 			mapView.removeAnnotations(annotationsToRemove)
-			print("🗺️ UnifiedMapView: Dismantle completed")
-		} else {
-			print("🗺️ UnifiedMapView: Dismantle completed (no annotations to remove)")
 		}
 	}
 
@@ -359,7 +352,6 @@ struct UnifiedMapView: UIViewRepresentable {
 		// MARK: - Loading Delegates
 
 		func mapViewDidFinishLoadingMap(_ mapView: MKMapView) {
-			print("🗺️ mapViewDidFinishLoadingMap called")
 			// Only report load once
 			guard isValid, !hasReportedLoad else { return }
 			hasReportedLoad = true
@@ -374,7 +366,6 @@ struct UnifiedMapView: UIViewRepresentable {
 			_ mapView: MKMapView,
 			fullyRendered: Bool
 		) {
-			print("🗺️ mapViewDidFinishRenderingMap called - fullyRendered: \(fullyRendered)")
 			if fullyRendered && !hasReportedLoad && isValid {
 				hasReportedLoad = true
 				DispatchQueue.main.async { [weak self] in
@@ -384,16 +375,7 @@ struct UnifiedMapView: UIViewRepresentable {
 			}
 		}
 
-		func mapViewWillStartLoadingMap(_ mapView: MKMapView) {
-			print("🗺️ mapViewWillStartLoadingMap called")
-		}
-
-		func mapViewWillStartRenderingMap(_ mapView: MKMapView) {
-			print("🗺️ mapViewWillStartRenderingMap called")
-		}
-
 		func mapView(_ mapView: MKMapView, rendererFor overlay: MKOverlay) -> MKOverlayRenderer {
-			print("🗺️ Renderer requested for overlay")
 			return MKOverlayRenderer(overlay: overlay)
 		}
 

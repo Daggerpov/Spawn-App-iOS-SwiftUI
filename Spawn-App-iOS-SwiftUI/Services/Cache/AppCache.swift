@@ -42,9 +42,8 @@ class AppCache: ObservableObject {
 		activityCacheService.activities
 	}
 
-	var activityTypes: [ActivityTypeDTO] {
-		get { activityCacheService.activityTypes }
-		set { activityCacheService.activityTypes = newValue }
+	var activityTypes: [UUID: [ActivityTypeDTO]] {
+		activityCacheService.activityTypes
 	}
 
 	// Expose publishers for SwiftUI subscriptions
@@ -52,7 +51,7 @@ class AppCache: ObservableObject {
 		activityCacheService.$activities
 	}
 
-	var activityTypesPublisher: Published<[ActivityTypeDTO]>.Publisher {
+	var activityTypesPublisher: Published<[UUID: [ActivityTypeDTO]]>.Publisher {
 		activityCacheService.$activityTypes
 	}
 
@@ -166,7 +165,18 @@ class AppCache: ObservableObject {
 
 	// MARK: - Activity Types Methods
 
-	func updateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
+	/// Get activity types for the current user
+	func getCurrentUserActivityTypes() -> [ActivityTypeDTO] {
+		return activityCacheService.getCurrentUserActivityTypes()
+	}
+
+	/// Update activity types for a specific user
+	func updateActivityTypesForUser(_ newActivityTypes: [ActivityTypeDTO], userId: UUID) {
+		activityCacheService.updateActivityTypesForUser(newActivityTypes, userId: userId)
+	}
+
+	/// Update activity types (for all users - used by cache validation)
+	func updateActivityTypes(_ newActivityTypes: [UUID: [ActivityTypeDTO]]) {
 		activityCacheService.updateActivityTypes(newActivityTypes)
 	}
 
@@ -184,6 +194,10 @@ class AppCache: ObservableObject {
 
 	func updateActivityTypeInCache(_ activityTypeDTO: ActivityTypeDTO) {
 		activityCacheService.updateActivityTypeInCache(activityTypeDTO)
+	}
+
+	func clearActivityTypesForUser(_ userId: UUID) {
+		activityCacheService.clearActivityTypesForUser(userId)
 	}
 
 	// MARK: - Other Profiles Methods

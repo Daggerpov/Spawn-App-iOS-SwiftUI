@@ -44,8 +44,6 @@ class CacheCoordinator: ObservableObject {
 
 	/// Initialize all cache services
 	func initialize() {
-		// Cache services initialize themselves on creation
-		print("✅ [CACHE-COORDINATOR] All cache services initialized")
 	}
 
 	/// Clear all caches
@@ -53,9 +51,10 @@ class CacheCoordinator: ObservableObject {
 		activityCache.clearAllCaches()
 		friendshipCache.clearAllCaches()
 		profileCache.clearAllCaches()
-		profilePictureCache.clearAllCache()
 
-		print("✅ [CACHE-COORDINATOR] All caches cleared successfully")
+		Task {
+			await profilePictureCache.clearAllCache()
+		}
 	}
 
 	/// Clear all data for a specific user
@@ -63,7 +62,10 @@ class CacheCoordinator: ObservableObject {
 		activityCache.clearDataForUser(userId)
 		friendshipCache.clearDataForUser(userId)
 		profileCache.clearDataForUser(userId)
-		profilePictureCache.removeCachedImage(for: userId)
+
+		Task {
+			await profilePictureCache.removeCachedImage(for: userId)
+		}
 
 		// Clear other profiles cache to prevent data leakage between users
 		profileCache.otherProfiles.removeAll()
@@ -82,8 +84,6 @@ class CacheCoordinator: ObservableObject {
 			print("❌ [CACHE-COORDINATOR] Cannot validate cache: No logged in user")
 			return
 		}
-
-		print("✅ [CACHE-COORDINATOR] Starting cache validation for user: \(userId)")
 
 		// Double-check authentication state before proceeding
 		guard UserAuthViewModel.shared.isLoggedIn else {
@@ -135,7 +135,6 @@ class CacheCoordinator: ObservableObject {
 			// Clean up any expired activities after refresh
 			activityCache.cleanupExpiredActivities()
 
-			print("✅ [CACHE-COORDINATOR] Completed initial cache refresh for all cache types")
 			return
 		}
 
@@ -190,7 +189,8 @@ class CacheCoordinator: ObservableObject {
 				// Activity Types
 				if let activityTypesResponse = result[CacheKeys.activityTypes], activityTypesResponse.invalidate {
 					if let updatedItems = activityTypesResponse.updatedItems,
-						let updatedActivityTypes = try? JSONDecoder().decode([ActivityTypeDTO].self, from: updatedItems)
+						let updatedActivityTypes = try? JSONDecoder().decode(
+							[UUID: [ActivityTypeDTO]].self, from: updatedItems)
 					{
 						activityCache.updateActivityTypes(updatedActivityTypes)
 					} else {
@@ -354,8 +354,6 @@ class CacheCoordinator: ObservableObject {
 
 		// Refresh stale profile pictures
 		await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
-
-		print("✅ [CACHE-COORDINATOR] Completed profile picture refresh for all cached users")
 	}
 
 	/// Force refresh all profile pictures (public method)
@@ -415,7 +413,7 @@ class CacheCoordinator: ObservableObject {
 		// Force refresh all profile pictures
 		for user in uniqueUsers {
 			guard let profilePictureUrl = user.profilePictureUrl else { continue }
-			_ = await profilePictureCache.refreshProfilePicture(for: user.userId, from: profilePictureUrl)
+			_ = await profilePictureCache.refreshProfilePicture(for: user.userId, urlString: profilePictureUrl)
 		}
 	}
 
@@ -432,8 +430,6 @@ class CacheCoordinator: ObservableObject {
 		await friendshipCache.diagnosticForceRefresh()
 		await activityCache.forceRefreshAll()
 		await profileCache.forceRefreshAll()
-
-		print("✅ [DIAGNOSTIC] Diagnostic refresh completed")
 	}
 
 	// MARK: - Helper Methods

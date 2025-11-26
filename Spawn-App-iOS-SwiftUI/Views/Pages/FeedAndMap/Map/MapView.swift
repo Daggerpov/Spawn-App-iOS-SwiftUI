@@ -107,21 +107,18 @@ struct MapView: View {
 		}
 		.onChange(of: viewModel.activities) { _, _ in
 			guard shouldProcessUpdates else {
-				print("🗺️ MapView: Ignoring activity update - view not appeared")
 				return
 			}
 			updateFilteredActivities()
 		}
 		.onChange(of: selectedTimeFilter) { _, _ in
 			guard shouldProcessUpdates else {
-				print("🗺️ MapView: Ignoring filter update - view not appeared")
 				return
 			}
 			updateFilteredActivities()
 		}
 		.onChange(of: locationManager.locationUpdated) { _, _ in
 			guard shouldProcessUpdates else {
-				print("🗺️ MapView: Ignoring location update - view not appeared")
 				return
 			}
 			handleUserLocationUpdate()
@@ -132,17 +129,14 @@ struct MapView: View {
 
 	private func handleViewAppeared() {
 		guard viewLifecycleState != .appeared else {
-			print("🗺️ MapView: Ignoring duplicate onAppear")
 			return
 		}
 
 		viewLifecycleState = .appearing
-		print("🗺️ MapView appeared")
 
 		// CRITICAL: Reset map loaded state on each appearance
 		// This ensures tiles reload if they failed previously
 		isMapLoaded = false
-		print("🗺️ MapView: Reset isMapLoaded to force tile loading")
 
 		// Initialize filtered activities
 		updateFilteredActivities()
@@ -165,7 +159,6 @@ struct MapView: View {
 			do {
 				// Check cancellation before sleep
 				guard !Task.isCancelled else {
-					print("🗺️ Map initialization cancelled before timeout")
 					return
 				}
 
@@ -173,7 +166,6 @@ struct MapView: View {
 
 				// Check cancellation after sleep
 				guard !Task.isCancelled else {
-					print("🗺️ Map initialization cancelled after timeout")
 					return
 				}
 
@@ -184,7 +176,6 @@ struct MapView: View {
 				}
 			} catch {
 				// Task was cancelled - this is expected during navigation
-				print("🗺️ Map initialization task cancelled (expected)")
 			}
 		}
 
@@ -193,12 +184,10 @@ struct MapView: View {
 
 	private func handleViewDisappeared() {
 		guard viewLifecycleState == .appeared else {
-			print("🗺️ MapView: Ignoring disappear when not appeared")
 			return
 		}
 
 		viewLifecycleState = .disappearing
-		print("🗺️ MapView disappeared")
 
 		locationManager.stopLocationUpdates()
 
@@ -208,7 +197,6 @@ struct MapView: View {
 	}
 
 	private func handleMapLoaded() {
-		print("✅ Map loaded successfully")
 		isMapLoaded = true
 	}
 

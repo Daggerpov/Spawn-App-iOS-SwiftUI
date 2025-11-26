@@ -179,8 +179,6 @@ struct ActivityCardPopupView: View {
 
 				// Update the region for the map to reflect new location
 				region = mapViewModel.initialRegion
-
-				print("✅ ActivityCardPopupView: Updated all view models with new activity data")
 			}
 		}
 	}

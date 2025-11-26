@@ -298,19 +298,15 @@ class FriendsTabViewModel: ObservableObject {
 
 		if !cachedFriends.isEmpty {
 			self.friends = cachedFriends
-			print("✅ FriendsTabViewModel: Loaded \(cachedFriends.count) friends from cache")
 		}
 		if !cachedRecommendedFriends.isEmpty {
 			self.recommendedFriends = cachedRecommendedFriends
-			print("✅ FriendsTabViewModel: Loaded \(cachedRecommendedFriends.count) recommended friends from cache")
 		}
 		if !cachedIncomingRequests.isEmpty {
 			self.incomingFriendRequests = cachedIncomingRequests
-			print("✅ FriendsTabViewModel: Loaded \(cachedIncomingRequests.count) incoming requests from cache")
 		}
 		if !cachedOutgoingRequests.isEmpty {
 			self.outgoingFriendRequests = cachedOutgoingRequests
-			print("✅ FriendsTabViewModel: Loaded \(cachedOutgoingRequests.count) outgoing requests from cache")
 		}
 
 		// Initialize filtered lists
@@ -341,7 +337,6 @@ class FriendsTabViewModel: ObservableObject {
 			|| !cachedOutgoingRequests.isEmpty
 
 		if hasCachedData {
-			print("✅ [VM] Using cached data (no loading state)")
 			// Load cached data immediately - no loading state needed
 			await MainActor.run {
 				if !cachedFriends.isEmpty {
@@ -368,8 +363,10 @@ class FriendsTabViewModel: ObservableObject {
 				self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
 			}
 
-			// Refresh profile pictures for cached data
-			await refreshProfilePictures()
+			// Refresh profile pictures for all visible users in background (non-blocking)
+			Task.detached(priority: .background) {
+				await self.refreshProfilePictures()
+			}
 
 			let duration = Date().timeIntervalSince(startTime)
 			print("⏱️ [VM] fetchAllData (cached) completed in \(String(format: "%.3f", duration))s")
@@ -411,8 +408,10 @@ class FriendsTabViewModel: ObservableObject {
 			self.isLoading = false
 		}
 
-		// Refresh profile pictures for all visible users
-		await refreshProfilePictures()
+		// Refresh profile pictures for all visible users in background (non-blocking)
+		Task.detached(priority: .background) {
+			await self.refreshProfilePictures()
+		}
 
 		let duration = Date().timeIntervalSince(startTime)
 		print("⏱️ [VM] fetchAllData (from API) completed in \(String(format: "%.2f", duration))s")
@@ -536,6 +535,10 @@ class FriendsTabViewModel: ObservableObject {
 		case .success:
 			// Fetch all data in parallel after successfully adding a friend
 			await fetchAllData()
+			// Ensure loading state is cleared
+			await MainActor.run {
+				isLoading = false
+			}
 
 		case .failure(let error):
 			await MainActor.run {
@@ -585,8 +588,6 @@ class FriendsTabViewModel: ObservableObject {
 
 		// Refresh stale profile pictures
 		await profilePictureCache.refreshStaleProfilePictures(for: uniqueUsers)
-
-		print("✅ [FriendsTabViewModel] Completed profile picture refresh")
 	}
 
 	func removeFriend(friendUserId: UUID) async {

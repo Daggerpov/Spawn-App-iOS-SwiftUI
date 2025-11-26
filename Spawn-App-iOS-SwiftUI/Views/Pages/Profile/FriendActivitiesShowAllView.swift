@@ -258,7 +258,6 @@ struct FriendActivitiesShowAllView: View {
 
 		Task {
 			if let fullActivity = await profileViewModel.fetchActivityDetails(activityId: activityId) {
-				print("✅ Fetched activity details: \(fullActivity.title ?? "No title")")
 				await MainActor.run {
 					showActivityDetails = true
 				}

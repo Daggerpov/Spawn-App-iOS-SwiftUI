@@ -174,7 +174,6 @@ class ContactsService: ObservableObject {
 				requestingUserId: userId
 			)
 
-			print("✅ BACKEND RETURNED \(existingUsers.count) USERS")
 			for user in existingUsers {
 				print("  - \(user.username ?? "No username") (\(user.name ?? "No name"))")
 			}
@@ -317,7 +316,6 @@ class ContactsService: ObservableObject {
 
 		switch result {
 		case .success(let response, _):
-			print("✅ API SUCCESS: Returned \(response.users.count) users")
 			return response.users
 		case .failure(let error):
 			print("❌ API returned error: \(error)")

@@ -108,11 +108,9 @@ struct ActivityFeedView: View {
 				)
 			}
 			.onAppear {
-				print("👁️ [NAV] ActivityFeedView appeared")
 				// Note: Data fetching and timer management now handled globally in ContentView
 			}
 			.onDisappear {
-				print("👋 [NAV] ActivityFeedView disappeared")
 				// Note: Data fetching and timer management now handled globally in ContentView
 			}
 		}
@@ -243,7 +241,6 @@ struct ActivityFeedView: View {
 			do {
 				// First check if the activity is already in our current activities list
 				if let existingActivity = viewModel.activities.first(where: { $0.id == activityId }) {
-					print("✅ ActivityFeedView: Found activity in current feed: \(existingActivity.title ?? "No title")")
 					await MainActor.run {
 						activityInPopup = existingActivity
 						colorInPopup = ActivityColorService.shared.getColorForActivity(activityId)
@@ -271,10 +268,6 @@ struct ActivityFeedView: View {
 				// Handle the result
 				switch result {
 				case .success(let activity, source: _):
-					print(
-						"✅ ActivityFeedView: Successfully fetched deep linked activity: \(activity.title ?? "No title")"
-					)
-
 					await MainActor.run {
 						// Ensure we're setting all required state atomically
 						activityInPopup = activity

@@ -54,48 +54,28 @@ struct FeedView: View {
 			}
 			.background(universalBackgroundColor)
 			.task {
-				print("📍 [NAV] FeedView .task started")
-				let taskStartTime = Date()
-
 				// CRITICAL FIX: Load cached activities immediately to unblock UI
 				// Cache validation is done on app startup, no need to repeat on every view load
 
 				// Load cached activities through view model (fast, non-blocking)
-				let cacheLoadStart = Date()
 				let activitiesCount: Int = await MainActor.run {
 					viewModel.loadCachedActivities()
 					return viewModel.activities.count
 				}
-				let cacheLoadDuration = Date().timeIntervalSince(cacheLoadStart)
-				let totalDuration = Date().timeIntervalSince(taskStartTime)
-
-				print(
-					"📊 [NAV] Cache loaded in \(String(format: "%.3f", cacheLoadDuration))s - \(activitiesCount) activities"
-				)
-				print("⏱️ [NAV] Total UI update took \(String(format: "%.3f", totalDuration))s")
 
 				// Check if task was cancelled
 				guard !Task.isCancelled else {
-					print("⚠️ [NAV] Task cancelled before determining refresh strategy")
 					return
 				}
 
 				// If cache is empty, block until we have data (critical for UX)
 				if activitiesCount == 0 {
-					print("🔄 [NAV] No cached activities - fetching from API on MainActor")
-					let fetchStart = Date()
 					await viewModel.fetchAllData()
-					let fetchDuration = Date().timeIntervalSince(fetchStart)
-					print("⏱️ [NAV] API fetch took \(String(format: "%.2f", fetchDuration))s")
 				} else {
 					// Cache exists - refresh in background (progressive enhancement)
-					print("🔄 [NAV] Starting background refresh for activities")
 					backgroundRefreshTask = Task { @MainActor in
-						let refreshStart = Date()
-
 						// Check cancellation before starting expensive work
 						guard !Task.isCancelled else {
-							print("⚠️ [NAV] FeedView: Background refresh cancelled before starting")
 							return
 						}
 
@@ -103,31 +83,22 @@ struct FeedView: View {
 
 						// Check cancellation after async work
 						guard !Task.isCancelled else {
-							print("⚠️ [NAV] FeedView: Background refresh cancelled after fetch")
 							return
 						}
-
-						let refreshDuration = Date().timeIntervalSince(refreshStart)
-						print("⏱️ [NAV] Background refresh took \(String(format: "%.2f", refreshDuration))s")
-						print("✅ [NAV] FeedView: Background refresh completed")
 					}
 				}
 			}
 			.onAppear {
-				print("👁️ [NAV] FeedView appeared")
 				// Resume timers when view appears
 				viewModel.resumeTimers()
 			}
 			.onDisappear {
-				print("👋 [NAV] FeedView disappearing - cancelling background tasks")
-
 				// Pause timers to save resources when view is not visible
 				viewModel.pauseTimers()
 
 				// Cancel any ongoing background refresh to prevent blocking
 				backgroundRefreshTask?.cancel()
 				backgroundRefreshTask = nil
-				print("👋 [NAV] FeedView disappeared")
 			}
 			.refreshable {
 				// Pull to refresh - user-initiated refresh

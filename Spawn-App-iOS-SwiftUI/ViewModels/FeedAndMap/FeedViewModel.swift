@@ -207,7 +207,6 @@ class FeedViewModel: ObservableObject {
 			case .success(let cachedActivities, _):
 				let filteredActivities = self.filterExpiredActivities(cachedActivities)
 				self.activitiesSubject.send(filteredActivities)
-				print("✅ FeedViewModel: Loaded \(cachedActivities.count) activities from cache")
 
 			case .failure:
 				print("⚠️ FeedViewModel: No cached activities available")
@@ -237,7 +236,6 @@ class FeedViewModel: ObservableObject {
 			await MainActor.run {
 				self.activitiesSubject.send(filteredActivities)
 			}
-			print("✅ FeedViewModel: Loaded \(activities.count) activities from \(source == .cache ? "cache" : "API")")
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error fetching activities")
@@ -271,7 +269,6 @@ class FeedViewModel: ObservableObject {
 			await MainActor.run {
 				self.activitiesSubject.send(filteredActivities)
 			}
-			print("✅ FeedViewModel: Force refreshed \(activities.count) activities from API")
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error force refreshing activities")
