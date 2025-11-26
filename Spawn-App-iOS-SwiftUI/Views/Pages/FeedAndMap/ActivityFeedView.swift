@@ -108,11 +108,9 @@ struct ActivityFeedView: View {
 				)
 			}
 			.onAppear {
-				print("👁️ [NAV] ActivityFeedView appeared")
 				// Note: Data fetching and timer management now handled globally in ContentView
 			}
 			.onDisappear {
-				print("👋 [NAV] ActivityFeedView disappeared")
 				// Note: Data fetching and timer management now handled globally in ContentView
 			}
 		}
