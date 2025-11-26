@@ -55,12 +55,13 @@ class ActivityTypeViewModel: ObservableObject {
 
 		// Subscribe to cache updates if not mocking - using AppCache for reactive updates is acceptable
 		if !MockAPIService.isMocking {
-			// Subscribe to cached activity types updates
+			// Subscribe to cached activity types updates for this specific user
 			AppCache.shared.activityTypesPublisher
 				.receive(on: DispatchQueue.main)
 				.sink { [weak self] cachedActivityTypes in
-					if !cachedActivityTypes.isEmpty {
-						self?.activityTypes = cachedActivityTypes
+					guard let self = self else { return }
+					if let userActivityTypes = cachedActivityTypes[self.userId], !userActivityTypes.isEmpty {
+						self.activityTypes = userActivityTypes
 					}
 				}
 				.store(in: &cancellables)
@@ -73,12 +74,12 @@ class ActivityTypeViewModel: ObservableObject {
 	/// Call this before fetchActivityTypes() to show cached data instantly
 	@MainActor
 	func loadCachedActivityTypes() {
-		let cachedTypes = AppCache.shared.activityTypes
+		let cachedTypes = AppCache.shared.getActivityTypesForUser(userId)
 		if !cachedTypes.isEmpty {
 			self.activityTypes = cachedTypes
-			print("✅ ActivityTypeViewModel: Loaded \(cachedTypes.count) activity types from cache")
+			print("✅ ActivityTypeViewModel: Loaded \(cachedTypes.count) activity types from cache for user \(userId)")
 		} else {
-			print("⚠️ ActivityTypeViewModel: No cached activity types available")
+			print("⚠️ ActivityTypeViewModel: No cached activity types available for user \(userId)")
 		}
 	}
 

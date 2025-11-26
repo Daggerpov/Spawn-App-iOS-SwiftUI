@@ -15,7 +15,7 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	// MARK: - Cached Data
 	@Published var activities: [UUID: [FullFeedActivityDTO]] = [:]
-	@Published var activityTypes: [ActivityTypeDTO] = []
+	@Published var activityTypes: [UUID: [ActivityTypeDTO]] = [:]
 
 	// MARK: - Constants
 	private enum CacheKeys {
@@ -210,8 +210,31 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	// MARK: - Activity Types Methods
 
-	/// Update activity types
-	func updateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
+	/// Get activity types for the current user
+	func getCurrentUserActivityTypes() -> [ActivityTypeDTO] {
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("⚠️ [ACTIVITY-CACHE] getCurrentUserActivityTypes: No user ID")
+			return []
+		}
+		let userActivityTypes = activityTypes[userId] ?? []
+		print(
+			"📦 [ACTIVITY-CACHE] getCurrentUserActivityTypes returned \(userActivityTypes.count) activity types for user \(userId)"
+		)
+		return userActivityTypes
+	}
+
+	/// Update activity types for a specific user
+	func updateActivityTypesForUser(_ newActivityTypes: [ActivityTypeDTO], userId: UUID) {
+		print(
+			"💾 [ACTIVITY-CACHE] Updating activity types cache: \(newActivityTypes.count) activity types for user \(userId)"
+		)
+		activityTypes[userId] = newActivityTypes
+		setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
+		saveToDisk()
+	}
+
+	/// Update activity types (for all users - used by cache validation)
+	func updateActivityTypes(_ newActivityTypes: [UUID: [ActivityTypeDTO]]) {
 		activityTypes = newActivityTypes
 
 		// Update timestamp for current user
@@ -230,41 +253,47 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 		}
 
 		await genericRefresh(endpoint: "users/\(userId)/activity-types") { (fetchedActivityTypes: [ActivityTypeDTO]) in
-			self.updateActivityTypes(fetchedActivityTypes)
+			self.updateActivityTypesForUser(fetchedActivityTypes, userId: userId)
 		}
 	}
 
 	/// Get activity types by user ID (for multi-user support)
 	func getActivityTypesForUser(_ userId: UUID) -> [ActivityTypeDTO] {
-		// For now, return the cached activity types (single user)
-		return activityTypes
+		return activityTypes[userId] ?? []
 	}
 
-	/// Add or update activity types in the cache
+	/// Add or update activity types in the cache for the current user
 	func addOrUpdateActivityTypes(_ newActivityTypes: [ActivityTypeDTO]) {
-		activityTypes = newActivityTypes
-
-		// Update timestamp for current user
-		if let userId = UserAuthViewModel.shared.spawnUser?.id {
-			setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("⚠️ [ACTIVITY-CACHE] Cannot update activity types: No user ID")
+			return
 		}
 
-		saveToDisk()
+		updateActivityTypesForUser(newActivityTypes, userId: userId)
 	}
 
 	/// Update a single activity type in the cache (for optimistic updates)
 	func updateActivityTypeInCache(_ activityTypeDTO: ActivityTypeDTO) {
-		if let index = activityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) {
-			activityTypes[index] = activityTypeDTO
+		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+			print("⚠️ [ACTIVITY-CACHE] Cannot update activity type: No user ID")
+			return
+		}
+
+		var userActivityTypes = activityTypes[userId] ?? []
+		if let index = userActivityTypes.firstIndex(where: { $0.id == activityTypeDTO.id }) {
+			userActivityTypes[index] = activityTypeDTO
 		} else {
-			activityTypes.append(activityTypeDTO)
+			userActivityTypes.append(activityTypeDTO)
 		}
+		activityTypes[userId] = userActivityTypes
 
-		// Update timestamp for current user
-		if let userId = UserAuthViewModel.shared.spawnUser?.id {
-			setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
-		}
+		setLastCheckedForUser(userId, cacheType: CacheKeys.activityTypes, date: Date())
+		saveToDisk()
+	}
 
+	/// Clear activity types for a specific user
+	func clearActivityTypesForUser(_ userId: UUID) {
+		activityTypes.removeValue(forKey: userId)
 		saveToDisk()
 	}
 
@@ -286,6 +315,7 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	func clearDataForUser(_ userId: UUID) {
 		clearActivitiesForUser(userId)
+		clearActivityTypesForUser(userId)
 
 		// Clear activity color preferences
 		ActivityColorService.shared.clearColorPreferencesForUser(userId)

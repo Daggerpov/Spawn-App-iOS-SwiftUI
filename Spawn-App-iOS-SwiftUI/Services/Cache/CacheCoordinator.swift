@@ -196,7 +196,8 @@ class CacheCoordinator: ObservableObject {
 				// Activity Types
 				if let activityTypesResponse = result[CacheKeys.activityTypes], activityTypesResponse.invalidate {
 					if let updatedItems = activityTypesResponse.updatedItems,
-						let updatedActivityTypes = try? JSONDecoder().decode([ActivityTypeDTO].self, from: updatedItems)
+						let updatedActivityTypes = try? JSONDecoder().decode(
+							[UUID: [ActivityTypeDTO]].self, from: updatedItems)
 					{
 						activityCache.updateActivityTypes(updatedActivityTypes)
 					} else {

@@ -352,7 +352,7 @@ struct ManagePeopleView: View {
 			activityTypeViewModel.activityTypes = updatedActivityTypes
 
 			// Update cache with confirmed data
-			AppCache.shared.updateActivityTypes(updatedActivityTypes)
+			AppCache.shared.updateActivityTypesForUser(updatedActivityTypes, userId: user.id)
 
 			// Post notification for UI updates
 			NotificationCenter.default.post(name: .activityTypesChanged, object: nil)

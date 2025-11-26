@@ -416,12 +416,12 @@ extension DataType {
 				userId: userId
 			)
 
-		case .activityTypes:
-			// Note: Activity types are stored globally (not per-user) in cache for now
-			return SimpleCacheConfig<[ActivityTypeDTO]>(
-				getter: { $0.activityTypes },
-				updater: { appCache in appCache.updateActivityTypes },
-				shouldReturnNilIfEmpty: true
+		case .activityTypes(let userId):
+			// Activity types are now stored per-user
+			return UserDictionaryCacheConfig<[ActivityTypeDTO]>(
+				dictionary: { $0.activityTypes },
+				updater: { appCache in appCache.updateActivityTypesForUser },
+				userId: userId
 			)
 
 		// Friends
