@@ -301,7 +301,7 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	func clearAllCaches() {
 		activities = [:]
-		activityTypes = []
+		activityTypes = [:]
 		lastChecked = [:]
 
 		// Clear UserDefaults data on background queue
@@ -361,7 +361,7 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	private func loadFromDisk() {
 		let loadedActivities: [UUID: [FullFeedActivityDTO]]? = loadFromDefaults(key: CacheKeys.events)
-		let loadedActivityTypes: [ActivityTypeDTO]? = loadFromDefaults(key: CacheKeys.activityTypes)
+		let loadedActivityTypes: [UUID: [ActivityTypeDTO]]? = loadFromDefaults(key: CacheKeys.activityTypes)
 		let loadedTimestamps: [UUID: [String: Date]]? = loadFromDefaults(key: CacheKeys.lastChecked)
 
 		// Update @Published properties on main thread
