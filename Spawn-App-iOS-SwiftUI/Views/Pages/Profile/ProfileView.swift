@@ -459,23 +459,43 @@ struct ProfileView: View {
 						}
 					}
 				}) {
-					HStack {
+					HStack(spacing: 12) {
 						if profileViewModel.friendshipStatus == .none {
 							Image(systemName: "person.badge.plus")
+								.foregroundColor(.white)
 							Text("Add Friend")
 								.bold()
+								.foregroundColor(.white)
 						} else {
-							Text("Friend Request Sent")
+							Image(systemName: "person.badge.plus")
+								.foregroundColor(.black)
+							Text("Request Sent")
 								.bold()
+								.foregroundColor(.black)
 						}
 					}
-					.font(.system(size: 16))
-					.foregroundColor(.white)
-					.padding(.vertical, 10)
-					.padding(.horizontal, 20)
-					.frame(maxWidth: 200)
-					.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
+					.font(.onestMedium(size: 16))
+					.padding(
+						EdgeInsets(
+							top: 10, leading: 20, bottom: 10, trailing: 20
+						)
+					)
+					.frame(maxWidth: profileViewModel.friendshipStatus == .none ? 200 : .infinity)
+					.background(
+						profileViewModel.friendshipStatus == .none
+							? universalSecondaryColor
+							: Color.clear
+					)
 					.cornerRadius(12)
+					.overlay(
+						RoundedRectangle(cornerRadius: 12)
+							.stroke(
+								profileViewModel.friendshipStatus == .requestSent
+									? Color(red: 0.15, green: 0.14, blue: 0.14)
+									: Color.clear,
+								lineWidth: 1
+							)
+					)
 					.scaleEffect(addFriendScale)
 					.shadow(
 						color: profileViewModel.friendshipStatus == .none ? Color.black.opacity(0.15) : Color.clear,
@@ -489,6 +509,7 @@ struct ProfileView: View {
 				.padding(.vertical, 10)
 				.animation(.easeInOut(duration: 0.15), value: addFriendScale)
 				.animation(.easeInOut(duration: 0.15), value: addFriendPressed)
+				.animation(.easeInOut(duration: 0.2), value: profileViewModel.friendshipStatus)
 				.onLongPressGesture(
 					minimumDuration: 0, maximumDistance: .infinity,
 					pressing: { pressing in
@@ -920,25 +941,9 @@ struct ProfileView: View {
 	private var friendActionButtons: some View {
 		Group {
 			switch profileViewModel.friendshipStatus {
-			case .none:
+			case .none, .requestSent:
 				// Share Profile button removed for other users
 				EmptyView()
-
-			case .requestSent:
-				// Request Sent (disabled button)
-				HStack {
-					Image(systemName: "clock")
-					Text("Request Sent")
-						.bold()
-				}
-				.font(.caption)
-				.foregroundColor(Color.gray)
-				.padding(.vertical, 24)
-				.padding(.horizontal, 8)
-				.frame(height: 32)
-				.frame(maxWidth: .infinity)
-				.background(Color.gray.opacity(0.3))
-				.cornerRadius(12)
 
 			case .requestReceived:
 				// Accept/Deny buttons
