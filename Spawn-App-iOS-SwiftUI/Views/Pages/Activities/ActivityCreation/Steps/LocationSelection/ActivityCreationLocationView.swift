@@ -531,19 +531,6 @@ struct ActivityCreationLocationView: View {
 			}
 		}
 		.onAppear {
-			print(
-				"📍 ActivityCreationLocationView: View appeared, checking location manager state..."
-			)
-			print(
-				"📍 Current authorization status: \(locationManager.authorizationStatus.rawValue)"
-			)
-			print(
-				"📍 Current user location: \(String(describing: locationManager.userLocation))"
-			)
-			print("📍 Location updated flag: \(locationManager.locationUpdated)")
-			print("🔍 DEBUG: Current region at onAppear: \(region)")
-			print("🔍 DEBUG: Current viewModel state: \(viewModel)")
-
 			// Ensure location manager is properly set up when view appears
 			if locationManager.authorizationStatus == .authorizedWhenInUse
 				|| locationManager.authorizationStatus == .authorizedAlways

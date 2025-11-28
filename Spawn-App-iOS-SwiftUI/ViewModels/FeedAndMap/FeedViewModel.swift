@@ -187,7 +187,6 @@ class FeedViewModel: ObservableObject {
 
 	/// Resume all periodic timers (useful when view becomes visible)
 	func resumeTimers() {
-		print("▶️ FeedViewModel: Resuming periodic timers")
 		startPeriodicRefresh()
 		startPeriodicCleanup()
 	}

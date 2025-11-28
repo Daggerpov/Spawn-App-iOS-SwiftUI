@@ -53,11 +53,9 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	/// Update friends for a specific user
 	func updateFriendsForUser(_ newFriends: [FullFriendUserDTO], userId: UUID) {
-		print("💾 [FRIENDSHIP-CACHE] Updating friends cache: \(newFriends.count) friends for user \(userId)")
 
 		// Debug: Check if profile pictures are present
 		let friendsWithPfp = newFriends.filter { $0.profilePicture != nil }.count
-		print("   Friends with profile pictures: \(friendsWithPfp)/\(newFriends.count)")
 
 		friends[userId] = newFriends
 		setLastCheckedForUser(userId, cacheType: CacheKeys.friends, date: Date())
@@ -65,7 +63,6 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 
 		// Preload profile pictures for friends
 		if !newFriends.isEmpty {
-			print("🖼️ [FRIENDSHIP-CACHE] Starting profile picture preload for \(newFriends.count) friends")
 			Task {
 				await preloadProfilePictures(for: [userId: newFriends])
 			}
@@ -186,10 +183,6 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	/// Update friend requests for a specific user
 	func updateFriendRequestsForUser(_ newFriendRequests: [FetchFriendRequestDTO], userId: UUID) {
-		print(
-			"💾 [FRIENDSHIP-CACHE] Updating incoming friend requests cache for user \(userId): \(newFriendRequests.count) requests"
-		)
-
 		// Normalize: remove zero UUIDs and unique by id
 		let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 		var seen = Set<UUID>()
