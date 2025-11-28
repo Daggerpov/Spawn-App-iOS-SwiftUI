@@ -230,7 +230,7 @@ class FeedViewModel: ObservableObject {
 		)
 
 		switch result {
-		case .success(let activities, let source):
+		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
 			await MainActor.run {
 				self.activitiesSubject.send(filteredActivities)

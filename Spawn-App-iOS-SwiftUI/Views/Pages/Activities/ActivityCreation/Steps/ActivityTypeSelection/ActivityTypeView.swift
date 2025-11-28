@@ -93,8 +93,6 @@ struct ActivityTypeView: View {
 					}
 				}
 			}
-			.onAppear {
-			}
 			.onDisappear {
 				// Cancel any ongoing background refresh to prevent blocking
 				backgroundRefreshTask?.cancel()
@@ -135,11 +133,20 @@ struct ActivityTypeView: View {
 					ActivityTypeManagementView(activityTypeDTO: selectedType)
 				}
 			}
-			.sheet(isPresented: $navigateToCreateType) {
-				NavigationStack {
-					ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+			.sheet(
+				isPresented: $navigateToCreateType,
+				onDismiss: {
+					// Refresh the activity types list when the create sheet is dismissed
+					Task {
+						await viewModel.fetchActivityTypes(forceRefresh: true)
+					}
+				},
+				content: {
+					NavigationStack {
+						ActivityTypeEditView(activityTypeDTO: ActivityTypeDTO.createNew())
+					}
 				}
-			}
+			)
 		}
 	}
 }

@@ -60,7 +60,7 @@ class ProfileViewModel: ObservableObject {
 		)
 
 		switch result {
-		case .success(let stats, let source):
+		case .success(let stats, _):
 			await MainActor.run {
 				self.userStats = stats
 				self.isLoadingStats = false
@@ -81,7 +81,7 @@ class ProfileViewModel: ObservableObject {
 		)
 
 		switch result {
-		case .success(let interests, let source):
+		case .success(let interests, _):
 			await MainActor.run {
 				self.userInterests = interests
 				self.isLoadingInterests = false
@@ -142,7 +142,7 @@ class ProfileViewModel: ObservableObject {
 		)
 
 		switch result {
-		case .success(let socialMedia, let source):
+		case .success(let socialMedia, _):
 			await MainActor.run {
 				self.userSocialMedia = socialMedia
 				self.isLoadingSocialMedia = false
@@ -968,7 +968,7 @@ class ProfileViewModel: ObservableObject {
 		)
 
 		switch result {
-		case .success(let activities, let source):
+		case .success(let activities, _):
 			// Log activity details
 			if !activities.isEmpty {
 				print("📋 ProfileViewModel: Activity details:")
