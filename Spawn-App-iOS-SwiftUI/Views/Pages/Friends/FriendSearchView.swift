@@ -255,6 +255,7 @@ struct FriendRowView: View {
 	var viewModel: FriendsTabViewModel
 	var isExistingFriend: Bool = false
 	@State private var isAdded: Bool = false
+	@State private var isFadingOut: Bool = false
 
 	// Profile menu state variables
 	@State private var showProfileMenu: Bool = false
@@ -361,14 +362,25 @@ struct FriendRowView: View {
 					}
 					Task {
 						await viewModel.addFriend(friendUserId: targetUserId)
-						// Add delay before removing the item
-						try? await Task.sleep(nanoseconds: 1_500_000_000)  // 1.5 seconds
-						if friend != nil {
-							viewModel.removeFromSearchResults(userId: targetUserId)
-						} else if user != nil {
-							viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
-						} else if recommendedFriend != nil {
-							viewModel.removeFromRecommended(friendId: targetUserId)
+						// Add delay before fading out
+						try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1 second
+						// Fade out animation
+						await MainActor.run {
+							withAnimation(.easeOut(duration: 0.3)) {
+								isFadingOut = true
+							}
+						}
+						// Wait for fade out to complete
+						try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+						// Remove from list
+						await MainActor.run {
+							if friend != nil {
+								viewModel.removeFromSearchResults(userId: targetUserId)
+							} else if user != nil {
+								viewModel.removeFromRecentlySpawnedWith(userId: targetUserId)
+							} else if recommendedFriend != nil {
+								viewModel.removeFromRecommended(friendId: targetUserId)
+							}
 						}
 					}
 				}) {
@@ -400,6 +412,8 @@ struct FriendRowView: View {
 				.disabled(isAdded)
 			}
 		}
+		.opacity(isFadingOut ? 0 : 1)
+		.scaleEffect(isFadingOut ? 0.95 : 1.0)
 		.sheet(isPresented: $showProfileMenu) {
 			ProfileMenuView(
 				user: userForProfile,

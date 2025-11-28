@@ -11,6 +11,7 @@ struct RecommendedFriendView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
 	var friend: RecommendedFriendUserDTO
 	@State private var isAdded: Bool = false
+	@State private var isFadingOut: Bool = false
 	@Binding var selectedFriend: FullFriendUserDTO?
 	@Binding var showProfileMenu: Bool
 
@@ -84,9 +85,20 @@ struct RecommendedFriendView: View {
 					}
 					Task {
 						await viewModel.addFriend(friendUserId: friend.id)
-						// Add delay before removing the item
-						try? await Task.sleep(nanoseconds: 1_500_000_000)  // 1.5 seconds
-						viewModel.removeFromRecommended(friendId: friend.id)
+						// Add delay before fading out
+						try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1 second
+						// Fade out animation
+						await MainActor.run {
+							withAnimation(.easeOut(duration: 0.3)) {
+								isFadingOut = true
+							}
+						}
+						// Wait for fade out to complete
+						try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+						// Remove from list
+						await MainActor.run {
+							viewModel.removeFromRecommended(friendId: friend.id)
+						}
 					}
 				}) {
 					HStack {
@@ -118,5 +130,7 @@ struct RecommendedFriendView: View {
 				.disabled(isAdded)
 			}
 		}
+		.opacity(isFadingOut ? 0 : 1)
+		.scaleEffect(isFadingOut ? 0.95 : 1.0)
 	}
 }
