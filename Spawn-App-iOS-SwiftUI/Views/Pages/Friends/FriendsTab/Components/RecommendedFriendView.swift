@@ -46,7 +46,7 @@ struct RecommendedFriendView: View {
 				.shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
 			}
 
-			NavigationLink(destination: ProfileView(user: friend)) {
+			NavigationLink(destination: UserProfileView(user: friend)) {
 				VStack(alignment: .leading, spacing: 4) {
 					Text(FormatterService.shared.formatName(user: friend))
 						.font(.onestSemiBold(size: 14))
