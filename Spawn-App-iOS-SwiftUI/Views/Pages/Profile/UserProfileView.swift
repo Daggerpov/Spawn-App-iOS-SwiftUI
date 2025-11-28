@@ -352,7 +352,7 @@ struct UserProfileView: View {
 							top: 10, leading: 20, bottom: 10, trailing: 20
 						)
 					)
-					.frame(maxWidth: profileViewModel.friendshipStatus == .none ? 200 : .infinity)
+					.frame(maxWidth: 200)
 					.background(
 						profileViewModel.friendshipStatus == .none
 							? universalSecondaryColor
