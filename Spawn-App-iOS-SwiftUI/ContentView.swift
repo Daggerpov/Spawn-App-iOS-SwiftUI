@@ -90,7 +90,7 @@ struct ContentView: View {
 					.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
 				case .profile:
 					NavigationStack {
-						ProfileView(user: user)
+						MyProfileView(user: user)
 					}
 					.disabled(tutorialViewModel.tutorialState.shouldRestrictNavigation)
 				}

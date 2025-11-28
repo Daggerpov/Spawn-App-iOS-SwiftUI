@@ -59,7 +59,7 @@ struct ProfilePictureView: View {
 			}
 		}
 		.fullScreenCover(isPresented: $showProfile) {
-			ProfileView(user: user)
+			UserProfileView(user: user)
 		}
 	}
 }

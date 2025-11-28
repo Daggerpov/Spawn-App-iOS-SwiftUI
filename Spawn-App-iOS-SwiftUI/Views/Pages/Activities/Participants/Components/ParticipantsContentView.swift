@@ -67,7 +67,7 @@ struct ParticipantsContentView: View {
 		}
 		.fullScreenCover(isPresented: $showProfile) {
 			if let selectedUser = selectedUser {
-				ProfileView(user: selectedUser)
+				UserProfileView(user: selectedUser)
 			}
 		}
 	}

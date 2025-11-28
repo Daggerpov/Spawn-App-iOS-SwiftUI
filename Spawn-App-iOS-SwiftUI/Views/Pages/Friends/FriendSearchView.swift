@@ -277,7 +277,7 @@ struct FriendRowView: View {
 			let profilePicture = user?.profilePicture ?? friend?.profilePicture ?? recommendedFriend?.profilePicture
 
 			// Create NavigationLink around the profile picture
-			NavigationLink(destination: ProfileView(user: userForProfile)) {
+			NavigationLink(destination: UserProfileView(user: userForProfile)) {
 				if let pfpUrl = profilePicture {
 					if MockAPIService.isMocking {
 						Image(pfpUrl)
@@ -303,7 +303,7 @@ struct FriendRowView: View {
 			.shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
 
 			// Navigation link for name and username
-			NavigationLink(destination: ProfileView(user: userForProfile)) {
+			NavigationLink(destination: UserProfileView(user: userForProfile)) {
 				VStack(alignment: .leading, spacing: 4) {
 					// Works with user, friend, or recommendedFriend
 					if let user = user {

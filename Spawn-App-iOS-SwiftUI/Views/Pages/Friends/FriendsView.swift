@@ -107,7 +107,7 @@ struct FriendsView: View {
 				case .success(let fetchedUser, source: _):
 					// Navigate to the profile
 					await MainActor.run {
-						let profileView = ProfileView(user: fetchedUser)
+						let profileView = UserProfileView(user: fetchedUser)
 
 						// Get the current window and present the profile
 						if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
