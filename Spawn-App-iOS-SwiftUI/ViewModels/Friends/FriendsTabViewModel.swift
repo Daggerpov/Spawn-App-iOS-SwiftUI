@@ -533,8 +533,10 @@ class FriendsTabViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			// Fetch all data in parallel after successfully adding a friend
-			await fetchAllData()
+			// Only refresh outgoing friend requests to show the new request
+			// Don't refresh recommended friends - let the view handle the removal animation
+			await fetchOutgoingFriendRequests()
+
 			// Ensure loading state is cleared
 			await MainActor.run {
 				isLoading = false

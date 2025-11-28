@@ -102,7 +102,7 @@ enum DataType {
 		switch self {
 		// Activities
 		case .activities(let userId):
-			return "users/\(userId)/activities"
+			return "activities/feedActivities/\(userId)"
 		case .activity(let activityId, _, _):
 			return "activities/\(activityId)"
 		case .activityTypes(let userId):

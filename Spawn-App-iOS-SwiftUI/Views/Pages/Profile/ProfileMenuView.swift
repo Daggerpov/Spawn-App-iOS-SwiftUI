@@ -89,7 +89,7 @@ private struct ProfileMenuContainer<Content: View>: View {
 		VStack(spacing: 8) {
 			content
 				.background(universalBackgroundColor)
-				.cornerRadius(12, corners: [.topLeft, .topRight])
+				.cornerRadius(12)
 		}
 		.fixedSize(horizontal: false, vertical: true)
 		.background(universalBackgroundColor)

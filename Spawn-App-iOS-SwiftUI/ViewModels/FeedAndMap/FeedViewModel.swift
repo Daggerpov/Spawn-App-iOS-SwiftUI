@@ -187,7 +187,6 @@ class FeedViewModel: ObservableObject {
 
 	/// Resume all periodic timers (useful when view becomes visible)
 	func resumeTimers() {
-		print("▶️ FeedViewModel: Resuming periodic timers")
 		startPeriodicRefresh()
 		startPeriodicCleanup()
 	}
@@ -231,7 +230,7 @@ class FeedViewModel: ObservableObject {
 		)
 
 		switch result {
-		case .success(let activities, let source):
+		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
 			await MainActor.run {
 				self.activitiesSubject.send(filteredActivities)

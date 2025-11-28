@@ -118,7 +118,7 @@ struct ActivityTypeManagementView: View {
 			}
 			.navigationDestination(isPresented: $navigateToProfile) {
 				if let selectedUser = selectedUserForProfile {
-					ProfileView(user: selectedUser)
+					UserProfileView(user: selectedUser)
 				}
 			}
 			.task {

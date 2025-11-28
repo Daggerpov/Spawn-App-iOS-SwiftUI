@@ -74,7 +74,6 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 		if expiredCount > 0 {
 			print("🧹 [ACTIVITY-CACHE] Filtered out \(expiredCount) expired activities before caching")
 		}
-		print("💾 [ACTIVITY-CACHE] Updating activities cache: \(filteredActivities.count) activities for user \(userId)")
 
 		activities[userId] = filteredActivities
 		setLastCheckedForUser(userId, cacheType: CacheKeys.events, date: Date())
@@ -87,7 +86,6 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 
 		// Preload profile pictures for activities
 		if !filteredActivities.isEmpty {
-			print("🖼️ [ACTIVITY-CACHE] Starting profile picture preload for \(filteredActivities.count) activities")
 			Task {
 				await preloadProfilePicturesForActivities([userId: filteredActivities])
 			}

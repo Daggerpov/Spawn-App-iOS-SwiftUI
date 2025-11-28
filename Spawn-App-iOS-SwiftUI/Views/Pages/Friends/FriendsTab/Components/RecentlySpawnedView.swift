@@ -10,6 +10,7 @@ struct RecentlySpawnedView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
 	var recentUser: RecentlySpawnedUserDTO
 	@State private var isAdded: Bool = false
+	@State private var isFadingOut: Bool = false
 	@Binding var selectedFriend: FullFriendUserDTO?
 	@Binding var showProfileMenu: Bool
 
@@ -17,7 +18,7 @@ struct RecentlySpawnedView: View {
 		HStack {
 			if MockAPIService.isMocking {
 				if let pfp = recentUser.user.profilePicture {
-					NavigationLink(destination: ProfileView(user: recentUser.user)) {
+					NavigationLink(destination: UserProfileView(user: recentUser.user)) {
 						Image(pfp)
 							.resizable()
 							.scaledToFill()
@@ -26,7 +27,7 @@ struct RecentlySpawnedView: View {
 					}
 				}
 			} else {
-				NavigationLink(destination: ProfileView(user: recentUser.user)) {
+				NavigationLink(destination: UserProfileView(user: recentUser.user)) {
 					if let pfpUrl = recentUser.user.profilePicture {
 						CachedProfileImage(
 							userId: recentUser.user.id,
@@ -44,7 +45,7 @@ struct RecentlySpawnedView: View {
 				.shadow(color: .black.opacity(0.25), radius: 2, x: 0, y: 2)
 			}
 
-			NavigationLink(destination: ProfileView(user: recentUser.user)) {
+			NavigationLink(destination: UserProfileView(user: recentUser.user)) {
 				VStack(alignment: .leading, spacing: 2) {
 					Text(FormatterService.shared.formatName(user: recentUser.user))
 						.font(.onestBold(size: 14))
@@ -83,9 +84,20 @@ struct RecentlySpawnedView: View {
 					}
 					Task {
 						await viewModel.addFriend(friendUserId: recentUser.user.id)
-						// Add delay before removing the item
-						try? await Task.sleep(nanoseconds: 1_500_000_000)  // 1.5 seconds
-						viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
+						// Add delay before fading out
+						try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1 second
+						// Fade out animation
+						await MainActor.run {
+							withAnimation(.easeOut(duration: 0.3)) {
+								isFadingOut = true
+							}
+						}
+						// Wait for fade out to complete
+						try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
+						// Remove from list
+						await MainActor.run {
+							viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
+						}
 					}
 				}) {
 					HStack(spacing: 6) {
@@ -118,5 +130,7 @@ struct RecentlySpawnedView: View {
 				.disabled(isAdded)
 			}
 		}
+		.opacity(isFadingOut ? 0 : 1)
+		.scaleEffect(isFadingOut ? 0.95 : 1.0)
 	}
 }

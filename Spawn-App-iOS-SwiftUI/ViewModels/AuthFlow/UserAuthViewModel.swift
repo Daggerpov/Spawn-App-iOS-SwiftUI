@@ -189,7 +189,6 @@ class UserAuthViewModel: NSObject, ObservableObject {
 				await quickSignIn()
 			}
 			await MainActor.run {
-				print("🔄 DEBUG: Quick login attempt completed, setting authCheckCompleted = true")
 				self.authCheckCompleted = true
 				self.checkLoadingCompletion()
 			}

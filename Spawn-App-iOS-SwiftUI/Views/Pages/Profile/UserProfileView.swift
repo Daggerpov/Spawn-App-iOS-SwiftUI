@@ -1,39 +1,20 @@
 //
-//  ProfileView.swift
+//  UserProfileView.swift
 //  Spawn-App-iOS-SwiftUI
 //
-//  Created by Daniel Agapov on 11/9/24.
+//  Created for viewing other users' profiles
 //
 
 import PhotosUI
 import SwiftUI
 
-struct ProfileView: View {
+/// View for displaying another user's profile
+/// Shows friendship status, friend actions, and limited calendar access based on friendship
+struct UserProfileView: View {
 	let user: Nameable
-	@State private var username: String
-	@State private var name: String
-	@State private var editingState: ProfileEditText = .edit
-	@State private var selectedImage: UIImage?
-	@State private var showImagePicker: Bool = false
-	@State private var isImageLoading: Bool = false
 	@State private var showNotification: Bool = false
 	@State private var notificationMessage: String = ""
-	@State private var newInterest: String = ""
-	@State private var whatsappLink: String = ""
-	@State private var instagramLink: String = ""
-	@State private var currentMonth = Calendar.current.component(
-		.month,
-		from: Date()
-	)
-	@State private var currentYear = Calendar.current.component(
-		.year,
-		from: Date()
-	)
-	@State private var showCalendarPopup: Bool = false
-	@State private var navigateToCalendar: Bool = false
 	@State private var showActivityDetails: Bool = false
-	@State private var navigateToDayActivities: Bool = false
-	@State private var selectedDayActivities: [CalendarActivityDTO] = []
 	@State private var showReportDialog: Bool = false
 	@State private var showBlockDialog: Bool = false
 	@State private var blockReason: String = ""
@@ -61,108 +42,26 @@ struct ProfileView: View {
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
-	// For the back button
-	@State private var showBackButton: Bool = false
-
-	// Check if this is the current user's profile
-	private var isCurrentUserProfile: Bool {
-		if MockAPIService.isMocking {
-			return true
-		}
-		guard let currentUser = userAuth.spawnUser else { return false }
-		return currentUser.id == user.id
-	}
-
 	init(user: Nameable) {
 		self.user = user
 		self._profileViewModel = StateObject(
 			wrappedValue: ProfileViewModel(userId: user.id)
 		)
-		self.username = user.username ?? ""
-		self.name = user.name ?? ""
 	}
 
 	var body: some View {
 		profileContent
 			.background(universalBackgroundColor.ignoresSafeArea())
 			.background(universalBackgroundColor)
-			.onChange(of: editingState) { _, newState in
-				switch newState {
-				case .save:
-					// Save original interests when entering edit mode
-					profileViewModel.saveOriginalInterests()
-				case .edit:
-					// This handles the case where editingState transitions back to .edit
-					// The cancel button should handle the restoration manually
-					break
-				}
-			}
-			.alert(item: $userAuth.activeAlert) { alertType in
-				switch alertType {
-				case .deleteConfirmation:
-					return Alert(
-						title: Text("Delete Account"),
-						message: Text(
-							"Are you sure you want to delete your account? This action cannot be undone."
-						),
-						primaryButton: .destructive(Text("Delete")) {
-							Task {
-								await userAuth.deleteAccount()
-							}
-						},
-						secondaryButton: .cancel()
-					)
-				case .deleteSuccess:
-					return Alert(
-						title: Text("Account Deleted"),
-						message: Text(
-							"Your account has been successfully deleted."
-						),
-						dismissButton: .default(Text("OK")) {
-							userAuth.signOut()
-						}
-					)
-				case .deleteError:
-					return Alert(
-						title: Text("Error"),
-						message: Text(
-							"Failed to delete your account. Please try again later."
-						),
-						dismissButton: .default(Text("OK"))
-					)
-				}
-			}
-			.onAppear {
-				// Update local state from userAuth.spawnUser when view appears
-				refreshUserData()
-			}
 			.task {
-				// Set back button state immediately (no async needed)
-				if !isCurrentUserProfile {
-					showBackButton = true
-				}
-
-				// Check if task was cancelled (user navigated away)
-				guard !Task.isCancelled else {
-					return
-				}
-
 				// CRITICAL FIX: Load critical profile data on MainActor to block view appearance
 				// This prevents empty state flashes and ensures view renders with data
 
 				// Load critical data that's required for the view to render meaningfully
 				await profileViewModel.loadCriticalProfileData(userId: user.id)
 
-				// Initialize social media links from loaded data
-				if let socialMedia = profileViewModel.userSocialMedia {
-					whatsappLink = socialMedia.whatsappLink ?? ""
-					instagramLink = socialMedia.instagramLink ?? ""
-				}
-
 				// Check friendship status if not viewing own profile (critical for UI)
-				if !isCurrentUserProfile,
-					let currentUserId = userAuth.spawnUser?.id
-				{
+				if let currentUserId = userAuth.spawnUser?.id {
 					// Check if user is a RecommendedFriendUserDTO with relationship status
 					if let recommendedFriend = user as? RecommendedFriendUserDTO,
 						recommendedFriend.relationshipStatus != nil
@@ -206,23 +105,10 @@ struct ProfileView: View {
 					await profileViewModel.loadEnhancementData(userId: await user.id)
 				}
 			}
-			.onAppear {
-			}
 			.onDisappear {
 				// Cancel any ongoing background tasks to prevent blocking
 				backgroundDataLoadTask?.cancel()
 				backgroundDataLoadTask = nil
-			}
-			.onChange(of: userAuth.spawnUser) { _, newUser in
-				// Update local state whenever spawnUser changes
-				refreshUserData()
-			}
-			.onChange(of: profileViewModel.userSocialMedia) { _, newSocialMedia in
-				// Update local state when social media changes
-				if let socialMedia = newSocialMedia {
-					whatsappLink = socialMedia.whatsappLink ?? ""
-					instagramLink = socialMedia.instagramLink ?? ""
-				}
 			}
 			.onChange(of: profileViewModel.friendshipStatus) { _, newStatus in
 				// Fetch activities when friendship status changes to friends
@@ -231,14 +117,6 @@ struct ProfileView: View {
 						await profileViewModel.fetchProfileActivities(
 							profileUserId: user.id
 						)
-					}
-				}
-			}
-			.onChange(of: navigateToDayActivities) { _, newValue in
-				if newValue {
-					// Ensure navigation happens on main thread
-					DispatchQueue.main.async {
-						// Navigation logic handled by the view
 					}
 				}
 			}
@@ -255,14 +133,7 @@ struct ProfileView: View {
 		NavigationStack {
 			profileWithOverlay
 				.modifier(
-					ImagePickerModifier(
-						showImagePicker: $showImagePicker,
-						selectedImage: $selectedImage,
-						isImageLoading: $isImageLoading
-					)
-				)
-				.modifier(
-					SheetsAndAlertsModifier(
+					UserProfileSheetsModifier(
 						showActivityDetails: $showActivityDetails,
 						activityDetailsView: AnyView(activityDetailsView),
 						showRemoveFriendConfirmation: $showRemoveFriendConfirmation,
@@ -297,16 +168,14 @@ struct ProfileView: View {
 			.navigationBarTitleDisplayMode(.inline)
 			.toolbar {
 				ToolbarItem(placement: .navigationBarLeading) {
-					if showBackButton {
-						Button(action: {
-							presentationMode.wrappedValue.dismiss()
-						}) {
-							HStack(spacing: 4) {
-								Image(systemName: "chevron.left")
-								Text("Back")
-							}
-							.foregroundColor(universalAccentColor)
+					Button(action: {
+						presentationMode.wrappedValue.dismiss()
+					}) {
+						HStack(spacing: 4) {
+							Image(systemName: "chevron.left")
+							Text("Back")
 						}
+						.foregroundColor(universalAccentColor)
 					}
 				}
 
@@ -315,22 +184,13 @@ struct ProfileView: View {
 					EmptyView()
 				}
 
-				// Add appropriate trailing button based on user profile type
+				// Menu button for other user profiles
 				ToolbarItem(placement: .navigationBarTrailing) {
-					if isCurrentUserProfile {
-						// Settings button for current user profile
-						NavigationLink(destination: SettingsView()) {
-							Image(systemName: "gearshape")
-								.foregroundColor(universalAccentColor)
-						}
-					} else {
-						// Menu button for other user profiles - always show immediately
-						Button(action: {
-							showProfileMenu = true
-						}) {
-							Image(systemName: "ellipsis")
-								.foregroundColor(universalAccentColor)
-						}
+					Button(action: {
+						showProfileMenu = true
+					}) {
+						Image(systemName: "ellipsis")
+							.foregroundColor(universalAccentColor)
 					}
 				}
 			}
@@ -339,12 +199,6 @@ struct ProfileView: View {
 			}
 			.navigationDestination(isPresented: $navigateToAddToActivityType) {
 				AddToActivityTypeView(user: user)
-			}
-			.navigationDestination(isPresented: $navigateToCalendar) {
-				calendarFullScreenView
-			}
-			.navigationDestination(isPresented: $navigateToDayActivities) {
-				dayActivitiesPageView
 			}
 
 			// Overlay for profile menu
@@ -373,20 +227,40 @@ struct ProfileView: View {
 
 	private var profileInnerComponentsView: some View {
 		VStack(alignment: .center, spacing: 10) {
-			// Profile Header (Profile Picture + Name)
-			ProfileHeaderView(
-				user: user,
-				selectedImage: $selectedImage,
-				showImagePicker: $showImagePicker,
-				isImageLoading: $isImageLoading,
-				editingState: $editingState
-			)
+			// Profile Header (Profile Picture + Name) - read-only for other users
+			VStack(spacing: 10) {
+				// Profile Picture
+				ZStack(alignment: .bottomTrailing) {
+					if let pfpUrl = user.profilePicture {
+						if MockAPIService.isMocking {
+							Image(pfpUrl)
+								.ProfileImageModifier(imageType: .profilePage)
+						} else {
+							CachedProfileImage(
+								userId: user.id,
+								url: URL(string: pfpUrl),
+								imageType: .profilePage
+							)
+						}
+					} else {
+						Circle()
+							.fill(Color.gray)
+							.frame(width: 150, height: 150)
+					}
+				}
+
+				// Name and Username
+				ProfileNameView(
+					user: user,
+					refreshFlag: .constant(false)
+				)
+			}
 
 			// Friendship badge (for other users' profiles)
 			friendshipBadge
 
 			// Friend Request Buttons (for incoming requests)
-			if !isCurrentUserProfile && profileViewModel.friendshipStatus == .requestReceived {
+			if profileViewModel.friendshipStatus == .requestReceived {
 				HStack(spacing: 10) {
 					Button(action: {
 						if let requestId = profileViewModel.pendingFriendRequestId {
@@ -440,9 +314,7 @@ struct ProfileView: View {
 			}
 
 			// Add Friend Button for non-friends or showing Friend Request Sent
-			if !isCurrentUserProfile
-				&& (profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent)
-			{
+			if profileViewModel.friendshipStatus == .none || profileViewModel.friendshipStatus == .requestSent {
 				Button(action: {
 					if profileViewModel.friendshipStatus == .none,
 						let currentUserId = userAuth.spawnUser?.id
@@ -459,23 +331,43 @@ struct ProfileView: View {
 						}
 					}
 				}) {
-					HStack {
+					HStack(spacing: 12) {
 						if profileViewModel.friendshipStatus == .none {
 							Image(systemName: "person.badge.plus")
+								.foregroundColor(.white)
 							Text("Add Friend")
 								.bold()
+								.foregroundColor(.white)
 						} else {
-							Text("Friend Request Sent")
+							Image(systemName: "person.badge.plus")
+								.foregroundColor(.black)
+							Text("Request Sent")
 								.bold()
+								.foregroundColor(.black)
 						}
 					}
-					.font(.system(size: 16))
-					.foregroundColor(.white)
-					.padding(.vertical, 10)
-					.padding(.horizontal, 20)
+					.font(.onestMedium(size: 16))
+					.padding(
+						EdgeInsets(
+							top: 10, leading: 20, bottom: 10, trailing: 20
+						)
+					)
 					.frame(maxWidth: 200)
-					.background(profileViewModel.friendshipStatus == .none ? universalSecondaryColor : Color.gray)
+					.background(
+						profileViewModel.friendshipStatus == .none
+							? universalSecondaryColor
+							: Color.clear
+					)
 					.cornerRadius(12)
+					.overlay(
+						RoundedRectangle(cornerRadius: 12)
+							.stroke(
+								profileViewModel.friendshipStatus == .requestSent
+									? Color(red: 0.15, green: 0.14, blue: 0.14)
+									: Color.clear,
+								lineWidth: 1
+							)
+					)
 					.scaleEffect(addFriendScale)
 					.shadow(
 						color: profileViewModel.friendshipStatus == .none ? Color.black.opacity(0.15) : Color.clear,
@@ -489,6 +381,7 @@ struct ProfileView: View {
 				.padding(.vertical, 10)
 				.animation(.easeInOut(duration: 0.15), value: addFriendScale)
 				.animation(.easeInOut(duration: 0.15), value: addFriendPressed)
+				.animation(.easeInOut(duration: 0.2), value: profileViewModel.friendshipStatus)
 				.onLongPressGesture(
 					minimumDuration: 0, maximumDistance: .infinity,
 					pressing: { pressing in
@@ -505,77 +398,45 @@ struct ProfileView: View {
 					}, perform: {})
 			}
 
-			// Profile Action Buttons
-			profileActionButtonsSection
+			// Friend action buttons for other users (based on friendship status)
+			friendActionButtons
 				.padding(.horizontal, 25)
 				.padding(.bottom, 4)
 
-			// Edit Save Cancel buttons (only when editing)
-			if isCurrentUserProfile && editingState == .save {
-				ProfileEditButtonsView(
-					user: user,
-					profileViewModel: profileViewModel,
-					editingState: $editingState,
-					username: $username,
-					name: $name,
-					selectedImage: $selectedImage,
-					whatsappLink: $whatsappLink,
-					instagramLink: $instagramLink,
-					isImageLoading: $isImageLoading,
-					saveProfile: saveProfile
-				)
-			}
-
-			// Interests Section with Social Media Icons
+			// Interests Section with Social Media Icons (read-only for other users)
 			ProfileInterestsView(
 				user: user,
 				profileViewModel: profileViewModel,
-				editingState: $editingState,
-				newInterest: $newInterest,
+				editingState: .constant(.edit),
+				newInterest: .constant(""),
 				openSocialMediaLink: openSocialMediaLink,
-				removeInterest: removeInterest
+				removeInterest: { _ in }  // No-op for other users
 			)
 			.padding(.top, 20)
 			.padding(.bottom, 8)
 
-			// User Stats (only for current user or friends)
-			userStatsSection
-
-			// Calendar or Activities Section
-			if isCurrentUserProfile {
-				VStack(spacing: 0) {
-					ProfileCalendarView(
-						profileViewModel: profileViewModel,
-						showCalendarPopup: $showCalendarPopup,
-						showActivityDetails: $showActivityDetails,
-						navigateToCalendar: $navigateToCalendar,
-						navigateToDayActivities: $navigateToDayActivities,
-						selectedDayActivities: $selectedDayActivities
-					)
-					.padding(.horizontal, 16)
-					.padding(.bottom, 15)
-
-					EmptyView()
-				}
-			} else {
-				// User Activities Section for other users (based on friendship status)
-				UserActivitiesSection(
-					user: user,
-					profileViewModel: profileViewModel,
-					showActivityDetails: $showActivityDetails
+			// User Stats (only show if friends)
+			if profileViewModel.friendshipStatus == .friends {
+				ProfileStatsView(
+					profileViewModel: profileViewModel
 				)
-				.padding(.horizontal, 16)
-				.padding(.bottom, 15)
 			}
+
+			// User Activities Section for other users (based on friendship status)
+			UserActivitiesSection(
+				user: user,
+				profileViewModel: profileViewModel,
+				showActivityDetails: $showActivityDetails
+			)
+			.padding(.horizontal, 16)
+			.padding(.bottom, 15)
 		}
 	}
 
 	// Break down body view components into smaller pieces
 	private var friendshipBadge: some View {
 		Group {
-			if !isCurrentUserProfile
-				&& profileViewModel.friendshipStatus == .friends
-			{
+			if profileViewModel.friendshipStatus == .friends {
 				HStack {
 					Image(systemName: "person.crop.circle.badge.checkmark")
 					Text("Friends")
@@ -596,95 +457,6 @@ struct ProfileView: View {
 				.background(universalBackgroundColor)
 			}
 		}
-	}
-
-	private var profileActionButtonsSection: some View {
-		Group {
-			if isCurrentUserProfile {
-				// Original action buttons for current user
-				ProfileActionButtonsView(
-					user: user as! BaseUserDTO,
-					profileViewModel: profileViewModel,
-					shareProfile: shareProfile
-				)
-			} else {
-				// Friend action buttons for other users (based on friendship status)
-				friendActionButtons
-			}
-		}
-	}
-
-	private var userStatsSection: some View {
-		Group {
-			if isCurrentUserProfile
-				|| profileViewModel.friendshipStatus == .friends
-			{
-				ProfileStatsView(
-					profileViewModel: profileViewModel
-				)
-			} else {
-				EmptyView()
-			}
-		}
-	}
-
-	private var calendarPopupView: some View {
-		InfiniteCalendarView(
-			activities: profileViewModel.allCalendarActivities,
-			isLoading: profileViewModel.isLoadingCalendar,
-			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
-			onDismiss: { showCalendarPopup = false },
-			onActivitySelected: { activity in
-				handleActivitySelection(activity)
-			},
-			onDayActivitiesSelected: { activities in
-				// Close the calendar popup and navigate to day activities
-				showCalendarPopup = false
-				selectedDayActivities = activities
-				navigateToDayActivities = true
-			}
-		)
-	}
-
-	private var calendarFullScreenView: some View {
-		ActivityCalendarView(
-			profileViewModel: profileViewModel,
-			userCreationDate: profileViewModel.userProfileInfo?.dateCreated,
-			calendarOwnerName: nil,
-			onDismiss: {
-				// Reset navigation state when calendar view is dismissed
-				navigateToCalendar = false
-			},
-			onActivitySelected: { activity in
-				// Handle single activity - fetch details and show popup directly
-				handleActivitySelection(activity)
-			},
-			onDayActivitiesSelected: { activities in
-				// Set the selected activities and navigate to day activities
-				selectedDayActivities = activities
-				navigateToDayActivities = true
-			}
-		)
-	}
-
-	private var dayActivitiesPageView: some View {
-		// Get the date from the first activity, or use today as fallback
-		let date = selectedDayActivities.first?.dateAsDate ?? Date()
-
-		return DayActivitiesPageView(
-			date: date,
-			activities: selectedDayActivities,
-			onDismiss: {
-				// Navigate back to calendar view instead of going back to profile
-				navigateToDayActivities = false
-				navigateToCalendar = true
-			},
-			onActivitySelected: { activity in
-				// Reset navigation state and handle activity selection
-				navigateToDayActivities = false
-				handleActivitySelection(activity)
-			}
-		)
 	}
 
 	private var activityDetailsView: some View {
@@ -809,22 +581,6 @@ struct ProfileView: View {
 		}
 	}
 
-	private func addInterest() {
-		guard !newInterest.isEmpty else { return }
-
-		Task {
-			let success = await profileViewModel.addUserInterest(
-				userId: user.id,
-				interest: newInterest
-			)
-			await MainActor.run {
-				if success {
-					newInterest = ""
-				}
-			}
-		}
-	}
-
 	private func openSocialMediaLink(platform: String, link: String) {
 		// Handle different platforms
 		var urlString: String?
@@ -882,63 +638,13 @@ struct ProfileView: View {
 		}
 	}
 
-	private func removeInterest(_ interest: String) {
-		Task {
-			await profileViewModel.removeUserInterest(
-				userId: user.id,
-				interest: interest
-			)
-		}
-	}
-
-	// Add a function to refresh user data from UserAuthViewModel
-	private func refreshUserData() {
-		if isCurrentUserProfile, let currentUser = userAuth.spawnUser {
-			username = currentUser.username ?? ""
-			name = currentUser.name ?? ""
-		}
-	}
-
-	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
-		// First close the calendar popup
-		showCalendarPopup = false
-
-		// Then fetch and show the activity details
-		Task {
-			if let activityId = activity.activityId,
-				await profileViewModel.fetchActivityDetails(activityId: activityId)
-					!= nil
-			{
-				await MainActor.run {
-					showActivityDetails = true
-				}
-			}
-		}
-	}
-
 	// Friend Action Buttons based on friendship status
 	private var friendActionButtons: some View {
 		Group {
 			switch profileViewModel.friendshipStatus {
-			case .none:
+			case .none, .requestSent:
 				// Share Profile button removed for other users
 				EmptyView()
-
-			case .requestSent:
-				// Request Sent (disabled button)
-				HStack {
-					Image(systemName: "clock")
-					Text("Request Sent")
-						.bold()
-				}
-				.font(.caption)
-				.foregroundColor(Color.gray)
-				.padding(.vertical, 24)
-				.padding(.horizontal, 8)
-				.frame(height: 32)
-				.frame(maxWidth: .infinity)
-				.background(Color.gray.opacity(0.3))
-				.cornerRadius(12)
 
 			case .requestReceived:
 				// Accept/Deny buttons
@@ -1063,198 +769,44 @@ struct ProfileView: View {
 	}
 }
 
-// MARK: - Profile Action Buttons
-extension ProfileView {
-	private var profileActionButtons: some View {
-		HStack(spacing: 12) {
-			if isCurrentUserProfile {
-				NavigationLink(
-					destination: EditProfileView(
-						userId: user.id,
-						profileViewModel: profileViewModel
-					)
-				) {
-					HStack {
-						Image(systemName: "pencil")
-						Text("Edit Profile")
-							.bold()
-					}
-					.font(.caption)
-					.foregroundColor(universalSecondaryColor)
-					.padding(.vertical, 24)
-					.padding(.horizontal, 8)
-					.frame(height: 32)
-					.frame(maxWidth: .infinity)
-				}
-				.navigationBarBackButtonHidden(true)
-				.overlay(
-					RoundedRectangle(cornerRadius: 12)
-						.stroke(universalSecondaryColor, lineWidth: 1)
-				)
+// MARK: - UserProfile Sheets Modifier
+struct UserProfileSheetsModifier: ViewModifier {
+	@Binding var showActivityDetails: Bool
+	var activityDetailsView: AnyView
+	@Binding var showRemoveFriendConfirmation: Bool
+	var removeFriendConfirmationAlert: AnyView
+	@Binding var showReportDialog: Bool
+	var reportUserDrawer: AnyView
+	@Binding var showBlockDialog: Bool
+	var blockUserAlert: AnyView
+	@Binding var showProfileMenu: Bool
+	var profileMenuSheet: AnyView
+
+	func body(content: Content) -> some View {
+		content
+			.sheet(isPresented: $showActivityDetails) {
+				activityDetailsView
 			}
-
-			Button(action: {
-				shareProfile()
-			}) {
-				HStack {
-					Image(systemName: "square.and.arrow.up")
-					Text("Share Profile")
-						.bold()
-				}
-				.font(.caption)
-				.foregroundColor(universalSecondaryColor)
-				.padding(.vertical, 24)
-				.padding(.horizontal, 8)
-				.frame(height: 32)
-				.frame(maxWidth: .infinity)
-				.overlay(
-					RoundedRectangle(cornerRadius: 12)
-						.stroke(universalSecondaryColor, lineWidth: 1)
-				)
+			.confirmationDialog(
+				"Remove this friend?",
+				isPresented: $showRemoveFriendConfirmation,
+				titleVisibility: .visible
+			) {
+				removeFriendConfirmationAlert
 			}
-		}
-	}
-}
-
-// MARK: - Profile Edit Buttons
-extension ProfileView {
-	private var profileEditButtons: some View {
-		HStack(spacing: 20) {
-			// Cancel Button
-			Button(action: {
-				// Revert to original values from userAuth.spawnUser
-				if let currentUser = userAuth.spawnUser {
-					username = currentUser.username ?? ""
-					name = currentUser.name ?? ""
-					selectedImage = nil
-
-					// Revert social media links
-					if let socialMedia = profileViewModel
-						.userSocialMedia
-					{
-						whatsappLink = socialMedia.whatsappLink ?? ""
-						instagramLink = socialMedia.instagramLink ?? ""
-					}
-				}
-
-				// Restore original interests
-				profileViewModel.restoreOriginalInterests()
-
-				editingState = .edit
-			}) {
-				Text("Cancel")
-					.font(.headline)
-					.foregroundColor(universalAccentColor)
-					.frame(maxWidth: 135)
-					.padding()
-					.background(
-						RoundedRectangle(
-							cornerRadius: universalRectangleCornerRadius
-						)
-						.stroke(universalAccentColor, lineWidth: 1)
-					)
+			.sheet(isPresented: $showReportDialog) {
+				reportUserDrawer
 			}
-
-			// Save Button
-			Button(action: {
-				Task {
-					await saveProfile()
-				}
-			}) {
-				Text("Save")
-					.font(.headline)
-					.foregroundColor(.white)
-					.frame(maxWidth: 135)
-					.padding()
-					.background(
-						RoundedRectangle(
-							cornerRadius: universalRectangleCornerRadius
-						)
-						.fill(profilePicPlusButtonColor)
-					)
+			.alert("Block User", isPresented: $showBlockDialog) {
+				blockUserAlert
 			}
-			.disabled(isImageLoading)
-		}
-	}
-
-	private func saveProfile() async {
-		// Check if there's a new profile picture
-		let hasNewProfilePicture = selectedImage != nil
-
-		// Set loading state immediately if there's an image
-		isImageLoading = hasNewProfilePicture
-
-		guard let userId = userAuth.spawnUser?.id else { return }
-
-		// Create a local copy of the selected image before starting async task
-		let imageToUpload = selectedImage
-
-		// Update profile info first
-		await userAuth.spawnEditProfile(
-			username: username,
-			name: name
-		)
-
-		// Update social media links
-		await profileViewModel.updateSocialMedia(
-			userId: userId,
-			whatsappLink: whatsappLink.isEmpty ? nil : whatsappLink,
-			instagramLink: instagramLink.isEmpty ? nil : instagramLink
-		)
-
-		// Small delay before processing image update to ensure the text updates are complete
-		try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
-
-		// Show notification if there's a profile picture change
-		if hasNewProfilePicture {
-			await MainActor.run {
-				notificationMessage =
-					"Sit tight –– your profile pic will update in just a minute..."
-				withAnimation {
-					showNotification = true
-				}
+			.sheet(isPresented: $showProfileMenu) {
+				profileMenuSheet
 			}
-		}
-
-		// Update profile picture if selected
-		if let newImage = imageToUpload {
-			await userAuth.updateProfilePicture(newImage)
-
-			// Small delay after image upload to ensure the server has processed it
-			try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 seconds
-		}
-
-		if let updatedUser = userAuth.spawnUser {
-			username = updatedUser.username ?? ""
-			name = updatedUser.name ?? ""
-		}
-
-		// Refresh profile data
-		await profileViewModel.loadAllProfileData(userId: userId)
-
-		// Invalidate the cached profile picture since we have a new one
-		if let userId = userAuth.spawnUser?.id {
-			await ProfilePictureCache.shared.removeCachedImage(for: userId)
-		}
-
-		// Update local state with the latest data from the user object
-		await MainActor.run {
-			// Clear the selected image to force the view to refresh from the server
-			selectedImage = nil
-			isImageLoading = false
-			editingState = .edit
-		}
-	}
-}
-
-// Extension for custom corner rounding
-extension View {
-	func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-		clipShape(RoundedCorner(radius: radius, corners: corners))
 	}
 }
 
 @available(iOS 17, *)
 #Preview {
-	ProfileView(user: BaseUserDTO.danielAgapov)
+	UserProfileView(user: BaseUserDTO.danielAgapov)
 }

@@ -290,9 +290,6 @@ class CacheCoordinator: ObservableObject {
 		Task {
 			await refreshAllProfilePictures()
 		}
-
-		let duration = Date().timeIntervalSince(startTime)
-		print("⏱️ [CACHE-COORDINATOR] Cache validation completed in \(String(format: "%.2f", duration))s")
 	}
 
 	/// Force refresh all profile pictures
@@ -301,8 +298,6 @@ class CacheCoordinator: ObservableObject {
 			print("❌ [CACHE-COORDINATOR] Cannot refresh profile pictures: No user ID available")
 			return
 		}
-
-		print("🔄 [CACHE-COORDINATOR] Starting profile picture refresh for all cached users")
 
 		var usersToRefresh: [(userId: UUID, profilePictureUrl: String?)] = []
 

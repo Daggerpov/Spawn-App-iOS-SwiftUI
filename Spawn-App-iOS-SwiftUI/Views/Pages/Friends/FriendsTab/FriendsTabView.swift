@@ -179,7 +179,7 @@ struct FriendsTabView: View {
 			}
 			.navigationDestination(isPresented: $navigateToProfile) {
 				if let friend = selectedFriend {
-					ProfileView(user: friend)
+					UserProfileView(user: friend)
 				}
 			}
 			.alert("Remove Friend", isPresented: $showRemoveFriendConfirmation) {
@@ -283,7 +283,7 @@ struct FriendsTabView: View {
 									// Profile picture
 									if MockAPIService.isMocking {
 										if let pfp = friend.profilePicture {
-											NavigationLink(destination: ProfileView(user: friend)) {
+											NavigationLink(destination: UserProfileView(user: friend)) {
 												Image(pfp)
 													.resizable()
 													.scaledToFill()
@@ -292,7 +292,7 @@ struct FriendsTabView: View {
 											}
 										}
 									} else {
-										NavigationLink(destination: ProfileView(user: friend)) {
+										NavigationLink(destination: UserProfileView(user: friend)) {
 											if let pfpUrl = friend.profilePicture {
 												CachedProfileImage(
 													userId: friend.id,
@@ -314,7 +314,7 @@ struct FriendsTabView: View {
 									}
 
 									// Friend info
-									NavigationLink(destination: ProfileView(user: friend)) {
+									NavigationLink(destination: UserProfileView(user: friend)) {
 										VStack(alignment: .leading, spacing: 4) {
 											Text(friend.name ?? friend.username ?? "User")
 												.font(.onestSemiBold(size: 14))
