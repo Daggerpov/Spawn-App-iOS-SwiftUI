@@ -54,8 +54,10 @@ struct ActivityListView: View {
 		.background(universalBackgroundColor)
 		.refreshable {
 			// Pull to refresh - user-initiated refresh
-			// Force refresh from API to get latest data
-			await viewModel.fetchAllData(forceRefresh: true)
+			// Use detached task to prevent cancellation when refresh gesture completes
+			await Task.detached {
+				await viewModel.fetchAllData(forceRefresh: true)
+			}.value
 		}
 	}
 
