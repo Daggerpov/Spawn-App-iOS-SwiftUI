@@ -102,10 +102,10 @@ struct FeedView: View {
 			}
 			.refreshable {
 				// Pull to refresh - user-initiated refresh
-				async let refreshCache: () = AppCache.shared.refreshActivities()
-				async let fetchData: () = viewModel.fetchAllData()
-
-				let _ = await (refreshCache, fetchData)
+				// Use detached task to prevent cancellation when refresh gesture completes
+				await Task.detached {
+					await viewModel.fetchAllData(forceRefresh: true)
+				}.value
 			}
 			.onChange(of: showingActivityDescriptionPopup) { _, isShowing in
 				if isShowing, let activity = activityInPopup, let color = colorInPopup {

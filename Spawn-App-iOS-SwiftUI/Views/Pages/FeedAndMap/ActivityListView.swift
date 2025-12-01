@@ -53,10 +53,11 @@ struct ActivityListView: View {
 		}
 		.background(universalBackgroundColor)
 		.refreshable {
-			Task {
-				await AppCache.shared.refreshActivities()
-				await viewModel.fetchAllData()
-			}
+			// Pull to refresh - user-initiated refresh
+			// Use detached task to prevent cancellation when refresh gesture completes
+			await Task.detached {
+				await viewModel.fetchAllData(forceRefresh: true)
+			}.value
 		}
 	}
 

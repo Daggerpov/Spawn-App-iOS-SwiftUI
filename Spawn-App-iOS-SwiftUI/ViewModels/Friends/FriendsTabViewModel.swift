@@ -322,9 +322,58 @@ class FriendsTabViewModel: ObservableObject {
 		}
 	}
 
-	func fetchAllData() async {
-		print("🔄 [VM] FriendsTabViewModel.fetchAllData started")
+	func fetchAllData(forceRefresh: Bool = false) async {
+		print("🔄 [VM] FriendsTabViewModel.fetchAllData started (forceRefresh: \(forceRefresh))")
 		let startTime = Date()
+
+		// If forceRefresh is true, always fetch from API using .apiOnly cache policy
+		if forceRefresh {
+			print("🔄 [VM] Force refresh requested - fetching from API")
+			await MainActor.run {
+				isLoading = true
+			}
+
+			// Create a task group to run these in parallel
+			await withTaskGroup(of: Void.self) { group in
+				group.addTask {
+					await self.fetchIncomingFriendRequests(forceRefresh: true)
+				}
+				group.addTask {
+					await self.fetchOutgoingFriendRequests(forceRefresh: true)
+				}
+				group.addTask {
+					await self.fetchRecommendedFriends(forceRefresh: true)
+				}
+				group.addTask {
+					await self.fetchFriends(forceRefresh: true)
+				}
+				group.addTask {
+					await self.fetchRecentlySpawnedWith()
+				}
+			}
+
+			// Initialize filtered lists with full lists after fetching
+			await MainActor.run {
+				self.filteredFriends = self.friends
+				self.filteredRecommendedFriends = self.recommendedFriends
+				self.filteredIncomingFriendRequests = self.incomingFriendRequests
+				self.filteredOutgoingFriendRequests = self.outgoingFriendRequests
+				self.isLoading = false
+			}
+
+			// Refresh profile pictures for all visible users in background (non-blocking)
+			Task.detached(priority: .background) {
+				await self.refreshProfilePictures()
+			}
+
+			let duration = Date().timeIntervalSince(startTime)
+			print("⏱️ [VM] fetchAllData (force refresh) completed in \(String(format: "%.2f", duration))s")
+			print("   Fetched: \(self.friends.count) friends, \(self.recommendedFriends.count) recommended")
+			print(
+				"   Requests: \(self.incomingFriendRequests.count) incoming, \(self.outgoingFriendRequests.count) outgoing"
+			)
+			return
+		}
 
 		// Check cache first - only show loading if we need to fetch from API
 		let cachedFriends = appCache.getCurrentUserFriends()
@@ -419,10 +468,14 @@ class FriendsTabViewModel: ObservableObject {
 		print("   Requests: \(incomingFriendRequests.count) incoming, \(outgoingFriendRequests.count) outgoing")
 	}
 
-	internal func fetchIncomingFriendRequests() async {
+	internal func fetchIncomingFriendRequests(forceRefresh: Bool = false) async {
+		// Use .apiOnly cache policy when forceRefresh is true to fetch fresh data from API
+		// DataService will still update the cache automatically after fetching
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
+
 		let result: DataResult<[FetchFriendRequestDTO]> = await dataService.read(
 			.friendRequests(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
@@ -448,10 +501,14 @@ class FriendsTabViewModel: ObservableObject {
 		}
 	}
 
-	internal func fetchOutgoingFriendRequests() async {
+	internal func fetchOutgoingFriendRequests(forceRefresh: Bool = false) async {
+		// Use .apiOnly cache policy when forceRefresh is true to fetch fresh data from API
+		// DataService will still update the cache automatically after fetching
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
+
 		let result: DataResult<[FetchSentFriendRequestDTO]> = await dataService.read(
 			.sentFriendRequests(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
@@ -477,10 +534,14 @@ class FriendsTabViewModel: ObservableObject {
 		}
 	}
 
-	internal func fetchRecommendedFriends() async {
+	internal func fetchRecommendedFriends(forceRefresh: Bool = false) async {
+		// Use .apiOnly cache policy when forceRefresh is true to fetch fresh data from API
+		// DataService will still update the cache automatically after fetching
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
+
 		let result: DataResult<[RecommendedFriendUserDTO]> = await dataService.read(
 			.recommendedFriends(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
@@ -496,10 +557,14 @@ class FriendsTabViewModel: ObservableObject {
 		}
 	}
 
-	func fetchFriends() async {
+	func fetchFriends(forceRefresh: Bool = false) async {
+		// Use .apiOnly cache policy when forceRefresh is true to fetch fresh data from API
+		// DataService will still update the cache automatically after fetching
+		let cachePolicy: CachePolicy = forceRefresh ? .apiOnly : .cacheFirst(backgroundRefresh: true)
+
 		let result: DataResult<[FullFriendUserDTO]> = await dataService.read(
 			.friends(userId: userId),
-			cachePolicy: .cacheFirst(backgroundRefresh: true)
+			cachePolicy: cachePolicy
 		)
 
 		switch result {
