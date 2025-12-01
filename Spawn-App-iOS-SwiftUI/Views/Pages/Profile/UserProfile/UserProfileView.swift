@@ -412,6 +412,7 @@ struct UserProfileView: View {
 				openSocialMediaLink: openSocialMediaLink,
 				removeInterest: { _ in }  // No-op for other users
 			)
+			.padding(.horizontal, 16)
 			.padding(.top, 20)
 			.padding(.bottom, 8)
 
