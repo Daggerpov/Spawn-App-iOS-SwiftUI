@@ -9,8 +9,7 @@ import SwiftUI
 struct SentFriendRequestItemView: View {
 	let friendRequest: FetchSentFriendRequestDTO
 	let onRemove: () -> Void
-	@State private var hasRemoved = false
-	@State private var isFadingOut = false
+	@State private var opacity: CGFloat = 1.0
 
 	var body: some View {
 		HStack(spacing: 12) {
@@ -60,48 +59,13 @@ struct SentFriendRequestItemView: View {
 
 			Spacer()
 
-			// Cancel button
-			Button(action: {
-				withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-					hasRemoved = true
-				}
-				Task {
-					// Add delay before fading out
-					try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 second
-					// Fade out animation
-					await MainActor.run {
-						withAnimation(.easeOut(duration: 0.3)) {
-							isFadingOut = true
-						}
-					}
-					// Wait for fade out to complete
-					try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
-					// Call onRemove to trigger the actual removal
-					onRemove()
-				}
-			}) {
-				HStack(spacing: 6) {
-					if hasRemoved {
-						Image(systemName: "checkmark")
-							.foregroundColor(figmaGreen)
-							.font(.system(size: 14, weight: .semibold))
-					}
-					Text("Cancel")
-						.font(.onestMedium(size: 14))
-						.foregroundColor(hasRemoved ? figmaGreen : figmaGray700)
-				}
-				.frame(width: 85, height: 34)
-				.background(
-					RoundedRectangle(cornerRadius: 8)
-						.fill(Color.clear)
-						.overlay(
-							RoundedRectangle(cornerRadius: 8)
-								.stroke(hasRemoved ? figmaGreen : figmaGray700, lineWidth: 1)
-						)
-				)
-			}
-			.disabled(hasRemoved)
+			// Cancel button with standardized animation
+			AnimatedActionButton(
+				style: .cancel,
+				parentOpacity: $opacity,
+				onAnimationComplete: onRemove
+			)
 		}
-		.opacity(isFadingOut ? 0 : 1)
+		.opacity(opacity)
 	}
 }

@@ -11,9 +11,7 @@ struct FriendRequestItemView: View {
 	let isIncoming: Bool
 	let onAccept: () -> Void
 	let onRemove: () -> Void
-	@State private var hasAccepted = false
-	@State private var hasRemoved = false
-	@State private var isFadingOut = false
+	@State private var opacity: CGFloat = 1.0
 
 	var body: some View {
 		HStack(spacing: 12) {
@@ -63,130 +61,29 @@ struct FriendRequestItemView: View {
 
 			Spacer()
 
-			// Action buttons
+			// Action buttons with standardized animation
 			HStack(spacing: 8) {
 				if isIncoming {
-					Button(action: {
-						withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-							hasAccepted = true
-						}
-						Task {
-							// Add delay before fading out
-							try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 second
-							// Fade out animation
-							await MainActor.run {
-								withAnimation(.easeOut(duration: 0.3)) {
-									isFadingOut = true
-								}
-							}
-							// Wait for fade out to complete
-							try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
-							// Call onAccept to trigger the actual acceptance
-							onAccept()
-						}
-					}) {
-						HStack(spacing: 6) {
-							if hasAccepted {
-								Image(systemName: "checkmark")
-									.foregroundColor(.white)
-									.font(.system(size: 14, weight: .semibold))
-							}
-							Text("Accept")
-								.font(.onestMedium(size: 14))
-								.foregroundColor(.white)
-						}
-						.frame(width: 79, height: 34)
-						.background(
-							RoundedRectangle(cornerRadius: 8)
-								.fill(hasAccepted ? Color(hex: colorsIndigo800) : universalSecondaryColor)
-						)
-					}
-					.disabled(hasAccepted)
+					AnimatedActionButton(
+						style: .accept,
+						parentOpacity: $opacity,
+						onAnimationComplete: onAccept
+					)
 
-					Button(action: {
-						withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-							hasRemoved = true
-						}
-						Task {
-							// Add delay before fading out
-							try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 second
-							// Fade out animation
-							await MainActor.run {
-								withAnimation(.easeOut(duration: 0.3)) {
-									isFadingOut = true
-								}
-							}
-							// Wait for fade out to complete
-							try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
-							// Call onRemove to trigger the actual removal
-							onRemove()
-						}
-					}) {
-						HStack(spacing: 6) {
-							if hasRemoved {
-								Image(systemName: "checkmark")
-									.foregroundColor(figmaGreen)
-									.font(.system(size: 14, weight: .semibold))
-							}
-							Text("Remove")
-								.font(.onestMedium(size: 14))
-								.foregroundColor(hasRemoved ? figmaGreen : figmaGray700)
-						}
-						.frame(width: 85, height: 34)
-						.background(
-							RoundedRectangle(cornerRadius: 8)
-								.fill(Color.clear)
-								.overlay(
-									RoundedRectangle(cornerRadius: 8)
-										.stroke(hasRemoved ? figmaGreen : figmaGray700, lineWidth: 1)
-								)
-						)
-					}
-					.disabled(hasRemoved)
+					AnimatedActionButton(
+						style: .remove,
+						parentOpacity: $opacity,
+						onAnimationComplete: onRemove
+					)
 				} else {
-					Button(action: {
-						withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-							hasRemoved = true
-						}
-						Task {
-							// Add delay before fading out
-							try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 second
-							// Fade out animation
-							await MainActor.run {
-								withAnimation(.easeOut(duration: 0.3)) {
-									isFadingOut = true
-								}
-							}
-							// Wait for fade out to complete
-							try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
-							// Call onRemove to trigger the actual removal
-							onRemove()
-						}
-					}) {
-						HStack(spacing: 6) {
-							if hasRemoved {
-								Image(systemName: "checkmark")
-									.foregroundColor(figmaGreen)
-									.font(.system(size: 14, weight: .semibold))
-							}
-							Text("Cancel")
-								.font(.onestMedium(size: 14))
-								.foregroundColor(hasRemoved ? figmaGreen : figmaGray700)
-						}
-						.frame(width: 85, height: 34)
-						.background(
-							RoundedRectangle(cornerRadius: 8)
-								.fill(Color.clear)
-								.overlay(
-									RoundedRectangle(cornerRadius: 8)
-										.stroke(hasRemoved ? figmaGreen : figmaGray700, lineWidth: 1)
-								)
-						)
-					}
-					.disabled(hasRemoved)
+					AnimatedActionButton(
+						style: .cancel,
+						parentOpacity: $opacity,
+						onAnimationComplete: onRemove
+					)
 				}
 			}
 		}
-		.opacity(isFadingOut ? 0 : 1)
+		.opacity(opacity)
 	}
 }

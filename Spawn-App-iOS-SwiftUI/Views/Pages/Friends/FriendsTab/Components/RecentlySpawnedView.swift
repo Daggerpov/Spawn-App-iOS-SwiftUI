@@ -9,8 +9,7 @@ import SwiftUI
 struct RecentlySpawnedView: View {
 	@ObservedObject var viewModel: FriendsTabViewModel
 	var recentUser: RecentlySpawnedUserDTO
-	@State private var isAdded: Bool = false
-	@State private var isFadingOut: Bool = false
+	@State private var opacity: CGFloat = 1.0
 	@Binding var selectedFriend: FullFriendUserDTO?
 	@Binding var showProfileMenu: Bool
 
@@ -78,59 +77,20 @@ struct RecentlySpawnedView: View {
 						.padding(8)
 				}
 			} else {
-				Button(action: {
-					withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-						isAdded = true
-					}
-					Task {
+				AnimatedActionButton(
+					style: .add,
+					delayBeforeFadeOut: 1_000_000_000,  // 1 second (matching original behavior)
+					parentOpacity: $opacity,
+					onImmediateAction: {
 						await viewModel.addFriend(friendUserId: recentUser.user.id)
-						// Add delay before fading out
-						try? await Task.sleep(nanoseconds: 1_000_000_000)  // 1 second
-						// Fade out animation
-						await MainActor.run {
-							withAnimation(.easeOut(duration: 0.3)) {
-								isFadingOut = true
-							}
-						}
-						// Wait for fade out to complete
-						try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
-						// Remove from list
-						await MainActor.run {
-							viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
-						}
+					},
+					onAnimationComplete: {
+						viewModel.removeFromRecentlySpawnedWith(userId: recentUser.user.id)
 					}
-				}) {
-					HStack(spacing: 6) {
-						if isAdded {
-							Image(systemName: "checkmark")
-								.font(.system(size: 14, weight: .bold))
-								.foregroundColor(.white)
-								.transition(.scale.combined(with: .opacity))
-						} else {
-							Text("Add +")
-								.font(.onestMedium(size: 14))
-								.transition(.scale.combined(with: .opacity))
-						}
-					}
-					.foregroundColor(isAdded ? .white : .gray)
-					.padding(12)
-					.background(
-						RoundedRectangle(cornerRadius: 8)
-							.fill(isAdded ? universalAccentColor : Color.clear)
-							.animation(.easeInOut(duration: 0.3), value: isAdded)
-					)
-					.overlay(
-						RoundedRectangle(cornerRadius: 8)
-							.stroke(isAdded ? universalAccentColor : .gray, lineWidth: 1)
-							.animation(.easeInOut(duration: 0.3), value: isAdded)
-					)
-					.frame(minHeight: 46, maxHeight: 46)
-				}
-				.buttonStyle(PlainButtonStyle())
-				.disabled(isAdded)
+				)
 			}
 		}
-		.opacity(isFadingOut ? 0 : 1)
-		.scaleEffect(isFadingOut ? 0.95 : 1.0)
+		.opacity(opacity)
+		.scaleEffect(opacity < 1 ? 0.95 : 1.0)
 	}
 }

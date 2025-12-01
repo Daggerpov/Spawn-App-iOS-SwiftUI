@@ -46,11 +46,6 @@ struct FriendRequestsView: View {
 				Task { await viewModel.fetchFriendRequests() }
 			}
 		}
-		.onReceive(NotificationCenter.default.publisher(for: .friendRequestsDidChange)) { _ in
-			if !isPreviewMode {
-				Task { await viewModel.fetchFriendRequests() }
-			}
-		}
 		.navigationDestination(isPresented: $navigateToAddToActivityType) {
 			if let friend = acceptedFriend {
 				AddToActivityTypeView(user: friend)
@@ -130,9 +125,8 @@ struct FriendRequestsView: View {
 				VStack(spacing: 0) {
 					HStack {
 						Text("Received")
-							.font(.title3)
-							.fontWeight(.semibold)
-							.foregroundColor(universalAccentColor)
+							.font(.onestMedium(size: 16))
+							.foregroundColor(universalPlaceHolderTextColor)
 						Spacer()
 					}
 					.padding(.bottom, 8)
@@ -178,8 +172,7 @@ struct FriendRequestsView: View {
 				VStack(spacing: 0) {
 					HStack {
 						Text("Sent")
-							.font(.title3)
-							.fontWeight(.semibold)
+							.font(.onestMedium(size: 16))
 							.foregroundColor(universalAccentColor)
 						Spacer()
 					}
