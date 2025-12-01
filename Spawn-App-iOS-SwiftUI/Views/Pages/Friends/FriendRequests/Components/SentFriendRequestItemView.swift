@@ -9,7 +9,7 @@ import SwiftUI
 struct SentFriendRequestItemView: View {
 	let friendRequest: FetchSentFriendRequestDTO
 	let onRemove: () -> Void
-	@State private var hasRemoved = false
+	@State private var opacity: CGFloat = 1.0
 
 	var body: some View {
 		HStack(spacing: 12) {
@@ -59,25 +59,13 @@ struct SentFriendRequestItemView: View {
 
 			Spacer()
 
-			// Cancel button
-			Button(action: {
-				hasRemoved = true
-				onRemove()
-			}) {
-				Text("Cancel")
-					.font(.onestMedium(size: 14))
-					.foregroundColor(figmaGray700)
-					.frame(width: 85, height: 34)
-					.background(
-						RoundedRectangle(cornerRadius: 8)
-							.fill(Color.clear)
-							.overlay(
-								RoundedRectangle(cornerRadius: 8)
-									.stroke(figmaGray700, lineWidth: 1)
-							)
-					)
-			}
-			.disabled(hasRemoved)
+			// Cancel button with standardized animation
+			AnimatedActionButton(
+				style: .cancel,
+				parentOpacity: $opacity,
+				onAnimationComplete: onRemove
+			)
 		}
+		.opacity(opacity)
 	}
 }

@@ -40,12 +40,20 @@ struct ProfileInterestsView: View {
 	}
 
 	private var interestsLoadingView: some View {
-		ZStack(alignment: .topLeading) {
-			// Background rectangle
+		VStack(spacing: 0) {
+			// Loading indicator
+			ProgressView()
+				.frame(maxWidth: .infinity, alignment: .center)
+				.padding(.horizontal, 16)
+				.padding(.top, 28)
+				.padding(.bottom, 16)
+		}
+		.background(
 			RoundedRectangle(cornerRadius: 15)
 				.stroke(figmaBittersweetOrange, lineWidth: 1)
 				.background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
-
+		)
+		.overlay(alignment: .topLeading) {
 			// Header positioned on the border
 			HStack {
 				Text("Interests + Hobbies")
@@ -65,13 +73,6 @@ struct ProfileInterestsView: View {
 						.offset(x: -16, y: -24)
 				}
 			}
-
-			// Loading indicator
-			ProgressView()
-				.frame(maxWidth: .infinity, alignment: .center)
-				.padding(.horizontal, 16)
-				.padding(.top, 28)
-				.padding(.bottom, 4)
 		}
 	}
 
@@ -114,12 +115,30 @@ struct ProfileInterestsView: View {
 	}
 
 	private var interestsContentView: some View {
-		ZStack(alignment: .topLeading) {
-			// Background rectangle
+		VStack(spacing: 0) {
+			// Content area with dynamic height
+			if profileViewModel.userInterests.isEmpty {
+				emptyInterestsView
+					.padding(.top, 28)
+			} else {
+				// Interests as chips with flexible layout
+				LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
+					ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
+						interestChip(interest: interest)
+					}
+				}
+				.padding(.horizontal, 16)
+				.padding(.top, 28)
+				.padding(.bottom, 16)
+				.animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
+			}
+		}
+		.background(
 			RoundedRectangle(cornerRadius: 15)
 				.stroke(figmaBittersweetOrange, lineWidth: 1)
 				.background(universalBackgroundColor.opacity(0.5).cornerRadius(15))
-
+		)
+		.overlay(alignment: .topLeading) {
 			// Header positioned on the border
 			HStack {
 				Text("Interests + Hobbies")
@@ -137,25 +156,6 @@ struct ProfileInterestsView: View {
 				if !profileViewModel.isLoadingSocialMedia {
 					socialMediaIcons
 						.offset(x: -16, y: -24)
-				}
-			}
-
-			// Content area with dynamic height
-			Group {
-				if profileViewModel.userInterests.isEmpty {
-					emptyInterestsView
-						.padding(.top, 28)
-				} else {
-					// Interests as chips with flexible layout
-					LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
-						ForEach(Array(profileViewModel.userInterests.enumerated()), id: \.offset) { index, interest in
-							interestChip(interest: interest)
-						}
-					}
-					.padding(.horizontal, 16)
-					.padding(.top, 28)
-					.padding(.bottom, 16)
-					.animation(.easeInOut(duration: 0.3), value: profileViewModel.userInterests)
 				}
 			}
 		}

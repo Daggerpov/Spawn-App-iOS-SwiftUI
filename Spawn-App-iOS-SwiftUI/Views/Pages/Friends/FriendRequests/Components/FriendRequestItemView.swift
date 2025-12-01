@@ -11,8 +11,7 @@ struct FriendRequestItemView: View {
 	let isIncoming: Bool
 	let onAccept: () -> Void
 	let onRemove: () -> Void
-	@State private var hasAccepted = false
-	@State private var hasRemoved = false
+	@State private var opacity: CGFloat = 1.0
 
 	var body: some View {
 		HStack(spacing: 12) {
@@ -62,63 +61,29 @@ struct FriendRequestItemView: View {
 
 			Spacer()
 
-			// Action buttons
+			// Action buttons with standardized animation
 			HStack(spacing: 8) {
 				if isIncoming {
-					Button(action: {
-						hasAccepted = true
-						onAccept()
-					}) {
-						Text("Accept")
-							.font(.onestMedium(size: 14))
-							.foregroundColor(.white)
-							.frame(width: 79, height: 34)
-							.background(
-								RoundedRectangle(cornerRadius: 8)
-									.fill(hasAccepted ? Color(hex: colorsIndigo800) : universalSecondaryColor)
-							)
-					}
-					.disabled(hasAccepted)
+					AnimatedActionButton(
+						style: .accept,
+						parentOpacity: $opacity,
+						onAnimationComplete: onAccept
+					)
 
-					Button(action: {
-						hasRemoved = true
-						onRemove()
-					}) {
-						Text("Remove")
-							.font(.onestMedium(size: 14))
-							.foregroundColor(figmaGray700)
-							.frame(width: 85, height: 34)
-							.background(
-								RoundedRectangle(cornerRadius: 8)
-									.fill(Color.clear)
-									.overlay(
-										RoundedRectangle(cornerRadius: 8)
-											.stroke(figmaGray700, lineWidth: 1)
-									)
-							)
-					}
-					.disabled(hasRemoved)
+					AnimatedActionButton(
+						style: .remove,
+						parentOpacity: $opacity,
+						onAnimationComplete: onRemove
+					)
 				} else {
-					Button(action: {
-						hasRemoved = true
-						onRemove()
-					}) {
-						Text("Cancel")
-							.font(.onestMedium(size: 14))
-							.foregroundColor(figmaGray700)
-							.frame(width: 85, height: 34)
-							.background(
-								RoundedRectangle(cornerRadius: 8)
-									.fill(Color.clear)
-									.overlay(
-										RoundedRectangle(cornerRadius: 8)
-											.stroke(figmaGray700, lineWidth: 1)
-									)
-							)
-					}
-					.disabled(hasRemoved)
+					AnimatedActionButton(
+						style: .cancel,
+						parentOpacity: $opacity,
+						onAnimationComplete: onRemove
+					)
 				}
 			}
 		}
+		.opacity(opacity)
 	}
 }
