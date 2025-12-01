@@ -36,11 +36,11 @@ Successfully completed a comprehensive DRY (Don't Repeat Yourself) refactoring o
 - `Views/Pages/AuthFlow/Components/OnboardingButtonView.swift` → Uses HapticFeedbackService
 
 #### Views Updated (7)
-- `Views/Pages/Profile/MyReportsView.swift`
+- `Views/Pages/Profile/Settings/MyReportsView.swift`
 - `Views/Pages/Profile/DayActivities/DayActivitiesPageView.swift`
 - `Views/Pages/FeedAndMap/ActivityListView.swift`
 - `Views/Pages/Activities/ActivityCreation/Steps/ActivityTypeSelection/ActivityTypeView.swift`
-- `Views/Pages/Profile/BlockedUsersView.swift`
+- `Views/Pages/Profile/Settings/BlockedUsersView.swift`
 - `Views/Pages/AuthFlow/Greeting/SpawnIntroView.swift`
 - Plus many more through wrapper components
 

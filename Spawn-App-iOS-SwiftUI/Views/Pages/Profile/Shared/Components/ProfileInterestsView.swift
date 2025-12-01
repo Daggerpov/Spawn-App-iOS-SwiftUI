@@ -36,7 +36,6 @@ struct ProfileInterestsView: View {
 				}
 			}
 		}
-		.padding(.horizontal)
 	}
 
 	private var interestsLoadingView: some View {

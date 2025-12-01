@@ -274,6 +274,7 @@ struct MyProfileView: View {
 				openSocialMediaLink: openSocialMediaLink,
 				removeInterest: removeInterest
 			)
+			.padding(.horizontal, 16)
 			.padding(.top, 20)
 			.padding(.bottom, 8)
 
