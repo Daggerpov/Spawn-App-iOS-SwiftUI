@@ -213,13 +213,23 @@ class FeedViewModel: ObservableObject {
 		}
 	}
 
-	func fetchAllData() async {
+	func fetchAllData(forceRefresh: Bool = false) async {
 		// Fetch activities and activity types in parallel for faster loading
-		async let activities: () = fetchActivitiesForUser()
-		async let activityTypes: () = activityTypeViewModel.fetchActivityTypes()
+		if forceRefresh {
+			// Force refresh from API
+			async let activities: () = fetchActivitiesFromAPI()
+			async let activityTypes: () = activityTypeViewModel.fetchActivityTypes(forceRefresh: true)
 
-		// Wait for both to complete
-		let _ = await (activities, activityTypes)
+			// Wait for both to complete
+			let _ = await (activities, activityTypes)
+		} else {
+			// Use cache-first strategy
+			async let activities: () = fetchActivitiesForUser()
+			async let activityTypes: () = activityTypeViewModel.fetchActivityTypes()
+
+			// Wait for both to complete
+			let _ = await (activities, activityTypes)
+		}
 	}
 
 	func fetchActivitiesForUser() async {

@@ -102,10 +102,8 @@ struct FeedView: View {
 			}
 			.refreshable {
 				// Pull to refresh - user-initiated refresh
-				async let refreshCache: () = AppCache.shared.refreshActivities()
-				async let fetchData: () = viewModel.fetchAllData()
-
-				let _ = await (refreshCache, fetchData)
+				// Force refresh from API to get latest data
+				await viewModel.fetchAllData(forceRefresh: true)
 			}
 			.onChange(of: showingActivityDescriptionPopup) { _, isShowing in
 				if isShowing, let activity = activityInPopup, let color = colorInPopup {

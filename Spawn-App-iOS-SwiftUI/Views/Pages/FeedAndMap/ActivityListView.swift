@@ -53,10 +53,9 @@ struct ActivityListView: View {
 		}
 		.background(universalBackgroundColor)
 		.refreshable {
-			Task {
-				await AppCache.shared.refreshActivities()
-				await viewModel.fetchAllData()
-			}
+			// Pull to refresh - user-initiated refresh
+			// Force refresh from API to get latest data
+			await viewModel.fetchAllData(forceRefresh: true)
 		}
 	}
 
