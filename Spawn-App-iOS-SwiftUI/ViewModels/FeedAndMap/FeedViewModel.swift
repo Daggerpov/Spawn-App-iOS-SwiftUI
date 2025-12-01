@@ -216,14 +216,15 @@ class FeedViewModel: ObservableObject {
 	func fetchAllData(forceRefresh: Bool = false) async {
 		// Fetch activities and activity types in parallel for faster loading
 		if forceRefresh {
-			// Force refresh from API
+			// Force refresh from API using .apiOnly cache policy
+			// DataService will still update the cache automatically after fetching
 			async let activities: () = fetchActivitiesFromAPI()
 			async let activityTypes: () = activityTypeViewModel.fetchActivityTypes(forceRefresh: true)
 
 			// Wait for both to complete
 			let _ = await (activities, activityTypes)
 		} else {
-			// Use cache-first strategy
+			// Use cache-first strategy for normal navigation
 			async let activities: () = fetchActivitiesForUser()
 			async let activityTypes: () = activityTypeViewModel.fetchActivityTypes()
 
@@ -266,7 +267,8 @@ class FeedViewModel: ObservableObject {
 			return
 		}
 
-		// Use DataService with API-only policy to force refresh
+		// Use .apiOnly cache policy to fetch fresh data from API
+		// DataService will still update the cache automatically after fetching
 		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
 			.activities(userId: userId),
 			cachePolicy: .apiOnly

@@ -123,9 +123,8 @@ struct FriendsTabView: View {
 			}
 			.refreshable {
 				// Pull to refresh functionality - user-initiated refresh
-				await AppCache.shared.refreshFriends()
-				await AppCache.shared.forceRefreshAllFriendRequests()
-				await viewModel.fetchAllData()
+				// Use forceRefresh to bypass cache and fetch fresh data from API
+				await viewModel.fetchAllData(forceRefresh: true)
 			}
 			.sheet(isPresented: $showProfileMenu) {
 				if let selectedFriend = selectedFriend {
