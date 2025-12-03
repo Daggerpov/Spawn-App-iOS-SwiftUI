@@ -23,7 +23,8 @@ struct SpawnIntroButtonView: View {
 			impactGenerator.impactOccurred()
 
 			// Execute action with slight delay for animation
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+			Task { @MainActor in
+				try? await Task.sleep(for: .seconds(0.1))
 				action()
 			}
 		}) {

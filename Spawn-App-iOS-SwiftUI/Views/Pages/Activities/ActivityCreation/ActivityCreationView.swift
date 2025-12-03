@@ -283,10 +283,9 @@ struct ActivityCreationView: View {
 
 					print("🔍 DEBUG: About to transition to location step")
 					// Ensure we're in a safe state before transitioning
-					DispatchQueue.main.async {
-						print("🔍 DEBUG: Setting currentStep to .location")
-						currentStep = .location
-						print("🔍 DEBUG: currentStep set to .location")
+					print("🔍 DEBUG: Setting currentStep to .location")
+					currentStep = .location
+					print("🔍 DEBUG: currentStep set to .location"
 					}
 				},
 				onBack: {
@@ -328,10 +327,8 @@ struct ActivityCreationView: View {
 					// Update activity type to ensure the correct icon is set before showing preview
 					viewModel.updateActivityType()
 
-					// Ensure we're in a safe state before transitioning
-					DispatchQueue.main.async {
-						currentStep = .preConfirmation
-					}
+					// Ensure we're in a safe state before transitioning - SwiftUI views are already on MainActor
+					currentStep = .preConfirmation
 				},
 				onBack: {
 					// Update location selection step state

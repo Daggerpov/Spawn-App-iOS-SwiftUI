@@ -9,6 +9,7 @@ import Combine
 import Foundation
 import SwiftUI
 
+@MainActor
 class FriendsTabViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
 	@Published var outgoingFriendRequests: [FetchSentFriendRequestDTO] = []
@@ -811,14 +812,12 @@ class FriendsTabViewModel: ObservableObject {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show notification toast
-			DispatchQueue.main.async {
-				InAppNotificationManager.shared.showNotification(
-					title: "Link copied to clipboard",
-					message: "Profile link has been copied to your clipboard",
-					type: .success,
-					duration: 5.0
-				)
-			}
+			InAppNotificationManager.shared.showNotification(
+				title: "Link copied to clipboard",
+				message: "Profile link has been copied to your clipboard",
+				type: .success,
+				duration: 5.0
+			)
 		}
 	}
 

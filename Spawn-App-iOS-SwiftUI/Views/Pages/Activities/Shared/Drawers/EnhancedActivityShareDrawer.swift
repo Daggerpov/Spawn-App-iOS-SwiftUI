@@ -127,7 +127,8 @@ struct EnhancedActivityShareDrawer: View {
 						let impactGenerator = UIImpactFeedbackGenerator(style: .light)
 						impactGenerator.impactOccurred()
 						shareViaLink()
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							dismiss()
 						}
 					}) {
@@ -295,7 +296,8 @@ struct EnhancedActivityShareDrawer: View {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show success notification
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+			Task { @MainActor in
+				try? await Task.sleep(for: .seconds(0.2))
 				InAppNotificationManager.shared.showNotification(
 					title: "Link copied to clipboard",
 					message: "Activity link has been copied to your clipboard",

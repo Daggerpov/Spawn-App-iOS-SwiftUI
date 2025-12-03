@@ -43,14 +43,14 @@ struct OnboardingContinuationView: View {
 					impactGenerator.impactOccurred()
 
 					// Add a small delay to prevent rapid taps
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.1))
 						// Navigation is now handled directly, no need for continuation popup
 						userAuth.navigateOnStatus()
 
 						// Reset processing state after a delay
-						DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-							isProcessing = false
-						}
+						try? await Task.sleep(for: .seconds(1.0))
+						isProcessing = false
 					}
 				}) {
 					OnboardingButtonCoreView("Continue")
@@ -67,14 +67,14 @@ struct OnboardingContinuationView: View {
 					impactGenerator.impactOccurred()
 
 					// Add a small delay to prevent rapid taps
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.1))
 						userAuth.resetAuthFlow()
 						userAuth.navigateTo(.signIn)
 
 						// Reset processing state after a delay
-						DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-							isProcessing = false
-						}
+						try? await Task.sleep(for: .seconds(1.0))
+						isProcessing = false
 					}
 				}) {
 					Text("Return to Login")

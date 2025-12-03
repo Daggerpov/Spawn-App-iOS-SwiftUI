@@ -55,7 +55,8 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
 				print("DEBUG: Updated parent.selectedEmoji to: \(self.parent.selectedEmoji)")
 
 				// Dismiss only the emoji picker sheet, not the parent
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.1))
 					print("DEBUG: Dismissing emoji picker sheet only")
 					self.parent.isPresented = false
 				}

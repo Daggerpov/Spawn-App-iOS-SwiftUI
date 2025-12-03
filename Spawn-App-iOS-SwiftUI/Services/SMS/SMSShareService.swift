@@ -9,6 +9,7 @@ import Foundation
 import MessageUI
 import SwiftUI
 
+@MainActor
 class SMSShareService: NSObject, ObservableObject {
 	static let shared = SMSShareService()
 
@@ -32,7 +33,7 @@ class SMSShareService: NSObject, ObservableObject {
 
 		// Generate the share URL first
 		ServiceConstants.generateActivityShareCodeURL(for: activity.id) { [weak self] url in
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				let shareURL = url ?? ServiceConstants.generateActivityShareURL(for: activity.id)
 				let message = self?.generateActivitySMSMessage(activity: activity, shareURL: shareURL) ?? ""
 
@@ -158,7 +159,8 @@ extension SMSShareService: MFMessageComposeViewControllerDelegate {
 				print("📱 SMS sharing cancelled")
 			case .sent:
 				// Show success notification
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.5))
 					InAppNotificationManager.shared.showNotification(
 						title: "Invitation sent!",
 						message: "Your activity invitation has been sent via SMS",
@@ -169,7 +171,8 @@ extension SMSShareService: MFMessageComposeViewControllerDelegate {
 			case .failed:
 				print("❌ SMS sending failed")
 				// Show error notification
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.5))
 					InAppNotificationManager.shared.showNotification(
 						title: "Message failed",
 						message: "Failed to send SMS invitation. Please try again.",

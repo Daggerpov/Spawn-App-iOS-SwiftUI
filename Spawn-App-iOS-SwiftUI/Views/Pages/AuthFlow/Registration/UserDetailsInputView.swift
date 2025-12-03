@@ -204,9 +204,9 @@ struct UserDetailsInputView: View {
 						impactGenerator.impactOccurred()
 
 						// Execute action with slight delay for animation
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-							Task {
-								if isOAuthUser {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
+							if isOAuthUser {
 									// For OAuth users who don't exist yet, register them first
 									if viewModel.spawnUser == nil {
 										// First create the OAuth user with EMAIL_VERIFIED status

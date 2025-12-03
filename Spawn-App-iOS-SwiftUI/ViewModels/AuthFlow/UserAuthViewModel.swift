@@ -11,6 +11,7 @@ import GoogleSignIn
 import SwiftUI
 import UIKit
 
+@MainActor
 class UserAuthViewModel: NSObject, ObservableObject {
 	static let shared: UserAuthViewModel = UserAuthViewModel(
 		apiService: MockAPIService.isMocking ? MockAPIService() : APIService())  // Singleton instance
@@ -132,20 +133,19 @@ class UserAuthViewModel: NSObject, ObservableObject {
 			return
 		}
 
-		Task { @MainActor in
+		Task {
 			self.isNavigating = true
 
 			// Small delay to ensure UI state is settled
 			if delay > 0 {
-				try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+				try? await Task.sleep(for: .seconds(delay))
 			}
 
 			self.navigationState = state
 
 			// Reset the navigation lock after a short delay
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-				self?.isNavigating = false
-			}
+			try? await Task.sleep(for: .seconds(0.5))
+			self.isNavigating = false
 		}
 	}
 

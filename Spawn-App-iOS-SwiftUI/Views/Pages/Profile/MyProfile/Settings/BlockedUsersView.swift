@@ -126,10 +126,10 @@ struct BlockedUsersView: View {
 				.shadow(radius: 5)
 				.padding()
 				.transition(.move(edge: .top))
-				.onAppear {
-					DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-						withAnimation {
-							showNotification = false
+				.task {
+					try? await Task.sleep(for: .seconds(3))
+					withAnimation {
+						showNotification = false
 						}
 					}
 				}

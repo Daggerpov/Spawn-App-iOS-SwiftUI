@@ -236,8 +236,6 @@ class ActivityTypeViewModel: ObservableObject {
 	/// Updates an existing activity type via DataService
 	@MainActor
 	func updateActivityType(_ activityTypeDTO: ActivityTypeDTO) async {
-		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
-
 		setLoadingState(true)
 
 		defer { setLoadingState(false) }

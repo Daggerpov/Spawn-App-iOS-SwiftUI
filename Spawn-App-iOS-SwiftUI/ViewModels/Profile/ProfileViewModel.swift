@@ -303,7 +303,6 @@ class ProfileViewModel: ObservableObject {
 		}
 
 		print("📡 Calendar: Fetching activities for user \(userId)")
-		print("📡 Calendar: API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
 		// Check authentication status
 		if !MockAPIService.isMocking {
@@ -375,7 +374,6 @@ class ProfileViewModel: ObservableObject {
 		}
 
 		print("🔄 ProfileViewModel: Fetching all calendar activities for friend: \(friendUserId)")
-		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
 		// Use centralized DataType configuration
 		let result: DataResult<[CalendarActivityDTO]> = await dataService.read(
@@ -419,7 +417,6 @@ class ProfileViewModel: ObservableObject {
 		}
 
 		print("🔄 ProfileViewModel: Fetching calendar activities for friend: \(friendUserId)")
-		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 		print("📅 Month: \(month), Year: \(year)")
 
 		// Use centralized DataType configuration
@@ -697,7 +694,6 @@ class ProfileViewModel: ObservableObject {
 		}
 
 		print("🔄 ProfileViewModel: Fetching activity details for activity: \(activityId)")
-		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
 		await MainActor.run { self.isLoadingActivity = true }
 
@@ -960,7 +956,6 @@ class ProfileViewModel: ObservableObject {
 	// New method to fetch profile activities (both upcoming and past)
 	func fetchProfileActivities(profileUserId: UUID) async {
 		print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
-		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
 
 		let result: DataResult<[ProfileActivityDTO]> = await dataService.read(
 			.profileActivities(userId: profileUserId),

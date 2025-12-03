@@ -200,15 +200,11 @@ struct ProfileCalendarView: View {
 			}
 		} else if activities.count > 1 {
 			// Multiple activities - set selected activities and navigate directly to day activities view
-			DispatchQueue.main.async {
-				self.selectedDayActivities = activities
-				self.navigateToDayActivities = true
-			}
+			selectedDayActivities = activities
+			navigateToDayActivities = true
 		} else {
 			// No activities - navigate to full calendar view (preserve existing behavior for empty days)
-			DispatchQueue.main.async {
-				self.navigateToCalendar = true
-			}
+			navigateToCalendar = true
 		}
 	}
 

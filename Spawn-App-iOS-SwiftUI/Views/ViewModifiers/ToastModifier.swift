@@ -24,10 +24,10 @@ struct ToastModifier: ViewModifier {
 					}
 					.padding(.top, 30)
 					.transition(.move(edge: .top).combined(with: .opacity))
-					.onAppear {
-						DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-							withAnimation {
-								isShowing = false
+					.task {
+						try? await Task.sleep(for: .seconds(duration))
+						withAnimation {
+							isShowing = false
 							}
 						}
 					}

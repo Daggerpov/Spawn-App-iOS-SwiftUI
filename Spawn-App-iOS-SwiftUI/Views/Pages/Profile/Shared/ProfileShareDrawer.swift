@@ -107,7 +107,8 @@ struct ProfileShareDrawer: View {
 							impactGenerator.impactOccurred()
 							shareViaLink()
 							// Delay dismissing the sheet to allow notification to show
-							DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+							Task { @MainActor in
+								try? await Task.sleep(for: .seconds(0.1))
 								showShareSheet = false
 							}
 						}) {
@@ -241,7 +242,8 @@ struct ProfileShareDrawer: View {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show success notification
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+			Task { @MainActor in
+				try? await Task.sleep(for: .seconds(0.2))
 				InAppNotificationManager.shared.showNotification(
 					title: "Link copied to clipboard",
 					message: "Profile link has been copied to your clipboard",

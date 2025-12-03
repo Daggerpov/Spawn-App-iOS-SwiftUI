@@ -54,13 +54,11 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 	// Register for push notifications
 	func registerForPushNotifications() {
 		// Request permission first
-		Task {
+		Task { @MainActor in
 			let granted = await requestPermission()
 			if granted {
 				// Register for remote notifications on main thread
-				DispatchQueue.main.async {
-					UIApplication.shared.registerForRemoteNotifications()
-				}
+				UIApplication.shared.registerForRemoteNotifications()
 			}
 		}
 	}
@@ -90,10 +88,9 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 
 	// Check if notifications are enabled
 	func checkNotificationStatus() {
-		UNUserNotificationCenter.current().getNotificationSettings { [weak self] settings in
-			DispatchQueue.main.async {
-				self?.isNotificationsEnabled = settings.authorizationStatus == .authorized
-			}
+		Task { @MainActor in
+			let settings = await UNUserNotificationCenter.current().notificationSettings()
+			isNotificationsEnabled = settings.authorizationStatus == .authorized
 		}
 	}
 
@@ -103,8 +100,8 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 			let granted = try await UNUserNotificationCenter.current().requestAuthorization(
 				options: [.alert, .badge, .sound]
 			)
-			DispatchQueue.main.async { [weak self] in
-				self?.isNotificationsEnabled = granted
+			await MainActor.run {
+				isNotificationsEnabled = granted
 			}
 			return granted
 		} catch {
