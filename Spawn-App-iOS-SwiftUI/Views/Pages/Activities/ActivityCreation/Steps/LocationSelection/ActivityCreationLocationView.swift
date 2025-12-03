@@ -243,101 +243,11 @@ struct ActivityCreationLocationView: View {
 			}
 
 			// Top-right controls: 3D toggle and recenter buttons
-			VStack {
-				HStack {
-					Spacer()
-					VStack(spacing: 0) {
-						// 3D mode toggle (works on iOS 9+ with MapKit camera)
-						Button(action: {
-							let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-							impactGenerator.impactOccurred()
-							withAnimation(.easeInOut(duration: 0.3)) {
-								is3DMode.toggle()
-							}
-						}) {
-							Text("3D")
-								.font(.system(size: 16, weight: .semibold))
-								.foregroundColor(universalAccentColor)
-								.frame(width: 44, height: 44)
-								.background(universalBackgroundColor)
-								.clipShape(
-									UnevenRoundedRectangle(
-										topLeadingRadius: 10,
-										bottomLeadingRadius: 0,
-										bottomTrailingRadius: 0,
-										topTrailingRadius: 10
-									)
-								)
-						}
-						.buttonStyle(PlainButtonStyle())
-
-						// Recenter to user location
-						Button(action: {
-							let impactGenerator = UIImpactFeedbackGenerator(
-								style: .medium
-							)
-							impactGenerator.impactOccurred()
-
-							if let userLocation = locationManager.userLocation {
-								// Validate user location before using it
-								guard
-									CLLocationCoordinate2DIsValid(userLocation) && userLocation.latitude.isFinite
-										&& userLocation.longitude.isFinite && !userLocation.latitude.isNaN
-										&& !userLocation.longitude.isNaN
-								else {
-									print(
-										"⚠️ ActivityCreationLocationView: Invalid user location for recenter - \(userLocation)"
-									)
-									return
-								}
-
-								let newRegion = MKCoordinateRegion(
-									center: userLocation,
-									span: MKCoordinateSpan(
-										latitudeDelta: 0.01,
-										longitudeDelta: 0.01
-									)
-								)
-
-								// Validate the new region
-								guard
-									CLLocationCoordinate2DIsValid(newRegion.center) && newRegion.span.latitudeDelta > 0
-										&& newRegion.span.longitudeDelta > 0 && newRegion.span.latitudeDelta.isFinite
-										&& newRegion.span.longitudeDelta.isFinite
-								else {
-									print(
-										"⚠️ ActivityCreationLocationView: Invalid region for recenter"
-									)
-									return
-								}
-
-								withAnimation(.easeInOut(duration: 0.75)) {
-									region = newRegion
-								}
-							}
-						}) {
-							Image(systemName: "location.fill")
-								.font(.system(size: 20))
-								.foregroundColor(universalAccentColor)
-								.frame(width: 44, height: 44)
-								.background(universalBackgroundColor)
-								.clipShape(
-									UnevenRoundedRectangle(
-										topLeadingRadius: 0,
-										bottomLeadingRadius: 10,
-										bottomTrailingRadius: 10,
-										topTrailingRadius: 0
-									)
-								)
-						}
-						.buttonStyle(PlainButtonStyle())
-					}
-					.shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
-					.padding(.trailing, 16)
-				}
-				.padding(.top, 24)
-				Spacer()
-			}
+			MapControlButtons(
+				is3DMode: $is3DMode,
+				region: $region,
+				locationManager: locationManager
+			)
 
 			// Bottom sheet
 			VStack {

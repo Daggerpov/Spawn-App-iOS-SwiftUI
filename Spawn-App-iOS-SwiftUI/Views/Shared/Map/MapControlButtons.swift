@@ -18,8 +18,7 @@ struct MapControlButtons: View {
 	@ObservedObject var locationManager: LocationManager
 
 	// MARK: - State
-	@State private var is3DPressed = false
-	@State private var isLocationPressed = false
+	// State variables removed - using simpler button styling without press animations
 
 	// MARK: - Body
 
@@ -27,72 +26,55 @@ struct MapControlButtons: View {
 		VStack {
 			HStack {
 				Spacer()
-
-				VStack(spacing: 12) {
-					// 3D Toggle Button
-					Button {
+				VStack(spacing: 0) {
+					// 3D mode toggle
+					Button(action: {
 						handleToggle3D()
-					} label: {
-						Image(systemName: is3DMode ? "view.3d" : "view.2d")
-							.font(.system(size: 18, weight: .medium))
+					}) {
+						Text("3D")
+							.font(.system(size: 16, weight: .semibold))
 							.foregroundColor(universalAccentColor)
 							.frame(width: 44, height: 44)
 							.background(universalBackgroundColor)
-							.clipShape(Circle())
-							.shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
-							.scaleEffect(is3DPressed ? 0.9 : 1.0)
+							.clipShape(
+								UnevenRoundedRectangle(
+									topLeadingRadius: 10,
+									bottomLeadingRadius: 0,
+									bottomTrailingRadius: 0,
+									topTrailingRadius: 10
+								)
+							)
 					}
-					.buttonStyle(.plain)
-					.simultaneousGesture(
-						DragGesture(minimumDistance: 0)
-							.onChanged { _ in
-								if !is3DPressed {
-									is3DPressed = true
-									hapticFeedback(.light)
-								}
-							}
-							.onEnded { _ in
-								is3DPressed = false
-							}
-					)
+					.buttonStyle(PlainButtonStyle())
 
-					// Location Center Button
-					Button {
+					// Recenter to user location
+					Button(action: {
 						handleCenterOnUser()
-					} label: {
+					}) {
 						Image(systemName: "location.fill")
-							.font(.system(size: 18, weight: .medium))
+							.font(.system(size: 20))
 							.foregroundColor(universalAccentColor)
 							.frame(width: 44, height: 44)
 							.background(universalBackgroundColor)
-							.clipShape(Circle())
-							.shadow(color: Color.black.opacity(0.15), radius: 4, x: 0, y: 2)
-							.scaleEffect(isLocationPressed ? 0.9 : 1.0)
+							.clipShape(
+								UnevenRoundedRectangle(
+									topLeadingRadius: 0,
+									bottomLeadingRadius: 10,
+									bottomTrailingRadius: 10,
+									topTrailingRadius: 0
+								)
+							)
 					}
-					.buttonStyle(.plain)
+					.buttonStyle(PlainButtonStyle())
 					.disabled(locationManager.userLocation == nil)
 					.opacity(locationManager.userLocation == nil ? 0.5 : 1.0)
-					.simultaneousGesture(
-						DragGesture(minimumDistance: 0)
-							.onChanged { _ in
-								if !isLocationPressed && locationManager.userLocation != nil {
-									isLocationPressed = true
-									hapticFeedback(.light)
-								}
-							}
-							.onEnded { _ in
-								isLocationPressed = false
-							}
-					)
 				}
+				.shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 2)
 				.padding(.trailing, 16)
 			}
-			.padding(.top, 16)
-
+			.padding(.top, 24)
 			Spacer()
 		}
-		.animation(.easeInOut(duration: 0.2), value: is3DPressed)
-		.animation(.easeInOut(duration: 0.2), value: isLocationPressed)
 	}
 
 	// MARK: - Actions
@@ -109,12 +91,37 @@ struct MapControlButtons: View {
 			return
 		}
 
+		// Validate user location before using it
+		guard
+			CLLocationCoordinate2DIsValid(userLocation) && userLocation.latitude.isFinite
+				&& userLocation.longitude.isFinite && !userLocation.latitude.isNaN
+				&& !userLocation.longitude.isNaN
+		else {
+			print("⚠️ MapControlButtons: Invalid user location for recenter - \(userLocation)")
+			return
+		}
+
+		let newRegion = MKCoordinateRegion(
+			center: userLocation,
+			span: MKCoordinateSpan(
+				latitudeDelta: 0.01,
+				longitudeDelta: 0.01
+			)
+		)
+
+		// Validate the new region
+		guard
+			CLLocationCoordinate2DIsValid(newRegion.center) && newRegion.span.latitudeDelta > 0
+				&& newRegion.span.longitudeDelta > 0 && newRegion.span.latitudeDelta.isFinite
+				&& newRegion.span.longitudeDelta.isFinite
+		else {
+			print("⚠️ MapControlButtons: Invalid region for recenter")
+			return
+		}
+
 		hapticFeedback(.medium)
 		withAnimation(.easeInOut(duration: 0.75)) {
-			region = MKCoordinateRegion(
-				center: userLocation,
-				span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-			)
+			region = newRegion
 		}
 	}
 
