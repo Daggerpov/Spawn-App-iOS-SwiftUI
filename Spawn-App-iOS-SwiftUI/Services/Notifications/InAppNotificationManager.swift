@@ -16,6 +16,9 @@ class InAppNotificationManager: ObservableObject {
 	///   - message: The notification message
 	///   - type: The notification type
 	///   - duration: How long to show the notification (default: 4 seconds)
+	/// Track the current auto-dismiss task
+	private var dismissTask: Task<Void, Never>?
+
 	func showNotification(
 		title: String,
 		message: String,
@@ -24,9 +27,9 @@ class InAppNotificationManager: ObservableObject {
 	) {
 		print("📱 [InAppNotificationManager] Showing notification: \(title) - Duration: \(duration)s")
 
-		// Cancel any existing dismiss work
-		dismissWorkItem?.cancel()
-		dismissWorkItem = nil
+		// Cancel any existing dismiss task
+		dismissTask?.cancel()
+		dismissTask = nil
 
 		// Set new notification data immediately
 		currentNotification = InAppNotificationData(
@@ -43,8 +46,9 @@ class InAppNotificationManager: ObservableObject {
 		print("📱 [InAppNotificationManager] Notification shown, will dismiss in \(duration)s")
 
 		// Auto-dismiss after duration using Task
-		Task { [weak self] in
+		dismissTask = Task { [weak self] in
 			try? await Task.sleep(for: .seconds(duration))
+			guard !Task.isCancelled else { return }
 			print("📱 [InAppNotificationManager] Auto-dismissing notification")
 			self?.dismissNotification()
 		}

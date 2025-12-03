@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 
 /// Cache service for profile-related data
+@MainActor
 class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 	static let shared = ProfileCacheService()
 
@@ -34,9 +35,9 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 	private override init() {
 		super.init()
 
-		// Load from disk in the background
-		diskQueue.async { [weak self] in
-			self?.loadFromDisk()
+		// Load from disk in the background, then update on main actor
+		Task.detached { [weak self] in
+			await self?.loadFromDiskAsync()
 		}
 	}
 
@@ -75,9 +76,7 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 				guard let url = URL(string: APIService.baseURL + "users/\(userId)") else { continue }
 				let fetchedProfile: BaseUserDTO = try await apiService.fetchData(from: url, parameters: nil)
 
-				await MainActor.run {
-					otherProfiles[userId] = fetchedProfile
-				}
+				otherProfiles[userId] = fetchedProfile
 			} catch let error as APIError {
 				// If user not found (404), mark for removal from cache
 				if case .invalidStatusCode(let statusCode) = error, statusCode == 404 {
@@ -95,13 +94,11 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 			otherProfiles.removeValue(forKey: userId)
 		}
 
-		await MainActor.run {
-			// Update timestamp for current user
-			if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
-				setLastCheckedForUser(currentUserId, cacheType: CacheKeys.otherProfiles, date: Date())
-			}
-			saveToDisk()
+		// Update timestamp for current user
+		if let currentUserId = UserAuthViewModel.shared.spawnUser?.id {
+			setLastCheckedForUser(currentUserId, cacheType: CacheKeys.otherProfiles, date: Date())
 		}
+		saveToDisk()
 	}
 
 	// MARK: - Profile Stats Methods
@@ -120,7 +117,8 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	/// Refresh profile stats from the backend
 	func refreshProfileStats(_ userId: UUID) async {
-		await genericSingleRefresh(endpoint: "users/\(userId)/stats") { (stats: UserStatsDTO) in
+		await genericSingleRefresh(endpoint: "users/\(userId)/stats") { [weak self] (stats: UserStatsDTO) in
+			guard let self = self else { return }
 			self.updateProfileStats(userId, stats)
 		}
 	}
@@ -141,7 +139,8 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	/// Refresh profile interests from the backend
 	func refreshProfileInterests(_ userId: UUID) async {
-		await genericRefresh(endpoint: "users/\(userId)/interests") { (interests: [String]) in
+		await genericRefresh(endpoint: "users/\(userId)/interests") { [weak self] (interests: [String]) in
+			guard let self = self else { return }
 			self.updateProfileInterests(userId, interests)
 		}
 	}
@@ -162,7 +161,9 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 
 	/// Refresh profile social media from the backend
 	func refreshProfileSocialMedia(_ userId: UUID) async {
-		await genericSingleRefresh(endpoint: "users/\(userId)/social-media") { (socialMedia: UserSocialMediaDTO) in
+		await genericSingleRefresh(endpoint: "users/\(userId)/social-media") {
+			[weak self] (socialMedia: UserSocialMediaDTO) in
+			guard let self = self else { return }
 			self.updateProfileSocialMedia(userId, socialMedia)
 		}
 	}
@@ -209,8 +210,8 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 		profileActivities = [:]
 		lastChecked = [:]
 
-		// Clear UserDefaults data on background queue
-		diskQueue.async {
+		// Clear UserDefaults data on background task
+		Task.detached(priority: .utility) {
 			UserDefaults.standard.removeObject(forKey: CacheKeys.otherProfiles)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.profileStats)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.profileInterests)
@@ -272,24 +273,39 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 		}
 	}
 
-	private func loadFromDisk() {
-		let loadedProfiles: [UUID: BaseUserDTO]? = loadFromDefaults(key: CacheKeys.otherProfiles)
-		let loadedStats: [UUID: UserStatsDTO]? = loadFromDefaults(key: CacheKeys.profileStats)
-		let loadedInterests: [UUID: [String]]? = loadFromDefaults(key: CacheKeys.profileInterests)
-		let loadedSocialMedia: [UUID: UserSocialMediaDTO]? = loadFromDefaults(key: CacheKeys.profileSocialMedia)
-		let loadedActivities: [UUID: [ProfileActivityDTO]]? = loadFromDefaults(key: CacheKeys.profileEvents)
-		let loadedTimestamps: [UUID: [String: Date]]? = loadFromDefaults(key: CacheKeys.lastChecked)
+	/// Async version of loadFromDisk that properly handles main actor isolation
+	private func loadFromDiskAsync() async {
+		// Load data on background queue to avoid blocking main thread
+		let profiles: [UUID: BaseUserDTO]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.otherProfiles)
+		}.value
 
-		// Update @Published properties on main thread
-		DispatchQueue.main.async { [weak self] in
-			guard let self = self else { return }
+		let stats: [UUID: UserStatsDTO]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.profileStats)
+		}.value
 
-			if let profiles = loadedProfiles { self.otherProfiles = profiles }
-			if let stats = loadedStats { self.profileStats = stats }
-			if let interests = loadedInterests { self.profileInterests = interests }
-			if let socialMedia = loadedSocialMedia { self.profileSocialMedia = socialMedia }
-			if let activities = loadedActivities { self.profileActivities = activities }
-			if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
-		}
+		let interests: [UUID: [String]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.profileInterests)
+		}.value
+
+		let socialMedia: [UUID: UserSocialMediaDTO]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.profileSocialMedia)
+		}.value
+
+		let activities: [UUID: [ProfileActivityDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.profileEvents)
+		}.value
+
+		let timestamps: [UUID: [String: Date]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.lastChecked)
+		}.value
+
+		// Update @Published properties - already on MainActor
+		if let profiles { self.otherProfiles = profiles }
+		if let stats { self.profileStats = stats }
+		if let interests { self.profileInterests = interests }
+		if let socialMedia { self.profileSocialMedia = socialMedia }
+		if let activities { self.profileActivities = activities }
+		if let timestamps { self.lastChecked = timestamps }
 	}
 }

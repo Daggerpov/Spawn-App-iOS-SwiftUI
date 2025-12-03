@@ -8,6 +8,7 @@
 import Combine
 import Foundation
 
+@MainActor
 class FeedViewModel: ObservableObject {
 	@Published var activities: [FullFeedActivityDTO] = []
 	@Published var activityTypes: [ActivityTypeDTO] = []
@@ -98,10 +99,8 @@ class FeedViewModel: ObservableObject {
 			.sink { [weak self] _ in
 				// Force immediate UI refresh by updating activity types from the view model
 				if let self = self {
-					Task { @MainActor in
-						self.activityTypes = self.activityTypeViewModel.activityTypes
-						self.objectWillChange.send()
-					}
+					self.activityTypes = self.activityTypeViewModel.activityTypes
+					self.objectWillChange.send()
 				}
 			}
 			.store(in: &cancellables)
@@ -156,7 +155,8 @@ class FeedViewModel: ObservableObject {
 		cleanupTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
 			guard let self = self else { return }
 
-			Task { @MainActor [weak self] in
+			// Class is @MainActor, so we can access properties directly from Timer callback via Task
+			Task { [weak self] in
 				guard let self = self else { return }
 				let filteredActivities = self.filterExpiredActivities(self.activities)
 
@@ -243,15 +243,11 @@ class FeedViewModel: ObservableObject {
 		switch result {
 		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
-			await MainActor.run {
-				self.activitiesSubject.send(filteredActivities)
-			}
+			self.activitiesSubject.send(filteredActivities)
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error fetching activities")
-			await MainActor.run {
-				self.activitiesSubject.send([])
-			}
+			self.activitiesSubject.send([])
 		}
 	}
 
@@ -277,15 +273,11 @@ class FeedViewModel: ObservableObject {
 		switch result {
 		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
-			await MainActor.run {
-				self.activitiesSubject.send(filteredActivities)
-			}
+			self.activitiesSubject.send(filteredActivities)
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error force refreshing activities")
-			await MainActor.run {
-				self.activitiesSubject.send([])
-			}
+			self.activitiesSubject.send([])
 		}
 	}
 

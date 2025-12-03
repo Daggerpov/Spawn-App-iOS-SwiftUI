@@ -130,7 +130,6 @@ struct BlockedUsersView: View {
 					try? await Task.sleep(for: .seconds(3))
 					withAnimation {
 						showNotification = false
-						}
 					}
 				}
 			}

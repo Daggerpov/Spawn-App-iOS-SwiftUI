@@ -27,7 +27,6 @@ struct WelcomeView: View {
 							try? await Task.sleep(for: .seconds(2.0))
 							withAnimation(.easeInOut(duration: 0.5)) {
 								animationCompleted = true
-								}
 							}
 						}
 				} else {

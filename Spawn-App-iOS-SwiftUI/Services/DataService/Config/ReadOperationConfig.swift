@@ -237,7 +237,11 @@ enum DataType {
 
 		case .profileActivities:
 			// Profile activities require requesting user ID as parameter
-			guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+			// Use MainActor.assumeIsolated since this is called from UI code
+			let requestingUserId: UUID? = MainActor.assumeIsolated {
+				UserAuthViewModel.shared.spawnUser?.id
+			}
+			guard let requestingUserId = requestingUserId else {
 				return nil
 			}
 			return ["requestingUserId": requestingUserId.uuidString]
@@ -481,6 +485,19 @@ extension DataType {
 				updater: { appCache in appCache.updateProfileActivities },
 				userId: userId
 			)
+
+		case .profileInfo(let userId, _):
+			return ProfileDictionaryCacheConfig<BaseUserDTO>(
+				dictionary: { $0.otherProfiles },
+				updater: { appCache in appCache.updateOtherProfile },
+				userId: userId
+			)
+
+		// Calendar - Not cacheable yet (no cache infrastructure exists)
+		// Falls through to default
+		case .calendar, .calendarAll:
+			// TODO: add calendar caching
+			return nil
 
 		// Non-cacheable data types
 		default:

@@ -9,6 +9,7 @@ import Combine
 import Foundation
 import SwiftUI
 
+@MainActor
 class DayActivitiesViewModel: ObservableObject {
 	@Published var activities: [CalendarActivityDTO] = []
 	@Published var headerTitle: String = "Activities"
@@ -82,10 +83,8 @@ class DayActivitiesViewModel: ObservableObject {
 
 		switch result {
 		case .success(let activity, _):
-			await MainActor.run {
-				// Store in our own dictionary
-				fetchedActivities[activityId] = activity
-			}
+			// Store in our own dictionary
+			fetchedActivities[activityId] = activity
 
 		case .failure(let error):
 			print("Error fetching activity: \(ErrorFormattingService.shared.formatError(error))")

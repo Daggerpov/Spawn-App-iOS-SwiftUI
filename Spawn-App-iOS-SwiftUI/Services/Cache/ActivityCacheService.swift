@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 
 /// Cache service for activity-related data
+@MainActor
 class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	static let shared = ActivityCacheService()
 
@@ -28,9 +29,9 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	private override init() {
 		super.init()
 
-		// Load from disk in the background
-		diskQueue.async { [weak self] in
-			self?.loadFromDisk()
+		// Load from disk in the background, then update on main actor
+		Task.detached { [weak self] in
+			await self?.loadFromDiskAsync()
 		}
 	}
 
@@ -123,7 +124,8 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 		}
 
 		await genericRefresh(endpoint: "activities/feedActivities/\(userId)") {
-			(fetchedActivities: [FullFeedActivityDTO]) in
+			[weak self] (fetchedActivities: [FullFeedActivityDTO]) in
+			guard let self = self else { return }
 			self.updateActivitiesForUser(fetchedActivities, userId: userId)
 		}
 
@@ -142,18 +144,16 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	func addOrUpdateActivity(_ activity: FullFeedActivityDTO) {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else { return }
 
-		DispatchQueue.main.async { [weak self] in
-			guard let self = self else { return }
-			if var userActivities = self.activities[userId] {
-				if let index = userActivities.firstIndex(where: { $0.id == activity.id }) {
-					userActivities[index] = activity
-				} else {
-					userActivities.append(activity)
-				}
-				self.activities[userId] = userActivities
+		// Already on main actor, no dispatch needed
+		if var userActivities = self.activities[userId] {
+			if let index = userActivities.firstIndex(where: { $0.id == activity.id }) {
+				userActivities[index] = activity
 			} else {
-				self.activities[userId] = [activity]
+				userActivities.append(activity)
 			}
+			self.activities[userId] = userActivities
+		} else {
+			self.activities[userId] = [activity]
 		}
 
 		// Ensure color is assigned for the activity
@@ -247,7 +247,9 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 			return
 		}
 
-		await genericRefresh(endpoint: "users/\(userId)/activity-types") { (fetchedActivityTypes: [ActivityTypeDTO]) in
+		await genericRefresh(endpoint: "users/\(userId)/activity-types") {
+			[weak self] (fetchedActivityTypes: [ActivityTypeDTO]) in
+			guard let self = self else { return }
 			self.updateActivityTypesForUser(fetchedActivityTypes, userId: userId)
 		}
 	}
@@ -299,8 +301,8 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 		activityTypes = [:]
 		lastChecked = [:]
 
-		// Clear UserDefaults data on background queue
-		diskQueue.async {
+		// Clear UserDefaults data on background task
+		Task.detached(priority: .utility) {
 			UserDefaults.standard.removeObject(forKey: CacheKeys.events)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.activityTypes)
 			UserDefaults.standard.removeObject(forKey: CacheKeys.lastChecked)
@@ -352,19 +354,25 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 		}
 	}
 
-	private func loadFromDisk() {
-		let loadedActivities: [UUID: [FullFeedActivityDTO]]? = loadFromDefaults(key: CacheKeys.events)
-		let loadedActivityTypes: [UUID: [ActivityTypeDTO]]? = loadFromDefaults(key: CacheKeys.activityTypes)
-		let loadedTimestamps: [UUID: [String: Date]]? = loadFromDefaults(key: CacheKeys.lastChecked)
+	/// Async version of loadFromDisk that properly handles main actor isolation
+	private func loadFromDiskAsync() async {
+		// Load data on background queue to avoid blocking main thread
+		let activities: [UUID: [FullFeedActivityDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.events)
+		}.value
 
-		// Update @Published properties on main thread
-		DispatchQueue.main.async { [weak self] in
-			guard let self = self else { return }
+		let activityTypes: [UUID: [ActivityTypeDTO]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.activityTypes)
+		}.value
 
-			if let activities = loadedActivities { self.activities = activities }
-			if let types = loadedActivityTypes { self.activityTypes = types }
-			if let timestamps = loadedTimestamps { self.lastChecked = timestamps }
-		}
+		let timestamps: [UUID: [String: Date]]? = await Task.detached { [weak self] in
+			self?.loadFromDefaults(key: CacheKeys.lastChecked)
+		}.value
+
+		// Update @Published properties - already on MainActor
+		if let activities { self.activities = activities }
+		if let activityTypes { self.activityTypes = activityTypes }
+		if let timestamps { self.lastChecked = timestamps }
 	}
 
 	// MARK: - Profile Picture Preloading

@@ -285,8 +285,7 @@ struct ActivityCreationView: View {
 					// Ensure we're in a safe state before transitioning
 					print("🔍 DEBUG: Setting currentStep to .location")
 					currentStep = .location
-					print("🔍 DEBUG: currentStep set to .location"
-					}
+					print("🔍 DEBUG: currentStep set to .location")
 				},
 				onBack: {
 					// Determine back navigation based on context:

@@ -45,11 +45,14 @@ class DataReader: IDataReader {
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> DataResult<T> {
 
-		// Get cache operations for this data type
-		guard let cacheOps = CacheOperationsFactory.operations(for: dataType, appCache: appCache) as CacheOperations<T>?
-		else {
-			print("❌ [DataReader] No cache operations found for \(dataType.displayName)")
-			return .failure(DataServiceError.unsupportedDataType)
+		// Get cache operations for this data type (may be nil for non-cacheable types)
+		let cacheOps = CacheOperationsFactory.operations(for: dataType, appCache: appCache) as CacheOperations<T>?
+
+		// If no cache operations exist, this is a non-cacheable data type
+		// In this case, always fetch from API regardless of cache policy
+		guard let cacheOps = cacheOps else {
+			print("ℹ️ [DataReader] \(dataType.displayName) is not cacheable, fetching from API")
+			return await fetchFromAPI(dataType: dataType, cacheOps: nil)
 		}
 
 		switch cachePolicy {
@@ -90,7 +93,7 @@ class DataReader: IDataReader {
 	/// Internal method to fetch from API
 	private func fetchFromAPI<T: Decodable>(
 		dataType: DataType,
-		cacheOps: CacheOperations<T>
+		cacheOps: CacheOperations<T>?
 	) async -> DataResult<T> {
 
 		// Build URL from endpoint
@@ -106,8 +109,8 @@ class DataReader: IDataReader {
 				parameters: dataType.parameters
 			)
 
-			// Update cache
-			cacheOps.updater(data)
+			// Update cache if cache operations are provided
+			cacheOps?.updater(data)
 
 			return .success(data, source: .api)
 

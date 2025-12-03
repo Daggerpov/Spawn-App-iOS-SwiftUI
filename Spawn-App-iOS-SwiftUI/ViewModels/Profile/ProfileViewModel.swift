@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 class ProfileViewModel: ObservableObject {
 	@Published var userStats: UserStatsDTO?
 	@Published var userInterests: [String] = []
@@ -48,9 +49,7 @@ class ProfileViewModel: ObservableObject {
 		// Check if user is still authenticated before making API call
 		guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 			print("Cannot fetch user stats: User is not logged in")
-			await MainActor.run {
-				self.isLoadingStats = false
-			}
+			self.isLoadingStats = false
 			return
 		}
 
@@ -61,16 +60,12 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let stats, _):
-			await MainActor.run {
-				self.userStats = stats
-				self.isLoadingStats = false
-			}
+			self.userStats = stats
+			self.isLoadingStats = false
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.isLoadingStats = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.isLoadingStats = false
 		}
 	}
 
@@ -82,24 +77,18 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let interests, _):
-			await MainActor.run {
-				self.userInterests = interests
-				self.isLoadingInterests = false
-			}
+			self.userInterests = interests
+			self.isLoadingInterests = false
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.isLoadingInterests = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.isLoadingInterests = false
 		}
 	}
 
 	func addUserInterest(userId: UUID, interest: String) async -> Bool {
 		// Update local state immediately for better UX
-		await MainActor.run {
-			self.userInterests.append(interest)
-		}
+		self.userInterests.append(interest)
 
 		// Use DataService for the POST operation
 		let operation = WriteOperation<String>.post(
@@ -119,18 +108,14 @@ class ProfileViewModel: ObservableObject {
 			)
 
 			if case .success(let interests, _) = refreshResult {
-				await MainActor.run {
-					self.userInterests = interests
-				}
+				self.userInterests = interests
 			}
 			return true
 
 		case .failure(let error):
 			// Revert local state if API call fails
-			await MainActor.run {
-				self.userInterests.removeAll { $0 == interest }
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.userInterests.removeAll { $0 == interest }
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			return false
 		}
 	}
@@ -143,16 +128,12 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let socialMedia, _):
-			await MainActor.run {
-				self.userSocialMedia = socialMedia
-				self.isLoadingSocialMedia = false
-			}
+			self.userSocialMedia = socialMedia
+			self.isLoadingSocialMedia = false
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.isLoadingSocialMedia = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.isLoadingSocialMedia = false
 		}
 	}
 
@@ -172,14 +153,10 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let updatedSocialMedia, _):
-			await MainActor.run {
-				self.userSocialMedia = updatedSocialMedia
-			}
+			self.userSocialMedia = updatedSocialMedia
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
@@ -187,13 +164,11 @@ class ProfileViewModel: ObservableObject {
 		// Check if user is still authenticated before making API call
 		guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
 			print("Cannot fetch profile info: User is not logged in")
-			await MainActor.run {
-				self.isLoadingProfileInfo = false
-			}
+			self.isLoadingProfileInfo = false
 			return
 		}
 
-		await MainActor.run { self.isLoadingProfileInfo = true }
+		self.isLoadingProfileInfo = true
 
 		// Use centralized DataType configuration
 		let result: DataResult<UserProfileInfoDTO> = await dataService.read(
@@ -201,16 +176,12 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let profileInfo, _):
-			await MainActor.run {
-				self.userProfileInfo = profileInfo
-				self.isLoadingProfileInfo = false
-			}
+			self.userProfileInfo = profileInfo
+			self.isLoadingProfileInfo = false
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.isLoadingProfileInfo = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.isLoadingProfileInfo = false
 		}
 	}
 
@@ -246,13 +217,11 @@ class ProfileViewModel: ObservableObject {
 	}
 
 	func fetchCalendarActivities(month: Int, year: Int) async {
-		await MainActor.run { self.isLoadingCalendar = true }
+		self.isLoadingCalendar = true
 
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
-			await MainActor.run {
-				self.isLoadingCalendar = false
-				self.errorMessage = "User ID not available"
-			}
+			self.isLoadingCalendar = false
+			self.errorMessage = "User ID not available"
 			return
 		}
 
@@ -269,36 +238,30 @@ class ProfileViewModel: ObservableObject {
 				year: year
 			)
 
-			await MainActor.run {
-				self.calendarActivities = grid
-				self.isLoadingCalendar = false
+			self.calendarActivities = grid
+			self.isLoadingCalendar = false
 
-				// Pre-assign colors for calendar activities
-				let activityIds = activities.compactMap { $0.activityId }
-				ActivityColorService.shared.assignColorsForActivities(activityIds)
-			}
+			// Pre-assign colors for calendar activities
+			let activityIds = activities.compactMap { $0.activityId }
+			ActivityColorService.shared.assignColorsForActivities(activityIds)
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.calendarActivities = Array(
-					repeating: Array(repeating: nil, count: 7),
-					count: 5
-				)
-				self.isLoadingCalendar = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.calendarActivities = Array(
+				repeating: Array(repeating: nil, count: 7),
+				count: 5
+			)
+			self.isLoadingCalendar = false
 		}
 	}
 
 	func fetchAllCalendarActivities() async {
-		await MainActor.run { self.isLoadingCalendar = true }
+		self.isLoadingCalendar = true
 
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			print("❌ Calendar: No user ID available")
-			await MainActor.run {
-				self.isLoadingCalendar = false
-				self.errorMessage = "User ID not available"
-			}
+			self.isLoadingCalendar = false
+			self.errorMessage = "User ID not available"
 			return
 		}
 
@@ -315,11 +278,9 @@ class ProfileViewModel: ObservableObject {
 
 			if !hasAccessToken && !hasRefreshToken {
 				print("❌ Calendar: No authentication tokens found - user may need to log in")
-				await MainActor.run {
-					self.errorMessage = "Authentication required - please log in again"
-					self.allCalendarActivities = []
-					self.isLoadingCalendar = false
-				}
+				self.errorMessage = "Authentication required - please log in again"
+				self.allCalendarActivities = []
+				self.isLoadingCalendar = false
 				return
 			}
 		}
@@ -338,38 +299,32 @@ class ProfileViewModel: ObservableObject {
 				}
 			}
 
-			await MainActor.run {
-				self.allCalendarActivities = activities
-				self.isLoadingCalendar = false
+			self.allCalendarActivities = activities
+			self.isLoadingCalendar = false
 
-				// Pre-assign colors for calendar activities
-				let activityIds = activities.compactMap { $0.activityId }
-				ActivityColorService.shared.assignColorsForActivities(activityIds)
-			}
+			// Pre-assign colors for calendar activities
+			let activityIds = activities.compactMap { $0.activityId }
+			ActivityColorService.shared.assignColorsForActivities(activityIds)
 
 		case .failure(let error):
 			print("❌ Calendar: Error fetching activities")
 			print("❌ Calendar: Error details: \(error)")
 
-			await MainActor.run {
-				let errorMsg = ErrorFormattingService.shared.formatError(error)
-				self.errorMessage = errorMsg
-				self.allCalendarActivities = []
-				self.isLoadingCalendar = false
-			}
+			let errorMsg = ErrorFormattingService.shared.formatError(error)
+			self.errorMessage = errorMsg
+			self.allCalendarActivities = []
+			self.isLoadingCalendar = false
 		}
 	}
 
 	// Method to fetch all calendar activities for a friend
 	func fetchAllCalendarActivities(friendUserId: UUID) async {
-		await MainActor.run { self.isLoadingCalendar = true }
+		self.isLoadingCalendar = true
 
 		guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
 			print("❌ ProfileViewModel: No requesting user ID available for calendar activities")
-			await MainActor.run {
-				self.isLoadingCalendar = false
-				self.errorMessage = "User ID not available"
-			}
+			self.isLoadingCalendar = false
+			self.errorMessage = "User ID not available"
 			return
 		}
 
@@ -382,37 +337,31 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let activities, _):
-			await MainActor.run {
-				self.allCalendarActivities = activities
-				self.isLoadingCalendar = false
+			self.allCalendarActivities = activities
+			self.isLoadingCalendar = false
 
-				// Pre-assign colors for calendar activities
-				let activityIds = activities.compactMap { $0.activityId }
-				ActivityColorService.shared.assignColorsForActivities(activityIds)
-			}
+			// Pre-assign colors for calendar activities
+			let activityIds = activities.compactMap { $0.activityId }
+			ActivityColorService.shared.assignColorsForActivities(activityIds)
 
 		case .failure(let error):
 			print(
 				"❌ ProfileViewModel: Error fetching friend's all calendar activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.allCalendarActivities = []
-				self.isLoadingCalendar = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.allCalendarActivities = []
+			self.isLoadingCalendar = false
 		}
 	}
 
 	// Method to fetch friend's calendar activities
 	func fetchFriendCalendarActivities(friendUserId: UUID, month: Int, year: Int) async {
-		await MainActor.run { self.isLoadingCalendar = true }
+		self.isLoadingCalendar = true
 
 		guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
 			print("❌ ProfileViewModel: No requesting user ID available for calendar activities")
-			await MainActor.run {
-				self.isLoadingCalendar = false
-				self.errorMessage = "User ID not available"
-			}
+			self.isLoadingCalendar = false
+			self.errorMessage = "User ID not available"
 			return
 		}
 
@@ -442,29 +391,25 @@ class ProfileViewModel: ObservableObject {
 				year: year
 			)
 
-			await MainActor.run {
-				self.calendarActivities = grid
-				self.allCalendarActivities = activities
-				self.isLoadingCalendar = false
+			self.calendarActivities = grid
+			self.allCalendarActivities = activities
+			self.isLoadingCalendar = false
 
-				// Pre-assign colors for calendar activities
-				let activityIds = activities.compactMap { $0.activityId }
-				ActivityColorService.shared.assignColorsForActivities(activityIds)
-			}
+			// Pre-assign colors for calendar activities
+			let activityIds = activities.compactMap { $0.activityId }
+			ActivityColorService.shared.assignColorsForActivities(activityIds)
 
 		case .failure(let error):
 			print(
 				"❌ ProfileViewModel: Error fetching friend's calendar activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.calendarActivities = Array(
-					repeating: Array(repeating: nil, count: 7),
-					count: 5
-				)
-				self.allCalendarActivities = []
-				self.isLoadingCalendar = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.calendarActivities = Array(
+				repeating: Array(repeating: nil, count: 7),
+				count: 5
+			)
+			self.allCalendarActivities = []
+			self.isLoadingCalendar = false
 		}
 	}
 
@@ -532,10 +477,8 @@ class ProfileViewModel: ObservableObject {
 			}
 		}
 
-		// Update the published property on the main thread
-		Task { @MainActor in
-			self.calendarActivitiesByDay = newCalendarActivitiesByDay
-		}
+		// Update the published property
+		self.calendarActivitiesByDay = newCalendarActivitiesByDay
 
 		return grid
 	}
@@ -608,16 +551,12 @@ class ProfileViewModel: ObservableObject {
 		let originalInterests = userInterests
 
 		// Update local state immediately for better UX
-		await MainActor.run {
-			self.userInterests.removeAll { $0 == interest }
-		}
+		self.userInterests.removeAll { $0 == interest }
 
 		// URL encode the interest name to handle spaces and special characters
 		guard let encodedInterest = interest.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-			await MainActor.run {
-				self.userInterests = originalInterests
-				self.errorMessage = "Failed to encode interest name"
-			}
+			self.userInterests = originalInterests
+			self.errorMessage = "Failed to encode interest name"
 			return
 		}
 
@@ -637,20 +576,16 @@ class ProfileViewModel: ObservableObject {
 			)
 
 			if case .success(let interests, _) = refreshResult {
-				await MainActor.run {
-					self.userInterests = interests
-					self.objectWillChange.send()
-				}
+				self.userInterests = interests
+				self.objectWillChange.send()
 			}
 
 		case .failure(let error):
 			print("❌ Failed to remove interest '\(interest)': \(ErrorFormattingService.shared.formatError(error))")
 
 			// Revert the optimistic update since the API call failed
-			await MainActor.run {
-				self.userInterests = originalInterests
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.userInterests = originalInterests
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
@@ -687,15 +622,13 @@ class ProfileViewModel: ObservableObject {
 	func fetchActivityDetails(activityId: UUID) async -> FullFeedActivityDTO? {
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			print("❌ ProfileViewModel: No user ID available for activity details")
-			await MainActor.run {
-				self.errorMessage = "User ID not available"
-			}
+			self.errorMessage = "User ID not available"
 			return nil
 		}
 
 		print("🔄 ProfileViewModel: Fetching activity details for activity: \(activityId)")
 
-		await MainActor.run { self.isLoadingActivity = true }
+		self.isLoadingActivity = true
 
 		// Use centralized DataType configuration
 		let result: DataResult<FullFeedActivityDTO> = await dataService.read(
@@ -708,10 +641,8 @@ class ProfileViewModel: ObservableObject {
 				"📋 Activity Details: ID: \(activity.id), Title: \(activity.title ?? "No title"), Location: \(activity.location?.name ?? "No location")"
 			)
 
-			await MainActor.run {
-				self.selectedActivity = activity
-				self.isLoadingActivity = false
-			}
+			self.selectedActivity = activity
+			self.isLoadingActivity = false
 
 			return activity
 
@@ -719,10 +650,8 @@ class ProfileViewModel: ObservableObject {
 			print(
 				"❌ ProfileViewModel: Error fetching activity details: \(ErrorFormattingService.shared.formatError(error))"
 			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.isLoadingActivity = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.isLoadingActivity = false
 			return nil
 		}
 	}
@@ -755,13 +684,11 @@ class ProfileViewModel: ObservableObject {
 	func checkFriendshipStatus(currentUserId: UUID, profileUserId: UUID) async {
 		// Don't check if it's the current user's profile
 		if currentUserId == profileUserId {
-			await MainActor.run {
-				self.friendshipStatus = .themself
-			}
+			self.friendshipStatus = .themself
 			return
 		}
 
-		await MainActor.run { self.isLoadingFriendshipStatus = true }
+		self.isLoadingFriendshipStatus = true
 
 		// First check if users are friends using centralized config
 		let friendResult: DataResult<Bool> = await dataService.read(
@@ -771,10 +698,8 @@ class ProfileViewModel: ObservableObject {
 		switch friendResult {
 		case .success(let isFriend, _):
 			if isFriend {
-				await MainActor.run {
-					self.friendshipStatus = .friends
-					self.isLoadingFriendshipStatus = false
-				}
+				self.friendshipStatus = .friends
+				self.isLoadingFriendshipStatus = false
 				return
 			}
 
@@ -802,34 +727,28 @@ class ProfileViewModel: ObservableObject {
 			let requestFromProfileUser = currentUserRequests.first { $0.senderUser.id == profileUserId }
 
 			if let requestFromProfileUser = requestFromProfileUser {
-				await MainActor.run {
-					let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
-					self.friendshipStatus = .requestReceived
-					self.pendingFriendRequestId =
-						(requestFromProfileUser.id == zeroUUID) ? nil : requestFromProfileUser.id
-					self.isLoadingFriendshipStatus = false
-				}
+				let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
+				self.friendshipStatus = .requestReceived
+				self.pendingFriendRequestId =
+					(requestFromProfileUser.id == zeroUUID) ? nil : requestFromProfileUser.id
+				self.isLoadingFriendshipStatus = false
 				return
 			}
 
 			// Check if any incoming request to profile user is from current user
 			let requestToProfileUser = profileUserRequests.first { $0.senderUser.id == currentUserId }
 
-			await MainActor.run {
-				if requestToProfileUser != nil {
-					self.friendshipStatus = .requestSent
-				} else {
-					self.friendshipStatus = .none
-				}
-				self.isLoadingFriendshipStatus = false
+			if requestToProfileUser != nil {
+				self.friendshipStatus = .requestSent
+			} else {
+				self.friendshipStatus = .none
 			}
+			self.isLoadingFriendshipStatus = false
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.friendshipStatus = .unknown
-				self.isLoadingFriendshipStatus = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.friendshipStatus = .unknown
+			self.isLoadingFriendshipStatus = false
 		}
 	}
 
@@ -846,26 +765,20 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			await MainActor.run {
-				self.friendshipStatus = .requestSent
-			}
+			self.friendshipStatus = .requestSent
 			// Refresh recommended friends to update the list
 			let _: DataResult<[RecommendedFriendUserDTO]> = await dataService.read(
 				.recommendedFriends(userId: fromUserId), cachePolicy: .apiOnly)
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
 	func acceptFriendRequest(requestId: UUID) async {
 		// IMMEDIATELY update UI state to provide instant feedback
-		await MainActor.run {
-			self.friendshipStatus = .friends
-			self.pendingFriendRequestId = nil
-		}
+		self.friendshipStatus = .friends
+		self.pendingFriendRequestId = nil
 
 		print("[PROFILE] accepted friend request id=\(requestId) -> status=friends")
 		NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
@@ -886,21 +799,17 @@ class ProfileViewModel: ObservableObject {
 			NotificationCenter.default.post(name: .friendsDidChange, object: nil)
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				// Revert the optimistic update on failure
-				self.friendshipStatus = .requestReceived
-				self.pendingFriendRequestId = requestId
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			// Revert the optimistic update on failure
+			self.friendshipStatus = .requestReceived
+			self.pendingFriendRequestId = requestId
 		}
 	}
 
 	func declineFriendRequest(requestId: UUID) async {
 		// IMMEDIATELY update UI state to provide instant feedback
-		await MainActor.run {
-			self.friendshipStatus = .none
-			self.pendingFriendRequestId = nil
-		}
+		self.friendshipStatus = .none
+		self.pendingFriendRequestId = nil
 
 		NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
 
@@ -914,19 +823,17 @@ class ProfileViewModel: ObservableObject {
 			break
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				// Revert the optimistic update on failure
-				self.friendshipStatus = .requestReceived
-				self.pendingFriendRequestId = requestId
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			// Revert the optimistic update on failure
+			self.friendshipStatus = .requestReceived
+			self.pendingFriendRequestId = requestId
 		}
 	}
 
 	// MARK: - User Activities
 
 	func fetchUserUpcomingActivities(userId: UUID) async {
-		await MainActor.run { self.isLoadingUserActivities = true }
+		self.isLoadingUserActivities = true
 
 		// Use centralized DataType configuration
 		let result: DataResult<[FullFeedActivityDTO]> = await dataService.read(
@@ -935,21 +842,17 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success(let activities, _):
-			await MainActor.run {
-				self.userActivities = activities
-				self.isLoadingUserActivities = false
+			self.userActivities = activities
+			self.isLoadingUserActivities = false
 
-				// Pre-assign colors for user activities
-				let activityIds = activities.map { $0.id }
-				ActivityColorService.shared.assignColorsForActivities(activityIds)
-			}
+			// Pre-assign colors for user activities
+			let activityIds = activities.map { $0.id }
+			ActivityColorService.shared.assignColorsForActivities(activityIds)
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.userActivities = []
-				self.isLoadingUserActivities = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.userActivities = []
+			self.isLoadingUserActivities = false
 		}
 	}
 
@@ -974,20 +877,16 @@ class ProfileViewModel: ObservableObject {
 				}
 			}
 
-			await MainActor.run {
-				self.profileActivities = activities
-				self.isLoadingUserActivities = false
-			}
+			self.profileActivities = activities
+			self.isLoadingUserActivities = false
 
 		case .failure(let error):
 			print(
 				"❌ ProfileViewModel: Error fetching profile activities: \(ErrorFormattingService.shared.formatError(error))"
 			)
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-				self.profileActivities = []
-				self.isLoadingUserActivities = false
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
+			self.profileActivities = []
+			self.isLoadingUserActivities = false
 		}
 	}
 
@@ -1003,17 +902,13 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			await MainActor.run {
-				self.friendshipStatus = .none
-			}
+			self.friendshipStatus = .none
 			// Refresh friends list
 			let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
 				.friends(userId: currentUserId), cachePolicy: .apiOnly)
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
@@ -1033,13 +928,9 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			await MainActor.run {
-				self.errorMessage = nil
-			}
+			self.errorMessage = nil
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
@@ -1063,18 +954,14 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			await MainActor.run {
-				self.friendshipStatus = .blocked
-				self.errorMessage = nil
-			}
+			self.friendshipStatus = .blocked
+			self.errorMessage = nil
 
 			// Refresh friends cache to remove the blocked user from friends list
 			await AppCache.shared.refreshFriends()
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
@@ -1086,18 +973,14 @@ class ProfileViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			await MainActor.run {
-				self.friendshipStatus = .none
-				self.errorMessage = nil
-			}
+			self.friendshipStatus = .none
+			self.errorMessage = nil
 
 			// Refresh friends cache for consistency
 			await AppCache.shared.refreshFriends()
 
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 		}
 	}
 
@@ -1112,9 +995,7 @@ class ProfileViewModel: ObservableObject {
 		case .success(let isBlocked, _):
 			return isBlocked
 		case .failure(let error):
-			await MainActor.run {
-				self.errorMessage = ErrorFormattingService.shared.formatError(error)
-			}
+			self.errorMessage = ErrorFormattingService.shared.formatError(error)
 			return false
 		}
 	}

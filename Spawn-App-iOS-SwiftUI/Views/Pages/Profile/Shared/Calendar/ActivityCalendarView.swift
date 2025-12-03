@@ -60,9 +60,8 @@ struct ActivityCalendarView: View {
 								// SwiftUI View body is already on the main thread
 								withAnimation(.easeInOut(duration: 0.8)) {
 									proxy.scrollTo(currentMonth, anchor: .center)
-									}
-									hasInitiallyScrolled = true
 								}
+								hasInitiallyScrolled = true
 							}
 						}
 					}

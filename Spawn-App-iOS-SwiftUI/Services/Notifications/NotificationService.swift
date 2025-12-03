@@ -4,7 +4,8 @@ import SwiftUI
 import UserNotifications
 
 @available(iOS 16.0, *)
-class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
+@MainActor
+class NotificationService: NSObject, ObservableObject {
 	static let shared = NotificationService()
 
 	@Published var isNotificationsEnabled = false
@@ -396,137 +397,6 @@ class NotificationService: NSObject, ObservableObject, @unchecked Sendable {
 			print("[PUSH DEBUG] New chat message in activity \(activityId) from user \(senderId)")
 		}
 		// Navigate to chat (implementation will depend on your navigation setup)
-	}
-
-	// Test notifications (for development)
-	func sendTestNotification(type: String) {
-		guard let notificationType = NotificationType(rawValue: type) else {
-			print("Invalid notification type: \(type)")
-			return
-		}
-
-		var title = ""
-		var body = ""
-		var userInfo: [String: String] = [:]
-
-		switch notificationType {
-		case .friendRequest:
-			title = "New Friend Request"
-			body = "Someone wants to be your friend on Spawn!"
-			let senderId = UUID()
-			userInfo = NotificationDataBuilder.friendRequest(
-				senderId: senderId,
-				requestId: UUID()
-			)
-
-			// Add more detailed logging
-			if let user = UserAuthViewModel.shared.spawnUser {
-				print(
-					"Test Friend Request - User ID: \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))"
-				)
-			}
-
-		case .activityInvite:
-			title = "New Activity Invitation"
-			body = "You've been invited to an activity!"
-			userInfo = NotificationDataBuilder.activityInvite(
-				activityId: UUID(),
-				activityName: "Fun Hangout"
-			)
-
-		case .activityUpdate:
-			title = "Activity Updated"
-			body = "An activity you're attending has been updated"
-			userInfo = NotificationDataBuilder.activityUpdate(
-				activityId: UUID(),
-				updateType: "time"
-			)
-
-		case .chat:
-			title = "New Message"
-			body = "You have a new message in an activity chat"
-			let senderId = UUID()
-			userInfo = NotificationDataBuilder.chatMessage(
-				activityId: UUID(),
-				senderId: senderId
-			)
-
-			// Add more detailed logging
-			if let user = UserAuthViewModel.shared.spawnUser {
-				print(
-					"Test Chat Message - User ID: \(senderId) (username: \(user.username ?? "Unknown"), name: \(user.name ?? "Unknown"))"
-				)
-			}
-
-		case .welcome:
-			title = "Welcome to Spawn!"
-			body = "Thanks for joining. We'll keep you updated on activities and friends."
-			userInfo = NotificationDataBuilder.welcome()
-
-		case .error:
-			title = "Error"
-			body = "Something went wrong. Please try again."
-			userInfo = ["type": NotificationType.error.rawValue]
-
-		case .success:
-			title = "Success"
-			body = "Action completed successfully"
-			userInfo = ["type": NotificationType.success.rawValue]
-		}
-
-		scheduleLocalNotification(title: title, body: body, userInfo: userInfo)
-	}
-
-	// Test in-app notifications (for development)
-	func testInAppNotification(type: NotificationType) {
-		print("Testing in-app notification of type: \(type.rawValue)")
-
-		Task { @MainActor in
-			switch type {
-			case .friendRequest:
-				InAppNotificationManager.shared.showNotification(
-					title: "Friend Request",
-					message: "Alex Chen wants to be your friend",
-					type: .friendRequest
-				)
-			case .activityInvite:
-				InAppNotificationManager.shared.showNotification(
-					title: "Activity Invite",
-					message: "You're invited to Coffee & Chat",
-					type: .activityInvite
-				)
-			case .activityUpdate:
-				InAppNotificationManager.shared.showNotification(
-					title: "Activity Update",
-					message: "Basketball Game has been updated",
-					type: .activityUpdate
-				)
-			case .chat:
-				InAppNotificationManager.shared.showNotification(
-					title: "New Message",
-					message: "Sarah sent a message in Study Group",
-					type: .chat
-				)
-			case .welcome:
-				InAppNotificationManager.shared.showNotification(
-					title: "Welcome to Spawn!",
-					message: "Start connecting with friends and activities",
-					type: .welcome
-				)
-			case .error:
-				InAppNotificationManager.shared.showNotification(
-					title: "Error",
-					message: "Something went wrong. Please try again.",
-					type: .error
-				)
-			case .success:
-				InAppNotificationManager.shared.showNotification(
-					title: "Success",
-					message: "Action completed successfully",
-					type: .success
-				)
-			}
-		}
 	}
 
 	// Save preferences to UserDefaults as a fallback (user-specific)
