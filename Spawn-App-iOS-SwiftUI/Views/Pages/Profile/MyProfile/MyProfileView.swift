@@ -265,19 +265,6 @@ struct MyProfileView: View {
 				)
 			}
 
-			// Interests Section with Social Media Icons
-			ProfileInterestsView(
-				user: user,
-				profileViewModel: profileViewModel,
-				editingState: $editingState,
-				newInterest: $newInterest,
-				openSocialMediaLink: openSocialMediaLink,
-				removeInterest: removeInterest
-			)
-			.padding(.horizontal, 16)
-			.padding(.top, 20)
-			.padding(.bottom, 8)
-
 			// User Stats
 			ProfileStatsView(
 				profileViewModel: profileViewModel
