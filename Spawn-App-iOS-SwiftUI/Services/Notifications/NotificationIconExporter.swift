@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 
+@MainActor
 struct NotificationIconExporter {
 	static func exportAppIconForNotifications() {
 		// First try to use the SpawnLogo from assets

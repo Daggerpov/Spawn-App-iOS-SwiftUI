@@ -234,8 +234,6 @@ struct FriendActivitiesShowAllView: View {
 			// isLoading = true // This line was removed as per the edit hint
 		}
 
-		print("📡 API Mode: \(MockAPIService.isMocking ? "MOCK" : "REAL")")
-
 		await MainActor.run {
 			// isLoading = false // This line was removed as per the edit hint
 		}
@@ -251,13 +249,14 @@ struct FriendActivitiesShowAllView: View {
 		}
 	}
 
+	// TODO: investigate why this isn't being used
 	private func handleActivitySelection(_ activity: CalendarActivityDTO) {
 		guard let activityId = activity.activityId else { return }
 
 		print("🔄 Fetching activity details for activity: \(activityId)")
 
 		Task {
-			if let fullActivity = await profileViewModel.fetchActivityDetails(activityId: activityId) {
+			if (await profileViewModel.fetchActivityDetails(activityId: activityId)) != nil {
 				await MainActor.run {
 					showActivityDetails = true
 				}

@@ -47,10 +47,11 @@ struct ActivityTypeEditView: View {
 		}
 		.onAppear {
 			setupInitialState()
+		}
+		.task {
 			// Auto-focus the title field when the view appears
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				isTitleFieldFocused = true
-			}
+			try? await Task.sleep(for: .seconds(0.1))
+			isTitleFieldFocused = true
 		}
 		.onChange(of: editedTitle) { _, newValue in
 			print("DEBUG: editedTitle changed to: \(newValue)")

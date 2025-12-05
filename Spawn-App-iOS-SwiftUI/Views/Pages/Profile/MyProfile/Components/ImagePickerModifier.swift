@@ -16,7 +16,8 @@ struct ImagePickerModifier: ViewModifier {
 			.sheet(isPresented: $showImagePicker) {
 				if selectedImage != nil {
 					isImageLoading = true
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.3))
 						isImageLoading = false
 					}
 				}
@@ -27,11 +28,10 @@ struct ImagePickerModifier: ViewModifier {
 			.onChange(of: selectedImage) { _, newImage in
 				if newImage != nil {
 					// Force UI update when image changes
-					DispatchQueue.main.async {
-						isImageLoading = true
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-							isImageLoading = false
-						}
+					isImageLoading = true
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.3))
+						isImageLoading = false
 					}
 				}
 			}

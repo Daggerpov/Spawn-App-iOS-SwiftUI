@@ -14,17 +14,19 @@ import Foundation
 
 // MARK: - Data Service Implementation
 
-/// Concrete implementation of IDataService that delegates to DataReader and DataWriter
-class DataService: IDataService {
+/// Main actor-isolated DataService for thread-safe data operations
+/// Delegates to DataReader and DataWriter
+@MainActor
+final class DataService: IDataService {
 
 	static let shared = DataService()
 
-	private let reader: IDataReader
-	private let writer: IDataWriter
+	private let reader: DataReader
+	private let writer: DataWriter
 
 	init(
-		reader: IDataReader = DataReader.shared,
-		writer: IDataWriter = DataWriter.shared
+		reader: DataReader = DataReader.shared,
+		writer: DataWriter = DataWriter.shared
 	) {
 		self.reader = reader
 		self.writer = writer

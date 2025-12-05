@@ -260,7 +260,8 @@ struct ActivityTypeFriendSelectionView: View {
 		)
 
 		// Simulate API call
-		DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+		Task { @MainActor in
+			try? await Task.sleep(for: .seconds(1.0))
 			isLoading = false
 			onComplete(updatedActivityType)
 			dismiss()

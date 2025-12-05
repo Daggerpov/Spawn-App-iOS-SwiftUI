@@ -200,15 +200,11 @@ struct ProfileCalendarView: View {
 			}
 		} else if activities.count > 1 {
 			// Multiple activities - set selected activities and navigate directly to day activities view
-			DispatchQueue.main.async {
-				self.selectedDayActivities = activities
-				self.navigateToDayActivities = true
-			}
+			selectedDayActivities = activities
+			navigateToDayActivities = true
 		} else {
 			// No activities - navigate to full calendar view (preserve existing behavior for empty days)
-			DispatchQueue.main.async {
-				self.navigateToCalendar = true
-			}
+			navigateToCalendar = true
 		}
 	}
 
@@ -265,7 +261,9 @@ struct ProfileCalendarView: View {
 		return "\(currentMonth)/\(currentYear)"
 	}
 
-	private func withTimeout<T>(seconds: Double, operation: @escaping () async throws -> T) async throws -> T {
+	private func withTimeout<T: Sendable>(seconds: Double, operation: @escaping @Sendable () async throws -> T)
+		async throws -> T
+	{
 		try await withThrowingTaskGroup(of: T.self) { group in
 			group.addTask {
 				try await operation()

@@ -123,17 +123,18 @@ struct MyProfileView: View {
 				// Load enhancement data in background (non-blocking progressive enhancements)
 				backgroundDataLoadTask = Task.detached(priority: .background) {
 					// Profile picture refresh (can use cached version initially)
-					if let profilePictureUrl = await user.profilePicture {
+					if let profilePictureUrl = user.profilePicture {
 						let profilePictureCache = ProfilePictureCache.shared
 						_ = await profilePictureCache.getCachedImageWithRefresh(
-							for: await user.id,
+							for: user.id,
 							from: profilePictureUrl,
 							maxAge: 6 * 60 * 60  // 6 hours
 						)
 					}
 
 					// Load non-critical enhancement data
-					await profileViewModel.loadEnhancementData(userId: await user.id)
+					await profileViewModel
+						.loadEnhancementData(userId: user.id)
 				}
 			}
 			.onDisappear {
@@ -150,14 +151,6 @@ struct MyProfileView: View {
 				if let socialMedia = newSocialMedia {
 					whatsappLink = socialMedia.whatsappLink ?? ""
 					instagramLink = socialMedia.instagramLink ?? ""
-				}
-			}
-			.onChange(of: navigateToDayActivities) { _, newValue in
-				if newValue {
-					// Ensure navigation happens on main thread
-					DispatchQueue.main.async {
-						// Navigation logic handled by the view
-					}
 				}
 			}
 			.accentColor(universalAccentColor)

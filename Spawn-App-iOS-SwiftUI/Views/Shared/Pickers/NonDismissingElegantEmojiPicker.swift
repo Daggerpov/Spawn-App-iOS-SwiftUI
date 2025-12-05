@@ -2,8 +2,9 @@ import ElegantEmojiPicker
 import SwiftUI
 
 // Custom subclass to prevent auto-dismissal
-class NonDismissingElegantEmojiPicker: ElegantEmojiPicker {
-	var onManualDismiss: (() -> Void)?
+@MainActor
+final class NonDismissingElegantEmojiPicker: ElegantEmojiPicker {
+	var onManualDismiss: (@MainActor () -> Void)?
 	private var allowDismissal = false
 
 	override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {

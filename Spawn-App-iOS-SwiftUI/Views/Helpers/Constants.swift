@@ -190,11 +190,13 @@ let activityColors = activityColorHexCodes.map { colorHexCode in
 }
 
 // Function to get evenly distributed colors for activities with caching
+@MainActor
 func getActivityColor(for activityId: UUID) -> Color {
 	return ActivityColorService.shared.getColorForActivity(activityId)
 }
 
 // Function to get the hex code for an activity color
+@MainActor
 func getActivityColorHex(for activityId: UUID) -> String {
 	return ActivityColorService.shared.getColorHexForActivity(activityId)
 }
@@ -202,6 +204,7 @@ func getActivityColorHex(for activityId: UUID) -> String {
 // MARK: - Dynamic Colors (Theme-aware)
 // These are reactive functions that need to be called within an ObservedObject context
 
+@MainActor
 func universalBackgroundColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
 	let currentScheme = themeService.colorScheme
 
@@ -215,6 +218,7 @@ func universalBackgroundColor(from themeService: ThemeService, environment: Colo
 	}
 }
 
+@MainActor
 func universalAccentColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
 	let currentScheme = themeService.colorScheme
 
@@ -228,6 +232,7 @@ func universalAccentColor(from themeService: ThemeService, environment: ColorSch
 	}
 }
 
+@MainActor
 func universalPlaceHolderTextColor(from themeService: ThemeService, environment: ColorScheme) -> Color {
 	let currentScheme = themeService.colorScheme
 

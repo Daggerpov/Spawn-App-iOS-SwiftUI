@@ -232,7 +232,8 @@ struct EditProfileView: View {
 				showAlert = true
 
 				// Dismiss after a short delay
-				DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(1.5))
 					presentationMode.wrappedValue.dismiss()
 				}
 			}

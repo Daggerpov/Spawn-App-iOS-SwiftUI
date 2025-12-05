@@ -11,6 +11,7 @@ import SwiftUI
 
 /// Central coordinator for all cache services
 /// Orchestrates cache validation, refresh operations, and cross-service coordination
+@MainActor
 class CacheCoordinator: ObservableObject {
 	static let shared = CacheCoordinator()
 
@@ -78,8 +79,6 @@ class CacheCoordinator: ObservableObject {
 
 	/// Validate cache with backend and refresh stale items
 	func validateCache() async {
-		let startTime = Date()
-
 		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
 			print("❌ [CACHE-COORDINATOR] Cannot validate cache: No logged in user")
 			return

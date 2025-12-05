@@ -182,7 +182,8 @@ struct ReportUserDrawer: View {
 		isSubmitting = true
 
 		// Add a small delay to show the loading state
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+		Task { @MainActor in
+			try? await Task.sleep(for: .seconds(0.5))
 			let description = reportDescription.isEmpty ? "No additional details provided" : reportDescription
 			onReport(reportType, description)
 			isSubmitting = false

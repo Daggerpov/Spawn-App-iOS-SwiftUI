@@ -8,7 +8,9 @@
 import Foundation
 import Security
 
-class KeychainService {
+/// Service for managing keychain storage
+/// Marked as @unchecked Sendable since keychain operations are thread-safe
+final class KeychainService: @unchecked Sendable {
 	static let shared = KeychainService()
 	private let service = "danielagapov.Spawn-App-iOS-SwiftUI"
 

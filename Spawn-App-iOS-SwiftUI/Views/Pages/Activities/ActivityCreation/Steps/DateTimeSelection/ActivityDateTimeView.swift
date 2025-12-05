@@ -48,6 +48,7 @@ struct ActivityDateTimeView: View {
 		}
 
 		// Only show options that make sense based on current context
+		@MainActor
 		static var availableOptions: [DayOption] {
 			let calendar = Calendar.current
 			let now = Date()

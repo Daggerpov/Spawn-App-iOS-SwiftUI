@@ -8,6 +8,7 @@
 import Combine
 import Foundation
 
+@MainActor
 class VerificationCodeViewModel: ObservableObject {
 	@Published var code: [String] = Array(repeating: "", count: 6)
 	@Published var previousCode: [String] = Array(repeating: "", count: 6)
@@ -15,7 +16,8 @@ class VerificationCodeViewModel: ObservableObject {
 	@Published var secondsRemaining: Int = 30
 	@Published var isResendEnabled: Bool = false
 
-	private var timer: Timer?
+	// nonisolated(unsafe) for timer since it's accessed in deinit
+	private nonisolated(unsafe) var timer: Timer?
 	private var userAuthViewModel: UserAuthViewModel
 
 	var isFormValid: Bool {
@@ -31,7 +33,9 @@ class VerificationCodeViewModel: ObservableObject {
 	}
 
 	deinit {
-		stopTimer()
+		// Timer invalidation is safe to call from deinit since it doesn't access actor-isolated state
+		timer?.invalidate()
+		timer = nil
 	}
 
 	// MARK: - Timer Management
@@ -44,13 +48,16 @@ class VerificationCodeViewModel: ObservableObject {
 		timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
 			guard let self = self else { return }
 
-			if self.secondsRemaining > 0 {
-				self.secondsRemaining -= 1
-			}
+			// Dispatch to main actor since Timer callback is @Sendable
+			Task { @MainActor in
+				if self.secondsRemaining > 0 {
+					self.secondsRemaining -= 1
+				}
 
-			if self.secondsRemaining == 0 {
-				self.isResendEnabled = true
-				self.stopTimer()
+				if self.secondsRemaining == 0 {
+					self.isResendEnabled = true
+					self.stopTimer()
+				}
 			}
 		}
 	}

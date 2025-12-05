@@ -8,7 +8,7 @@
 import Foundation
 
 /// Matches the backend UserRelationshipType enum
-enum UserRelationshipType: String, Codable, CaseIterable {
+enum UserRelationshipType: String, Codable, CaseIterable, Sendable {
 	case friend = "FRIEND"
 	case recommendedFriend = "RECOMMENDED_FRIEND"
 	case incomingFriendRequest = "INCOMING_FRIEND_REQUEST"

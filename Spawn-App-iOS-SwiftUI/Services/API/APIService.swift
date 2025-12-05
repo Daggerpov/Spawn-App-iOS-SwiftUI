@@ -25,8 +25,10 @@ struct ErrorResponse: Codable {
 	let message: String
 }
 
-class APIService: IAPIService {
-	static var baseURL: String = ServiceConstants.URLs.apiBase
+final class APIService: IAPIService, @unchecked Sendable {
+	/// Base URL for API requests. Uses nonisolated(unsafe) since it's set once at startup
+	/// and read from multiple threads but not mutated during normal operation.
+	nonisolated(unsafe) static var baseURL: String = ServiceConstants.URLs.apiBase
 
 	var errorMessage: String?  // TODO: currently not being accessed; maybe use in alert to user
 	var errorStatusCode: Int?  // if 404 -> just populate empty array, that's fine
@@ -108,7 +110,10 @@ class APIService: IAPIService {
 			urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
 
 		if !isAuthEndpoint && !isWhitelistedEndpoint {
-			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+			let isAuthenticated = await MainActor.run {
+				UserAuthViewModel.shared.spawnUser != nil && UserAuthViewModel.shared.isLoggedIn
+			}
+			guard isAuthenticated else {
 				print("❌ Cannot make API call to \(urlString): User is not logged in")
 				throw APIError.invalidStatusCode(statusCode: 401)
 			}
@@ -253,14 +258,21 @@ class APIService: IAPIService {
 			urlString.contains("/optional-details") || urlString.contains("/contacts/cross-reference")
 
 		if !isAuthEndpoint && !isWhitelistedEndpoint {
-			guard UserAuthViewModel.shared.spawnUser != nil, UserAuthViewModel.shared.isLoggedIn else {
+			let (isAuthenticated, spawnUserId, isLoggedIn) = await MainActor.run {
+				(
+					UserAuthViewModel.shared.spawnUser != nil && UserAuthViewModel.shared.isLoggedIn,
+					UserAuthViewModel.shared.spawnUser?.id.uuidString,
+					UserAuthViewModel.shared.isLoggedIn
+				)
+			}
+			guard isAuthenticated else {
 				print("❌ Cannot make API call to \(urlString): User is not logged in")
 
 				// DEBUG: Extra logging for blocking endpoints
 				if urlString.contains("blocked-users") {
 					print("🚫 DEBUG: ❌ CRITICAL - User not logged in when attempting to block user!")
-					print("🚫 DEBUG: spawnUser: \(UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil")")
-					print("🚫 DEBUG: isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
+					print("🚫 DEBUG: spawnUser: \(spawnUserId ?? "nil")")
+					print("🚫 DEBUG: isLoggedIn: \(isLoggedIn)")
 				}
 
 				throw APIError.invalidStatusCode(statusCode: 401)
@@ -1182,7 +1194,7 @@ class APIService: IAPIService {
 			return [:]
 		}
 
-		guard let userId = UserAuthViewModel.shared.spawnUser?.id else {
+		guard let userId = await UserAuthViewModel.shared.spawnUser?.id else {
 			throw APIError.invalidData
 		}
 
@@ -1336,7 +1348,7 @@ class APIService: IAPIService {
 }
 
 // since the PUT requests don't need any `@RequestBody` in the back-end
-struct EmptyRequestBody: Codable {}
+struct EmptyRequestBody: Codable, Sendable {}
 // for empty responses from requests:
-struct EmptyResponse: Codable {}
-struct EmptyObject: Codable {}
+struct EmptyResponse: Codable, Sendable {}
+struct EmptyObject: Codable, Sendable {}

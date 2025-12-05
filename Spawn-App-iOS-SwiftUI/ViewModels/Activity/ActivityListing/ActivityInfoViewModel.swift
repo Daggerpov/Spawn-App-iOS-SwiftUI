@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class ActivityInfoViewModel: ObservableObject {
 	@ObservedObject var activity: FullFeedActivityDTO
 	@ObservedObject var locationManager: LocationManager

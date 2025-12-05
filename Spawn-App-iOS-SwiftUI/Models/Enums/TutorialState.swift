@@ -8,7 +8,7 @@
 import Foundation
 
 /// Enum representing the current state of the first-time tutorial flow
-enum TutorialState: Codable, Equatable {
+enum TutorialState: Codable, Equatable, Sendable {
 	case notStarted
 	case activityTypeSelection  // User needs to select an activity type
 	case activityCreation(selectedActivityType: String)  // User has selected type, going through creation flow

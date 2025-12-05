@@ -19,6 +19,7 @@ import SwiftUI
 
 /// A singleton cache manager facade that provides convenient access to all cache services
 /// Conforms to ObservableObject for SwiftUI compatibility, but all reactive state is managed by the underlying cache services
+@MainActor
 class AppCache: ObservableObject {
 	static let shared = AppCache()
 

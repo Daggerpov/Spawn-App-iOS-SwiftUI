@@ -9,6 +9,8 @@ import Combine
 import Foundation
 
 /// Protocol defining common cache service functionality
+/// MainActor isolated since all cache services manage UI-related state
+@MainActor
 protocol CacheService: AnyObject {
 	/// Clear all cached data for this service
 	func clearAllCaches()
@@ -27,14 +29,13 @@ protocol CacheService: AnyObject {
 }
 
 /// Base class providing shared functionality for cache services
+@MainActor
 class BaseCacheService {
 	// MARK: - Properties
 
-	/// Background queue for disk operations
-	let diskQueue = DispatchQueue(label: "com.spawn.cache.diskQueue", qos: .utility)
-
 	/// Pending save task for debouncing
-	var pendingSaveTask: DispatchWorkItem?
+	/// nonisolated(unsafe) for deinit access
+	private nonisolated(unsafe) var pendingSaveTask: Task<Void, Never>?
 
 	/// Debounce interval for saving to disk
 	let saveDebounceInterval: TimeInterval = 1.0
@@ -42,13 +43,25 @@ class BaseCacheService {
 	/// User-specific cache timestamps
 	var lastChecked: [UUID: [String: Date]] = [:]
 
+	/// Timer for periodic save
+	/// nonisolated(unsafe) for deinit access
+	private nonisolated(unsafe) var periodicSaveTimer: Timer?
+
 	// MARK: - Initialization
 
 	init() {
 		// Set up a timer to periodically save to disk (debounced)
-		Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
-			self?.saveToDisk()
+		periodicSaveTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
+			guard let self = self else { return }
+			Task { @MainActor in
+				self.saveToDisk()
+			}
 		}
+	}
+
+	deinit {
+		periodicSaveTimer?.invalidate()
+		pendingSaveTask?.cancel()
 	}
 
 	// MARK: - Timestamp Management
@@ -99,10 +112,7 @@ class BaseCacheService {
 			guard let url = URL(string: APIService.baseURL + endpoint) else { return }
 
 			let fetchedData: [T] = try await apiService.fetchData(from: url, parameters: parameters)
-
-			await MainActor.run {
-				updateCache(fetchedData)
-			}
+			updateCache(fetchedData)
 		} catch {
 			print("Failed to refresh \(endpoint): \(error.localizedDescription)")
 		}
@@ -129,10 +139,7 @@ class BaseCacheService {
 			guard let url = URL(string: APIService.baseURL + endpoint) else { return }
 
 			let fetchedData: T = try await apiService.fetchData(from: url, parameters: parameters)
-
-			await MainActor.run {
-				updateCache(fetchedData)
-			}
+			updateCache(fetchedData)
 		} catch {
 			print("Failed to refresh \(endpoint): \(error.localizedDescription)")
 		}
@@ -141,14 +148,16 @@ class BaseCacheService {
 	// MARK: - Persistence Helpers
 
 	/// Generic encode-save helper
-	func saveToDefaults<T: Encodable>(_ data: T, key: String) {
+	/// Nonisolated since UserDefaults is thread-safe and this doesn't access MainActor state
+	nonisolated func saveToDefaults<T: Encodable>(_ data: T, key: String) {
 		if let encoded = try? JSONEncoder().encode(data) {
 			UserDefaults.standard.set(encoded, forKey: key)
 		}
 	}
 
 	/// Generic decode-load helper
-	func loadFromDefaults<T: Decodable>(key: String) -> T? {
+	/// Nonisolated since UserDefaults is thread-safe and this doesn't access MainActor state
+	nonisolated func loadFromDefaults<T: Decodable>(key: String) -> T? {
 		guard let data = UserDefaults.standard.data(forKey: key),
 			let decoded = try? JSONDecoder().decode(T.self, from: data)
 		else {
@@ -157,21 +166,24 @@ class BaseCacheService {
 		return decoded
 	}
 
-	/// Debounced save that prevents excessive disk writes
-	func debouncedSaveToDisk(saveAction: @escaping () -> Void) {
+	/// Debounced save that prevents excessive disk writes using Swift Concurrency
+	func debouncedSaveToDisk(saveAction: @escaping @Sendable () -> Void) {
 		// Cancel any pending save task
 		pendingSaveTask?.cancel()
 
-		// Create a new save task
-		let task = DispatchWorkItem { [weak self] in
-			self?.diskQueue.async {
-				saveAction()
-			}
-		}
+		// Create a new save task with debounce delay
+		pendingSaveTask = Task { [weak self] in
+			guard let self = self else { return }
+			try? await Task.sleep(for: .seconds(self.saveDebounceInterval))
 
-		// Store the task and schedule it
-		pendingSaveTask = task
-		diskQueue.asyncAfter(deadline: .now() + saveDebounceInterval, execute: task)
+			// Check if task was cancelled during sleep
+			guard !Task.isCancelled else { return }
+
+			// Perform save action on a background thread
+			await Task.detached(priority: .utility) {
+				saveAction()
+			}.value
+		}
 	}
 
 	/// Template method for subclasses to implement actual save logic

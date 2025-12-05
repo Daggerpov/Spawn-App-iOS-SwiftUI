@@ -8,7 +8,8 @@
 import Foundation
 
 // Will correspond to `CreateChatMessageDTO` in the back-end:
-class CreateChatMessageDTO: Identifiable, Codable {
+struct CreateChatMessageDTO: Identifiable, Codable, Sendable {
+	var id: UUID = UUID()
 	var content: String
 	var senderUserId: UUID
 	var activityId: UUID

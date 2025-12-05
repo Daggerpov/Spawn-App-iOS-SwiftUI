@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class ChatViewModel: ObservableObject {
 	private let dataService: DataService
 	private let senderUserId: UUID
@@ -35,11 +36,9 @@ class ChatViewModel: ObservableObject {
 
 	// MARK: - Helper Methods
 
-	/// Set error message on main actor
-	private func setErrorMessage(_ message: String?) async {
-		await MainActor.run {
-			creationMessage = message
-		}
+	/// Set error message
+	private func setErrorMessage(_ message: String?) {
+		creationMessage = message
 	}
 
 	/// Add or update chat message in activity
@@ -55,13 +54,13 @@ class ChatViewModel: ObservableObject {
 
 	func sendMessage(message: String) async {
 		// Clear any previous error message
-		await setErrorMessage(nil)
+		setErrorMessage(nil)
 
 		// Validate the message is not empty
 		let trimmedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines)
 		guard !trimmedMessage.isEmpty else {
 			print("Cannot send empty message")
-			await setErrorMessage(ErrorMessages.emptyMessage)
+			setErrorMessage(ErrorMessages.emptyMessage)
 			return
 		}
 
@@ -79,15 +78,13 @@ class ChatViewModel: ObservableObject {
 
 		switch result {
 		case .success(let newChatMessage, _):
-			await MainActor.run {
-				// Add message and clear error
-				addChatMessage(newChatMessage)
-				creationMessage = nil
-			}
+			// Add message and clear error
+			addChatMessage(newChatMessage)
+			creationMessage = nil
 
 		case .failure(let error):
 			print("Error sending message: \(error)")
-			await setErrorMessage(ErrorMessages.sendError)
+			setErrorMessage(ErrorMessages.sendError)
 		}
 	}
 
@@ -100,19 +97,17 @@ class ChatViewModel: ObservableObject {
 
 		switch result {
 		case .success(let chats, source: _):
-			await MainActor.run {
-				// Only update if we actually got data
-				if !chats.isEmpty || activity.chatMessages?.isEmpty == true {
-					activity.chatMessages = chats
-				}
-				// Clear any error messages on successful refresh
-				creationMessage = nil
+			// Only update if we actually got data
+			if !chats.isEmpty || activity.chatMessages?.isEmpty == true {
+				activity.chatMessages = chats
 			}
+			// Clear any error messages on successful refresh
+			creationMessage = nil
 		case .failure(let error):
 			print("Error refreshing chats: \(error)")
 			// Only show refresh error if there are no existing messages
 			if activity.chatMessages?.isEmpty != false {
-				await setErrorMessage(ErrorMessages.refreshError)
+				setErrorMessage(ErrorMessages.refreshError)
 			}
 		}
 	}

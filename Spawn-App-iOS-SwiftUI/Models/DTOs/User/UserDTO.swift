@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct UserDTO: Identifiable, Codable, Hashable, Nameable {
+struct UserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 	static func == (lhs: UserDTO, rhs: UserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
@@ -43,7 +43,7 @@ struct UserDTO: Identifiable, Codable, Hashable, Nameable {
 }
 
 extension UserDTO {
-	static var danielAgapov: UserDTO = {
+	static let danielAgapov: UserDTO = {
 		let id: UUID = UUID()
 		let friendIds: [UUID] = [UUID(), UUID()]
 		return UserDTO(
@@ -58,7 +58,7 @@ extension UserDTO {
 		)
 	}()
 
-	static var danielLee: UserDTO = {
+	static let danielLee: UserDTO = {
 		let id: UUID = UUID()
 		return UserDTO(
 			id: id,
@@ -72,7 +72,7 @@ extension UserDTO {
 		)
 	}()
 
-	static var haley: UserDTO = UserDTO(
+	static let haley: UserDTO = UserDTO(
 		id: UUID(),
 		friendUserIds: [],
 		username: "haleyusername",

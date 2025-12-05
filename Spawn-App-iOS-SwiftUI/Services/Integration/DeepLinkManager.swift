@@ -9,6 +9,7 @@ enum DeepLinkType {
 }
 
 // MARK: - Deep Link Manager
+@MainActor
 class DeepLinkManager: ObservableObject {
 	static let shared = DeepLinkManager()
 
@@ -155,48 +156,46 @@ class DeepLinkManager: ObservableObject {
 
 	// MARK: - Deep Link Processing
 	private func processPendingDeepLink(_ deepLink: DeepLinkType) {
-		DispatchQueue.main.async {
-			switch deepLink {
-			case .activity(let activityId):
-				print("🎯 DeepLinkManager: Processing activity deep link: \(activityId)")
-				self.pendingDeepLink = deepLink
-				self.activityToShow = activityId
-				self.shouldShowActivity = true
+		switch deepLink {
+		case .activity(let activityId):
+			print("🎯 DeepLinkManager: Processing activity deep link: \(activityId)")
+			pendingDeepLink = deepLink
+			activityToShow = activityId
+			shouldShowActivity = true
 
-				// Check if user is authenticated to determine behavior
-				self.handleActivityDeepLink(activityId)
+			// Check if user is authenticated to determine behavior
+			handleActivityDeepLink(activityId)
 
-				// Post notification for other parts of the app to listen to
-				NotificationCenter.default.post(
-					name: .deepLinkActivityReceived,
-					object: nil,
-					userInfo: ["activityId": activityId]
-				)
+			// Post notification for other parts of the app to listen to
+			NotificationCenter.default.post(
+				name: .deepLinkActivityReceived,
+				object: nil,
+				userInfo: ["activityId": activityId]
+			)
 
-			case .profile(let profileId):
-				print("🎯 DeepLinkManager: Processing profile deep link: \(profileId)")
-				self.pendingDeepLink = deepLink
-				self.profileToShow = profileId
-				self.shouldShowProfile = true
+		case .profile(let profileId):
+			print("🎯 DeepLinkManager: Processing profile deep link: \(profileId)")
+			pendingDeepLink = deepLink
+			profileToShow = profileId
+			shouldShowProfile = true
 
-				// Check if user is authenticated to determine behavior
-				self.handleProfileDeepLink(profileId)
+			// Check if user is authenticated to determine behavior
+			handleProfileDeepLink(profileId)
 
-				// Post notification for other parts of the app to listen to
-				NotificationCenter.default.post(
-					name: .deepLinkProfileReceived,
-					object: nil,
-					userInfo: ["profileId": profileId]
-				)
+			// Post notification for other parts of the app to listen to
+			NotificationCenter.default.post(
+				name: .deepLinkProfileReceived,
+				object: nil,
+				userInfo: ["profileId": profileId]
+			)
 
-			case .unknown:
-				print("❌ DeepLinkManager: Unknown deep link type, ignoring")
-				self.pendingDeepLink = nil
-				self.activityToShow = nil
-				self.shouldShowActivity = false
-				self.profileToShow = nil
-				self.shouldShowProfile = false
-			}
+		case .unknown:
+			print("❌ DeepLinkManager: Unknown deep link type, ignoring")
+			pendingDeepLink = nil
+			activityToShow = nil
+			shouldShowActivity = false
+			profileToShow = nil
+			shouldShowProfile = false
 		}
 	}
 
@@ -241,20 +240,21 @@ class DeepLinkManager: ObservableObject {
 		request.httpMethod = "GET"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-		URLSession.shared.dataTask(with: request) { data, response, error in
-			guard let data = data,
-				let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-				let activityIdString = json["id"] as? String,
-				let activityId = UUID(uuidString: activityIdString)
-			else {
-				print("❌ DeepLinkManager: Failed to resolve activity share code: \(shareCode)")
-				return
+		Task { [weak self] in
+			do {
+				let (data, _) = try await URLSession.shared.data(for: request)
+				guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+					let activityIdString = json["id"] as? String,
+					let activityId = UUID(uuidString: activityIdString)
+				else {
+					print("❌ DeepLinkManager: Failed to resolve activity share code: \(shareCode)")
+					return
+				}
+				self?.processPendingDeepLink(.activity(activityId))
+			} catch {
+				print("❌ DeepLinkManager: Network error resolving activity share code: \(error)")
 			}
-
-			DispatchQueue.main.async {
-				self.processPendingDeepLink(.activity(activityId))
-			}
-		}.resume()
+		}
 	}
 
 	private func resolveProfileShareCode(shareCode: String) {
@@ -270,32 +270,31 @@ class DeepLinkManager: ObservableObject {
 		request.httpMethod = "GET"
 		request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-		URLSession.shared.dataTask(with: request) { data, response, error in
-			guard let data = data,
-				let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-				let profileIdString = json["id"] as? String,
-				let profileId = UUID(uuidString: profileIdString)
-			else {
-				print("❌ DeepLinkManager: Failed to resolve profile share code: \(shareCode)")
-				return
+		Task { [weak self] in
+			do {
+				let (data, _) = try await URLSession.shared.data(for: request)
+				guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+					let profileIdString = json["id"] as? String,
+					let profileId = UUID(uuidString: profileIdString)
+				else {
+					print("❌ DeepLinkManager: Failed to resolve profile share code: \(shareCode)")
+					return
+				}
+				self?.processPendingDeepLink(.profile(profileId))
+			} catch {
+				print("❌ DeepLinkManager: Network error resolving profile share code: \(error)")
 			}
-
-			DispatchQueue.main.async {
-				self.processPendingDeepLink(.profile(profileId))
-			}
-		}.resume()
+		}
 	}
 
 	// MARK: - State Management
 	func clearPendingDeepLink() {
-		DispatchQueue.main.async {
-			print("🔗 DeepLinkManager: Clearing pending deep link")
-			self.pendingDeepLink = nil
-			self.activityToShow = nil
-			self.shouldShowActivity = false
-			self.profileToShow = nil
-			self.shouldShowProfile = false
-		}
+		print("🔗 DeepLinkManager: Clearing pending deep link")
+		pendingDeepLink = nil
+		activityToShow = nil
+		shouldShowActivity = false
+		profileToShow = nil
+		shouldShowProfile = false
 	}
 
 	func hasPendingDeepLink() -> Bool {

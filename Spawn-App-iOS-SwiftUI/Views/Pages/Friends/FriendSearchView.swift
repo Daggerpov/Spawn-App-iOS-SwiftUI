@@ -449,7 +449,7 @@ struct FriendRowView: View {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show notification toast
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				InAppNotificationManager.shared.showNotification(
 					title: "Link copied to clipboard",
 					message: "Profile link has been copied to your clipboard",

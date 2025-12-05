@@ -6,9 +6,11 @@
 //
 import Foundation
 
+@MainActor
 class ActivityStatusViewModel: ObservableObject {
 	@Published var status: ActivityStatus = .laterToday
-	private var timer: Timer?
+	// nonisolated(unsafe) for timer since it's accessed in deinit
+	private nonisolated(unsafe) var timer: Timer?
 	private let activityStartTime: Date
 	private let activityDuration: TimeInterval  // in seconds
 	private var refresh: Double = -1
@@ -37,7 +39,9 @@ class ActivityStatusViewModel: ObservableObject {
 		// Update every minute
 		guard refresh > 0 else { return }
 		timer = Timer.scheduledTimer(withTimeInterval: refresh, repeats: true) { [weak self] _ in
-			self?.updateStatus()
+			Task { @MainActor [weak self] in
+				self?.updateStatus()
+			}
 		}
 	}
 

@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 class ReportingService {
 	private let dataService: DataService
 
@@ -17,9 +18,11 @@ class ReportingService {
 	func blockUser(blockerId: UUID, blockedId: UUID, reason: String) async throws {
 		print("🚫 DEBUG: Starting blockUser request")
 		print("🚫 DEBUG: blockerId: \(blockerId), blockedId: \(blockedId), reason: \(reason)")
-		print("🚫 DEBUG: UserAuthViewModel.shared.isLoggedIn: \(UserAuthViewModel.shared.isLoggedIn)")
+		let isLoggedIn = UserAuthViewModel.shared.isLoggedIn
+		let spawnUserId = UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil"
+		print("🚫 DEBUG: UserAuthViewModel.shared.isLoggedIn: \(isLoggedIn)")
 		print(
-			"🚫 DEBUG: UserAuthViewModel.shared.spawnUser: \(UserAuthViewModel.shared.spawnUser?.id.uuidString ?? "nil")"
+			"🚫 DEBUG: UserAuthViewModel.shared.spawnUser: \(spawnUserId)"
 		)
 
 		// Check if we have access token in keychain

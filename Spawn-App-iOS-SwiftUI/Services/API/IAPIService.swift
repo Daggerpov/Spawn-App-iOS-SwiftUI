@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI  // just for UIImage for `createUser()`
 
-protocol IAPIService {
+protocol IAPIService: Sendable {
 	var errorMessage: String? { get set }
 	var errorStatusCode: Int? { get set }
 	/// generic function for fetching (GETting) data from API, given a model of type, T, and possibly other request parameters

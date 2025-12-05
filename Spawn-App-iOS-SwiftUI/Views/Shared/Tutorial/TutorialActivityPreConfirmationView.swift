@@ -59,7 +59,8 @@ struct TutorialActivityPreConfirmationView: View {
 					withAnimation(.easeInOut(duration: 0.3)) {
 						isVisible = false
 					}
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.3))
 						onContinue()
 					}
 				}

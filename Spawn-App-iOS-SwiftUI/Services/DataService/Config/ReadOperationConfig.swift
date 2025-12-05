@@ -237,7 +237,11 @@ enum DataType {
 
 		case .profileActivities:
 			// Profile activities require requesting user ID as parameter
-			guard let requestingUserId = UserAuthViewModel.shared.spawnUser?.id else {
+			// Use MainActor.assumeIsolated since this is called from UI code
+			let requestingUserId: UUID? = MainActor.assumeIsolated {
+				UserAuthViewModel.shared.spawnUser?.id
+			}
+			guard let requestingUserId = requestingUserId else {
 				return nil
 			}
 			return ["requestingUserId": requestingUserId.uuidString]
@@ -332,17 +336,22 @@ enum DataType {
 // MARK: - Cache Operations
 
 /// Helper struct to encapsulate cache operations for each data type
+/// MainActor isolated since it works with MainActor-isolated AppCache
+@MainActor
 struct CacheOperations<T> {
 	let provider: () -> T?
 	let updater: (T) -> Void
 }
 
 /// Protocol for type-erased cache configuration
+/// MainActor isolated since implementations access MainActor-isolated AppCache properties
+@MainActor
 private protocol CacheConfigProtocol {
 	func createOperations<T>(appCache: AppCache) -> CacheOperations<T>?
 }
 
 /// Generic cache configuration for user-specific dictionary caches (data first, userId second pattern)
+@MainActor
 private struct UserDictionaryCacheConfig<Value>: CacheConfigProtocol {
 	let dictionary: (AppCache) -> [UUID: Value]
 	let updater: (AppCache) -> (Value, UUID) -> Void
@@ -361,6 +370,7 @@ private struct UserDictionaryCacheConfig<Value>: CacheConfigProtocol {
 }
 
 /// Generic cache configuration for user-specific dictionary caches (userId first, data second pattern)
+@MainActor
 private struct ProfileDictionaryCacheConfig<Value>: CacheConfigProtocol {
 	let dictionary: (AppCache) -> [UUID: Value]
 	let updater: (AppCache) -> (UUID, Value) -> Void
@@ -379,6 +389,7 @@ private struct ProfileDictionaryCacheConfig<Value>: CacheConfigProtocol {
 }
 
 /// Generic cache configuration for simple (non-dictionary) caches
+@MainActor
 private struct SimpleCacheConfig<Value>: CacheConfigProtocol {
 	let getter: (AppCache) -> Value
 	let updater: (AppCache) -> (Value) -> Void
@@ -404,6 +415,7 @@ private struct SimpleCacheConfig<Value>: CacheConfigProtocol {
 
 // MARK: - DataType Cache Configuration Extension
 
+@MainActor
 extension DataType {
 	/// Returns the cache configuration for this data type, or nil if not cacheable
 	fileprivate var cacheConfig: CacheConfigProtocol? {
@@ -482,6 +494,19 @@ extension DataType {
 				userId: userId
 			)
 
+		case .profileInfo(let userId, _):
+			return ProfileDictionaryCacheConfig<BaseUserDTO>(
+				dictionary: { $0.otherProfiles },
+				updater: { appCache in appCache.updateOtherProfile },
+				userId: userId
+			)
+
+		// Calendar - Not cacheable yet (no cache infrastructure exists)
+		// Falls through to default
+		case .calendar, .calendarAll:
+			// TODO: add calendar caching
+			return nil
+
 		// Non-cacheable data types
 		default:
 			return nil
@@ -490,6 +515,8 @@ extension DataType {
 }
 
 /// Factory for creating cache operations for each data type
+/// MainActor isolated since it works with MainActor-isolated cache configurations
+@MainActor
 struct CacheOperationsFactory {
 	/// Generic method to create cache operations for any data type
 	/// This method uses the cache configuration defined in the DataType enum

@@ -1,6 +1,7 @@
 import ElegantEmojiPicker
 import SwiftUI
 
+@MainActor
 struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
 	@Binding var selectedEmoji: String
 	@Binding var isPresented: Bool
@@ -21,8 +22,9 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
 		let picker = NonDismissingElegantEmojiPicker(delegate: context.coordinator, configuration: configuration)
 
 		// Set up manual dismiss callback
-		picker.onManualDismiss = {
-			DispatchQueue.main.async {
+		picker.onManualDismiss = { [weak picker] in
+			_ = picker  // Capture to avoid unused warning
+			Task { @MainActor in
 				self.isPresented = false
 			}
 		}
@@ -38,27 +40,28 @@ struct ElegantEmojiPickerWrapper: UIViewControllerRepresentable {
 		Coordinator(self)
 	}
 
-	class Coordinator: NSObject, ElegantEmojiPickerDelegate {
+	@MainActor
+	final class Coordinator: NSObject, ElegantEmojiPickerDelegate {
 		var parent: ElegantEmojiPickerWrapper
 
 		init(_ parent: ElegantEmojiPickerWrapper) {
 			self.parent = parent
 		}
 
-		func emojiPicker(_ picker: ElegantEmojiPicker, didSelectEmoji emoji: Emoji?) {
+		nonisolated func emojiPicker(_ picker: ElegantEmojiPicker, didSelectEmoji emoji: Emoji?) {
 			let selectedEmojiString = emoji?.emoji ?? "⭐️"
 			print("DEBUG: Emoji selected: \(selectedEmojiString)")
 
-			// Update selectedEmoji on main thread and dismiss ONLY the emoji picker
-			DispatchQueue.main.async {
+			// Update selectedEmoji on main actor and dismiss the emoji picker
+			Task { @MainActor [weak self] in
+				guard let self = self else { return }
 				self.parent.selectedEmoji = selectedEmojiString
 				print("DEBUG: Updated parent.selectedEmoji to: \(self.parent.selectedEmoji)")
 
-				// Dismiss only the emoji picker sheet, not the parent
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-					print("DEBUG: Dismissing emoji picker sheet only")
-					self.parent.isPresented = false
-				}
+				// Small delay to ensure UI updates properly before dismissing
+				try? await Task.sleep(for: .milliseconds(100))
+				print("DEBUG: Dismissing emoji picker sheet only")
+				self.parent.isPresented = false
 			}
 		}
 	}

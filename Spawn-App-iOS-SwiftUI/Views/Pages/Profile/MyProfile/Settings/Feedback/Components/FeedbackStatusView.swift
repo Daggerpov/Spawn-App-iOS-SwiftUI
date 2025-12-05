@@ -26,11 +26,10 @@ struct FeedbackStatusView: View {
 								.stroke(successColor.opacity(0.3), lineWidth: 1)
 						)
 				)
-				.onAppear {
+				.task {
 					// Dismiss after showing success message
-					DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-						onSuccess()
-					}
+					try? await Task.sleep(for: .seconds(1.5))
+					onSuccess()
 				}
 			}
 

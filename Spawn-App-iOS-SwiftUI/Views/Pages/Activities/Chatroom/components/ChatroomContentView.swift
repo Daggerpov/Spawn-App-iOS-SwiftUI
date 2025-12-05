@@ -136,7 +136,8 @@ struct ChatroomContentView: View {
 				.onChange(of: isExpanded) {
 					// When expansion state changes, maintain scroll position to bottom
 					if let lastMessage = sortedMessages.last {
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							proxy.scrollTo(lastMessage.id, anchor: .bottom)
 						}
 					}
@@ -144,7 +145,8 @@ struct ChatroomContentView: View {
 				.onAppear {
 					// Scroll to newest message when view appears
 					if let lastMessage = sortedMessages.last {
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							proxy.scrollTo(lastMessage.id, anchor: .bottom)
 						}
 					}

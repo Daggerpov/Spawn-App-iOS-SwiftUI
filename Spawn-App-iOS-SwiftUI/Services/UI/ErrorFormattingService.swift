@@ -8,7 +8,8 @@
 import Foundation
 
 /// Service responsible for converting raw technical error messages into user-friendly text
-class ErrorFormattingService {
+/// Thread-safe singleton with no mutable state
+final class ErrorFormattingService: Sendable {
 	static let shared = ErrorFormattingService()
 
 	private init() {}

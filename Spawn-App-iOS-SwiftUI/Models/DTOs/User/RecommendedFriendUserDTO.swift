@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
+struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 	static func == (lhs: RecommendedFriendUserDTO, rhs: RecommendedFriendUserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
@@ -49,7 +49,7 @@ struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 }
 
 extension RecommendedFriendUserDTO {
-	static var danielAgapov: RecommendedFriendUserDTO = {
+	static let danielAgapov: RecommendedFriendUserDTO = {
 		let id: UUID = UUID()
 		return RecommendedFriendUserDTO(
 			id: id,
@@ -61,7 +61,7 @@ extension RecommendedFriendUserDTO {
 		)
 	}()
 
-	static var danielLee: RecommendedFriendUserDTO = {
+	static let danielLee: RecommendedFriendUserDTO = {
 		let id: UUID = UUID()
 		return RecommendedFriendUserDTO(
 			id: id,
@@ -73,7 +73,7 @@ extension RecommendedFriendUserDTO {
 		)
 	}()
 
-	static var haley: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
+	static let haley: RecommendedFriendUserDTO = RecommendedFriendUserDTO(
 		id: UUID(),
 		username: "haleyusername",
 		profilePicture: "Haley_pfp",
