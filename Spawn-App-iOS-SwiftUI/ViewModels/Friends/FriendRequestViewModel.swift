@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class FriendRequestViewModel: ObservableObject {
 	var dataService: DataService
 	var userId: UUID
@@ -48,10 +49,8 @@ class FriendRequestViewModel: ObservableObject {
 		case .success:
 			print("Successfully processed friend request: \(action.rawValue)")
 		case .failure(let error):
-			await MainActor.run {
-				creationMessage =
-					"There was an error \(action == .accept ? "accepting" : action == .cancel ? "canceling" : "declining") the friend request. Please try again"
-			}
+			creationMessage =
+				"There was an error \(action == .accept ? "accepting" : action == .cancel ? "canceling" : "declining") the friend request. Please try again"
 			print("Error processing friend request: \(error)")
 		}
 	}
