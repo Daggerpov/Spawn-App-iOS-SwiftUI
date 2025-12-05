@@ -752,6 +752,242 @@ class FeedViewModel: ObservableObject {
 
 ---
 
+## Making Services Sendable for Cross-Actor Usage
+
+When `@MainActor` classes call async methods on service objects (like `IAPIService`), those services must be `Sendable` to be safely passed across actor boundaries.
+
+### The Problem: Data Race Warnings
+
+```swift
+// ❌ WARNING: Sending 'self.apiService' risks causing data races
+@MainActor
+final class DataReader {
+    private let apiService: IAPIService  // Not Sendable!
+    
+    func fetchData() async {
+        let data = try await apiService.fetchData(from: url)  // ⚠️ Data race risk
+    }
+}
+```
+
+### The Solution: Protocol + Implementation Sendable Conformance
+
+**Step 1: Make the protocol extend Sendable**
+
+```swift
+// ✅ GOOD: Protocol requires Sendable conformance
+protocol IAPIService: Sendable {
+    func fetchData<T: Decodable>(from url: URL) async throws -> T
+    func sendData<T: Encodable>(_ object: T, to url: URL) async throws
+}
+```
+
+**Step 2: Mark implementations as `@unchecked Sendable`**
+
+```swift
+// ✅ GOOD: Implementation is @unchecked Sendable
+// Safe because URLSession is thread-safe
+final class APIService: IAPIService, @unchecked Sendable {
+    var errorMessage: String?  // Mutable, but reset at start of each call
+    
+    func fetchData<T: Decodable>(from url: URL) async throws -> T {
+        // URLSession.shared is thread-safe
+        let (data, _) = try await URLSession.shared.data(from: url)
+        return try JSONDecoder().decode(T.self, from: data)
+    }
+}
+```
+
+### When to Use `@unchecked Sendable`
+
+Use `@unchecked Sendable` when:
+- The class uses thread-safe APIs internally (like `URLSession.shared`)
+- Mutable state is reset at the start of each operation (not shared across calls)
+- You're certain the implementation is functionally thread-safe
+
+```swift
+// ✅ Safe to use @unchecked Sendable:
+final class APIService: @unchecked Sendable {
+    var errorMessage: String?  // Reset at start of each call
+    // Uses URLSession.shared which is thread-safe
+}
+
+// ❌ NOT safe for @unchecked Sendable:
+class SharedCounter: @unchecked Sendable {
+    var count = 0  // Shared mutable state - NOT thread-safe!
+}
+```
+
+### Mock Services Need the Same Treatment
+
+```swift
+// ✅ Mock also needs @unchecked Sendable
+final class MockAPIService: IAPIService, @unchecked Sendable {
+    var userId: UUID?
+    
+    func fetchData<T: Decodable>(from url: URL) async throws -> T {
+        // Return mock data
+    }
+}
+```
+
+---
+
+## Adding Sendable Constraints to Generic Parameters
+
+When generic parameters are passed across actor boundaries (like in async method calls), they must be `Sendable`.
+
+### The Problem: Generic Body Parameters
+
+```swift
+// ❌ WARNING: Sending 'body' risks causing data races
+@MainActor
+final class DataWriter {
+    func write<RequestBody: Encodable>(body: RequestBody) async {
+        try await apiService.sendData(body, to: url)  // ⚠️ body not Sendable
+    }
+}
+```
+
+### The Solution: Add `& Sendable` Constraint
+
+```swift
+// ✅ GOOD: Require Sendable for cross-actor safety
+@MainActor
+final class DataWriter {
+    func write<RequestBody: Encodable & Sendable>(body: RequestBody) async {
+        try await apiService.sendData(body, to: url)  // ✅ Safe
+    }
+}
+```
+
+### Update All Related Types
+
+When you add `Sendable` to a method, update related structs and protocols too:
+
+```swift
+// ✅ Struct holding the body must also be Sendable
+struct WriteOperation<Body: Encodable & Sendable>: Sendable {
+    let method: HTTPMethod
+    let endpoint: String
+    let body: Body?
+}
+
+// ✅ Protocol methods need the constraint
+protocol IDataWriter {
+    func write<RequestBody: Encodable & Sendable>(
+        _ operation: WriteOperation<RequestBody>
+    ) async -> DataResult<Response>
+}
+
+// ✅ Implementation methods need the constraint
+@MainActor
+final class DataWriter: IDataWriter {
+    func write<RequestBody: Encodable & Sendable>(
+        _ operation: WriteOperation<RequestBody>
+    ) async -> DataResult<Response> {
+        // ...
+    }
+}
+```
+
+### DTOs Are Usually Already Sendable
+
+Most DTOs in Swift are automatically `Sendable` because they're structs with only `Sendable` properties:
+
+```swift
+// ✅ This struct is implicitly Sendable
+struct ActivityCreateDTO: Encodable {
+    let title: String        // Sendable
+    let startTime: Date      // Sendable
+    let location: Location?  // Sendable if Location is Sendable
+}
+```
+
+If a DTO isn't `Sendable`, Swift will give a compile error at the call site, making it easy to identify and fix.
+
+---
+
+## All ObservableObjects Should Be @MainActor
+
+Every class that conforms to `ObservableObject` should have `@MainActor`:
+
+### Why Every ObservableObject Needs @MainActor
+
+1. **`@Published` properties must be updated on main thread** - SwiftUI requirement
+2. **Singleton `.shared` access from @MainActor classes** - avoids init errors
+3. **Consistency** - all UI-related state is on the same actor
+
+### Cache Facades and Wrappers
+
+Even "facade" or "wrapper" classes that don't have their own `@Published` properties need `@MainActor` if they're `ObservableObject`:
+
+```swift
+// ❌ BAD: Cache facade without @MainActor causes data race warnings
+class AppCache: ObservableObject {
+    static let shared = AppCache()
+    
+    private let activityCache = ActivityCacheService.shared  // @MainActor
+    
+    var activities: [UUID: [Activity]] {
+        activityCache.activities  // Accessing @MainActor property
+    }
+}
+
+// Causes: "Sending 'self.appCache' risks causing data races"
+// when used in Task blocks from @MainActor classes
+
+// ✅ GOOD: Facade with @MainActor
+@MainActor
+class AppCache: ObservableObject {
+    static let shared = AppCache()
+    
+    private let activityCache = ActivityCacheService.shared
+    
+    var activities: [UUID: [Activity]] {
+        activityCache.activities  // Safe - same actor
+    }
+}
+```
+
+### Checklist for ObservableObject Classes
+
+When creating or migrating an `ObservableObject`:
+
+- [ ] Add `@MainActor` to the class declaration
+- [ ] Remove redundant `@MainActor` from methods
+- [ ] Remove unnecessary `await MainActor.run { }` blocks
+- [ ] Ensure stored services/dependencies are also `@MainActor` or `Sendable`
+- [ ] Use `nonisolated(unsafe)` for properties accessed in `deinit`
+
+---
+
+## Migration Checklist Summary
+
+When migrating a file to proper actor isolation:
+
+### For ViewModels / ObservableObjects:
+1. Add `@MainActor` to the class
+2. Remove `@MainActor` from individual methods
+3. Remove `await MainActor.run { }` for property updates
+4. Keep `await` for async method calls
+
+### For Service Protocols (like IAPIService):
+1. Add `: Sendable` to the protocol
+2. Add `@unchecked Sendable` to implementations that use thread-safe APIs
+3. Mark implementations as `final class`
+
+### For Generic Methods Crossing Actor Boundaries:
+1. Add `& Sendable` constraint to generic type parameters
+2. Update related structs to also be `: Sendable`
+3. Update protocol declarations to match
+
+### For Cache/Facade Classes:
+1. Add `@MainActor` even if they're just wrappers
+2. Ensure underlying services are also `@MainActor`
+
+---
+
 ## Related Documentation
 
 - `THREADING-FIXES-IMPLEMENTATION.md` - How threading was fixed across the app
@@ -763,5 +999,5 @@ class FeedViewModel: ObservableObject {
 
 *Last Updated: December 2025*
 *Status: Reference Documentation*
-*Recent additions: Class-level @MainActor patterns, deinit handling, Timer callbacks, @preconcurrency import*
+*Recent additions: Sendable protocols/classes, generic Sendable constraints, ObservableObject @MainActor patterns, migration checklists*
 

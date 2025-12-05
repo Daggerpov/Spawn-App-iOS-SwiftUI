@@ -17,13 +17,13 @@ import Foundation
 @MainActor
 protocol IDataWriter {
 	/// Perform a write operation with a response body
-	func write<RequestBody: Encodable, Response: Decodable>(
+	func write<RequestBody: Encodable & Sendable, Response: Decodable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool
 	) async -> DataResult<Response>
 
 	/// Perform a write operation without a response body
-	func writeWithoutResponse<RequestBody: Encodable>(
+	func writeWithoutResponse<RequestBody: Encodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool
 	) async -> DataResult<EmptyResponse>
@@ -45,7 +45,7 @@ final class DataWriter: IDataWriter {
 	}
 
 	/// Perform a write operation with a response body
-	func write<RequestBody: Encodable, Response: Decodable>(
+	func write<RequestBody: Encodable & Sendable, Response: Decodable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool = true
 	) async -> DataResult<Response> {
@@ -81,7 +81,7 @@ final class DataWriter: IDataWriter {
 	}
 
 	/// Perform a write operation without a response body
-	func writeWithoutResponse<RequestBody: Encodable>(
+	func writeWithoutResponse<RequestBody: Encodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool = true
 	) async -> DataResult<EmptyResponse> {
@@ -119,7 +119,7 @@ final class DataWriter: IDataWriter {
 	// MARK: - Private Helper Methods
 
 	/// Perform a write operation with response
-	private func performWrite<RequestBody: Encodable, Response: Decodable>(
+	private func performWrite<RequestBody: Encodable & Sendable, Response: Decodable>(
 		method: HTTPMethod,
 		url: URL,
 		body: RequestBody?,
@@ -160,7 +160,7 @@ final class DataWriter: IDataWriter {
 	}
 
 	/// Perform a write operation without response
-	private func performWriteWithoutResponse<RequestBody: Encodable>(
+	private func performWriteWithoutResponse<RequestBody: Encodable & Sendable>(
 		method: HTTPMethod,
 		url: URL,
 		body: RequestBody?,

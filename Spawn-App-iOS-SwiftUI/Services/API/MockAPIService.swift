@@ -8,7 +8,7 @@
 import Foundation
 import SwiftUI  // just for UIImage for `createUser()`
 
-class MockAPIService: IAPIService {
+final class MockAPIService: IAPIService, @unchecked Sendable {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
 	static let isMocking: Bool = false
 

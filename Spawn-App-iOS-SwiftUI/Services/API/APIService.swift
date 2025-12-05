@@ -25,7 +25,7 @@ struct ErrorResponse: Codable {
 	let message: String
 }
 
-class APIService: IAPIService {
+final class APIService: IAPIService, @unchecked Sendable {
 	static var baseURL: String = ServiceConstants.URLs.apiBase
 
 	var errorMessage: String?  // TODO: currently not being accessed; maybe use in alert to user

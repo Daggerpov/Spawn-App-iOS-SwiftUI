@@ -13,7 +13,7 @@ import Foundation
 // MARK: - Write Operation
 
 /// Configuration for a write operation
-struct WriteOperation<Body: Encodable> {
+struct WriteOperation<Body: Encodable & Sendable>: Sendable {
 	let method: HTTPMethod
 	let endpoint: String
 	let body: Body?
@@ -111,7 +111,7 @@ struct WriteOperationFactory {
 
 	/// Create a write operation from a DataType
 	/// This allows DataType to also configure common write operations
-	static func operation<Body: Encodable>(
+	static func operation<Body: Encodable & Sendable>(
 		for dataType: DataType,
 		method: HTTPMethod,
 		body: Body? = nil,

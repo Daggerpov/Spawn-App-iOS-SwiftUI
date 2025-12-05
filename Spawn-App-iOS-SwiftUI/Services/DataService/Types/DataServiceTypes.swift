@@ -91,7 +91,7 @@ enum DataServiceError: Error, LocalizedError, Sendable {
 // MARK: - Write Operation Configuration
 
 /// Configuration for write operations (POST, PUT, PATCH, DELETE)
-struct WriteOperationConfig<Body: Encodable> {
+struct WriteOperationConfig<Body: Encodable & Sendable>: Sendable {
 	let method: HTTPMethod
 	let endpoint: String
 	let body: Body?
