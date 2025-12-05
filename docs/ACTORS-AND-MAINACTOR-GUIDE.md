@@ -293,6 +293,244 @@ actor ProfilePictureCache {
 
 ---
 
+## Class-Level @MainActor Best Practices
+
+### When to Add @MainActor to a Class
+
+Add `@MainActor` to the entire class when:
+
+1. **It's an `ObservableObject` with `@Published` properties** - SwiftUI requires main thread updates
+2. **It accesses `@MainActor`-isolated singletons** (like `DataService.shared`) in its initializer
+3. **Most of its methods update UI state**
+
+```swift
+// ❌ BAD: Accessing @MainActor singleton from nonisolated init default parameter
+class FeedbackViewModel: ObservableObject {
+    private var dataService: DataService
+    
+    init(dataService: DataService? = nil) {
+        // Error: Main actor-isolated static property 'shared' cannot be 
+        // referenced from a nonisolated autoclosure
+        self.dataService = dataService ?? DataService.shared
+    }
+}
+
+// ✅ GOOD: Class-level @MainActor allows access to @MainActor singletons
+@MainActor
+class FeedbackViewModel: ObservableObject {
+    private var dataService: DataService
+    
+    init(dataService: DataService? = nil) {
+        self.dataService = dataService ?? DataService.shared  // ✅ Works
+    }
+}
+```
+
+---
+
+### Removing Redundant @MainActor from Methods
+
+When a class is marked `@MainActor`, **all its methods are automatically main actor-isolated**. Remove redundant method-level `@MainActor` annotations:
+
+```swift
+// ❌ BAD: Redundant @MainActor on methods
+@MainActor
+class ActivityTypeViewModel: ObservableObject {
+    @Published var isLoading = false
+    
+    @MainActor  // ← Redundant!
+    func fetchActivityTypes() async {
+        isLoading = true
+        // ...
+    }
+    
+    @MainActor  // ← Redundant!
+    private func setLoadingState(_ loading: Bool) {
+        isLoading = loading
+    }
+}
+
+// ✅ GOOD: Clean - class-level @MainActor covers all methods
+@MainActor
+class ActivityTypeViewModel: ObservableObject {
+    @Published var isLoading = false
+    
+    func fetchActivityTypes() async {
+        isLoading = true
+        // ...
+    }
+    
+    private func setLoadingState(_ loading: Bool) {
+        isLoading = loading
+    }
+}
+```
+
+---
+
+### Replacing `await MainActor.run` in @MainActor Classes
+
+When the entire class is `@MainActor`, you don't need `await MainActor.run` to update properties - you're already on the main actor:
+
+```swift
+// ❌ BAD: Unnecessary MainActor.run in @MainActor class
+@MainActor
+class FeedbackViewModel: ObservableObject {
+    @Published var isSubmitting = false
+    @Published var errorMessage: String?
+    
+    func submitFeedback() async {
+        await MainActor.run {  // ← Unnecessary!
+            isSubmitting = true
+            errorMessage = nil
+        }
+        
+        let result = await api.submit()
+        
+        await MainActor.run {  // ← Unnecessary!
+            isSubmitting = false
+        }
+    }
+}
+
+// ✅ GOOD: Direct property access - already on main actor
+@MainActor
+class FeedbackViewModel: ObservableObject {
+    @Published var isSubmitting = false
+    @Published var errorMessage: String?
+    
+    func submitFeedback() async {
+        isSubmitting = true  // ✅ Direct access
+        errorMessage = nil
+        
+        let result = await api.submit()
+        
+        isSubmitting = false  // ✅ Direct access
+    }
+}
+```
+
+---
+
+### Common Refactoring Checklist
+
+When adding `@MainActor` to a class, follow these steps:
+
+1. **Add `@MainActor` to the class declaration**
+2. **Remove `@MainActor` from individual methods** - they inherit from the class
+3. **Replace `await MainActor.run { ... }`** with direct property access
+4. **Remove `Task { @MainActor in ... }`** wrappers for simple property updates
+5. **Keep `await`** for calling other async methods - the actor hop is still needed
+
+```swift
+// Before refactoring
+class ActivityCardViewModel: ObservableObject {
+    @Published var isParticipating = false
+    
+    @MainActor
+    private func updateState(_ participating: Bool) {
+        isParticipating = participating
+    }
+    
+    func toggle() async {
+        let result = await api.toggle()
+        await MainActor.run {
+            isParticipating = result
+        }
+    }
+}
+
+// After refactoring
+@MainActor
+class ActivityCardViewModel: ObservableObject {
+    @Published var isParticipating = false
+    
+    private func updateState(_ participating: Bool) {  // No @MainActor needed
+        isParticipating = participating
+    }
+    
+    func toggle() async {
+        let result = await api.toggle()
+        isParticipating = result  // Direct access, no MainActor.run
+    }
+}
+```
+
+---
+
+### Handling `deinit` in @MainActor Classes
+
+`deinit` is **always nonisolated** and cannot call @MainActor methods directly. Use `nonisolated(unsafe)` for properties that need cleanup in deinit:
+
+```swift
+// ❌ BAD: Cannot call @MainActor methods from deinit
+@MainActor
+class FeedViewModel: ObservableObject {
+    private var refreshTimer: Timer?
+    
+    private func stopTimer() {  // Implicitly @MainActor
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+    
+    deinit {
+        stopTimer()  // Error: Call to main actor-isolated method in nonisolated context
+    }
+}
+
+// ✅ GOOD: Use nonisolated(unsafe) for properties accessed in deinit
+@MainActor
+class FeedViewModel: ObservableObject {
+    // nonisolated(unsafe) allows access from deinit
+    private nonisolated(unsafe) var refreshTimer: Timer?
+    
+    private func stopTimer() {
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+    
+    deinit {
+        // Direct cleanup - safe because Timer is nonisolated(unsafe)
+        refreshTimer?.invalidate()
+        refreshTimer = nil
+    }
+}
+```
+
+**When to use `nonisolated(unsafe)`:**
+- Properties that need cleanup in `deinit` (timers, observers)
+- Properties that don't need actor isolation guarantees
+- Use sparingly - only when necessary for deinit access
+
+---
+
+### Timer Callbacks in @MainActor Classes
+
+Timer callbacks run on a different thread. Use `@MainActor` on the Task to safely access properties:
+
+```swift
+@MainActor
+class FeedViewModel: ObservableObject {
+    @Published var activities: [Activity] = []
+    private nonisolated(unsafe) var cleanupTimer: Timer?
+    
+    private func startPeriodicCleanup() {
+        cleanupTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            guard self != nil else { return }
+            
+            // ✅ Use @MainActor Task to access @MainActor properties
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+                let filtered = self.filterExpiredActivities(self.activities)
+                self.activities = filtered
+            }
+        }
+    }
+}
+```
+
+---
+
 ## Common Patterns in Spawn App
 
 ### Pattern 1: Stale-While-Revalidate
@@ -462,11 +700,55 @@ actor ImageCache {
 | Concept | Purpose | When to Use |
 |---------|---------|-------------|
 | `actor` | Thread-safe mutable state | Shared caches, network deduplication |
-| `@MainActor` | Main thread guarantee | ViewModels, UI-publishing services |
+| `@MainActor` (class) | Main thread guarantee for all methods | ViewModels, ObservableObjects with @Published |
+| `@MainActor` (method) | Main thread for specific method | Non-@MainActor class needing UI updates |
 | `Task { }` | Inherits actor context | Spawning work from @MainActor |
 | `Task.detached { }` | Background work | Heavy computation, disk I/O |
 | `withTaskGroup` | Parallel operations | Batch downloads, parallel fetches |
 | `async let` | Fixed parallel calls | 2-5 independent operations |
+
+### Quick Reference: @MainActor Class Refactoring
+
+| Before | After | Why |
+|--------|-------|-----|
+| `class Foo: ObservableObject` | `@MainActor class Foo: ObservableObject` | Enable access to @MainActor singletons |
+| `@MainActor func bar()` (on @MainActor class) | `func bar()` | Redundant - class already isolated |
+| `await MainActor.run { prop = x }` (on @MainActor class) | `prop = x` | Already on main actor |
+| `Task { @MainActor in ... }` (on @MainActor class) | `Task { ... }` | Task inherits @MainActor context |
+
+---
+
+## Handling Sendable Warnings from Combine
+
+When using `@MainActor` classes with Combine, you may see Sendable-related warnings. Use `@preconcurrency import` to suppress these:
+
+```swift
+// ❌ Warning: Add '@preconcurrency' to treat 'Sendable'-related errors 
+// from module 'Combine' as warnings
+import Combine
+import Foundation
+
+@MainActor
+class FeedViewModel: ObservableObject {
+    private let activitiesSubject = PassthroughSubject<[Activity], Never>()
+    // ...
+}
+
+// ✅ GOOD: @preconcurrency suppresses Combine Sendable warnings
+@preconcurrency import Combine
+import Foundation
+
+@MainActor
+class FeedViewModel: ObservableObject {
+    private let activitiesSubject = PassthroughSubject<[Activity], Never>()
+    // ...
+}
+```
+
+**When to use `@preconcurrency`:**
+- Importing modules that haven't fully adopted Sendable (like Combine)
+- When you get warnings about non-Sendable types crossing actor boundaries
+- As a temporary measure while Apple updates their frameworks
 
 ---
 
@@ -481,4 +763,5 @@ actor ImageCache {
 
 *Last Updated: December 2025*
 *Status: Reference Documentation*
+*Recent additions: Class-level @MainActor patterns, deinit handling, Timer callbacks, @preconcurrency import*
 
