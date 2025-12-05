@@ -7,11 +7,7 @@
 
 import Foundation
 
-class LocationDTO: Identifiable, Codable, Equatable {
-	static func == (lhs: LocationDTO, rhs: LocationDTO) -> Bool {
-		lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude && lhs.name == rhs.name
-	}
-
+struct LocationDTO: Identifiable, Codable, Equatable, Sendable {
 	var id: UUID
 	var name: String
 	var latitude: Double

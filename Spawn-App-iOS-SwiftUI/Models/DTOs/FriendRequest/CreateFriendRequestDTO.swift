@@ -8,7 +8,7 @@
 import Foundation
 
 /// as defined in the back-end `CreateFriendRequestDTO.java`
-struct CreateFriendRequestDTO: Identifiable, Codable, Hashable {
+struct CreateFriendRequestDTO: Identifiable, Codable, Hashable, Sendable {
 	static func == (lhs: CreateFriendRequestDTO, rhs: CreateFriendRequestDTO) -> Bool {
 		return lhs.id == rhs.id
 	}

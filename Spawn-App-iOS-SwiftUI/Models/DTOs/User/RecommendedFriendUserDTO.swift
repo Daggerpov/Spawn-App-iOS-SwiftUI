@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
+struct RecommendedFriendUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 	static func == (lhs: RecommendedFriendUserDTO, rhs: RecommendedFriendUserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}

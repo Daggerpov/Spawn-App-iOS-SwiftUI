@@ -172,7 +172,7 @@ extension FullFeedActivityDTO {
 		return nil
 	}
 
-	static let mockDinnerActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+	nonisolated(unsafe) static let mockDinnerActivity: FullFeedActivityDTO = FullFeedActivityDTO(
 		id: UUID(),
 		title: "Dinner time!!!!!!",
 		startTime: dateFromTimeString("10:00 PM"),
@@ -191,7 +191,7 @@ extension FullFeedActivityDTO {
 		],
 		isExpired: false
 	)
-	static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+	nonisolated(unsafe) static let mockSelfOwnedActivity: FullFeedActivityDTO = FullFeedActivityDTO(
 		id: UUID(),
 		title: "Basketball Game",
 		startTime: dateFromTimeString("10:00 PM"),
@@ -213,7 +213,7 @@ extension FullFeedActivityDTO {
 		isExpired: false
 	)
 
-	static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
+	nonisolated(unsafe) static let mockSelfOwnedActivity2: FullFeedActivityDTO = FullFeedActivityDTO(
 		id: UUID(),
 		title: "Study Session",
 		startTime: dateFromTimeString("2:00 PM"),
@@ -233,7 +233,7 @@ extension FullFeedActivityDTO {
 	)
 
 	// Mock indefinite activity from yesterday - should be filtered out
-	static let mockExpiredIndefiniteActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+	nonisolated(unsafe) static let mockExpiredIndefiniteActivity: FullFeedActivityDTO = FullFeedActivityDTO(
 		id: UUID(),
 		title: "Yesterday's Indefinite Study Session",
 		startTime: Calendar.current.date(byAdding: .day, value: -1, to: Date()),
@@ -251,7 +251,7 @@ extension FullFeedActivityDTO {
 	)
 
 	// Mock past activity that already ended - should be filtered out
-	static let mockPastActivity: FullFeedActivityDTO = FullFeedActivityDTO(
+	nonisolated(unsafe) static let mockPastActivity: FullFeedActivityDTO = FullFeedActivityDTO(
 		id: UUID(),
 		title: "Past Lunch Meeting",
 		startTime: Calendar.current.date(byAdding: .hour, value: -3, to: Date()),

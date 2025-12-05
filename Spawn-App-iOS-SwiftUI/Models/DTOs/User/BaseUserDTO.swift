@@ -15,7 +15,7 @@ enum UserStatus: String, Codable, CaseIterable {
 	case active = "ACTIVE"
 }
 
-struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable {
+struct BaseUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 	static func == (lhs: BaseUserDTO, rhs: BaseUserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
@@ -60,7 +60,7 @@ extension BaseUserDTO {
 		)
 	}
 
-	static var danielAgapov: BaseUserDTO = {
+	static let danielAgapov: BaseUserDTO = {
 		let id: UUID = UUID(uuidString: "7CF00DD1-D246-4339-8B85-0EC589161DBF") ?? UUID()
 		return BaseUserDTO(
 			id: id,
@@ -73,8 +73,8 @@ extension BaseUserDTO {
 		)
 	}()
 
-	static var danielLee: BaseUserDTO = {
-		let id: UUID = UUID()
+	static let danielLee: BaseUserDTO = {
+		let id: UUID = UUID(uuidString: "8DF11EE2-E357-5440-9C96-1FD690272ECF") ?? UUID()
 		return BaseUserDTO(
 			id: id,
 			username: "uhdlee",
@@ -86,8 +86,8 @@ extension BaseUserDTO {
 		)
 	}()
 
-	static var haley: BaseUserDTO = BaseUserDTO(
-		id: UUID(),
+	static let haley: BaseUserDTO = BaseUserDTO(
+		id: UUID(uuidString: "9EF22FF3-F468-6551-AD07-2FE7A1383FDA") ?? UUID(),
 		username: "haleyusername",
 		profilePicture: "Haley_pfp",
 		name: "Haley",
