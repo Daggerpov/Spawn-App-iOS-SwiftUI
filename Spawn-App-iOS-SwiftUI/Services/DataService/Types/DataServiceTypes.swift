@@ -13,7 +13,7 @@ import Foundation
 // MARK: - HTTP Method
 
 /// HTTP methods supported by the data service
-enum HTTPMethod: String {
+enum HTTPMethod: String, Sendable {
 	case get = "GET"
 	case post = "POST"
 	case put = "PUT"
@@ -32,7 +32,7 @@ enum HTTPMethod: String {
 // MARK: - Cache Policy
 
 /// Defines how the DataService should handle caching for read operations
-enum CachePolicy {
+enum CachePolicy: Sendable {
 	/// Check cache first, if available use it and optionally refresh in background
 	case cacheFirst(backgroundRefresh: Bool = true)
 	/// Always fetch from API, bypass cache (but still update cache after fetch)
@@ -44,7 +44,7 @@ enum CachePolicy {
 // MARK: - Data Source
 
 /// Indicates the source of data in a result
-enum DataSource {
+enum DataSource: Sendable {
 	case cache
 	case api
 }
@@ -59,7 +59,7 @@ enum DataResult<T> {
 
 // MARK: - Data Service Error
 
-enum DataServiceError: Error, LocalizedError {
+enum DataServiceError: Error, LocalizedError, Sendable {
 	case noCachedData
 	case unsupportedDataType
 	case unsupportedOperation(HTTPMethod, String)
@@ -116,4 +116,4 @@ struct WriteOperationConfig<Body: Encodable> {
 // MARK: - No Request Body Type
 
 /// Empty struct for operations that don't require a request body
-struct NoBody: Encodable {}
+struct NoBody: Encodable, Sendable {}

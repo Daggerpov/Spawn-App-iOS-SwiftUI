@@ -116,7 +116,8 @@ class SMSShareService: NSObject, ObservableObject {
 		var smsMessage = message
 
 		if smsMessage == nil, let activity = activity {
-			ServiceConstants.generateActivityShareCodeURL(for: activity.id) { url in
+			ServiceConstants.generateActivityShareCodeURL(for: activity.id) { [weak self] url in
+				guard let self = self else { return }
 				let shareURL = url ?? ServiceConstants.generateActivityShareURL(for: activity.id)
 				smsMessage = self.generateActivitySMSMessage(activity: activity, shareURL: shareURL)
 				self.openSystemSMS(message: smsMessage!, phoneNumbers: phoneNumbers)
@@ -150,38 +151,40 @@ class SMSShareService: NSObject, ObservableObject {
 // MARK: - MFMessageComposeViewControllerDelegate
 
 extension SMSShareService: MFMessageComposeViewControllerDelegate {
-	func messageComposeViewController(
+	nonisolated func messageComposeViewController(
 		_ controller: MFMessageComposeViewController, didFinishWith result: MessageComposeResult
 	) {
-		controller.dismiss(animated: true) {
-			switch result {
-			case .cancelled:
-				print("📱 SMS sharing cancelled")
-			case .sent:
-				// Show success notification
-				Task { @MainActor in
-					try? await Task.sleep(for: .seconds(0.5))
-					InAppNotificationManager.shared.showNotification(
-						title: "Invitation sent!",
-						message: "Your activity invitation has been sent via SMS",
-						type: .success,
-						duration: 3.0
-					)
+		Task { @MainActor in
+			controller.dismiss(animated: true) {
+				switch result {
+				case .cancelled:
+					print("📱 SMS sharing cancelled")
+				case .sent:
+					// Show success notification
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.5))
+						InAppNotificationManager.shared.showNotification(
+							title: "Invitation sent!",
+							message: "Your activity invitation has been sent via SMS",
+							type: .success,
+							duration: 3.0
+						)
+					}
+				case .failed:
+					print("❌ SMS sending failed")
+					// Show error notification
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.5))
+						InAppNotificationManager.shared.showNotification(
+							title: "Message failed",
+							message: "Failed to send SMS invitation. Please try again.",
+							type: .error,
+							duration: 4.0
+						)
+					}
+				@unknown default:
+					print("❓ Unknown SMS result")
 				}
-			case .failed:
-				print("❌ SMS sending failed")
-				// Show error notification
-				Task { @MainActor in
-					try? await Task.sleep(for: .seconds(0.5))
-					InAppNotificationManager.shared.showNotification(
-						title: "Message failed",
-						message: "Failed to send SMS invitation. Please try again.",
-						type: .error,
-						duration: 4.0
-					)
-				}
-			@unknown default:
-				print("❓ Unknown SMS result")
 			}
 		}
 	}

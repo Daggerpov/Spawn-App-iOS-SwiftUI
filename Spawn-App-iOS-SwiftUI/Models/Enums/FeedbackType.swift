@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum FeedbackType: String, Codable, CaseIterable, Identifiable {
+enum FeedbackType: String, Codable, CaseIterable, Identifiable, Sendable {
 	case BUG
 	case FEATURE_REQUEST
 	case GENERAL_FEEDBACK

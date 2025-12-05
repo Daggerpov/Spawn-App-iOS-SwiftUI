@@ -135,6 +135,7 @@ class ThemeService: ObservableObject {
 }
 
 // MARK: - Dynamic Color Extensions
+@MainActor
 extension Color {
 	static func dynamicBackground(_ colorScheme: ColorScheme) -> Color {
 		return ThemeService.shared.backgroundColor(for: colorScheme)
