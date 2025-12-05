@@ -7,7 +7,9 @@
 import UIKit
 
 /// Centralized haptic feedback service to eliminate duplicate UIImpactFeedbackGenerator code
-final class HapticFeedbackService {
+/// Main actor isolated since UIKit haptic generators require main thread access
+@MainActor
+final class HapticFeedbackService: Sendable {
 	static let shared = HapticFeedbackService()
 
 	private init() {}

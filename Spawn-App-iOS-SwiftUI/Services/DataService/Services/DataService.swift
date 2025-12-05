@@ -14,17 +14,18 @@ import Foundation
 
 // MARK: - Data Service Implementation
 
-/// Concrete implementation of IDataService that delegates to DataReader and DataWriter
-class DataService: IDataService {
+/// Actor-based DataService for thread-safe data operations
+/// Delegates to DataReader and DataWriter actors
+actor DataService: IDataService {
 
 	static let shared = DataService()
 
-	private let reader: IDataReader
-	private let writer: IDataWriter
+	private let reader: DataReader
+	private let writer: DataWriter
 
 	init(
-		reader: IDataReader = DataReader.shared,
-		writer: IDataWriter = DataWriter.shared
+		reader: DataReader = DataReader.shared,
+		writer: DataWriter = DataWriter.shared
 	) {
 		self.reader = reader
 		self.writer = writer
@@ -33,7 +34,7 @@ class DataService: IDataService {
 	// MARK: - Read Operations
 
 	/// Fetch data using a DataType configuration
-	func read<T: Decodable>(
+	func read<T: Decodable & Sendable>(
 		_ dataType: DataType,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> DataResult<T> {
@@ -43,7 +44,7 @@ class DataService: IDataService {
 	// MARK: - Write Operations
 
 	/// Perform a write operation with a response body
-	func write<RequestBody: Encodable, Response: Decodable>(
+	func write<RequestBody: Encodable & Sendable, Response: Decodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool = true
 	) async -> DataResult<Response> {
@@ -51,7 +52,7 @@ class DataService: IDataService {
 	}
 
 	/// Perform a write operation without a response body
-	func writeWithoutResponse<RequestBody: Encodable>(
+	func writeWithoutResponse<RequestBody: Encodable & Sendable>(
 		_ operation: WriteOperation<RequestBody>,
 		invalidateCache: Bool = true
 	) async -> DataResult<EmptyResponse> {

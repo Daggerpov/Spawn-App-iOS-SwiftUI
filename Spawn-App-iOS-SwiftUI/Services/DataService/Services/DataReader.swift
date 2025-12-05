@@ -18,9 +18,9 @@ import Foundation
 // MARK: - Data Reader Protocol
 
 /// Protocol defining the DataReader interface for read operations
-protocol IDataReader {
+protocol IDataReader: Sendable {
 	/// Read data using a DataType configuration
-	func read<T: Decodable>(
+	func read<T: Decodable & Sendable>(
 		_ dataType: DataType,
 		cachePolicy: CachePolicy
 	) async -> DataResult<T>
@@ -28,7 +28,8 @@ protocol IDataReader {
 
 // MARK: - Data Reader Implementation
 
-class DataReader: IDataReader {
+/// Actor-based DataReader for thread-safe read operations
+actor DataReader: IDataReader {
 	static let shared = DataReader()
 
 	private let apiService: IAPIService
@@ -40,7 +41,7 @@ class DataReader: IDataReader {
 	}
 
 	/// Generic read method using DataType configuration
-	func read<T: Decodable>(
+	func read<T: Decodable & Sendable>(
 		_ dataType: DataType,
 		cachePolicy: CachePolicy = .cacheFirst(backgroundRefresh: true)
 	) async -> DataResult<T> {
@@ -76,8 +77,8 @@ class DataReader: IDataReader {
 
 				// If background refresh is enabled, fetch from API in background
 				if backgroundRefresh {
-					Task {
-						let _ = await fetchFromAPI(dataType: dataType, cacheOps: cacheOps)
+					Task { [dataType, cacheOps] in
+						let _: DataResult<T> = await self.fetchFromAPI(dataType: dataType, cacheOps: cacheOps)
 					}
 				}
 
@@ -91,7 +92,7 @@ class DataReader: IDataReader {
 	}
 
 	/// Internal method to fetch from API
-	private func fetchFromAPI<T: Decodable>(
+	private func fetchFromAPI<T: Decodable & Sendable>(
 		dataType: DataType,
 		cacheOps: CacheOperations<T>?
 	) async -> DataResult<T> {
