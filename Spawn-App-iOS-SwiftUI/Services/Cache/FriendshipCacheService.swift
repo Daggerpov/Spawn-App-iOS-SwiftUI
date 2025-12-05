@@ -447,17 +447,17 @@ class FriendshipCacheService: BaseCacheService, CacheService, ObservableObject {
 	// MARK: - Persistence
 
 	override func saveToDisk() {
+		// Capture data on main actor BEFORE passing to background closure
+		let capturedFriends = self.friends
+		let capturedRecommended = self.recommendedFriends
+		let capturedRequests = self.friendRequests
+		let capturedSentRequests = self.sentFriendRequests
+		let capturedTimestamps = self.lastChecked
+
 		debouncedSaveToDisk { [weak self] in
 			guard let self = self else { return }
 
-			// Capture data on main thread
-			let capturedFriends = self.friends
-			let capturedRecommended = self.recommendedFriends
-			let capturedRequests = self.friendRequests
-			let capturedSentRequests = self.sentFriendRequests
-			let capturedTimestamps = self.lastChecked
-
-			// Encode and write on background queue
+			// Encode and write on background queue using captured data
 			self.saveToDefaults(capturedFriends, key: CacheKeys.friends)
 			self.saveToDefaults(capturedRecommended, key: CacheKeys.recommendedFriends)
 			self.saveToDefaults(capturedRequests, key: CacheKeys.friendRequests)

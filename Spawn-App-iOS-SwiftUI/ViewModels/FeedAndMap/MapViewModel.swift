@@ -7,6 +7,7 @@
 import MapKit
 import SwiftUI
 
+@MainActor
 class MapViewModel: Identifiable, ObservableObject {
 	@ObservedObject var activity: FullFeedActivityDTO
 	let id = UUID()

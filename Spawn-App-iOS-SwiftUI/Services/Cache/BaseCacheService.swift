@@ -9,6 +9,8 @@ import Combine
 import Foundation
 
 /// Protocol defining common cache service functionality
+/// MainActor isolated since all cache services manage UI-related state
+@MainActor
 protocol CacheService: AnyObject {
 	/// Clear all cached data for this service
 	func clearAllCaches()
@@ -32,7 +34,8 @@ class BaseCacheService {
 	// MARK: - Properties
 
 	/// Pending save task for debouncing
-	private var pendingSaveTask: Task<Void, Never>?
+	/// nonisolated(unsafe) for deinit access
+	private nonisolated(unsafe) var pendingSaveTask: Task<Void, Never>?
 
 	/// Debounce interval for saving to disk
 	let saveDebounceInterval: TimeInterval = 1.0
@@ -41,7 +44,8 @@ class BaseCacheService {
 	var lastChecked: [UUID: [String: Date]] = [:]
 
 	/// Timer for periodic save
-	private var periodicSaveTimer: Timer?
+	/// nonisolated(unsafe) for deinit access
+	private nonisolated(unsafe) var periodicSaveTimer: Timer?
 
 	// MARK: - Initialization
 
@@ -144,14 +148,16 @@ class BaseCacheService {
 	// MARK: - Persistence Helpers
 
 	/// Generic encode-save helper
-	func saveToDefaults<T: Encodable>(_ data: T, key: String) {
+	/// Nonisolated since UserDefaults is thread-safe and this doesn't access MainActor state
+	nonisolated func saveToDefaults<T: Encodable>(_ data: T, key: String) {
 		if let encoded = try? JSONEncoder().encode(data) {
 			UserDefaults.standard.set(encoded, forKey: key)
 		}
 	}
 
 	/// Generic decode-load helper
-	func loadFromDefaults<T: Decodable>(key: String) -> T? {
+	/// Nonisolated since UserDefaults is thread-safe and this doesn't access MainActor state
+	nonisolated func loadFromDefaults<T: Decodable>(key: String) -> T? {
 		guard let data = UserDefaults.standard.data(forKey: key),
 			let decoded = try? JSONDecoder().decode(T.self, from: data)
 		else {

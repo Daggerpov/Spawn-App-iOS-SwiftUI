@@ -30,7 +30,7 @@ struct ServiceConstants {
 	}
 
 	// MARK: - Share Code Generation
-	static func generateActivityShareCodeURL(for activityId: UUID, completion: @escaping (URL?) -> Void) {
+	static func generateActivityShareCodeURL(for activityId: UUID, completion: @Sendable @escaping (URL?) -> Void) {
 		// Generate share code via backend API
 		let urlString = "\(URLs.apiBase)share/activity/\(activityId.uuidString)"
 
@@ -59,7 +59,7 @@ struct ServiceConstants {
 		}.resume()
 	}
 
-	static func generateProfileShareCodeURL(for userId: UUID, completion: @escaping (URL?) -> Void) {
+	static func generateProfileShareCodeURL(for userId: UUID, completion: @Sendable @escaping (URL?) -> Void) {
 		// Generate share code via backend API
 		let urlString = "\(URLs.apiBase)share/profile/\(userId.uuidString)"
 

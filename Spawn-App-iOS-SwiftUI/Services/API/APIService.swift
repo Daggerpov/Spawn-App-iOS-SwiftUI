@@ -26,7 +26,9 @@ struct ErrorResponse: Codable {
 }
 
 final class APIService: IAPIService, @unchecked Sendable {
-	static var baseURL: String = ServiceConstants.URLs.apiBase
+	/// Base URL for API requests. Uses nonisolated(unsafe) since it's set once at startup
+	/// and read from multiple threads but not mutated during normal operation.
+	nonisolated(unsafe) static var baseURL: String = ServiceConstants.URLs.apiBase
 
 	var errorMessage: String?  // TODO: currently not being accessed; maybe use in alert to user
 	var errorStatusCode: Int?  // if 404 -> just populate empty array, that's fine

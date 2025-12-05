@@ -16,7 +16,8 @@ class VerificationCodeViewModel: ObservableObject {
 	@Published var secondsRemaining: Int = 30
 	@Published var isResendEnabled: Bool = false
 
-	private var timer: Timer?
+	// nonisolated(unsafe) for timer since it's accessed in deinit
+	private nonisolated(unsafe) var timer: Timer?
 	private var userAuthViewModel: UserAuthViewModel
 
 	var isFormValid: Bool {

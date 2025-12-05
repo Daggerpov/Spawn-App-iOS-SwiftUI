@@ -7,9 +7,11 @@
 
 import Foundation
 
-// Unified ActivityDTO that matches the back-end ActivityDTO structure
-// Replaces both ActivityCreationDTO and handles both creation and updates
-class ActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
+/// Unified ActivityDTO that matches the back-end ActivityDTO structure.
+/// Replaces both ActivityCreationDTO and handles both creation and updates.
+/// Uses @unchecked Sendable because it's a class with mutable state that needs to cross
+/// async boundaries. The mutable state is only modified on MainActor in practice.
+class ActivityDTO: Identifiable, Codable, Equatable, ObservableObject, @unchecked Sendable {
 	static func == (lhs: ActivityDTO, rhs: ActivityDTO) -> Bool {
 		return lhs.id == rhs.id
 	}

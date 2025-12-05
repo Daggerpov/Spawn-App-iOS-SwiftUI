@@ -232,7 +232,9 @@ class ContactsService: ObservableObject {
 
 	// MARK: - Helper Methods
 
-	private static func cleanPhoneNumber(_ phoneNumber: String) -> String {
+	/// Cleans and normalizes a phone number string.
+	/// Nonisolated because it's a pure function with no MainActor dependencies.
+	private nonisolated static func cleanPhoneNumber(_ phoneNumber: String) -> String {
 		print("🧹 CLEANING PHONE: '\(phoneNumber)'")
 
 		// Check if it's obviously not a phone number

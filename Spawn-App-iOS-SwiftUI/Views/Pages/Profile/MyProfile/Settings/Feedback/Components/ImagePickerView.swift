@@ -42,6 +42,8 @@ struct ImagePickerView: View {
 						.offset(x: 8, y: -8)
 					}
 				} else {
+					// Capture the color value before the PhotosPicker closure to avoid Sendable issues
+					let strokeColor = colorScheme == .dark ? Color.white.opacity(0.2) : Color.gray.opacity(0.3)
 					PhotosPicker(selection: $selectedItem, matching: .images) {
 						VStack(spacing: 8) {
 							Image(systemName: "photo")
@@ -54,7 +56,7 @@ struct ImagePickerView: View {
 						.padding()
 						.background(
 							RoundedRectangle(cornerRadius: 8)
-								.stroke(borderColor, lineWidth: 1)
+								.stroke(strokeColor, lineWidth: 1)
 						)
 					}
 				}
@@ -64,9 +66,5 @@ struct ImagePickerView: View {
 			Spacer()
 		}
 		.padding(.horizontal)
-	}
-
-	private var borderColor: Color {
-		colorScheme == .dark ? Color.white.opacity(0.2) : Color.gray.opacity(0.3)
 	}
 }

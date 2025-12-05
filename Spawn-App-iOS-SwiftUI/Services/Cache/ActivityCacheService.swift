@@ -339,15 +339,15 @@ class ActivityCacheService: BaseCacheService, CacheService, ObservableObject {
 	// MARK: - Persistence
 
 	override func saveToDisk() {
+		// Capture data on main actor BEFORE passing to background closure
+		let capturedActivities = self.activities
+		let capturedActivityTypes = self.activityTypes
+		let capturedTimestamps = self.lastChecked
+
 		debouncedSaveToDisk { [weak self] in
 			guard let self = self else { return }
 
-			// Capture data on main thread
-			let capturedActivities = self.activities
-			let capturedActivityTypes = self.activityTypes
-			let capturedTimestamps = self.lastChecked
-
-			// Encode and write on background queue
+			// Encode and write on background queue using captured data
 			self.saveToDefaults(capturedActivities, key: CacheKeys.events)
 			self.saveToDefaults(capturedActivityTypes, key: CacheKeys.activityTypes)
 			self.saveToDefaults(capturedTimestamps, key: CacheKeys.lastChecked)

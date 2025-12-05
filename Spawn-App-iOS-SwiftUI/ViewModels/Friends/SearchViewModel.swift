@@ -9,6 +9,7 @@ import Combine
 import Foundation
 import SwiftUI
 
+@MainActor
 class SearchViewModel: ObservableObject {
 	@Published var searchText: String = ""
 	@Published var isSearching: Bool = false

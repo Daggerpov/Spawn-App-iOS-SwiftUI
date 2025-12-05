@@ -291,6 +291,17 @@ actor ProfilePictureCache {
 }
 ```
 
+Use `nonisolated` for pure functions that don't access MainActor state:
+```swift
+@MainActor
+class ContactsService: ObservableObject {
+    // ✅ Pure function - no MainActor dependencies
+    private nonisolated static func cleanPhoneNumber(_ phone: String) -> String {
+        phone.filter { $0.isNumber }  // Safe to call from any thread
+    }
+}
+```
+
 ---
 
 ## Class-Level @MainActor Best Practices
@@ -585,7 +596,70 @@ class FriendshipCacheService {
 }
 ```
 
-### Pattern 3: Parallel Downloads with Task Groups
+### Pattern 3: Capture Data Before Sendable Closures
+
+When passing data to `@Sendable` closures from `@MainActor` context, capture *before* the closure:
+
+```swift
+@MainActor
+class CacheService {
+    @Published var data: [String: Any] = [:]
+    
+    func saveToDisk() {
+        // ✅ Capture on MainActor BEFORE the closure
+        let capturedData = self.data
+        
+        debouncedSave { [weak self] in  // @Sendable closure
+            self?.writeToDefaults(capturedData)  // Uses captured data
+        }
+    }
+}
+```
+
+### Pattern 4: @Sendable Completion Handlers
+
+When completion handlers can be called from different actor contexts, mark them `@Sendable` and wrap MainActor code in a Task:
+
+```swift
+// ✅ Mark completion as @Sendable
+func generateShareURL(completion: @Sendable @escaping (URL) -> Void) {
+    ServiceConstants.generateActivityShareCodeURL(for: activityId) { url in
+        completion(url ?? fallbackURL)
+    }
+}
+
+// ✅ When calling: capture values before closure, wrap MainActor code
+func shareViaSystem() {
+    let title = activityTitle  // Capture before closure
+    generateShareURL { url in
+        Task { @MainActor in  // Hop to main actor for UI work
+            let shareText = "Join \(title)! \(url)"
+            UIApplication.shared.open(url)
+        }
+    }
+}
+```
+
+### Pattern 5: Extracting Values from Non-Sendable Types
+
+When SDK types aren't Sendable (like Google Sign-In's `GIDGoogleUser`), extract values before creating Tasks:
+
+```swift
+func handleSignIn(_ user: GIDGoogleUser) {
+    // ✅ Extract Sendable values BEFORE the Task
+    let email = user.profile?.email
+    let name = user.profile?.name
+    let idToken = user.idToken?.tokenString
+    
+    Task { @MainActor in
+        self.email = email      // Uses extracted values
+        self.name = name
+        self.idToken = idToken
+    }
+}
+```
+
+### Pattern 6: Parallel Downloads with Task Groups
 
 ```swift
 actor ProfilePictureCache {
@@ -746,9 +820,19 @@ class FeedViewModel: ObservableObject {
 ```
 
 **When to use `@preconcurrency`:**
-- Importing modules that haven't fully adopted Sendable (like Combine)
+- Importing modules that haven't fully adopted Sendable (Combine, CoreLocation, UserNotifications)
 - When you get warnings about non-Sendable types crossing actor boundaries
-- As a temporary measure while Apple updates their frameworks
+
+**For protocol conformances with non-Sendable parameters:**
+```swift
+// ✅ Use @preconcurrency on protocol conformance when delegate methods receive non-Sendable types
+class AppDelegate: NSObject, @preconcurrency UNUserNotificationCenterDelegate, @preconcurrency MessagingDelegate {
+    @MainActor
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+        // Handle notification on main actor
+    }
+}
+```
 
 ---
 
@@ -829,6 +913,21 @@ final class MockAPIService: IAPIService, @unchecked Sendable {
         // Return mock data
     }
 }
+```
+
+### Subclasses Must Restate Inherited Sendable
+
+When a subclass inherits from a class with `@unchecked Sendable`, it must explicitly restate the conformance:
+
+```swift
+// Parent class
+class FullFeedActivityDTO: @unchecked Sendable { ... }
+
+// ❌ BAD: Compiler error - must restate inherited conformance
+class ProfileActivityDTO: FullFeedActivityDTO { ... }
+
+// ✅ GOOD: Explicitly restate the conformance
+class ProfileActivityDTO: FullFeedActivityDTO, @unchecked Sendable { ... }
 ```
 
 ---
@@ -999,5 +1098,4 @@ When migrating a file to proper actor isolation:
 
 *Last Updated: December 2025*
 *Status: Reference Documentation*
-*Recent additions: Sendable protocols/classes, generic Sendable constraints, ObservableObject @MainActor patterns, migration checklists*
 

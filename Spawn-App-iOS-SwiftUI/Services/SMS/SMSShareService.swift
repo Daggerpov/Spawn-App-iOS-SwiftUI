@@ -113,17 +113,17 @@ class SMSShareService: NSObject, ObservableObject {
 		phoneNumbers: [String]? = nil,
 		message: String? = nil
 	) {
-		var smsMessage = message
-
-		if smsMessage == nil, let activity = activity {
+		if message == nil, let activity = activity {
 			ServiceConstants.generateActivityShareCodeURL(for: activity.id) { [weak self] url in
-				guard let self = self else { return }
-				let shareURL = url ?? ServiceConstants.generateActivityShareURL(for: activity.id)
-				smsMessage = self.generateActivitySMSMessage(activity: activity, shareURL: shareURL)
-				self.openSystemSMS(message: smsMessage!, phoneNumbers: phoneNumbers)
+				Task { @MainActor in
+					guard let self = self else { return }
+					let shareURL = url ?? ServiceConstants.generateActivityShareURL(for: activity.id)
+					let generatedMessage = self.generateActivitySMSMessage(activity: activity, shareURL: shareURL)
+					self.openSystemSMS(message: generatedMessage, phoneNumbers: phoneNumbers)
+				}
 			}
-		} else if let message = smsMessage {
-			openSystemSMS(message: message, phoneNumbers: phoneNumbers)
+		} else if let messageToSend = message {
+			openSystemSMS(message: messageToSend, phoneNumbers: phoneNumbers)
 		}
 	}
 

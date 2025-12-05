@@ -584,12 +584,10 @@ struct ActivityCreationLocationView: View {
 		// Cancel any existing timer
 		debounceTimer?.invalidate()
 
-		await MainActor.run {
-			// Create a new timer with a delay to debounce the calls
-			debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
-				DispatchQueue.main.async {
-					self.performReverseGeocoding(for: coordinate)
-				}
+		// Create a new timer with a delay to debounce the calls
+		debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
+			DispatchQueue.main.async {
+				self.performReverseGeocoding(for: coordinate)
 			}
 		}
 	}

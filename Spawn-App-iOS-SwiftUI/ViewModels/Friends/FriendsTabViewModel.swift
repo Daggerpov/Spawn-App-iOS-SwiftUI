@@ -5,7 +5,7 @@
 //  Created by Daniel Agapov on 2025-01-20.
 //
 
-import Combine
+@preconcurrency import Combine
 import Foundation
 import SwiftUI
 
@@ -33,7 +33,8 @@ class FriendsTabViewModel: ObservableObject {
 	private var dataService: DataService
 	private var cancellables = Set<AnyCancellable>()
 	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
-	private var notificationObservers: [NSObjectProtocol] = []
+	// nonisolated(unsafe) for notificationObservers since it's accessed in deinit
+	private nonisolated(unsafe) var notificationObservers: [NSObjectProtocol] = []
 	private var apiService: IAPIService  // Keep for dynamic search operations (query-based, not cacheable)
 
 	init(userId: UUID, apiService: IAPIService) {
@@ -803,52 +804,56 @@ class FriendsTabViewModel: ObservableObject {
 	/// Copy profile URL to clipboard
 	func copyProfileURL(for user: Nameable) {
 		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
-			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
+			Task { @MainActor in
+				let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
 
-			// Clear the pasteboard first to avoid any contamination
-			UIPasteboard.general.items = []
+				// Clear the pasteboard first to avoid any contamination
+				UIPasteboard.general.items = []
 
-			// Set only the URL string to the pasteboard
-			UIPasteboard.general.string = url.absoluteString
+				// Set only the URL string to the pasteboard
+				UIPasteboard.general.string = url.absoluteString
 
-			// Show notification toast
-			InAppNotificationManager.shared.showNotification(
-				title: "Link copied to clipboard",
-				message: "Profile link has been copied to your clipboard",
-				type: .success,
-				duration: 5.0
-			)
+				// Show notification toast
+				InAppNotificationManager.shared.showNotification(
+					title: "Link copied to clipboard",
+					message: "Profile link has been copied to your clipboard",
+					type: .success,
+					duration: 5.0
+				)
+			}
 		}
 	}
 
 	/// Share profile using the system share sheet
 	func shareProfile(for user: Nameable, from viewController: UIViewController? = nil) {
 		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
-			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
-			let shareText =
-				"Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
+			Task { @MainActor in
+				let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
+				let shareText =
+					"Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
 
-			let activityViewController = UIActivityViewController(
-				activityItems: [shareText],
-				applicationActivities: nil
-			)
+				let activityViewController = UIActivityViewController(
+					activityItems: [shareText],
+					applicationActivities: nil
+				)
 
-			// Present the activity view controller
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-				let window = windowScene.windows.first
-			{
+				// Present the activity view controller
+				if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+					let window = windowScene.windows.first
+				{
 
-				var topController = window.rootViewController
-				while let presentedViewController = topController?.presentedViewController {
-					topController = presentedViewController
+					var topController = window.rootViewController
+					while let presentedViewController = topController?.presentedViewController {
+						topController = presentedViewController
+					}
+
+					if let popover = activityViewController.popoverPresentationController {
+						popover.sourceView = topController?.view
+						popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+					}
+
+					topController?.present(activityViewController, animated: true, completion: nil)
 				}
-
-				if let popover = activityViewController.popoverPresentationController {
-					popover.sourceView = topController?.view
-					popover.sourceRect = topController?.view.bounds ?? CGRect.zero
-				}
-
-				topController?.present(activityViewController, animated: true, completion: nil)
 			}
 		}
 	}

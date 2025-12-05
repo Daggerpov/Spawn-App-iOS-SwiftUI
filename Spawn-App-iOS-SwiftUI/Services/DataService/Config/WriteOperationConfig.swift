@@ -544,7 +544,7 @@ extension IDataService {
 	}
 
 	/// Perform a write operation using WriteOperationType configuration with explicit body
-	func write<Body: Encodable, Response: Decodable>(
+	func write<Body: Encodable & Sendable, Response: Decodable>(
 		_ operationType: WriteOperationType,
 		body: Body,
 		invalidateCache: Bool = true

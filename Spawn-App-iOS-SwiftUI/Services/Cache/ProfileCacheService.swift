@@ -252,18 +252,18 @@ class ProfileCacheService: BaseCacheService, CacheService, ObservableObject {
 	// MARK: - Persistence
 
 	override func saveToDisk() {
+		// Capture data on main actor BEFORE passing to background closure
+		let capturedProfiles = self.otherProfiles
+		let capturedStats = self.profileStats
+		let capturedInterests = self.profileInterests
+		let capturedSocialMedia = self.profileSocialMedia
+		let capturedActivities = self.profileActivities
+		let capturedTimestamps = self.lastChecked
+
 		debouncedSaveToDisk { [weak self] in
 			guard let self = self else { return }
 
-			// Capture data on main thread
-			let capturedProfiles = self.otherProfiles
-			let capturedStats = self.profileStats
-			let capturedInterests = self.profileInterests
-			let capturedSocialMedia = self.profileSocialMedia
-			let capturedActivities = self.profileActivities
-			let capturedTimestamps = self.lastChecked
-
-			// Encode and write on background queue
+			// Encode and write on background queue using captured data
 			self.saveToDefaults(capturedProfiles, key: CacheKeys.otherProfiles)
 			self.saveToDefaults(capturedStats, key: CacheKeys.profileStats)
 			self.saveToDefaults(capturedInterests, key: CacheKeys.profileInterests)

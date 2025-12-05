@@ -263,30 +263,33 @@ struct EnhancedActivityShareDrawer: View {
 	}
 
 	private func shareViaSystem() {
+		let creatorName = FormatterService.shared.formatFirstName(user: activity.creatorUser)
+		let title = activityTitle
 		generateShareURL(for: activity) { activityURL in
-			let creatorName = FormatterService.shared.formatFirstName(user: activity.creatorUser)
-			let shareText = "\(creatorName) has invited you to \(activityTitle)! \(activityURL.absoluteString)"
+			Task { @MainActor in
+				let shareText = "\(creatorName) has invited you to \(title)! \(activityURL.absoluteString)"
 
-			let activityVC = UIActivityViewController(
-				activityItems: [shareText],
-				applicationActivities: nil
-			)
+				let activityVC = UIActivityViewController(
+					activityItems: [shareText],
+					applicationActivities: nil
+				)
 
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-				let window = windowScene.windows.first
-			{
+				if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+					let window = windowScene.windows.first
+				{
 
-				var topController = window.rootViewController
-				while let presentedViewController = topController?.presentedViewController {
-					topController = presentedViewController
+					var topController = window.rootViewController
+					while let presentedViewController = topController?.presentedViewController {
+						topController = presentedViewController
+					}
+
+					if let popover = activityVC.popoverPresentationController {
+						popover.sourceView = topController?.view
+						popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+					}
+
+					topController?.present(activityVC, animated: true, completion: nil)
 				}
-
-				if let popover = activityVC.popoverPresentationController {
-					popover.sourceView = topController?.view
-					popover.sourceRect = topController?.view.bounds ?? CGRect.zero
-				}
-
-				topController?.present(activityVC, animated: true, completion: nil)
 			}
 		}
 	}
@@ -309,24 +312,27 @@ struct EnhancedActivityShareDrawer: View {
 	}
 
 	private func shareViaWhatsApp() {
+		let creatorName = FormatterService.shared.formatFirstName(user: activity.creatorUser)
+		let title = activityTitle
 		generateShareURL(for: activity) { url in
-			let creatorName = FormatterService.shared.formatFirstName(user: activity.creatorUser)
-			let shareText = "\(creatorName) has invited you to \(activityTitle)! \(url.absoluteString)"
+			Task { @MainActor in
+				let shareText = "\(creatorName) has invited you to \(title)! \(url.absoluteString)"
 
-			if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-				let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)")
-			{
+				if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+					let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)")
+				{
 
-				if UIApplication.shared.canOpenURL(whatsappURL) {
-					UIApplication.shared.open(whatsappURL)
-				} else {
-					print("WhatsApp not installed or URL scheme not supported")
+					if UIApplication.shared.canOpenURL(whatsappURL) {
+						UIApplication.shared.open(whatsappURL)
+					} else {
+						print("WhatsApp not installed or URL scheme not supported")
+					}
 				}
 			}
 		}
 	}
 
-	private func generateShareURL(for activity: FullFeedActivityDTO, completion: @escaping (URL) -> Void) {
+	private func generateShareURL(for activity: FullFeedActivityDTO, completion: @Sendable @escaping (URL) -> Void) {
 		// Use the centralized Constants for share URL generation with share codes
 		ServiceConstants.generateActivityShareCodeURL(for: activity.id) { url in
 			completion(url ?? ServiceConstants.generateActivityShareURL(for: activity.id))

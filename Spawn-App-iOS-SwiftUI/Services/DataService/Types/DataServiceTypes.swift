@@ -52,7 +52,9 @@ enum DataSource: Sendable {
 // MARK: - Data Operation Result
 
 /// Result of a data operation (read or write)
-enum DataResult<T> {
+/// Uses @unchecked Sendable because Error is not Sendable by default,
+/// but in practice our errors are safe to pass across actor boundaries.
+enum DataResult<T: Sendable>: @unchecked Sendable {
 	case success(T, source: DataSource)
 	case failure(Error)
 }

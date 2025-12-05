@@ -158,29 +158,32 @@ struct ActivityShareDrawer: View {
 
 	// MARK: - Share Functions
 	private func shareViaSystem() {
+		let title = activityTitle
 		generateShareURL(for: activity) { activityURL in
-			let shareText = "Join me for \"\(activityTitle)\"! \(activityURL.absoluteString)"
+			Task { @MainActor in
+				let shareText = "Join me for \"\(title)\"! \(activityURL.absoluteString)"
 
-			let activityVC = UIActivityViewController(
-				activityItems: [shareText],
-				applicationActivities: nil
-			)
+				let activityVC = UIActivityViewController(
+					activityItems: [shareText],
+					applicationActivities: nil
+				)
 
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-				let window = windowScene.windows.first
-			{
+				if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+					let window = windowScene.windows.first
+				{
 
-				var topController = window.rootViewController
-				while let presentedViewController = topController?.presentedViewController {
-					topController = presentedViewController
+					var topController = window.rootViewController
+					while let presentedViewController = topController?.presentedViewController {
+						topController = presentedViewController
+					}
+
+					if let popover = activityVC.popoverPresentationController {
+						popover.sourceView = topController?.view
+						popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+					}
+
+					topController?.present(activityVC, animated: true, completion: nil)
 				}
-
-				if let popover = activityVC.popoverPresentationController {
-					popover.sourceView = topController?.view
-					popover.sourceRect = topController?.view.bounds ?? CGRect.zero
-				}
-
-				topController?.present(activityVC, animated: true, completion: nil)
 			}
 		}
 	}
@@ -203,17 +206,20 @@ struct ActivityShareDrawer: View {
 	}
 
 	private func shareViaWhatsApp() {
+		let title = activityTitle
 		generateShareURL(for: activity) { url in
-			let shareText = "Join me for \"\(activityTitle)\"! \(url.absoluteString)"
+			Task { @MainActor in
+				let shareText = "Join me for \"\(title)\"! \(url.absoluteString)"
 
-			if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-				let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)")
-			{
+				if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+					let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)")
+				{
 
-				if UIApplication.shared.canOpenURL(whatsappURL) {
-					UIApplication.shared.open(whatsappURL)
-				} else {
-					print("WhatsApp not installed or URL scheme not supported")
+					if UIApplication.shared.canOpenURL(whatsappURL) {
+						UIApplication.shared.open(whatsappURL)
+					} else {
+						print("WhatsApp not installed or URL scheme not supported")
+					}
 				}
 			}
 		}
@@ -224,7 +230,7 @@ struct ActivityShareDrawer: View {
 		SMSShareService.shared.shareActivity(activity)
 	}
 
-	private func generateShareURL(for activity: FullFeedActivityDTO, completion: @escaping (URL) -> Void) {
+	private func generateShareURL(for activity: FullFeedActivityDTO, completion: @Sendable @escaping (URL) -> Void) {
 		// Use the centralized Constants for share URL generation with share codes
 		ServiceConstants.generateActivityShareCodeURL(for: activity.id) { url in
 			completion(url ?? ServiceConstants.generateActivityShareURL(for: activity.id))

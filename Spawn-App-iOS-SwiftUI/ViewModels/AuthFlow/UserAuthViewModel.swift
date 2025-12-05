@@ -470,28 +470,35 @@ class UserAuthViewModel: NSObject, ObservableObject {
 					}
 					guard let user = user else { return }
 
+					// Extract user data before Task to avoid Sendable issues with GIDGoogleUser
+					let idTokenString = user.idToken?.tokenString ?? ""
+					let userEmail = user.profile?.email
+					let userName = user.profile?.name
+					let userProfilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString
+					let userExternalId = user.userID
+
 					Task { @MainActor in
 						guard let self = self else { return }
 
 						if self.isOnboarding {
 							await self.registerWithOAuth(
-								idToken: user.idToken?.tokenString ?? "",
+								idToken: idTokenString,
 								provider: .google,
-								email: user.profile?.email,
-								name: user.profile?.name,
-								profilePictureUrl: user.profile?.imageURL(withDimension: 400)?.absoluteString
+								email: userEmail,
+								name: userName,
+								profilePictureUrl: userProfilePicUrl
 							)
 							return
 						}
 
 						// Request a higher resolution image (400px instead of 100px)
-						self.profilePicUrl = user.profile?.imageURL(withDimension: 400)?.absoluteString ?? ""
-						self.name = user.profile?.name
-						self.email = user.profile?.email
+						self.profilePicUrl = userProfilePicUrl ?? ""
+						self.name = userName
+						self.email = userEmail
 						self.isLoggedIn = true
-						self.externalUserId = user.userID
+						self.externalUserId = userExternalId
 						self.authProvider = .google
-						self.idToken = user.idToken?.tokenString
+						self.idToken = idTokenString
 
 						// Now that all properties are set, check if user exists
 						// This must happen AFTER setting idToken to avoid race condition
