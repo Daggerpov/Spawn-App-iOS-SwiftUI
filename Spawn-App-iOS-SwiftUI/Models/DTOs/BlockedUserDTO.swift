@@ -1,6 +1,6 @@
 import Foundation
 
-struct BlockedUserDTO: Codable {
+struct BlockedUserDTO: Codable, Sendable {
 	let id: UUID
 	let blockerId: UUID
 	let blockedId: UUID

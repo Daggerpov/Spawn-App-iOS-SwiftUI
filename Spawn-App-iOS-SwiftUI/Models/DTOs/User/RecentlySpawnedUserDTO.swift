@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RecentlySpawnedUserDTO: Codable, Hashable {
+struct RecentlySpawnedUserDTO: Codable, Hashable, Sendable {
 	var user: BaseUserDTO
 	var dateTime: Date
 }

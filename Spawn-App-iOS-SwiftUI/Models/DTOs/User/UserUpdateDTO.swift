@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct UserUpdateDTO: Codable {
+struct UserUpdateDTO: Codable, Sendable {
 	let username: String
 	let name: String
 }

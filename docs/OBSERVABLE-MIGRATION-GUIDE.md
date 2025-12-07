@@ -340,3 +340,4 @@ After each migration:
 
 **Note**: `ObservableObject` isn't "obsolete" — it's still valid for apps supporting older OS versions. However, for maintainability and modern best practices, `@Observable` is the preferred approach for new code in this project.
 
+

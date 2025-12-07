@@ -1,6 +1,6 @@
 import Foundation
 
-struct UserProfileInfoDTO: Codable {
+struct UserProfileInfoDTO: Codable, Sendable {
 	let userId: UUID
 	let name: String
 	let username: String

@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct CacheValidationResponse: Codable {
+struct CacheValidationResponse: Codable, Sendable {
 	var invalidate: Bool
 	var updatedItems: Data?
 }

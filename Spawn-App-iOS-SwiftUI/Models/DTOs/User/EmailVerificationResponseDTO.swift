@@ -5,7 +5,7 @@
 //  Created by Assistant on 2025-01-28.
 //
 
-struct EmailVerificationResponseDTO: Codable {
+struct EmailVerificationResponseDTO: Codable, Sendable {
 	let secondsUntilNextAttempt: Int
 	let message: String
 }

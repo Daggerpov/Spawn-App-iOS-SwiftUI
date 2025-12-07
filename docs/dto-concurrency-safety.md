@@ -66,3 +66,4 @@ nonisolated(unsafe) static let mockActivity: FullFeedActivityDTO = ...
 4. **Use fixed UUIDs** in mock data for stable identity
 5. If a class is required, use `nonisolated(unsafe)` for static properties
 
+

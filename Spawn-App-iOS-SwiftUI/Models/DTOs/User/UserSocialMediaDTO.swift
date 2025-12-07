@@ -1,6 +1,6 @@
 import Foundation
 
-struct UserSocialMediaDTO: Codable, Equatable {
+struct UserSocialMediaDTO: Codable, Equatable, Sendable {
 	var id: UUID?
 	var userId: UUID?
 	var whatsappLink: String?

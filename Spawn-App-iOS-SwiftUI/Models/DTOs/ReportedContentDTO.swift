@@ -1,6 +1,6 @@
 import Foundation
 
-struct ReportedContentDTO: Codable {
+struct ReportedContentDTO: Codable, Sendable {
 	let id: UUID?
 	let reporter: UserDTO?
 	let contentId: UUID
@@ -33,7 +33,7 @@ struct ReportedContentDTO: Codable {
 }
 
 // Enums to match backend
-enum EntityType: String, Codable, CaseIterable {
+enum EntityType: String, Codable, CaseIterable, Sendable {
 	case chatMessage = "ChatMessage"
 	case activity = "Activity"
 	case activityType = "ActivityType"
@@ -77,7 +77,7 @@ enum EntityType: String, Codable, CaseIterable {
 	}
 }
 
-enum ReportType: String, Codable, CaseIterable {
+enum ReportType: String, Codable, CaseIterable, Sendable {
 	case harassment = "HARASSMENT"
 	case violence = "VIOLENCE"
 	case nudity = "NUDITY"
@@ -97,7 +97,7 @@ enum ReportType: String, Codable, CaseIterable {
 	}
 }
 
-enum ResolutionStatus: String, Codable, CaseIterable {
+enum ResolutionStatus: String, Codable, CaseIterable, Sendable {
 	case pending = "PENDING"
 	case resolved = "RESOLVED"
 	case dismissed = "DISMISSED"
