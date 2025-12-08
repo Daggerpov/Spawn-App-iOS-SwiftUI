@@ -90,7 +90,7 @@ class ActivityCardViewModel: ObservableObject {
 		switch result {
 		case .success(let updatedActivity, _):
 			// Update local state after a successful API call
-			await updateActivityAfterAPISuccess(updatedActivity)
+			updateActivityAfterAPISuccess(updatedActivity)
 
 		case .failure(let error):
 			// Handle specific API errors

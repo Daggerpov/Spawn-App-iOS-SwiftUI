@@ -24,7 +24,7 @@ class FeedbackViewModel: ObservableObject {
 
 	func submitFeedback(type: FeedbackType, message: String, userId: UUID? = nil, image: UIImage? = nil) async {
 		guard !message.isEmpty else {
-			await setError("Please enter a message")
+			setError("Please enter a message")
 			return
 		}
 

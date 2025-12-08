@@ -89,20 +89,24 @@ struct UserProfileView: View {
 					return
 				}
 
+				// Capture user properties before Task.detached (they're not Sendable)
+				let userId = user.id
+				let profilePictureUrl = user.profilePicture
+
 				// Load enhancement data in background (non-blocking progressive enhancements)
-				backgroundDataLoadTask = Task.detached(priority: .background) {
+				backgroundDataLoadTask = Task.detached(priority: .background) { [profileViewModel] in
 					// Profile picture refresh (can use cached version initially)
-					if let profilePictureUrl = await user.profilePicture {
+					if let profilePictureUrl = profilePictureUrl {
 						let profilePictureCache = ProfilePictureCache.shared
 						_ = await profilePictureCache.getCachedImageWithRefresh(
-							for: await user.id,
+							for: userId,
 							from: profilePictureUrl,
 							maxAge: 6 * 60 * 60  // 6 hours
 						)
 					}
 
 					// Load non-critical enhancement data
-					await profileViewModel.loadEnhancementData(userId: await user.id)
+					await profileViewModel.loadEnhancementData(userId: userId)
 				}
 			}
 			.onDisappear {
