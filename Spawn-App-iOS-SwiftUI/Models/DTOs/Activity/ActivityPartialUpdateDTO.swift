@@ -8,7 +8,7 @@
 import Foundation
 
 /// DTO for partial activity updates using PATCH requests
-struct ActivityPartialUpdateDTO: Codable {
+struct ActivityPartialUpdateDTO: Codable, Sendable {
 	var title: String?
 	var icon: String?
 	var startTime: String?  // ISO8601 formatted string

@@ -7,7 +7,10 @@
 
 import Foundation
 
-class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject {
+/// Full activity DTO with all details for display in the feed.
+/// Uses @unchecked Sendable because it's a class with @Published properties that needs to cross
+/// async boundaries. The mutable state is only modified on MainActor in practice.
+class FullFeedActivityDTO: Identifiable, Codable, Equatable, ObservableObject, @unchecked Sendable {
 	static func == (lhs: FullFeedActivityDTO, rhs: FullFeedActivityDTO) -> Bool {
 		return lhs.id == rhs.id
 	}

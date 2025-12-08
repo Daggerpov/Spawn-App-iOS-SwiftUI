@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-enum AppColorScheme: String, CaseIterable {
+enum AppColorScheme: String, CaseIterable, Sendable {
 	case system = "system"
 	case light = "light"
 	case dark = "dark"
@@ -40,6 +40,9 @@ enum AppColorScheme: String, CaseIterable {
 	}
 }
 
+/// Theme service for managing app color scheme
+/// Main actor isolated since it uses @Published and ObservableObject
+@MainActor
 class ThemeService: ObservableObject {
 	static let shared = ThemeService()
 
@@ -64,7 +67,7 @@ class ThemeService: ObservableObject {
 
 	// MARK: - Dynamic Colors
 
-	func backgroundColor(for colorScheme: ColorScheme) -> Color {
+	nonisolated func backgroundColor(for colorScheme: ColorScheme) -> Color {
 		switch colorScheme {
 		case .light:
 			return Color(hex: "#FFFFFF")
@@ -75,7 +78,7 @@ class ThemeService: ObservableObject {
 		}
 	}
 
-	func accentColor(for colorScheme: ColorScheme) -> Color {
+	nonisolated func accentColor(for colorScheme: ColorScheme) -> Color {
 		switch colorScheme {
 		case .light:
 			return Color(hex: "#1D1D1D")
@@ -86,7 +89,7 @@ class ThemeService: ObservableObject {
 		}
 	}
 
-	func secondaryTextColor(for colorScheme: ColorScheme) -> Color {
+	nonisolated func secondaryTextColor(for colorScheme: ColorScheme) -> Color {
 		switch colorScheme {
 		case .light:
 			return Color(hex: "#8E8484")
@@ -97,7 +100,7 @@ class ThemeService: ObservableObject {
 		}
 	}
 
-	func cardBackgroundColor(for colorScheme: ColorScheme) -> Color {
+	nonisolated func cardBackgroundColor(for colorScheme: ColorScheme) -> Color {
 		switch colorScheme {
 		case .light:
 			return Color.white.opacity(0.5)
@@ -108,7 +111,7 @@ class ThemeService: ObservableObject {
 		}
 	}
 
-	func borderColor(for colorScheme: ColorScheme) -> Color {
+	nonisolated func borderColor(for colorScheme: ColorScheme) -> Color {
 		switch colorScheme {
 		case .light:
 			return Color.gray
@@ -119,7 +122,7 @@ class ThemeService: ObservableObject {
 		}
 	}
 
-	func placeholderTextColor(for colorScheme: ColorScheme) -> Color {
+	nonisolated func placeholderTextColor(for colorScheme: ColorScheme) -> Color {
 		switch colorScheme {
 		case .light:
 			return Color(hex: "#B0AFAF")
@@ -132,6 +135,7 @@ class ThemeService: ObservableObject {
 }
 
 // MARK: - Dynamic Color Extensions
+@MainActor
 extension Color {
 	static func dynamicBackground(_ colorScheme: ColorScheme) -> Color {
 		return ThemeService.shared.backgroundColor(for: colorScheme)

@@ -8,7 +8,7 @@
 import Foundation
 
 /// matches `FullFriendUserDTO` in the back-end
-struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
+struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable, Sendable {
 	static func == (lhs: FullFriendUserDTO, rhs: FullFriendUserDTO) -> Bool {
 		return lhs.id == rhs.id
 	}
@@ -38,7 +38,7 @@ struct FullFriendUserDTO: Identifiable, Codable, Hashable, Nameable {
 }
 
 extension FullFriendUserDTO {
-	static var danielAgapov: FullFriendUserDTO = {
+	static let danielAgapov: FullFriendUserDTO = {
 		let id: UUID = UUID()
 		return FullFriendUserDTO(
 			id: id,
@@ -46,11 +46,11 @@ extension FullFriendUserDTO {
 			profilePicture: "Daniel_Agapov_pfp",
 			name: "Daniel Agapov",
 			bio: "This is my bio.",
-			email: "daniel@agapov.com",
+			email: "daniel@agapov.com"
 		)
 	}()
 
-	static var danielLee: FullFriendUserDTO = {
+	static let danielLee: FullFriendUserDTO = {
 		let id: UUID = UUID()
 		return FullFriendUserDTO(
 			id: id,
@@ -58,7 +58,7 @@ extension FullFriendUserDTO {
 			profilePicture: "Daniel_Lee_pfp",
 			name: "Daniel Lee",
 			bio: "This is my bio.",
-			email: "daniel2456@gmail.com",
+			email: "daniel2456@gmail.com"
 		)
 	}()
 

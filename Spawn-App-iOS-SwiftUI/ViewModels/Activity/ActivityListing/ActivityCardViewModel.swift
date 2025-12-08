@@ -7,6 +7,7 @@
 
 import Foundation
 
+@MainActor
 class ActivityCardViewModel: ObservableObject {
 	@Published var isParticipating: Bool = false
 	var dataService: DataService
@@ -16,7 +17,6 @@ class ActivityCardViewModel: ObservableObject {
 	// MARK: - Helper Methods
 
 	/// Updates activity and posts notification after successful API call
-	@MainActor
 	private func updateActivityAfterAPISuccess(_ updatedActivity: FullFeedActivityDTO) {
 		self.activity = updatedActivity
 		self.isParticipating = updatedActivity.participationStatus == .participating
@@ -24,7 +24,6 @@ class ActivityCardViewModel: ObservableObject {
 	}
 
 	/// Handles activity full error (400 status code)
-	@MainActor
 	private func handleActivityFullError() {
 		NotificationCenter.default.post(
 			name: NSNotification.Name("ShowActivityFullAlert"),
@@ -91,31 +90,28 @@ class ActivityCardViewModel: ObservableObject {
 		switch result {
 		case .success(let updatedActivity, _):
 			// Update local state after a successful API call
-			await updateActivityAfterAPISuccess(updatedActivity)
+			updateActivityAfterAPISuccess(updatedActivity)
 
 		case .failure(let error):
-			await MainActor.run {
-				// Handle specific API errors
-				if let apiError = error as? APIError,
-					case .invalidStatusCode(let statusCode) = apiError
-				{
-					if statusCode == 400 {
-						// Activity is full
-						handleActivityFullError()
-					} else {
-						print(
-							"Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(apiError))"
-						)
-					}
+			// Handle specific API errors
+			if let apiError = error as? APIError,
+				case .invalidStatusCode(let statusCode) = apiError
+			{
+				if statusCode == 400 {
+					// Activity is full
+					handleActivityFullError()
 				} else {
-					print("Error toggling participation: \(ErrorFormattingService.shared.formatError(error))")
+					print(
+						"Error toggling participation (status \(statusCode)): \(ErrorFormattingService.shared.formatAPIError(apiError))"
+					)
 				}
+			} else {
+				print("Error toggling participation: \(ErrorFormattingService.shared.formatError(error))")
 			}
 		}
 	}
 
 	/// Deletes the activity
-	@MainActor
 	public func deleteActivity() async throws {
 		// Use DataService with WriteOperationType
 		let result: DataResult<EmptyResponse> = await dataService.writeWithoutResponse(

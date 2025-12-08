@@ -32,11 +32,10 @@ struct ActivityTypeFriendMenuView: View {
 			}
 		}
 		.background(universalBackgroundColor)
-		.onAppear {
+		.task {
 			// Simulate a very brief loading state to ensure smooth animation
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-				isLoading = false
-			}
+			try? await Task.sleep(for: .seconds(0.1))
+			isLoading = false
 		}
 	}
 

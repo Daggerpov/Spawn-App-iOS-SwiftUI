@@ -1,7 +1,7 @@
 import Foundation
 
 /// Data transfer object for registering a device token with the backend
-struct DeviceTokenDTO: Codable {
+struct DeviceTokenDTO: Codable, Sendable {
 	/// The device token from APNS
 	let token: String
 

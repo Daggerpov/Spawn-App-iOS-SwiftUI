@@ -255,7 +255,6 @@ struct ContentView: View {
 				.zIndex(999)  // Below notifications but above everything else
 			}
 		}
-		.testInAppNotification()  // Triple-tap anywhere to test in-app notifications
 	}
 
 	// MARK: - Deep Link Handling
@@ -271,7 +270,8 @@ struct ContentView: View {
 		selectedTabsEnum = .home
 
 		// Add a small delay to ensure tab switching completes before setting deep link state
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+		Task { @MainActor in
+			try? await Task.sleep(for: .seconds(0.1))
 			// Set up the deep linked activity state
 			deepLinkedActivityId = activityId
 			shouldShowDeepLinkedActivity = true
@@ -309,7 +309,7 @@ struct ContentView: View {
 
 				if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
 					// Show success notification
-					DispatchQueue.main.async {
+					Task { @MainActor in
 						InAppNotificationManager.shared.showNotification(
 							title: "You're invited!",
 							message: "You've been added to this activity. Check it out!",
@@ -335,7 +335,8 @@ struct ContentView: View {
 		selectedTabsEnum = .friends
 
 		// Add a small delay to ensure tab switching completes before setting deep link state
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+		Task { @MainActor in
+			try? await Task.sleep(for: .seconds(0.1))
 			// Set up the deep linked profile state
 			deepLinkedProfileId = profileId
 			shouldShowDeepLinkedProfile = true

@@ -9,7 +9,7 @@ import SwiftUI
 
 extension Circle {
 	func CircularButton(
-		systemName: String, buttonActionCallback: @escaping () -> Void,
+		systemName: String, buttonActionCallback: @escaping @Sendable @MainActor () -> Void,
 		width: CGFloat? = 17.5, height: CGFloat? = 17.5,
 		frameSize: CGFloat? = 40, source: String? = "default"
 	) -> some View {
@@ -28,7 +28,7 @@ struct CircularButtonStyling: ViewModifier {
 	var height: CGFloat?
 	var frameSize: CGFloat?
 	var source: String? = "default"
-	var buttonActionCallback: () -> Void
+	var buttonActionCallback: @Sendable @MainActor () -> Void
 	var systemName: String
 
 	// Animation states for 3D effect
@@ -61,7 +61,8 @@ struct CircularButtonStyling: ViewModifier {
 					HapticFeedbackService.shared.medium()
 
 					// Execute action with slight delay for animation
-					DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+					Task { @MainActor in
+						try? await Task.sleep(for: .seconds(0.1))
 						buttonActionCallback()
 					}
 				}) {

@@ -5,7 +5,7 @@
 //  Created by Assistant on 2025-01-28.
 //
 
-struct OAuthRegistrationDTO: Codable {
+struct OAuthRegistrationDTO: Codable, Sendable {
 	let idToken: String
 	let provider: String
 	let email: String?

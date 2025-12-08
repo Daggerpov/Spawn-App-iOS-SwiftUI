@@ -317,7 +317,8 @@ struct ActivityConfirmationView: View {
 						impactGenerator.impactOccurred()
 						shareViaLink()
 						// Delay dismissing the sheet to allow notification to show
-						DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+						Task { @MainActor in
+							try? await Task.sleep(for: .seconds(0.1))
 							showShareSheet = false
 						}
 					}) {
@@ -417,29 +418,32 @@ struct ActivityConfirmationView: View {
 	// MARK: - Share Functions
 	private func shareViaSystem() {
 		let activity = viewModel.activity
+		let title = activity.title ?? "an activity"
 		generateShareURL(for: activity) { activityURL in
-			let shareText = "Join me for \"\(activity.title ?? "an activity")\"! \(activityURL.absoluteString)"
+			Task { @MainActor in
+				let shareText = "Join me for \"\(title)\"! \(activityURL.absoluteString)"
 
-			let activityVC = UIActivityViewController(
-				activityItems: [shareText],
-				applicationActivities: nil
-			)
+				let activityVC = UIActivityViewController(
+					activityItems: [shareText],
+					applicationActivities: nil
+				)
 
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-				let window = windowScene.windows.first
-			{
+				if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+					let window = windowScene.windows.first
+				{
 
-				var topController = window.rootViewController
-				while let presentedViewController = topController?.presentedViewController {
-					topController = presentedViewController
+					var topController = window.rootViewController
+					while let presentedViewController = topController?.presentedViewController {
+						topController = presentedViewController
+					}
+
+					if let popover = activityVC.popoverPresentationController {
+						popover.sourceView = topController?.view
+						popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+					}
+
+					topController?.present(activityVC, animated: true, completion: nil)
 				}
-
-				if let popover = activityVC.popoverPresentationController {
-					popover.sourceView = topController?.view
-					popover.sourceRect = topController?.view.bounds ?? CGRect.zero
-				}
-
-				topController?.present(activityVC, animated: true, completion: nil)
 			}
 		}
 	}
@@ -450,7 +454,8 @@ struct ActivityConfirmationView: View {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show success notification
-			DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+			Task { @MainActor in
+				try? await Task.sleep(for: .seconds(0.2))
 				InAppNotificationManager.shared.showNotification(
 					title: "Link copied to clipboard",
 					message: "Activity link has been copied to your clipboard",
@@ -463,17 +468,20 @@ struct ActivityConfirmationView: View {
 
 	private func shareViaWhatsApp() {
 		let activity = viewModel.activity
+		let title = activity.title ?? "an activity"
 		generateShareURL(for: activity) { url in
-			let shareText = "Join me for \"\(activity.title ?? "an activity")\"! \(url.absoluteString)"
+			Task { @MainActor in
+				let shareText = "Join me for \"\(title)\"! \(url.absoluteString)"
 
-			if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
-				let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)")
-			{
+				if let encodedText = shareText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed),
+					let whatsappURL = URL(string: "whatsapp://send?text=\(encodedText)")
+				{
 
-				if UIApplication.shared.canOpenURL(whatsappURL) {
-					UIApplication.shared.open(whatsappURL)
-				} else {
-					print("WhatsApp not installed or URL scheme not supported")
+					if UIApplication.shared.canOpenURL(whatsappURL) {
+						UIApplication.shared.open(whatsappURL)
+					} else {
+						print("WhatsApp not installed or URL scheme not supported")
+					}
 				}
 			}
 		}
@@ -501,7 +509,7 @@ struct ActivityConfirmationView: View {
 		SMSShareService.shared.shareActivity(fullActivity)
 	}
 
-	private func generateShareURL(for activity: ActivityDTO, completion: @escaping (URL) -> Void) {
+	private func generateShareURL(for activity: ActivityDTO, completion: @Sendable @escaping (URL) -> Void) {
 		// Use the centralized Constants for share URL generation with share codes
 		ServiceConstants.generateActivityShareCodeURL(for: activity.id) { url in
 			completion(url ?? ServiceConstants.generateActivityShareURL(for: activity.id))

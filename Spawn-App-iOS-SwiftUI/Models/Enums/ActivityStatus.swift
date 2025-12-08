@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-public enum ActivityStatus {
+public enum ActivityStatus: Sendable {
 	case laterToday
 	case inHours(Int)
 	case happeningNow

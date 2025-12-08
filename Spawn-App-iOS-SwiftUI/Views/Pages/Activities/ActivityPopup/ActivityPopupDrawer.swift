@@ -157,7 +157,8 @@ struct ActivityPopupDrawer: View {
 		isDragging = false
 
 		// Delay the actual dismissal to allow animation to complete
-		DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+		Task { @MainActor in
+			try? await Task.sleep(for: .seconds(0.25))
 			dragOffset = 0
 			isExpanded = false
 			isDragging = false

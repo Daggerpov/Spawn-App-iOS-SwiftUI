@@ -5,9 +5,10 @@
 //  Created by Daniel Agapov on 11/9/24.
 //
 
-import Combine
+@preconcurrency import Combine
 import Foundation
 
+@MainActor
 class FeedViewModel: ObservableObject {
 	@Published var activities: [FullFeedActivityDTO] = []
 	@Published var activityTypes: [ActivityTypeDTO] = []
@@ -23,11 +24,11 @@ class FeedViewModel: ObservableObject {
 	private var activitiesUpdateThrottle: AnyCancellable?
 	private let activitiesSubject = PassthroughSubject<[FullFeedActivityDTO], Never>()
 
-	// Periodic refresh timer
-	private var refreshTimer: Timer?
+	// Periodic refresh timer - nonisolated for deinit access
+	private nonisolated(unsafe) var refreshTimer: Timer?
 
-	// Periodic local cleanup timer for expired activities
-	private var cleanupTimer: Timer?
+	// Periodic local cleanup timer for expired activities - nonisolated for deinit access
+	private nonisolated(unsafe) var cleanupTimer: Timer?
 
 	// MARK: - Computed Properties
 
@@ -98,10 +99,8 @@ class FeedViewModel: ObservableObject {
 			.sink { [weak self] _ in
 				// Force immediate UI refresh by updating activity types from the view model
 				if let self = self {
-					Task { @MainActor in
-						self.activityTypes = self.activityTypeViewModel.activityTypes
-						self.objectWillChange.send()
-					}
+					self.activityTypes = self.activityTypeViewModel.activityTypes
+					self.objectWillChange.send()
 				}
 			}
 			.store(in: &cancellables)
@@ -123,8 +122,11 @@ class FeedViewModel: ObservableObject {
 	}
 
 	deinit {
-		stopPeriodicRefresh()
-		stopPeriodicCleanup()
+		// Timer cleanup is safe from deinit since timers are nonisolated(unsafe)
+		refreshTimer?.invalidate()
+		refreshTimer = nil
+		cleanupTimer?.invalidate()
+		cleanupTimer = nil
 	}
 
 	// MARK: - Periodic Refresh
@@ -154,16 +156,18 @@ class FeedViewModel: ObservableObject {
 
 		// Run cleanup every 30 seconds to remove expired activities locally
 		cleanupTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-			guard let self = self else { return }
+			guard self != nil else { return }
 
+			// Class is @MainActor, so we must use MainActor.run to access properties from Timer callback
 			Task { @MainActor [weak self] in
 				guard let self = self else { return }
-				let filteredActivities = self.filterExpiredActivities(self.activities)
+				let currentActivities = self.activities
+				let filteredActivities = self.filterExpiredActivities(currentActivities)
 
 				// Only update if activities were actually filtered out
-				if filteredActivities.count < self.activities.count {
+				if filteredActivities.count < currentActivities.count {
 					print(
-						"🧹 FeedViewModel: Removed \(self.activities.count - filteredActivities.count) expired activities from view"
+						"🧹 FeedViewModel: Removed \(currentActivities.count - filteredActivities.count) expired activities from view"
 					)
 					self.activitiesSubject.send(filteredActivities)
 				}
@@ -243,15 +247,11 @@ class FeedViewModel: ObservableObject {
 		switch result {
 		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
-			await MainActor.run {
-				self.activitiesSubject.send(filteredActivities)
-			}
+			self.activitiesSubject.send(filteredActivities)
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error fetching activities")
-			await MainActor.run {
-				self.activitiesSubject.send([])
-			}
+			self.activitiesSubject.send([])
 		}
 	}
 
@@ -277,15 +277,11 @@ class FeedViewModel: ObservableObject {
 		switch result {
 		case .success(let activities, _):
 			let filteredActivities = self.filterExpiredActivities(activities)
-			await MainActor.run {
-				self.activitiesSubject.send(filteredActivities)
-			}
+			self.activitiesSubject.send(filteredActivities)
 
 		case .failure(let error):
 			APIError.logIfNotCancellation(error, message: "❌ FeedViewModel: Error force refreshing activities")
-			await MainActor.run {
-				self.activitiesSubject.send([])
-			}
+			self.activitiesSubject.send([])
 		}
 	}
 

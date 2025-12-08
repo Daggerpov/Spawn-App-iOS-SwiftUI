@@ -57,13 +57,11 @@ struct ActivityCalendarView: View {
 								Calendar.current.isDate(month, equalTo: today, toGranularity: .month)
 							}) {
 								// Scroll to current month immediately on first appearance
-								// Use a small delay to ensure the scroll view has loaded
-								DispatchQueue.main.async {
-									withAnimation(.easeInOut(duration: 0.8)) {
-										proxy.scrollTo(currentMonth, anchor: .center)
-									}
-									hasInitiallyScrolled = true
+								// SwiftUI View body is already on the main thread
+								withAnimation(.easeInOut(duration: 0.8)) {
+									proxy.scrollTo(currentMonth, anchor: .center)
 								}
+								hasInitiallyScrolled = true
 							}
 						}
 					}

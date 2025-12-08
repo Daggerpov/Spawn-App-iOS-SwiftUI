@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct FetchFeedbackSubmissionDTO: Codable, Identifiable {
+struct FetchFeedbackSubmissionDTO: Codable, Identifiable, Sendable {
 	var id: UUID?
 	var type: FeedbackType
 	var fromUserId: UUID?

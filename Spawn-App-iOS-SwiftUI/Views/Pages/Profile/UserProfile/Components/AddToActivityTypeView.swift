@@ -300,6 +300,7 @@ struct ActivityTypeSelectionCard: View {
 }
 
 // ViewModel for managing activity types
+@MainActor
 class AddToActivityTypeViewModel: ObservableObject {
 	@Published var activityTypes: [ActivityTypeDTO] = []
 	@Published var isLoading = false
@@ -316,10 +317,8 @@ class AddToActivityTypeViewModel: ObservableObject {
 	}
 
 	func loadActivityTypes() async {
-		await MainActor.run {
-			isLoading = true
-			errorMessage = nil
-		}
+		isLoading = true
+		errorMessage = nil
 
 		do {
 			// Fetch activity types from the API

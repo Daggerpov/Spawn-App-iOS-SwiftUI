@@ -449,7 +449,7 @@ struct FriendRowView: View {
 			UIPasteboard.general.string = url.absoluteString
 
 			// Show notification toast
-			DispatchQueue.main.async {
+			Task { @MainActor in
 				InAppNotificationManager.shared.showNotification(
 					title: "Link copied to clipboard",
 					message: "Profile link has been copied to your clipboard",
@@ -461,32 +461,36 @@ struct FriendRowView: View {
 	}
 
 	private func shareProfile(for user: Nameable) {
+		// Capture user name on main thread before the completion handler
+		let userName = FormatterService.shared.formatName(user: user)
+
 		ServiceConstants.generateProfileShareCodeURL(for: user.id) { profileURL in
 			let url = profileURL ?? ServiceConstants.generateProfileShareURL(for: user.id)
-			let shareText =
-				"Check out \(FormatterService.shared.formatName(user: user))'s profile on Spawn! \(url.absoluteString)"
+			let shareText = "Check out \(userName)'s profile on Spawn! \(url.absoluteString)"
 
-			let activityViewController = UIActivityViewController(
-				activityItems: [shareText],
-				applicationActivities: nil
-			)
+			// All UIKit operations must be on main actor
+			Task { @MainActor in
+				let activityViewController = UIActivityViewController(
+					activityItems: [shareText],
+					applicationActivities: nil
+				)
 
-			// Present the activity view controller
-			if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-				let window = windowScene.windows.first
-			{
+				// Present the activity view controller
+				if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+					let window = windowScene.windows.first
+				{
+					var topController = window.rootViewController
+					while let presentedViewController = topController?.presentedViewController {
+						topController = presentedViewController
+					}
 
-				var topController = window.rootViewController
-				while let presentedViewController = topController?.presentedViewController {
-					topController = presentedViewController
+					if let popover = activityViewController.popoverPresentationController {
+						popover.sourceView = topController?.view
+						popover.sourceRect = topController?.view.bounds ?? CGRect.zero
+					}
+
+					topController?.present(activityViewController, animated: true, completion: nil)
 				}
-
-				if let popover = activityViewController.popoverPresentationController {
-					popover.sourceView = topController?.view
-					popover.sourceRect = topController?.view.bounds ?? CGRect.zero
-				}
-
-				topController?.present(activityViewController, animated: true, completion: nil)
 			}
 		}
 	}

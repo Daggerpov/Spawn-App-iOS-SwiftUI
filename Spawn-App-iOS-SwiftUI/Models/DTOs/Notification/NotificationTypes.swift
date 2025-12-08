@@ -1,7 +1,7 @@
 import Foundation
 
 /// Defines all notification types used in the app
-enum NotificationType: String, Codable {
+enum NotificationType: String, Codable, Sendable {
 	/// Friend request notifications
 	case friendRequest = "friendRequest"
 
@@ -25,7 +25,7 @@ enum NotificationType: String, Codable {
 }
 
 /// Utility for building notification data
-struct NotificationDataBuilder {
+struct NotificationDataBuilder: Sendable {
 	/// Build notification data for a friend request
 	static func friendRequest(senderId: UUID, requestId: UUID) -> [String: String] {
 		return [

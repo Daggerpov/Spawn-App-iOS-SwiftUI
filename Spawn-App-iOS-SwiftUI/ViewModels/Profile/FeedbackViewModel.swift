@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 
+@MainActor
 class FeedbackViewModel: ObservableObject {
 	// DataService for all data operations
 	private var dataService: DataService
@@ -23,15 +24,13 @@ class FeedbackViewModel: ObservableObject {
 
 	func submitFeedback(type: FeedbackType, message: String, userId: UUID? = nil, image: UIImage? = nil) async {
 		guard !message.isEmpty else {
-			await setError("Please enter a message")
+			setError("Please enter a message")
 			return
 		}
 
-		await MainActor.run {
-			isSubmitting = true
-			errorMessage = nil
-			successMessage = nil
-		}
+		isSubmitting = true
+		errorMessage = nil
+		successMessage = nil
 
 		// Create feedback data model
 		var feedback = FeedbackSubmissionDTO(
@@ -57,13 +56,11 @@ class FeedbackViewModel: ObservableObject {
 
 		switch result {
 		case .success:
-			await MainActor.run {
-				isSubmitting = false
-				successMessage = "Thank you for your feedback!"
-			}
+			isSubmitting = false
+			successMessage = "Thank you for your feedback!"
 
 		case .failure(let error):
-			await setError("Failed to submit feedback: \(ErrorFormattingService.shared.formatError(error))")
+			setError("Failed to submit feedback: \(ErrorFormattingService.shared.formatError(error))")
 		}
 	}
 
@@ -95,7 +92,6 @@ class FeedbackViewModel: ObservableObject {
 		return resizedImage
 	}
 
-	@MainActor
 	private func setError(_ message: String) {
 		isSubmitting = false
 		errorMessage = message

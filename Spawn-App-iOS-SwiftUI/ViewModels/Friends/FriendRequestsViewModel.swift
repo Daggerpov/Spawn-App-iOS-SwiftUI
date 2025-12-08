@@ -8,6 +8,7 @@
 import Combine
 import Foundation
 
+@MainActor
 class FriendRequestsViewModel: ObservableObject {
 	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
 	@Published var sentFriendRequests: [FetchSentFriendRequestDTO] = []
@@ -39,7 +40,6 @@ class FriendRequestsViewModel: ObservableObject {
 		return result
 	}
 
-	@MainActor
 	func fetchFriendRequests() async {
 		isLoading = true
 		defer { isLoading = false }
@@ -79,7 +79,6 @@ class FriendRequestsViewModel: ObservableObject {
 		}
 	}
 
-	@MainActor
 	func respondToFriendRequest(requestId: UUID, action: FriendRequestAction) async {
 		let zeroUUID = UUID(uuidString: "00000000-0000-0000-0000-000000000000")!
 		if requestId == zeroUUID { return }

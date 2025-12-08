@@ -1,7 +1,7 @@
 import Foundation
 
 /// Data transfer object for managing notification preferences
-struct NotificationPreferencesDTO: Codable {
+struct NotificationPreferencesDTO: Codable, Sendable {
 	/// Whether the user wants to receive friend request notifications
 	let friendRequestsEnabled: Bool
 

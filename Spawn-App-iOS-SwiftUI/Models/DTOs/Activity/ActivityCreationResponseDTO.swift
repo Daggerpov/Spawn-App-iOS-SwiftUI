@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ActivityCreationResponseDTO: Codable {
+struct ActivityCreationResponseDTO: Codable, Sendable {
 	let activity: FullFeedActivityDTO
 	let friendSuggestion: ActivityTypeFriendSuggestionDTO?
 
@@ -17,7 +17,7 @@ struct ActivityCreationResponseDTO: Codable {
 	}
 }
 
-struct ActivityTypeFriendSuggestionDTO: Codable {
+struct ActivityTypeFriendSuggestionDTO: Codable, Sendable {
 	let activityTypeId: UUID
 	let activityTypeTitle: String
 	let suggestedFriends: [BaseUserDTO]

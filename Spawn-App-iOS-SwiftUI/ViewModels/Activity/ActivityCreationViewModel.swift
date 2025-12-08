@@ -8,6 +8,7 @@
 import Combine
 import Foundation
 
+@MainActor
 class ActivityCreationViewModel: ObservableObject {
 	// semi-singleton, that can only be reset upon calling `reInitialize()`
 	static var shared: ActivityCreationViewModel = ActivityCreationViewModel()
@@ -348,11 +349,9 @@ class ActivityCreationViewModel: ObservableObject {
 
 	// MARK: - Friend Selection Helpers
 
-	/// Helper to execute friend selection changes on main thread
-	private func updateSelectedFriends(_ update: @escaping () -> Void) {
-		DispatchQueue.main.async {
-			update()
-		}
+	/// Helper to execute friend selection changes
+	private func updateSelectedFriends(_ update: () -> Void) {
+		update()
 	}
 
 	/// Check if a friend is selected

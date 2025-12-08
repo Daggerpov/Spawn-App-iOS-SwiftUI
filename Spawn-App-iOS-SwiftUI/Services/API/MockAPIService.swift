@@ -8,9 +8,9 @@
 import Foundation
 import SwiftUI  // just for UIImage for `createUser()`
 
-class MockAPIService: IAPIService {
+final class MockAPIService: IAPIService, @unchecked Sendable {
 	/// This variable dictates whether we'll be using the `MockAPIService()` or `APIService()` throughout the app
-	static var isMocking: Bool = false
+	static let isMocking: Bool = false
 
 	var errorMessage: String? = nil
 	var errorStatusCode: Int? = nil
@@ -214,7 +214,7 @@ class MockAPIService: IAPIService {
 
 				// Use the app cache to get current friend requests for this user
 				// This ensures we return the actual current state, not hardcoded data
-				let cachedRequests = AppCache.shared.friendRequests[receiverUserId] ?? []
+				let cachedRequests = await MainActor.run { AppCache.shared.friendRequests[receiverUserId] ?? [] }
 
 				// If cache is empty and this is the initial load, return appropriate mock data
 				if cachedRequests.isEmpty {
@@ -231,7 +231,9 @@ class MockAPIService: IAPIService {
 
 					// Update cache with initial mock data if it was empty
 					if !mockRequests.isEmpty {
-						AppCache.shared.updateFriendRequestsForUser(mockRequests, userId: receiverUserId)
+						await MainActor.run {
+							AppCache.shared.updateFriendRequestsForUser(mockRequests, userId: receiverUserId)
+						}
 					}
 
 					return mockRequests as! T
@@ -256,7 +258,7 @@ class MockAPIService: IAPIService {
 
 				// Use the app cache to get current sent friend requests for this user
 				// This ensures we return the actual current state, not hardcoded data
-				let cachedSentRequests = AppCache.shared.sentFriendRequests[senderUserId] ?? []
+				let cachedSentRequests = await MainActor.run { AppCache.shared.sentFriendRequests[senderUserId] ?? [] }
 
 				// If cache is empty and this is the initial load, return appropriate mock data
 				if cachedSentRequests.isEmpty {
@@ -275,7 +277,9 @@ class MockAPIService: IAPIService {
 
 					// Update cache with initial mock data if it was empty
 					if !mockSentRequests.isEmpty {
-						AppCache.shared.updateSentFriendRequestsForUser(mockSentRequests, userId: senderUserId)
+						await MainActor.run {
+							AppCache.shared.updateSentFriendRequestsForUser(mockSentRequests, userId: senderUserId)
+						}
 					}
 
 					return mockSentRequests as! T
@@ -289,7 +293,7 @@ class MockAPIService: IAPIService {
 		// Handle calendar activities fetch
 		if url.absoluteString.contains("users/") && url.absoluteString.contains("/calendar") {
 			// Create mock calendar activities based on mock activities
-			let mockActivities = createMockCalendarActivities(parameters: parameters)
+			let mockActivities = await createMockCalendarActivities(parameters: parameters)
 
 			// If parameters are provided, return activities for that month
 			// If no parameters, return all activities
@@ -308,7 +312,7 @@ class MockAPIService: IAPIService {
 						let month = calendar.component(.month, from: futureDate)
 						let year = calendar.component(.year, from: futureDate)
 
-						let monthActivities = createMockCalendarActivities(parameters: [
+						let monthActivities = await createMockCalendarActivities(parameters: [
 							"month": String(month),
 							"year": String(year),
 						])
@@ -596,10 +600,9 @@ class MockAPIService: IAPIService {
 				print("🔍 MOCK: Updating activity details for ID: \(activityId)")
 
 				// Get the current activity from cache or create a mock one
-				let activityToUpdate =
-					AppCache.shared.getActivityById(
-						activityId
-					) ?? FullFeedActivityDTO.mockDinnerActivity
+				let activityToUpdate = await MainActor.run {
+					AppCache.shared.getActivityById(activityId) ?? FullFeedActivityDTO.mockDinnerActivity
+				}
 				activityToUpdate.id = activityId
 
 				// Apply updates from the request data
@@ -618,7 +621,7 @@ class MockAPIService: IAPIService {
 				}
 
 				// Update the cache with the modified activity
-				AppCache.shared.addOrUpdateActivity(activityToUpdate)
+				await MainActor.run { AppCache.shared.addOrUpdateActivity(activityToUpdate) }
 
 				return activityToUpdate as! U
 			}
@@ -663,17 +666,19 @@ class MockAPIService: IAPIService {
 			let parts = url.absoluteString.components(separatedBy: "/")
 			if let idStr = parts.last, let frId = UUID(uuidString: idStr) {
 				// Remove from mock caches using proper update methods
-				var updatedFriendRequests: [UUID: [FetchFriendRequestDTO]] = [:]
-				for (uid, requests) in AppCache.shared.friendRequests {
-					updatedFriendRequests[uid] = requests.filter { $0.id != frId }
-				}
-				AppCache.shared.updateFriendRequests(updatedFriendRequests)
+				await MainActor.run {
+					var updatedFriendRequests: [UUID: [FetchFriendRequestDTO]] = [:]
+					for (uid, requests) in AppCache.shared.friendRequests {
+						updatedFriendRequests[uid] = requests.filter { $0.id != frId }
+					}
+					AppCache.shared.updateFriendRequests(updatedFriendRequests)
 
-				var updatedSentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]
-				for (uid, requests) in AppCache.shared.sentFriendRequests {
-					updatedSentFriendRequests[uid] = requests.filter { $0.id != frId }
+					var updatedSentFriendRequests: [UUID: [FetchSentFriendRequestDTO]] = [:]
+					for (uid, requests) in AppCache.shared.sentFriendRequests {
+						updatedSentFriendRequests[uid] = requests.filter { $0.id != frId }
+					}
+					AppCache.shared.updateSentFriendRequests(updatedSentFriendRequests)
 				}
-				AppCache.shared.updateSentFriendRequests(updatedSentFriendRequests)
 			}
 			return
 		}
@@ -837,7 +842,7 @@ class MockAPIService: IAPIService {
 		]
 	}
 
-	private func createMockCalendarActivities(parameters: [String: String]?) -> [CalendarActivityDTO] {
+	private func createMockCalendarActivities(parameters: [String: String]?) async -> [CalendarActivityDTO] {
 		// Get the current month and year from parameters, or use current date
 		let calendar = Calendar.current
 		let currentDate = Date()
@@ -865,12 +870,13 @@ class MockAPIService: IAPIService {
 			for dayOffset in [3, 8, 15, 22] {
 				dateComponents.day = dayOffset + index
 				if let date = calendar.date(from: dateComponents) {
+					let colorHex = await MainActor.run { getActivityColorHex(for: activity.id) }
 					let calendarActivity = CalendarActivityDTO.create(
 						id: UUID(),
 						date: date,
 						title: activity.title,
 						icon: activity.icon,
-						colorHexCode: getActivityColorHex(for: activity.id),
+						colorHexCode: colorHex,
 						activityId: activity.id
 					)
 					activities.append(calendarActivity)

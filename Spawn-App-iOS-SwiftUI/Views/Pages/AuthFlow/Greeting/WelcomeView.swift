@@ -22,12 +22,11 @@ struct WelcomeView: View {
 					// Initial Rive animation for new users
 					RiveAnimationView.logoAnimation(fileName: "spawn_logo_animation")
 						.frame(width: 300, height: 300)
-						.onAppear {
+						.task {
 							// Show content after animation completes
-							DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-								withAnimation(.easeInOut(duration: 0.5)) {
-									animationCompleted = true
-								}
+							try? await Task.sleep(for: .seconds(2.0))
+							withAnimation(.easeInOut(duration: 0.5)) {
+								animationCompleted = true
 							}
 						}
 				} else {

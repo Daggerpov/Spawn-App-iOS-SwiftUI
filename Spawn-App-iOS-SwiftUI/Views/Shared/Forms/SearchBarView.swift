@@ -57,7 +57,8 @@ struct SearchBarView: View {
 		.onAppear {
 			if autofocus {
 				// Small delay to ensure the view is fully loaded
-				DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+				Task { @MainActor in
+					try? await Task.sleep(for: .seconds(0.1))
 					isTextFieldFocused = true
 				}
 			}
