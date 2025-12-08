@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FullscreenActivityListView: View {
-	@ObservedObject var viewModel: FeedViewModel
+	var viewModel: FeedViewModel
 	var user: BaseUserDTO
 	var callback: (FullFeedActivityDTO, Color) -> Void
 	@Environment(\.dismiss) private var dismiss

@@ -8,13 +8,14 @@
 @preconcurrency import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class FeedViewModel: ObservableObject {
-	@Published var activities: [FullFeedActivityDTO] = []
-	@Published var activityTypes: [ActivityTypeDTO] = []
+final class FeedViewModel {
+	var activities: [FullFeedActivityDTO] = []
+	var activityTypes: [ActivityTypeDTO] = []
 
 	// Use the ActivityTypeViewModel for managing activity types
-	@Published var activityTypeViewModel: ActivityTypeViewModel
+	var activityTypeViewModel: ActivityTypeViewModel
 
 	var userId: UUID
 	private var dataService: DataService
@@ -95,7 +96,6 @@ final class FeedViewModel: ObservableObject {
 				// Force immediate UI refresh by updating activity types from the view model
 				if let self = self {
 					self.activityTypes = self.activityTypeViewModel.activityTypes
-					self.objectWillChange.send()
 				}
 			}
 			.store(in: &cancellables)

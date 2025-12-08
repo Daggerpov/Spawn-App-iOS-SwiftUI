@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityPreConfirmationView: View {
-	@ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
+	var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
 	@ObservedObject var themeService = ThemeService.shared
 	@Environment(\.colorScheme) var colorScheme
 	let onCreateActivity: () -> Void

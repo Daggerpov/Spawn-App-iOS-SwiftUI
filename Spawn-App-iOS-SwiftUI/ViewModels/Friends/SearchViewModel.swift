@@ -6,7 +6,6 @@
 //
 
 @preconcurrency import Combine
-import Foundation
 import SwiftUI
 
 @Observable

@@ -5,7 +5,6 @@
 //  Created by Assistant on 1/21/25.
 //
 
-import Foundation
 import SwiftUI
 
 @Observable

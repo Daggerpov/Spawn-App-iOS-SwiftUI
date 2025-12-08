@@ -3,7 +3,7 @@ import MapKit
 import SwiftUI
 
 struct ActivityCreationLocationView: View {
-	@ObservedObject var viewModel: ActivityCreationViewModel =
+	var viewModel: ActivityCreationViewModel =
 		ActivityCreationViewModel.shared
 	@ObservedObject private var locationManager = LocationManager.shared
 	@State private var region: MKCoordinateRegion = {

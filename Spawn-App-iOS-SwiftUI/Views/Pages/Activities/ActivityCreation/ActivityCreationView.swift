@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ActivityCreationView: View {
-	@ObservedObject var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
+	var viewModel: ActivityCreationViewModel = ActivityCreationViewModel.shared
 	var tutorialViewModel = TutorialViewModel.shared
 	@Environment(\.dismiss) private var dismiss
 

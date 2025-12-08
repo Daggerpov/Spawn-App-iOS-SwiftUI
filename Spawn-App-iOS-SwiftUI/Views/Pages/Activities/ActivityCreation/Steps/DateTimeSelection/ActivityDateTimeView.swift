@@ -10,7 +10,7 @@ struct ActivityDateTimeView: View {
 	let onBack: (() -> Void)?
 
 	// Access to the view model to update selectedDate
-	@ObservedObject private var viewModel = ActivityCreationViewModel.shared
+	private var viewModel = ActivityCreationViewModel.shared
 
 	// Environment for color scheme detection
 	@Environment(\.colorScheme) private var colorScheme

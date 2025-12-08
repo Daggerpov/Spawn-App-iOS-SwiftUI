@@ -5,23 +5,23 @@
 //  Created by Daniel Agapov on 2025-01-02.
 //
 
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class ActivityCreationViewModel: ObservableObject {
+final class ActivityCreationViewModel {
 	// semi-singleton, that can only be reset upon calling `reInitialize()`
 	static var shared: ActivityCreationViewModel = ActivityCreationViewModel()
 
-	@Published var selectedDate: Date = Date()
-	@Published var activity: ActivityDTO
-	@Published var creationMessage: String = ""
-	@Published var timeValidationMessage: String = ""
-	@Published var selectedActivityType: ActivityTypeDTO?
-	@Published var selectedDuration: ActivityDuration = .indefinite
-	@Published var selectedLocation: LocationDTO?
+	var selectedDate: Date = Date()
+	var activity: ActivityDTO
+	var creationMessage: String = ""
+	var timeValidationMessage: String = ""
+	var selectedActivityType: ActivityTypeDTO?
+	var selectedDuration: ActivityDuration = .indefinite
+	var selectedLocation: LocationDTO?
 
-	@Published var selectedFriends: [FullFriendUserDTO] = []
+	var selectedFriends: [FullFriendUserDTO] = []
 
 	// MARK: - Constants
 	private enum TimeConstants {
@@ -32,27 +32,27 @@ final class ActivityCreationViewModel: ObservableObject {
 	}
 
 	// Validation properties
-	@Published var isTitleValid: Bool = true
-	@Published var isInvitesValid: Bool = true
-	@Published var isLocationValid: Bool = true
-	@Published var isTimeValid: Bool = true
-	@Published var isFormValid: Bool = false
+	var isTitleValid: Bool = true
+	var isInvitesValid: Bool = true
+	var isLocationValid: Bool = true
+	var isTimeValid: Bool = true
+	var isFormValid: Bool = false
 
 	// Loading state
-	@Published var isCreatingActivity: Bool = false
+	var isCreatingActivity: Bool = false
 
 	// Edit state
-	@Published var isEditingExistingActivity: Bool = false
+	var isEditingExistingActivity: Bool = false
 
 	// UI state for controlling navigation bar visibility
-	@Published var isOnLocationSelectionStep: Bool = false
+	var isOnLocationSelectionStep: Bool = false
 
 	// MARK: - Change Tracking Properties
 	// Store original values when editing starts to detect changes
-	@Published var originalTitle: String?
-	@Published var originalDate: Date?
-	@Published var originalDuration: ActivityDuration?
-	@Published var originalLocation: LocationDTO?
+	var originalTitle: String?
+	var originalDate: Date?
+	var originalDuration: ActivityDuration?
+	var originalLocation: LocationDTO?
 
 	// Computed property to check if there are any changes
 	var hasAnyChanges: Bool {

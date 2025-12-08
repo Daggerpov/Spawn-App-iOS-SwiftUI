@@ -11,7 +11,7 @@ struct ContentView: View {
 	var user: BaseUserDTO
 	@State private var selectedTabsEnum: Tabs = .home
 	@State private var friendsViewModel: FriendsTabViewModel
-	@StateObject private var feedViewModel: FeedViewModel
+	@State private var feedViewModel: FeedViewModel
 	private var tutorialViewModel = TutorialViewModel.shared
 	@ObservedObject private var inAppNotificationManager = InAppNotificationManager.shared
 	@ObservedObject var deepLinkManager: DeepLinkManager
@@ -45,7 +45,7 @@ struct ContentView: View {
 		self._friendsViewModel = State(initialValue: FriendsTabViewModel(userId: user.id))
 
 		// Create shared FeedViewModel for both ActivityFeedView and MapView
-		self._feedViewModel = StateObject(wrappedValue: FeedViewModel(userId: user.id))
+		self._feedViewModel = State(initialValue: FeedViewModel(userId: user.id))
 	}
 
 	var body: some View {
