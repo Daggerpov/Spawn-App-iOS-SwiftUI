@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Feedback Status Component
 struct FeedbackStatusView: View {
-	@ObservedObject var viewModel: FeedbackViewModel
+	var viewModel: FeedbackViewModel
 	var onSuccess: () -> Void
 	@Environment(\.colorScheme) private var colorScheme
 

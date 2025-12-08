@@ -5,19 +5,19 @@
 //  Created by Daniel Agapov on 2025-05-17.
 //
 
-import Combine
 import Foundation
+import Observation
 
+@Observable
 @MainActor
-class FriendRequestsViewModel: ObservableObject {
-	@Published var incomingFriendRequests: [FetchFriendRequestDTO] = []
-	@Published var sentFriendRequests: [FetchSentFriendRequestDTO] = []
-	@Published var isLoading: Bool = false
-	@Published var errorMessage: String = ""
+final class FriendRequestsViewModel {
+	var incomingFriendRequests: [FetchFriendRequestDTO] = []
+	var sentFriendRequests: [FetchSentFriendRequestDTO] = []
+	var isLoading: Bool = false
+	var errorMessage: String = ""
 
 	private let userId: UUID
 	private var dataService: DataService
-	private var cancellables = Set<AnyCancellable>()
 
 	init(userId: UUID, dataService: DataService? = nil) {
 		self.userId = userId

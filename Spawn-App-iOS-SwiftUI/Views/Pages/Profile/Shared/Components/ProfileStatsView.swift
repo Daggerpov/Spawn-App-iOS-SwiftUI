@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileStatsView: View {
-	@StateObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 
 	var body: some View {
 		HStack(spacing: 48) {

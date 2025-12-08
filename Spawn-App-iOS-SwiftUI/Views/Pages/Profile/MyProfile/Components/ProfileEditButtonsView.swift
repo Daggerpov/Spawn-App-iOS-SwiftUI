@@ -10,7 +10,7 @@ import SwiftUI
 struct ProfileEditButtonsView: View {
 	let user: Nameable
 	@ObservedObject var userAuth = UserAuthViewModel.shared
-	@StateObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 
 	@Binding var editingState: ProfileEditText
 	@Binding var username: String

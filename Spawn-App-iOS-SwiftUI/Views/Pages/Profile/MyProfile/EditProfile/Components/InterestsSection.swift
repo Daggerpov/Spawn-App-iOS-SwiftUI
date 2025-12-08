@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Interests Section
 struct InterestsSection: View {
-	@ObservedObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	let userId: UUID
 	@Binding var newInterest: String
 	let maxInterests: Int

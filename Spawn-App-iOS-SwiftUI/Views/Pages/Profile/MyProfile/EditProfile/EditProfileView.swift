@@ -4,7 +4,7 @@ import SwiftUI
 struct EditProfileView: View {
 	@Environment(\.presentationMode) var presentationMode
 	@ObservedObject var userAuth = UserAuthViewModel.shared
-	@ObservedObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 
 	@State private var name: String
 	@State private var username: String

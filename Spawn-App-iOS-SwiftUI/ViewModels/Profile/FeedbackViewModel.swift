@@ -6,17 +6,19 @@
 //
 
 import Foundation
+import Observation
 import SwiftUI
 
+@Observable
 @MainActor
-class FeedbackViewModel: ObservableObject {
+final class FeedbackViewModel {
 	// DataService for all data operations
 	private var dataService: DataService
 
-	// Published properties that the view can observe
-	@Published var isSubmitting = false
-	@Published var successMessage: String?
-	@Published var errorMessage: String?
+	// Observable properties that the view can observe
+	var isSubmitting = false
+	var successMessage: String?
+	var errorMessage: String?
 
 	init(dataService: DataService? = nil) {
 		self.dataService = dataService ?? DataService.shared

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MonthCalendarView: View {
 	let month: Date
-	@StateObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	@ObservedObject var userAuth: UserAuthViewModel
 	let onActivitySelected: ((CalendarActivityDTO) -> Void)?
 	let onDayActivitiesSelected: ([CalendarActivityDTO]) -> Void

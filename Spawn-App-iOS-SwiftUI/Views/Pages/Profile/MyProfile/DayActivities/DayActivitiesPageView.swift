@@ -7,7 +7,7 @@ struct DayActivitiesPageView: View {
 	let onActivitySelected: (CalendarActivityDTO) -> Void
 
 	@Environment(\.dismiss) private var dismiss
-	@StateObject private var profileViewModel = ProfileViewModel()
+	@State private var profileViewModel = ProfileViewModel()
 	@ObservedObject private var userAuth = UserAuthViewModel.shared
 	@ObservedObject private var locationManager = LocationManager.shared
 	@State private var showActivityDetails: Bool = false

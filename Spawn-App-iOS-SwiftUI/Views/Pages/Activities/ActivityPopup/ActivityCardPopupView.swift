@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ActivityCardPopupView: View {
 	@StateObject private var viewModel: ActivityInfoViewModel
-	@StateObject private var mapViewModel: MapViewModel
+	@State private var mapViewModel: MapViewModel
 	@StateObject private var cardViewModel: ActivityCardViewModel
 	@ObservedObject private var locationManager = LocationManager.shared
 	@ObservedObject var activity: FullFeedActivityDTO
@@ -55,7 +55,7 @@ struct ActivityCardPopupView: View {
 			)
 		)
 		let mapVM = MapViewModel(activity: cachedActivity)
-		_mapViewModel = StateObject(wrappedValue: mapVM)
+		_mapViewModel = State(wrappedValue: mapVM)
 		self._cardViewModel = StateObject(
 			wrappedValue: ActivityCardViewModel(
 				userId: UserAuthViewModel.shared.spawnUser?.id ?? BaseUserDTO.danielAgapov.id,

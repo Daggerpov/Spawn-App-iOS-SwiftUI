@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ProfileInterestsView: View {
 	let user: Nameable
-	@ObservedObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	@Binding var editingState: ProfileEditText
 	@Binding var newInterest: String
 

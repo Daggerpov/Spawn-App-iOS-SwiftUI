@@ -10,7 +10,7 @@ import SwiftUI
 struct TimeoutError: Error {}
 
 struct ProfileCalendarView: View {
-	@StateObject var profileViewModel: ProfileViewModel
+	var profileViewModel: ProfileViewModel
 	@ObservedObject var userAuth = UserAuthViewModel.shared
 
 	@Binding var showCalendarPopup: Bool

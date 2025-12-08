@@ -34,14 +34,14 @@ struct MyProfileView: View {
 	@State private var backgroundDataLoadTask: Task<Void, Never>?
 
 	@ObservedObject var userAuth = UserAuthViewModel.shared
-	@StateObject var profileViewModel = ProfileViewModel()
+	@State var profileViewModel: ProfileViewModel
 
 	// Add environment object for navigation
 	@Environment(\.presentationMode) var presentationMode
 
 	init(user: BaseUserDTO) {
 		self.user = user
-		self._profileViewModel = StateObject(
+		self._profileViewModel = State(
 			wrappedValue: ProfileViewModel(userId: user.id)
 		)
 		self.username = user.username ?? ""

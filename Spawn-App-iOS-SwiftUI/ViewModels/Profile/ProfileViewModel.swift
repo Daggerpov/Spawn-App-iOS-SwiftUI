@@ -1,40 +1,42 @@
+import Observation
 import SwiftUI
 
+@Observable
 @MainActor
-class ProfileViewModel: ObservableObject {
-	@Published var userStats: UserStatsDTO?
-	@Published var userInterests: [String] = []
-	@Published var originalUserInterests: [String] = []  // Backup for cancel functionality
-	@Published var userSocialMedia: UserSocialMediaDTO?
-	@Published var userProfileInfo: UserProfileInfoDTO?
-	@Published var isLoadingStats: Bool = false
-	@Published var isLoadingInterests: Bool = false
-	@Published var isLoadingSocialMedia: Bool = false
-	@Published var isLoadingProfileInfo: Bool = false
-	@Published var showDrawer: Bool = false
-	@Published var errorMessage: String?
-	@Published var calendarActivities: [[CalendarActivityDTO?]] = Array(
+final class ProfileViewModel {
+	var userStats: UserStatsDTO?
+	var userInterests: [String] = []
+	var originalUserInterests: [String] = []  // Backup for cancel functionality
+	var userSocialMedia: UserSocialMediaDTO?
+	var userProfileInfo: UserProfileInfoDTO?
+	var isLoadingStats: Bool = false
+	var isLoadingInterests: Bool = false
+	var isLoadingSocialMedia: Bool = false
+	var isLoadingProfileInfo: Bool = false
+	var showDrawer: Bool = false
+	var errorMessage: String?
+	var calendarActivities: [[CalendarActivityDTO?]] = Array(
 		repeating: Array(repeating: nil, count: 7),
 		count: 5
 	)
-	@Published var isLoadingCalendar: Bool = false
-	@Published var allCalendarActivities: [CalendarActivityDTO] = []
-	@Published var selectedActivity: FullFeedActivityDTO?
-	@Published var isLoadingActivity: Bool = false
+	var isLoadingCalendar: Bool = false
+	var allCalendarActivities: [CalendarActivityDTO] = []
+	var selectedActivity: FullFeedActivityDTO?
+	var isLoadingActivity: Bool = false
 
 	// New property to store all activities organized by day position in the grid
-	@Published var calendarActivitiesByDay: [[[CalendarActivityDTO]]] = Array(
+	var calendarActivitiesByDay: [[[CalendarActivityDTO]]] = Array(
 		repeating: Array(repeating: [CalendarActivityDTO](), count: 7),
 		count: 5
 	)
 
 	// New properties for friendship status
-	@Published var friendshipStatus: FriendshipStatus = .unknown
-	@Published var isLoadingFriendshipStatus: Bool = false
-	@Published var pendingFriendRequestId: UUID?
-	@Published var userActivities: [FullFeedActivityDTO] = []
-	@Published var profileActivities: [ProfileActivityDTO] = []
-	@Published var isLoadingUserActivities: Bool = false
+	var friendshipStatus: FriendshipStatus = .unknown
+	var isLoadingFriendshipStatus: Bool = false
+	var pendingFriendRequestId: UUID?
+	var userActivities: [FullFeedActivityDTO] = []
+	var profileActivities: [ProfileActivityDTO] = []
+	var isLoadingUserActivities: Bool = false
 
 	private let dataService: DataService
 
@@ -575,7 +577,6 @@ class ProfileViewModel: ObservableObject {
 
 			if case .success(let interests, _) = refreshResult {
 				self.userInterests = interests
-				self.objectWillChange.send()
 			}
 
 		case .failure(let error):

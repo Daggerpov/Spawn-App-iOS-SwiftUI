@@ -6,18 +6,21 @@
 //
 
 import Foundation
+import Observation
 import SwiftUI
 
+@Observable
 @MainActor
-class ChatViewModel: ObservableObject {
+final class ChatViewModel {
 	private let dataService: DataService
 	private let senderUserId: UUID
-	@ObservedObject private var activity: FullFeedActivityDTO
+	// Note: activity is still ObservableObject; will be migrated separately
+	private var activity: FullFeedActivityDTO
 
 	var chats: [FullActivityChatMessageDTO] {
 		activity.chatMessages ?? []
 	}
-	@Published var creationMessage: String?
+	var creationMessage: String?
 
 	// MARK: - Constants
 	private enum ErrorMessages {
