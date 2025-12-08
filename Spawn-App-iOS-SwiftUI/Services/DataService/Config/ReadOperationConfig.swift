@@ -150,7 +150,7 @@ enum DataType {
 		case .reportsByUser(let reporterId):
 			return "reports/fetch/reporter/\(reporterId)"
 		case .reportsAboutUser(let userId):
-			return "reports/\(userId)"
+			return "reports/fetch/content-owner/\(userId)"
 
 		// Notifications
 		case .notificationPreferences(let userId):

@@ -91,9 +91,6 @@ enum WriteOperationType {
 
 	// MARK: - Chat Operations
 
-	/// Fetch activity chat messages
-	case fetchActivityChats(activityId: UUID)
-
 	/// Send a chat message
 	case sendChatMessage(message: CreateChatMessageDTO)
 
@@ -170,8 +167,7 @@ enum WriteOperationType {
 		case .joinActivity,
 			.inviteToActivity,
 			.blockUser,
-			.unblockUser,
-			.fetchActivityChats:
+			.unblockUser:
 			return .post
 
 		case .partialUpdateActivity,
@@ -200,7 +196,7 @@ enum WriteOperationType {
 			.declineFriendRequest(let requestId):
 			return "friend-requests/\(requestId)"
 		case .removeFriend(let currentUserId, let friendId):
-			return "api/v1/users/friends/\(currentUserId)/\(friendId)"
+			return "users/friends/\(currentUserId)/\(friendId)"
 
 		// Activity Types
 		case .batchUpdateActivityTypes(let userId, _):
@@ -237,8 +233,6 @@ enum WriteOperationType {
 			return "users/\(userId)"
 
 		// Chats
-		case .fetchActivityChats(let activityId):
-			return "activities/\(activityId)/chats"
 		case .sendChatMessage:
 			return "chatMessages"
 
@@ -340,8 +334,6 @@ enum WriteOperationType {
 			return []
 
 		// Chats
-		case .fetchActivityChats(let activityId):
-			return ["activityChats-\(activityId)"]
 		case .sendChatMessage(let message):
 			return ["activityChats-\(message.activityId)"]
 
@@ -412,8 +404,6 @@ enum WriteOperationType {
 			return "Unblock User"
 		case .deleteUser:
 			return "Delete User"
-		case .fetchActivityChats:
-			return "Fetch Activity Chats"
 		case .sendChatMessage:
 			return "Send Chat Message"
 		case .submitFeedback:
@@ -474,8 +464,6 @@ enum WriteOperationType {
 		case .unblockUser:
 			return EmptyRequestBody() as? T
 		case .deleteUser:
-			return EmptyRequestBody() as? T
-		case .fetchActivityChats:
 			return EmptyRequestBody() as? T
 		case .sendChatMessage(let message):
 			return message as? T
