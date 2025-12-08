@@ -34,8 +34,8 @@ final class FriendsTabViewModel {
 	// Keep cancellables for Combine cache subscriptions
 	private var cancellables = Set<AnyCancellable>()
 	private var appCache: AppCache  // Keep for cache subscriptions (reactive updates)
-	// nonisolated(unsafe) for notificationObservers since it's accessed in deinit
-	private nonisolated(unsafe) var notificationObservers: [NSObjectProtocol] = []
+	// nonisolated for notificationObservers since it's accessed in deinit
+	private nonisolated var notificationObservers: [NSObjectProtocol] = []
 
 	init(userId: UUID) {
 		self.userId = userId

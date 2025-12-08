@@ -10,8 +10,8 @@ import Foundation
 @MainActor
 final class ActivityStatusViewModel {
 	var status: ActivityStatus = .laterToday
-	// nonisolated(unsafe) for timer since it's accessed in deinit
-	private nonisolated(unsafe) var timer: Timer?
+	// nonisolated for timer since it's accessed in deinit
+	private nonisolated var timer: Timer?
 	private let activityStartTime: Date
 	private let activityDuration: TimeInterval  // in seconds
 	private var refresh: Double = -1

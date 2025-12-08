@@ -26,10 +26,10 @@ final class FeedViewModel {
 	private let activitiesSubject = PassthroughSubject<[FullFeedActivityDTO], Never>()
 
 	// Periodic refresh timer - nonisolated for deinit access
-	private nonisolated(unsafe) var refreshTimer: Timer?
+	private nonisolated var refreshTimer: Timer?
 
 	// Periodic local cleanup timer for expired activities - nonisolated for deinit access
-	private nonisolated(unsafe) var cleanupTimer: Timer?
+	private nonisolated var cleanupTimer: Timer?
 
 	// MARK: - Computed Properties
 
