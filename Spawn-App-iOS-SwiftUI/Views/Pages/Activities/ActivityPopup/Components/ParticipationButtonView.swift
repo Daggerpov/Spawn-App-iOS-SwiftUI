@@ -8,7 +8,7 @@ import SwiftUI
 
 struct ParticipationButtonView: View {
 	@ObservedObject private var activity: FullFeedActivityDTO
-	@ObservedObject private var cardViewModel: ActivityCardViewModel
+	private var cardViewModel: ActivityCardViewModel
 
 	// Optional binding to control tab selection for current user navigation
 	@Binding var selectedTab: TabType?

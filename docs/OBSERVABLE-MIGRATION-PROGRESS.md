@@ -14,8 +14,8 @@ This document tracks the progress of migrating from `ObservableObject` + `@Publi
 |----------|-------|----------|-----------|
 | High Priority | 5 | 2 | 3 |
 | Medium Priority | 4 | 3 | 1 |
-| Lower Priority | 12 | 1 | 11 |
-| **Total** | **21** | **6** | **15** |
+| Lower Priority | 12 | 9 | 3 |
+| **Total** | **21** | **14** | **7** |
 
 ---
 
@@ -38,24 +38,24 @@ This document tracks the progress of migrating from `ObservableObject` + `@Publi
 | `FriendRequestViewModel` | ✅ Completed | Migrated Dec 8, 2025 (not used in Views yet) |
 | `FriendRequestsViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 | `ChatViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
-| `FriendsTabViewModel` | ⏳ Pending | To be reviewed |
+| `FriendsTabViewModel` | ⏳ Pending | Uses Combine for cache subscriptions |
 
 ### Lower Priority (Supporting Features)
 
 | ViewModel | Status | Notes |
 |-----------|--------|-------|
 | `FeedbackViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
-| `BlockedUsersViewModel` | ⏳ Pending | To be reviewed |
-| `MyReportsViewModel` | ⏳ Pending | To be reviewed |
-| `SearchViewModel` | ⏳ Pending | To be reviewed |
-| `ActivityCardViewModel` | ⏳ Pending | To be reviewed |
-| `ActivityDescriptionViewModel` | ⏳ Pending | To be reviewed |
-| `ActivityInfoViewModel` | ⏳ Pending | To be reviewed |
-| `ActivityStatusViewModel` | ⏳ Pending | To be reviewed |
-| `ActivityTypeViewModel` | ⏳ Pending | To be reviewed |
-| `DayActivitiesViewModel` | ⏳ Pending | To be reviewed |
-| `TutorialViewModel` | ⏳ Pending | To be reviewed |
-| `VerificationCodeViewModel` | ⏳ Pending | To be reviewed |
+| `BlockedUsersViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
+| `MyReportsViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
+| `SearchViewModel` | ⏳ Pending | Uses Combine for debouncing |
+| `ActivityCardViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
+| `ActivityDescriptionViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
+| `ActivityInfoViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
+| `ActivityStatusViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
+| `ActivityTypeViewModel` | ⏳ Pending | Uses Combine for cache subscriptions |
+| `DayActivitiesViewModel` | ⏳ Pending | Uses Combine (may not need it) |
+| `TutorialViewModel` | ✅ Completed | Migrated Dec 8, 2025 (singleton) |
+| `VerificationCodeViewModel` | ✅ Completed | Migrated Dec 8, 2025 |
 
 ---
 
@@ -141,6 +141,110 @@ Starting with simpler ViewModels to establish patterns before tackling complex o
   - `Views/Pages/Profile/MyProfile/DayActivities/DayActivitiesPageView.swift` - Changed `@StateObject` to `@State`
   - `Views/Pages/Profile/MyProfile/Components/ProfileEditButtonsView.swift` - Changed `@StateObject` to plain var
 
+### Phase 2: Continue Lower Priority ViewModels
+
+#### BlockedUsersViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Simple ViewModel with API calls
+- **Files Changed:**
+  - `ViewModels/Profile/BlockedUsersViewModel.swift` - Added `@Observable`, removed `@Published`
+  - `Views/Pages/Profile/MyProfile/Settings/BlockedUsersView.swift` - Changed `@StateObject` to `@State`
+
+#### MyReportsViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Simple ViewModel with API calls
+- **Files Changed:**
+  - `ViewModels/Profile/MyReportsViewModel.swift` - Added `@Observable`, removed `@Published`
+  - `Views/Pages/Profile/MyProfile/Settings/MyReportsView.swift` - Changed `@StateObject` to `@State`
+
+#### ActivityCardViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Simple ViewModel for activity card interactions
+- **Files Changed:**
+  - `ViewModels/Activity/ActivityListing/ActivityCardViewModel.swift` - Added `@Observable`, removed `@Published`
+  - `Views/Pages/Activities/ActivityCard/ActivityCardView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Activities/ActivityPopup/Components/ParticipationButtonView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Activities/ActivityPopup/ActivityCardPopupView.swift` - Changed `@StateObject` to `@State`
+
+#### ActivityStatusViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Simple ViewModel for status display with timer
+- **Files Changed:**
+  - `ViewModels/Activity/ActivityListing/ActivityStatusViewModel.swift` - Added `@Observable`, removed `@Published`
+  - `Views/Pages/Activities/ActivityCard/ActivityStatusView.swift` - Changed `@StateObject` to `@State`
+
+#### ActivityDescriptionViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Medium
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Removed `objectWillChange.send()` calls
+- **Files Changed:**
+  - `ViewModels/Activity/ActivityListing/ActivityDescriptionViewModel.swift` - Added `@Observable`, removed `@Published`, removed `objectWillChange.send()`
+  - `Views/Pages/Activities/ActivityDetail/ActivityDescriptionView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Activities/ActivityDetail/ActivityEditView.swift` - Changed `@ObservedObject` to plain var
+
+#### ActivityInfoViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Removed `objectWillChange.send()` call, had `@ObservedObject` internal properties
+- **Files Changed:**
+  - `ViewModels/Activity/ActivityListing/ActivityInfoViewModel.swift` - Added `@Observable`, removed `@ObservedObject`, removed `objectWillChange.send()`
+  - `Views/Pages/Activities/ActivityDetail/ActivityInfo/ActivityInfoView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Activities/ActivityCard/ActivityLocationView.swift` - Changed `@StateObject` to `@State`
+  - `Views/Pages/Events/EventInfoViews/EventInfoView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Activities/ActivityPopup/ActivityCardPopupView.swift` - Changed `@StateObject` to `@State`
+
+#### TutorialViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low (singleton)
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Singleton pattern preserved with `static let shared`
+- **Files Changed:**
+  - `ViewModels/AuthFlow/TutorialViewModel.swift` - Added `@Observable`, removed `@Published`
+  - `Views/Shared/Tutorial/TutorialOverlayView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Shared/Tutorial/TutorialActivityPreConfirmationView.swift` - Changed `@ObservedObject` to plain var
+  - `ContentView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/Activities/ActivityCreation/ActivityCreationView.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Shared/TabBar/TabBar.swift` - Changed `@ObservedObject` to plain var
+  - `Views/Pages/FeedAndMap/ActivityFeedView.swift` - Changed `@ObservedObject` to plain var
+
+#### VerificationCodeViewModel
+- **Status:** ✅ Completed
+- **Complexity:** Low
+- **Date Started:** December 8, 2025
+- **Date Completed:** December 8, 2025
+- **Notes:** Simple ViewModel with timer, removed Combine import
+- **Files Changed:**
+  - `ViewModels/AuthFlow/VerificationCodeViewModel.swift` - Added `@Observable`, removed `@Published`, removed `import Combine`
+  - `Views/Pages/AuthFlow/Registration/VerificationCodeView.swift` - Changed `@StateObject` to `@State`
+
+---
+
+## Additional Fixes During Migration
+
+During the migration, the following additional fixes were required:
+
+1. **InterestsSection.swift** - Removed `objectWillChange.send()` calls that were referencing ProfileViewModel
+2. **EditProfileView.swift** - Updated Preview to use `@State` instead of `@StateObject` for ProfileViewModel
+3. **TutorialActivityPreConfirmationView.swift** - Removed `private` from tutorialViewModel to fix memberwise initializer issue
+4. **TabBar.swift** - Removed `private` from tutorialViewModel to fix memberwise initializer issue
+
 ---
 
 ## Migration Checklist Template
@@ -148,50 +252,45 @@ Starting with simpler ViewModels to establish patterns before tackling complex o
 For each ViewModel migration:
 
 ### ViewModel Migration
-- [ ] Add `import Observation`
-- [ ] Replace `class MyViewModel: ObservableObject` with `@Observable class MyViewModel`
-- [ ] Remove all `@Published` property wrappers
-- [ ] Keep `@MainActor` annotation
-- [ ] Remove unused `private var cancellables = Set<AnyCancellable>()` (if not needed for Combine pipelines)
-- [ ] Update computed properties if needed
-- [ ] Test ViewModel in isolation
+- [x] Replace `class MyViewModel: ObservableObject` with `@Observable class MyViewModel`
+- [x] Add `final` to class declaration for better optimization
+- [x] Remove all `@Published` property wrappers
+- [x] Keep `@MainActor` annotation
+- [x] Remove unused `private var cancellables = Set<AnyCancellable>()` (if not needed for Combine pipelines)
+- [x] Remove `objectWillChange.send()` calls (no longer needed)
+- [x] Remove `import Combine` if not used for other purposes
+- [x] **Note:** No need to add `import Observation` - it's exported by Foundation
 
 ### View Updates
-- [ ] Replace `@StateObject private var viewModel = ...` with `@State private var viewModel = ...`
-- [ ] Replace `@ObservedObject var viewModel: ...` with `var viewModel: ...` (plain property)
-- [ ] Verify all view bindings still work
-- [ ] Test view renders correctly
-- [ ] Test all interactions work as expected
+- [x] Replace `@StateObject private var viewModel = ...` with `@State private var viewModel = ...`
+- [x] Replace `@ObservedObject var viewModel: ...` with `var viewModel: ...` (plain property)
+- [x] Update Previews to use `@State` instead of `@StateObject`
+- [x] Remove `private` from plain var properties that have default values (for memberwise initializer)
+- [x] Verify all view bindings still work
+- [x] Test view renders correctly
+- [x] Test all interactions work as expected
 
 ---
 
 ## Special Considerations
 
-### ViewModels Using Combine
+### ViewModels Using Combine (Not Migrated Yet)
 
 The following ViewModels use Combine for purposes other than observation (throttling, debouncing, notifications):
 
 1. **FeedViewModel** - Uses `PassthroughSubject` for throttling activity updates, uses `NotificationCenter.default.publisher` for various notifications
-2. **FriendRequestsViewModel** - Uses `Set<AnyCancellable>` (but may not need it)
+2. **FriendsTabViewModel** - Uses Combine for cache subscriptions and search debouncing
+3. **SearchViewModel** - Uses Combine for debouncing search queries
+4. **ActivityTypeViewModel** - Uses Combine for cache subscriptions
+5. **DayActivitiesViewModel** - Uses Combine (may not need it)
 
-These will need to retain their Combine imports and `cancellables` even after migration.
-
-### ViewModels with @ObservedObject Properties
-
-The following ViewModels use `@ObservedObject` internally for nested observable objects:
-
-1. **MapViewModel** - Has `@ObservedObject var activity: FullFeedActivityDTO`
-2. **ChatViewModel** - Has `@ObservedObject private var activity: FullFeedActivityDTO`
-3. **FeedViewModel** - Has `@Published var activityTypeViewModel: ActivityTypeViewModel`
-
-These need special handling - the nested objects should also be migrated to `@Observable`.
+These will need to retain their Combine imports and `cancellables` even after migration, or be refactored to use async/await alternatives.
 
 ### Singleton ViewModels
 
-1. **UserAuthViewModel** - Uses `static let shared` pattern
+1. **UserAuthViewModel** - Uses `static let shared` pattern, also inherits from NSObject
 2. **ActivityCreationViewModel** - Uses semi-singleton with `static var shared`
-
-These need careful migration to ensure singleton behavior is preserved.
+3. **TutorialViewModel** - ✅ Migrated with singleton pattern preserved
 
 ### NSObject Subclasses
 
@@ -204,7 +303,7 @@ This requires special handling as `@Observable` works with classes, but we need 
 ## Testing Strategy
 
 ### Unit Testing
-- [ ] Verify all @Published properties are properly observed after migration
+- [ ] Verify all properties are properly observed after migration
 - [ ] Verify computed properties update correctly
 - [ ] Verify async operations still trigger UI updates
 

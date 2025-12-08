@@ -6,9 +6,10 @@
 //
 import Foundation
 
+@Observable
 @MainActor
-class ActivityStatusViewModel: ObservableObject {
-	@Published var status: ActivityStatus = .laterToday
+final class ActivityStatusViewModel {
+	var status: ActivityStatus = .laterToday
 	// nonisolated(unsafe) for timer since it's accessed in deinit
 	private nonisolated(unsafe) var timer: Timer?
 	private let activityStartTime: Date

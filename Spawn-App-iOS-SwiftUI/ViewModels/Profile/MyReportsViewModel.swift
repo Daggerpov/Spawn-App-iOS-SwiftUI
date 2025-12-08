@@ -1,11 +1,12 @@
 import Foundation
 import SwiftUI
 
+@Observable
 @MainActor
-class MyReportsViewModel: ObservableObject {
-	@Published var reports: [FetchReportedContentDTO] = []
-	@Published var isLoading = false
-	@Published var errorMessage: String?
+final class MyReportsViewModel {
+	var reports: [FetchReportedContentDTO] = []
+	var isLoading = false
+	var errorMessage: String?
 
 	private let reportingService: ReportingService
 

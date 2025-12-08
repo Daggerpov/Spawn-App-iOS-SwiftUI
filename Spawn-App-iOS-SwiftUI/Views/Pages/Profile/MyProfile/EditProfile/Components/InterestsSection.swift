@@ -79,7 +79,6 @@ struct InterestsSection: View {
 		if !profileViewModel.userInterests.contains(interest) {
 			// Only update local state - don't call API until save
 			profileViewModel.userInterests.append(interest)
-			profileViewModel.objectWillChange.send()
 			newInterest = ""
 			isTextFieldFocused = false  // Dismiss keyboard
 		} else {
@@ -91,6 +90,5 @@ struct InterestsSection: View {
 	private func removeInterest(_ interest: String) {
 		// Only update local state - don't call API until save
 		profileViewModel.userInterests.removeAll { $0 == interest }
-		profileViewModel.objectWillChange.send()
 	}
 }

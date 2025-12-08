@@ -269,7 +269,7 @@ struct EditProfileView: View {
 
 @available(iOS 17.0, *)
 #Preview {
-	@Previewable @StateObject var profileViewModel = ProfileViewModel(
+	@Previewable @State var profileViewModel = ProfileViewModel(
 		userId: BaseUserDTO.danielAgapov.id,
 		dataService: DataService.shared
 	)

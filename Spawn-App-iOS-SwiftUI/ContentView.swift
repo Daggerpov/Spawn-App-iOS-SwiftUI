@@ -12,7 +12,7 @@ struct ContentView: View {
 	@State private var selectedTabsEnum: Tabs = .home
 	@StateObject private var friendsViewModel: FriendsTabViewModel
 	@StateObject private var feedViewModel: FeedViewModel
-	@ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+	private var tutorialViewModel = TutorialViewModel.shared
 	@ObservedObject private var inAppNotificationManager = InAppNotificationManager.shared
 	@ObservedObject var deepLinkManager: DeepLinkManager
 

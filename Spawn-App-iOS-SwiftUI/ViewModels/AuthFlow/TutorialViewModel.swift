@@ -8,12 +8,13 @@
 import Foundation
 import SwiftUI
 
+@Observable
 @MainActor
-class TutorialViewModel: ObservableObject {
+final class TutorialViewModel {
 	static let shared = TutorialViewModel()
 
-	@Published var tutorialState: TutorialState = .notStarted
-	@Published var shouldShowCallout: Bool = false
+	var tutorialState: TutorialState = .notStarted
+	var shouldShowCallout: Bool = false
 
 	private let userDefaults = UserDefaults.standard
 	private let tutorialStateKey = "TutorialState"

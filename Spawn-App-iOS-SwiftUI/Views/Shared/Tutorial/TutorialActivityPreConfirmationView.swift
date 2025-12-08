@@ -14,7 +14,7 @@ struct TutorialActivityPreConfirmationView: View {
 
 	@Environment(\.colorScheme) var colorScheme
 	@State private var isVisible = false
-	@ObservedObject private var tutorialViewModel = TutorialViewModel.shared
+	var tutorialViewModel = TutorialViewModel.shared
 
 	private var adaptiveBackgroundColor: Color {
 		colorScheme == .dark ? Color(red: 0.13, green: 0.13, blue: 0.13) : Color.white

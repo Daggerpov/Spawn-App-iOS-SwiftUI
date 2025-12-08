@@ -5,19 +5,19 @@
 //  Created by Daniel Agapov on 2025-01-28.
 //
 
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-class VerificationCodeViewModel: ObservableObject {
-	@Published var code: [String] = Array(repeating: "", count: 6)
-	@Published var previousCode: [String] = Array(repeating: "", count: 6)
-	@Published var focusedIndex: Int? = 0
-	@Published var secondsRemaining: Int = 30
-	@Published var isResendEnabled: Bool = false
+final class VerificationCodeViewModel {
+	var code: [String] = Array(repeating: "", count: 6)
+	var previousCode: [String] = Array(repeating: "", count: 6)
+	var focusedIndex: Int? = 0
+	var secondsRemaining: Int = 30
+	var isResendEnabled: Bool = false
 
-	// nonisolated(unsafe) for timer since it's accessed in deinit
-	private nonisolated(unsafe) var timer: Timer?
+	// Timer property - uses weak self pattern in callbacks to avoid actor isolation issues in deinit
+	private var timer: Timer?
 	private var userAuthViewModel: UserAuthViewModel
 
 	var isFormValid: Bool {
@@ -30,12 +30,6 @@ class VerificationCodeViewModel: ObservableObject {
 
 	init(userAuthViewModel: UserAuthViewModel) {
 		self.userAuthViewModel = userAuthViewModel
-	}
-
-	deinit {
-		// Timer invalidation is safe to call from deinit since it doesn't access actor-isolated state
-		timer?.invalidate()
-		timer = nil
 	}
 
 	// MARK: - Timer Management

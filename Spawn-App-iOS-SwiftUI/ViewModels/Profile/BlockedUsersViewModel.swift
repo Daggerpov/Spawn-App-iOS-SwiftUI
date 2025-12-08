@@ -1,11 +1,12 @@
 import Foundation
 import SwiftUI
 
+@Observable
 @MainActor
-class BlockedUsersViewModel: ObservableObject {
-	@Published var blockedUsers: [BlockedUserDTO] = []
-	@Published var isLoading = false
-	@Published var errorMessage: String?
+final class BlockedUsersViewModel {
+	var blockedUsers: [BlockedUserDTO] = []
+	var isLoading = false
+	var errorMessage: String?
 
 	private let reportingService: ReportingService
 

@@ -56,12 +56,7 @@ struct ActivityCreationLocationView: View {
 	@State private var is3DMode: Bool = false  // Only used on iOS 17+
 
 	var body: some View {
-		print("🔍 DEBUG: ActivityCreationLocationView body being rendered")
-		print("🔍 DEBUG: Current region: \(region)")
-		print("🔍 DEBUG: Current is3DMode: \(is3DMode)")
-		print("🔍 DEBUG: Current searchText: \(searchText)")
-
-		return ZStack {
+		ZStack {
 			// Unified Map View using the same component as MapView (works on all iOS versions)
 			UnifiedMapView(
 				region: $region,

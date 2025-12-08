@@ -8,10 +8,11 @@
 import Foundation
 import SwiftUI
 
+@Observable
 @MainActor
-class ActivityInfoViewModel: ObservableObject {
-	@ObservedObject var activity: FullFeedActivityDTO
-	@ObservedObject var locationManager: LocationManager
+final class ActivityInfoViewModel {
+	var activity: FullFeedActivityDTO
+	var locationManager: LocationManager
 
 	init(activity: FullFeedActivityDTO, locationManager: LocationManager) {
 		self.activity = activity
@@ -66,6 +67,5 @@ class ActivityInfoViewModel: ObservableObject {
 	// Add method to update activity reference
 	func updateActivity(_ newActivity: FullFeedActivityDTO) {
 		self.activity = newActivity
-		objectWillChange.send()
 	}
 }

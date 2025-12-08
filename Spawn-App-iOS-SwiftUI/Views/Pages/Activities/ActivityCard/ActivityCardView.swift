@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityCardView: View {
-	@ObservedObject var viewModel: ActivityCardViewModel
+	var viewModel: ActivityCardViewModel
 	@ObservedObject var activity: FullFeedActivityDTO
 	@ObservedObject var locationManager: LocationManager
 	var color: Color

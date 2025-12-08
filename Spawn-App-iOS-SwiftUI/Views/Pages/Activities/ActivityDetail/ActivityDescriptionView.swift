@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ActivityDescriptionView: View {
 	@State private var messageText: String = ""
-	@ObservedObject var viewModel: ActivityDescriptionViewModel
+	var viewModel: ActivityDescriptionViewModel
 	var color: Color
 	@State private var showActivityEditView = false
 	@State private var showAttendees = false

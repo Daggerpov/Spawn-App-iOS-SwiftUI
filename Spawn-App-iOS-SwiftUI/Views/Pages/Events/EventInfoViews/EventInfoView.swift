@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct EventInfoView: View {
-	@ObservedObject var viewModel: ActivityInfoViewModel
+	var viewModel: ActivityInfoViewModel
 
 	init(event: FullFeedActivityDTO, eventInfoType: ActivityInfoType, locationManager: LocationManager) {
 		self.viewModel = ActivityInfoViewModel(

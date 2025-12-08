@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ActivityEditView: View {
-	@ObservedObject var viewModel: ActivityDescriptionViewModel
+	var viewModel: ActivityDescriptionViewModel
 	@Environment(\.dismiss) private var dismiss
 	@Environment(\.colorScheme) private var colorScheme
 
