@@ -31,17 +31,22 @@ struct ActivityListView: View {
 		self._selectedTab = selectedTab
 	}
 
+	/// Activities to display, limited by bound
+	private var displayedActivities: [FullFeedActivityDTO] {
+		Array(viewModel.activities.prefix(bound))
+	}
+
 	var body: some View {
 		ScrollView {
 			LazyVStack(spacing: 14) {
 				if viewModel.activities.isEmpty {
 					EmptyStateView.noActivities()
 				} else {
-					ForEach(0..<min(bound, viewModel.activities.count), id: \.self) { activityIndex in
+					ForEach(displayedActivities, id: \.id) { activity in
 						ActivityCardView(
 							userId: user.id,
-							activity: viewModel.activities[activityIndex],
-							color: getActivityColor(for: viewModel.activities[activityIndex].id),
+							activity: activity,
+							color: getActivityColor(for: activity.id),
 							locationManager: locationManager,
 							callback: callback,
 							selectedTab: $selectedTab
