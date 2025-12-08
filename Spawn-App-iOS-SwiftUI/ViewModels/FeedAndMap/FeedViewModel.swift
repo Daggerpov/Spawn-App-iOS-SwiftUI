@@ -63,7 +63,8 @@ final class FeedViewModel {
 		NotificationCenter.default.publisher(for: .activityCreated)
 			.sink { [weak self] _ in
 				Task {
-					await self?.fetchActivitiesForUser()
+					// Force refresh from API to show new activity immediately
+					await self?.forceRefreshActivities()
 				}
 			}
 			.store(in: &cancellables)
@@ -72,7 +73,8 @@ final class FeedViewModel {
 		NotificationCenter.default.publisher(for: .activityUpdated)
 			.sink { [weak self] _ in
 				Task {
-					await self?.fetchActivitiesForUser()
+					// Force refresh from API to show updated activity immediately
+					await self?.forceRefreshActivities()
 				}
 			}
 			.store(in: &cancellables)
@@ -81,7 +83,8 @@ final class FeedViewModel {
 		NotificationCenter.default.publisher(for: .activityDeleted)
 			.sink { [weak self] notification in
 				Task {
-					await self?.fetchActivitiesForUser()
+					// Force refresh from API to remove deleted activity immediately
+					await self?.forceRefreshActivities()
 				}
 			}
 			.store(in: &cancellables)

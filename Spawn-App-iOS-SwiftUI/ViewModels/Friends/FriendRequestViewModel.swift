@@ -49,6 +49,20 @@ final class FriendRequestViewModel {
 		switch result {
 		case .success:
 			print("Successfully processed friend request: \(action.rawValue)")
+
+			// Post notifications to refresh UI immediately
+			if action == .accept {
+				// Refresh friends list cache
+				let _: DataResult<[FullFriendUserDTO]> = await dataService.read(
+					.friends(userId: userId), cachePolicy: .apiOnly)
+				let _: DataResult<[FetchFriendRequestDTO]> = await dataService.read(
+					.friendRequests(userId: userId), cachePolicy: .apiOnly)
+
+				// Notify other views to refresh
+				NotificationCenter.default.post(name: .friendsDidChange, object: nil)
+			}
+			NotificationCenter.default.post(name: .friendRequestsDidChange, object: nil)
+
 		case .failure(let error):
 			creationMessage =
 				"There was an error \(action == .accept ? "accepting" : action == .cancel ? "canceling" : "declining") the friend request. Please try again"

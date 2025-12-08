@@ -82,9 +82,10 @@ final class FriendsTabViewModel {
 			forName: .friendRequestsDidChange, object: nil, queue: .main
 		) { [weak self] _ in
 			guard let self = self else { return }
+			// Force refresh from API to show updated friend requests immediately
 			Task {
-				await self.fetchIncomingFriendRequests()
-				await self.fetchOutgoingFriendRequests()
+				await self.fetchIncomingFriendRequests(forceRefresh: true)
+				await self.fetchOutgoingFriendRequests(forceRefresh: true)
 			}
 		}
 		notificationObservers.append(friendRequestsObserver)
@@ -93,7 +94,8 @@ final class FriendsTabViewModel {
 			forName: .friendsDidChange, object: nil, queue: .main
 		) { [weak self] _ in
 			guard let self = self else { return }
-			Task { await self.fetchFriends() }
+			// Force refresh from API to show new friend immediately
+			Task { await self.fetchFriends(forceRefresh: true) }
 		}
 		notificationObservers.append(friendsObserver)
 	}
