@@ -486,13 +486,17 @@ struct ActivityCreationLocationView: View {
 
 	// Function to update location text based on coordinates
 	private func updateLocationText(for coordinate: CLLocationCoordinate2D) {
-		// Cancel any existing timer
-		debounceTimer?.invalidate()
+		// Defer state modification to avoid "Modifying state during view update" warning
+		DispatchQueue.main.async {
+			// Cancel any existing timer
+			self.debounceTimer?.invalidate()
 
-		// Create a new timer with a delay to debounce the calls
-		debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
-			DispatchQueue.main.async {
-				self.performReverseGeocoding(for: coordinate)
+			// Create a new timer with a delay to debounce the calls
+			self.debounceTimer = Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { _ in
+				// Use Task to ensure we're on the main actor when calling the method
+				Task { @MainActor in
+					self.performReverseGeocoding(for: coordinate)
+				}
 			}
 		}
 	}
