@@ -327,13 +327,6 @@ final class ProfileViewModel {
 
 		switch result {
 		case .success(let activities, _):
-			if !activities.isEmpty {
-				print("📅 Calendar: Sample activity dates:")
-				for activity in activities.prefix(3) {
-					print("   - \(activity.date): \(activity.title ?? "No title")")
-				}
-			}
-
 			self.allCalendarActivities = activities
 			self.isLoadingCalendar = false
 
@@ -899,8 +892,6 @@ final class ProfileViewModel {
 			return
 		}
 
-		print("🔄 ProfileViewModel: Fetching profile activities for user: \(profileUserId)")
-
 		let result: DataResult<[ProfileActivityDTO]> = await dataService.read(
 			.profileActivities(userId: profileUserId, requestingUserId: requestingUserId),
 			cachePolicy: .cacheFirst(backgroundRefresh: true)
@@ -908,16 +899,6 @@ final class ProfileViewModel {
 
 		switch result {
 		case .success(let activities, _):
-			// Log activity details
-			if !activities.isEmpty {
-				print("📋 ProfileViewModel: Activity details:")
-				for (index, activity) in activities.enumerated() {
-					print(
-						"  \(index + 1). \(activity.title ?? "No title") - \(activity.startTime?.formatted() ?? "No time")"
-					)
-				}
-			}
-
 			self.profileActivities = activities
 			self.isLoadingUserActivities = false
 

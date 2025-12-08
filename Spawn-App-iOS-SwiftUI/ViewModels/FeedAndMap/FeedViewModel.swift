@@ -66,6 +66,7 @@ final class FeedViewModel {
 
 				// Optimistically add the newly created activity to the list immediately
 				// This ensures instant UI feedback without waiting for API
+				// CRITICAL: Update activities directly to bypass the throttle for instant UI updates
 				if let newActivity = notification.object as? FullFeedActivityDTO {
 					Task { @MainActor in
 						// Check if activity isn't already in the list (avoid duplicates)
@@ -74,7 +75,8 @@ final class FeedViewModel {
 							var updatedActivities = [newActivity] + self.activities
 							// Filter expired activities just in case
 							updatedActivities = self.filterExpiredActivities(updatedActivities)
-							self.activitiesSubject.send(updatedActivities)
+							// Update activities directly to bypass throttle for instant feedback
+							self.activities = updatedActivities
 							print(
 								"✅ FeedViewModel: Optimistically added new activity: \(newActivity.title ?? "Unknown")")
 						}
@@ -94,13 +96,15 @@ final class FeedViewModel {
 				guard let self = self else { return }
 
 				// Optimistically update the activity in the list immediately
+				// CRITICAL: Update activities directly to bypass the throttle for instant UI updates
 				if let updatedActivity = notification.object as? FullFeedActivityDTO {
 					Task { @MainActor in
 						// Find and replace the activity in the list
 						var currentActivities = self.activities
 						if let index = currentActivities.firstIndex(where: { $0.id == updatedActivity.id }) {
 							currentActivities[index] = updatedActivity
-							self.activitiesSubject.send(currentActivities)
+							// Update activities directly to bypass throttle for instant feedback
+							self.activities = currentActivities
 							print(
 								"✅ FeedViewModel: Optimistically updated activity: \(updatedActivity.title ?? "Unknown")"
 							)
@@ -121,12 +125,14 @@ final class FeedViewModel {
 				guard let self = self else { return }
 
 				// Optimistically remove the activity from the list immediately
+				// CRITICAL: Update activities directly to bypass the throttle for instant UI updates
 				if let activityId = notification.object as? UUID {
 					Task { @MainActor in
 						let currentActivities = self.activities
 						let filteredActivities = currentActivities.filter { $0.id != activityId }
 						if filteredActivities.count < currentActivities.count {
-							self.activitiesSubject.send(filteredActivities)
+							// Update activities directly to bypass throttle for instant feedback
+							self.activities = filteredActivities
 							print("✅ FeedViewModel: Optimistically removed deleted activity: \(activityId)")
 						}
 					}

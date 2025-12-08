@@ -270,6 +270,7 @@ enum DataType {
 			var params = [
 				"month": String(month),
 				"year": String(year),
+				"timezone": TimeZone.current.identifier,
 			]
 			if let requestingUserId = requestingUserId {
 				params["requestingUserId"] = requestingUserId.uuidString
@@ -277,10 +278,11 @@ enum DataType {
 			return params
 
 		case .calendarAll(_, let requestingUserId):
+			var params = ["timezone": TimeZone.current.identifier]
 			if let requestingUserId = requestingUserId {
-				return ["requestingUserId": requestingUserId.uuidString]
+				params["requestingUserId"] = requestingUserId.uuidString
 			}
-			return nil
+			return params
 
 		case .activityChats:
 			return nil

@@ -18,9 +18,11 @@ struct ActivityCalendarView: View {
 
 	@State private var currentMonth = Date()
 	@State private var scrollOffset: CGFloat = 0
-	@State private var hasInitiallyScrolled = false
+	@State private var hasPerformedInitialScroll = false
 	@State private var scrollProxy: ScrollViewProxy?
-	@State private var isFirstAppearance = true
+	@State private var lastSelectedDate: Date?  // Track the last selected day's date
+	@State private var isReturningFromNavigation = false  // Track if we're returning from day activities
+	@State private var previousActivityCount = 0  // Track activity count changes
 
 	var onDismiss: (() -> Void)?
 	var onActivitySelected: ((CalendarActivityDTO) -> Void)?
@@ -42,7 +44,14 @@ struct ActivityCalendarView: View {
 									profileViewModel: profileViewModel,
 									userAuth: userAuth,
 									onActivitySelected: onActivitySelected,
-									onDayActivitiesSelected: onDayActivitiesSelected
+									onDayActivitiesSelected: { activities in
+										// Save the selected date before navigating
+										if let firstActivity = activities.first {
+											lastSelectedDate = firstActivity.dateAsDate
+										}
+										// Call the parent's callback
+										onDayActivitiesSelected(activities)
+									}
 								)
 								.id(month)
 							}
@@ -52,7 +61,17 @@ struct ActivityCalendarView: View {
 					}
 					.onAppear {
 						scrollProxy = proxy
-						scrollToCurrentMonth(animated: isFirstAppearance)
+						// Perform scroll when view appears
+						// If returning from navigation, scroll to the last selected date
+						// Otherwise wait for activities to load before scrolling
+						if isReturningFromNavigation {
+							scrollToMonth(containing: lastSelectedDate ?? Date(), animated: false)
+							isReturningFromNavigation = false
+						} else if !profileViewModel.allCalendarActivities.isEmpty {
+							// Activities already loaded (cached), scroll to current month
+							scrollToCurrentMonth(animated: false)
+						}
+						// Otherwise, wait for activities to load (onChange will trigger scroll)
 					}
 				}
 			}
@@ -64,46 +83,57 @@ struct ActivityCalendarView: View {
 		.onAppear {
 			// Fetch calendar data for current and upcoming months
 			fetchCalendarData()
-
-			// Reset scroll state when view reappears (e.g., returning from day activities)
-			// This ensures we scroll to current month when coming back
-			hasInitiallyScrolled = false
 		}
 		.onDisappear {
-			// Mark that subsequent appearances are not the first
-			isFirstAppearance = false
+			// Mark that we're returning from navigation (e.g., day activities view)
+			isReturningFromNavigation = true
+			// Reset the scroll flag so we scroll properly when coming back
+			hasPerformedInitialScroll = false
 			// Reset navigation state when leaving the calendar view
 			// This prevents the NavigationLink from getting stuck in active state
 			onDismiss?()
 		}
-		.onChange(of: profileViewModel.allCalendarActivities) { _, _ in
-			// When activities are loaded, scroll to current month (with animation on first load)
-			if !hasInitiallyScrolled {
-				scrollToCurrentMonth(animated: true)
+		.onChange(of: profileViewModel.allCalendarActivities) { oldActivities, newActivities in
+			// When activities are first loaded (or change significantly), scroll to current month
+			// This handles the case where monthsArray changes after activities load
+			let activityCountChanged = oldActivities.count != newActivities.count
+			let isFirstLoad = !hasPerformedInitialScroll && !newActivities.isEmpty
+
+			if isFirstLoad || (activityCountChanged && previousActivityCount == 0) {
+				scrollToCurrentMonth(animated: !hasPerformedInitialScroll)
 			}
+			previousActivityCount = newActivities.count
 		}
 	}
 
 	/// Scrolls to the current month
 	/// - Parameter animated: Whether to animate the scroll
 	private func scrollToCurrentMonth(animated: Bool) {
-		guard !hasInitiallyScrolled, let proxy = scrollProxy else { return }
+		scrollToMonth(containing: Date(), animated: animated)
+		hasPerformedInitialScroll = true
+	}
 
-		let today = Date()
-		if let currentMonthDate = monthsArray.first(where: { month in
-			Calendar.current.isDate(month, equalTo: today, toGranularity: .month)
+	/// Scrolls to the month containing the specified date
+	/// - Parameters:
+	///   - date: The date whose month to scroll to
+	///   - animated: Whether to animate the scroll
+	private func scrollToMonth(containing date: Date, animated: Bool) {
+		guard let proxy = scrollProxy else { return }
+
+		// Find the month in our array that matches the target date
+		if let targetMonthDate = monthsArray.first(where: { month in
+			Calendar.current.isDate(month, equalTo: date, toGranularity: .month)
 		}) {
 			// Use a small delay to ensure the ScrollView has rendered
 			DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 				if animated {
 					withAnimation(.easeInOut(duration: 0.5)) {
-						proxy.scrollTo(currentMonthDate, anchor: .top)
+						proxy.scrollTo(targetMonthDate, anchor: .top)
 					}
 				} else {
-					// Scroll instantly without animation when returning from navigation
-					proxy.scrollTo(currentMonthDate, anchor: .top)
+					// Scroll instantly without animation
+					proxy.scrollTo(targetMonthDate, anchor: .top)
 				}
-				hasInitiallyScrolled = true
 			}
 		}
 	}
